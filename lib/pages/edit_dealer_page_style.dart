@@ -109,29 +109,29 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
       opacity: enabled ? 1 : 0.5,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           splashColor: _editDealerAccent.withValues(alpha: 0.12),
           highlightColor: _editDealerAccent.withValues(alpha: 0.06),
           child: Ink(
-            height: 28,
+            height: 44,
             decoration: BoxDecoration(
               color: selected
                   ? _editDealerAccent.withValues(alpha: 0.1)
                   : _editDealerAccent.withValues(alpha: 0.035),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: borderColor, width: 1),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  Icon(icon, size: 13, color: _editDealerAccent),
-                  const SizedBox(width: 3),
+                  Icon(icon, size: 18, color: _editDealerAccent),
+                  const SizedBox(width: 6),
                   Flexible(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -142,7 +142,7 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
                         softWrap: false,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: _editDealerAccent,
                           height: 1.1,

@@ -132,11 +132,20 @@ Widget buildBodyTypeImage(String assetPath) {
         .replaceAll('.svg', '.png');
   }
 
-  return ColorFiltered(
-    colorFilter: ColorFilter.matrix(_tintColorMatrix(const Color(0xFF707070))),
-    child: _WhiteKeyedImage(
-      assetPath: pngAssetPath,
-      svgFallbackPath: svgFallbackPath,
-    ),
+  return Image.asset(
+    pngAssetPath,
+    fit: BoxFit.contain,
+    filterQuality: FilterQuality.high,
+    errorBuilder: (context, error, stackTrace) {
+      return ColorFiltered(
+        colorFilter: ColorFilter.matrix(
+          _tintColorMatrix(const Color(0xFF707070)),
+        ),
+        child: _WhiteKeyedImage(
+          assetPath: pngAssetPath,
+          svgFallbackPath: svgFallbackPath,
+        ),
+      );
+    },
   );
 }

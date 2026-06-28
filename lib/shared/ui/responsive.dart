@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../prefs/listing_layout_prefs.dart';
+import 'keyboard.dart';
 
 /// Layout helpers so UI stays consistent and overflow-free across phone sizes.
 abstract final class AppResponsive {
@@ -115,7 +116,7 @@ abstract final class AppResponsive {
     final mq = MediaQuery.of(context);
     return MediaQuery(
       data: mq.copyWith(textScaler: TextScaler.noScaling),
-      child: child,
+      child: KeyboardDismissOnTap(child: child),
     );
   }
 }

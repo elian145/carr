@@ -18,7 +18,7 @@ Widget _buildGlobalCarCardInnerText(
   const double titleBoxFontSize = 15;
   const double titleFontSize = 17;
   const double yearFontSize = 14;
-  const double priceFontSize = 18;
+  const double priceFontSize = 20;
   const double titleLineHeight = 1.1;
   const int titleMaxLines = 2;
   final double reservedTitleHeight =
@@ -176,7 +176,9 @@ Widget _buildGlobalCarCardInnerText(
       ),
       if (pinBottomMeta) const Spacer(),
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
+        Divider(height: 1, thickness: 1, color: dividerLineColor),
+        const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [

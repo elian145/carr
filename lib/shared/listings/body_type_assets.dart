@@ -54,7 +54,7 @@ String getBodyTypeAsset(String bodyType) {
     case 'wagon':
     case 'station wagon':
     case 'estate':
-      return 'assets/body_types_png/hatchback.png';
+      return 'assets/body_types_png/wagon.png';
     case 'pickup':
       return 'assets/body_types_png/pickup.png';
     case 'roadster':
@@ -72,7 +72,7 @@ String getBodyTypeAsset(String bodyType) {
     case 'minivan':
     case 'mini van':
     case 'mpv':
-      return 'assets/body_types_png/van.png';
+      return 'assets/body_types_png/minivan.png';
     case 'supercar':
       return 'assets/body_types_png/supercar.png';
     case 'cabriolet':
@@ -88,4 +88,12 @@ String getBodyTypeAsset(String bodyType) {
     default:
       return 'assets/body_types_png/sedan.png';
   }
+}
+
+/// Body-type artwork for search filter tiles (null for [Any]).
+String? bodyTypeImageAsset(String? bodyType) {
+  if (bodyType == null || bodyType.isEmpty || bodyType == 'Any') {
+    return null;
+  }
+  return getBodyTypeAsset(bodyType);
 }

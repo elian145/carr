@@ -182,7 +182,7 @@ abstract class _HomePageFields extends State<HomePage> {
     'Beige',
     'Gold',
   ];
-  final List<String> driveTypes = ['Any', 'FWD', 'RWD', 'AWD', '4WD'];
+  final List<String> driveTypes = ['Any', 'FWD', 'RWD', 'AWD'];
   final List<String> cylinderCounts = [
     'Any',
     '1',

@@ -69,24 +69,7 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
                 color: _profilePrimaryInk(context),
               ),
             ),
-            SizedBox(height: 8),
-            Text(
-              () {
-                final e = profile?['email']?.toString() ?? '';
-                final p =
-                    profile?['phone_number']?.toString() ??
-                    profile?['phone']?.toString() ??
-                    '';
-                final realEmail =
-                    e.isNotEmpty && !e.endsWith('@phone.local');
-                return realEmail ? e : (p.isNotEmpty ? p : e);
-              }(),
-              style: TextStyle(
-                fontSize: 16,
-                color: _profileSecondaryInk(context),
-              ),
-            ),
-            SizedBox(height: 10),
+            SizedBox(height: 12),
             Builder(
               builder: (ctx) {
                 final accountType =

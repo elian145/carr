@@ -9,3 +9,19 @@ void dismissAnyKeyboard([BuildContext? context]) {
     FocusScope.of(context).unfocus();
   }
 }
+
+/// Dismisses the keyboard when the user taps outside a focused field.
+class KeyboardDismissOnTap extends StatelessWidget {
+  const KeyboardDismissOnTap({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => dismissAnyKeyboard(context),
+      behavior: HitTestBehavior.translucent,
+      child: child,
+    );
+  }
+}

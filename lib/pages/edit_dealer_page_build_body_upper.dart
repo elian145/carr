@@ -1,6 +1,55 @@
 part of 'edit_dealer_page.dart';
 
 mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
+  Future<void> _confirmRemovePhone(int index) async {
+    if (_saving || index <= 0 || index >= _phones.length) return;
+
+    final phoneNumber = _phones[index].text.trim();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          _tr(
+            'Remove phone number?',
+            ar: 'إزالة رقم الهاتف؟',
+            ku: 'ژمارەی تەلەفۆن لاببرێت؟',
+          ),
+        ),
+        content: Text(
+          phoneNumber.isNotEmpty
+              ? _tr(
+                  'Remove $phoneNumber from your contact numbers?',
+                  ar: 'إزالة $phoneNumber من أرقام التواصل؟',
+                  ku: '$phoneNumber لە ژمارەکانی پەیوەندیدا لاببرێت؟',
+                )
+              : _tr(
+                  'Remove this phone number from your contact numbers?',
+                  ar: 'إزالة رقم الهاتف هذا من أرقام التواصل؟',
+                  ku: 'ئەم ژمارەی تەلەفۆنە لە ژمارەکانی پەیوەندیدا لاببرێت؟',
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(_loc?.cancelAction ?? _tr('Cancel', ar: 'إلغاء', ku: 'پاشگەزبوونەوە')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              _tr('Remove', ar: 'إزالة', ku: 'لابردن'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final c = _phones.removeAt(index);
+    c.dispose();
+    setState(() {});
+  }
+
   List<Widget> _editDealerUpperFormCards(BuildContext context) {
     final logoUrl = buildMediaUrl((_currentLogo ?? '').trim());
     final coverUrl = buildMediaUrl((_currentCover ?? '').trim());
@@ -218,13 +267,7 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
                                   padding: const EdgeInsets.only(top: 6),
                                   child: IconButton(
                                     tooltip: _tr('Remove', ar: 'إزالة', ku: 'لابردن'),
-                                    onPressed: _saving
-                                        ? null
-                                        : () {
-                                            final c = _phones.removeAt(i);
-                                            c.dispose();
-                                            setState(() {});
-                                          },
+                                    onPressed: _saving ? null : () => _confirmRemovePhone(i),
                                     icon: const Icon(Icons.close),
                                   ),
                                 ),

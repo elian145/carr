@@ -88,17 +88,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             selectedValues: _homeSelectedBodyTypes,
             onToggle: _homeToggleBodyType,
             onClear: () => _homeSetSelectedBodyTypes([]),
-            iconForOption: _searchBodyTypeIcon,
+            imageAssetForOption: body_type_assets.bodyTypeImageAsset,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
-          ),
-          _searchNumericRangeCard(
-            context: context,
-            children: _moreFiltersColorWidgets(
-              context,
-              setStateDialog,
-              style,
-            ),
+            tileWidth: 88,
+            tileImageWidth: 64,
+            tileImageHeight: 64,
+            tileImageBorderRadius: 8,
           ),
           _searchMultiIconCardSection(
             context,
@@ -113,8 +109,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
             tileWidth: 88,
-            tileImageWidth: 64,
-            tileImageHeight: 64,
+            tileImageWidth: 76,
+            tileImageHeight: 76,
+            tileImageBorderRadius: 8,
           ),
           _searchIconCardSection(
             context,
@@ -128,8 +125,18 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
             tileWidth: 88,
-            tileImageWidth: 64,
-            tileImageHeight: 64,
+            tileImageWidth: 76,
+            tileImageHeight: 76,
+            tileImageFit: BoxFit.contain,
+            tileImageBorderRadius: 8,
+          ),
+          _searchNumericRangeCard(
+            context: context,
+            children: _moreFiltersColorWidgets(
+              context,
+              setStateDialog,
+              style,
+            ),
           ),
           _searchIconCardSection(
             context,
@@ -582,8 +589,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         return Icons.arrow_circle_down_outlined;
       case 'AWD':
         return Icons.sync_alt_rounded;
-      case '4WD':
-        return Icons.terrain_outlined;
       default:
         return Icons.grid_view_rounded;
     }
@@ -716,11 +721,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         setStateDialog(() {});
       },
     );
-  }
-
-  IconData _searchBodyTypeIcon(String bodyType) {
-    if (bodyType == 'Any') return _searchAnyOptionIcon;
-    return homeFilterBodyTypeIcon(bodyType.toLowerCase());
   }
 
   String _searchOptionSummary(
