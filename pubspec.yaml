@@ -94,8 +94,7 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   adaptive_icon_background: "#000000"
   adaptive_icon_foreground: assets/icon/app_icon.png
-  # Wide logo must sit inside the adaptive-icon safe zone (circular mask).
-  adaptive_icon_foreground_inset: 12
+  adaptive_icon_foreground_inset: 0
 
 # Branded splash (Android + iOS). Regenerate after icon change:
 #   dart run flutter_native_splash:create
