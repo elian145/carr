@@ -1,6 +1,5 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 /// When true, the outgoing route keeps its edge-swipe offset and skips the
 /// theme pop slide until cleared after [Navigator.maybePop].
@@ -17,8 +16,13 @@ class EdgeSwipeBackCoordinator extends ChangeNotifier {
   static final EdgeSwipeBackCoordinator instance = EdgeSwipeBackCoordinator._();
 
   double _dragDx = 0;
+  double _exitLatchFraction = 0;
 
   double get dragDx => _dragDx;
+
+  /// Fraction of screen width held after an edge-swipe pop until the route
+  /// transition finishes, so the page does not snap back on-screen.
+  double get exitLatchFraction => _exitLatchFraction;
 
   void setDragDx(double dx) {
     final clamped = dx.clamp(0.0, double.infinity);
@@ -27,8 +31,18 @@ class EdgeSwipeBackCoordinator extends ChangeNotifier {
     notifyListeners();
   }
 
+  void latchExitFraction(double fraction) {
+    final clamped = fraction.clamp(0.0, 1.0);
+    if (_exitLatchFraction == clamped) return;
+    _exitLatchFraction = clamped;
+    notifyListeners();
+  }
+
   void reset() {
-    setDragDx(0);
+    if (_dragDx == 0 && _exitLatchFraction == 0) return;
+    _dragDx = 0;
+    _exitLatchFraction = 0;
+    notifyListeners();
   }
 }
 
@@ -61,6 +75,8 @@ class EdgeSwipeBack extends StatefulWidget {
 
 class _EdgeSwipeBackState extends State<EdgeSwipeBack>
     with SingleTickerProviderStateMixin {
+  static const Duration _popTransitionClearDelay = Duration(milliseconds: 320);
+
   bool _popped = false;
   late final AnimationController _settleController;
   Animation<double>? _settleAnimation;
@@ -146,15 +162,23 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
       target,
       duration: const Duration(milliseconds: 140),
       onDone: () {
+        final width = MediaQuery.sizeOf(context).width;
+        _coordinator.latchExitFraction(_coordinator.dragDx / width);
         NavigationPopCoordinator.suppressNextRoutePopTransition = true;
         _settleController.stop();
         _settleAnimation = null;
-        // Keep drag offset until after pop so the page stays off-screen instead
-        // of snapping back (black flash) before the route is removed.
-        nav.maybePop();
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          NavigationPopCoordinator.suppressNextRoutePopTransition = false;
-          _reset();
+        nav.maybePop().then((didPop) {
+          if (!mounted) return;
+          if (!didPop) {
+            NavigationPopCoordinator.suppressNextRoutePopTransition = false;
+            _reset();
+            return;
+          }
+          Future<void>.delayed(_popTransitionClearDelay, () {
+            if (!mounted) return;
+            NavigationPopCoordinator.suppressNextRoutePopTransition = false;
+            _reset();
+          });
         });
       },
     );

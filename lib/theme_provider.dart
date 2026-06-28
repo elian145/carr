@@ -165,6 +165,7 @@ class AppThemes {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: lightAppBackground,
+      canvasColor: lightAppBackground,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
           TargetPlatform.android: _mobilePageTransitions,
@@ -241,6 +242,7 @@ class AppThemes {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surfaceContainerLowest,
+      canvasColor: scheme.surfaceContainerLowest,
       pageTransitionsTheme: PageTransitionsTheme(
         builders: const {
           TargetPlatform.android: _mobilePageTransitions,
@@ -348,11 +350,27 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
         final dragFraction = route.isCurrent
             ? (coordinator.dragDx / width).clamp(0.0, 1.0)
             : 0.0;
-        final slideOffset = skipPopSlide ? Offset.zero : slide.value;
-        final offset = Offset(
-          slideOffset.dx + dragFraction,
-          slideOffset.dy,
-        );
+        final exitLatchFraction = route.isCurrent
+            ? coordinator.exitLatchFraction
+            : 0.0;
+        final interactiveFraction = dragFraction > exitLatchFraction
+            ? dragFraction
+            : exitLatchFraction;
+
+        final double offsetDx;
+        if (skipPopSlide) {
+          offsetDx = interactiveFraction;
+        } else if (exitLatchFraction > 0 &&
+            animation.status == AnimationStatus.reverse) {
+          // Keep the outgoing page off-screen until the route is removed.
+          offsetDx = slide.value.dx > interactiveFraction
+              ? slide.value.dx
+              : interactiveFraction;
+        } else {
+          offsetDx = slide.value.dx + dragFraction;
+        }
+
+        final offset = Offset(offsetDx, slide.value.dy);
         if (offset == Offset.zero) return child!;
         return FractionalTranslation(
           translation: offset,
