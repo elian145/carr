@@ -17,7 +17,7 @@ Widget _buildGlobalCarCardInnerText(
   // brand+model text larger so it has stronger hierarchy than trim.
   const double titleBoxFontSize = 15;
   const double titleFontSize = 17;
-  const double yearFontSize = 14;
+  const double yearFontSize = 16;
   const double priceFontSize = 20;
   const double titleLineHeight = 1.1;
   const int titleMaxLines = 2;
@@ -135,43 +135,49 @@ Widget _buildGlobalCarCardInnerText(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: Text(
-              yearDisplay.isNotEmpty
-                  ? yearDisplay
-                  : formatCurrency(context, car['price']),
-              textScaler: const TextScaler.linear(1.0),
-              style: TextStyle(
-                color: Color(0xFFFF6B00),
-                fontWeight: FontWeight.w600,
-                fontSize:
-                    yearDisplay.isNotEmpty ? yearFontSize : priceFontSize,
-                height: 1.1,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            flex: 1,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: yearDisplay.isNotEmpty
+                  ? Text(
+                      yearDisplay,
+                      textScaler: const TextScaler.linear(1.0),
+                      style: const TextStyle(
+                        color: Color(0xFFFF6B00),
+                        fontWeight: FontWeight.w600,
+                        fontSize: yearFontSize,
+                        height: 1.1,
+                      ),
+                      maxLines: 1,
+                      softWrap: false,
+                    )
+                  : const SizedBox.shrink(),
             ),
           ),
-          if (yearDisplay.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Expanded(
-              child: Align(
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
                 alignment: AlignmentDirectional.centerEnd,
                 child: Text(
                   formatCurrency(context, car['price']),
                   textScaler: const TextScaler.linear(1.0),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.w600,
                     fontSize: priceFontSize,
                     height: 1.1,
                   ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
                   textAlign: TextAlign.end,
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
       if (pinBottomMeta) const Spacer(),
