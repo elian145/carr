@@ -49,7 +49,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                         GestureDetector(
                           onTap: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(
+                              AppPageRoute(
                                 builder: (_) => ListingPreviewGalleryPage(
                                   imageFilesOrUrls: _damageImages,
                                   initialIndex: index,

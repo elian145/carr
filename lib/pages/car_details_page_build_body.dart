@@ -90,7 +90,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                         car!['price'],
                                       ),
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: 26,
                                         fontWeight: FontWeight.w700,
                                         color: Color(0xFFFF6B00),
                                       ),
@@ -127,7 +127,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                           car!['price'],
                                         ),
                                         style: TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 26,
                                           fontWeight: FontWeight.w700,
                                           color: Color(0xFFFF6B00),
                                         ),

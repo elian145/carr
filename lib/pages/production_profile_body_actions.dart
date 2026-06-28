@@ -64,7 +64,7 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
               () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  AppPageRoute(
                     builder: (_) => const SavedSearchesPage(),
                   ),
                 );

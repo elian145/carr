@@ -157,7 +157,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
 
     Navigator.push<void>(
       context,
-      MaterialPageRoute<void>(
+      AppPageRoute<void>(
         builder: (ctx) => carzo_chat.ChatConversationPage(
             carId: carIdForChat,
             receiverId: receiverId,

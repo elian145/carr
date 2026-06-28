@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
+import '../navigation/app_page_route.dart';
 import '../services/trust_config.dart';
 import 'legal_document_page.dart';
 
@@ -171,7 +172,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                   title: Text(loc.termsOfServiceTitle),
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    AppPageRoute(
                       builder: (_) => LegalDocumentPage(
                         document: LegalDocument.terms,
                         externalUrl: cfg.termsUrl,
@@ -184,7 +185,7 @@ class _HelpCenterPageState extends State<HelpCenterPage> {
                   title: Text(loc.privacyPolicyTitle),
                   onTap: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    AppPageRoute(
                       builder: (_) => LegalDocumentPage(
                         document: LegalDocument.privacy,
                         externalUrl: cfg.privacyUrl,

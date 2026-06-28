@@ -24,6 +24,7 @@ import '../../shared/text/pretty_title_case.dart';
 import '../../data/car_name_translations.dart';
 import '../../theme_provider.dart';
 import '../../widgets/theme_toggle_widget.dart';
+import '../../navigation/app_page_route.dart';
 import '../../widgets/in_app_video_screen.dart';
 import '../../shared/debug/app_log.dart';
 

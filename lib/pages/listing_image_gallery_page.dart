@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../l10n/app_localizations.dart';
+import '../navigation/app_page_route.dart';
 import '../widgets/in_app_video_screen.dart';
 import '../widgets/network_video_thumbnail.dart';
 

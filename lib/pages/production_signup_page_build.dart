@@ -313,7 +313,7 @@ mixin _SignupPageBuild on _SignupPageActions {
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        AppPageRoute(
                           builder: (_) => const LegalDocumentPage(
                             document: LegalDocument.terms,
                           ),
@@ -338,7 +338,7 @@ mixin _SignupPageBuild on _SignupPageActions {
                     GestureDetector(
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(
+                        AppPageRoute(
                           builder: (_) => const LegalDocumentPage(
                             document: LegalDocument.privacy,
                           ),

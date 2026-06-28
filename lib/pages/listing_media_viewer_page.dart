@@ -191,7 +191,7 @@ void _openListingMediaViewer(
   required int initialIndex,
 }) {
   Navigator.of(context).push<void>(
-    MaterialPageRoute<void>(
+    AppPageRoute<void>(
       builder: (context) => ListingMediaViewerPage(
         imageUrls: imageUrls,
         videoUrls: videoUrls,

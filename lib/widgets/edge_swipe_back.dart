@@ -30,7 +30,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
   AppPageRoute<dynamic>? _topAppPageRoute(NavigatorState navigator) {
     AppPageRoute<dynamic>? top;
     navigator.popUntil((route) {
-      if (top == null && route is AppPageRoute) {
+      if (route.isCurrent && route is AppPageRoute) {
         top = route;
       }
       return true;

@@ -6,7 +6,7 @@ mixin _EditDealerPageLocation on _EditDealerPageProfile {
     if (kIsWeb) return;
     final res = await Navigator.push<Map<String, double>>(
       context,
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => DealerLocationPickerPage(
           initialLatitude: _pickLat,
           initialLongitude: _pickLng,

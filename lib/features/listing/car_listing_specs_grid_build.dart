@@ -165,7 +165,7 @@ Widget buildCarListingSpecsGrid(
           ? null
           : () {
               Navigator.of(context).push(
-                MaterialPageRoute(
+                AppPageRoute(
                   builder: (_) => ListingPreviewMediaGridPage(
                     imageFilesOrUrls: List<dynamic>.from(damagePreviewEntries),
                     videoFilesOrUrls: const <dynamic>[],

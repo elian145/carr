@@ -25,6 +25,7 @@ import '../../features/listing/listing_spec_item.dart';
 import '../../globals.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/online_spec_variant.dart';
+import '../../navigation/app_page_route.dart';
 import '../../pages/listing_image_gallery_page.dart';
 import '../../services/ai_service.dart';
 import '../../services/api_service.dart';

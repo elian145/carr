@@ -81,7 +81,7 @@ class _SellReviewCarDetailScrollViewState
     final i = _currentMediaIndex.clamp(0, media.length - 1);
     final videos = media.where((m) => m.isVideo).map((m) => m.item).toList();
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => ListingPreviewMediaGridPage(
           imageFilesOrUrls: images,
           videoFilesOrUrls: videos,

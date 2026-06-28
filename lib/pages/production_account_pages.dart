@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../app/widgets/main_shell_navigation.dart'
     show buildFloatingBottomNav, navigateMainShellTab;
 import '../l10n/app_localizations.dart';
+import '../navigation/app_page_route.dart';
 import '../pages/saved_searches_page.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';

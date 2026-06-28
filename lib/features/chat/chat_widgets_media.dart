@@ -13,7 +13,7 @@ void _showChatMediaDialog(
   int initialIndex = 0,
 }) {
   Navigator.of(context).push(
-    MaterialPageRoute<void>(
+    AppPageRoute<void>(
       builder: (_) =>
           _ChatMediaGroupViewer(entries: entries, initialIndex: initialIndex),
     ),

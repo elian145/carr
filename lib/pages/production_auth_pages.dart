@@ -16,6 +16,7 @@ import '../app/widgets/main_shell_navigation.dart'
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../features/listing/listing_mappers.dart';
 import '../l10n/app_localizations.dart';
+import '../navigation/app_page_route.dart';
 import '../pages/legal_document_page.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';

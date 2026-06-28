@@ -28,7 +28,7 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(
+                          AppPageRoute(
                             builder: (_) => ListingPreviewGalleryPage(
                               imageFilesOrUrls: const [],
                               videoFilesOrUrls: List<dynamic>.from(

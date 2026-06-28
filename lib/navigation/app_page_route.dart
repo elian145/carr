@@ -12,6 +12,21 @@ class AppPageRoute<T> extends MaterialPageRoute<T> {
   AnimationController? get routeAnimationController => controller;
 }
 
+/// Prefer this over [MaterialPageRoute] so [EdgeSwipeBack] can animate pops.
+Route<T> appPageRoute<T>({
+  required WidgetBuilder builder,
+  RouteSettings? settings,
+  bool fullscreenDialog = false,
+  bool maintainState = true,
+}) {
+  return AppPageRoute<T>(
+    builder: builder,
+    settings: settings,
+    fullscreenDialog: fullscreenDialog,
+    maintainState: maintainState,
+  );
+}
+
 Route<dynamic>? appOnGenerateRoute(
   RouteSettings settings,
   Map<String, WidgetBuilder> routes,

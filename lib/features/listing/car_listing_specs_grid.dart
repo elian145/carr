@@ -1,10 +1,11 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as services;
 import 'package:image_picker/image_picker.dart';
 
+import '../../navigation/app_page_route.dart';
 import '../../pages/listing_image_gallery_page.dart'
     show ListingPreviewMediaGridPage;
 import '../../features/listing/listing_spec_item.dart';

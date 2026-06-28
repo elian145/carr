@@ -185,7 +185,7 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
 
   void _openViewer(BuildContext context, int index) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+      AppPageRoute<void>(
         builder: (_) => ListingPreviewMediaViewerPage(
           imageFilesOrUrls: widget.imageFilesOrUrls,
           videoFilesOrUrls: widget.videoFilesOrUrls,

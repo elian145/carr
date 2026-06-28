@@ -147,7 +147,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                 _heroMediaCount - 1,
                               );
                               Navigator.of(context).push(
-                                MaterialPageRoute(
+                                AppPageRoute(
                                   builder: (_) => ListingImageGalleryPage(
                                     imageUrls: _imageUrls,
                                     videoUrls: _videoUrls,

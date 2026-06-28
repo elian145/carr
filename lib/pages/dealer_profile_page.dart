@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../l10n/app_localizations.dart';
+import '../navigation/app_page_route.dart';
 import '../app/listing_shell.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 import '../services/auth_service.dart';
@@ -256,7 +257,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 onPressed: () async {
                                   final changed = await Navigator.push<bool>(
                                     context,
-                                    MaterialPageRoute(
+                                    AppPageRoute(
                                       builder: (_) => const EditDealerPage(),
                                     ),
                                   );

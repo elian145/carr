@@ -332,7 +332,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
       // Navigate to saved searches for quick edit
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
+        AppPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
       );
     } catch (e, st) { logNonFatal(e, st); }
   }

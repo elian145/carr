@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -17,6 +17,7 @@ import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../features/comparison/widgets/comparison_button.dart';
 import '../features/listing/car_listing_specs_grid.dart';
 import '../l10n/app_localizations.dart';
+import '../navigation/app_page_route.dart';
 import '../pages/listing_image_gallery_page.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
@@ -62,7 +63,7 @@ part 'car_details_page_build.dart';
 class CarDetailsPage extends StatefulWidget {
   final String carId;
 
-  /// When false (default), owner edit/delete/sold controls are hidden — e.g. when
+  /// When false (default), owner edit/delete/sold controls are hidden � e.g. when
   /// opened from the home browse feed. Set true from My Listings.
   final bool allowOwnerManagement;
 

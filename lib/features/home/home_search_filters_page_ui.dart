@@ -1287,7 +1287,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       _searchFiltersPageSnapshot(),
     ];
     final applied = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+      AppPageRoute<bool>(
         fullscreenDialog: true,
         builder: (pageContext) {
           return StatefulBuilder(

@@ -39,7 +39,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                         GestureDetector(
                           onTap: () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(
+                              AppPageRoute(
                                 builder: (_) => ListingPreviewGalleryPage(
                                   imageFilesOrUrls: _selectedImages,
                                   initialIndex: index,
