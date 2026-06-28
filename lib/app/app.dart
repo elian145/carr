@@ -7,6 +7,7 @@ import '../shared/i18n/ku_delegates.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 import '../shared/ui/responsive.dart';
+import '../navigation/app_page_route.dart';
 import '../widgets/edge_swipe_back.dart';
 import 'providers.dart';
 import 'routes.dart';
@@ -35,13 +36,20 @@ class CarzoApp extends StatelessWidget {
                   navigatorKey: appNavigatorKey,
                   title: 'CarNet',
                   debugShowCheckedModeBanner: false,
-                  builder: (context, child) => AppResponsive.wrapApp(
-                    context,
-                    EdgeSwipeBack(
-                      navigatorKey: appNavigatorKey,
-                      child: child ?? const SizedBox.shrink(),
-                    ),
-                  ),
+                  builder: (context, child) {
+                    final shellColor =
+                        Theme.of(context).scaffoldBackgroundColor;
+                    return AppResponsive.wrapApp(
+                      context,
+                      ColoredBox(
+                        color: shellColor,
+                        child: EdgeSwipeBack(
+                          navigatorKey: appNavigatorKey,
+                          child: child ?? const SizedBox.shrink(),
+                        ),
+                      ),
+                    );
+                  },
                   theme: AppThemes.lightTheme,
                   darkTheme: AppThemes.darkTheme,
                   themeMode: themeProvider.themeMode,
@@ -64,7 +72,8 @@ class CarzoApp extends StatelessWidget {
                     return const Locale('en');
                   },
                   initialRoute: '/',
-                  routes: routes,
+                  onGenerateRoute: (settings) =>
+                      appOnGenerateRoute(settings, routes),
                 ),
               );
             },

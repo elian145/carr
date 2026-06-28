@@ -1,50 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
-/// When true, the outgoing route keeps its edge-swipe offset and skips the
-/// theme pop slide until cleared after [Navigator.maybePop].
-class NavigationPopCoordinator {
-  NavigationPopCoordinator._();
-
-  static bool suppressNextRoutePopTransition = false;
-}
-
-/// Drives interactive edge-swipe offset for the top route's page transition.
-class EdgeSwipeBackCoordinator extends ChangeNotifier {
-  EdgeSwipeBackCoordinator._();
-
-  static final EdgeSwipeBackCoordinator instance = EdgeSwipeBackCoordinator._();
-
-  double _dragDx = 0;
-  double _exitLatchFraction = 0;
-
-  double get dragDx => _dragDx;
-
-  /// Fraction of screen width held after an edge-swipe pop until the route
-  /// transition finishes, so the page does not snap back on-screen.
-  double get exitLatchFraction => _exitLatchFraction;
-
-  void setDragDx(double dx) {
-    final clamped = dx.clamp(0.0, double.infinity);
-    if (_dragDx == clamped) return;
-    _dragDx = clamped;
-    notifyListeners();
-  }
-
-  void latchExitFraction(double fraction) {
-    final clamped = fraction.clamp(0.0, 1.0);
-    if (_exitLatchFraction == clamped) return;
-    _exitLatchFraction = clamped;
-    notifyListeners();
-  }
-
-  void reset() {
-    if (_dragDx == 0 && _exitLatchFraction == 0) return;
-    _dragDx = 0;
-    _exitLatchFraction = 0;
-    notifyListeners();
-  }
-}
+import '../navigation/app_page_route.dart';
 
 class EdgeSwipeBack extends StatefulWidget {
   const EdgeSwipeBack({
@@ -52,136 +9,64 @@ class EdgeSwipeBack extends StatefulWidget {
     required this.child,
     required this.navigatorKey,
     this.edgeWidth = 20,
-    this.triggerDistance = 120,
-    this.triggerVelocity = 900,
   });
 
   final Widget child;
   final GlobalKey<NavigatorState> navigatorKey;
-
-  /// Only swipes that begin within this many logical pixels from the left edge
-  /// will be considered.
   final double edgeWidth;
-
-  /// Minimum horizontal drag distance required to pop.
-  final double triggerDistance;
-
-  /// Minimum fling velocity (px/s) required to pop.
-  final double triggerVelocity;
 
   @override
   State<EdgeSwipeBack> createState() => _EdgeSwipeBackState();
 }
 
-class _EdgeSwipeBackState extends State<EdgeSwipeBack>
-    with SingleTickerProviderStateMixin {
-  static const Duration _popTransitionClearDelay = Duration(milliseconds: 320);
-
-  bool _popped = false;
-  late final AnimationController _settleController;
-  Animation<double>? _settleAnimation;
-  final EdgeSwipeBackCoordinator _coordinator = EdgeSwipeBackCoordinator.instance;
-
-  @override
-  void initState() {
-    super.initState();
-    _settleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 180),
-    );
-  }
-
-  @override
-  void dispose() {
-    _settleController.dispose();
-    super.dispose();
-  }
+class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
+  _AppBackGestureController? _gestureController;
 
   bool _canPop() {
     final nav = widget.navigatorKey.currentState;
     return nav != null && nav.canPop();
   }
 
-  void _reset() {
-    _settleController.stop();
-    _settleAnimation = null;
-    _coordinator.reset();
-    _popped = false;
+  AppPageRoute<dynamic>? _topAppPageRoute(NavigatorState navigator) {
+    AppPageRoute<dynamic>? top;
+    navigator.popUntil((route) {
+      if (top == null && route is AppPageRoute) {
+        top = route;
+      }
+      return true;
+    });
+    return top;
   }
 
-  void _animateTo(
-    double target, {
-    required Duration duration,
-    VoidCallback? onDone,
-  }) {
-    _settleController
-      ..stop()
-      ..duration = duration;
-    _settleAnimation = Tween<double>(
-      begin: _coordinator.dragDx,
-      end: target,
-    ).animate(
-      CurvedAnimation(
-        parent: _settleController,
-        curve: Curves.easeOutCubic,
-      ),
-    )..addListener(() {
-        if (!mounted) return;
-        _coordinator.setDragDx(_settleAnimation!.value);
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed && onDone != null) {
-          onDone();
-        }
-      });
-    _settleController.forward(from: 0);
-  }
-
-  void _animateBackToStart() {
-    if (_coordinator.dragDx <= 0) {
-      _reset();
-      return;
-    }
-    _animateTo(
-      0,
-      duration: const Duration(milliseconds: 180),
-      onDone: _reset,
-    );
-  }
-
-  void _maybePop() {
-    if (_popped) return;
+  void _onDragStart() {
     final nav = widget.navigatorKey.currentState;
-    if (nav == null) return;
-    if (!nav.canPop()) return;
+    if (nav == null || !nav.canPop()) return;
 
-    _popped = true;
-    final width = MediaQuery.sizeOf(context).width;
-    final target = width.clamp(280.0, 1200.0);
-    _animateTo(
-      target,
-      duration: const Duration(milliseconds: 140),
-      onDone: () {
-        final width = MediaQuery.sizeOf(context).width;
-        _coordinator.latchExitFraction(_coordinator.dragDx / width);
-        NavigationPopCoordinator.suppressNextRoutePopTransition = true;
-        _settleController.stop();
-        _settleAnimation = null;
-        nav.maybePop().then((didPop) {
-          if (!mounted) return;
-          if (!didPop) {
-            NavigationPopCoordinator.suppressNextRoutePopTransition = false;
-            _reset();
-            return;
-          }
-          Future<void>.delayed(_popTransitionClearDelay, () {
-            if (!mounted) return;
-            NavigationPopCoordinator.suppressNextRoutePopTransition = false;
-            _reset();
-          });
-        });
-      },
+    final route = _topAppPageRoute(nav);
+    final controller = route?.routeAnimationController;
+    if (route == null || controller == null) return;
+
+    nav.didStartUserGesture();
+    _gestureController = _AppBackGestureController(
+      navigator: nav,
+      route: route,
+      animationController: controller,
+      screenWidth: MediaQuery.sizeOf(context).width,
     );
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    _gestureController?.dragUpdate(details.delta.dx);
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    _gestureController?.dragEnd(details.primaryVelocity ?? 0);
+    _gestureController = null;
+  }
+
+  void _onDragCancel() {
+    _gestureController?.dragEnd(0);
+    _gestureController = null;
   }
 
   @override
@@ -196,39 +81,81 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack>
             edgeWidth: widget.edgeWidth,
           ),
           (recognizer) {
-            recognizer
-              ..onStart = (_) {
-                _reset();
-              }
-              ..onUpdate = (details) {
-                if (_popped) return;
-                _settleController.stop();
-                _coordinator.setDragDx(
-                  _coordinator.dragDx + details.delta.dx,
-                );
-                if (_coordinator.dragDx >= widget.triggerDistance) {
-                  _maybePop();
-                }
-              }
-              ..onEnd = (details) {
-                if (_popped) return;
-                final v = details.primaryVelocity ?? 0;
-                if (_coordinator.dragDx >= widget.triggerDistance ||
-                    v >= widget.triggerVelocity) {
-                  _maybePop();
-                } else {
-                  _animateBackToStart();
-                }
-              }
-              ..onCancel = () {
-                if (_popped) return;
-                _animateBackToStart();
-              };
+            recognizer.onStart = (_) => _onDragStart();
+            recognizer.onUpdate = _onDragUpdate;
+            recognizer.onEnd = _onDragEnd;
+            recognizer.onCancel = _onDragCancel;
           },
         ),
       },
       child: widget.child,
     );
+  }
+}
+
+class _AppBackGestureController {
+  _AppBackGestureController({
+    required this.navigator,
+    required this.route,
+    required this.animationController,
+    required this.screenWidth,
+  });
+
+  static const double _minFlingVelocity = 1.0;
+  static const Duration _droppedPageAnimationDuration =
+      Duration(milliseconds: 180);
+
+  final NavigatorState navigator;
+  final AppPageRoute<dynamic> route;
+  final AnimationController animationController;
+  final double screenWidth;
+
+  void dragUpdate(double deltaPx) {
+    animationController.value -= deltaPx / screenWidth;
+  }
+
+  void dragEnd(double velocityPxPerSec) {
+    final velocity = velocityPxPerSec / screenWidth;
+    final isCurrent = route.isCurrent;
+    final bool animateForward;
+
+    if (!isCurrent) {
+      animateForward = route.isActive;
+    } else if (velocity.abs() >= _minFlingVelocity) {
+      animateForward = velocity <= 0;
+    } else {
+      animateForward = animationController.value > 0.5;
+    }
+
+    if (animateForward) {
+      animationController.animateTo(
+        1.0,
+        duration: _droppedPageAnimationDuration,
+        curve: Curves.fastEaseInToSlowEaseOut,
+      );
+    } else {
+      if (isCurrent) {
+        navigator.pop();
+      }
+      if (animationController.isAnimating) {
+        animationController.animateBack(
+          0.0,
+          duration: _droppedPageAnimationDuration,
+          curve: Curves.fastEaseInToSlowEaseOut,
+        );
+      }
+    }
+
+    if (animationController.isAnimating) {
+      void stopGesture(AnimationStatus status) {
+        navigator.didStopUserGesture();
+        animationController.removeStatusListener(stopGesture);
+      }
+
+      animationController.addStatusListener(stopGesture);
+    } else {
+      navigator.didStopUserGesture();
+    }
   }
 }
 

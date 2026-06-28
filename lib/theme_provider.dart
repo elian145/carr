@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'widgets/edge_swipe_back.dart'
-    show EdgeSwipeBackCoordinator, NavigationPopCoordinator;
-
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
 
@@ -327,9 +324,6 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final skipPopSlide = NavigationPopCoordinator.suppressNextRoutePopTransition &&
-        route.isCurrent;
-
     final slide = Tween<Offset>(
       begin: const Offset(1, 0),
       end: Offset.zero,
@@ -341,39 +335,12 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
       ),
     );
 
-    final width = MediaQuery.sizeOf(context).width;
-    final coordinator = EdgeSwipeBackCoordinator.instance;
-
     return AnimatedBuilder(
-      animation: Listenable.merge([animation, coordinator]),
+      animation: animation,
       builder: (context, child) {
-        final dragFraction = route.isCurrent
-            ? (coordinator.dragDx / width).clamp(0.0, 1.0)
-            : 0.0;
-        final exitLatchFraction = route.isCurrent
-            ? coordinator.exitLatchFraction
-            : 0.0;
-        final interactiveFraction = dragFraction > exitLatchFraction
-            ? dragFraction
-            : exitLatchFraction;
-
-        final double offsetDx;
-        if (skipPopSlide) {
-          offsetDx = interactiveFraction;
-        } else if (exitLatchFraction > 0 &&
-            animation.status == AnimationStatus.reverse) {
-          // Keep the outgoing page off-screen until the route is removed.
-          offsetDx = slide.value.dx > interactiveFraction
-              ? slide.value.dx
-              : interactiveFraction;
-        } else {
-          offsetDx = slide.value.dx + dragFraction;
-        }
-
-        final offset = Offset(offsetDx, slide.value.dy);
-        if (offset == Offset.zero) return child!;
+        if (slide.value == Offset.zero) return child!;
         return FractionalTranslation(
-          translation: offset,
+          translation: slide.value,
           transformHitTests: true,
           child: child!,
         );
