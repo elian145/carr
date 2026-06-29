@@ -1381,6 +1381,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                   _homeSetSelectedBrand(brand);
                   clearFiltersOnVehicleChange();
                   _searchFiltersKeywordController.clear();
+                  _searchFiltersKeywordFocusNode.unfocus();
                 });
                 setStateDialog(() {});
               },
@@ -1415,6 +1416,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                   selectedTrim = null;
                   clearFiltersOnVehicleChange();
                   _searchFiltersKeywordController.clear();
+                  _searchFiltersKeywordFocusNode.unfocus();
                 });
                 setStateDialog(() {});
               },
@@ -1426,42 +1428,59 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
 
   Widget _searchKeywordField(
     BuildContext context,
-    StateSetter setStateDialog,
-  ) {
+    StateSetter setStateDialog, {
+    bool autofocus = false,
+  }) {
     final query = _searchFiltersKeywordController.text.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextField(
           controller: _searchFiltersKeywordController,
+          focusNode: _searchFiltersKeywordFocusNode,
+          autofocus: autofocus,
           onChanged: (_) => setStateDialog(() {}),
           textInputAction: TextInputAction.search,
+          keyboardType: TextInputType.text,
+          textCapitalization: TextCapitalization.words,
+          enableInteractiveSelection: true,
           decoration: _searchKeywordFieldDecoration(context, setStateDialog),
         ),
         if (query.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _searchKeywordResultsPanel(context, setStateDialog, query),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 240),
+            child: SingleChildScrollView(
+              child: _searchKeywordResultsPanel(
+                context,
+                setStateDialog,
+                query,
+              ),
+            ),
+          ),
         ],
       ],
     );
   }
 
-  List<Widget> _searchFiltersPageBody(
+  List<Widget> _searchFiltersPageScrollBody(
     BuildContext context,
     StateSetter setStateDialog,
   ) {
     final style = _searchMoreFiltersStyle(context);
 
     return [
-      _searchKeywordField(context, setStateDialog),
-      const SizedBox(height: 16),
       _searchMakeSection(context, setStateDialog),
       _searchAllFilterSections(context, setStateDialog, style),
     ];
   }
 
-  Future<void> _openHomeSearchFiltersPage(BuildContext context) async {
+  Future<void> _openHomeSearchFiltersPage(
+    BuildContext context, {
+    bool focusSearchField = true,
+  }) async {
     _searchFiltersKeywordController.clear();
+    _searchFiltersKeywordFocusNode.unfocus();
     _syncMoreFiltersControllers();
     final revertSnapshot = <Map<String, dynamic>>[
       _searchFiltersPageSnapshot(),
@@ -1470,8 +1489,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       AppPageRoute<bool>(
         fullscreenDialog: true,
         builder: (pageContext) {
+          var didRequestSearchFocus = false;
           return StatefulBuilder(
             builder: (context, setStateDialog) {
+              if (focusSearchField && !didRequestSearchFocus) {
+                didRequestSearchFocus = true;
+                _focusSearchFiltersKeywordField();
+              }
               final isLightShell =
                   Theme.of(context).brightness == Brightness.light;
               final titleColor =
@@ -1484,6 +1508,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                   }
                 },
                 child: Scaffold(
+                  resizeToAvoidBottomInset: true,
                   backgroundColor: isLightShell ? Colors.white : null,
                   body: SafeArea(
                     child: Column(
@@ -1533,6 +1558,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                             ],
                           ),
                         ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: _searchKeywordField(
+                            context,
+                            setStateDialog,
+                            autofocus: focusSearchField,
+                          ),
+                        ),
                         Expanded(
                           child: Container(
                             decoration: isLightShell
@@ -1542,7 +1575,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                                   ),
                             child: ListView(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                              children: _searchFiltersPageBody(
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              children: _searchFiltersPageScrollBody(
                                 context,
                                 setStateDialog,
                               ),

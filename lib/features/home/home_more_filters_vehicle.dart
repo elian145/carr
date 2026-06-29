@@ -5,27 +5,8 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     BuildContext context,
     void Function(void Function()) setStateDialog,
   ) {
-    showHomeBrandModelSearchDialog(
-      context: context,
-      brands: homeBrands,
-      models: models,
-      onBrandSelected: (brand) {
-        setState(() {
-          _homeSetSelectedBrand(brand);
-          clearFiltersOnVehicleChange();
-        });
-        setStateDialog(() {});
-      },
-      onModelSelected: (brand, model) {
-        setState(() {
-          _homeSetSelectedBrand(brand);
-          selectedModel = model;
-          selectedTrim = null;
-          clearFiltersOnVehicleChange();
-        });
-        setStateDialog(() {});
-      },
-    );
+    _focusSearchFiltersKeywordField();
+    setStateDialog(() {});
   }
 
   double _moreFiltersDropdownMenuMaxHeight(BuildContext context) {

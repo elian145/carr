@@ -72,6 +72,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
       _maxMileageController.clear();
       _engineSizeController.clear();
       _searchFiltersKeywordController.clear();
+      _searchFiltersKeywordFocusNode.unfocus();
     });
     refreshDialog();
     await _persistFilters();
