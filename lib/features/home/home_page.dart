@@ -301,6 +301,7 @@ abstract class _HomePageFields extends State<HomePage> {
   late final TextEditingController _minMileageController;
   late final TextEditingController _maxMileageController;
   late final TextEditingController _engineSizeController;
+  late final TextEditingController _searchFiltersKeywordController;
 
 }
 
@@ -349,6 +350,7 @@ class _HomePageState extends _HomePageFields
     _minMileageController = TextEditingController();
     _maxMileageController = TextEditingController();
     _engineSizeController = TextEditingController();
+    _searchFiltersKeywordController = TextEditingController();
     if (_HomePageFields._homeFeedCache.isNotEmpty) {
       cars = copyListingMapList(_HomePageFields._homeFeedCache);
       isLoading = false;
@@ -466,6 +468,7 @@ class _HomePageState extends _HomePageFields
     _minMileageController.dispose();
     _maxMileageController.dispose();
     _engineSizeController.dispose();
+    _searchFiltersKeywordController.dispose();
     try {
       _homeScrollRestoreScheduleGen++;
       // Prefer live controller position; on tab replacement the viewport is often

@@ -28,6 +28,11 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     );
   }
 
+  double _moreFiltersDropdownMenuMaxHeight(BuildContext context) {
+    final height = MediaQuery.sizeOf(context).height;
+    return (height * 0.32).clamp(200.0, 280.0);
+  }
+
   InputDecoration _moreFiltersFilterFieldDecoration(
     MoreFiltersDialogStyle style,
     String label,
@@ -50,6 +55,28 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
+  InputDecoration _moreFiltersColorMatchedFieldDecoration(
+    MoreFiltersDialogStyle style,
+    String label,
+  ) {
+    final labelStyle = TextStyle(
+      color: style.onSurface,
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    );
+    return InputDecoration(
+      labelText: label,
+      labelStyle: labelStyle,
+      floatingLabelStyle: labelStyle,
+      filled: true,
+      fillColor: style.fieldFill,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
     );
   }
@@ -113,6 +140,44 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
             SizedBox(width: gap),
             Expanded(child: maxField),
           ],
+        ),
+      ),
+    );
+  }
+
+  double _moreFiltersDropdownMenuWidth(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    return (width * 0.48).clamp(160.0, 240.0);
+  }
+
+  Widget _moreFiltersDropdownField({
+    required BuildContext context,
+    required MoreFiltersDialogStyle style,
+    required String label,
+    required String value,
+    required List<DropdownMenuItem<String>> items,
+    required ValueChanged<String?>? onChanged,
+    bool narrowMenu = false,
+  }) {
+    return InputDecorator(
+      decoration: _moreFiltersColorMatchedFieldDecoration(style, label),
+      isEmpty: false,
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          isDense: true,
+          value: value,
+          items: items,
+          onChanged: onChanged,
+          menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
+          menuWidth: narrowMenu ? _moreFiltersDropdownMenuWidth(context) : null,
+          borderRadius: BorderRadius.circular(8),
+          dropdownColor: style.fieldFill,
+          alignment: AlignmentDirectional.centerStart,
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: style.onSurface.withValues(alpha: 0.7),
+          ),
         ),
       ),
     );

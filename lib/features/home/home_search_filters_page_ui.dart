@@ -1240,41 +1240,220 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     );
   }
 
-  List<Widget> _searchFiltersPageBody(
+  List<String> _searchKeywordMatchedBrands(String raw) {
+    final q = raw.toLowerCase().trim();
+    if (q.isEmpty) return const [];
+    return homeBrands.where((b) => b.toLowerCase().contains(q)).toList();
+  }
+
+  List<Map<String, String>> _searchKeywordMatchedModels(String raw) {
+    final q = raw.toLowerCase().trim();
+    if (q.isEmpty) return const [];
+    final seen = <String>{};
+    final results = <Map<String, String>>[];
+    for (final brand in homeBrands) {
+      final brandModels = models[brand] ?? const <String>[];
+      if (brand.toLowerCase().contains(q)) {
+        for (final model in brandModels) {
+          final key = '$brand|$model';
+          if (seen.add(key)) {
+            results.add({'brand': brand, 'model': model});
+          }
+        }
+      }
+      for (final model in brandModels) {
+        if (model.toLowerCase().contains(q)) {
+          final key = '$brand|$model';
+          if (seen.add(key)) {
+            results.add({'brand': brand, 'model': model});
+          }
+        }
+      }
+    }
+    results.sort((a, b) {
+      final modelCmp = a['model']!.toLowerCase().compareTo(b['model']!.toLowerCase());
+      if (modelCmp != 0) return modelCmp;
+      return a['brand']!.toLowerCase().compareTo(b['brand']!.toLowerCase());
+    });
+    return results;
+  }
+
+  InputDecoration _searchKeywordFieldDecoration(
     BuildContext context,
     StateSetter setStateDialog,
   ) {
     final isLight = Theme.of(context).brightness == Brightness.light;
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(
+        color: isLight ? const Color(0xFFE8E8ED) : Colors.white24,
+      ),
+    );
+    return InputDecoration(
+      hintText: _trLegacyText(
+        context,
+        'Search make or model',
+        ar: 'ابحث عن الماركة أو الموديل',
+        ku: 'براند یان مۆدێل بگەڕێ',
+      ),
+      prefixIcon: const Icon(Icons.search, color: _searchAccent),
+      suffixIcon: _searchFiltersKeywordController.text.trim().isEmpty
+          ? null
+          : IconButton(
+              icon: const Icon(Icons.clear, size: 20),
+              color: _searchAccent,
+              onPressed: () {
+                _searchFiltersKeywordController.clear();
+                setStateDialog(() {});
+              },
+            ),
+      filled: true,
+      fillColor: isLight ? const Color(0xFFF7F7F9) : Colors.white10,
+      border: border,
+      enabledBorder: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: _searchAccent, width: 2),
+      ),
+    );
+  }
+
+  Widget _searchKeywordResultsPanel(
+    BuildContext context,
+    StateSetter setStateDialog,
+    String query,
+  ) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final textColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
+    final mutedColor = isLight ? const Color(0xFF6B6B6B) : Colors.white70;
+    final brands = _searchKeywordMatchedBrands(query);
+    final modelHits = _searchKeywordMatchedModels(query);
+    const maxResults = 10;
+    final brandSlots = brands.take(maxResults).toList();
+    final modelSlots = modelHits.take(maxResults - brandSlots.length).toList();
+
+    if (brandSlots.isEmpty && modelSlots.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          _trLegacyText(
+            context,
+            'No makes or models match your search.',
+            ar: 'لا توجد ماركات أو موديلات مطابقة.',
+            ku: 'هیچ براند یان مۆدێلێک نەدۆزرایەوە.',
+          ),
+          style: TextStyle(color: mutedColor, fontSize: 14),
+        ),
+      );
+    }
+
+    return Material(
+      color: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final brand in brandSlots)
+            ListTile(
+              dense: true,
+              leading: _searchBrandLogoCircle(brand),
+              title: Text(
+                CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
+                    ? CarNameTranslations.getLocalizedBrand(context, brand)
+                    : brand,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                _trLegacyText(
+                  context,
+                  'Make',
+                  ar: 'الماركة',
+                  ku: 'براند',
+                ),
+                style: TextStyle(color: mutedColor, fontSize: 12),
+              ),
+              onTap: () {
+                setState(() {
+                  _homeSetSelectedBrand(brand);
+                  clearFiltersOnVehicleChange();
+                  _searchFiltersKeywordController.clear();
+                });
+                setStateDialog(() {});
+              },
+            ),
+          for (final item in modelSlots)
+            ListTile(
+              dense: true,
+              leading: _searchBrandLogoCircle(item['brand']!),
+              title: Text(
+                item['model']!,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                CarNameTranslations.getLocalizedBrand(
+                          context,
+                          item['brand']!,
+                        ).isNotEmpty
+                    ? CarNameTranslations.getLocalizedBrand(
+                        context,
+                        item['brand']!,
+                      )
+                    : item['brand']!,
+                style: TextStyle(color: mutedColor, fontSize: 12),
+              ),
+              onTap: () {
+                setState(() {
+                  _homeSetSelectedBrand(item['brand']);
+                  selectedModel = item['model'];
+                  selectedTrim = null;
+                  clearFiltersOnVehicleChange();
+                  _searchFiltersKeywordController.clear();
+                });
+                setStateDialog(() {});
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _searchKeywordField(
+    BuildContext context,
+    StateSetter setStateDialog,
+  ) {
+    final query = _searchFiltersKeywordController.text.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextField(
+          controller: _searchFiltersKeywordController,
+          onChanged: (_) => setStateDialog(() {}),
+          textInputAction: TextInputAction.search,
+          decoration: _searchKeywordFieldDecoration(context, setStateDialog),
+        ),
+        if (query.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _searchKeywordResultsPanel(context, setStateDialog, query),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _searchFiltersPageBody(
+    BuildContext context,
+    StateSetter setStateDialog,
+  ) {
     final style = _searchMoreFiltersStyle(context);
 
     return [
-      TextField(
-        readOnly: true,
-        onTap: () => _openMoreFiltersBrandModelSearch(context, setStateDialog),
-        decoration: InputDecoration(
-          hintText: _trLegacyText(
-            context,
-            'Search make, model, or keyword',
-            ar: 'ابحث عن الماركة أو الموديل أو كلمة',
-            ku: 'براند، مۆدێل یان وشە بگەڕێ',
-          ),
-          prefixIcon: const Icon(Icons.search, color: _searchAccent),
-          filled: true,
-          fillColor: isLight ? const Color(0xFFF7F7F9) : Colors.white10,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: isLight ? const Color(0xFFE8E8ED) : Colors.white24,
-            ),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(
-              color: isLight ? const Color(0xFFE8E8ED) : Colors.white24,
-            ),
-          ),
-        ),
-      ),
+      _searchKeywordField(context, setStateDialog),
       const SizedBox(height: 16),
       _searchMakeSection(context, setStateDialog),
       _searchAllFilterSections(context, setStateDialog, style),
@@ -1282,6 +1461,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   }
 
   Future<void> _openHomeSearchFiltersPage(BuildContext context) async {
+    _searchFiltersKeywordController.clear();
     _syncMoreFiltersControllers();
     final revertSnapshot = <Map<String, dynamic>>[
       _searchFiltersPageSnapshot(),
