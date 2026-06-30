@@ -212,7 +212,28 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             scrollHorizontally: true,
             tileWidth: 104,
             tileImageWidth: 96,
-            tileImageHeight: 20,
+            tileImageHeight: 24,
+          ),
+          _searchIconCardSection(
+            context,
+            setStateDialog,
+            title: _trLegacyText(
+              context,
+              'Plate city',
+              ar: 'مدينة اللوحة',
+              ku: 'شاری پڵەیت',
+            ),
+            options: ['Any', ...kPlateCityFilterOptions],
+            selected: selectedPlateCity,
+            onSelected: (v) => selectedPlateCity = v,
+            iconForOption: _searchPlateCityIcon,
+            imageAssetForOption: plateCityImageAsset,
+            labelForOption: _searchPlateCityLabel,
+            scrollHorizontally: true,
+            tileWidth: 148,
+            tileImageWidth: 132,
+            tileImageHeight: 40,
+            compactImageTile: true,
           ),
           _searchNumericRangeCard(
             context: context,
@@ -657,6 +678,16 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     }
   }
 
+  IconData _searchPlateCityIcon(String city) {
+    return Icons.location_on_outlined;
+  }
+
+  String _searchPlateCityLabel(BuildContext context, String city) {
+    final loc = AppLocalizations.of(context)!;
+    if (city == 'Any') return loc.any;
+    return _translateValueGlobal(context, city) ?? city;
+  }
+
   String _searchTitleStatusLabel(BuildContext context, String status) {
     final loc = AppLocalizations.of(context)!;
     switch (status) {
@@ -740,13 +771,18 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   double _searchIconTileHeight({
     required bool textOnly,
     double? imageHeight,
+    bool compactImageTile = false,
   }) {
     if (textOnly) return 52;
     final slotHeight = imageHeight ?? 26;
-    final verticalPadding = slotHeight > 80 ? 16.0 : 20.0;
+    // Tile uses symmetric vertical padding; selected state adds a 2px border.
+    final verticalPadding = compactImageTile
+        ? 16.0
+        : (slotHeight > 80 ? 16.0 : 20.0);
     const gap = 6.0;
-    const labelHeight = 16.0;
-    return verticalPadding + slotHeight + gap + labelHeight;
+    const labelHeight = 15.0;
+    const borderAllowance = 4.0;
+    return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
   }
 
   double _searchIconScrollListHeight({
@@ -754,14 +790,18 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     required List<String> options,
     double? tileImageHeight,
     String? Function(String option)? imageAssetForOption,
+    Widget? Function(String option)? graphicForOption,
+    bool compactImageTile = false,
   }) {
     if (textOnly) return 52;
     var maxHeight = 0.0;
     for (final option in options) {
-      final asset = imageAssetForOption?.call(option);
+      final hasGraphic = graphicForOption != null ||
+          (imageAssetForOption?.call(option) != null);
       final height = _searchIconTileHeight(
         textOnly: false,
-        imageHeight: asset == null ? null : tileImageHeight,
+        imageHeight: hasGraphic ? tileImageHeight : null,
+        compactImageTile: compactImageTile,
       );
       if (height > maxHeight) maxHeight = height;
     }
@@ -773,6 +813,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     required bool selected,
     IconData? icon,
     String? imageAsset,
+    Widget? customGraphic,
     required String label,
     required VoidCallback onTap,
     double? width = 72,
@@ -781,12 +822,21 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     BoxFit imageFit = BoxFit.contain,
     double imageBorderRadius = 0,
     bool textOnly = false,
+    bool compactImageTile = false,
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final idleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
     final Widget? graphic;
     if (textOnly) {
       graphic = null;
+    } else if (customGraphic != null) {
+      final slotWidth = imageWidth ?? 26;
+      final slotHeight = imageHeight ?? 26;
+      graphic = SizedBox(
+        width: slotWidth,
+        height: slotHeight,
+        child: Center(child: customGraphic),
+      );
     } else {
       final slotWidth = imageWidth ?? 26;
       final slotHeight = imageHeight ?? 26;
@@ -835,7 +885,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           padding: EdgeInsets.symmetric(
             vertical: textOnly
                 ? 14
-                : ((imageHeight ?? 0) > 80 ? 8 : 10),
+                : (compactImageTile
+                    ? 8
+                    : ((imageHeight ?? 0) > 80 ? 8 : 10)),
             horizontal: textOnly ? 12 : 8,
           ),
           decoration: BoxDecoration(
@@ -883,6 +935,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     required void Function(String? value) onSelected,
     IconData Function(String option)? iconForOption,
     String? Function(String option)? imageAssetForOption,
+    Widget? Function(String option)? graphicForOption,
     String Function(BuildContext, String)? labelForOption,
     bool scrollHorizontally = false,
     bool textOnly = false,
@@ -892,6 +945,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     BoxFit tileImageFit = BoxFit.contain,
     double tileImageBorderRadius = 0,
     double? scrollListHeight,
+    bool compactImageTile = false,
   }) {
     final loc = AppLocalizations.of(context)!;
     final normalizedSelected =
@@ -908,6 +962,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           : (labelForOption?.call(context, option) ??
               _translateValueGlobal(context, option) ??
               option);
+      final customGraphic =
+          isAny ? null : graphicForOption?.call(option);
+      final usesImageAsset = !textOnly &&
+          customGraphic == null &&
+          imageAssetForOption != null;
       return _searchIconOptionTile(
         context,
         selected: isSelected,
@@ -915,19 +974,30 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             ? _searchAnyOptionIcon
             : (textOnly
                 ? null
-                : (imageAssetForOption?.call(option) == null
-                    ? iconForOption?.call(option)
-                    : null)),
+                : (customGraphic != null
+                    ? null
+                    : (usesImageAsset &&
+                            imageAssetForOption.call(option) == null
+                        ? iconForOption?.call(option)
+                        : (usesImageAsset ? null : iconForOption?.call(option))))),
         imageAsset: isAny
             ? null
-            : (textOnly ? null : imageAssetForOption?.call(option)),
+            : (textOnly || customGraphic != null
+                ? null
+                : imageAssetForOption?.call(option)),
+        customGraphic: customGraphic,
         label: label,
         width: scrollHorizontally ? tileWidth : null,
-        imageWidth: imageAssetForOption == null ? null : tileImageWidth,
-        imageHeight: imageAssetForOption == null ? null : tileImageHeight,
+        imageWidth: (usesImageAsset || customGraphic != null)
+            ? tileImageWidth
+            : null,
+        imageHeight: (usesImageAsset || customGraphic != null)
+            ? tileImageHeight
+            : null,
         imageFit: tileImageFit,
         imageBorderRadius: tileImageBorderRadius,
         textOnly: textOnly,
+        compactImageTile: compactImageTile,
         onTap: () {
           setState(() => onSelected(isAny ? null : option));
           setStateDialog(() {});
@@ -964,6 +1034,8 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                       options: options,
                       tileImageHeight: tileImageHeight,
                       imageAssetForOption: imageAssetForOption,
+                      graphicForOption: graphicForOption,
+                      compactImageTile: compactImageTile,
                     ),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,

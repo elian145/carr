@@ -49,6 +49,7 @@ import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
 import '../../shared/listings/listing_events.dart';
 import '../../shared/listings/listing_identity.dart';
 import '../../shared/listings/drive_type_assets.dart';
+import '../../shared/listings/plate_city_assets.dart';
 import '../../shared/listings/plate_type_assets.dart';
 import '../../shared/listings/region_spec_assets.dart';
 import '../../shared/listings/transmission_type_assets.dart';

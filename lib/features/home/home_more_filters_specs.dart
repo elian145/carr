@@ -27,14 +27,12 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
             value: '',
             child: Text(loc.any, style: TextStyle(color: style.anyOrange)),
           ),
-          ...cities
-              .where((c) => c.toLowerCase() != 'any')
-              .map(
-                (c) => DropdownMenuItem(
-                  value: c,
-                  child: Text(_translateValueGlobal(context, c) ?? c),
-                ),
-              ),
+          ...kPlateCityFilterOptions.map(
+            (c) => DropdownMenuItem(
+              value: c,
+              child: Text(_translateValueGlobal(context, c) ?? c),
+            ),
+          ),
         ],
         onChanged: (value) {
           setState(() {
@@ -165,12 +163,6 @@ mixin _HomePageMoreFiltersSpecs on _HomePageMoreFiltersSpecsPlate {
     MoreFiltersDialogStyle style,
   ) => [
         ..._moreFiltersSpecsEngineWidgets(
-          context,
-          setStateDialog,
-          style,
-          narrowMenu: true,
-        ),
-        ..._moreFiltersSpecsPlateCityWidgets(
           context,
           setStateDialog,
           style,

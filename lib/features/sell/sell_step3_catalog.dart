@@ -124,24 +124,6 @@ mixin _SellStep3Catalog on _SellStep3Fields {
     'taxi',
   ];
 
-  // "All the cities we have" (keep in sync with Home filters list).
-  final List<String> _plateCities = const [
-    'Baghdad',
-    'Basra',
-    'Erbil',
-    'Najaf',
-    'Karbala',
-    'Kirkuk',
-    'Mosul',
-    'Sulaymaniyah',
-    'Dohuk',
-    'Anbar',
-    'Halabja',
-    'Diyala',
-    'Diyarbakir',
-    'Maysan',
-    'Muthanna',
-    'Dhi Qar',
-    'Salaheldeen',
-  ];
+  // Keep in sync with [kPlateCityFilterOptions].
+  List<String> get _plateCities => kPlateCityFilterOptions;
 }

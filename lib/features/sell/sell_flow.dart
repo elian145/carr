@@ -43,6 +43,7 @@ import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/i18n/region_spec_labels.dart' as region_spec_labels;
 import '../../shared/listings/body_type_assets.dart' as body_type_assets;
 import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
+import '../../shared/listings/plate_city_assets.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/listings/listing_uploaded_ago.dart';
 import '../../shared/media/media_url.dart';
