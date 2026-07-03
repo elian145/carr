@@ -85,7 +85,7 @@ Widget _buildGlobalCarCardInnerText(
                         textAlign: TextAlign.start,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFFF6B00),
+                          color: Colors.white,
                           fontSize: effectiveTitleFontSize,
                           height: titleLineHeight,
                         ),
@@ -112,9 +112,8 @@ Widget _buildGlobalCarCardInnerText(
         child: Text(
           trimLine,
           textScaler: const TextScaler.linear(1.0),
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFFF6B00),
+          style: TextStyle(
+            color: metaTextColor,
             fontSize: 15,
             height: 1.1,
           ),
@@ -142,9 +141,8 @@ Widget _buildGlobalCarCardInnerText(
                   ? Text(
                       yearDisplay,
                       textScaler: const TextScaler.linear(1.0),
-                      style: const TextStyle(
-                        color: Color(0xFFFF6B00),
-                        fontWeight: FontWeight.w600,
+                      style: TextStyle(
+                        color: metaTextColor,
                         fontSize: yearFontSize,
                         height: 1.1,
                       ),
