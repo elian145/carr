@@ -322,30 +322,34 @@ Widget buildGlobalCarCard(
           ),
         ],
       ),
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-          if (onCardTap == null)
-            InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onPublishedCardTap,
-              child: cardInner,
-            )
-          else
-            cardInner,
-          if (!listLayout && showVideoCountBadge)
-            Positioned(
-              top: 12,
-              right: 12,
-              child: _globalListingCardVideoCountBadge(car),
-            ),
-          if (sold)
-            Positioned(
-              top: listLayout ? 8 : 12,
-              left: listLayout ? 8 : 12,
-              child: buildListingSoldBadge(context),
-            ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            if (onCardTap == null)
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: onPublishedCardTap,
+                child: cardInner,
+              )
+            else
+              cardInner,
+            if (!listLayout && showVideoCountBadge)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: _globalListingCardVideoCountBadge(car),
+              ),
+            if (sold)
+              Positioned(
+                top: listLayout ? 8 : 12,
+                left: listLayout ? 8 : 12,
+                child: buildListingSoldBadge(context),
+              ),
+          ],
+        ),
       ),
     ),
   );

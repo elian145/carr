@@ -19,6 +19,9 @@ class CarDetailsHorizontalList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const verticalChrome = 12.0;
+    const cardViewportPadding = EdgeInsets.fromLTRB(0, 2, 0, 10);
+
     if (listingColumnsPref == 1) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -26,22 +29,23 @@ class CarDetailsHorizontalList extends StatelessWidget {
           final double itemW = (viewportW.isFinite && viewportW > 0)
               ? viewportW
               : MediaQuery.of(context).size.width;
-          final double h =
-              (itemW.isFinite && itemW > 0) ? (itemW / 2.78) : 140;
+          final double h = (itemW.isFinite && itemW > 0) ? (itemW / 2.78) : 140;
 
           return SizedBox(
-            height: h,
+            height: h + verticalChrome,
             child: PageView.builder(
               controller: snapController,
               physics: const PageScrollPhysics(),
               pageSnapping: true,
+              clipBehavior: Clip.none,
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = Map<String, dynamic>.from(items[index]);
-                final normalized =
-                    mapListingToGlobalCarCardData(context, item);
+                final normalized = mapListingToGlobalCarCardData(context, item);
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 2,
+                  ).add(cardViewportPadding),
                   child: SizedBox(
                     width: itemW,
                     height: h,
@@ -63,9 +67,12 @@ class CarDetailsHorizontalList extends StatelessWidget {
     final cardH = AppResponsive.homeGridListingCardHeight(context);
 
     return SizedBox(
-      height: cardH,
+      height: cardH + verticalChrome,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        clipBehavior: Clip.none,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 4,
+        ).add(cardViewportPadding),
         scrollDirection: Axis.horizontal,
         itemCount: items.length,
         separatorBuilder: (context, index) => const SizedBox(width: 10),
