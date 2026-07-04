@@ -88,7 +88,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
     if (!auth.isAuthenticated) {
       setState(() {
         _loading = false;
-        _error = AppLocalizations.of(context)?.loginRequired ?? 'Login required';
+        _error =
+            AppLocalizations.of(context)?.loginRequired ?? 'Login required';
       });
       return;
     }
@@ -213,9 +214,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       await Navigator.pushNamed(
         context,
         '/sell',
-        arguments: <String, dynamic>{
-          'draftSnapshot': prepared,
-        },
+        arguments: <String, dynamic>{'draftSnapshot': prepared},
       );
     }
     if (mounted) await _loadDrafts();
@@ -223,13 +222,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   String _buildDraftOwnerKey() {
     final user = Provider.of<AuthService>(context, listen: false).currentUser;
-    final raw = (user?['public_id'] ??
-            user?['id'] ??
-            user?['username'] ??
-            user?['email'] ??
-            'guest')
-        .toString()
-        .trim();
+    final raw =
+        (user?['public_id'] ??
+                user?['id'] ??
+                user?['username'] ??
+                user?['email'] ??
+                'guest')
+            .toString()
+            .trim();
     return raw.isEmpty ? 'guest' : raw;
   }
 
@@ -271,119 +271,124 @@ class _MyListingsPageState extends State<MyListingsPage> {
       child: _loading
           ? const Center(child: CircularProgressIndicator())
           : (_error != null)
-              ? ListView(
+          ? ListView(
+              children: [
+                const SizedBox(height: 40),
+                Center(child: Text(_error!)),
+                const SizedBox(height: 12),
+                Center(
+                  child: OutlinedButton(
+                    onPressed: () => _fetch(refresh: true),
+                    child: Text(loc?.retryAction ?? 'Retry'),
+                  ),
+                ),
+              ],
+            )
+          : ValueListenableBuilder<int>(
+              valueListenable: ListingLayoutPrefs.columns,
+              builder: (context, cols, _) {
+                final screenWidth = MediaQuery.sizeOf(context).width;
+                final listingColumns =
+                    ListingLayoutPrefs.effectiveColumnsForWidth(
+                      cols == 1 ? 1 : 2,
+                      screenWidth,
+                    );
+                final draftCount = _drafts.length;
+                final totalCards = _cars.length + draftCount;
+                return Column(
                   children: [
-                    const SizedBox(height: 40),
-                    Center(child: Text(_error!)),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: OutlinedButton(
-                        onPressed: () => _fetch(refresh: true),
-                        child: Text(loc?.retryAction ?? 'Retry'),
-                      ),
-                    ),
-                  ],
-                )
-              : ValueListenableBuilder<int>(
-                  valueListenable: ListingLayoutPrefs.columns,
-                  builder: (context, cols, _) {
-                    final listingColumns = (cols == 1) ? 1 : 2;
-                    final draftCount = _drafts.length;
-                    final totalCards = _cars.length + draftCount;
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: totalCards == 0
-                              ? ListView(
-                                  controller: _controller,
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    12,
-                                    16,
-                                    12,
-                                  ),
-                                  children: [
-                                    if (_loadingDraft)
-                                      const Padding(
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 24),
-                                        child: Center(
-                                          child: CircularProgressIndicator(),
-                                        ),
-                                      )
-                                    else
-                                      _buildEmptyState(),
-                                  ],
-                                )
-                              : GridView.builder(
-                                  controller: _controller,
-                                  padding: EdgeInsets.fromLTRB(
-                                    listingColumns == 1 ? 4 : 8,
-                                    8,
-                                    listingColumns == 1 ? 4 : 8,
-                                    8 + bottomInset,
-                                  ),
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
+                    Expanded(
+                      child: totalCards == 0
+                          ? ListView(
+                              controller: _controller,
+                              padding: const EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                12,
+                              ),
+                              children: [
+                                if (_loadingDraft)
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 24),
+                                    child: Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  )
+                                else
+                                  _buildEmptyState(),
+                              ],
+                            )
+                          : GridView.builder(
+                              controller: _controller,
+                              padding: EdgeInsets.fromLTRB(
+                                listingColumns == 1 ? 4 : 8,
+                                8,
+                                listingColumns == 1 ? 4 : 8,
+                                8 + bottomInset,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: listingColumns,
                                     childAspectRatio:
-                                        ListingLayoutPrefs.gridChildAspectRatio(
-                                      listingColumns,
-                                    ),
+                                        ListingLayoutPrefs.gridChildAspectRatioForWidth(
+                                          listingColumns,
+                                          screenWidth,
+                                        ),
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
                                   ),
-                                  itemCount: totalCards + (_hasNext ? 1 : 0),
-                                  itemBuilder: (context, index) {
-                                    if (index >= totalCards) {
-                                      return const Center(
-                                        child: Padding(
-                                          padding: EdgeInsets.all(12),
-                                          child: SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
+                              itemCount: totalCards + (_hasNext ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= totalCards) {
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
                                         ),
-                                      );
-                                    }
+                                      ),
+                                    ),
+                                  );
+                                }
 
-                                    if (index < draftCount) {
-                                      return _buildDraftCard(
-                                        _drafts[index],
-                                        listLayout: listingColumns == 1,
-                                      );
-                                    }
+                                if (index < draftCount) {
+                                  return _buildDraftCard(
+                                    _drafts[index],
+                                    listLayout: listingColumns == 1,
+                                  );
+                                }
 
-                                    final car = _cars[index - draftCount];
-                                    final id = listingPrimaryId(car);
+                                final car = _cars[index - draftCount];
+                                final id = listingPrimaryId(car);
 
-                                    final mapped = mapListingToGlobalCarCardData(
-                                      context,
-                                      car,
-                                    );
-                                    final card = buildGlobalCarCard(
-                                      context,
-                                      mapped,
-                                      listLayout: listingColumns == 1,
-                                      allowOwnerManagementOnOpen: true,
-                                    );
+                                final mapped = mapListingToGlobalCarCardData(
+                                  context,
+                                  car,
+                                );
+                                final card = buildGlobalCarCard(
+                                  context,
+                                  mapped,
+                                  listLayout: listingColumns == 1,
+                                  allowOwnerManagementOnOpen: true,
+                                );
 
-                                    return _buildOwnedListingTile(
-                                      car: car,
-                                      id: id,
-                                      card: card,
-                                      loc: loc,
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                                return _buildOwnedListingTile(
+                                  car: car,
+                                  id: id,
+                                  card: card,
+                                  loc: loc,
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
     );
 
     final isLightShell = Theme.of(context).brightness == Brightness.light;
@@ -408,9 +413,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
     return Scaffold(
       backgroundColor: isLightShell ? Colors.white : null,
-      appBar: AppBar(
-        title: Text(loc?.myListingsTitle ?? 'My listings'),
-      ),
+      appBar: AppBar(title: Text(loc?.myListingsTitle ?? 'My listings')),
       body: isLightShell
           ? bodyChild
           : Container(

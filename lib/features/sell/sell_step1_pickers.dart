@@ -43,9 +43,11 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Container(
-                width: 420,
-                padding: EdgeInsets.all(20),
+              child: ResponsiveDialogBody(
+                preferredWidth: 420,
+                padding: EdgeInsets.all(
+                  AppResponsive.isCompactPhone(context) ? 14 : 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -104,10 +106,15 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                       SizedBox(height: 10),
                     ],
                     SizedBox(
-                      height: 400,
+                      height: AppResponsive.dialogScrollHeight(
+                        context,
+                        preferred: 400,
+                        headerFooterReserve: isYearPicker ? 100 : 170,
+                      ),
                       child: ListView.separated(
                         itemCount: filtered.length,
-                        separatorBuilder: (context, index) => SizedBox(height: 10),
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 10),
                         itemBuilder: (context, index) {
                           final value = filtered[index];
                           final lowerTitle = title.toLowerCase();
@@ -138,8 +145,10 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                                 '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}';
                           } else if (lowerTitle.contains('region') &&
                               isValidCarRegionSpecCode(value)) {
-                            displayText =
-                                carRegionSpecDisplayLabelLocalized(context, value);
+                            displayText = carRegionSpecDisplayLabelLocalized(
+                              context,
+                              value,
+                            );
                           } else if (lowerTitle.contains('engine') &&
                               isNumeric) {
                             displayText =
@@ -255,9 +264,11 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Container(
-                width: 480,
-                padding: EdgeInsets.all(20),
+              child: ResponsiveDialogBody(
+                preferredWidth: 480,
+                padding: EdgeInsets.all(
+                  AppResponsive.isCompactPhone(context) ? 14 : 20,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -287,12 +298,12 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                       },
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                          hintText: _trLegacyText(
-                            context,
-                            'Search...',
-                            ar: 'بحث...',
-                            ku: 'گەڕان...',
-                          ),
+                        hintText: _trLegacyText(
+                          context,
+                          'Search...',
+                          ar: 'بحث...',
+                          ku: 'گەڕان...',
+                        ),
                         hintStyle: const TextStyle(color: Colors.white60),
                         prefixIcon: const Icon(
                           Icons.search,
@@ -314,12 +325,22 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                     ),
                     SizedBox(height: 10),
                     SizedBox(
-                      height: 420,
+                      height: AppResponsive.dialogScrollHeight(
+                        context,
+                        preferred: 420,
+                        headerFooterReserve: 170,
+                      ),
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: BouncingScrollPhysics(),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
+                          crossAxisCount:
+                              AppResponsive.pickerGridCrossAxisCount(
+                                context,
+                                preferred: 4,
+                                minCellWidth: 76,
+                                preferredDialogWidth: 480,
+                              ),
                           childAspectRatio: 0.85,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,

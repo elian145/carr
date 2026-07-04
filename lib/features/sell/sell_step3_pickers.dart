@@ -10,9 +10,11 @@ mixin _SellStep3Pickers on _SellStep3Catalog {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Container(
-            width: 420,
-            padding: EdgeInsets.all(20),
+          child: ResponsiveDialogBody(
+            preferredWidth: 420,
+            padding: EdgeInsets.all(
+              AppResponsive.isCompactPhone(context) ? 14 : 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -36,26 +38,34 @@ mixin _SellStep3Pickers on _SellStep3Catalog {
                 ),
                 SizedBox(height: 10),
                 SizedBox(
-                  height: 420,
+                  height: AppResponsive.dialogScrollHeight(
+                    context,
+                    preferred: 420,
+                    headerFooterReserve: 110,
+                  ),
                   child: ListView.separated(
                     itemCount: options.length,
                     separatorBuilder: (context, index) => SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final value = options[index];
                       final rawLower = value.trim().toLowerCase();
-                      final displayValue = const {
-                        'private',
-                        'commercial',
-                        'comercial',
-                        'taxi',
-                        'government',
-                        'temporary',
-                        'diplomatic',
-                        'police',
-                      }.contains(rawLower)
+                      final displayValue =
+                          const {
+                            'private',
+                            'commercial',
+                            'comercial',
+                            'taxi',
+                            'government',
+                            'temporary',
+                            'diplomatic',
+                            'police',
+                          }.contains(rawLower)
                           ? _translatePlateTypeLegacy(context, value)
                           : isValidCarRegionSpecCode(rawLower)
-                          ? carRegionSpecDisplayLabelLocalized(context, rawLower)
+                          ? carRegionSpecDisplayLabelLocalized(
+                              context,
+                              rawLower,
+                            )
                           : (_translateValueGlobal(context, value) ?? value);
                       return InkWell(
                         borderRadius: BorderRadius.circular(14),

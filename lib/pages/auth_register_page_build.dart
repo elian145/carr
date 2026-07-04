@@ -3,6 +3,7 @@ part of 'auth_pages.dart';
 mixin _RegisterPageBuild on _RegisterPageActions {
   @override
   Widget build(BuildContext context) {
+    final compact = AppResponsive.isCompactPhone(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.createAccount),
@@ -44,29 +45,50 @@ mixin _RegisterPageBuild on _RegisterPageActions {
                     _otpController.clear();
                   });
                 },
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text(AppLocalizations.of(context)!.emailLabel),
-                        value: 'email',
+                child: compact
+                    ? Column(
+                        children: [
+                          RadioListTile<String>(
+                            title: Text(
+                              AppLocalizations.of(context)!.emailLabel,
+                            ),
+                            value: 'email',
+                          ),
+                          RadioListTile<String>(
+                            title: Text(
+                              AppLocalizations.of(context)!.phoneLabel,
+                            ),
+                            value: 'phone',
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: Text(
+                                AppLocalizations.of(context)!.emailLabel,
+                              ),
+                              value: 'email',
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: Text(
+                                AppLocalizations.of(context)!.phoneLabel,
+                              ),
+                              value: 'phone',
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text(AppLocalizations.of(context)!.phoneLabel),
-                        value: 'phone',
-                      ),
-                    ),
-                  ],
-                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Account type',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               SwitchListTile(
@@ -140,41 +162,70 @@ mixin _RegisterPageBuild on _RegisterPageActions {
                 const SizedBox(height: 8),
               ],
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _firstNameController,
-                      decoration: InputDecoration(
-                        labelText: _firstNameLabel(context),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return _pleaseEnterFirstName(context);
-                        }
-                        return null;
-                      },
-                    ),
+              if (compact) ...[
+                TextFormField(
+                  controller: _firstNameController,
+                  decoration: InputDecoration(
+                    labelText: _firstNameLabel(context),
+                    border: const OutlineInputBorder(),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _lastNameController,
-                      decoration: InputDecoration(
-                        labelText: _lastNameLabel(context),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return _pleaseEnterLastName(context);
-                        }
-                        return null;
-                      },
-                    ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return _pleaseEnterFirstName(context);
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _lastNameController,
+                  decoration: InputDecoration(
+                    labelText: _lastNameLabel(context),
+                    border: const OutlineInputBorder(),
                   ),
-                ],
-              ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return _pleaseEnterLastName(context);
+                    }
+                    return null;
+                  },
+                ),
+              ] else
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _firstNameController,
+                        decoration: InputDecoration(
+                          labelText: _firstNameLabel(context),
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return _pleaseEnterFirstName(context);
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _lastNameController,
+                        decoration: InputDecoration(
+                          labelText: _lastNameLabel(context),
+                          border: const OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return _pleaseEnterLastName(context);
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               if (!_isDealer) ...[
                 const SizedBox(height: 16),
                 TextFormField(
@@ -377,10 +428,14 @@ mixin _RegisterPageBuild on _RegisterPageActions {
                     : Text(AppLocalizations.of(context)!.createAccount),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(_alreadyHaveAccount(context)),
+                  Text(
+                    _alreadyHaveAccount(context),
+                    textAlign: TextAlign.center,
+                  ),
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacementNamed(context, '/login');

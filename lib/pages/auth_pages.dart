@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/ui/responsive.dart';
 import '../widgets/theme_toggle_widget.dart';
 
 // Lightweight i18n helpers for auth pages

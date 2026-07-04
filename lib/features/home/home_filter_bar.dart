@@ -2,17 +2,20 @@ part of 'home_flow.dart';
 
 mixin _HomePageFilterBar on _HomePageFilterBarBrand {
   Widget _buildHomeVehicleFilterRow(BuildContext filterRowContext) {
-        final isLightShell =
-            Theme.of(filterRowContext).brightness ==
-            Brightness.light;
-        final dropdownMenuInk = isLightShell
-            ? AppThemes.darkHomeShellBackground
-            : Colors.white;
-        const dropdownFieldInk = Colors.white;
-        final dropdownMenuBg = isLightShell
-            ? Colors.white
-            : AppThemes.darkHomeShellBackground;
-        return Row(
+    final isLightShell =
+        Theme.of(filterRowContext).brightness == Brightness.light;
+    final dropdownMenuInk = isLightShell
+        ? AppThemes.darkHomeShellBackground
+        : Colors.white;
+    const dropdownFieldInk = Colors.white;
+    final dropdownMenuBg = isLightShell
+        ? Colors.white
+        : AppThemes.darkHomeShellBackground;
+    final compact = AppResponsive.isCompactPhone(filterRowContext);
+    final labelFontSize = compact ? 12.0 : 15.0;
+    final valueFontSize = compact ? 11.0 : 14.0;
+    final fieldGap = compact ? 4.0 : 6.0;
+    return Row(
       children: [
         // Brand selector styled like a form field for symmetry
         Expanded(
@@ -20,25 +23,19 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             onTap: () => _pickHomeBrand(filterRowContext),
             child: InputDecorator(
               decoration: InputDecoration(
-                labelText: AppLocalizations.of(
-                  context,
-                )!.brandLabel,
+                labelText: AppLocalizations.of(context)!.brandLabel,
                 labelStyle: GoogleFonts.orbitron(
                   color: Colors.white,
-                  fontSize: 15,
+                  fontSize: labelFontSize,
                   fontWeight: FontWeight.bold,
                 ),
                 filled: true,
-                fillColor: Colors.black.withValues(alpha: 
-                  0.15,
-                ),
+                fillColor: Colors.black.withValues(alpha: 0.15),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    12,
-                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 10,
+                  horizontal: compact ? 6 : 10,
                   vertical: 12,
                 ),
               ),
@@ -50,34 +47,22 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                       height: 24,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       padding: EdgeInsets.all(2),
                       child: CachedNetworkImage(
                         imageUrl:
                             '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrand!] ?? _homeSelectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
-                        placeholder: (context, url) =>
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child:
-                                  CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                            ),
-                        errorWidget:
-                            (
-                              context,
-                              url,
-                              error,
-                            ) => Icon(
-                              Icons.directions_car,
-                              size: 16,
-                              color: Color(
-                                0xFFFF6B00,
-                              ),
-                            ),
+                        placeholder: (context, url) => SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        errorWidget: (context, url, error) => Icon(
+                          Icons.directions_car,
+                          size: 16,
+                          color: Color(0xFFFF6B00),
+                        ),
                         fit: BoxFit.contain,
                       ),
                     )
@@ -87,12 +72,12 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                       size: 20,
                       color: Color(0xFFFF6B00),
                     ),
-                  SizedBox(width: 6),
+                  SizedBox(width: fieldGap),
                   Expanded(
                     child: Text(
                       _homeBrandFilterLabel(filterRowContext),
                       style: GoogleFonts.orbitron(
-                        fontSize: 14,
+                        fontSize: valueFontSize,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -106,7 +91,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             ),
           ),
         ),
-        SizedBox(width: 6),
+        SizedBox(width: fieldGap),
         // Model Dropdown
         Expanded(
           child: DropdownButtonFormField<String>(
@@ -114,7 +99,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             isExpanded: true,
             dropdownColor: dropdownMenuBg,
             style: GoogleFonts.orbitron(
-              fontSize: 14,
+              fontSize: valueFontSize,
               color: dropdownMenuInk,
               fontWeight: FontWeight.bold,
             ),
@@ -124,7 +109,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.orbitron(
-                  fontSize: 14,
+                  fontSize: valueFontSize,
                   color: dropdownFieldInk,
                   fontWeight: FontWeight.bold,
                 ),
@@ -147,7 +132,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.orbitron(
-                      fontSize: 14,
+                      fontSize: valueFontSize,
                       color: dropdownFieldInk,
                       fontWeight: FontWeight.bold,
                     ),
@@ -158,34 +143,26 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 selectedModel != null &&
                     (selectedModel!.isEmpty ||
                         (_homeSingleSelectedBrand != null &&
-                            models[_homeSingleSelectedBrand] !=
-                                null &&
-                            models[_homeSingleSelectedBrand]!
-                                .contains(
-                                  selectedModel,
-                                )))
+                            models[_homeSingleSelectedBrand] != null &&
+                            models[_homeSingleSelectedBrand]!.contains(
+                              selectedModel,
+                            )))
                 ? selectedModel
                 : null,
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(
-                context,
-              )!.modelLabel,
+              labelText: AppLocalizations.of(context)!.modelLabel,
               labelStyle: GoogleFonts.orbitron(
                 color: Colors.white,
-                fontSize: 15,
+                fontSize: labelFontSize,
                 fontWeight: FontWeight.bold,
               ),
               filled: true,
-              fillColor: Colors.black.withValues(alpha: 
-                0.15,
-              ),
+              fillColor: Colors.black.withValues(alpha: 0.15),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(
-                  12,
-                ),
+                borderRadius: BorderRadius.circular(12),
               ),
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 6,
+                horizontal: compact ? 4 : 6,
                 vertical: 6,
               ),
             ),
@@ -197,10 +174,8 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.orbitron(
-                    color: isLightShell
-                        ? const Color(0xFF757575)
-                        : Colors.grey,
-                    fontSize: 14,
+                    color: isLightShell ? const Color(0xFF757575) : Colors.grey,
+                    fontSize: valueFontSize,
                   ),
                 ),
               ),
@@ -224,7 +199,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.orbitron(
-                        fontSize: 14,
+                        fontSize: valueFontSize,
                         color: dropdownMenuInk,
                       ),
                     ),
@@ -234,18 +209,16 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             onChanged: _homeSingleSelectedBrand == null
                 ? null
                 : (value) {
-              setState(() {
-                selectedModel = value == ''
-                    ? null
-                    : value;
-                selectedTrim = null;
-                clearFiltersOnVehicleChange();
-              });
-              onFilterChanged();
-            },
+                    setState(() {
+                      selectedModel = value == '' ? null : value;
+                      selectedTrim = null;
+                      clearFiltersOnVehicleChange();
+                    });
+                    onFilterChanged();
+                  },
           ),
         ),
-        SizedBox(width: 6),
+        SizedBox(width: fieldGap),
         // Trim Dropdown
         Expanded(
           child: DropdownButtonFormField<String>(
@@ -253,7 +226,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             isExpanded: true,
             dropdownColor: dropdownMenuBg,
             style: GoogleFonts.orbitron(
-              fontSize: 14,
+              fontSize: valueFontSize,
               color: dropdownMenuInk,
               fontWeight: FontWeight.bold,
             ),
@@ -263,7 +236,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.orbitron(
-                  fontSize: 14,
+                  fontSize: valueFontSize,
                   color: dropdownFieldInk,
                   fontWeight: FontWeight.bold,
                 ),
@@ -280,7 +253,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.orbitron(
-                          fontSize: 14,
+                          fontSize: valueFontSize,
                           color: dropdownFieldInk,
                           fontWeight: FontWeight.bold,
                         ),
@@ -301,11 +274,10 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 ? selectedTrim
                 : null,
             decoration: InputDecoration(
-              labelText:
-                  AppLocalizations.of(context)!.trimLabel,
+              labelText: AppLocalizations.of(context)!.trimLabel,
               labelStyle: GoogleFonts.orbitron(
                 color: Colors.white,
-                fontSize: 15,
+                fontSize: labelFontSize,
                 fontWeight: FontWeight.bold,
               ),
               filled: true,
@@ -313,8 +285,8 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 6,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: compact ? 4 : 6,
                 vertical: 6,
               ),
             ),
@@ -326,10 +298,8 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.orbitron(
-                    color: isLightShell
-                        ? const Color(0xFF757575)
-                        : Colors.grey,
-                    fontSize: 14,
+                    color: isLightShell ? const Color(0xFF757575) : Colors.grey,
+                    fontSize: valueFontSize,
                   ),
                 ),
               ),
@@ -347,7 +317,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.orbitron(
-                            fontSize: 14,
+                            fontSize: valueFontSize,
                             color: dropdownMenuInk,
                           ),
                         ),
@@ -357,12 +327,12 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             onChanged: _homeSingleSelectedBrand == null || selectedModel == null
                 ? null
                 : (value) {
-              setState(() {
-                selectedTrim = value == '' ? null : value;
-                clearFiltersOnVehicleChange();
-              });
-              onFilterChanged();
-            },
+                    setState(() {
+                      selectedTrim = value == '' ? null : value;
+                      clearFiltersOnVehicleChange();
+                    });
+                    onFilterChanged();
+                  },
           ),
         ),
       ],

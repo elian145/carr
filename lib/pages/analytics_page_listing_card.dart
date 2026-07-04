@@ -98,306 +98,320 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                 ],
               ),
               child: Column(
-              children: [
-                // Modern header with gradient
-                Container(
-                  padding: EdgeInsets.fromLTRB(24, 20, 20, 20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFFFF6B00), Color(0xFFFF8A50)],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.analytics_outlined,
-                          color: Colors.white,
-                          size: 24,
-                        ),
+                children: [
+                  // Modern header with gradient
+                  Container(
+                    padding: EdgeInsets.fromLTRB(24, 20, 20, 20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
                       ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Analytics Dashboard',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Text(
-                              'Performance insights',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFF6B00), Color(0xFFFF8A50)],
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Container(
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            Icons.close_rounded,
+                            Icons.analytics_outlined,
                             color: Colors.white,
-                            size: 20,
+                            size: 24,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Content with modern styling
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        // Car image with modern styling
-                        Container(
-                          width: 240,
-                          height: 160,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Color(0xFFFF6B00).withValues(alpha: 0.2),
-                                blurRadius: 20,
-                                offset: Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child:
-                                listing.imageUrl != null &&
-                                    listing.imageUrl!.isNotEmpty
-                                ? Image.network(
-                                    listing.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              Colors.grey[100]!,
-                                              Colors.grey[200]!,
-                                            ],
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.directions_car_outlined,
-                                          color: Colors.grey[500],
-                                          size: 60,
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.grey[100]!,
-                                          Colors.grey[200]!,
-                                        ],
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.directions_car_outlined,
-                                      color: Colors.grey[500],
-                                      size: 60,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        // Car details with modern typography
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.grey[100]!),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
+                        SizedBox(width: 12),
+                        Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                listing.carTitle,
+                                'Analytics Dashboard',
                                 style: TextStyle(
-                                  fontSize: 22,
+                                  color: Colors.white,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey[900],
-                                  letterSpacing: 0.3,
+                                  letterSpacing: 0.5,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
-                              SizedBox(height: 8),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Color(0xFFFF6B00),
-                                      Color(0xFFFF8A50),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  listing.formattedPrice,
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
+                              Text(
+                                'Performance insights',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(height: 32),
-                        // Modern metrics section
-                        Text(
-                          'Performance Metrics',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                            letterSpacing: 0.5,
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
-                        SizedBox(height: 20),
-                        // Modern metrics grid
-                        Container(
-                          padding: EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.grey[100]!),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.03),
-                                blurRadius: 15,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              // First row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildModernMetricItem(
-                                      Icons.visibility_outlined,
-                                      '${listing.views}',
-                                      'Views',
-                                      Color(0xFF4CAF50),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildModernMetricItem(
-                                      Icons.message_outlined,
-                                      '${listing.messages}',
-                                      'Messages',
-                                      Color(0xFF2196F3),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              // Second row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildModernMetricItem(
-                                      Icons.phone_outlined,
-                                      '${listing.calls}',
-                                      'Calls',
-                                      Color(0xFF9C27B0),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildModernMetricItem(
-                                      Icons.share_outlined,
-                                      '${listing.shares}',
-                                      'Shares',
-                                      Color(0xFFFF9800),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 16),
-                              // Third row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildModernMetricItem(
-                                      Icons.favorite_outline,
-                                      '${listing.favorites}',
-                                      'Favorites',
-                                      Color(0xFFE91E63),
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: _buildModernMetricItem(
-                                      Icons.trending_up_outlined,
-                                      '${listing.engagementRate.toStringAsFixed(1)}%',
-                                      'Engagement',
-                                      Color(0xFF00BCD4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 20),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
+                  // Content with modern styling
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          // Car image with modern styling
+                          Container(
+                            width: (MediaQuery.sizeOf(context).width - 96)
+                                .clamp(180.0, 240.0)
+                                .toDouble(),
+                            height:
+                                (MediaQuery.sizeOf(context).width - 96)
+                                    .clamp(180.0, 240.0)
+                                    .toDouble() *
+                                2 /
+                                3,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(
+                                    0xFFFF6B00,
+                                  ).withValues(alpha: 0.2),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child:
+                                  listing.imageUrl != null &&
+                                      listing.imageUrl!.isNotEmpty
+                                  ? Image.network(
+                                      listing.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                            return Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.grey[100]!,
+                                                    Colors.grey[200]!,
+                                                  ],
+                                                ),
+                                              ),
+                                              child: Icon(
+                                                Icons.directions_car_outlined,
+                                                color: Colors.grey[500],
+                                                size: 60,
+                                              ),
+                                            );
+                                          },
+                                    )
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.grey[100]!,
+                                            Colors.grey[200]!,
+                                          ],
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.directions_car_outlined,
+                                        color: Colors.grey[500],
+                                        size: 60,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          SizedBox(height: 24),
+                          // Car details with modern typography
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 16,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.grey[100]!),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  listing.carTitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[900],
+                                    letterSpacing: 0.3,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(height: 8),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Color(0xFFFF6B00),
+                                        Color(0xFFFF8A50),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    listing.formattedPrice,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 32),
+                          // Modern metrics section
+                          Text(
+                            'Performance Metrics',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          // Modern metrics grid
+                          Container(
+                            padding: EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.grey[100]!),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 15,
+                                  offset: Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                // First row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildModernMetricItem(
+                                        Icons.visibility_outlined,
+                                        '${listing.views}',
+                                        'Views',
+                                        Color(0xFF4CAF50),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildModernMetricItem(
+                                        Icons.message_outlined,
+                                        '${listing.messages}',
+                                        'Messages',
+                                        Color(0xFF2196F3),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+                                // Second row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildModernMetricItem(
+                                        Icons.phone_outlined,
+                                        '${listing.calls}',
+                                        'Calls',
+                                        Color(0xFF9C27B0),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildModernMetricItem(
+                                        Icons.share_outlined,
+                                        '${listing.shares}',
+                                        'Shares',
+                                        Color(0xFFFF9800),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 16),
+                                // Third row
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildModernMetricItem(
+                                        Icons.favorite_outline,
+                                        '${listing.favorites}',
+                                        'Favorites',
+                                        Color(0xFFE91E63),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildModernMetricItem(
+                                        Icons.trending_up_outlined,
+                                        '${listing.engagementRate.toStringAsFixed(1)}%',
+                                        'Engagement',
+                                        Color(0xFF00BCD4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

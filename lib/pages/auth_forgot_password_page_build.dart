@@ -3,6 +3,7 @@ part of 'auth_pages.dart';
 mixin _ForgotPasswordPageBuild on _ForgotPasswordPageActions {
   @override
   Widget build(BuildContext context) {
+    final compact = AppResponsive.isCompactPhone(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(_forgotPasswordTitle(context)),
@@ -66,22 +67,43 @@ mixin _ForgotPasswordPageBuild on _ForgotPasswordPageActions {
                     if (v == null) return;
                     setState(() => _recoveryMethod = v);
                   },
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: RadioListTile<String>(
-                          title: Text(AppLocalizations.of(context)!.emailLabel),
-                          value: 'email',
+                  child: compact
+                      ? Column(
+                          children: [
+                            RadioListTile<String>(
+                              title: Text(
+                                AppLocalizations.of(context)!.emailLabel,
+                              ),
+                              value: 'email',
+                            ),
+                            RadioListTile<String>(
+                              title: Text(
+                                AppLocalizations.of(context)!.phoneLabel,
+                              ),
+                              value: 'phone',
+                            ),
+                          ],
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: Text(
+                                  AppLocalizations.of(context)!.emailLabel,
+                                ),
+                                value: 'email',
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<String>(
+                                title: Text(
+                                  AppLocalizations.of(context)!.phoneLabel,
+                                ),
+                                value: 'phone',
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      Expanded(
-                        child: RadioListTile<String>(
-                          title: Text(AppLocalizations.of(context)!.phoneLabel),
-                          value: 'phone',
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 8),
                 if (_recoveryMethod == 'email')
@@ -110,7 +132,9 @@ mixin _ForgotPasswordPageBuild on _ForgotPasswordPageActions {
                     controller: _phoneController,
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context)!.phoneLabel,
-                      hintText: AppLocalizations.of(context)!.useInternationalFormat,
+                      hintText: AppLocalizations.of(
+                        context,
+                      )!.useInternationalFormat,
                       prefixIcon: const Icon(Icons.phone),
                       border: const OutlineInputBorder(),
                     ),

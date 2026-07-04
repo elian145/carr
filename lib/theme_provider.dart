@@ -62,17 +62,14 @@ class AppThemes {
   /// Mid tone of [darkShellGradientColors] — dark home “base” (accent text on bright listing body).
   static const Color darkHomeShellBackground = Color(0xFF131722);
 
-  /// Same *appearance* as a frosted listing card on the dark home shell, for use on a white shell.
-  /// (Translucent white on white reads as pale grey; this matches the blended color on [darkHomeShellBackground].)
-  static Color listingCardFillGridOnLightShell() => Color.alphaBlend(
-        Colors.white.withValues(alpha: 0.10),
-        darkHomeShellBackground,
-      );
+  /// Very light grey listing card fills for the white light-mode shell.
+  static const Color _lightListingCardFill = Color(0xFFF4F4F4);
+  static const Color _lightListingCardFillCompact = Color(0xFFF6F6F6);
 
-  static Color listingCardFillCompactOnLightShell() => Color.alphaBlend(
-        Colors.white.withValues(alpha: 0.08),
-        darkHomeShellBackground,
-      );
+  static Color listingCardFillGridOnLightShell() => _lightListingCardFill;
+
+  static Color listingCardFillCompactOnLightShell() =>
+      _lightListingCardFillCompact;
 
   /// Page background: dark gradient or light white shell.
   static BoxDecoration shellBackgroundDecoration(Brightness brightness) {
@@ -95,17 +92,21 @@ class AppThemes {
     final isDark = brightness == Brightness.dark;
     return (
       backgroundColor: isDark ? const Color(0xDE000000) : lightAppBackground,
-      unselectedItemColor: isDark ? const Color(0xB3FFFFFF) : const Color(0xFF757575),
+      unselectedItemColor: isDark
+          ? const Color(0xB3FFFFFF)
+          : const Color(0xFF757575),
     );
   }
 
   /// Primary text on light surfaces (~near-black on white).
   static const Color _lightInk = Color(0xFF0A0A0A);
+
   /// Secondary / supporting text — still dark enough to read clearly on white cards.
   static const Color _lightInkMuted = Color(0xFF3A3A3A);
 
   /// Primary text on dark surfaces.
   static const Color _darkInk = Color(0xFFF7F7F7);
+
   /// Secondary text — clearly lighter than card fill, not dim grey.
   static const Color _darkInkMuted = Color(0xFFD8D8D8);
 
@@ -132,31 +133,34 @@ class AppThemes {
     );
   }
 
-  static const _desktopPageTransitions = AppNoTransitionsPageTransitionsBuilder();
-  static const _mobilePageTransitions = AppHorizontalSlidePageTransitionsBuilder();
+  static const _desktopPageTransitions =
+      AppNoTransitionsPageTransitionsBuilder();
+  static const _mobilePageTransitions =
+      AppHorizontalSlidePageTransitionsBuilder();
 
   static ThemeData get lightTheme {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: _brandOrange,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: _brandOrange,
-      onPrimary: Colors.white,
-      secondary: _brandSecondary,
-      onSecondary: Colors.white,
-      // Surfaces match the home shell: white. Slightly stronger containers for inputs/chips.
-      surface: lightAppBackground,
-      onSurface: _lightInk,
-      onSurfaceVariant: _lightInkMuted,
-      surfaceContainerLowest: lightAppBackground,
-      surfaceContainerLow: lightAppBackground,
-      surfaceContainer: const Color(0xFFF3F3F3),
-      surfaceContainerHigh: const Color(0xFFEBEBEB),
-      surfaceContainerHighest: const Color(0xFFE0E0E0),
-      outline: const Color(0xFF6B6B6B),
-      outlineVariant: const Color(0xFFCACACA),
-      surfaceTint: Colors.transparent,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: _brandOrange,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: _brandOrange,
+          onPrimary: Colors.white,
+          secondary: _brandSecondary,
+          onSecondary: Colors.white,
+          // Surfaces match the home shell: white. Slightly stronger containers for inputs/chips.
+          surface: lightAppBackground,
+          onSurface: _lightInk,
+          onSurfaceVariant: _lightInkMuted,
+          surfaceContainerLowest: lightAppBackground,
+          surfaceContainerLow: lightAppBackground,
+          surfaceContainer: const Color(0xFFF3F3F3),
+          surfaceContainerHigh: const Color(0xFFEBEBEB),
+          surfaceContainerHighest: const Color(0xFFE0E0E0),
+          outline: const Color(0xFF6B6B6B),
+          outlineVariant: const Color(0xFFCACACA),
+          surfaceTint: Colors.transparent,
+        );
 
     final base = ThemeData(
       useMaterial3: true,
@@ -210,9 +214,7 @@ class AppThemes {
           color: scheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
-        subtitleTextStyle: TextStyle(
-          color: scheme.onSurfaceVariant,
-        ),
+        subtitleTextStyle: TextStyle(color: scheme.onSurfaceVariant),
       ),
     );
 
@@ -220,20 +222,21 @@ class AppThemes {
   }
 
   static ThemeData get darkTheme {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: _brandOrange,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: _brandOrange,
-      onPrimary: Colors.white,
-      secondary: _brandSecondary,
-      onSecondary: Colors.white,
-      surface: const Color(0xFF1E1E1E),
-      onSurface: _darkInk,
-      onSurfaceVariant: _darkInkMuted,
-      outline: const Color(0xFF9E9E9E),
-      outlineVariant: const Color(0xFF5C5C5C),
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: _brandOrange,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: _brandOrange,
+          onPrimary: Colors.white,
+          secondary: _brandSecondary,
+          onSecondary: Colors.white,
+          surface: const Color(0xFF1E1E1E),
+          onSurface: _darkInk,
+          onSurfaceVariant: _darkInkMuted,
+          outline: const Color(0xFF9E9E9E),
+          outlineVariant: const Color(0xFF5C5C5C),
+        );
 
     final base = ThemeData(
       useMaterial3: true,
@@ -287,9 +290,7 @@ class AppThemes {
           color: scheme.onSurface,
           fontWeight: FontWeight.w600,
         ),
-        subtitleTextStyle: TextStyle(
-          color: scheme.onSurfaceVariant,
-        ),
+        subtitleTextStyle: TextStyle(color: scheme.onSurfaceVariant),
       ),
     );
 
@@ -324,16 +325,14 @@ class AppHorizontalSlidePageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final slide = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      ),
-    );
+    final slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
 
     return AnimatedBuilder(
       animation: animation,

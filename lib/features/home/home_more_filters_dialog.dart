@@ -54,9 +54,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
     _restoreMoreFiltersDialogSnapshot(snap);
   }
 
-  Future<void> _resetSearchFiltersPage(
-    VoidCallback refreshDialog,
-  ) async {
+  Future<void> _resetSearchFiltersPage(VoidCallback refreshDialog) async {
     setState(() {
       _resetAllFiltersInMemory();
       _moreFiltersDialogFieldGeneration++;
@@ -89,7 +87,11 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
   }) {
     return SizedBox(
       width: double.infinity,
-      child: Row(
+      child: OverflowBar(
+        alignment: MainAxisAlignment.end,
+        overflowAlignment: OverflowBarAlignment.end,
+        spacing: 8,
+        overflowSpacing: 8,
         textDirection: ui.TextDirection.ltr,
         children: [
           TextButton(
@@ -114,8 +116,10 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
               style: TextStyle(color: style.muted),
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: AppResponsive.isCompactPhone(context) ? 120 : 150,
+            ),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6B00),
@@ -176,15 +180,26 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              content: SingleChildScrollView(
-                child: KeyedSubtree(
-                  key: ValueKey<int>(_moreFiltersDialogFieldGeneration),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: _moreFiltersAdvancedWidgets(
+              content: SizedBox(
+                width: AppResponsive.dialogWidth(context, preferred: 420),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: AppResponsive.dialogMaxHeight(
                       context,
-                      setStateDialog,
-                      style,
+                      fraction: 0.72,
+                    ),
+                  ),
+                  child: SingleChildScrollView(
+                    child: KeyedSubtree(
+                      key: ValueKey<int>(_moreFiltersDialogFieldGeneration),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: _moreFiltersAdvancedWidgets(
+                          context,
+                          setStateDialog,
+                          style,
+                        ),
+                      ),
                     ),
                   ),
                 ),

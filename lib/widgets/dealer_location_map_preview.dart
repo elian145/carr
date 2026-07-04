@@ -24,7 +24,7 @@ class DealerLocationMapPreview extends StatelessWidget {
   Widget _fallbackNoSdk(BuildContext context) {
     final openMapsLabel =
         AppLocalizations.of(context)?.openInGoogleMapsAction ??
-            'Open in Google Maps';
+        'Open in Google Maps';
     return Material(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(12),
@@ -44,7 +44,15 @@ class DealerLocationMapPreview extends StatelessWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 8),
-                Text(openMapsLabel),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    openMapsLabel,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${latitude.toStringAsFixed(5)}, ${longitude.toStringAsFixed(5)}',
@@ -61,7 +69,7 @@ class DealerLocationMapPreview extends StatelessWidget {
   Widget _googleMapStack(BuildContext context) {
     final openMapsLabel =
         AppLocalizations.of(context)?.openInGoogleMapsAction ??
-            'Open in Google Maps';
+        'Open in Google Maps';
     final target = LatLng(latitude, longitude);
     final lite = !kIsWeb && Platform.isAndroid;
 
@@ -110,7 +118,16 @@ class DealerLocationMapPreview extends StatelessWidget {
                         children: [
                           const Icon(Icons.open_in_new, size: 18),
                           const SizedBox(width: 8),
-                          Text(openMapsLabel),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.sizeOf(context).width - 96,
+                            ),
+                            child: Text(
+                              openMapsLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ),

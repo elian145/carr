@@ -26,6 +26,9 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
     final title = _listingTitle(context, car);
     final price = _listingPrice(car);
     final location = (car['location'] ?? car['city'] ?? '').toString().trim();
+    final previewImageHeight = AppResponsive.isCompactPhone(context)
+        ? 110.0
+        : 140.0;
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -33,7 +36,7 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
         Navigator.pushNamed(
           context,
           '/car_detail',
-            arguments: {'carId': listingPrimaryId(car)},
+          arguments: {'carId': listingPrimaryId(car)},
         );
       },
       child: Container(
@@ -56,18 +59,18 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
               child: imageUrl.isEmpty
                   ? Container(
                       width: double.infinity,
-                      height: 140,
+                      height: previewImageHeight,
                       color: Colors.black12,
                       child: const Icon(Icons.directions_car),
                     )
                   : Image.network(
                       imageUrl,
                       width: double.infinity,
-                      height: 140,
+                      height: previewImageHeight,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Container(
                         width: double.infinity,
-                        height: 140,
+                        height: previewImageHeight,
                         color: Colors.black12,
                         child: const Icon(Icons.directions_car),
                       ),
@@ -246,9 +249,7 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
           ),
           TextButton(
             onPressed: _stopAndSendVoiceRecording,
-            child: Text(
-              _chatText(context, 'Send', ar: 'إرسال', ku: 'ناردن'),
-            ),
+            child: Text(_chatText(context, 'Send', ar: 'إرسال', ku: 'ناردن')),
           ),
         ],
       ),
@@ -363,10 +364,7 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
     return width.ceilToDouble();
   }
 
-  double _bubbleBorderInset({
-    required bool isMe,
-    required bool isHighlighted,
-  }) {
+  double _bubbleBorderInset({required bool isMe, required bool isHighlighted}) {
     if (isHighlighted) return 4;
     if (!isMe) return 2;
     return 0;
@@ -385,10 +383,10 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
       color: bubbleOnStrong,
       fontStyle: message.isDeleted ? FontStyle.italic : FontStyle.normal,
     );
-    final metaStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: bubbleOnMuted,
-          fontSize: 12,
-        ) ??
+    final metaStyle =
+        Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: bubbleOnMuted, fontSize: 12) ??
         TextStyle(color: bubbleOnMuted, fontSize: 12);
 
     final bodyWidth = _measureMultilineMaxLineWidth(
@@ -405,16 +403,15 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
     );
     if (message.editedAt != null && !message.isDeleted) {
       metaLeftWidth +=
-          6 + _measureLineTextWidth(context, _chatEditedLabel(context), metaStyle);
+          6 +
+          _measureLineTextWidth(context, _chatEditedLabel(context), metaStyle);
     }
 
     final contentWidth = !isMe
         ? math.max(bodyWidth, metaLeftWidth)
-        : math.max(
-            bodyWidth,
-            metaLeftWidth + _kOutgoingMetaMinGap + 18,
-          );
-    return contentWidth + _bubbleBorderInset(isMe: isMe, isHighlighted: isHighlighted);
+        : math.max(bodyWidth, metaLeftWidth + _kOutgoingMetaMinGap + 18);
+    return contentWidth +
+        _bubbleBorderInset(isMe: isMe, isHighlighted: isHighlighted);
   }
 
   Widget _buildMessageStatusIndicator(

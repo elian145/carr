@@ -125,7 +125,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontWeight: FontWeight.w700,
                         color: titleColor,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (subtitle != null && subtitle.trim().isNotEmpty) ...[
@@ -137,14 +137,14 @@ class _SettingsPageState extends State<SettingsPage> {
                           color: subtitleColor,
                           fontWeight: FontWeight.w500,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ],
                 ),
               ),
-              if (trailing != null) trailing,
+              if (trailing != null) ...[const SizedBox(width: 8), trailing],
             ],
           ),
         ),
@@ -175,72 +175,68 @@ class _SettingsPageState extends State<SettingsPage> {
     final bodyChild = ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
       children: [
-        settingsCard(
-          [
-            rowTile(
-              icon: Icons.language,
-              title: loc.settingsLanguageTitle,
-              subtitle: localeLabel(currentLocale),
-              trailing: PopupMenuButton<String?>(
-                key: _languageMenuKey,
-                tooltip: '',
-                position: PopupMenuPosition.under,
-                onSelected: (v) => _setLocale(v),
-                itemBuilder: (context) => [
-                  PopupMenuItem<String?>(
-                    value: null,
-                    child: Text(loc.settingsSystem),
-                  ),
-                  const PopupMenuItem<String?>(
-                    value: 'en',
-                    child: Text('English'),
-                  ),
-                  const PopupMenuItem<String?>(
-                    value: 'ar',
-                    child: Text('العربية'),
-                  ),
-                  const PopupMenuItem<String?>(
-                    value: 'ku',
-                    child: Text('کوردی'),
-                  ),
-                ],
-                icon: Icon(
-                  Icons.expand_more,
-                  color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+        settingsCard([
+          rowTile(
+            icon: Icons.language,
+            title: loc.settingsLanguageTitle,
+            subtitle: localeLabel(currentLocale),
+            trailing: PopupMenuButton<String?>(
+              key: _languageMenuKey,
+              tooltip: '',
+              position: PopupMenuPosition.under,
+              onSelected: (v) => _setLocale(v),
+              itemBuilder: (context) => [
+                PopupMenuItem<String?>(
+                  value: null,
+                  child: Text(loc.settingsSystem),
                 ),
-              ),
-              onTap: () => _languageMenuKey.currentState?.showButtonMenu(),
-            ),
-            Divider(height: 1, color: dividerColor),
-            rowTile(
-              icon: theme.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-              title: loc.settingsThemeTitle,
-              subtitle: theme.themeMode == ThemeMode.system
-                  ? loc.settingsSystem
-                  : theme.themeMode == ThemeMode.dark
-                      ? loc.settingsDark
-                      : loc.settingsLight,
-              trailing: Icon(
-                theme.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                const PopupMenuItem<String?>(
+                  value: 'en',
+                  child: Text('English'),
+                ),
+                const PopupMenuItem<String?>(
+                  value: 'ar',
+                  child: Text('العربية'),
+                ),
+                const PopupMenuItem<String?>(value: 'ku', child: Text('کوردی')),
+              ],
+              icon: Icon(
+                Icons.expand_more,
                 color: isLightShell ? Colors.grey.shade700 : Colors.white70,
               ),
-              onTap: theme.toggleTheme,
             ),
-            Divider(height: 1, color: dividerColor),
-            rowTile(
-              icon: Icons.notifications_active_outlined,
-              title: loc.settingsEnablePush,
-              subtitle: _pushDiagSubtitle ??
-                  (_pushEnabled ? loc.enabledLabel : loc.disabledLabel),
-              trailing: Switch.adaptive(
-                value: _pushEnabled,
-                activeThumbColor: const Color(0xFFFF6B00),
-                onChanged: _togglePush,
-              ),
-              onTap: () => _togglePush(!_pushEnabled),
+            onTap: () => _languageMenuKey.currentState?.showButtonMenu(),
+          ),
+          Divider(height: 1, color: dividerColor),
+          rowTile(
+            icon: theme.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            title: loc.settingsThemeTitle,
+            subtitle: theme.themeMode == ThemeMode.system
+                ? loc.settingsSystem
+                : theme.themeMode == ThemeMode.dark
+                ? loc.settingsDark
+                : loc.settingsLight,
+            trailing: Icon(
+              theme.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+              color: isLightShell ? Colors.grey.shade700 : Colors.white70,
             ),
-          ],
-        ),
+            onTap: theme.toggleTheme,
+          ),
+          Divider(height: 1, color: dividerColor),
+          rowTile(
+            icon: Icons.notifications_active_outlined,
+            title: loc.settingsEnablePush,
+            subtitle:
+                _pushDiagSubtitle ??
+                (_pushEnabled ? loc.enabledLabel : loc.disabledLabel),
+            trailing: Switch.adaptive(
+              value: _pushEnabled,
+              activeThumbColor: const Color(0xFFFF6B00),
+              onChanged: _togglePush,
+            ),
+            onTap: () => _togglePush(!_pushEnabled),
+          ),
+        ]),
       ],
     );
 

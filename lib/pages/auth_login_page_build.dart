@@ -83,10 +83,11 @@ mixin _LoginPageBuild on _LoginPageActions {
                 child: Text(_forgotPasswordQuestion(context)),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(_dontHaveAccount(context)),
+                  Text(_dontHaveAccount(context), textAlign: TextAlign.center),
                   TextButton(
                     onPressed: () {
                       Navigator.pushNamed(context, '/register');

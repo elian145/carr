@@ -10,6 +10,7 @@ class ListingMediaViewerPage extends StatefulWidget {
 
   final List<String> imageUrls;
   final List<String> videoUrls;
+
   /// Index in combined list: all images first, then all videos.
   final int initialIndex;
 
@@ -89,22 +90,39 @@ class _ListingMediaViewerPageState extends State<ListingMediaViewerPage> {
               right: 0,
               bottom: 20,
               child: IgnorePointer(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_mediaCount, (i) {
-                    final active = i == _index;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: active ? 10 : 6,
-                      height: active ? 10 : 6,
-                      decoration: BoxDecoration(
-                        color: active ? Colors.white : Colors.white54,
-                        shape: BoxShape.circle,
+                child: _mediaCount > 12 || AppResponsive.isCompactPhone(context)
+                    ? Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${_index + 1}/$_mediaCount',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_mediaCount, (i) {
+                          final active = i == _index;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: active ? 10 : 6,
+                            height: active ? 10 : 6,
+                            decoration: BoxDecoration(
+                              color: active ? Colors.white : Colors.white54,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        }),
                       ),
-                    );
-                  }),
-                ),
               ),
             ),
         ],
@@ -167,14 +185,21 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
             height: s.height,
             filterQuality: FilterQuality.medium,
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.broken_image, color: Colors.white38, size: 48);
+              return const Icon(
+                Icons.broken_image,
+                color: Colors.white38,
+                size: 48,
+              );
             },
             loadingBuilder: (context, child, progress) {
               if (progress == null) return child;
               return const SizedBox(
                 width: 36,
                 height: 36,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white54),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white54,
+                ),
               );
             },
           ),

@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../shared/ui/responsive.dart';
 import '../route_registry.dart';
 
 /// Instant main-tab switch using registered app routes (no slide transition).
@@ -33,6 +34,7 @@ Widget buildFloatingBottomNav(
   bool solidBackground = false,
 }) {
   final brightness = Theme.of(context).brightness;
+  final compact = AppResponsive.isCompactPhone(context);
   final isLight = brightness == Brightness.light;
   final unselectedItemColor = isLight
       ? const Color(0xFF666666)
@@ -56,16 +58,21 @@ Widget buildFloatingBottomNav(
       elevation: 0,
       selectedItemColor: const Color(0xFFFF6B00),
       unselectedItemColor: unselectedItemColor,
-      selectedLabelStyle: const TextStyle(
+      selectedFontSize: compact ? 10 : 12,
+      unselectedFontSize: compact ? 10 : 11,
+      iconSize: compact ? 21 : 24,
+      selectedLabelStyle: TextStyle(
         fontWeight: FontWeight.w700,
         letterSpacing: 0.15,
+        overflow: TextOverflow.ellipsis,
       ),
-      unselectedLabelStyle: const TextStyle(
+      unselectedLabelStyle: TextStyle(
         fontWeight: FontWeight.w600,
         letterSpacing: 0.1,
+        overflow: TextOverflow.ellipsis,
       ),
       showSelectedLabels: true,
-      showUnselectedLabels: true,
+      showUnselectedLabels: !compact,
       currentIndex: currentIndex,
       onTap: onTap,
       items: [
@@ -99,7 +106,7 @@ Widget buildFloatingBottomNav(
   return Semantics(
     label: AppLocalizations.of(context)!.navHome,
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      padding: EdgeInsets.fromLTRB(compact ? 8 : 12, 0, compact ? 8 : 12, 10),
       child: SafeArea(
         top: false,
         child: Container(

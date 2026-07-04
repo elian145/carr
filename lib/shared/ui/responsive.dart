@@ -7,18 +7,68 @@ import 'keyboard.dart';
 abstract final class AppResponsive {
   static const double _dialogHorizontalInset = 24;
   static const double _dialogVerticalInset = 48;
+  static const double compactPhoneWidth = 360;
+  static const double narrowPhoneWidth = 380;
+  static const double phoneWidth = 600;
 
   static Size screenSize(BuildContext context) => MediaQuery.sizeOf(context);
 
-  static double dialogWidth(BuildContext context, {double preferred = 400}) {
-    final maxW = screenSize(context).width - _dialogHorizontalInset * 2;
-    return preferred.clamp(280, maxW);
+  static bool isCompactPhone(BuildContext context) {
+    return screenSize(context).width < compactPhoneWidth;
   }
 
-  static double dialogMaxHeight(BuildContext context, {double fraction = 0.85}) {
+  static bool isNarrowPhone(BuildContext context) {
+    return screenSize(context).width < narrowPhoneWidth;
+  }
+
+  static bool isPhone(BuildContext context) {
+    return screenSize(context).width < phoneWidth;
+  }
+
+  static double availableWidth(
+    BuildContext context, {
+    double horizontalInset = 0,
+  }) {
+    return (screenSize(context).width - horizontalInset * 2)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+  }
+
+  static EdgeInsets pagePadding(
+    BuildContext context, {
+    double compact = 12,
+    double regular = 16,
+  }) {
+    final horizontal = isCompactPhone(context) ? compact : regular;
+    return EdgeInsets.symmetric(horizontal: horizontal);
+  }
+
+  static double adaptiveGap(
+    BuildContext context, {
+    double compact = 8,
+    double regular = 12,
+  }) {
+    return isCompactPhone(context) ? compact : regular;
+  }
+
+  static double dialogWidth(BuildContext context, {double preferred = 400}) {
+    final maxW = screenSize(context).width - _dialogHorizontalInset * 2;
+    final safeMax = maxW.clamp(240.0, double.infinity).toDouble();
+    final minW = safeMax < 280 ? safeMax : 280.0;
+    return preferred.clamp(minW, safeMax).toDouble();
+  }
+
+  static double dialogMaxHeight(
+    BuildContext context, {
+    double fraction = 0.85,
+  }) {
     final viewPadding = MediaQuery.viewPaddingOf(context);
     final h = screenSize(context).height - viewPadding.top - viewPadding.bottom;
-    return (h * fraction).clamp(280, h - _dialogVerticalInset);
+    final safeMax = (h - _dialogVerticalInset)
+        .clamp(220.0, double.infinity)
+        .toDouble();
+    final minH = safeMax < 280 ? safeMax : 280.0;
+    return (h * fraction).clamp(minH, safeMax).toDouble();
   }
 
   /// Height for scrollable picker content inside a dialog header + footer.
@@ -28,7 +78,9 @@ abstract final class AppResponsive {
     double headerFooterReserve = 120,
   }) {
     final max = dialogMaxHeight(context) - headerFooterReserve;
-    return preferred.clamp(160, max);
+    final safeMax = max.clamp(120.0, double.infinity).toDouble();
+    final minH = safeMax < 160 ? safeMax : 160.0;
+    return preferred.clamp(minH, safeMax).toDouble();
   }
 
   static BoxConstraints dialogBoxConstraints(
@@ -48,7 +100,9 @@ abstract final class AppResponsive {
     double minCellWidth = 72,
     double preferredDialogWidth = 400,
   }) {
-    final w = dialogWidth(context, preferred: preferredDialogWidth) - 40;
+    final w = (dialogWidth(context, preferred: preferredDialogWidth) - 40)
+        .clamp(160.0, double.infinity)
+        .toDouble();
     final count = (w / minCellWidth).floor();
     return count.clamp(2, preferred);
   }
@@ -78,16 +132,21 @@ abstract final class AppResponsive {
 
   static double homeGridListingCardHeight(BuildContext context) {
     final width = homeGridListingCardWidth(context);
-    return width / ListingLayoutPrefs.gridChildAspectRatio(2);
+    return width /
+        ListingLayoutPrefs.gridChildAspectRatioForWidth(
+          2,
+          screenSize(context).width,
+        );
   }
 
   static double listingGridImageHeight(
     BuildContext context, {
     bool quickSell = false,
     double? maxHeight,
+    double? cardWidth,
   }) {
     final w = screenSize(context).width;
-    final colW = (w - 24) / 2;
+    final colW = cardWidth ?? ((w - 24) / 2);
     final ratio = quickSell ? 0.62 : 0.88;
     var height = (colW * ratio).clamp(
       quickSell ? 100.0 : 140.0,
@@ -108,14 +167,19 @@ abstract final class AppResponsive {
 
   /// Tighter app bar button padding on narrow phones (labels always stay visible).
   static bool narrowAppBar(BuildContext context) {
-    return screenSize(context).width < 380;
+    return isNarrowPhone(context);
   }
 
-  /// Lock text scale so typography and layout match across devices.
+  /// Allow accessibility text scaling, but cap it to keep dense mobile layouts stable.
   static Widget wrapApp(BuildContext context, Widget child) {
     final mq = MediaQuery.of(context);
+    const baseFontSize = 14.0;
+    final maxScale = isCompactPhone(context) ? 1.1 : 1.2;
+    final scaleFactor = (mq.textScaler.scale(baseFontSize) / baseFontSize)
+        .clamp(1.0, maxScale)
+        .toDouble();
     return MediaQuery(
-      data: mq.copyWith(textScaler: TextScaler.noScaling),
+      data: mq.copyWith(textScaler: TextScaler.linear(scaleFactor)),
       child: KeyboardDismissOnTap(child: child),
     );
   }
@@ -140,10 +204,7 @@ class ResponsiveDialogShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: AppResponsive.dialogWidth(context, preferred: preferredWidth),
-      height: AppResponsive.dialogMaxHeight(
-        context,
-        fraction: heightFraction,
-      ),
+      height: AppResponsive.dialogMaxHeight(context, fraction: heightFraction),
       child: Padding(padding: padding, child: child),
     );
   }
@@ -177,9 +238,6 @@ class ResponsiveDialogBody extends StatelessWidget {
     if (scrollable) {
       content = SingleChildScrollView(child: content);
     }
-    return ConstrainedBox(
-      constraints: constraints,
-      child: content,
-    );
+    return ConstrainedBox(constraints: constraints, child: content);
   }
 }

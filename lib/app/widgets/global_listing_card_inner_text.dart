@@ -9,6 +9,7 @@ Widget _buildGlobalCarCardInnerText(
   required String yearDisplay,
   required String mileageDisplay,
   required String cityLine,
+  required Color titleTextColor,
   required Color dividerLineColor,
   required Color metaTextColor,
   bool pinBottomMeta = false,
@@ -35,8 +36,9 @@ Widget _buildGlobalCarCardInnerText(
           final double logoSize = maxW < 150 ? 22 : (maxW < 175 ? 24 : 28);
           final double logoInner = logoSize - 4;
           final double gap = maxW < 150 ? 6 : 8;
-          final double effectiveTitleFontSize =
-              maxW < 150 ? 15 : (maxW < 175 ? 16 : titleFontSize);
+          final double effectiveTitleFontSize = maxW < 150
+              ? 15
+              : (maxW < 175 ? 16 : titleFontSize);
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -85,7 +87,7 @@ Widget _buildGlobalCarCardInnerText(
                         textAlign: TextAlign.start,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: titleTextColor,
                           fontSize: effectiveTitleFontSize,
                           height: titleLineHeight,
                         ),
@@ -112,11 +114,7 @@ Widget _buildGlobalCarCardInnerText(
         child: Text(
           trimLine,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(
-            color: metaTextColor,
-            fontSize: 15,
-            height: 1.1,
-          ),
+          style: TextStyle(color: metaTextColor, fontSize: 15, height: 1.1),
           maxLines: 1,
           overflow: TextOverflow.clip,
         ),
@@ -200,10 +198,7 @@ Widget _buildGlobalCarCardInnerText(
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
-                          style: TextStyle(
-                            color: metaTextColor,
-                            fontSize: 13,
-                          ),
+                          style: TextStyle(color: metaTextColor, fontSize: 13),
                         ),
                       )
                     : const SizedBox.shrink(),

@@ -30,7 +30,10 @@ class _ListingPreviewMediaViewerPageState
     super.initState();
     _mediaCount =
         widget.imageFilesOrUrls.length + widget.videoFilesOrUrls.length;
-    _index = widget.initialIndex.clamp(0, _mediaCount > 0 ? _mediaCount - 1 : 0);
+    _index = widget.initialIndex.clamp(
+      0,
+      _mediaCount > 0 ? _mediaCount - 1 : 0,
+    );
     _controller = PageController(initialPage: _index);
   }
 
@@ -100,7 +103,8 @@ class _ListingPreviewMediaViewerPageState
             onPageChanged: (i) => setState(() => _index = i),
             itemBuilder: (context, index) {
               if (_isVideoSlide(index)) {
-                final v = widget.videoFilesOrUrls[index - widget.imageFilesOrUrls.length];
+                final v = widget
+                    .videoFilesOrUrls[index - widget.imageFilesOrUrls.length];
                 final src = _asPathOrUrl(v);
                 return GalleryEmbeddedVideoPlayer(
                   videoUrl: src,
@@ -116,22 +120,39 @@ class _ListingPreviewMediaViewerPageState
               right: 0,
               bottom: 20,
               child: IgnorePointer(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_mediaCount, (i) {
-                    final active = i == _index;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      width: active ? 10 : 6,
-                      height: active ? 10 : 6,
-                      decoration: BoxDecoration(
-                        color: active ? Colors.white : Colors.white54,
-                        shape: BoxShape.circle,
+                child: _mediaCount > 12 || AppResponsive.isCompactPhone(context)
+                    ? Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${_index + 1}/$_mediaCount',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_mediaCount, (i) {
+                          final active = i == _index;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: active ? 10 : 6,
+                            height: active ? 10 : 6,
+                            decoration: BoxDecoration(
+                              color: active ? Colors.white : Colors.white54,
+                              shape: BoxShape.circle,
+                            ),
+                          );
+                        }),
                       ),
-                    );
-                  }),
-                ),
               ),
             ),
         ],
@@ -193,7 +214,11 @@ class _ZoomableFileImageState extends State<_ZoomableFileImage> {
             width: s.width,
             height: s.height,
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.broken_image, color: Colors.white38, size: 48);
+              return const Icon(
+                Icons.broken_image,
+                color: Colors.white38,
+                size: 48,
+              );
             },
           ),
         ),

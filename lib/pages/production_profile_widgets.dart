@@ -29,6 +29,8 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
               SizedBox(height: 2),
               Text(
                 value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 16,
                   color: _profilePrimaryInk(c),
@@ -78,15 +80,18 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
               child: Icon(icon, size: 20, color: accent),
             ),
             SizedBox(width: 12),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                color: color ?? _profilePrimaryInk(context),
-                fontWeight: FontWeight.w500,
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: color ?? _profilePrimaryInk(context),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            Spacer(),
             if (badgeCount > 0) ...[
               Container(
                 constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
@@ -128,25 +133,15 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
         password: password.isEmpty ? null : password,
       );
       if (!context.mounted) return;
-      Navigator.pushNamedAndRemoveUntil(
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      ScaffoldMessenger.of(
         context,
-        '/login',
-        (route) => false,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(loc.accountDeletedSnackbar)),
-      );
+      ).showSnackBar(SnackBar(content: Text(loc.accountDeletedSnackbar)));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: loc.error,
-            ),
-          ),
+          content: Text(userErrorText(context, e, fallback: loc.error)),
           backgroundColor: Colors.red,
         ),
       );

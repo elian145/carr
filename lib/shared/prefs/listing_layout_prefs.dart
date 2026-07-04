@@ -29,7 +29,8 @@ class ListingLayoutPrefs {
       final v = _sanitize(sp.getInt(_key) ?? 2);
       columns.value = v;
       return v;
-    } catch (e, st) { logNonFatal(e, st); 
+    } catch (e, st) {
+      logNonFatal(e, st);
       columns.value = 2;
       return 2;
     }
@@ -41,13 +42,32 @@ class ListingLayoutPrefs {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.setInt(_key, v);
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   /// Grid cell aspect ratio (width / height) — matches Home feed so cards do not overflow.
   static double gridChildAspectRatio(int listingColumns) {
-    if (listingColumns == 1) return 2.78;
+    if (listingColumns == 1) return 2.90;
     return Platform.isIOS ? 0.67 : 0.63;
   }
-}
 
+  static int effectiveColumnsForWidth(int requestedColumns, double width) {
+    if (requestedColumns == 1 || requestedColumns == 3) {
+      return requestedColumns;
+    }
+    return width < 340 ? 1 : 2;
+  }
+
+  static double gridChildAspectRatioForWidth(int listingColumns, double width) {
+    if (listingColumns == 1) {
+      if (width < 340) return 2.55;
+      if (width < 380) return 2.75;
+      return 2.90;
+    }
+    if (width < 340) return 2.55;
+    if (width < 380) return Platform.isIOS ? 0.64 : 0.60;
+    return gridChildAspectRatio(listingColumns);
+  }
+}

@@ -15,6 +15,7 @@ import '../shared/maps/dealer_map_coords.dart';
 import '../shared/maps/open_google_maps.dart';
 import '../shared/media/media_url.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/ui/responsive.dart';
 import '../features/listing/listing_mappers.dart';
 import '../shared/errors/user_error_text.dart';
 import '../theme_provider.dart';
@@ -97,26 +98,34 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final fallbackName = ('$firstName $lastName').trim();
     final displayName = dealershipName.isNotEmpty
         ? dealershipName
-        : (fallbackName.isNotEmpty ? fallbackName : _tr('Dealer', ar: 'وكيل', ku: 'وەکیل'));
-    final logoUrl = buildMediaUrl((dealer?['profile_picture'] ?? '').toString().trim());
+        : (fallbackName.isNotEmpty
+              ? fallbackName
+              : _tr('Dealer', ar: 'وكيل', ku: 'وەکیل'));
+    final logoUrl = buildMediaUrl(
+      (dealer?['profile_picture'] ?? '').toString().trim(),
+    );
     final coverUrl = buildMediaUrl(
       (dealer?['dealership_cover_picture'] ?? '').toString().trim(),
     );
     final bannerUrl = coverUrl.isNotEmpty ? coverUrl : _firstListingImage();
-    final location = (dealer?['dealership_location'] ?? dealer?['location'] ?? '')
-        .toString()
-        .trim();
+    final location =
+        (dealer?['dealership_location'] ?? dealer?['location'] ?? '')
+            .toString()
+            .trim();
     final double? mapLat = parseDealerCoord(dealer?['dealership_latitude']);
     final double? mapLng = parseDealerCoord(dealer?['dealership_longitude']);
     final phones = _phonesFromAnySource(dealer);
     final email = (dealer?['email'] ?? '').toString().trim();
-    final description = (dealer?['dealership_description'] ?? '').toString().trim();
-    final currentUserPublicId = (auth.currentUser?['public_id'] ??
-            auth.currentUser?['id'] ??
-            auth.currentUser?['user_id'] ??
-            '')
+    final description = (dealer?['dealership_description'] ?? '')
         .toString()
         .trim();
+    final currentUserPublicId =
+        (auth.currentUser?['public_id'] ??
+                auth.currentUser?['id'] ??
+                auth.currentUser?['user_id'] ??
+                '')
+            .toString()
+            .trim();
     final isDealerOwner =
         auth.isAuthenticated && currentUserPublicId == widget.dealerPublicId;
     final openingHours = _openingHoursFromAnySource(
@@ -133,7 +142,11 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
         actions: [
           if (auth.isAuthenticated && !isDealerOwner)
             IconButton(
-              tooltip: _tr('Report user', ar: 'الإبلاغ عن المستخدم', ku: 'ڕاپۆرتکردنی بەکارهێنەر'),
+              tooltip: _tr(
+                'Report user',
+                ar: 'الإبلاغ عن المستخدم',
+                ku: 'ڕاپۆرتکردنی بەکارهێنەر',
+              ),
               icon: const Icon(Icons.flag_outlined),
               onPressed: () => showReportUserDialog(
                 context,
@@ -155,16 +168,21 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          Text(_error!, style: const TextStyle(color: Colors.red)),
-                          const SizedBox(height: 12),
-                          FilledButton(onPressed: _load, child: Text(AppLocalizations.of(context)?.retryAction ?? 'Retry')),
-                        ],
-                      )
-                    : ListView(
-                        children: [
+                ? ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Text(_error!, style: const TextStyle(color: Colors.red)),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _load,
+                        child: Text(
+                          AppLocalizations.of(context)?.retryAction ?? 'Retry',
+                        ),
+                      ),
+                    ],
+                  )
+                : ListView(
+                    children: [
                       SizedBox(
                         height: bannerUrl.isNotEmpty ? 188 : 148,
                         child: Stack(
@@ -178,8 +196,11 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const ColoredBox(color: Colors.black12),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const ColoredBox(
+                                                color: Colors.black12,
+                                              ),
                                     )
                                   : const ColoredBox(color: Colors.black12),
                             ),
@@ -206,7 +227,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 clipBehavior: Clip.antiAlias,
                                 child: CircleAvatar(
                                   radius: 36,
-                                  backgroundColor: Theme.of(context).colorScheme.surface,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.surface,
                                   child: CircleAvatar(
                                     radius: 32,
                                     backgroundImage: logoUrl.isNotEmpty
@@ -237,9 +260,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                           children: [
                             Text(
                               displayName,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
+                              style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                             if (description.isNotEmpty) ...[
@@ -266,107 +287,166 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                   }
                                 },
                                 icon: const Icon(Icons.edit_outlined),
-                                label: Text(_tr('Edit dealer page', ar: 'تعديل صفحة الوكيل', ku: 'دەستکاری پەڕەی وەکیل')),
+                                label: Text(
+                                  _tr(
+                                    'Edit dealer page',
+                                    ar: 'تعديل صفحة الوكيل',
+                                    ku: 'دەستکاری پەڕەی وەکیل',
+                                  ),
+                                ),
                               ),
                             ],
                             const SizedBox(height: 12),
-                            SegmentedButton<_DealerSection>(
-                              segments: [
-                                ButtonSegment(
-                                  value: _DealerSection.listings,
-                                  label: Text(_tr('Listings', ar: 'الإعلانات', ku: 'ڕێکلامەکان')),
-                                ),
-                                ButtonSegment(
-                                  value: _DealerSection.about,
-                                  label: Text(_tr('About', ar: 'حول', ku: 'دەربارە')),
-                                ),
-                              ],
-                              selected: {_section},
-                              onSelectionChanged: (s) {
-                                if (s.isEmpty) return;
-                                setState(() => _section = s.first);
-                              },
-                            ),
+                            if (AppResponsive.isCompactPhone(context))
+                              DropdownButtonFormField<_DealerSection>(
+                                initialValue: _section,
+                                isExpanded: true,
+                                items: [
+                                  DropdownMenuItem(
+                                    value: _DealerSection.listings,
+                                    child: Text(
+                                      _tr(
+                                        'Listings',
+                                        ar: 'الإعلانات',
+                                        ku: 'ڕێکلامەکان',
+                                      ),
+                                    ),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: _DealerSection.about,
+                                    child: Text(
+                                      _tr('About', ar: 'حول', ku: 'دەربارە'),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  setState(() => _section = value);
+                                },
+                              )
+                            else
+                              SegmentedButton<_DealerSection>(
+                                segments: [
+                                  ButtonSegment(
+                                    value: _DealerSection.listings,
+                                    label: Text(
+                                      _tr(
+                                        'Listings',
+                                        ar: 'الإعلانات',
+                                        ku: 'ڕێکلامەکان',
+                                      ),
+                                    ),
+                                  ),
+                                  ButtonSegment(
+                                    value: _DealerSection.about,
+                                    label: Text(
+                                      _tr('About', ar: 'حول', ku: 'دەربارە'),
+                                    ),
+                                  ),
+                                ],
+                                selected: {_section},
+                                onSelectionChanged: (s) {
+                                  if (s.isEmpty) return;
+                                  setState(() => _section = s.first);
+                                },
+                              ),
                             const SizedBox(height: 12),
                             if (_section == _DealerSection.about) ...[
-                            if (phones.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    for (var i = 0; i < phones.length; i++)
-                                      Padding(
-                                        padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
-                                        child: Tooltip(
-                                          message: _tr('Tap to call • Hold to copy', ar: 'اضغط للاتصال • اضغط مطولاً للنسخ', ku: 'کرتە بکە بۆ پەیوەندی • چەند چرکە هەڵبگرە بۆ کۆپی'),
-                                          child: SizedBox(
-                                            width: double.infinity,
-                                            child: FilledButton.icon(
-                                              onPressed: () =>
-                                                  _callDealer(phones[i]),
-                                              onLongPress: () =>
-                                                  _copyToClipboard(
-                                                phones[i],
-                                                _tr('Phone number copied to clipboard', ar: 'تم نسخ رقم الهاتف', ku: 'ژمارەی تەلەفۆن کۆپی کرا'),
-                                              ),
-                                              icon: const Icon(
-                                                Icons.phone_outlined,
-                                              ),
-                                              label: Text(
-                                                phones[i],
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
+                              if (phones.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      for (var i = 0; i < phones.length; i++)
+                                        Padding(
+                                          padding: EdgeInsets.only(
+                                            top: i == 0 ? 0 : 8,
+                                          ),
+                                          child: Tooltip(
+                                            message: _tr(
+                                              'Tap to call • Hold to copy',
+                                              ar: 'اضغط للاتصال • اضغط مطولاً للنسخ',
+                                              ku: 'کرتە بکە بۆ پەیوەندی • چەند چرکە هەڵبگرە بۆ کۆپی',
+                                            ),
+                                            child: SizedBox(
+                                              width: double.infinity,
+                                              child: FilledButton.icon(
+                                                onPressed: () =>
+                                                    _callDealer(phones[i]),
+                                                onLongPress: () => _copyToClipboard(
+                                                  phones[i],
+                                                  _tr(
+                                                    'Phone number copied to clipboard',
+                                                    ar: 'تم نسخ رقم الهاتف',
+                                                    ku: 'ژمارەی تەلەفۆن کۆپی کرا',
+                                                  ),
+                                                ),
+                                                icon: const Icon(
+                                                  Icons.phone_outlined,
+                                                ),
+                                                label: Text(
+                                                  phones[i],
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
+                              _infoRow(
+                                Icons.location_on_outlined,
+                                _tr('Location', ar: 'الموقع', ku: 'شوێن'),
+                                location,
                               ),
-                            _infoRow(
-                              Icons.location_on_outlined,
-                              _tr('Location', ar: 'الموقع', ku: 'شوێن'),
-                              location,
-                            ),
-                            if (mapLat != null &&
-                                mapLng != null &&
-                                isValidDealerLatLng(mapLat, mapLng)) ...[
-                              const SizedBox(height: 10),
-                              DealerLocationMapPreview(
-                                latitude: mapLat,
-                                longitude: mapLng,
-                                onOpenInGoogleMaps: () => _openDealerOnGoogleMaps(
-                                  mapLat,
-                                  mapLng,
+                              if (mapLat != null &&
+                                  mapLng != null &&
+                                  isValidDealerLatLng(mapLat, mapLng)) ...[
+                                const SizedBox(height: 10),
+                                DealerLocationMapPreview(
+                                  latitude: mapLat,
+                                  longitude: mapLng,
+                                  onOpenInGoogleMaps: () =>
+                                      _openDealerOnGoogleMaps(mapLat, mapLng),
                                 ),
-                              ),
-                            ],
-                            if (email.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Tooltip(
-                                  message: _tr('Tap to send email • Hold to copy', ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ', ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی'),
-                                  child: SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () => _emailDealer(email),
-                                      onLongPress: () => _copyToClipboard(
-                                        email,
-                                        _tr('Email copied to clipboard', ar: 'تم نسخ البريد الإلكتروني', ku: 'ئیمەیل کۆپی کرا'),
-                                      ),
-                                      icon: const Icon(Icons.email_outlined),
-                                      label: Text(
-                                        email,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                              ],
+                              if (email.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Tooltip(
+                                    message: _tr(
+                                      'Tap to send email • Hold to copy',
+                                      ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ',
+                                      ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی',
+                                    ),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () => _emailDealer(email),
+                                        onLongPress: () => _copyToClipboard(
+                                          email,
+                                          _tr(
+                                            'Email copied to clipboard',
+                                            ar: 'تم نسخ البريد الإلكتروني',
+                                            ku: 'ئیمەیل کۆپی کرا',
+                                          ),
+                                        ),
+                                        icon: const Icon(Icons.email_outlined),
+                                        label: Text(
+                                          email,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            _openingHoursTable(openingHours),
+                              _openingHoursTable(openingHours),
                             ],
                           ],
                         ),
@@ -376,13 +456,26 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                         if (_listings.isEmpty)
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(_tr('No active vehicles right now.', ar: 'لا توجد مركبات نشطة حالياً.', ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.')),
+                            child: Text(
+                              _tr(
+                                'No active vehicles right now.',
+                                ar: 'لا توجد مركبات نشطة حالياً.',
+                                ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
+                              ),
+                            ),
                           )
                         else
                           ValueListenableBuilder<int>(
                             valueListenable: ListingLayoutPrefs.columns,
                             builder: (context, cols, _) {
-                              final listingColumns = (cols == 1) ? 1 : 2;
+                              final screenWidth = MediaQuery.sizeOf(
+                                context,
+                              ).width;
+                              final listingColumns =
+                                  ListingLayoutPrefs.effectiveColumnsForWidth(
+                                    cols == 1 ? 1 : 2,
+                                    screenWidth,
+                                  );
                               return GridView.builder(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
@@ -394,19 +487,19 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 ),
                                 gridDelegate:
                                     SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: listingColumns,
-                                  childAspectRatio:
-                                      ListingLayoutPrefs.gridChildAspectRatio(
-                                    listingColumns,
-                                  ),
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                ),
+                                      crossAxisCount: listingColumns,
+                                      childAspectRatio:
+                                          ListingLayoutPrefs.gridChildAspectRatioForWidth(
+                                            listingColumns,
+                                            screenWidth,
+                                          ),
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                    ),
                                 itemCount: _listings.length,
                                 itemBuilder: (context, index) {
                                   final item = _listings[index];
-                                  final mapped =
-                                      mapListingToGlobalCarCardData(
+                                  final mapped = mapListingToGlobalCarCardData(
                                     context,
                                     item,
                                   );

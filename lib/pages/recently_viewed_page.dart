@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../app/listing_shell.dart'
-    show buildGlobalCarCard, buildFloatingBottomNav, mapListingToGlobalCarCardData, navigateMainShellTab;
+    show
+        buildGlobalCarCard,
+        buildFloatingBottomNav,
+        mapListingToGlobalCarCardData,
+        navigateMainShellTab;
 import '../services/api_service.dart';
 import '../services/recently_viewed_service.dart';
 import '../shared/auth/token_store.dart';
@@ -56,7 +60,9 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
         _loading = false;
         _error = null;
       });
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   Future<void> _fetch() async {
@@ -205,9 +211,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     await RecentlyViewedService.removeOne(listingId);
     if (!mounted) return;
     setState(() {
-      _cars = _cars
-          .where((c) => !listingMatchesId(c, listingId))
-          .toList();
+      _cars = _cars.where((c) => !listingMatchesId(c, listingId)).toList();
     });
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -255,7 +259,11 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     return ValueListenableBuilder<int>(
       valueListenable: ListingLayoutPrefs.columns,
       builder: (context, cols, _) {
-        final listingColumns = (cols == 1) ? 1 : 2;
+        final screenWidth = MediaQuery.sizeOf(context).width;
+        final listingColumns = ListingLayoutPrefs.effectiveColumnsForWidth(
+          cols == 1 ? 1 : 2,
+          screenWidth,
+        );
         final horizontalPadding = listingColumns == 1 ? 4.0 : 8.0;
 
         return GridView.builder(
@@ -270,8 +278,10 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             crossAxisCount: listingColumns,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio:
-                ListingLayoutPrefs.gridChildAspectRatio(listingColumns),
+            childAspectRatio: ListingLayoutPrefs.gridChildAspectRatioForWidth(
+              listingColumns,
+              screenWidth,
+            ),
           ),
           itemCount: _cars.length,
           itemBuilder: (context, index) {
@@ -322,11 +332,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final title = _tr(
-      'Recently viewed',
-      ar: 'شوهد مؤخراً',
-      ku: 'دواتر بینراو',
-    );
+    final title = _tr('Recently viewed', ar: 'شوهد مؤخراً', ku: 'دواتر بینراو');
     final empty = _tr(
       'You have not viewed any listings yet.\nOpen a car listing to add it here.',
       ar: 'لم تشاهد أي إعلانات بعد.\nافتح إعلان سيارة لإضافته هنا.',
@@ -345,10 +351,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             children: [
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _fetch,
-                child: Text(loc.retryAction),
-              ),
+              FilledButton(onPressed: _fetch, child: Text(loc.retryAction)),
             ],
           ),
         ),
@@ -356,10 +359,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     } else if (_cars.isEmpty) {
       body = _buildEmptyState(empty);
     } else {
-      body = RefreshIndicator(
-        onRefresh: _fetch,
-        child: _buildListingGrid(),
-      );
+      body = RefreshIndicator(onRefresh: _fetch, child: _buildListingGrid());
     }
 
     final loggedIn =
@@ -370,10 +370,8 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => navigateMainShellTab(
-            context,
-            loggedIn ? '/profile' : '/login',
-          ),
+          onPressed: () =>
+              navigateMainShellTab(context, loggedIn ? '/profile' : '/login'),
         ),
         title: Text(title),
         actions: [
@@ -402,10 +400,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
               navigateMainShellTab(context, '/dealers');
               break;
             case 3:
-              navigateMainShellTab(
-                context,
-                loggedIn ? '/profile' : '/login',
-              );
+              navigateMainShellTab(context, loggedIn ? '/profile' : '/login');
               break;
           }
         },

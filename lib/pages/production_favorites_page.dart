@@ -18,7 +18,8 @@ class _FavoritesPageState extends State<FavoritesPage> {
     if (raw == null || raw.isEmpty) return -1;
     try {
       return DateTime.parse(raw).millisecondsSinceEpoch;
-    } catch (e, st) { logNonFatal(e, st); 
+    } catch (e, st) {
+      logNonFatal(e, st);
       return -1;
     }
   }
@@ -62,7 +63,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
               _loading = false;
             });
           }
-        } catch (e, st) { logNonFatal(e, st); }
+        } catch (e, st) {
+          logNonFatal(e, st);
+        }
       }
       final decoded = await ApiService.getFavorites();
       final parsed = listingMapsFromFavoritesResponse(decoded);
@@ -118,7 +121,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
       } else {
         unawaited(AnalyticsService.trackFavorite(carId));
       }
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   @override
@@ -185,29 +190,43 @@ class _FavoritesPageState extends State<FavoritesPage> {
               child: ValueListenableBuilder<int>(
                 valueListenable: ListingLayoutPrefs.columns,
                 builder: (context, cols, _) {
-                  final listingColumns = (cols == 1) ? 1 : 2;
+                  final screenWidth = MediaQuery.sizeOf(context).width;
+                  final listingColumns =
+                      ListingLayoutPrefs.effectiveColumnsForWidth(
+                        cols == 1 ? 1 : 2,
+                        screenWidth,
+                      );
                   return GridView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 110),
+                    padding: EdgeInsets.fromLTRB(
+                      listingColumns == 1 ? 4 : 8,
+                      8,
+                      listingColumns == 1 ? 4 : 8,
+                      110,
+                    ),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: listingColumns,
                       crossAxisSpacing: 8,
                       mainAxisSpacing: 8,
                       childAspectRatio:
-                          ListingLayoutPrefs.gridChildAspectRatio(
-                        listingColumns,
-                      ),
+                          ListingLayoutPrefs.gridChildAspectRatioForWidth(
+                            listingColumns,
+                            screenWidth,
+                          ),
                     ),
                     itemCount: _favorites.length,
                     itemBuilder: (context, index) {
-                      final carMap = Map<String, dynamic>.from(_favorites[index]);
+                      final carMap = Map<String, dynamic>.from(
+                        _favorites[index],
+                      );
                       final card = buildGlobalCarCard(
                         context,
                         mapListingToGlobalCarCardData(context, carMap),
                         listLayout: listingColumns == 1,
                       );
                       final String carId =
-                          (carMap['public_id'] ?? carMap['id'] ?? '').toString();
+                          (carMap['public_id'] ?? carMap['id'] ?? '')
+                              .toString();
                       if (carId.isEmpty) return card;
                       return Stack(
                         clipBehavior: Clip.none,

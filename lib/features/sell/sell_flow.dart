@@ -19,7 +19,8 @@ import '../../app/widgets/listing_galleries.dart';
 import '../../app/widgets/listing_network_image.dart';
 import '../../data/car_catalog.dart';
 import '../../data/car_name_translations.dart';
-import '../../features/listing/car_listing_specs_grid.dart' as car_listing_specs_grid;
+import '../../features/listing/car_listing_specs_grid.dart'
+    as car_listing_specs_grid;
 import '../../shared/listings/listing_identity.dart' as listing_identity;
 import '../../features/listing/listing_spec_item.dart';
 import '../../globals.dart';
@@ -198,8 +199,7 @@ Map<String, dynamic> unwrapCarApiPayload(Map<String, dynamic> payload) =>
 String listingPrimaryId(Map<String, dynamic> listing) =>
     listing_identity.listingPrimaryId(listing);
 
-int _maxSellDraftStep(int a, int b, [int c = 0]) =>
-    maxSellDraftStep(a, b, c);
+int _maxSellDraftStep(int a, int b, [int c = 0]) => maxSellDraftStep(a, b, c);
 
 bool isValidCarRegionSpecCode(String? s) =>
     region_spec_labels.isValidCarRegionSpecCode(s);
@@ -247,8 +247,7 @@ String _trLegacyText(
   String en, {
   String? ar,
   String? ku,
-}) =>
-    trLegacyText(context, en, ar: ar, ku: ku);
+}) => trLegacyText(context, en, ar: ar, ku: ku);
 
 String _buildFullImageUrl(String rel) => buildLegacyFullImageUrl(rel);
 
@@ -257,8 +256,7 @@ Widget _listingNetworkImage(
   BoxFit fit = BoxFit.cover,
   double? width,
   double? height,
-}) =>
-    listingNetworkImage(url, fit: fit, width: width, height: height);
+}) => listingNetworkImage(url, fit: fit, width: width, height: height);
 
 String? _translateValueGlobal(BuildContext context, String? raw) =>
     translateListingValue(context, raw);
@@ -289,16 +287,15 @@ Widget buildFancySelector(
   Widget? leading,
   bool isError = false,
   String? currency,
-}) =>
-    sell_fancy_selector.buildFancySelector(
-      context,
-      icon: icon,
-      label: label,
-      value: value,
-      leading: leading,
-      isError: isError,
-      currency: currency,
-    );
+}) => sell_fancy_selector.buildFancySelector(
+  context,
+  icon: icon,
+  label: label,
+  value: value,
+  leading: leading,
+  isError: isError,
+  currency: currency,
+);
 
 Color _sellFlowManualFieldFill(BuildContext context) =>
     sell_fancy_selector.sellFlowManualFieldFill(context);
@@ -315,8 +312,7 @@ TextStyle _sellFlowManualFieldTextStyle(BuildContext context) =>
 Widget buildCarListingSpecsGrid(
   BuildContext context,
   Map<String, dynamic> car,
-) =>
-    car_listing_specs_grid.buildCarListingSpecsGrid(context, car);
+) => car_listing_specs_grid.buildCarListingSpecsGrid(context, car);
 
 typedef _SpecItem = ListingSpecItem;
 
@@ -334,58 +330,67 @@ Widget buildSellWizardNavRow(
   required VoidCallback onPrevious,
   required VoidCallback onNext,
 }) {
+  final compact = AppResponsive.isCompactPhone(context);
+  final previousButton = SizedBox(
+    width: double.infinity,
+    height: 50,
+    child: OutlinedButton(
+      onPressed: onPrevious,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFFF6B00)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          AppLocalizations.of(context)!.previousButton,
+          maxLines: 1,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFFF6B00),
+          ),
+        ),
+      ),
+    ),
+  );
+  final nextButton = SizedBox(
+    width: double.infinity,
+    height: 50,
+    child: Semantics(
+      button: true,
+      label: AppLocalizations.of(context)!.nextStep,
+      child: ElevatedButton(
+        onPressed: onNext,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFF6B00),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            AppLocalizations.of(context)!.nextStep,
+            maxLines: 1,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ),
+    ),
+  );
+  if (compact) {
+    return Column(
+      children: [previousButton, const SizedBox(height: 10), nextButton],
+    );
+  }
   return Row(
     children: [
-      Expanded(
-        child: SizedBox(
-          height: 50,
-          child: OutlinedButton(
-            onPressed: onPrevious,
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFFF6B00)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              AppLocalizations.of(context)!.previousButton,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFFFF6B00),
-              ),
-            ),
-          ),
-        ),
-      ),
+      Expanded(child: previousButton),
       const SizedBox(width: 16),
-      Expanded(
-        child: SizedBox(
-          height: 50,
-          child: Semantics(
-            button: true,
-            label: AppLocalizations.of(context)!.nextStep,
-            child: ElevatedButton(
-              onPressed: onNext,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B00),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              child: Text(
-                AppLocalizations.of(context)!.nextStep,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      Expanded(child: nextButton),
     ],
   );
 }
