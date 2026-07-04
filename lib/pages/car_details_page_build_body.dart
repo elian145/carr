@@ -68,8 +68,9 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
-                                    child: Text(
+                                    child: AutoSizeText(
                                       _displayBrandName(context),
+                                      textScaleFactor: 1.0,
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -78,21 +79,34 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                             : Colors.white,
                                       ),
                                       maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                      minFontSize: 11,
+                                      stepGranularity: 0.5,
+                                      overflow: TextOverflow.clip,
                                     ),
                                   ),
                                   if (car!['price'] != null &&
                                       _displayModelName(context).isEmpty) ...[
                                     SizedBox(width: 12),
-                                    Text(
-                                      formatCurrency(
-                                        context,
-                                        car!['price'],
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: 26,
-                                        fontWeight: FontWeight.w700,
-                                        color: Color(0xFFFF6B00),
+                                    Flexible(
+                                      child: Align(
+                                        alignment: AlignmentDirectional.centerEnd,
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment:
+                                              AlignmentDirectional.centerEnd,
+                                          child: Text(
+                                            formatCurrency(
+                                              context,
+                                              car!['price'],
+                                            ),
+                                            maxLines: 1,
+                                            style: TextStyle(
+                                              fontSize: 26,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFFFF6B00),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -104,8 +118,10 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
-                                      child: Text(
+                                      flex: 6,
+                                      child: AutoSizeText(
                                         _displayModelName(context),
+                                        textScaleFactor: 1.0,
                                         style: TextStyle(
                                           fontSize: 22,
                                           fontWeight: FontWeight.w800,
@@ -116,20 +132,35 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                               : Colors.white70,
                                         ),
                                         maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        minFontSize: 9,
+                                        stepGranularity: 0.5,
+                                        overflow: TextOverflow.clip,
                                       ),
                                     ),
                                     if (car!['price'] != null) ...[
-                                      SizedBox(width: 12),
-                                      Text(
-                                        formatCurrency(
-                                          context,
-                                          car!['price'],
-                                        ),
-                                        style: TextStyle(
-                                          fontSize: 26,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFFF6B00),
+                                      SizedBox(width: 8),
+                                      Flexible(
+                                        flex: 4,
+                                        child: Align(
+                                          alignment:
+                                              AlignmentDirectional.centerEnd,
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment:
+                                                AlignmentDirectional.centerEnd,
+                                            child: Text(
+                                              formatCurrency(
+                                                context,
+                                                car!['price'],
+                                              ),
+                                              maxLines: 1,
+                                              style: TextStyle(
+                                                fontSize: 26,
+                                                fontWeight: FontWeight.w700,
+                                                color: Color(0xFFFF6B00),
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ],
