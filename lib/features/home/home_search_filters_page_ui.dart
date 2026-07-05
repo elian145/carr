@@ -842,26 +842,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       final slotHeight = imageHeight ?? 26;
       final Widget slotChild;
       if (imageAsset != null) {
-        if (imageBorderRadius > 0) {
-          slotChild = ClipRRect(
-            borderRadius: BorderRadius.circular(imageBorderRadius),
-            child: Image.asset(
-              imageAsset,
-              width: slotWidth,
-              height: slotHeight,
-              fit: imageFit,
-              filterQuality: FilterQuality.high,
-            ),
-          );
-        } else {
-          slotChild = Image.asset(
-            imageAsset,
-            width: slotWidth,
-            height: slotHeight,
-            fit: BoxFit.contain,
-            filterQuality: FilterQuality.high,
-          );
-        }
+        slotChild = buildFilterIconImage(
+          context: context,
+          imageAsset: imageAsset,
+          width: slotWidth,
+          height: slotHeight,
+          fit: imageFit,
+          borderRadius: imageBorderRadius,
+        );
       } else {
         slotChild = Icon(
           icon ?? Icons.grid_view_rounded,
@@ -891,7 +879,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             horizontal: textOnly ? 12 : 8,
           ),
           decoration: BoxDecoration(
-            color: isLight ? Colors.white : Colors.black.withValues(alpha: 0.15),
+            color: isLight
+                ? Colors.white
+                : filterIconTileBackdropColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected ? _searchAccent : const Color(0xFFE0E0E5),

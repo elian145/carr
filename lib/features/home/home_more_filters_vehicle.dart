@@ -23,13 +23,13 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       isDense: true,
       labelStyle: TextStyle(
         color: style.onSurface,
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
       ),
       floatingLabelStyle: TextStyle(
         color: style.onSurface,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
+        fontSize: 15,
+        fontWeight: FontWeight.bold,
       ),
       filled: true,
       fillColor: style.fieldFill,

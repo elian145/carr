@@ -65,7 +65,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Expanded(
                                     child: AutoSizeText(
@@ -115,7 +115,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                               if (_displayModelName(context).isNotEmpty) ...[
                                 SizedBox(height: 4),
                                 Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Expanded(
                                       flex: 6,

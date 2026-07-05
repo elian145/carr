@@ -14,7 +14,8 @@ mixin _HomePageBuild on _HomePageSlivers {
           Padding(
             padding: const EdgeInsetsDirectional.only(end: 8),
             child: OutlinedButton.icon(
-              onPressed: () => _openHomeSearchFiltersPage(context),
+              onPressed: () =>
+                  _openHomeSearchFiltersPage(context, focusSearchField: false),
               icon: const Icon(Icons.search, color: Colors.white, size: 20),
               label: Text(
                 AppLocalizations.of(context)!.homeSearchHeading,
