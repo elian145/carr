@@ -4,7 +4,6 @@ import '../l10n/app_localizations.dart';
 import '../app/listing_shell.dart'
     show
         buildGlobalCarCard,
-        buildFloatingBottomNav,
         mapListingToGlobalCarCardData,
         navigateMainShellTab;
 import '../services/api_service.dart';
@@ -272,7 +271,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
             horizontalPadding,
             8,
             horizontalPadding,
-            100,
+            24,
           ),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: listingColumns,
@@ -366,7 +365,6 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
         ApiService.accessToken != null && ApiService.accessToken!.isNotEmpty;
 
     return Scaffold(
-      extendBody: true,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -384,27 +382,6 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
         ],
       ),
       body: body,
-      bottomNavigationBar: buildFloatingBottomNav(
-        context,
-        currentIndex: 3,
-        solidBackground: true,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              navigateMainShellTab(context, '/');
-              break;
-            case 1:
-              navigateMainShellTab(context, '/favorites');
-              break;
-            case 2:
-              navigateMainShellTab(context, '/dealers');
-              break;
-            case 3:
-              navigateMainShellTab(context, loggedIn ? '/profile' : '/login');
-              break;
-          }
-        },
-      ),
     );
   }
 }

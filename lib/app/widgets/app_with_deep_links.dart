@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/deep_link_service.dart';
+import '../../services/push_notification_service.dart';
 
 /// Wraps [MaterialApp] and initializes [DeepLinkService] after the first frame.
 class AppWithDeepLinks extends StatefulWidget {
@@ -23,6 +24,7 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       DeepLinkService.instance.init(widget.navigatorKey);
+      PushNotificationService.attachNavigator(widget.navigatorKey);
     });
   }
 

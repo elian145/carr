@@ -8,12 +8,21 @@ Widget buildChatReplyPreviewCard(
   VoidCallback? onTap,
 }) {
   final theme = Theme.of(context);
+  final isLight = theme.brightness == Brightness.light;
   final baseColor = isMe
       ? Colors.white.withValues(alpha: 0.14)
       : _homeListingCardBackgroundFill(context);
   final borderColor = isMe
       ? Colors.white.withValues(alpha: 0.5)
+      : isLight
+      ? theme.colorScheme.outline.withValues(alpha: 0.35)
       : Colors.white.withValues(alpha: 0.12);
+  final titleColor = isMe
+      ? Colors.white
+      : _peerBubbleTextStrong(context);
+  final bodyColor = isMe
+      ? Colors.white70
+      : _peerBubbleTextMuted(context);
   final inner = Container(
     width: double.infinity,
     margin: EdgeInsets.only(bottom: dense ? 6 : 8),
@@ -38,7 +47,7 @@ Widget buildChatReplyPreviewCard(
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: titleColor,
           ),
         ),
         const SizedBox(height: 2),
@@ -47,7 +56,7 @@ Widget buildChatReplyPreviewCard(
           maxLines: dense ? 1 : 2,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.white70,
+            color: bodyColor,
           ),
         ),
       ],

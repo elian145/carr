@@ -47,10 +47,10 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                                 : peerBubbleFill;
                             final bubbleOnStrong = isMe
                                 ? Colors.white
-                                : Colors.white;
+                                : _peerBubbleTextStrong(context);
                             final bubbleOnMuted = isMe
                                 ? Colors.white.withValues(alpha: 0.85)
-                                : Colors.white70;
+                                : _peerBubbleTextMuted(context);
                             final bubbleMaxWidth =
                                 message.attachments.isNotEmpty ||
                                     _isAudioMessage(message)
@@ -92,7 +92,7 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                                   _buildReplyPreviewCard(
                                     context,
                                     message.replyToMessage!,
-                                    isMe: true,
+                                    isMe: isMe,
                                     onTap: () => _jumpToMessageId(
                                       message.replyToMessage!.id,
                                     ),
@@ -254,8 +254,8 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                                         )
                                       : !isMe
                                       ? Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.12,
+                                          color: _peerBubbleBorderColor(
+                                            context,
                                           ),
                                           width: 1,
                                         )

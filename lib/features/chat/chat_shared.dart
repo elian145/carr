@@ -14,6 +14,30 @@ Color _homeListingCardBackgroundFill(BuildContext context) {
   return AppThemes.listingCardFillGridOnLightShell();
 }
 
+Color _peerBubbleTextStrong(BuildContext context) {
+  final theme = Theme.of(context);
+  if (theme.brightness == Brightness.light) {
+    return theme.colorScheme.onSurface;
+  }
+  return Colors.white;
+}
+
+Color _peerBubbleTextMuted(BuildContext context) {
+  final theme = Theme.of(context);
+  if (theme.brightness == Brightness.light) {
+    return theme.colorScheme.onSurfaceVariant;
+  }
+  return Colors.white70;
+}
+
+Color _peerBubbleBorderColor(BuildContext context) {
+  final theme = Theme.of(context);
+  if (theme.brightness == Brightness.light) {
+    return theme.colorScheme.outline.withValues(alpha: 0.28);
+  }
+  return Colors.white.withValues(alpha: 0.12);
+}
+
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar' || code == 'ku' || code == 'ckb') {

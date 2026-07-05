@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +39,79 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 class PushNotificationService {
   static bool _messagingReady = false;
   static bool _refreshListenerAttached = false;
+  static bool _openHandlersAttached = false;
+  static GlobalKey<NavigatorState>? _navigatorKey;
+  static Map<String, dynamic>? _pendingChatNavigation;
+
+  /// Wire the app navigator so notification taps can open chat.
+  static void attachNavigator(GlobalKey<NavigatorState> key) {
+    _navigatorKey = key;
+    _consumePendingChatNavigation();
+  }
+
+  static void _consumePendingChatNavigation() {
+    final pending = _pendingChatNavigation;
+    if (pending == null) return;
+    _pendingChatNavigation = null;
+    _openChatFromNotificationData(pending);
+  }
+
+  static bool _isChatNotification(Map<String, dynamic> data) {
+    final type = (data['type'] ?? '').toString();
+    return type.isEmpty || type == 'chat_message';
+  }
+
+  static void _openChatFromNotificationData(Map<String, dynamic> data) {
+    if (!_isChatNotification(data)) return;
+
+    void tryNavigate(int frame) {
+      final nav = _navigatorKey?.currentState;
+      if (nav == null) {
+        _pendingChatNavigation = data;
+        if (frame < 360) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => tryNavigate(frame + 1));
+        }
+        return;
+      }
+      _pendingChatNavigation = null;
+      nav.pushNamed('/chat');
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => tryNavigate(0));
+  }
+
+  static void _handleRemoteMessageOpen(RemoteMessage message) {
+    _openChatFromNotificationData(message.data);
+  }
+
+  static void _handleLocalNotificationPayload(String? payload) {
+    if (payload == null || payload.trim().isEmpty) {
+      _openChatFromNotificationData(const {'type': 'chat_message'});
+      return;
+    }
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map) {
+        _openChatFromNotificationData(
+          Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
+        );
+        return;
+      }
+    } catch (e, st) {
+      logNonFatal(e, st, 'PushNotificationService.localPayload');
+    }
+    _openChatFromNotificationData(const {'type': 'chat_message'});
+  }
+
+  static void _attachOpenHandlers() {
+    if (_openHandlersAttached) return;
+    _openHandlersAttached = true;
+
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleRemoteMessageOpen);
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) _handleRemoteMessageOpen(message);
+    });
+  }
 
   static Future<void> _ensureLocalNotifications() async {
     if (_localNotificationsReady) return;
@@ -44,7 +119,12 @@ class PushNotificationService {
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(),
     );
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        _handleLocalNotificationPayload(response.payload);
+      },
+    );
     if (Platform.isAndroid) {
       await _localNotifications
           .resolvePlatformSpecificImplementation<
@@ -60,6 +140,9 @@ class PushNotificationService {
     if (notification == null) return;
     await _ensureLocalNotifications();
     final id = message.hashCode & 0x7fffffff;
+    final payload = message.data.isNotEmpty
+        ? jsonEncode(message.data)
+        : jsonEncode(const {'type': 'chat_message'});
     await _localNotifications.show(
       id,
       notification.title,
@@ -78,6 +161,7 @@ class PushNotificationService {
           presentSound: true,
         ),
       ),
+      payload: payload,
     );
   }
 
@@ -181,6 +265,8 @@ class PushNotificationService {
           );
         }
       });
+
+      _attachOpenHandlers();
     } catch (e) {
       if (kDebugMode) {
         // ignore: avoid_print
