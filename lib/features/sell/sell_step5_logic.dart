@@ -1,6 +1,59 @@
 part of 'sell_flow.dart';
 
 mixin _SellStep5Logic on _SellStep5Fields {
+  String? _imageUrlFromApiDict(dynamic item) {
+    if (item is Map) {
+      return (item['image_url'] ?? item['url'] ?? item['path'] ?? '')
+          .toString()
+          .trim();
+    }
+    return item?.toString().trim();
+  }
+
+  String? _primaryListingImageRef(
+    dynamic firstImage, {
+    Map<String, dynamic>? listingMediaResponse,
+  }) {
+    if (firstImage is String) {
+      final s = firstImage.trim();
+      if (s.isEmpty) return null;
+      if (s.startsWith('http://') ||
+          s.startsWith('https://') ||
+          s.startsWith('uploads/') ||
+          s.startsWith('static/') ||
+          s.startsWith('/static/')) {
+        return s;
+      }
+    }
+    if (listingMediaResponse != null) {
+      final dynamic responseImages =
+          listingMediaResponse['images'] ?? listingMediaResponse['uploaded'];
+      if (responseImages is List && responseImages.isNotEmpty) {
+        final url = _imageUrlFromApiDict(responseImages.first);
+        if (url != null && url.isNotEmpty) return url;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _applyPrimaryListingImage(
+    String carId,
+    List<dynamic> orderedImages, {
+    Map<String, dynamic>? listingMediaResponse,
+  }) async {
+    if (orderedImages.isEmpty) return;
+    final primaryRef = _primaryListingImageRef(
+      orderedImages.first,
+      listingMediaResponse: listingMediaResponse,
+    );
+    if (primaryRef == null || primaryRef.isEmpty) return;
+    try {
+      await ApiService.setCarPrimaryImage(carId, primaryRef);
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+  }
+
   /// Returns the created car id on success so caller can navigate to listing page; null otherwise.
   Future<String?> _submitListing(
     Map<String, dynamic> carData, {
@@ -108,10 +161,24 @@ mixin _SellStep5Logic on _SellStep5Fields {
             }
           }
           if (toAttach.isNotEmpty) {
-            await CarService().attachCarImages(carId, toAttach);
+            final attachResponse =
+                await CarService().attachCarImages(carId, toAttach);
+            await _applyPrimaryListingImage(
+              carId,
+              imgs,
+              listingMediaResponse: attachResponse,
+            );
           } else if (toUpload.isNotEmpty) {
             // No blur on submit; backend is called with skip_blur=1
-            await CarService().uploadCarImages(carId, toUpload);
+            final uploadResponse =
+                await CarService().uploadCarImages(carId, toUpload);
+            await _applyPrimaryListingImage(
+              carId,
+              imgs,
+              listingMediaResponse: uploadResponse,
+            );
+          } else if (imgs.isNotEmpty) {
+            await _applyPrimaryListingImage(carId, imgs);
           }
           if (videosToUpload.isNotEmpty) {
             try {

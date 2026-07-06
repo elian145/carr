@@ -147,6 +147,97 @@ def _pick_primary_listing_url(car: Car):
         return None
 
 
+def _normalize_image_match_key(url: str) -> str:
+    """Normalize stored or client image refs for fuzzy equality checks."""
+    from urllib.parse import urlparse
+
+    s = (url or "").strip().replace("\\", "/")
+    if not s:
+        return ""
+    if "?" in s:
+        s = s.split("?", 1)[0]
+    lower = s.lower()
+    if lower.startswith("http://") or lower.startswith("https://"):
+        s = urlparse(s).path.lstrip("/")
+    if s.startswith("/"):
+        s = s[1:]
+    if s.startswith("static/"):
+        s = s[len("static/") :]
+    return s.lower()
+
+
+def _find_listing_image_by_ref(car: Car, image_ref: str):
+    """Return a listing CarImage row matching a client path or URL."""
+    key = _normalize_image_match_key(image_ref)
+    if not key:
+        return None
+    basename = os.path.basename(key)
+    for img in car.images:
+        if _normalize_car_image_kind(getattr(img, "kind", None)) != "listing":
+            continue
+        stored = _normalize_image_match_key(getattr(img, "image_url", "") or "")
+        if not stored:
+            continue
+        if stored == key or stored.endswith("/" + key) or key.endswith("/" + stored):
+            return img
+        if basename and os.path.basename(stored) == basename:
+            return img
+    return None
+
+
+def _set_primary_listing_image(car: Car, image_ref: str):
+    """Mark one listing photo as primary; clear primary on other listing photos."""
+    target = _find_listing_image_by_ref(car, image_ref)
+    if not target:
+        return None
+    for img in car.images:
+        if _normalize_car_image_kind(getattr(img, "kind", None)) != "listing":
+            continue
+        img.is_primary = img.id == target.id
+    return target.image_url
+
+
+@bp.route("/api/cars/<car_id>/images/primary", methods=["PUT"])
+@jwt_required()
+def set_car_primary_image(car_id: str):
+    """Set which listing photo is the cover / primary image."""
+    try:
+        current_user = get_current_user()
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
+
+        car = _get_car_by_any_id(car_id)
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            return jsonify({"message": "Not authorized to update images for this listing"}), 403
+
+        data = request.get_json(silent=True) or {}
+        image_ref = (
+            data.get("image_url")
+            or data.get("path")
+            or data.get("url")
+            or ""
+        )
+        image_ref = str(image_ref).strip()
+        if not image_ref:
+            return jsonify({"message": "image_url is required"}), 400
+
+        primary_url = _set_primary_listing_image(car, image_ref)
+        if not primary_url:
+            return jsonify({"message": "Image not found on this listing"}), 404
+
+        db.session.commit()
+        log_user_action(current_user, "set_primary_image", "car", car.public_id)
+
+        return jsonify({"message": "Primary image updated", "image_url": primary_url}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to set primary image"}), 500
+
+
 @bp.route("/api/media/r2/sign-upload", methods=["POST"])
 @jwt_required()
 def r2_sign_upload():

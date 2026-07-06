@@ -8,6 +8,19 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
         _photosRequiredTitleGlobal(context),
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
       ),
+      if (_selectedImages.length > 1)
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            _trLegacyText(
+              context,
+              'Tap the star on a photo to set it as the cover image shown first in your listing.',
+              ar: 'اضغط على النجمة على الصورة لتعيينها كصورة الغلاف التي تظهر أولاً في إعلانك.',
+              ku: 'کرتە بکە لە ئەستێرەکە لەسەر وێنەکە بۆ ئەوەی وەک وێنەی سەرەکی یەکەم لە ڕیکلامەکەتدا دەربکەوێت.',
+            ),
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ),
       SizedBox(height: 12),
       if (_selectedImages.isNotEmpty)
         LayoutBuilder(
@@ -31,6 +44,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
               itemBuilder: (context, index) {
                 final image = _selectedImages[index];
                 final keyStr = image is XFile ? image.path : image.toString();
+                final isPrimary = index == 0;
                 return Stack(
                   key: ValueKey(keyStr),
                   children: [
@@ -48,7 +62,12 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade700),
+                          border: Border.all(
+                            color: isPrimary
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.grey.shade700,
+                            width: isPrimary ? 2 : 1,
+                          ),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black26,
@@ -85,6 +104,61 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                               ),
                       ),
                     ),
+                    if (isPrimary)
+                      Positioned(
+                        left: 6,
+                        bottom: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.star, size: 14, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                _trLegacyText(
+                                  context,
+                                  'Cover',
+                                  ar: 'الغلاف',
+                                  ku: 'سەرەکی',
+                                ),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Positioned(
+                        left: 6,
+                        bottom: 6,
+                        child: InkWell(
+                          onTap: () => _setPrimaryImage(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: EdgeInsets.all(6),
+                            child: Icon(
+                              Icons.star_border,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                     Positioned(
                       right: 6,
                       top: 6,

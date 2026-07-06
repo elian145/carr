@@ -232,6 +232,16 @@ mixin _SellStep4Logic on _SellStep4Fields {
   String _imagePathKey(dynamic item) =>
       item is XFile ? item.path : item.toString().trim();
 
+  void _setPrimaryImage(int index) {
+    if (index <= 0 || index >= _selectedImages.length) return;
+    setState(() {
+      final item = _selectedImages.removeAt(index);
+      _selectedImages.insert(0, item);
+    });
+    unawaited(_syncMediaDraftToParent());
+    unawaited(_saveDraft());
+  }
+
   Future<void> _pickImages() async {
     try {
       // Upload full-resolution images to improve YOLO/OCR accuracy

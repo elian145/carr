@@ -189,6 +189,18 @@ abstract final class _ApiServiceListings {
       );
     }
 
+  static Future<Map<String, dynamic>> setCarPrimaryImage(
+    String carId,
+    String imageUrl,
+  ) async {
+    final id = Uri.encodeComponent(carId.trim());
+    return await ApiService._makeAuthenticatedRequest(
+      'PUT',
+      '/cars/$id/images/primary',
+      body: {'image_url': imageUrl.trim()},
+    );
+  }
+
   static Future<Map<String, dynamic>> signR2ImageUpload({
       String? filename,
       String? contentType,

@@ -404,6 +404,12 @@ class ApiService {
   }) =>
       _ApiServiceListings.attachCarImages(carId, paths, kind: kind);
 
+  static Future<Map<String, dynamic>> setCarPrimaryImage(
+    String carId,
+    String imageUrl,
+  ) =>
+      _ApiServiceListings.setCarPrimaryImage(carId, imageUrl);
+
   static Future<Map<String, dynamic>> signR2ImageUpload({
     String? filename,
     String? contentType,
