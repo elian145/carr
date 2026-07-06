@@ -12,6 +12,7 @@ abstract class _SellStep1Fields extends State<SellStep1Page> {
   bool errTrim = false;
   bool errYear = false;
   bool isYearManualInput = false;
+  bool brandsExpanded = false;
 
   CarSpecIndex? _specIdx;
   String? _specLoadErr;
