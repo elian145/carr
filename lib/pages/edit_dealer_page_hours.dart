@@ -47,29 +47,7 @@ mixin _EditDealerPageHours on _EditDealerPageStyle {
       return _DayHours(enabled: false, is24h: false);
     }
 
-    TimeOfDay? parseOne(String t) {
-      final m = RegExp(
-        r'^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$',
-        caseSensitive: false,
-      ).firstMatch(t);
-      if (m == null) return null;
-      var h = int.tryParse(m.group(1) ?? '');
-      final min = int.tryParse(m.group(2) ?? '0') ?? 0;
-      final ap = (m.group(3) ?? '').toLowerCase();
-      if (h == null) return null;
-      if (min < 0 || min > 59) return null;
-      if (ap.isNotEmpty) {
-        if (h < 1 || h > 12) return null;
-        if (ap == 'am') {
-          h = h == 12 ? 0 : h;
-        } else if (ap == 'pm') {
-          h = h == 12 ? 12 : h + 12;
-        }
-      } else {
-        if (h < 0 || h > 23) return null;
-      }
-      return TimeOfDay(hour: h, minute: min);
-    }
+    TimeOfDay? parseOne(String t) => parseHourTimeToken(t);
 
     // Try to parse "start - end"
     final parts = s.split(RegExp(r'\s*-\s*'));

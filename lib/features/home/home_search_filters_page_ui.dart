@@ -399,30 +399,133 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     return [...picked, ...extras];
   }
 
-  Future<void> _openSearchBrandPicker(
-    BuildContext context,
-    void Function(void Function()) setStateDialog,
-  ) async {
-    final brand = await _showHomeBrandPickerDialog(
-      context,
-      initialBrand: _homeSelectedBrand,
+  List<String> _searchCollapsedBrands() {
+    final featured = _searchFeaturedBrands();
+    final selected = _homeSelectedBrand;
+    if (selected == null || selected.isEmpty) return featured;
+    final rest = featured.where((b) => b != selected).toList();
+    return [selected, ...rest];
+  }
+
+  static const double _searchBrandRowHeight = 92;
+  static const double _searchBrandTileWidth = 72;
+  static const double _searchBrandGridSpacing = 10;
+  static const int _searchBrandExpandedVisibleRows = 4;
+
+  int _searchBrandGridCrossAxisCount(double maxWidth) {
+    return ((maxWidth + _searchBrandGridSpacing) /
+            (_searchBrandTileWidth + _searchBrandGridSpacing))
+        .floor()
+        .clamp(3, 8);
+  }
+
+  Widget _searchBrandActionTile({
+    required BuildContext context,
+    required Color labelColor,
+    required bool isLight,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: _searchBrandTileWidth,
+        child: Column(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isLight
+                    ? Colors.white
+                    : Colors.black.withValues(alpha: 0.2),
+                border: Border.all(
+                  color: const Color(0xFFE0E0E5),
+                ),
+              ),
+              child: Icon(
+                icon,
+                color: _searchAccent,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: labelColor,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
-    if (brand == null) return;
-    setState(() {
-      _homeSetSelectedBrand(brand.isEmpty ? null : brand);
-      clearFiltersOnVehicleChange();
-    });
-    setStateDialog(() {});
+  }
+
+  Widget _searchBrandTile({
+    required BuildContext context,
+    required String brand,
+    required bool selected,
+    required Color labelColor,
+    required VoidCallback onTap,
+  }) {
+    final display = CarNameTranslations.getLocalizedBrand(
+              context,
+              brand,
+            ).isNotEmpty
+        ? CarNameTranslations.getLocalizedBrand(context, brand)
+        : brand;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: _searchBrandTileWidth,
+        child: Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selected ? _searchAccent : const Color(0xFFE0E0E5),
+                  width: selected ? 2 : 1,
+                ),
+              ),
+              child: _searchBrandLogoCircle(brand),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              display,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: selected ? _searchAccent : labelColor,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _searchMakeSection(
     BuildContext context,
-    StateSetter setStateDialog,
-  ) {
+    StateSetter setStateDialog, {
+    required bool brandsExpanded,
+    required VoidCallback onToggleBrandsExpanded,
+  }) {
     final loc = AppLocalizations.of(context)!;
     final isLight = Theme.of(context).brightness == Brightness.light;
     final labelColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
-    final featured = _searchFeaturedBrands();
+    final collapsedBrands = _searchCollapsedBrands();
     final hasBrand = _homeSelectedBrand != null;
     final hasModel =
         _homeSingleSelectedBrand != null &&
@@ -453,114 +556,104 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 },
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              height: 92,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: featured.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  if (index == featured.length) {
-                    return InkWell(
-                      onTap: () => _openSearchBrandPicker(
-                        context,
-                        setStateDialog,
+            if (brandsExpanded)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount =
+                      _searchBrandGridCrossAxisCount(constraints.maxWidth);
+                  final expandedHeight = _searchBrandRowHeight *
+                          _searchBrandExpandedVisibleRows +
+                      _searchBrandGridSpacing *
+                          (_searchBrandExpandedVisibleRows - 1);
+                  return SizedBox(
+                    height: expandedHeight,
+                    child: GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: _searchBrandGridSpacing,
+                        crossAxisSpacing: _searchBrandGridSpacing,
+                        mainAxisExtent: _searchBrandRowHeight,
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      child: SizedBox(
-                        width: 72,
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isLight
-                                    ? Colors.white
-                                    : Colors.black.withValues(alpha: 0.2),
-                                border: Border.all(
-                                  color: const Color(0xFFE0E0E5),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.more_horiz,
-                                color: _searchAccent,
-                              ),
+                      itemCount: homeBrands.length + 1,
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          return _searchBrandActionTile(
+                            context: context,
+                            labelColor: labelColor,
+                            isLight: isLight,
+                            icon: Icons.expand_less,
+                            label: _trLegacyText(
+                              context,
+                              'Less',
+                              ar: 'أقل',
+                              ku: 'کەمتر',
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _trLegacyText(
-                                context,
-                                'More',
-                                ar: 'المزيد',
-                                ku: 'زیاتر',
-                              ),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: labelColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                  final brand = featured[index];
-                  final selected = _homeSelectedBrand == brand;
-                  final display = CarNameTranslations.getLocalizedBrand(
-                            context,
-                            brand,
-                          ).isNotEmpty
-                      ? CarNameTranslations.getLocalizedBrand(context, brand)
-                      : brand;
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        _homeToggleBrand(brand);
-                        clearFiltersOnVehicleChange();
-                      });
-                      setStateDialog(() {});
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      width: 72,
-                      child: Column(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selected
-                                    ? _searchAccent
-                                    : const Color(0xFFE0E0E5),
-                                width: selected ? 2 : 1,
-                              ),
-                            ),
-                            child: _searchBrandLogoCircle(brand),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            display,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: selected ? _searchAccent : labelColor,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                            onTap: onToggleBrandsExpanded,
+                          );
+                        }
+                        final brand = homeBrands[index - 1];
+                        final selected = _homeSelectedBrand == brand;
+                        return _searchBrandTile(
+                          context: context,
+                          brand: brand,
+                          selected: selected,
+                          labelColor: labelColor,
+                          onTap: () {
+                            setState(() {
+                              _homeToggleBrand(brand);
+                              clearFiltersOnVehicleChange();
+                            });
+                            setStateDialog(() {});
+                          },
+                        );
+                      },
                     ),
                   );
                 },
+              )
+            else
+              SizedBox(
+                height: _searchBrandRowHeight,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: collapsedBrands.length + 1,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(width: _searchBrandGridSpacing),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      return _searchBrandActionTile(
+                        context: context,
+                        labelColor: labelColor,
+                        isLight: isLight,
+                        icon: Icons.more_horiz,
+                        label: _trLegacyText(
+                          context,
+                          'More',
+                          ar: 'المزيد',
+                          ku: 'زیاتر',
+                        ),
+                        onTap: onToggleBrandsExpanded,
+                      );
+                    }
+                    final brand = collapsedBrands[index - 1];
+                    final selected = _homeSelectedBrand == brand;
+                    return _searchBrandTile(
+                      context: context,
+                      brand: brand,
+                      selected: selected,
+                      labelColor: labelColor,
+                      onTap: () {
+                        setState(() {
+                          _homeToggleBrand(brand);
+                          clearFiltersOnVehicleChange();
+                        });
+                        setStateDialog(() {});
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
             if (hasBrand && _homeSingleSelectedBrand != null) ...[
               const SizedBox(height: 16),
               _searchSectionHeader(
@@ -1527,12 +1620,19 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
 
   List<Widget> _searchFiltersPageScrollBody(
     BuildContext context,
-    StateSetter setStateDialog,
-  ) {
+    StateSetter setStateDialog, {
+    required bool brandsExpanded,
+    required VoidCallback onToggleBrandsExpanded,
+  }) {
     final style = _searchMoreFiltersStyle(context);
 
     return [
-      _searchMakeSection(context, setStateDialog),
+      _searchMakeSection(
+        context,
+        setStateDialog,
+        brandsExpanded: brandsExpanded,
+        onToggleBrandsExpanded: onToggleBrandsExpanded,
+      ),
       _searchAllFilterSections(context, setStateDialog, style),
     ];
   }
@@ -1552,8 +1652,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         fullscreenDialog: true,
         builder: (pageContext) {
           var didRequestSearchFocus = false;
+          var searchBrandsExpanded = false;
           return StatefulBuilder(
             builder: (context, setStateDialog) {
+              void toggleSearchBrandsExpanded() {
+                setStateDialog(() {
+                  searchBrandsExpanded = !searchBrandsExpanded;
+                });
+              }
               if (focusSearchField && !didRequestSearchFocus) {
                 didRequestSearchFocus = true;
                 _focusSearchFiltersKeywordField();
@@ -1642,6 +1748,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                               children: _searchFiltersPageScrollBody(
                                 context,
                                 setStateDialog,
+                                brandsExpanded: searchBrandsExpanded,
+                                onToggleBrandsExpanded:
+                                    toggleSearchBrandsExpanded,
                               ),
                             ),
                           ),

@@ -29,29 +29,6 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     }
   }
 
-  TimeOfDay? _parseHourTime(String raw) {
-    final m = RegExp(
-      r'^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$',
-      caseSensitive: false,
-    ).firstMatch(raw);
-    if (m == null) return null;
-    int? h = int.tryParse(m.group(1) ?? '');
-    final min = int.tryParse(m.group(2) ?? '0') ?? 0;
-    final ap = (m.group(3) ?? '').toLowerCase();
-    if (h == null || min < 0 || min > 59) return null;
-    if (ap.isNotEmpty) {
-      if (h < 1 || h > 12) return null;
-      if (ap == 'am') {
-        h = h == 12 ? 0 : h;
-      } else if (ap == 'pm') {
-        h = h == 12 ? 12 : h + 12;
-      }
-    } else {
-      if (h < 0 || h > 23) return null;
-    }
-    return TimeOfDay(hour: h, minute: min);
-  }
-
   String _formatLocalTime(TimeOfDay t) {
     return MaterialLocalizations.of(context).formatTimeOfDay(
       t,
@@ -81,8 +58,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
 
     final parts = v.split(RegExp(r'\s*-\s*'));
     if (parts.length >= 2) {
-      final a = _parseHourTime(parts[0]);
-      final b = _parseHourTime(parts[1]);
+      final a = parseHourTimeToken(parts[0]);
+      final b = parseHourTimeToken(parts[1]);
       if (a != null && b != null) {
         return '${_formatLocalTime(a)} - ${_formatLocalTime(b)}';
       }
