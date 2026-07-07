@@ -35,7 +35,7 @@ export default function UsersPage() {
             onClick={() => {
               if (!data) return;
               downloadCsv(
-                `carzo-users-page-${page}.csv`,
+                `carnet-users-page-${page}.csv`,
                 ["Name", "Username", "Email", "Phone", "Type", "Active", "Admin", "Joined"],
                 data.users.map((u) => [
                   displayName(u),

@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-surface via-black to-brand-950/30 p-4">
       <div className="w-full max-w-md rounded-2xl border border-surface-border bg-surface-card p-8 shadow-2xl">
         <div className="mb-8 text-center">
-          <p className="text-2xl font-bold text-brand-400">CARZO</p>
+          <p className="text-2xl font-bold text-brand-400">CarNet</p>
           <h1 className="mt-2 text-xl font-semibold">Admin sign in</h1>
           <p className="mt-2 text-sm text-surface-muted">
             Use an account with admin privileges on the server.

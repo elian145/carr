@@ -4,8 +4,8 @@ import { AdminLayout } from "@/components/AdminLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CARZO Admin",
-  description: "CARZO platform administration dashboard",
+  title: "CarNet Admin",
+  description: "CarNet platform administration dashboard",
 };
 
 export default function RootLayout({

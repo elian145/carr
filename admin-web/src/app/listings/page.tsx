@@ -52,7 +52,7 @@ export default function ListingsPage() {
             disabled={filtered.length === 0}
             onClick={() => {
               downloadCsv(
-                `carzo-listings-page-${page}.csv`,
+                `carnet-listings-page-${page}.csv`,
                 ["ID", "Title", "Brand", "Model", "Year", "Price", "Location", "Status", "Views", "Created"],
                 filtered.map((c) => [
                   c.id,

@@ -38,7 +38,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-surface-border bg-black/30">
         <div className="border-b border-surface-border px-5 py-5">
-          <p className="text-lg font-bold text-brand-400">CARZO</p>
+          <p className="text-lg font-bold text-brand-400">CarNet</p>
           <p className="text-xs text-surface-muted">Admin dashboard</p>
         </div>
         <nav className="flex-1 space-y-1 p-3">

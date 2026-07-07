@@ -1,6 +1,6 @@
-# CARZO Admin Web Dashboard
+# CarNet Admin Web Dashboard
 
-Browser-based admin dashboard for the CARZO car marketplace. Connects to the existing Flask API (`/api/admin/*`).
+Browser-based admin dashboard for the CarNet car marketplace. Connects to the existing Flask API (`/api/admin/*`).
 
 ## Features
 
