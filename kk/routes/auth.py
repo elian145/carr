@@ -34,7 +34,7 @@ from ..auth import (
 )
 from ..extensions import mail
 from ..models import EmailVerification, Message, PasswordReset, PendingSignup, TokenBlacklist, User, db
-from ..security import rate_limit, validate_input_sanitization
+from ..security import check_rate_limit, rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
 
@@ -164,6 +164,54 @@ def _generate_unique_username(prefix: str = "u") -> str:
         if not User.query.filter_by(username=candidate).first():
             return candidate
     return f"{prefix}_{secrets.token_hex(8)}".lower()
+
+
+def _get_active_user_by_phone(phone_digits: str) -> User | None:
+    return User.query.filter_by(phone_number=phone_digits, is_active=True).first()
+
+
+def _phone_otp_create_if_missing(data: dict) -> bool:
+    purpose = (data.get("purpose") or "").strip().lower()
+    if purpose == "login":
+        return False
+    if purpose == "signup":
+        return True
+    if "create_if_missing" in data:
+        return _to_bool(data.get("create_if_missing"))
+    return True
+
+
+def _resolve_user_for_phone_otp(
+    phone_digits: str,
+    *,
+    create_if_missing: bool,
+    username: str | None = None,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    email: str | None = None,
+    password: str | None = None,
+    is_dealer_requested: bool = False,
+    dealership_name: str | None = None,
+    dealership_phone: str | None = None,
+    dealership_location: str | None = None,
+) -> User:
+    if create_if_missing:
+        return _get_or_create_user_for_phone(
+            phone_digits,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            is_dealer_requested=is_dealer_requested,
+            dealership_name=dealership_name,
+            dealership_phone=dealership_phone,
+            dealership_location=dealership_location,
+        )
+    user = _get_active_user_by_phone(phone_digits)
+    if not user:
+        raise ValueError("account_not_found")
+    return user
 
 
 def _get_or_create_user_for_phone(
@@ -1373,9 +1421,8 @@ def send_phone_verification():
 # --- Option D auth endpoints (email+password AND phone OTP as separate options) ---
 
 @bp.route("/api/auth/phone/start", methods=["POST"])
-@rate_limit(max_requests=3, window_minutes=10)
 def phone_start():
-    """Start phone OTP login/signup (passwordless). Auto-creates user on first use."""
+    """Start phone OTP login/signup (passwordless)."""
     try:
         data = request.get_json(silent=True) or {}
         data = validate_input_sanitization(data)
@@ -1395,9 +1442,24 @@ def phone_start():
             if not dealership_location:
                 return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
 
+        create_if_missing = _phone_otp_create_if_missing(data)
+        if not create_if_missing and not _get_active_user_by_phone(phone_digits):
+            return jsonify({
+                "message": "No account found with this phone number. Please sign up first.",
+                "code": "account_not_found",
+            }), 404
+
+        limited = check_rate_limit(
+            max_requests=_SEND_OTP_MAX_REQUESTS,
+            window_minutes=_SEND_OTP_WINDOW_MINUTES,
+        )
+        if limited is not None:
+            return limited
+
         try:
-            user = _get_or_create_user_for_phone(
+            user = _resolve_user_for_phone_otp(
                 phone_digits,
+                create_if_missing=create_if_missing,
                 username=(data.get("username") or None),
                 first_name=(data.get("first_name") or data.get("firstName") or None),
                 last_name=(data.get("last_name") or data.get("lastName") or None),
@@ -1409,7 +1471,11 @@ def phone_start():
                 dealership_location=dealership_location or None,
             )
         except ValueError as e:
-            # Avoid leaking account existence details.
+            if str(e) == "account_not_found":
+                return jsonify({
+                    "message": "No account found with this phone number. Please sign up first.",
+                    "code": "account_not_found",
+                }), 404
             current_app.logger.info("phone_start validation error: %s", str(e))
             return jsonify({"message": "Invalid input"}), 400
         if user.is_verified:
@@ -1484,9 +1550,11 @@ def phone_verify():
         if len(code) != 6 or not code.isdigit():
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
+        create_if_missing = _phone_otp_create_if_missing(data)
         try:
-            user = _get_or_create_user_for_phone(
+            user = _resolve_user_for_phone_otp(
                 phone_digits,
+                create_if_missing=create_if_missing,
                 username=(data.get("username") or None),
                 first_name=(data.get("first_name") or data.get("firstName") or None),
                 last_name=(data.get("last_name") or data.get("lastName") or None),
@@ -1498,6 +1566,11 @@ def phone_verify():
                 dealership_location=dealership_location or None,
             )
         except ValueError as e:
+            if str(e) == "account_not_found":
+                return jsonify({
+                    "message": "No account found with this phone number. Please sign up first.",
+                    "code": "account_not_found",
+                }), 404
             current_app.logger.info("phone_verify validation error: %s", str(e))
             return jsonify({"message": "Invalid input"}), 400
 

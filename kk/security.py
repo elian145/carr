@@ -36,6 +36,74 @@ def _redis_client():
 # Fallback in-process storage (dev only). Not safe across processes/replicas.
 rate_limit_storage: dict[str, list[float]] = {}
 
+
+def _rate_limit_key(per_ip: bool, window_s: int) -> str:
+    identifier = None
+    if per_ip:
+        identifier = _client_ip()
+    else:
+        try:
+            user_id = get_jwt_identity()
+            identifier = f"user:{user_id}" if user_id else _client_ip()
+        except Exception:
+            identifier = _client_ip()
+    route = (request.endpoint or request.path or "unknown").replace(" ", "_")
+    return f"rl:{route}:{identifier}:{window_s}"
+
+
+def _rate_limit_response(max_requests: int, window_minutes: int, retry_after: int):
+    return (
+        jsonify(
+            {
+                "message": (
+                    f"Rate limit exceeded. Maximum {max_requests} requests "
+                    f"per {window_minutes} minutes."
+                ),
+                "retry_after": max(0, int(retry_after)),
+            }
+        ),
+        429,
+    )
+
+
+def check_rate_limit(max_requests=10, window_minutes=60, per_ip=True):
+    """
+    Return a Flask (response, status) tuple when rate-limited, else None.
+  """
+    env = (os.environ.get("APP_ENV") or "").strip().lower()
+    if env == "testing" or bool(current_app.config.get("TESTING")):
+        return None
+
+    window_s = int(window_minutes * 60)
+    key = _rate_limit_key(per_ip=per_ip, window_s=window_s)
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            n = r.incr(key)
+            if n == 1:
+                r.expire(key, window_s)
+            if n > int(max_requests):
+                ttl = r.ttl(key)
+                retry_after = max(0, int(ttl) if ttl is not None else window_s)
+                return _rate_limit_response(max_requests, window_minutes, retry_after)
+            return None
+        except Exception:
+            pass
+
+    now = time.time()
+    window_start = now - window_s
+    times = rate_limit_storage.get(key, [])
+    times = [t for t in times if t > window_start]
+    if len(times) >= max_requests:
+        oldest = min(times) if times else now
+        retry_after = max(1, int(window_s - (now - oldest)))
+        return _rate_limit_response(max_requests, window_minutes, retry_after)
+    times.append(now)
+    rate_limit_storage[key] = times
+    return None
+
+
 def rate_limit(max_requests=10, window_minutes=60, per_ip=True):
     """
     Rate limiting decorator
@@ -43,77 +111,13 @@ def rate_limit(max_requests=10, window_minutes=60, per_ip=True):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Tests should not be flaky due to global in-process rate limit state.
-            env = (os.environ.get("APP_ENV") or "").strip().lower()
-            if env == "testing" or bool(current_app.config.get("TESTING")):
-                return f(*args, **kwargs)
-
-            # Identifier: IP (default) or user id (if requested).
-            identifier = None
-            if per_ip:
-                identifier = _client_ip()
-            else:
-                try:
-                    user_id = get_jwt_identity()
-                    identifier = f"user:{user_id}" if user_id else _client_ip()
-                except Exception:
-                    identifier = _client_ip()
-
-            window_s = int(window_minutes * 60)
-            # Bucket by route+identifier so different endpoints don't share a single counter.
-            route = (request.endpoint or request.path or "unknown").replace(" ", "_")
-            key = f"rl:{route}:{identifier}:{window_s}"
-
-            r = _redis_client()
-            if r is not None:
-                try:
-                    # Atomic-ish: INCR then set expiry if new.
-                    n = r.incr(key)
-                    if n == 1:
-                        r.expire(key, window_s)
-                    if n > int(max_requests):
-                        ttl = r.ttl(key)
-                        return (
-                            jsonify(
-                                {
-                                    "message": f"Rate limit exceeded. Maximum {max_requests} requests per {window_minutes} minutes.",
-                                    "retry_after": max(0, int(ttl) if ttl is not None else window_s),
-                                }
-                            ),
-                            429,
-                        )
-                    return f(*args, **kwargs)
-                except Exception:
-                    # Fall through to in-memory on any redis error.
-                    pass
-
-            # In-memory fallback (dev only; not shared across workers).
-            env = (os.environ.get("APP_ENV") or "").strip().lower()
-            if env == "production":
-                try:
-                    current_app.logger.warning(
-                        "Rate limit using in-process storage (REDIS_URL unavailable). "
-                        "Limits are not shared across Gunicorn workers."
-                    )
-                except Exception:
-                    pass
-
-            now = time.time()
-            window_start = now - window_s
-            times = rate_limit_storage.get(key, [])
-            times = [t for t in times if t > window_start]
-            if len(times) >= max_requests:
-                return (
-                    jsonify(
-                        {
-                            "message": f"Rate limit exceeded. Maximum {max_requests} requests per {window_minutes} minutes.",
-                            "retry_after": window_s,
-                        }
-                    ),
-                    429,
-                )
-            times.append(now)
-            rate_limit_storage[key] = times
+            limited = check_rate_limit(
+                max_requests=max_requests,
+                window_minutes=window_minutes,
+                per_ip=per_ip,
+            )
+            if limited is not None:
+                return limited
             return f(*args, **kwargs)
         return decorated_function
     return decorator

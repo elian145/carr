@@ -203,6 +203,36 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Send a one-time code to [phoneNumber] for passwordless login (existing accounts only).
+  Future<Map<String, dynamic>> sendPhoneLoginCode(String phoneNumber) async {
+    return ApiService.phoneStart(
+      phoneNumber: phoneNumber,
+      createIfMissing: false,
+    );
+  }
+
+  /// Verify the phone OTP and sign in (existing accounts only).
+  Future<Map<String, dynamic>> loginWithPhoneOtp(
+    String phoneNumber,
+    String code,
+  ) async {
+    await initialize();
+    _setLoading(true);
+
+    try {
+      final response = await ApiService.phoneVerify(
+        phoneNumber: phoneNumber,
+        code: code,
+        createIfMissing: false,
+      );
+      final userFromVerify = userMapFrom(response['user']);
+      await activateSession(user: userFromVerify);
+      return response;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Logout user
   Future<void> logout() async {
     _setLoading(true);

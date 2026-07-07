@@ -235,6 +235,16 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("refresh_token", data)
         self.assertIn("user", data)
 
+    def test_phone_otp_login_rejects_unknown_number(self):
+        phone = "07000009999"
+        start = self.client.post(
+            "/api/auth/phone/start",
+            json={"phone_number": phone, "create_if_missing": False},
+        )
+        self.assertEqual(start.status_code, 404, start.data)
+        payload = start.get_json() or {}
+        self.assertEqual(payload.get("code"), "account_not_found")
+
     def test_admin_endpoints_require_admin(self):
         dash = self.client.get("/api/admin/dashboard", headers=self._auth(self.viewer_token))
         self.assertEqual(dash.status_code, 403, dash.data)

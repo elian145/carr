@@ -98,10 +98,11 @@ abstract final class _ApiServiceHttp {
       if (code == 429) {
         String message = 'Too many requests. Please try again later.';
         int? retryAfterSeconds;
+        Map<String, dynamic> err = <String, dynamic>{};
 
         try {
-          final Map<String, dynamic> err = body.isNotEmpty
-              ? json.decode(body)
+          err = body.isNotEmpty
+              ? Map<String, dynamic>.from(json.decode(body) as Map)
               : <String, dynamic>{};
           final msg = (err['message'] ?? err['error'] ?? '').toString().trim();
           if (msg.isNotEmpty) {
@@ -121,12 +122,16 @@ abstract final class _ApiServiceHttp {
         }
 
         if (retryAfterSeconds != null && retryAfterSeconds > 0) {
-          final minutes = (retryAfterSeconds / 60).ceil();
-          message =
-              '$message Please try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+          final lower = message.toLowerCase();
+          if (!lower.contains('try again')) {
+            final waitLabel = retryAfterSeconds < 60
+                ? '$retryAfterSeconds second${retryAfterSeconds == 1 ? '' : 's'}'
+                : '${(retryAfterSeconds / 60).ceil()} minute${(retryAfterSeconds / 60).ceil() == 1 ? '' : 's'}';
+            message = '$message Please try again in $waitLabel.';
+          }
         }
 
-        throw ApiException(statusCode: code, message: message);
+        throw ApiException(statusCode: code, message: message, body: err);
       }
       try {
         final Map<String, dynamic> err = body.isNotEmpty
