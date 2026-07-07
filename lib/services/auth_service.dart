@@ -203,19 +203,52 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Send a one-time code to [phoneNumber] for passwordless login (existing accounts only).
-  Future<Map<String, dynamic>> sendPhoneLoginCode(String phoneNumber) async {
+  static bool isDealerAccount(Map<String, dynamic>? user) {
+    if (user == null) return false;
+    final accountType =
+        (user['account_type'] ?? 'user').toString().trim().toLowerCase();
+    final dealerStatus =
+        (user['dealer_status'] ?? 'none').toString().trim().toLowerCase();
+    if (accountType == 'dealer') return true;
+    if (dealerStatus == 'pending' ||
+        dealerStatus == 'approved' ||
+        dealerStatus == 'rejected') {
+      return true;
+    }
+    return false;
+  }
+
+  /// Send a one-time code to [phoneNumber] for passwordless login or signup.
+  Future<Map<String, dynamic>> sendPhoneLoginCode(
+    String phoneNumber, {
+    bool createIfMissing = true,
+    String? purpose,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
+  }) async {
     return ApiService.phoneStart(
       phoneNumber: phoneNumber,
-      createIfMissing: false,
+      createIfMissing: createIfMissing,
+      purpose: purpose,
+      isDealer: isDealer,
+      dealershipName: dealershipName,
+      dealershipPhone: dealershipPhone,
+      dealershipLocation: dealershipLocation,
     );
   }
 
-  /// Verify the phone OTP and sign in (existing accounts only).
+  /// Verify the phone OTP and sign in, creating an account when the number is new.
   Future<Map<String, dynamic>> loginWithPhoneOtp(
     String phoneNumber,
-    String code,
-  ) async {
+    String code, {
+    String? purpose,
+    bool isDealer = false,
+    String? dealershipName,
+    String? dealershipPhone,
+    String? dealershipLocation,
+  }) async {
     await initialize();
     _setLoading(true);
 
@@ -223,7 +256,12 @@ class AuthService extends ChangeNotifier {
       final response = await ApiService.phoneVerify(
         phoneNumber: phoneNumber,
         code: code,
-        createIfMissing: false,
+        createIfMissing: true,
+        purpose: purpose,
+        isDealer: isDealer,
+        dealershipName: dealershipName,
+        dealershipPhone: dealershipPhone,
+        dealershipLocation: dealershipLocation,
       );
       final userFromVerify = userMapFrom(response['user']);
       await activateSession(user: userFromVerify);

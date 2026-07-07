@@ -61,7 +61,10 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
                 if (at == 'dealer' && dn.isNotEmpty) return dn;
                 if (at == 'dealer' && full.isNotEmpty) return full;
                 if (at == 'dealer') return 'Dealer';
-                return profile?['username']?.toString() ?? 'User';
+                final phone =
+                    (profile?['phone_number'] ?? '').toString().trim();
+                if (phone.isNotEmpty) return phone;
+                return 'User';
               }(),
               style: TextStyle(
                 fontSize: 24,

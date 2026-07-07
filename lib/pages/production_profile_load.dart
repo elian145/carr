@@ -112,7 +112,7 @@ mixin _ProfilePageLoad on _ProfilePageStyle {
                 Navigator.pop(ctx);
                 Navigator.pushReplacementNamed(context, '/signup');
               },
-              child: Text(AppLocalizations.of(ctx)!.signupTitle),
+              child: Text(AppLocalizations.of(ctx)!.dealerFallbackLabel),
             ),
             FilledButton(
               onPressed: () {

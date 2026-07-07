@@ -1,7 +1,9 @@
 part of 'production_auth_pages.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, this.initialDealerMode = false});
+
+  final bool initialDealerMode;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -9,20 +11,23 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   bool _loading = false;
   bool _sendingOtp = false;
   bool _otpSent = false;
-  String _authType = 'password';
+  late bool _isDealer;
+  bool _pendingNewDealerAccount = false;
   String? _devOtp;
 
   @override
+  void initState() {
+    super.initState();
+    _isDealer = widget.initialDealerMode;
+  }
+
+  @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
@@ -39,7 +44,15 @@ class _LoginPageState extends State<LoginPage> {
     return false;
   }
 
-  Future<void> _showAccountNotFoundDialog() async {
+  bool _isPersonalAccountConflict(Object e) {
+    if (e is ApiException) {
+      final code = e.body?['code']?.toString();
+      if (code == 'personal_account_exists') return true;
+    }
+    return false;
+  }
+
+  Future<void> _showPersonalAccountConflictDialog() async {
     final loc = AppLocalizations.of(context)!;
     await showDialog<void>(
       context: context,
@@ -48,9 +61,9 @@ class _LoginPageState extends State<LoginPage> {
         content: Text(
           trLegacyText(
             context,
-            'No account found with this phone number. Please create an account first.',
-            ar: 'لا يوجد حساب بهذا الرقم. يرجى إنشاء حساب أولاً.',
-            ku: 'هیچ هەژمارێک بەم ژمارەیە نەدۆزرایەوە. تکایە سەرەتا هەژمار دروست بکە.',
+            'This phone number is registered to a personal account. Please use personal login instead.',
+            ar: 'رقم الهاتف هذا مسجل لحساب شخصي. يرجى استخدام تسجيل الدخول الشخصي.',
+            ku: 'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی کەسی تۆمارکراوە. تکایە چوونەژوورەوەی کەسی بەکاربهێنە.',
           ),
         ),
         actions: [
@@ -61,20 +74,31 @@ class _LoginPageState extends State<LoginPage> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pushReplacementNamed(context, '/signup');
+              _setAccountType(false);
             },
-            child: Text(loc.createAccount),
+            child: Text(loc.personalAccountLabel),
           ),
         ],
       ),
     );
   }
 
+  void _resetOtpState() {
+    _otpSent = false;
+    _otpController.clear();
+    _devOtp = null;
+    _pendingNewDealerAccount = false;
+  }
+
+  void _setAccountType(bool isDealer) {
+    if (_isDealer == isDealer) return;
+    setState(() {
+      _isDealer = isDealer;
+      _resetOtpState();
+    });
+  }
+
   Future<void> _showApiErrorDialog(ApiException e) async {
-    if (_isAccountNotFound(e)) {
-      await _showAccountNotFoundDialog();
-      return;
-    }
     String msg = e.message;
     if (e.statusCode == 429) {
       final retryAfter = e.body?['retry_after'];
@@ -102,50 +126,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _loading = true;
-    });
-    try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.login(
-        _usernameController.text.trim(),
-        _passwordController.text,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-    } catch (e, st) {
-      if (!mounted) return;
-      logNonFatal(e, st, 'LoginPage');
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(AppLocalizations.of(context)!.errorTitle),
-          content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: AppLocalizations.of(context)!.error,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(AppLocalizations.of(context)!.okAction),
-            ),
-          ],
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    }
-  }
-
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
@@ -164,12 +144,40 @@ class _LoginPageState extends State<LoginPage> {
       );
       return;
     }
+
     setState(() {
       _sendingOtp = true;
     });
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      final resp = await authService.sendPhoneLoginCode(_formattedPhone());
+      final dealerPurpose = _isDealer ? 'dealer' : null;
+      Map<String, dynamic> resp;
+      if (_isDealer) {
+        try {
+          resp = await authService.sendPhoneLoginCode(
+            _formattedPhone(),
+            createIfMissing: false,
+            purpose: dealerPurpose,
+          );
+          _pendingNewDealerAccount = false;
+        } on ApiException catch (e) {
+          if (_isPersonalAccountConflict(e)) {
+            if (!mounted) return;
+            _resetOtpState();
+            await _showPersonalAccountConflictDialog();
+            return;
+          }
+          if (!_isAccountNotFound(e)) rethrow;
+          resp = await authService.sendPhoneLoginCode(
+            _formattedPhone(),
+            purpose: dealerPurpose,
+          );
+          _pendingNewDealerAccount = true;
+        }
+      } else {
+        resp = await authService.sendPhoneLoginCode(_formattedPhone());
+        _pendingNewDealerAccount = false;
+      }
       if (!mounted) return;
       setState(() {
         _otpSent = true;
@@ -189,6 +197,11 @@ class _LoginPageState extends State<LoginPage> {
       }
     } on ApiException catch (e) {
       if (!mounted) return;
+      if (_isPersonalAccountConflict(e)) {
+        _resetOtpState();
+        await _showPersonalAccountConflictDialog();
+        return;
+      }
       await _showApiErrorDialog(e);
     } catch (e, st) {
       if (!mounted) return;
@@ -223,25 +236,46 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _loginWithPhone() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _loading = true;
     });
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      await authService.loginWithPhoneOtp(
+      final dealerPurpose = _isDealer ? 'dealer' : null;
+      final response = await authService.loginWithPhoneOtp(
         _formattedPhone(),
         _otpController.text.trim(),
+        purpose: dealerPurpose,
       );
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+
+      if (_isDealer &&
+          !_pendingNewDealerAccount &&
+          !AuthService.isDealerAccount(AuthService.userMapFrom(response['user']))) {
+        await authService.logout();
+        _resetOtpState();
+        await _showPersonalAccountConflictDialog();
+        return;
+      }
+
+      if (_isDealer && _pendingNewDealerAccount) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/dealer-onboarding',
+          (route) => false,
+        );
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      }
     } catch (e, st) {
       if (!mounted) return;
       logNonFatal(e, st, 'LoginPage.phoneOtp');
-      if (_isAccountNotFound(e)) {
-        await _showAccountNotFoundDialog();
-        return;
-      }
       if (e is ApiException) {
+        if (_isPersonalAccountConflict(e)) {
+          _resetOtpState();
+          await _showPersonalAccountConflictDialog();
+          return;
+        }
         await _showApiErrorDialog(e);
         return;
       }
@@ -276,10 +310,20 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final isPhoneAuth = _authType == 'phone';
 
     return Scaffold(
-      appBar: AppBar(title: Text(loc.loginTitle)),
+      appBar: AppBar(
+        title: Text(
+          _isDealer
+              ? trLegacyText(
+                  context,
+                  'Dealer account',
+                  ar: 'حساب الوكالة',
+                  ku: 'هەژماری ناوەندی فرۆشتن',
+                )
+              : loc.loginTitle,
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         child: Form(
@@ -290,9 +334,9 @@ class _LoginPageState extends State<LoginPage> {
               Text(
                 trLegacyText(
                   context,
-                  'Sign in with:',
-                  ar: 'تسجيل الدخول باستخدام:',
-                  ku: 'چوونەژوورەوە بە:',
+                  'Account type',
+                  ar: 'نوع الحساب',
+                  ku: 'جۆری هەژمار',
                 ),
                 style: const TextStyle(
                   fontSize: 16,
@@ -301,30 +345,25 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 8),
               RadioGroup<String>(
-                groupValue: _authType,
+                groupValue: _isDealer ? 'dealer' : 'personal',
                 onChanged: (value) {
                   if (value == null) return;
-                  setState(() {
-                    _authType = value;
-                    _otpSent = false;
-                    _otpController.clear();
-                    _devOtp = null;
-                  });
+                  _setAccountType(value == 'dealer');
                 },
                 child: Row(
                   children: [
                     Expanded(
                       child: RadioListTile<String>(
-                        title: Text(loc.passwordLabel),
-                        value: 'password',
+                        title: Text(loc.personalAccountLabel),
+                        value: 'personal',
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                       ),
                     ),
                     Expanded(
                       child: RadioListTile<String>(
-                        title: Text(loc.phoneLabel),
-                        value: 'phone',
+                        title: Text(loc.dealerFallbackLabel),
+                        value: 'dealer',
                         contentPadding: EdgeInsets.zero,
                         dense: true,
                       ),
@@ -333,91 +372,79 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (!isPhoneAuth) ...[
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: InputDecoration(
-                    labelText: loc.emailOrPhoneLabel,
-                    hintText: loc.enterEmailOrPhoneHint,
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? loc.emailOrPhoneRequired
-                      : null,
+              Text(
+                trLegacyText(
+                  context,
+                  'Enter your phone number to log in or create an account.',
+                  ar: 'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.',
+                  ku: 'ژمارەی تەلەفۆنەکەت بنووسە بۆ چوونەژوورەوە یان دروستکردنی هەژمار.',
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: loc.passwordLabel,
-                  ),
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? loc.requiredField
-                      : null,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
-              ] else ...[
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: loc.enterPhoneNumber,
-                    hintText: '7XX XXX XXXX',
-                    prefixText: '+964 ',
-                  ),
-                  inputFormatters: [
-                    services.FilteringTextInputFormatter.allow(
-                      RegExp(r'[0-9]'),
-                    ),
-                    services.LengthLimitingTextInputFormatter(10),
-                  ],
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? loc.requiredField
-                      : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: loc.enterPhoneNumber,
+                  hintText: '7XX XXX XXXX',
+                  prefixText: '+964 ',
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _otpController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: loc.sixDigitCodeLabel,
-                        ),
-                        inputFormatters: [
-                          services.FilteringTextInputFormatter.digitsOnly,
-                          services.LengthLimitingTextInputFormatter(6),
-                        ],
-                        validator: (v) => (!_otpSent)
-                            ? loc.sendCodeFirst
-                            : ((v == null || v.trim().length != 6)
-                                  ? loc.requiredField
-                                  : null),
+                inputFormatters: [
+                  services.FilteringTextInputFormatter.allow(
+                    RegExp(r'[0-9]'),
+                  ),
+                  services.LengthLimitingTextInputFormatter(10),
+                ],
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? loc.requiredField
+                    : null,
+                onChanged: (_) => _resetOtpState(),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _otpController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: loc.sixDigitCodeLabel,
                       ),
+                      inputFormatters: [
+                        services.FilteringTextInputFormatter.digitsOnly,
+                        services.LengthLimitingTextInputFormatter(6),
+                      ],
+                      validator: (v) => (!_otpSent)
+                          ? loc.sendCodeFirst
+                          : ((v == null || v.trim().length != 6)
+                                ? loc.requiredField
+                                : null),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: (_loading || _sendingOtp) ? null : _sendOtp,
-                      child: _sendingOtp
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(_otpSent ? loc.resend : loc.sendCode),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: (_loading || _sendingOtp) ? null : _sendOtp,
+                    child: _sendingOtp
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(_otpSent ? loc.resend : loc.sendCode),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
               Semantics(
                 button: true,
                 label: loc.navLogin,
                 child: ElevatedButton(
-                  onPressed: _loading
-                      ? null
-                      : (isPhoneAuth ? _loginWithPhone : _login),
+                  onPressed: _loading ? null : _loginWithPhone,
                   child: _loading
                       ? const SizedBox(
                           width: 18,
@@ -426,17 +453,6 @@ class _LoginPageState extends State<LoginPage> {
                         )
                       : Text(loc.navLogin),
                 ),
-              ),
-              if (!isPhoneAuth)
-                TextButton(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, '/forgot-password'),
-                  child: Text(loc.forgotPasswordLink),
-                ),
-              TextButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/signup'),
-                child: Text(loc.createAccount),
               ),
             ],
           ),

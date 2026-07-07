@@ -170,6 +170,32 @@ def _get_active_user_by_phone(phone_digits: str) -> User | None:
     return User.query.filter_by(phone_number=phone_digits, is_active=True).first()
 
 
+def _is_dealer_account(user: User) -> bool:
+    account_type = (getattr(user, "account_type", None) or "user").strip().lower()
+    dealer_status = (getattr(user, "dealer_status", None) or "none").strip().lower()
+    if account_type == "dealer":
+        return True
+    if dealer_status in ("pending", "approved", "rejected"):
+        return True
+    return False
+
+
+def _personal_account_exists_response():
+    return jsonify({
+        "message": "This phone number is registered to a personal account. Please use personal login.",
+        "code": "personal_account_exists",
+    }), 409
+
+
+def _reject_dealer_flow_for_personal(user: User | None, *, purpose: str):
+    """Block dealer auth when the phone belongs to an established personal account."""
+    if purpose != "dealer" or user is None or _is_dealer_account(user):
+        return None
+    if getattr(user, "is_verified", False):
+        return _personal_account_exists_response()
+    return None
+
+
 def _phone_otp_create_if_missing(data: dict) -> bool:
     purpose = (data.get("purpose") or "").strip().lower()
     if purpose == "login":
@@ -1443,7 +1469,12 @@ def phone_start():
                 return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
 
         create_if_missing = _phone_otp_create_if_missing(data)
-        if not create_if_missing and not _get_active_user_by_phone(phone_digits):
+        purpose = (data.get("purpose") or "").strip().lower()
+        existing = _get_active_user_by_phone(phone_digits)
+        personal_conflict = _reject_dealer_flow_for_personal(existing, purpose=purpose)
+        if personal_conflict is not None:
+            return personal_conflict
+        if not create_if_missing and not existing:
             return jsonify({
                 "message": "No account found with this phone number. Please sign up first.",
                 "code": "account_not_found",
@@ -1551,6 +1582,7 @@ def phone_verify():
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
         create_if_missing = _phone_otp_create_if_missing(data)
+        purpose = (data.get("purpose") or "").strip().lower()
         try:
             user = _resolve_user_for_phone_otp(
                 phone_digits,
@@ -1573,6 +1605,10 @@ def phone_verify():
                 }), 404
             current_app.logger.info("phone_verify validation error: %s", str(e))
             return jsonify({"message": "Invalid input"}), 400
+
+        personal_conflict = _reject_dealer_flow_for_personal(user, purpose=purpose)
+        if personal_conflict is not None:
+            return personal_conflict
 
         from ..time_utils import utcnow
 

@@ -183,6 +183,7 @@ class ApiService {
     String? dealershipPhone,
     String? dealershipLocation,
     bool createIfMissing = true,
+    String? purpose,
   }) =>
       _ApiServiceAuth.phoneStart(
         phoneNumber: phoneNumber,
@@ -196,6 +197,7 @@ class ApiService {
         dealershipPhone: dealershipPhone,
         dealershipLocation: dealershipLocation,
         createIfMissing: createIfMissing,
+        purpose: purpose,
       );
 
   static Future<Map<String, dynamic>> phoneVerify({
@@ -211,6 +213,7 @@ class ApiService {
     String? dealershipPhone,
     String? dealershipLocation,
     bool createIfMissing = true,
+    String? purpose,
   }) =>
       _ApiServiceAuth.phoneVerify(
         phoneNumber: phoneNumber,
@@ -225,6 +228,7 @@ class ApiService {
         dealershipPhone: dealershipPhone,
         dealershipLocation: dealershipLocation,
         createIfMissing: createIfMissing,
+        purpose: purpose,
       );
 
   static Future<void> logout() => _ApiServiceAuth.logout();

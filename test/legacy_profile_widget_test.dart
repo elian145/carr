@@ -21,6 +21,7 @@ void main() {
       user: {
         'id': 1,
         'username': 'testuser',
+        'phone_number': '+9647701234567',
         'is_admin': false,
         'is_verified': true,
         'account_type': 'individual',
@@ -37,7 +38,7 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Legacy profile shows username from /auth/me', (tester) async {
+  testWidgets('Legacy profile shows phone number in header', (tester) async {
     await tester.pumpWidget(const legacy.MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -48,6 +49,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('testuser'), findsWidgets);
+    expect(find.text('+9647701234567'), findsWidgets);
   });
 }

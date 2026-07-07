@@ -12,6 +12,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 BORDER_WHITE_THRESH = 240
 INTERIOR_WHITE_THRESH = 230
+PLATE_WHITE_THRESH = 250
 DARK_TILE_BG = np.array([28, 31, 40, 255], dtype=np.uint8)
 
 
@@ -229,10 +230,59 @@ def make_body_type_dark_variant(src: Path, dest: Path) -> None:
     Image.fromarray(arr, mode='RGBA').save(dest)
 
 
+def _flood_pure_white_border(arr: np.ndarray, *, threshold: int) -> np.ndarray:
+    """Flood only near-pure white pixels from the image border.
+
+    Plate artwork uses gray anti-aliasing around glyphs. Treating those pixels
+    as background (see _connected_light_edge_regions) can leak through IRQ/KR
+    strip gaps and hollow out text — most visibly on code_22 (Erbil).
+    """
+    height, width, _ = arr.shape
+    visited = np.zeros((height, width), dtype=bool)
+    queue: deque[tuple[int, int]] = deque()
+
+    def is_white(y: int, x: int) -> bool:
+        rgb = arr[y, x, :3]
+        return (
+            int(rgb[0]) >= threshold
+            and int(rgb[1]) >= threshold
+            and int(rgb[2]) >= threshold
+        )
+
+    def try_seed(y: int, x: int) -> None:
+        if visited[y, x] or not is_white(y, x):
+            return
+        visited[y, x] = True
+        queue.append((y, x))
+
+    for x in range(width):
+        try_seed(0, x)
+        try_seed(height - 1, x)
+    for y in range(height):
+        try_seed(y, 0)
+        try_seed(y, width - 1)
+
+    while queue:
+        y, x = queue.popleft()
+        for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
+            if 0 <= ny < height and 0 <= nx < width:
+                try_seed(ny, nx)
+
+    return visited
+
+
 def make_dark_tile_background_variant(src: Path, dest: Path) -> None:
     image = Image.open(src).convert('RGBA')
     arr = np.array(image)
     replace_mask = _connected_light_edge_regions(arr)
+    arr[replace_mask] = DARK_TILE_BG
+    Image.fromarray(arr, mode='RGBA').save(dest)
+
+
+def make_plate_dark_variant(src: Path, dest: Path) -> None:
+    image = Image.open(src).convert('RGBA')
+    arr = np.array(image)
+    replace_mask = _flood_pure_white_border(arr, threshold=PLATE_WHITE_THRESH)
     arr[replace_mask] = DARK_TILE_BG
     Image.fromarray(arr, mode='RGBA').save(dest)
 
@@ -295,7 +345,7 @@ def main() -> None:
         if src.stem.endswith('_mult'):
             continue
         dest = src.with_name(f'{src.stem}_dark.png')
-        make_dark_tile_background_variant(src, dest)
+        make_plate_dark_variant(src, dest)
         print(f'wrote {dest.relative_to(ROOT)}')
 
 

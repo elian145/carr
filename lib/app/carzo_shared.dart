@@ -195,7 +195,7 @@ class _SellAuthPromptState extends State<_SellAuthPrompt> {
               Navigator.pop(ctx);
               Navigator.pushReplacementNamed(context, '/signup');
             },
-            child: Text(loc.signupTitle),
+            child: Text(loc.dealerFallbackLabel),
           ),
           FilledButton(
             onPressed: () {

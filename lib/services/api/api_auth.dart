@@ -114,6 +114,7 @@ abstract final class _ApiServiceAuth {
       String? dealershipPhone,
       String? dealershipLocation,
       bool createIfMissing = true,
+      String? purpose,
     }) async {
       final normalizedPhone = normalizePhoneNumber(phoneNumber);
       final response = await ApiService._httpClient
@@ -135,6 +136,7 @@ abstract final class _ApiServiceAuth {
               if (isDealer && (dealershipLocation ?? '').trim().isNotEmpty)
                 'dealership_location': dealershipLocation,
               'create_if_missing': createIfMissing,
+              if ((purpose ?? '').trim().isNotEmpty) 'purpose': purpose!.trim(),
             }),
           )
           .timeout(ApiService._defaultTimeout);
@@ -154,6 +156,7 @@ abstract final class _ApiServiceAuth {
       String? dealershipPhone,
       String? dealershipLocation,
       bool createIfMissing = true,
+      String? purpose,
     }) async {
       final normalizedPhone = normalizePhoneNumber(phoneNumber);
       final response = await ApiService._httpClient
@@ -176,6 +179,7 @@ abstract final class _ApiServiceAuth {
               if (isDealer && (dealershipLocation ?? '').trim().isNotEmpty)
                 'dealership_location': dealershipLocation,
               'create_if_missing': createIfMissing,
+              if ((purpose ?? '').trim().isNotEmpty) 'purpose': purpose!.trim(),
             }),
           )
           .timeout(ApiService._defaultTimeout);

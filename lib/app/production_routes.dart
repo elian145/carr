@@ -8,6 +8,7 @@ import '../pages/change_password_page.dart';
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealer_profile_page.dart';
 import '../pages/dealers_directory_page.dart';
+import '../pages/dealer_onboarding_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../pages/edit_listing_page.dart' as modern_edit;
 import '../pages/edit_profile_page.dart';
@@ -66,7 +67,9 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                 '/dealers': (context) => const DealersDirectoryPage(),
                 '/chat': (context) => AuthGuard(child: ChatListPage()),
                 '/login': (context) => LoginPage(),
-                '/signup': (context) => SignupPage(),
+                '/signup': (context) => LoginPage(initialDealerMode: true),
+                '/dealer-onboarding': (context) =>
+                    AuthGuard(child: const DealerOnboardingPage()),
                 '/profile': (context) =>
                     AuthGuard(allowWhenLoggedOut: true, child: ProfilePage()),
                 '/edit-profile': (context) =>

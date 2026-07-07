@@ -38,22 +38,39 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('Legacy login page shows credential fields', (tester) async {
+  testWidgets('Login page shows personal phone auth fields', (tester) async {
     await openLogin(tester);
 
     expect(find.text('Login'), findsWidgets);
+    expect(find.text('Personal account'), findsOneWidget);
+    expect(find.text('Dealer'), findsOneWidget);
+    expect(
+      find.text('Enter your phone number to log in or create an account.'),
+      findsOneWidget,
+    );
     expect(find.byType(TextFormField), findsNWidgets(2));
+    expect(find.text('Send code'), findsOneWidget);
   });
 
-  testWidgets('Legacy login validates empty credentials', (tester) async {
+  testWidgets('Login validates empty phone before submit', (tester) async {
     await openLogin(tester);
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Email or phone number is required'), findsOneWidget);
-    expect(find.text('Required'), findsOneWidget);
+    expect(find.text('Required'), findsWidgets);
     expect(AuthService().isAuthenticated, isFalse);
+  });
+
+  testWidgets('Dealer mode uses same phone fields as personal', (tester) async {
+    await openLogin(tester);
+
+    await tester.tap(find.text('Dealer'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dealer account'), findsOneWidget);
+    expect(find.text('Dealership name'), findsNothing);
+    expect(find.byType(TextFormField), findsNWidgets(2));
   });
 }

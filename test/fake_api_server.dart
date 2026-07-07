@@ -288,10 +288,44 @@ class FakeApiServer {
         return _json(200, {'unread_count': 0});
       case '/api/auth/login':
       case '/api/auth/signup':
+      case '/api/auth/phone/verify':
         return _json(200, {
           'access_token': 'test_access_token',
           'refresh_token': 'test_refresh_token',
           'user': {'id': 1, 'username': 'test', 'is_admin': false},
+        });
+      case '/api/auth/phone/start':
+        var createIfMissing = true;
+        var purpose = '';
+        try {
+          if (request.body.isNotEmpty) {
+            final decoded = json.decode(request.body);
+            if (decoded is Map) {
+              if (decoded.containsKey('create_if_missing')) {
+                createIfMissing = decoded['create_if_missing'] == true;
+              }
+              purpose = (decoded['purpose'] ?? '').toString().trim().toLowerCase();
+            }
+          }
+        } catch (_) {}
+        if (!createIfMissing) {
+          if (purpose == 'dealer') {
+            return _json(409, {
+              'message':
+                  'This phone number is registered to a personal account. Please use personal login.',
+              'code': 'personal_account_exists',
+            });
+          }
+          return _json(404, {
+            'message':
+                'No account found with this phone number. Please sign up first.',
+            'code': 'account_not_found',
+          });
+        }
+        return _json(200, {
+          'sent': true,
+          'message': 'Verification code sent',
+          'dev_code': '123456',
         });
       case '/api/auth/forgot-password':
         return _json(200, {
@@ -316,6 +350,7 @@ class FakeApiServer {
         return _json(200, {
           'id': 1,
           'username': 'testuser',
+          'phone_number': '+9647701234567',
           'email': 'test@example.com',
           'is_admin': false,
           'account_type': 'individual',

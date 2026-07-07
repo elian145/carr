@@ -38,22 +38,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('Legacy signup page shows registration fields', (tester) async {
+  testWidgets('Signup route opens dealer phone auth by default', (tester) async {
     await openSignup(tester);
 
-    expect(find.text('Sign Up'), findsWidgets);
-    expect(find.text('Choose Authentication Method:'), findsOneWidget);
-    expect(find.text('Create account'), findsOneWidget);
-    expect(find.byType(TextFormField), findsWidgets);
-  });
-
-  testWidgets('Legacy signup keeps create account disabled until terms accepted',
-      (tester) async {
-    await openSignup(tester);
-
-    final button = tester.widget<ElevatedButton>(
-      find.widgetWithText(ElevatedButton, 'Create account'),
-    );
-    expect(button.onPressed, isNull);
+    expect(find.text('Dealer account'), findsOneWidget);
+    expect(find.text('Dealer'), findsOneWidget);
+    expect(find.text('Dealership name'), findsNothing);
+    expect(find.byType(TextFormField), findsNWidgets(2));
   });
 }
