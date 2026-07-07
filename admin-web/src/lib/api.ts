@@ -1,11 +1,18 @@
 import { apiRequest } from "./auth";
+import { buildQuery } from "./query";
 import type {
   AdminReport,
+  AnalyticsOverview,
+  CarDetail,
   CarListing,
   DashboardData,
+  FilterMeta,
+  GlobalSearchResults,
+  InsightsData,
   Message,
   Notification,
   Pagination,
+  SavedSearch,
   User,
   UserAction,
   UserDetail,
@@ -36,36 +43,75 @@ export async function fetchDashboard(): Promise<DashboardData> {
   return apiRequest<DashboardData>("/api/admin/dashboard");
 }
 
-export async function fetchUsers(params: {
+export async function fetchFilterMeta(): Promise<FilterMeta> {
+  return apiRequest<FilterMeta>("/api/admin/meta/filters");
+}
+
+export async function globalSearch(q: string, limit = 20): Promise<GlobalSearchResults> {
+  return apiRequest(`/api/admin/search${buildQuery({ q, limit })}`);
+}
+
+export interface UserListParams {
   page?: number;
   per_page?: number;
   search?: string;
-}): Promise<{ users: User[]; pagination: Pagination }> {
-  const q = new URLSearchParams();
-  if (params.page) q.set("page", String(params.page));
-  if (params.per_page) q.set("per_page", String(params.per_page));
-  if (params.search) q.set("search", params.search);
-  const qs = q.toString();
-  return apiRequest(`/api/admin/users${qs ? `?${qs}` : ""}`);
+  account_type?: string;
+  dealer_status?: string;
+  is_active?: boolean;
+  is_admin?: boolean;
+}
+
+export async function fetchUsers(
+  params: UserListParams,
+): Promise<{ users: User[]; pagination: Pagination }> {
+  return apiRequest(`/api/admin/users${buildQuery(params as Record<string, string | number | boolean>)}`);
 }
 
 export async function fetchUserDetail(userId: string): Promise<UserDetail> {
-  return apiRequest<UserDetail>(
-    `/api/admin/users/${encodeURIComponent(userId)}`,
-  );
+  return apiRequest<UserDetail>(`/api/admin/users/${encodeURIComponent(userId)}`);
 }
 
-export async function fetchListings(params: {
+export async function updateUserStatus(
+  userId: string,
+  isActive: boolean,
+): Promise<void> {
+  await apiRequest(`/api/admin/users/${encodeURIComponent(userId)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_active: isActive }),
+  });
+}
+
+export interface ListingListParams {
   page?: number;
   per_page?: number;
+  search?: string;
+  brand?: string;
+  status?: string;
   active_only?: boolean;
-}): Promise<{ cars: CarListing[]; pagination: Pagination }> {
-  const q = new URLSearchParams();
-  if (params.page) q.set("page", String(params.page));
-  if (params.per_page) q.set("per_page", String(params.per_page));
-  if (params.active_only) q.set("active_only", "true");
-  const qs = q.toString();
-  return apiRequest(`/api/admin/cars${qs ? `?${qs}` : ""}`);
+  is_featured?: boolean;
+  min_price?: number;
+  max_price?: number;
+  sort?: string;
+}
+
+export async function fetchListings(
+  params: ListingListParams,
+): Promise<{ cars: CarListing[]; pagination: Pagination }> {
+  return apiRequest(`/api/admin/cars${buildQuery(params as Record<string, string | number | boolean>)}`);
+}
+
+export async function fetchListingDetail(carId: string): Promise<CarDetail> {
+  return apiRequest<CarDetail>(`/api/admin/cars/${encodeURIComponent(carId)}`);
+}
+
+export async function updateListingStatus(
+  carId: string,
+  patch: { is_active?: boolean; status?: string; is_featured?: boolean },
+): Promise<void> {
+  await apiRequest(`/api/admin/cars/${encodeURIComponent(carId)}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }
 
 export async function fetchReports(params: {
@@ -74,13 +120,7 @@ export async function fetchReports(params: {
   status?: string;
   type?: string;
 }): Promise<{ reports: AdminReport[]; pagination: Pagination }> {
-  const q = new URLSearchParams();
-  if (params.page) q.set("page", String(params.page));
-  if (params.per_page) q.set("per_page", String(params.per_page));
-  if (params.status) q.set("status", params.status);
-  if (params.type) q.set("type", params.type);
-  const qs = q.toString();
-  return apiRequest(`/api/admin/reports${qs ? `?${qs}` : ""}`);
+  return apiRequest(`/api/admin/reports${buildQuery(params)}`);
 }
 
 export async function updateReport(
@@ -98,6 +138,12 @@ export async function updateReport(
   });
 }
 
+export async function fetchDealers(
+  status = "all",
+): Promise<{ dealers: User[] }> {
+  return apiRequest(`/api/admin/dealers${buildQuery({ status })}`);
+}
+
 export async function fetchPendingDealers(): Promise<{ dealers: User[] }> {
   return apiRequest("/api/admin/dealers/pending");
 }
@@ -108,10 +154,7 @@ export async function approveDealer(userId: string): Promise<void> {
   });
 }
 
-export async function rejectDealer(
-  userId: string,
-  reason?: string,
-): Promise<void> {
+export async function rejectDealer(userId: string, reason?: string): Promise<void> {
   await apiRequest(`/api/admin/dealers/${encodeURIComponent(userId)}/reject`, {
     method: "POST",
     body: JSON.stringify(reason ? { reason } : {}),
@@ -121,36 +164,46 @@ export async function rejectDealer(
 export async function fetchMessages(params: {
   page?: number;
   per_page?: number;
+  search?: string;
+  is_read?: boolean;
+  car_id?: string;
 }): Promise<{ messages: Message[]; pagination: Pagination }> {
-  const q = new URLSearchParams();
-  if (params.page) q.set("page", String(params.page));
-  if (params.per_page) q.set("per_page", String(params.per_page));
-  const qs = q.toString();
-  return apiRequest(`/api/admin/messages${qs ? `?${qs}` : ""}`);
+  return apiRequest(`/api/admin/messages${buildQuery(params)}`);
 }
 
 export async function fetchNotifications(params: {
   page?: number;
   per_page?: number;
+  type?: string;
+  is_read?: boolean;
 }): Promise<{ notifications: Notification[]; pagination: Pagination }> {
-  const q = new URLSearchParams();
-  if (params.page) q.set("page", String(params.page));
-  if (params.per_page) q.set("per_page", String(params.per_page));
-  const qs = q.toString();
-  return apiRequest(`/api/admin/notifications${qs ? `?${qs}` : ""}`);
+  return apiRequest(`/api/admin/notifications${buildQuery(params)}`);
 }
 
 export async function fetchUserActions(params: {
   page?: number;
   per_page?: number;
   action_type?: string;
+  target_type?: string;
+  user_id?: string;
 }): Promise<{ actions: UserAction[]; pagination: Pagination }> {
-  const q = new URLSearchParams();
-  if (params.page) q.set("page", String(params.page));
-  if (params.per_page) q.set("per_page", String(params.per_page));
-  if (params.action_type) q.set("action_type", params.action_type);
-  const qs = q.toString();
-  return apiRequest(`/api/admin/user-actions${qs ? `?${qs}` : ""}`);
+  return apiRequest(`/api/admin/user-actions${buildQuery(params)}`);
+}
+
+export async function fetchAnalyticsOverview(): Promise<AnalyticsOverview> {
+  return apiRequest<AnalyticsOverview>("/api/admin/analytics/overview");
+}
+
+export async function fetchInsights(days = 14): Promise<InsightsData> {
+  return apiRequest<InsightsData>(`/api/admin/insights${buildQuery({ days })}`);
+}
+
+export async function fetchSavedSearches(params: {
+  page?: number;
+  per_page?: number;
+  search?: string;
+}): Promise<{ saved_searches: SavedSearch[]; pagination: Pagination }> {
+  return apiRequest(`/api/admin/saved-searches${buildQuery(params)}`);
 }
 
 export async function fetchNavBadges(): Promise<{

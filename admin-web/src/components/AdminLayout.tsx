@@ -5,15 +5,20 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { displayName } from "@/lib/format";
 import { NavBadge, useNavBadges } from "@/components/NavBadges";
+import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", badgeKey: null },
+  { href: "/search", label: "Search", badgeKey: null },
+  { href: "/insights", label: "Insights", badgeKey: null },
+  { href: "/analytics", label: "Engagement", badgeKey: null },
   { href: "/users", label: "Users", badgeKey: null },
   { href: "/listings", label: "Listings", badgeKey: null },
   { href: "/reports", label: "Reports", badgeKey: "pendingReports" as const },
   { href: "/dealers", label: "Dealers", badgeKey: "pendingDealers" as const },
   { href: "/messages", label: "Messages", badgeKey: null },
   { href: "/notifications", label: "Notifications", badgeKey: null },
+  { href: "/saved-searches", label: "Saved searches", badgeKey: null },
   { href: "/audit", label: "Audit log", badgeKey: null },
 ];
 
@@ -77,7 +82,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto p-6 lg:p-8">{children}</main>
+      <main className="flex-1 overflow-auto p-6 lg:p-8">
+        {pathname !== "/login" ? <GlobalSearchBar /> : null}
+        {children}
+      </main>
     </div>
   );
 }

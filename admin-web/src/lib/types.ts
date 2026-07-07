@@ -40,6 +40,12 @@ export interface DashboardStats {
   pending_user_reports?: number;
   pending_listing_reports?: number;
   pending_dealers?: number;
+  dealer_accounts?: number;
+  featured_cars?: number;
+  total_listing_views?: number;
+  total_listing_messages?: number;
+  total_listing_calls?: number;
+  total_listing_favorites?: number;
 }
 
 export interface DashboardData {
@@ -62,9 +68,33 @@ export interface CarListing {
   location?: string;
   status?: string;
   is_active?: boolean;
+  is_featured?: boolean;
   views_count?: number;
   created_at?: string;
+  updated_at?: string;
   seller_id?: string;
+  seller?: User;
+  description?: string;
+  images?: { image_url: string; is_primary?: boolean }[];
+}
+
+export interface ListingAnalytics {
+  listing_id?: string;
+  views?: number;
+  messages?: number;
+  calls?: number;
+  shares?: number;
+  favorites?: number;
+  brand?: string;
+  model?: string;
+  year?: number;
+  price?: number;
+}
+
+export interface CarDetail {
+  car: CarListing;
+  analytics: ListingAnalytics | null;
+  reports: AdminReport[];
 }
 
 export interface Message {
@@ -73,6 +103,8 @@ export interface Message {
   sender_id?: string;
   receiver_id?: string;
   car_id?: string;
+  message_type?: string;
+  is_read?: boolean;
   created_at?: string;
 }
 
@@ -83,6 +115,8 @@ export interface Notification {
   notification_type?: string;
   is_read?: boolean;
   created_at?: string;
+  user_public_id?: string;
+  user_username?: string;
 }
 
 export interface UserAction {
@@ -92,6 +126,8 @@ export interface UserAction {
   target_id?: string;
   action_metadata?: Record<string, unknown>;
   created_at?: string;
+  user_public_id?: string;
+  user_username?: string;
 }
 
 export interface UserDetail {
@@ -113,6 +149,45 @@ export interface AdminReport {
   listing?: { id?: string; title?: string; brand?: string; model?: string };
 }
 
-export interface ApiError {
-  message: string;
+export interface GlobalSearchResults {
+  users: User[];
+  cars: CarListing[];
+}
+
+export interface AnalyticsOverview {
+  totals: {
+    views: number;
+    messages: number;
+    calls: number;
+    shares: number;
+    favorites: number;
+    tracked_listings: number;
+  };
+  top_listings: ListingAnalytics[];
+}
+
+export interface InsightsData {
+  signups_by_day: { day: string; count: number }[];
+  listings_by_day: { day: string; count: number }[];
+  messages_by_day: { day: string; count: number }[];
+  top_brands: { brand: string; count: number }[];
+  top_locations: { location: string; count: number }[];
+}
+
+export interface SavedSearch {
+  id: string;
+  name: string;
+  filters: Record<string, unknown>;
+  notify?: boolean;
+  auto_saved?: boolean;
+  created_at?: string;
+  user_public_id?: string;
+  user_username?: string;
+}
+
+export interface FilterMeta {
+  brands: string[];
+  listing_statuses: string[];
+  action_types: string[];
+  notification_types: string[];
 }

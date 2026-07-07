@@ -53,18 +53,25 @@ export default function DashboardPage() {
               <StatCard
                 label="Listings"
                 value={formatNumber(s.total_cars)}
-                sub={`${formatNumber(s.active_cars)} active · ${formatNumber(s.inactive_cars ?? 0)} inactive`}
+                sub={`${formatNumber(s.active_cars)} active · ${formatNumber(s.featured_cars ?? 0)} featured`}
+              />
+              <StatCard
+                label="Dealers"
+                value={formatNumber(s.dealer_accounts ?? 0)}
+                sub={`${formatNumber(s.pending_dealers ?? 0)} pending approval`}
               />
               <StatCard
                 label="Messages"
                 value={formatNumber(s.total_messages)}
-                sub="All-time chat volume"
+                sub={`${formatNumber(s.total_notifications)} notifications`}
               />
-              <StatCard
-                label="Notifications"
-                value={formatNumber(s.total_notifications)}
-                sub="In-app notifications sent"
-              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard label="Listing views" value={formatNumber(s.total_listing_views ?? 0)} />
+              <StatCard label="Listing messages" value={formatNumber(s.total_listing_messages ?? 0)} />
+              <StatCard label="Listing calls" value={formatNumber(s.total_listing_calls ?? 0)} />
+              <StatCard label="Favorites" value={formatNumber(s.total_listing_favorites ?? 0)} />
             </div>
 
             <section className="rounded-xl border border-surface-border bg-surface-card p-5">
