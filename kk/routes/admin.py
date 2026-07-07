@@ -25,6 +25,10 @@ def dashboard():
         total_messages = Message.query.count()
         total_notifications = Notification.query.count()
 
+        pending_user_reports = UserReport.query.filter_by(status="pending").count()
+        pending_listing_reports = ListingReport.query.filter_by(status="pending").count()
+        pending_dealers = User.query.filter(User.dealer_status == "pending").count()
+
         recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
         recent_cars = Car.query.order_by(Car.created_at.desc()).limit(10).all()
         recent_messages = Message.query.order_by(Message.created_at.desc()).limit(10).all()
@@ -41,10 +45,16 @@ def dashboard():
                     "stats": {
                         "total_users": total_users,
                         "active_users": active_users,
+                        "inactive_users": total_users - active_users,
                         "total_cars": total_cars,
                         "active_cars": active_cars,
+                        "inactive_cars": total_cars - active_cars,
                         "total_messages": total_messages,
                         "total_notifications": total_notifications,
+                        "pending_reports": pending_user_reports + pending_listing_reports,
+                        "pending_user_reports": pending_user_reports,
+                        "pending_listing_reports": pending_listing_reports,
+                        "pending_dealers": pending_dealers,
                     },
                     "recent_activity": {
                         "users": [u.to_dict(include_private=True) for u in recent_users],
@@ -234,7 +244,11 @@ def user_actions():
     try:
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 50, type=int)
-        pagination = UserAction.query.order_by(UserAction.created_at.desc()).paginate(
+        action_type = (request.args.get("action_type") or "").strip()
+        q = UserAction.query
+        if action_type:
+            q = q.filter(UserAction.action_type == action_type)
+        pagination = q.order_by(UserAction.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         return (
