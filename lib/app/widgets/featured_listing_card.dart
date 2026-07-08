@@ -253,6 +253,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     final imageCount = _imageCount();
     final title = _title(context);
     final subtitle = _subtitle(context);
+    final hasPrice = tryParseCurrencyValue(widget.car['price']) != null;
     final price = formatCurrency(context, widget.car['price']);
     final mileage = _mileage(context);
     final transmission = _label(context, widget.car['transmission']);
@@ -463,21 +464,23 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment:
-                                            AlignmentDirectional.topEnd,
-                                        child: Text(
-                                          price,
-                                          style: const TextStyle(
-                                            color: _kFeaturedAccent,
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 21,
-                                            height: 1.2,
+                                      if (hasPrice) ...[
+                                        const SizedBox(width: 12),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment:
+                                              AlignmentDirectional.topEnd,
+                                          child: Text(
+                                            price,
+                                            style: const TextStyle(
+                                              color: _kFeaturedAccent,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 21,
+                                              height: 1.2,
+                                            ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ],
                                   ),
                                   if (subtitle.isNotEmpty) ...[

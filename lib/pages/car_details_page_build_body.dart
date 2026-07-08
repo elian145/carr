@@ -2,6 +2,7 @@ part of 'car_details_page.dart';
 
 mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
   Widget _buildCarDetailsBodySliver(BuildContext context, bool isLightShell) {
+    final bool hasPrice = tryParseCurrencyValue(car!['price']) != null;
     return                 SliverToBoxAdapter(
                   child: Container(
                     width: double.infinity,
@@ -84,7 +85,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                       overflow: TextOverflow.clip,
                                     ),
                                   ),
-                                  if (car!['price'] != null &&
+                                  if (hasPrice &&
                                       _displayModelName(context).isEmpty) ...[
                                     SizedBox(width: 12),
                                     Flexible(
@@ -137,7 +138,7 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                                         overflow: TextOverflow.clip,
                                       ),
                                     ),
-                                    if (car!['price'] != null) ...[
+                                    if (hasPrice) ...[
                                       SizedBox(width: 8),
                                       Flexible(
                                         flex: 4,

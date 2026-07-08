@@ -25,6 +25,7 @@ Widget _buildGlobalCarCardInnerText(
   final double reservedTitleHeight =
       titleBoxFontSize * titleLineHeight * titleMaxLines;
   final bool hasTrim = trimLine.isNotEmpty;
+  final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -154,24 +155,26 @@ Widget _buildGlobalCarCardInnerText(
             flex: 1,
             child: Align(
               alignment: AlignmentDirectional.centerEnd,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: AlignmentDirectional.centerEnd,
-                child: Text(
-                  formatCurrency(context, car['price']),
-                  textScaler: const TextScaler.linear(1.0),
-                  style: const TextStyle(
-                    color: Color(0xFFFF6B00),
-                    fontWeight: FontWeight.w600,
-                    fontSize: priceFontSize,
-                    height: 1.1,
-                  ),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  textAlign: TextAlign.end,
-                ),
-              ),
+              child: hasPrice
+                  ? FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text(
+                        formatCurrency(context, car['price']),
+                        textScaler: const TextScaler.linear(1.0),
+                        style: const TextStyle(
+                          color: Color(0xFFFF6B00),
+                          fontWeight: FontWeight.w600,
+                          fontSize: priceFontSize,
+                          height: 1.1,
+                        ),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        textAlign: TextAlign.end,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ),
         ],
