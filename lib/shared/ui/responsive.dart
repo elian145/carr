@@ -116,12 +116,19 @@ abstract final class AppResponsive {
     return 3;
   }
 
+  /// Full-bleed featured carousel card (image + title/price/specs).
+  /// Matches the home featured section horizontal padding (8 + 4 each side).
+  static const double featuredSectionHorizontalInset = 12;
+
   static double featuredCarouselHeight(BuildContext context) {
-    return homeGridListingCardHeight(context);
+    final w = featuredCardWidth(context);
+    // Keep a wide card: image-dominant, room for larger title/price/specs type.
+    return (w * 0.76).clamp(280.0, 400.0);
   }
 
   static double featuredCardWidth(BuildContext context) {
-    return homeGridListingCardWidth(context);
+    final sw = screenSize(context).width;
+    return (sw - featuredSectionHorizontalInset * 2).clamp(280.0, sw);
   }
 
   /// Matches a single cell in the home 2-column listing grid.

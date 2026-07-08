@@ -89,6 +89,8 @@ def dashboard():
         pending_dealers = User.query.filter(User.dealer_status == "pending").count()
         dealer_accounts = User.query.filter(User.account_type == "dealer").count()
         featured_cars = Car.query.filter_by(is_featured=True, is_active=True).count()
+        total_saved_searches = SavedSearch.query.count()
+        total_user_actions = UserAction.query.count()
         engagement = db.session.query(
             func.coalesce(func.sum(ListingAnalytics.views), 0),
             func.coalesce(func.sum(ListingAnalytics.messages), 0),
@@ -124,6 +126,8 @@ def dashboard():
                         "pending_dealers": pending_dealers,
                         "dealer_accounts": dealer_accounts,
                         "featured_cars": featured_cars,
+                        "total_saved_searches": total_saved_searches,
+                        "total_user_actions": total_user_actions,
                         "total_listing_views": int(engagement[0] or 0),
                         "total_listing_messages": int(engagement[1] or 0),
                         "total_listing_calls": int(engagement[2] or 0),

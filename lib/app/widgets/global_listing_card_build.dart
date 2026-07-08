@@ -22,6 +22,7 @@ Widget buildGlobalCarCard(
   final bool quickSell =
       car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
   final bool sold = isListingSold(Map<String, dynamic>.from(car));
+  final bool featured = listingIsFeatured(car);
   final String yearRaw = (car['year'] ?? '').toString().trim();
   final String mileageRaw = (car['mileage'] ?? '').toString().trim();
   String? cityRaw;
@@ -306,51 +307,70 @@ Widget buildGlobalCarCard(
         );
 
   final titleForA11y = localizedCarTitleForCard(context, car);
+  Widget cardShell = Container(
+    decoration: BoxDecoration(
+      color: cardFill,
+      borderRadius: BorderRadius.circular(20),
+      border: null,
+      boxShadow: featured
+          ? null
+          : [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: Offset(0, 4),
+              ),
+            ],
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          if (onCardTap == null)
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: onPublishedCardTap,
+              child: cardInner,
+            )
+          else
+            cardInner,
+          if (!listLayout && showVideoCountBadge)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: _globalListingCardVideoCountBadge(car),
+            ),
+          if (featured)
+            Positioned(
+              top: listLayout ? 8 : 10,
+              left: listLayout ? 8 : 10,
+              child: buildListingFeaturedBadge(
+                context,
+                compact: listLayout,
+              ),
+            ),
+          if (sold)
+            Positioned(
+              top: listLayout
+                  ? (featured ? 36 : 8)
+                  : (featured ? 42 : 12),
+              left: listLayout ? 8 : 12,
+              child: buildListingSoldBadge(context),
+            ),
+        ],
+      ),
+    ),
+  );
+
+  if (featured) {
+    cardShell = wrapListingFeaturedGlow(child: cardShell, radius: 20);
+  }
+
   return Semantics(
     button: true,
     label: titleForA11y.isEmpty ? locCard.navHome : titleForA11y,
-    child: Container(
-      decoration: BoxDecoration(
-        color: cardFill,
-        borderRadius: BorderRadius.circular(20),
-        border: null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          clipBehavior: Clip.hardEdge,
-          children: [
-            if (onCardTap == null)
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: onPublishedCardTap,
-                child: cardInner,
-              )
-            else
-              cardInner,
-            if (!listLayout && showVideoCountBadge)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: _globalListingCardVideoCountBadge(car),
-              ),
-            if (sold)
-              Positioned(
-                top: listLayout ? 8 : 12,
-                left: listLayout ? 8 : 12,
-                child: buildListingSoldBadge(context),
-              ),
-          ],
-        ),
-      ),
-    ),
+    child: cardShell,
   );
 }

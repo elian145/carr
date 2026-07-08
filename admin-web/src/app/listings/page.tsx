@@ -59,6 +59,7 @@ export default function ListingsPage() {
     <AsyncPageBody
       title="Listings"
       description="Search and filter all car listings"
+      count={data?.pagination.total}
       data={data}
       error={error}
       loading={loading}

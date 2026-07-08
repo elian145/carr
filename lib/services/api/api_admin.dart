@@ -75,59 +75,6 @@ abstract final class _ApiServiceAdmin {
       );
     }
 
-    /// Admin: list user and listing reports.
-    static Future<Map<String, dynamic>> adminListReports({
-      String status = 'pending',
-      String type = 'all',
-      int page = 1,
-      int perPage = 20,
-    }) async {
-      final q = Uri(queryParameters: {
-        'status': status,
-        'type': type,
-        'page': '$page',
-        'per_page': '$perPage',
-      });
-      return await ApiService._makeAuthenticatedRequest(
-        'GET',
-        '/admin/reports${q.query.isEmpty ? '' : '?${q.query}'}',
-      );
-    }
-
-    /// Admin: update a user report status.
-    static Future<Map<String, dynamic>> adminUpdateUserReport(
-      int reportId, {
-      required String status,
-      String? adminNotes,
-    }) async {
-      return await ApiService._makeAuthenticatedRequest(
-        'PATCH',
-        '/admin/reports/user/$reportId',
-        body: {
-          'status': status,
-          if (adminNotes != null && adminNotes.trim().isNotEmpty)
-            'admin_notes': adminNotes.trim(),
-        },
-      );
-    }
-
-    /// Admin: update a listing report status.
-    static Future<Map<String, dynamic>> adminUpdateListingReport(
-      int reportId, {
-      required String status,
-      String? adminNotes,
-    }) async {
-      return await ApiService._makeAuthenticatedRequest(
-        'PATCH',
-        '/admin/reports/listing/$reportId',
-        body: {
-          'status': status,
-          if (adminNotes != null && adminNotes.trim().isNotEmpty)
-            'admin_notes': adminNotes.trim(),
-        },
-      );
-    }
-
     /// Get list of blocked user IDs.
     static Future<List<String>> getBlockedUsers() async {
       final result = await ApiService._makeAuthenticatedRequest('GET', '/users/blocked');

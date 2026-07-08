@@ -309,18 +309,6 @@ class ApiService {
   ) =>
       _ApiServiceAuth.updateDealerProfile(dealerData);
 
-  static Future<Map<String, dynamic>> adminDealersPending() =>
-      _ApiServiceAuth.adminDealersPending();
-
-  static Future<Map<String, dynamic>> adminApproveDealer(String publicUserId) =>
-      _ApiServiceAuth.adminApproveDealer(publicUserId);
-
-  static Future<Map<String, dynamic>> adminRejectDealer(
-    String publicUserId, {
-    String? reason,
-  }) =>
-      _ApiServiceAuth.adminRejectDealer(publicUserId, reason: reason);
-
   static Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> profileData,
   ) =>
@@ -692,41 +680,6 @@ class ApiService {
         listingId,
         reason: reason,
         details: details,
-      );
-
-  static Future<Map<String, dynamic>> adminListReports({
-    String status = 'pending',
-    String type = 'all',
-    int page = 1,
-    int perPage = 20,
-  }) =>
-      _ApiServiceAdmin.adminListReports(
-        status: status,
-        type: type,
-        page: page,
-        perPage: perPage,
-      );
-
-  static Future<Map<String, dynamic>> adminUpdateUserReport(
-    int reportId, {
-    required String status,
-    String? adminNotes,
-  }) =>
-      _ApiServiceAdmin.adminUpdateUserReport(
-        reportId,
-        status: status,
-        adminNotes: adminNotes,
-      );
-
-  static Future<Map<String, dynamic>> adminUpdateListingReport(
-    int reportId, {
-    required String status,
-    String? adminNotes,
-  }) =>
-      _ApiServiceAdmin.adminUpdateListingReport(
-        reportId,
-        status: status,
-        adminNotes: adminNotes,
       );
 
   static Future<List<String>> getBlockedUsers() =>

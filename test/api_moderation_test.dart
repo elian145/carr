@@ -48,30 +48,4 @@ void main() {
     final blocked = await ApiService.getBlockedUsers();
     expect(blocked, isA<List<String>>());
   });
-
-  test('adminListReports GET returns reports envelope', () async {
-    final result = await ApiService.adminListReports(
-      status: 'pending',
-      type: 'all',
-    );
-    expect(result['reports'], isA<List>());
-  });
-
-  test('adminUpdateUserReport PATCH returns report envelope', () async {
-    final result = await ApiService.adminUpdateUserReport(
-      1,
-      status: 'resolved',
-    );
-    expect(result['report'], isA<Map>());
-    expect(result['report']['status'], 'resolved');
-  });
-
-  test('adminUpdateListingReport PATCH returns report envelope', () async {
-    final result = await ApiService.adminUpdateListingReport(
-      1,
-      status: 'dismissed',
-    );
-    expect(result['report'], isA<Map>());
-    expect(result['report']['type'], 'listing');
-  });
 }

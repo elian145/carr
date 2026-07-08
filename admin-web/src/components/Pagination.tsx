@@ -1,4 +1,5 @@
 import type { Pagination as PaginationType } from "@/lib/types";
+import { formatNumber } from "@/lib/format";
 
 export function Pagination({
   pagination,
@@ -7,12 +8,18 @@ export function Pagination({
   pagination: PaginationType;
   onPageChange: (page: number) => void;
 }) {
-  if (pagination.pages <= 1) return null;
+  if (pagination.pages <= 1) {
+    return (
+      <div className="mt-4 text-sm text-surface-muted">
+        {formatNumber(pagination.total)} total
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 flex items-center justify-between text-sm text-surface-muted">
       <span>
-        Page {pagination.page} of {pagination.pages} ({pagination.total} total)
+        Page {pagination.page} of {pagination.pages} ({formatNumber(pagination.total)} total)
       </span>
       <div className="flex gap-2">
         <button

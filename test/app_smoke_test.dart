@@ -48,8 +48,6 @@ void main() {
       '/verify-email',
       '/dealer/profile',
       '/dealer/edit',
-      '/admin/dealers',
-      '/admin/reports',
     ];
 
     final args = <String, Object?>{

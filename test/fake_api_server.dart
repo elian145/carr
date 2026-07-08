@@ -185,27 +185,6 @@ class FakeApiServer {
       });
     }
 
-    if (path.startsWith('/api/admin/dealers/')) {
-      if (path == '/api/admin/dealers/pending' && method == 'GET') {
-        return _json(200, {'dealers': <dynamic>[]});
-      }
-      return _json(200, {'message': 'ok'});
-    }
-
-    if (path.startsWith('/api/admin/reports')) {
-      if (method == 'PATCH') {
-        return _json(200, {
-          'report': {
-            'id': 1,
-            'type': path.contains('/listing/') ? 'listing' : 'user',
-            'status': 'resolved',
-            'reason': 'Spam',
-          },
-        });
-      }
-      return _json(200, {'reports': <dynamic>[]});
-    }
-
     if (path.startsWith('/api/chat/')) {
       if (path.endsWith('/messages')) {
         return _json(200, <dynamic>[]);
@@ -448,8 +427,6 @@ class FakeApiServer {
           'dealers': <dynamic>[],
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
         });
-      case '/api/admin/dealers/pending':
-        return _json(200, {'dealers': <dynamic>[]});
       default:
         return _json(200, <String, dynamic>{});
     }

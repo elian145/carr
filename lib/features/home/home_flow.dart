@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/app_api_base.dart' show getApiBase;
+import '../../app/widgets/featured_listings_auto_scroll.dart';
 import '../../app/widgets/global_listing_card.dart';
 import '../../app/widgets/main_shell_navigation.dart' as main_shell_navigation;
 import '../../data/brand_logo_filenames.dart';
@@ -47,6 +48,7 @@ import '../../shared/i18n/sort_api_mapping.dart';
 import '../../shared/listings/body_type_assets.dart' as body_type_assets;
 import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
 import '../../shared/listings/listing_events.dart';
+import '../../shared/listings/listing_featured_mix.dart';
 import '../../shared/listings/listing_identity.dart';
 import '../../shared/listings/drive_type_assets.dart';
 import '../../shared/listings/plate_city_assets.dart';

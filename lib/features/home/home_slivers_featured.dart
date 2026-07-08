@@ -6,14 +6,29 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
+    const inset = AppResponsive.featuredSectionHorizontalInset;
+    const glowPad = 10.0;
+    final cardW = AppResponsive.featuredCardWidth(context);
+    final cardH = AppResponsive.featuredCarouselHeight(context);
+    final normalizedCars = [
+      for (final raw in featuredCars)
+        mapListingToGlobalCarCardData(
+          context,
+          Map<String, dynamic>.from(raw),
+        ),
+    ];
+
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: inset,
+                vertical: 4,
+              ),
               child: Text(
                 _trLegacyText(
                   context,
@@ -29,30 +44,12 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
               ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: AppResponsive.featuredCarouselHeight(context),
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                itemCount: featuredCars.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final item = Map<String, dynamic>.from(featuredCars[index]);
-                  final normalized =
-                      mapListingToGlobalCarCardData(context, item);
-                  final cardW = AppResponsive.homeGridListingCardWidth(context);
-                  final cardH = AppResponsive.homeGridListingCardHeight(context);
-                  return SizedBox(
-                    width: cardW,
-                    height: cardH,
-                    child: buildGlobalCarCard(
-                      context,
-                      normalized,
-                      carouselResetSeed: _homeCarouselResetSeed,
-                    ),
-                  );
-                },
-              ),
+            FeaturedListingsAutoScroll(
+              cars: normalizedCars,
+              height: cardH,
+              cardWidth: cardW,
+              horizontalPadding: inset,
+              verticalPadding: glowPad,
             ),
           ],
         ),

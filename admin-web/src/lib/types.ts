@@ -42,6 +42,8 @@ export interface DashboardStats {
   pending_dealers?: number;
   dealer_accounts?: number;
   featured_cars?: number;
+  total_saved_searches?: number;
+  total_user_actions?: number;
   total_listing_views?: number;
   total_listing_messages?: number;
   total_listing_calls?: number;

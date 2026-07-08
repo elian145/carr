@@ -78,39 +78,6 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
                 Navigator.pushNamed(context, '/settings');
               },
             ),
-            if (profile?['is_admin'] == true) ...[
-              SizedBox(height: 12),
-              _buildActionButton(
-                Icons.verified_user_outlined,
-                'Dealer approvals (admin)',
-                () {
-                  if (ApiService.accessToken == null ||
-                      ApiService.accessToken!.isEmpty) {
-                    _showAuthRequiredDialog(context);
-                    return;
-                  }
-                  Navigator.pushNamed(context, '/admin/dealers');
-                },
-              ),
-              SizedBox(height: 12),
-              _buildActionButton(
-                Icons.flag_outlined,
-                trLegacyText(
-                  context,
-                  'Reports queue (admin)',
-                  ar: 'قائمة البلاغات (مسؤول)',
-                  ku: 'ڕیزبەندی ڕاپۆرت (بەڕێوەبەر)',
-                ),
-                () {
-                  if (ApiService.accessToken == null ||
-                      ApiService.accessToken!.isEmpty) {
-                    _showAuthRequiredDialog(context);
-                    return;
-                  }
-                  Navigator.pushNamed(context, '/admin/reports');
-                },
-              ),
-            ],
             SizedBox(height: 12),
             _buildActionButton(
               Icons.chat_outlined,

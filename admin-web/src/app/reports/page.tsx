@@ -52,6 +52,7 @@ export default function ReportsPage() {
     <AsyncPageBody
       title="Reports"
       description="Moderate user and listing reports"
+      count={data?.pagination.total}
       data={data}
       error={error}
       loading={loading}

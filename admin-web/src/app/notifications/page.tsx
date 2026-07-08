@@ -36,6 +36,7 @@ export default function NotificationsPage() {
     <AsyncPageBody
       title="Notifications"
       description="In-app notifications sent to users"
+      count={data?.pagination.total}
       data={data}
       error={error}
       loading={loading}

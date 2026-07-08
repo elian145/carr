@@ -4,22 +4,35 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { displayName } from "@/lib/format";
-import { NavBadge, useNavBadges } from "@/components/NavBadges";
+import { NavBadge, NavTotalBadge, useNavBadges } from "@/components/NavBadges";
 import { GlobalSearchBar } from "@/components/GlobalSearchBar";
+import type { NavBadges } from "@/lib/api";
 
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", badgeKey: null },
-  { href: "/search", label: "Search", badgeKey: null },
-  { href: "/insights", label: "Insights", badgeKey: null },
-  { href: "/analytics", label: "Engagement", badgeKey: null },
-  { href: "/users", label: "Users", badgeKey: null },
-  { href: "/listings", label: "Listings", badgeKey: null },
-  { href: "/reports", label: "Reports", badgeKey: "pendingReports" as const },
-  { href: "/dealers", label: "Dealers", badgeKey: "pendingDealers" as const },
-  { href: "/messages", label: "Messages", badgeKey: null },
-  { href: "/notifications", label: "Notifications", badgeKey: null },
-  { href: "/saved-searches", label: "Saved searches", badgeKey: null },
-  { href: "/audit", label: "Audit log", badgeKey: null },
+type NavItem = {
+  href: string;
+  label: string;
+  totalKey?: keyof NavBadges;
+  alertKey?: "pendingReports" | "pendingDealers";
+};
+
+const NAV: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/search", label: "Search" },
+  { href: "/insights", label: "Insights" },
+  { href: "/analytics", label: "Engagement" },
+  { href: "/users", label: "Users", totalKey: "users" },
+  { href: "/listings", label: "Listings", totalKey: "listings" },
+  { href: "/reports", label: "Reports", alertKey: "pendingReports" },
+  {
+    href: "/dealers",
+    label: "Dealers",
+    totalKey: "dealers",
+    alertKey: "pendingDealers",
+  },
+  { href: "/messages", label: "Messages", totalKey: "messages" },
+  { href: "/notifications", label: "Notifications", totalKey: "notifications" },
+  { href: "/saved-searches", label: "Saved searches", totalKey: "savedSearches" },
+  { href: "/audit", label: "Audit log", totalKey: "auditLog" },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -50,20 +63,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           {NAV.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const alertCount = item.alertKey ? badges[item.alertKey] : 0;
+            const totalCount = item.totalKey ? badges[item.totalKey] : 0;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center rounded-lg px-3 py-2 text-sm transition ${
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
                   active
                     ? "bg-brand-600/20 font-medium text-brand-300"
                     : "text-surface-muted hover:bg-white/5 hover:text-white"
                 }`}
               >
-                <span>{item.label}</span>
-                {item.badgeKey ? (
-                  <NavBadge count={badges[item.badgeKey]} />
-                ) : null}
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {item.alertKey ? <NavBadge count={alertCount} /> : null}
+                {item.totalKey ? <NavTotalBadge count={totalCount} /> : null}
               </Link>
             );
           })}

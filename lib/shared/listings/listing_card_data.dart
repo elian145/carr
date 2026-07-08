@@ -52,6 +52,12 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
     'image_url': listing['image_url'],
     'images': listing['images'],
     'videos': listing['videos'],
+    'body_type': listing['body_type'],
+    'transmission': listing['transmission'],
+    'fuel_type': listing['fuel_type'],
+    'is_featured': listing['is_featured'] ?? false,
+    'is_favorited':
+        listing['is_favorited'] ?? listing['favorited'] ?? false,
     'is_quick_sell': listing['is_quick_sell'] ?? false,
     'status': listing['status'],
     'created_at': listing['created_at'],

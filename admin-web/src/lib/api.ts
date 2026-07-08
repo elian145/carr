@@ -206,13 +206,30 @@ export async function fetchSavedSearches(params: {
   return apiRequest(`/api/admin/saved-searches${buildQuery(params)}`);
 }
 
-export async function fetchNavBadges(): Promise<{
+export interface NavBadges {
   pendingReports: number;
   pendingDealers: number;
-}> {
+  users: number;
+  listings: number;
+  dealers: number;
+  messages: number;
+  notifications: number;
+  savedSearches: number;
+  auditLog: number;
+}
+
+export async function fetchNavBadges(): Promise<NavBadges> {
   const dashboard = await fetchDashboard();
+  const s = dashboard.stats;
   return {
-    pendingReports: dashboard.stats.pending_reports ?? 0,
-    pendingDealers: dashboard.stats.pending_dealers ?? 0,
+    pendingReports: s.pending_reports ?? 0,
+    pendingDealers: s.pending_dealers ?? 0,
+    users: s.total_users ?? 0,
+    listings: s.total_cars ?? 0,
+    dealers: s.dealer_accounts ?? 0,
+    messages: s.total_messages ?? 0,
+    notifications: s.total_notifications ?? 0,
+    savedSearches: s.total_saved_searches ?? 0,
+    auditLog: s.total_user_actions ?? 0,
   };
 }

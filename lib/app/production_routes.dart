@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../pages/admin_dealers_page.dart';
-import '../pages/admin_reports_page.dart';
 import '../pages/analytics_page.dart';
 import '../pages/forgot_password_page.dart';
 import '../pages/change_password_page.dart';
@@ -179,10 +177,6 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
                 '/forgot-password': (context) => const ForgotPasswordPage(),
                 '/change-password': (context) =>
                     AuthGuard(child: const ChangePasswordPage()),
-                '/admin/dealers': (context) =>
-                    AuthGuard(child: AdminDealersPage()),
-                '/admin/reports': (context) =>
-                    AuthGuard(child: const AdminReportsPage()),
                 '/help': (context) => const HelpCenterPage(),
                 '/dealer/edit': (context) =>
                     AuthGuard(child: EditDealerPage()),

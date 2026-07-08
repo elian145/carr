@@ -37,6 +37,7 @@ export default function UsersPage() {
     <AsyncPageBody
       title="Users"
       description="Search and filter all accounts"
+      count={data?.pagination.total}
       data={data}
       error={error}
       loading={loading}

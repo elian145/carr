@@ -422,31 +422,6 @@ abstract final class _ApiServiceAuth {
       );
     }
 
-  static Future<Map<String, dynamic>> adminDealersPending() async {
-      return await ApiService._makeAuthenticatedRequest('GET', '/admin/dealers/pending');
-    }
-
-  static Future<Map<String, dynamic>> adminApproveDealer(String publicUserId) async {
-      final id = Uri.encodeComponent(publicUserId.trim());
-      return await ApiService._makeAuthenticatedRequest('POST', '/admin/dealers/$id/approve');
-    }
-
-  static Future<Map<String, dynamic>> adminRejectDealer(
-    String publicUserId, {
-      String? reason,
-    }) async {
-      final id = Uri.encodeComponent(publicUserId.trim());
-      final body = <String, dynamic>{};
-      if (reason != null && reason.trim().isNotEmpty) {
-        body['reason'] = reason.trim();
-      }
-      return await ApiService._makeAuthenticatedRequest(
-        'POST',
-        '/admin/dealers/$id/reject',
-        body: body.isNotEmpty ? body : null,
-      );
-    }
-
   static Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> profileData,
   ) async {

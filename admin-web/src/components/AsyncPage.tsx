@@ -79,6 +79,7 @@ export function AsyncPageBody<T>({
   title,
   description,
   actions,
+  count,
   data,
   error,
   loading,
@@ -88,6 +89,7 @@ export function AsyncPageBody<T>({
   title: string;
   description?: string;
   actions?: React.ReactNode;
+  count?: number | null;
   data: T | null;
   error: string | null;
   loading: boolean;
@@ -99,6 +101,7 @@ export function AsyncPageBody<T>({
       <PageHeader
         title={title}
         description={description}
+        count={count}
         actions={
           <>
             <RefreshButton onClick={reload} />

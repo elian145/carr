@@ -1,16 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DataTable, Td, Th } from "@/components/DataTable";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
 import { approveDealer, fetchDealers, fetchPendingDealers, rejectDealer } from "@/lib/api";
-import { displayName, formatDate } from "@/lib/format";
+import { displayName, formatDate, formatNumber } from "@/lib/format";
 import type { User } from "@/lib/types";
 
+type DealerTab = "pending" | "all" | "approved" | "rejected";
+
+const EMPTY_COUNTS: Record<DealerTab, number> = {
+  pending: 0,
+  all: 0,
+  approved: 0,
+  rejected: 0,
+};
+
 export default function DealersPage() {
-  const [tab, setTab] = useState<"pending" | "all" | "approved" | "rejected">("pending");
+  const [tab, setTab] = useState<DealerTab>("pending");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [tabCounts, setTabCounts] = useState(EMPTY_COUNTS);
 
   const { data, error, loading, reload } = useAsyncData(async () => {
     if (tab === "pending") {
@@ -19,6 +29,29 @@ export default function DealersPage() {
     const status = tab === "all" ? "all" : tab;
     return fetchDealers(status);
   }, [tab]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetchPendingDealers(),
+      fetchDealers("all"),
+      fetchDealers("approved"),
+      fetchDealers("rejected"),
+    ])
+      .then(([pending, all, approved, rejected]) => {
+        if (cancelled) return;
+        setTabCounts({
+          pending: pending.dealers.length,
+          all: all.dealers.length,
+          approved: approved.dealers.length,
+          rejected: rejected.dealers.length,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
 
   async function handleApprove(dealer: User) {
     setBusyId(dealer.id);
@@ -45,17 +78,18 @@ export default function DealersPage() {
     }
   }
 
-  const tabs = [
-    { id: "pending" as const, label: "Pending" },
-    { id: "all" as const, label: "All dealers" },
-    { id: "approved" as const, label: "Approved" },
-    { id: "rejected" as const, label: "Rejected" },
+  const tabs: { id: DealerTab; label: string }[] = [
+    { id: "pending", label: "Pending" },
+    { id: "all", label: "All dealers" },
+    { id: "approved", label: "Approved" },
+    { id: "rejected", label: "Rejected" },
   ];
 
   return (
     <AsyncPageBody
       title="Dealers"
       description="Dealer applications and accounts"
+      count={data?.dealers.length}
       data={data}
       error={error}
       loading={loading}
@@ -71,7 +105,7 @@ export default function DealersPage() {
                 tab === t.id ? "bg-brand-600 text-white" : "text-surface-muted hover:bg-white/5"
               }`}
             >
-              {t.label}
+              {t.label} ({formatNumber(tabCounts[t.id])})
             </button>
           ))}
         </div>

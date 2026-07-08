@@ -22,6 +22,7 @@ export default function SavedSearchesPage() {
     <AsyncPageBody
       title="Saved searches"
       description="What users are watching for"
+      count={data?.pagination.total}
       data={data}
       error={error}
       loading={loading}

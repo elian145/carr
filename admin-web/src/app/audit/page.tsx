@@ -39,6 +39,7 @@ export default function AuditPage() {
     <AsyncPageBody
       title="Audit log"
       description="User action history across the platform"
+      count={data?.pagination.total}
       data={data}
       error={error}
       loading={loading}

@@ -46,8 +46,6 @@ void main() {
       '/chat',
       '/my_listings',
       '/analytics',
-      '/admin/dealers',
-      '/admin/reports',
       '/dealer/edit',
       '/edit-profile',
       '/change-password',

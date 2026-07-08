@@ -142,64 +142,76 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
               ),
             ),
           ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            feedColumns == 1 ? 4 : 8,
-            8,
-            feedColumns == 1 ? 4 : 8,
-            8 + MediaQuery.of(context).padding.bottom + 92,
-          ),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: feedColumns,
-              // Slightly taller cells than 0.65 so listing cards (image + content) don’t overflow
-              // One column: horizontal row — wider vs tall to match strip layout.
-              // One column: horizontal card. Larger ratio => shorter cell height
-              // so the text column is not left with a tall empty band under the last row.
-              childAspectRatio: ListingLayoutPrefs.gridChildAspectRatioForWidth(
-                feedColumns,
-                screenWidth,
+        Builder(
+          builder: (context) {
+            final feedCars = mixFeaturedIntoListingFeed(
+              feed: cars,
+              featured: featuredCars,
+            );
+            return SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                feedColumns == 1 ? 4 : 8,
+                8,
+                feedColumns == 1 ? 4 : 8,
+                8 + MediaQuery.of(context).padding.bottom + 92,
               ),
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              if (index >= cars.length) {
-                return Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: CircularProgressIndicator(strokeWidth: 2),
+              sliver: SliverGrid(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: feedColumns,
+                  // Slightly taller cells than 0.65 so listing cards (image + content) don’t overflow
+                  // One column: horizontal row — wider vs tall to match strip layout.
+                  // One column: horizontal card. Larger ratio => shorter cell height
+                  // so the text column is not left with a tall empty band under the last row.
+                  childAspectRatio:
+                      ListingLayoutPrefs.gridChildAspectRatioForWidth(
+                    feedColumns,
+                    screenWidth,
                   ),
-                );
-              }
-              final car = cars[index];
-              if (listingColumns == 3) {
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/tiktok_scroll',
-                      arguments: {'cars': cars, 'initialIndex': index},
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  if (index >= feedCars.length) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
                     );
-                  },
-                  child: AbsorbPointer(
-                    child: buildGlobalCarCard(
-                      context,
-                      car,
-                      listLayout: feedColumns == 1,
-                      carouselResetSeed: _homeCarouselResetSeed,
-                    ),
-                  ),
-                );
-              }
-              return buildGlobalCarCard(
-                context,
-                car,
-                listLayout: feedColumns == 1,
-                carouselResetSeed: _homeCarouselResetSeed,
-              );
-            }, childCount: cars.length + (_hasNext ? 1 : 0)),
-          ),
+                  }
+                  final car = feedCars[index];
+                  if (listingColumns == 3) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/tiktok_scroll',
+                          arguments: {
+                            'cars': feedCars,
+                            'initialIndex': index,
+                          },
+                        );
+                      },
+                      child: AbsorbPointer(
+                        child: buildGlobalCarCard(
+                          context,
+                          car,
+                          listLayout: feedColumns == 1,
+                          carouselResetSeed: _homeCarouselResetSeed,
+                        ),
+                      ),
+                    );
+                  }
+                  return buildGlobalCarCard(
+                    context,
+                    car,
+                    listLayout: feedColumns == 1,
+                    carouselResetSeed: _homeCarouselResetSeed,
+                  );
+                }, childCount: feedCars.length + (_hasNext ? 1 : 0)),
+              ),
+            );
+          },
         ),
       ],
     ];
