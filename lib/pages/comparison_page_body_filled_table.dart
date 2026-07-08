@@ -6,344 +6,78 @@ extension _CarComparisonPageBodyFilledTable on CarComparisonPage {
     CarComparisonStore comparisonStore,
     List<Map<String, dynamic>> cars,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lightInk = AppThemes.darkHomeShellBackground;
+    return ListView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
+      children: _buildComparisonRows(context, cars),
+    );
+  }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double labelWidth = 120.0;
-        final double horizontalPadding = 32.0; // padding inside row containers
-        final bool isTwoCars = cars.length == 2;
-        final double availableWidth = constraints.maxWidth;
-        final double effectiveRowWidth = availableWidth - horizontalPadding;
-        final int numColumns = cars.isEmpty ? 1 : cars.length;
-        final double baseColumnWidth =
-            (effectiveRowWidth - labelWidth) / numColumns;
-        final double columnWidth = isTwoCars
-            ? (baseColumnWidth < 96.0 ? 96.0 : baseColumnWidth)
-            : baseColumnWidth.clamp(120.0, 260.0).toDouble();
-        final double requiredWidth =
-            labelWidth + (numColumns * columnWidth) + horizontalPadding;
-        final double tableWidth = requiredWidth > availableWidth
-            ? requiredWidth
-            : availableWidth;
-        final double imageSize = isTwoCars
-            ? ((columnWidth - 16).clamp(88.0, 120.0)).toDouble()
-            : 120.0;
-        final double headerTitleHeight = 52.0;
-        final double headerPriceHeight = 22.0;
-
-        final table = Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
-                : AppThemes.lightAppBackground,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 16,
-                offset: Offset(0, 8),
-              ),
-            ],
+  Widget _buildCarSummarySection(
+    BuildContext context,
+    CarComparisonStore comparisonStore,
+    List<Map<String, dynamic>> cars,
+  ) {
+    if (cars.length == 2) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _buildComparisonCarCard(
+              context,
+              comparisonStore,
+              cars[0],
+            ),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Car Headers
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  // Keep the orange accent in light mode, but soften it.
-                  color: Color(
-                    0xFFFF6B00,
-                  ).withValues(alpha: isDark ? 0.12 : 0.10),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Row(
-                  mainAxisAlignment: isTwoCars
-                      ? MainAxisAlignment.center
-                      : MainAxisAlignment.start,
-                  children: isTwoCars
-                      ? [
-                          // Left car
-                          SizedBox(
-                            width: columnWidth,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    height: imageSize,
-                                    width: imageSize,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.white10),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: _buildCarImage(cars[0]),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  SizedBox(
-                                    height: headerTitleHeight,
-                                    child: Center(
-                                      child: AutoSizeText(
-                                        (cars[0]['title'] ?? '').toString(),
-                                        textScaleFactor: 1.0,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: isDark
-                                              ? Colors.white
-                                              : lightInk,
-                                          height: 1.15,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        minFontSize: 9,
-                                        stepGranularity: 0.5,
-                                        overflow: TextOverflow.clip,
-                                        softWrap: true,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  SizedBox(
-                                    height: headerPriceHeight,
-                                    child: Center(
-                                      child: Text(
-                                        formatCurrency(
-                                          context,
-                                          cars[0]['price']?.toString() ?? '0',
-                                        ),
-                                        style: TextStyle(
-                                          color: Color(0xFFFF6B00),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  IconButton(
-                                    onPressed: () {
-                                      comparisonStore.removeCarFromComparison(
-                                        cars[0]['id'],
-                                      );
-                                    },
-                                    icon: Icon(
-                                      Icons.close,
-                                      color: Colors.red,
-                                      size: 24,
-                                    ),
-                                    constraints: BoxConstraints(),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Middle spacer for labels
-                          SizedBox(width: labelWidth),
-                          // Right car
-                          SizedBox(
-                            width: columnWidth,
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    height: imageSize,
-                                    width: imageSize,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.white10),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: _buildCarImage(cars[1]),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  SizedBox(
-                                    height: headerTitleHeight,
-                                    child: Center(
-                                      child: AutoSizeText(
-                                        (cars[1]['title'] ?? '').toString(),
-                                        textScaleFactor: 1.0,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: isDark
-                                              ? Colors.white
-                                              : lightInk,
-                                          height: 1.15,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        minFontSize: 9,
-                                        stepGranularity: 0.5,
-                                        overflow: TextOverflow.clip,
-                                        softWrap: true,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  SizedBox(
-                                    height: headerPriceHeight,
-                                    child: Center(
-                                      child: Text(
-                                        formatCurrency(
-                                          context,
-                                          cars[1]['price']?.toString() ?? '0',
-                                        ),
-                                        style: TextStyle(
-                                          color: Color(0xFFFF6B00),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  IconButton(
-                                    onPressed: () {
-                                      comparisonStore.removeCarFromComparison(
-                                        cars[1]['id'],
-                                      );
-                                    },
-                                    icon: Icon(
-                                      Icons.close,
-                                      color: Colors.red,
-                                      size: 24,
-                                    ),
-                                    constraints: BoxConstraints(),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ]
-                      : [
-                          SizedBox(
-                            width: labelWidth,
-                          ), // Space for property names
-                          ...cars.map(
-                            (car) => SizedBox(
-                              width: columnWidth,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 8),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      height: 110,
-                                      width: 110,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: Colors.white10,
-                                        ),
-                                      ),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: _buildCarImage(car),
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    SizedBox(
-                                      height: headerTitleHeight,
-                                      child: Center(
-                                        child: AutoSizeText(
-                                          [
-                                                localizedCarTitleForCard(
-                                                  context,
-                                                  car,
-                                                ),
-                                                localizedTrimForCard(
-                                                  context,
-                                                  car,
-                                                ),
-                                              ]
-                                              .where((s) => s.isNotEmpty)
-                                              .join(' '),
-                                          textScaleFactor: 1.0,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 14,
-                                            color: isDark
-                                                ? Colors.white
-                                                : lightInk,
-                                            height: 1.15,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                          maxLines: 2,
-                                          minFontSize: 9,
-                                          stepGranularity: 0.5,
-                                          overflow: TextOverflow.clip,
-                                          softWrap: true,
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    SizedBox(
-                                      height: headerPriceHeight,
-                                      child: Center(
-                                        child: Text(
-                                          formatCurrency(
-                                            context,
-                                            car['price']?.toString() ?? '0',
-                                          ),
-                                          style: TextStyle(
-                                            color: Color(0xFFFF6B00),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    IconButton(
-                                      onPressed: () {
-                                        comparisonStore.removeCarFromComparison(
-                                          car['id'],
-                                        );
-                                      },
-                                      icon: Icon(
-                                        Icons.close,
-                                        color: Colors.red,
-                                        size: 24,
-                                      ),
-                                      constraints: BoxConstraints(),
-                                      padding: EdgeInsets.zero,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                ),
-              ),
-              SizedBox(height: 12),
-
-              // Comparison Rows
-              ..._buildComparisonRows(context, cars, columnWidth, labelWidth),
-            ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildComparisonCarCard(
+              context,
+              comparisonStore,
+              cars[1],
+            ),
           ),
-        );
+        ],
+      );
+    }
 
-        if (isTwoCars && tableWidth <= availableWidth) {
-          return SizedBox(width: availableWidth, child: table);
-        }
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: BouncingScrollPhysics(),
-          child: SizedBox(width: tableWidth, child: table),
-        );
-      },
+    if (cars.length == 3) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (int i = 0; i < cars.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: _buildComparisonCarCard(
+                context,
+                comparisonStore,
+                cars[i],
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    return SizedBox(
+      height: 188,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: cars.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          return SizedBox(
+            width: 168,
+            child: _buildComparisonCarCard(
+              context,
+              comparisonStore,
+              cars[index],
+              width: 168,
+            ),
+          );
+        },
+      ),
     );
   }
 }

@@ -5,7 +5,6 @@ import 'package:share_plus/share_plus.dart';
 
 import '../app/widgets/global_listing_card.dart'
     show localizedCarTitleForCard, localizedTrimForCard;
-import '../app/widgets/language_menu.dart';
 import '../app/widgets/listing_network_image.dart';
 import '../features/comparison/state/car_comparison_store.dart';
 import '../l10n/app_localizations.dart';
@@ -17,7 +16,6 @@ import '../shared/i18n/locale_formatting.dart';
 import '../shared/i18n/region_spec_labels.dart';
 import '../shared/media/media_url.dart';
 import '../theme_provider.dart';
-import '../widgets/theme_toggle_widget.dart';
 
 // Car Comparison Page
 
@@ -34,73 +32,52 @@ class CarComparisonPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pageIsDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
+    final brightness = Theme.of(context).brightness;
+    final isLightShell = brightness == Brightness.light;
+
     return Scaffold(
-      backgroundColor: pageIsDark ? null : AppThemes.lightAppBackground,
+      backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.specificationsLabel),
-        elevation: 0,
+        title: Text(loc.comparisonTitle),
         actions: [
-          Semantics(
-            button: true,
-            label: AppLocalizations.of(context)!.shareAction,
-            child: IconButton(
-              tooltip: AppLocalizations.of(context)!.shareAction,
-              onPressed: () async {
-              try {
-                final store = Provider.of<CarComparisonStore>(
-                  context,
-                  listen: false,
-                );
-                final cars = store.comparisonCars;
-                final text = cars
-                    .map(
-                      (c) =>
-                          '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}',
-                    )
-                    .join('\n');
-                if (text.trim().isNotEmpty) {
-                  SharePlus.instance.share(ShareParams(text: text));
-                }
-              } catch (e, st) { logNonFatal(e, st); }
-            },
-            icon: Icon(Icons.share_outlined),
-            ),
-          ),
           Consumer<CarComparisonStore>(
-            builder: (context, comparisonStore, child) {
-              if (comparisonStore.comparisonCount > 0) {
-                return TextButton(
-                  onPressed: () {
-                    comparisonStore.clearComparison();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          AppLocalizations.of(context)!.clearFilters,
-                        ),
-                        backgroundColor: Color(0xFFFF6B00),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.clearFilters,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                );
+            builder: (context, comparisonStore, _) {
+              if (comparisonStore.comparisonCount == 0) {
+                return const SizedBox.shrink();
               }
-              return SizedBox.shrink();
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    button: true,
+                    label: loc.shareAction,
+                    child: IconButton(
+                      tooltip: loc.shareAction,
+                      onPressed: () => _shareComparison(context, comparisonStore),
+                      icon: const Icon(Icons.share_outlined),
+                    ),
+                  ),
+                  Semantics(
+                    button: true,
+                    label: loc.clearAll,
+                    child: IconButton(
+                      tooltip: loc.clearAll,
+                      onPressed: () => _clearComparison(context, comparisonStore),
+                      icon: const Icon(Icons.delete_sweep_outlined),
+                    ),
+                  ),
+                ],
+              );
             },
           ),
-          const ThemeToggleWidget(),
-          buildLanguageMenu(),
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           Container(
-            decoration: pageIsDark
-                ? AppThemes.shellBackgroundDecoration(Brightness.dark)
-                : const BoxDecoration(color: AppThemes.lightAppBackground),
+            decoration: AppThemes.shellBackgroundDecoration(brightness),
           ),
           Consumer<CarComparisonStore>(
             builder: (context, comparisonStore, child) {
@@ -109,6 +86,33 @@ class CarComparisonPage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _shareComparison(
+    BuildContext context,
+    CarComparisonStore comparisonStore,
+  ) async {
+    try {
+      final cars = comparisonStore.comparisonCars;
+      final text = cars
+          .map(
+            (c) =>
+                '${c['title'] ?? ''} • ${c['year'] ?? ''} • ${c['price'] ?? ''}',
+          )
+          .join('\n');
+      if (text.trim().isNotEmpty) {
+        await SharePlus.instance.share(ShareParams(text: text));
+      }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+  }
+
+  void _clearComparison(BuildContext context, CarComparisonStore comparisonStore) {
+    comparisonStore.clearComparison();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context)!.comparisonCleared)),
     );
   }
 }
