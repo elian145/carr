@@ -14,6 +14,7 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
   String _currentDraftId = _newSellDraftId();
   bool _skipDraftPersistOnDispose = false;
   String? _editListingId;
+  final Set<String> _verifiedListingPhones = <String>{};
 
   bool get _isEditMode => (_editListingId ?? '').trim().isNotEmpty;
 

@@ -33,8 +33,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Specifications'), findsWidgets);
+    expect(find.text('Comparison'), findsOneWidget);
     expect(find.text('No cars found'), findsOneWidget);
-    expect(find.text('Tap to select a brand'), findsOneWidget);
+    expect(find.text('Add cars to comparison from listings.'), findsOneWidget);
   });
 }

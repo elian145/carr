@@ -77,24 +77,29 @@ mixin _SellStep5Build on _SellStep5Logic {
                                       .findAncestorStateOfType<
                                         _SellCarPageState
                                       >();
-                                  final isEdit =
-                                      parentState?._isEditMode == true;
-                                  if (!isEdit) {
-                                    final auth = context.read<AuthService>();
-                                    if (!auth.isUserVerified) {
-                                      setState(() {
-                                        isSubmitting = false;
-                                      });
-                                      await ensurePhoneVerifiedForAction(
-                                        context,
-                                      );
-                                      return;
-                                    }
-                                  }
                                   final Map<String, dynamic> carData =
                                       Map<String, dynamic>.from(
                                         parentState?.carData ?? {},
                                       );
+                                  final contactPhone =
+                                      (carData['contact_phone'] ?? '')
+                                          .toString()
+                                          .trim();
+                                  if (contactPhone.isNotEmpty) {
+                                    final verified =
+                                        await ensureListingContactPhoneVerified(
+                                          context,
+                                          contactPhone: contactPhone,
+                                          verifiedPhonesCache:
+                                              parentState?._verifiedListingPhones,
+                                        );
+                                    if (!verified) {
+                                      setState(() {
+                                        isSubmitting = false;
+                                      });
+                                      return;
+                                    }
+                                  }
                                   final List<String> required = [
                                     'brand',
                                     'model',

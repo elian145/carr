@@ -5,6 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../errors/user_error_text.dart';
+import '../phone/phone_normalizer.dart';
 
 const String kPhoneVerificationRequiredCode = 'phone_verification_required';
 
@@ -53,10 +54,11 @@ Future<bool> showPhoneVerificationDialog(
   BuildContext context, {
   required String phone,
   required AuthService auth,
+  bool allowAccountVerifiedFallback = true,
 }) async {
-  final codeController = TextEditingController();
   var codeSent = false;
   var verified = false;
+  var codeInput = '';
 
   await showDialog<void>(
     context: context,
@@ -75,13 +77,15 @@ Future<bool> showPhoneVerificationDialog(
                   Text(locDialog.verifyPhoneDialogMessage(phone)),
                   const SizedBox(height: 16),
                   TextField(
-                    controller: codeController,
                     decoration: InputDecoration(
                       labelText: locDialog.sixDigitCodeLabel,
                       border: const OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
                     maxLength: 6,
+                    onChanged: (value) {
+                      codeInput = value;
+                    },
                   ),
                 ],
               ),
@@ -123,7 +127,7 @@ Future<bool> showPhoneVerificationDialog(
                 ),
               FilledButton(
                 onPressed: () async {
-                  final code = codeController.text.trim();
+                  final code = codeInput.trim();
                   if (code.length != 6) {
                     ScaffoldMessenger.of(ctx2).showSnackBar(
                       SnackBar(
@@ -170,8 +174,49 @@ Future<bool> showPhoneVerificationDialog(
     },
   );
 
-  codeController.dispose();
-  return verified || auth.isUserVerified;
+  return verified || (allowAccountVerifiedFallback && auth.isUserVerified);
+}
+
+String _normalizedPhoneDigits(String input) {
+  final normalized = normalizePhoneNumber(input);
+  if (normalized.isEmpty) return '';
+  return normalized.replaceAll(RegExp(r'\D'), '');
+}
+
+Future<bool> ensureListingContactPhoneVerified(
+  BuildContext context, {
+  required String contactPhone,
+  Set<String>? verifiedPhonesCache,
+}) async {
+  final enteredDigits = _normalizedPhoneDigits(contactPhone);
+  if (enteredDigits.isEmpty) return false;
+
+  final auth = context.read<AuthService>();
+  final accountPhone = (auth.currentUser?['phone_number'] ?? '')
+      .toString()
+      .trim();
+  final accountDigits = _normalizedPhoneDigits(accountPhone);
+
+  // If seller uses account phone, no extra OTP gate is needed.
+  if (accountDigits.isNotEmpty && enteredDigits == accountDigits) {
+    return true;
+  }
+
+  if (verifiedPhonesCache != null && verifiedPhonesCache.contains(enteredDigits)) {
+    return true;
+  }
+
+  final normalizedPhone = normalizePhoneNumber(contactPhone);
+  final verified = await showPhoneVerificationDialog(
+    context,
+    phone: normalizedPhone.isEmpty ? contactPhone.trim() : normalizedPhone,
+    auth: auth,
+    allowAccountVerifiedFallback: false,
+  );
+  if (verified) {
+    verifiedPhonesCache?.add(enteredDigits);
+  }
+  return verified;
 }
 
 void showPhoneVerificationRequiredSnackBar(BuildContext context) {
