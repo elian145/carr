@@ -25,7 +25,8 @@ mixin _SellStep3Catalog on _SellStep3Fields {
       selectedCurrency = (data['currency']?.toString().trim().isNotEmpty == true)
           ? data['currency'].toString()
           : selectedCurrency;
-      _priceController.text = selectedPrice ?? '';
+      final rawPrice = selectedPrice ?? '';
+      _priceController.text = rawPrice.replaceAll(RegExp(r'[^\d.]'), '');
       _phoneController.text = (contactPhone ?? '').replaceFirst(RegExp(r'^\+964'), '');
       _descriptionController.text = data['description']?.toString() ?? '';
     });
@@ -71,7 +72,6 @@ mixin _SellStep3Catalog on _SellStep3Fields {
           'selectedPlateCity': selectedPlateCity,
           'contactPhone': contactPhone,
           'isQuickSell': isQuickSell,
-          'isPriceManualInput': isPriceManualInput,
           'selectedCurrency': selectedCurrency,
           'priceControllerText': _priceController.text,
           'descriptionControllerText': _descriptionController.text,

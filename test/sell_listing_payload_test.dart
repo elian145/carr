@@ -59,6 +59,31 @@ void main() {
       });
       expect(payload.containsKey('region_specs'), isFalse);
     });
+
+    test('converts miles to km for API payload', () {
+      final payload = buildSellCarUpdatePayload({
+        ...sampleCarData,
+        'mileage': '10000',
+        'mileage_unit': 'miles',
+      });
+      expect(payload['mileage'], 16093);
+    });
+  });
+
+  group('sellMileageKmFromCarData', () {
+    test('returns km value unchanged', () {
+      expect(
+        sellMileageKmFromCarData({'mileage': '45000', 'mileage_unit': 'km'}),
+        45000,
+      );
+    });
+
+    test('converts miles to km', () {
+      expect(
+        sellMileageKmFromCarData({'mileage': '10000', 'mileage_unit': 'miles'}),
+        16093,
+      );
+    });
   });
 
   group('buildSellCarCreatePayload', () {

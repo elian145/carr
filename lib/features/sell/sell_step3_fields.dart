@@ -11,7 +11,6 @@ mixin _SellStep3Fields on State<SellStep3Page> {
   String? selectedPlateCity;
   String? contactPhone;
   bool isQuickSell = false;
-  bool isPriceManualInput = false;
   String selectedCurrency = 'USD';
 
   // Focus node for keyboard management

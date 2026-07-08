@@ -76,6 +76,12 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
 
     setState(() {
       selectedMileage = d['mileage']?.toString();
+      selectedMileageUnit =
+          d['mileage_unit']?.toString() == 'miles' ? 'miles' : 'km';
+      final mileageText = selectedMileage ?? '';
+      if (_mileageController.text != mileageText) {
+        _mileageController.text = mileageText;
+      }
       selectedCondition = d['condition']?.toString();
       takeScalarOrOnlineOpt(
         'transmission',
@@ -190,6 +196,7 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
         _SellStep2Fields._draftKey,
         json.encode(<String, dynamic>{
           'selectedMileage': selectedMileage,
+          'selectedMileageUnit': selectedMileageUnit,
           'selectedCondition': selectedCondition,
           'selectedTransmission': selectedTransmission,
           'selectedFuelType': selectedFuelType,
@@ -216,7 +223,6 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
           'errCylinderCount': errCylinderCount,
           'errTitle': errTitle,
           'errDamagedParts': errDamagedParts,
-          'isMileageManualInput': isMileageManualInput,
           'isEngineSizeManualInput': isEngineSizeManualInput,
           'mileageControllerText': _mileageController.text,
           'engineSizeControllerText': _engineSizeController.text,
@@ -227,6 +233,7 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
 
   void _resetStep2() {
     selectedMileage = null;
+    selectedMileageUnit = 'km';
     selectedCondition = null;
     selectedTransmission = null;
     selectedFuelType = null;

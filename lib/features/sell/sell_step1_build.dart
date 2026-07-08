@@ -176,6 +176,38 @@ mixin _SellStep1Build on _SellStep1Pickers {
               ),
             ),
             const SizedBox(height: 24),
+            MakeModelKeywordSearch(
+              brands: brands,
+              models: models,
+              controller: _makeModelSearchController,
+              focusNode: _makeModelSearchFocusNode,
+              onBrandSelected: (brand) {
+                setState(() {
+                  selectedBrand = brand;
+                  selectedModel = null;
+                  selectedTrim = null;
+                  errBrand = false;
+                  _resetDsPicker();
+                  _pruneYearOutsideCatalog();
+                });
+                _schedDsRefresh();
+                _syncStep1DraftToParent();
+              },
+              onModelSelected: (brand, model) {
+                setState(() {
+                  selectedBrand = brand;
+                  selectedModel = model;
+                  selectedTrim = null;
+                  errBrand = false;
+                  errModel = false;
+                  _resetDsPicker();
+                  _pruneYearOutsideCatalog();
+                });
+                _schedDsRefresh();
+                _syncStep1DraftToParent();
+              },
+            ),
+            const SizedBox(height: 14),
             FilterMakeSection(
               brands: brands,
               selectedBrand: selectedBrand,

@@ -1,18 +1,51 @@
 part of 'sell_flow.dart';
 
 mixin _SellStep2BuildCore on _SellStep2Pickers {
+  Widget _mileageUnitOption({
+    required String value,
+    required String label,
+  }) {
+    final selected = selectedMileageUnit == value;
+    return InkWell(
+      onTap: () {
+        setState(() => selectedMileageUnit = value);
+        _syncStep2DraftToParent();
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected
+              ? kFilterAccentColor.withValues(alpha: 0.12)
+              : Colors.grey.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? kFilterAccentColor : const Color(0xFFE0E0E5),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: selected ? kFilterAccentColor : Colors.grey[700],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _sellStep2MileageSection() {
     final loc = AppLocalizations.of(context)!;
     final style = filterDialogStyle(context);
-    final miles = [
-      for (int m = 0; m <= 100000; m += 1000) m.toString(),
-      for (int m = 105000; m <= 300000; m += 5000) m.toString(),
-    ];
 
     String formatMileage(String value) {
       final parsed = int.tryParse(value) ?? 0;
       final nf = _decimalFormatterGlobal(context);
-      return '${_localizeDigitsGlobal(context, nf.format(parsed))} ${loc.unit_km}';
+      final unit =
+          selectedMileageUnit == 'miles' ? loc.unit_miles : loc.unit_km;
+      return '${_localizeDigitsGlobal(context, nf.format(parsed))} $unit';
     }
 
     return [
@@ -22,108 +55,55 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilterSectionHeader(
-              title: loc.mileageKmLabel,
+              title: loc.mileageLabel,
               requiredField: true,
-              valueSummary: selectedMileage == null
-                  ? loc.tapToSelect
+              valueSummary: selectedMileage == null ||
+                      selectedMileage!.trim().isEmpty
+                  ? loc.enterMileage
                   : formatMileage(selectedMileage!),
             ),
             const SizedBox(height: 12),
+            TextFormField(
+              focusNode: _mileageFocusNode,
+              controller: _mileageController,
+              decoration: filterFieldDecoration(
+                style,
+                loc.enterMileage,
+                errorText: errMileage ? loc.pleaseEnterMileage : null,
+              ),
+              style: TextStyle(color: style.onSurface),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                setState(() {
+                  selectedMileage = value.isEmpty ? null : value;
+                });
+                _syncStep2DraftToParent();
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return loc.pleaseEnterMileage;
+                }
+                final mileage = int.tryParse(value);
+                if (mileage == null) return loc.invalidMileage;
+                if (mileage < 0) return loc.mileageNegative;
+                return null;
+              },
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
-                  child: isMileageManualInput
-                      ? TextFormField(
-                          focusNode: _mileageFocusNode,
-                          controller: _mileageController,
-                          decoration: filterFieldDecoration(
-                            style,
-                            loc.mileageKmLabel,
-                            errorText: errMileage ? loc.pleaseSelectMileage : null,
-                          ),
-                          style: TextStyle(color: style.onSurface),
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedMileage = value.isEmpty ? null : value;
-                            });
-                            _syncStep2DraftToParent();
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return loc.pleaseEnterMileage;
-                            }
-                            final mileage = int.tryParse(value);
-                            if (mileage == null) return loc.invalidMileage;
-                            if (mileage < 0) return loc.mileageNegative;
-                            return null;
-                          },
-                        )
-                      : DropdownButtonFormField<String>(
-                          isExpanded: true,
-                          value: selectedMileage != null &&
-                                  miles.contains(selectedMileage)
-                              ? selectedMileage
-                              : null,
-                          decoration: filterFieldDecoration(
-                            style,
-                            loc.mileageKmLabel,
-                            errorText: errMileage ? loc.pleaseSelectMileage : null,
-                          ),
-                          items: miles.map((mile) {
-                            return DropdownMenuItem<String>(
-                              value: mile,
-                              child: Text(formatMileage(mile)),
-                            );
-                          }).toList(),
-                          hint: Text(
-                            loc.tapToSelect,
-                            style: TextStyle(
-                              color: style.anyOrange,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() => selectedMileage = value);
-                            _syncStep2DraftToParent();
-                          },
-                        ),
+                  child: _mileageUnitOption(
+                    value: 'km',
+                    label: loc.unit_km,
+                  ),
                 ),
                 const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {
-                    if (isMileageManualInput) {
-                      _mileageFocusNode.unfocus();
-                      FocusScope.of(context).unfocus();
-                      setState(() {
-                        isMileageManualInput = false;
-                        if (_mileageController.text.isNotEmpty) {
-                          selectedMileage = _mileageController.text;
-                        }
-                      });
-                      _syncStep2DraftToParent();
-                    } else {
-                      setState(() {
-                        isMileageManualInput = true;
-                        _mileageController.clear();
-                        selectedMileage = null;
-                      });
-                      _syncStep2DraftToParent();
-                    }
-                  },
-                  icon: Icon(
-                    isMileageManualInput ? Icons.check : Icons.edit,
-                    color: kFilterAccentColor,
+                Expanded(
+                  child: _mileageUnitOption(
+                    value: 'miles',
+                    label: loc.unit_miles,
                   ),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.withValues(alpha: 0.1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  tooltip: isMileageManualInput
-                      ? loc.confirmMileage
-                      : loc.typeManually,
                 ),
               ],
             ),

@@ -427,6 +427,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get unit_km => 'کم';
 
   @override
+  String get unit_miles => 'میل';
+
+  @override
   String get unit_liter_suffix => 'L';
 
   @override

@@ -235,6 +235,7 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     if (parentState == null) return;
     parentState.carData['mileage'] = selectedMileage;
+    parentState.carData['mileage_unit'] = selectedMileageUnit;
     parentState.carData['condition'] = selectedCondition;
     parentState.carData['transmission'] = selectedTransmission;
     parentState.carData['fuel_type'] = selectedFuelType;

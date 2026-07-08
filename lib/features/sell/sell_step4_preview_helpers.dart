@@ -231,7 +231,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
         icon: Icons.speed,
         label: loc.mileageLabel,
         value: data['mileage'] != null
-            ? '${_localizeDigitsGlobal(context, _formatPrice(context, data['mileage'].toString()))} ${loc.unit_km}'
+            ? '${_localizeDigitsGlobal(context, _formatPrice(context, data['mileage'].toString()))} ${data['mileage_unit']?.toString() == 'miles' ? loc.unit_miles : loc.unit_km}'
             : null,
       ),
       _SpecItem(

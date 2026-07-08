@@ -8,18 +8,14 @@ import '../../shared/debug/app_log.dart';
 ///
 /// - `2` = grid (2 columns)
 /// - `1` = list (1 column / horizontal card)
-/// - `3` = TikTok-style vertical scroll on card tap
 class ListingLayoutPrefs {
   static const String _key = 'listing_columns_v1';
 
   static final ValueNotifier<int> columns = ValueNotifier<int>(2);
 
-  /// Whether the current mode is TikTok-style vertical scroll.
-  static bool get isTikTokMode => columns.value == 3;
-
   static int _sanitize(dynamic v) {
     final n = v is int ? v : int.tryParse(v?.toString() ?? '');
-    if (n == 1 || n == 3) return n!;
+    if (n == 1) return n!;
     return 2;
   }
 
@@ -54,7 +50,7 @@ class ListingLayoutPrefs {
   }
 
   static int effectiveColumnsForWidth(int requestedColumns, double width) {
-    if (requestedColumns == 1 || requestedColumns == 3) {
+    if (requestedColumns == 1) {
       return requestedColumns;
     }
     return width < 340 ? 1 : 2;

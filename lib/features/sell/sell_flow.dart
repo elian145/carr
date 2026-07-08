@@ -59,6 +59,7 @@ import '../../shared/listings/transmission_type_assets.dart';
 import '../../shared/ui/filter_card_sections.dart';
 import '../../shared/ui/filter_color_field.dart';
 import '../../shared/ui/filter_make_section.dart';
+import '../../shared/ui/make_model_keyword_search.dart';
 import '../../shared/ui/filter_option_icons.dart';
 import '../../shared/ui/keyboard.dart';
 import '../../shared/ui/responsive.dart';

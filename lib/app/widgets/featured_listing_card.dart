@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/car_name_translations.dart';
@@ -14,12 +15,70 @@ import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/listings/listing_card_media.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/text/pretty_title_case.dart';
+import '../../theme_provider.dart';
 import 'listing_network_image.dart';
 
 const Color _kFeaturedAccent = Color(0xFFFF6B00);
-const Color _kFeaturedCardBg = Color(0xFF121212);
-const Color _kFeaturedMuted = Color(0xFF9A9A9A);
+const Color _kFeaturedCardBgDark = Color(0xFF121212);
+const Color _kFeaturedMutedDark = Color(0xFF9A9A9A);
 const double _kFeaturedRadius = 16;
+
+class _FeaturedCardColors {
+  const _FeaturedCardColors({
+    required this.cardBg,
+    required this.title,
+    required this.muted,
+    required this.divider,
+    required this.placeholderBg,
+    required this.placeholderIcon,
+    required this.favoriteIdle,
+    required this.outerBorder,
+    required this.midBorder,
+    required this.innerBorder,
+  });
+
+  final Color cardBg;
+  final Color title;
+  final Color muted;
+  final Color divider;
+  final Color placeholderBg;
+  final Color placeholderIcon;
+  final Color favoriteIdle;
+  final Color outerBorder;
+  final Color midBorder;
+  final Color innerBorder;
+
+  factory _FeaturedCardColors.of(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    if (isLight) {
+      final scheme = Theme.of(context).colorScheme;
+      return _FeaturedCardColors(
+        cardBg: AppThemes.listingCardFillGridOnLightShell(),
+        title: scheme.onSurface,
+        muted: scheme.onSurfaceVariant,
+        divider: scheme.outlineVariant,
+        placeholderBg: const Color(0xFFE8E8ED),
+        placeholderIcon: const Color(0xFF9E9E9E),
+        favoriteIdle: scheme.onSurface,
+        outerBorder: _kFeaturedAccent.withValues(alpha: 0.14),
+        midBorder: _kFeaturedAccent.withValues(alpha: 0.28),
+        innerBorder: _kFeaturedAccent.withValues(alpha: 0.75),
+      );
+    }
+    return _FeaturedCardColors(
+      cardBg: _kFeaturedCardBgDark,
+      title: Colors.white,
+      muted: _kFeaturedMutedDark,
+      divider: const Color(0xFF3A3A3A),
+      placeholderBg: const Color(0xFF1A1A1A),
+      placeholderIcon: const Color(0xFF757575),
+      favoriteIdle: Colors.white,
+      outerBorder: _kFeaturedAccent.withValues(alpha: 0.18),
+      midBorder: _kFeaturedAccent.withValues(alpha: 0.35),
+      innerBorder: _kFeaturedAccent.withValues(alpha: 0.9),
+    );
+  }
+}
 
 /// Wide featured listing card used in the home "Featured Listings" carousel.
 class FeaturedListingCard extends StatefulWidget {
@@ -189,6 +248,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = _FeaturedCardColors.of(context);
     final imageUrl = _firstImageUrl();
     final imageCount = _imageCount();
     final title = _title(context);
@@ -217,7 +277,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_kFeaturedRadius + 3),
             border: Border.all(
-              color: _kFeaturedAccent.withValues(alpha: 0.18),
+              color: colors.outerBorder,
               width: 3,
             ),
           ),
@@ -227,7 +287,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(_kFeaturedRadius + 1.5),
                 border: Border.all(
-                  color: _kFeaturedAccent.withValues(alpha: 0.35),
+                  color: colors.midBorder,
                   width: 2,
                 ),
               ),
@@ -235,12 +295,21 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                 padding: const EdgeInsets.all(1),
                 child: Ink(
                   decoration: BoxDecoration(
-                    color: _kFeaturedCardBg,
+                    color: colors.cardBg,
                     borderRadius: BorderRadius.circular(_kFeaturedRadius),
                     border: Border.all(
-                      color: _kFeaturedAccent.withValues(alpha: 0.9),
+                      color: colors.innerBorder,
                       width: 1.25,
                     ),
+                    boxShadow: Theme.of(context).brightness == Brightness.light
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: ClipRRect(
                     borderRadius:
@@ -262,11 +331,11 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                 )
                               else
                                 ColoredBox(
-                                  color: const Color(0xFF1A1A1A),
+                                  color: colors.placeholderBg,
                                   child: Icon(
                                     Icons.directions_car,
                                     size: 56,
-                                    color: Colors.grey[600],
+                                    color: colors.placeholderIcon,
                                   ),
                                 ),
                               PositionedDirectional(
@@ -317,7 +386,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                         : Icons.favorite_border,
                                     color: _isFavorite
                                         ? _kFeaturedAccent
-                                        : Colors.white,
+                                        : colors.favoriteIdle,
                                     size: 26,
                                   ),
                                 ),
@@ -367,7 +436,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         Expanded(
                           flex: 42,
                           child: ColoredBox(
-                            color: _kFeaturedCardBg,
+                            color: colors.cardBg,
                             child: Padding(
                               padding:
                                   const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -380,12 +449,14 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
-                                        child: Text(
+                                        child: AutoSizeText(
                                           title,
-                                          maxLines: 1,
+                                          maxLines: 2,
+                                          minFontSize: 14,
+                                          stepGranularity: 0.5,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: Colors.white,
+                                          style: TextStyle(
+                                            color: colors.title,
                                             fontWeight: FontWeight.w700,
                                             fontSize: 20,
                                             height: 1.2,
@@ -393,13 +464,18 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      Text(
-                                        price,
-                                        style: const TextStyle(
-                                          color: _kFeaturedAccent,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 21,
-                                          height: 1.2,
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment:
+                                            AlignmentDirectional.topEnd,
+                                        child: Text(
+                                          price,
+                                          style: const TextStyle(
+                                            color: _kFeaturedAccent,
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 21,
+                                            height: 1.2,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -410,8 +486,8 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                       subtitle,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: _kFeaturedMuted,
+                                      style: TextStyle(
+                                        color: colors.muted,
                                         fontSize: 15,
                                         height: 1.2,
                                       ),
@@ -423,6 +499,8 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                                     transmission: transmission,
                                     fuel: fuel,
                                     city: city,
+                                    muted: colors.muted,
+                                    divider: colors.divider,
                                   ),
                                 ],
                               ),
@@ -448,12 +526,16 @@ class _FeaturedSpecsRow extends StatelessWidget {
     required this.transmission,
     required this.fuel,
     required this.city,
+    required this.muted,
+    required this.divider,
   });
 
   final String mileage;
   final String transmission;
   final String fuel;
   final String city;
+  final Color muted;
+  final Color divider;
 
   @override
   Widget build(BuildContext context) {
@@ -476,21 +558,21 @@ class _FeaturedSpecsRow extends StatelessWidget {
           children: [
             for (var i = 0; i < items.length; i++) ...[
               if (i > 0) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: SizedBox(
                     width: 1,
                     height: 14,
-                    child: ColoredBox(color: Color(0xFF3A3A3A)),
+                    child: ColoredBox(color: divider),
                   ),
                 ),
               ],
-              Icon(items[i].icon, size: 15, color: _kFeaturedMuted),
+              Icon(items[i].icon, size: 15, color: muted),
               const SizedBox(width: 4),
               Text(
                 items[i].text,
-                style: const TextStyle(
-                  color: _kFeaturedMuted,
+                style: TextStyle(
+                  color: muted,
                   fontSize: 13,
                   height: 1.1,
                   fontWeight: FontWeight.w500,

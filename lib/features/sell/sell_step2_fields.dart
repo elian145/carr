@@ -4,6 +4,7 @@ abstract class _SellStep2Fields extends State<SellStep2Page> {
   final _formKey = GlobalKey<FormState>();
   static const String _draftKey = 'legacy_sell_draft_step2_v1';
   String? selectedMileage;
+  String selectedMileageUnit = 'km';
   String? selectedCondition;
   String? selectedTransmission;
   String? selectedFuelType;
@@ -32,7 +33,6 @@ abstract class _SellStep2Fields extends State<SellStep2Page> {
   bool errCylinderCount = false;
   bool errTitle = false;
   bool errDamagedParts = false;
-  bool isMileageManualInput = false;
   bool isEngineSizeManualInput = false;
 
   /// Bumps when step 1 applies catalog/online specs so we re-hydrate when returning to step 2.

@@ -928,6 +928,12 @@ abstract class AppLocalizations {
   /// **'km'**
   String get unit_km;
 
+  /// No description provided for @unit_miles.
+  ///
+  /// In en, this message translates to:
+  /// **'mi'**
+  String get unit_miles;
+
   /// No description provided for @unit_liter_suffix.
   ///
   /// In en, this message translates to:

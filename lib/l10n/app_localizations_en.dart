@@ -427,6 +427,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unit_km => 'km';
 
   @override
+  String get unit_miles => 'mi';
+
+  @override
   String get unit_liter_suffix => 'L';
 
   @override

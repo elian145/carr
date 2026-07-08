@@ -22,8 +22,10 @@ abstract class _SellStep1Fields extends State<SellStep1Page> {
 
   // Focus node for keyboard management
   final FocusNode _yearFocusNode = FocusNode();
+  final FocusNode _makeModelSearchFocusNode = FocusNode();
 
   // Controller for year input
   late TextEditingController _yearController;
+  late TextEditingController _makeModelSearchController;
 
 }

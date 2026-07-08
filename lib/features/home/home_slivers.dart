@@ -85,18 +85,16 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
                   isSelected: [
                     listingColumns == 1,
                     listingColumns == 2,
-                    listingColumns == 3,
                   ],
                   onPressed: (index) {
                     setState(() {
-                      listingColumns = index == 0 ? 1 : (index == 1 ? 2 : 3);
+                      listingColumns = index == 0 ? 1 : 2;
                     });
                     ListingLayoutPrefs.setColumns(listingColumns);
                   },
                   children: const [
                     Icon(Icons.view_agenda),
                     Icon(Icons.grid_view),
-                    Icon(Icons.swipe_vertical),
                   ],
                 ),
               ],
@@ -180,28 +178,6 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
                     );
                   }
                   final car = feedCars[index];
-                  if (listingColumns == 3) {
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/tiktok_scroll',
-                          arguments: {
-                            'cars': feedCars,
-                            'initialIndex': index,
-                          },
-                        );
-                      },
-                      child: AbsorbPointer(
-                        child: buildGlobalCarCard(
-                          context,
-                          car,
-                          listLayout: feedColumns == 1,
-                          carouselResetSeed: _homeCarouselResetSeed,
-                        ),
-                      ),
-                    );
-                  }
                   return buildGlobalCarCard(
                     context,
                     car,

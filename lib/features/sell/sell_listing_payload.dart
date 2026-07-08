@@ -1,13 +1,22 @@
 import '../../models/online_spec_variant.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 
+const double _kmPerMile = 1.609344;
+
+int sellMileageKmFromCarData(Map<String, dynamic> carData) {
+  final raw = int.tryParse(carData['mileage']?.toString() ?? '0') ?? 0;
+  final unit = carData['mileage_unit']?.toString() ?? 'km';
+  if (unit == 'miles') return (raw * _kmPerMile).round();
+  return raw;
+}
+
 Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
   final brand = carData['brand']?.toString() ?? '';
   final model = carData['model']?.toString() ?? '';
   final trim = carData['trim']?.toString() ?? 'Base';
   final year =
       int.tryParse(carData['year']?.toString() ?? '') ?? DateTime.now().year;
-  final mileage = int.tryParse(carData['mileage']?.toString() ?? '0') ?? 0;
+  final mileage = sellMileageKmFromCarData(carData);
   final condition =
       (carData['condition']?.toString() ?? 'used').toLowerCase();
   final transmission =
@@ -86,7 +95,7 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
   final trim = carData['trim']?.toString() ?? 'Base';
   final year =
       int.tryParse(carData['year']?.toString() ?? '') ?? DateTime.now().year;
-  final mileage = int.tryParse(carData['mileage']?.toString() ?? '0') ?? 0;
+  final mileage = sellMileageKmFromCarData(carData);
   final condition = (carData['condition']?.toString() ?? 'Used')
       .toLowerCase();
   final transmission = (carData['transmission']?.toString() ?? 'Automatic')

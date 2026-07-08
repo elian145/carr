@@ -6,7 +6,7 @@ mixin _SellStep2Build on _SellStep2BuildMechanical {
     final List<String> missing = [];
 
     if (selectedMileage == null || selectedMileage!.trim().isEmpty) {
-      missing.add(l.mileageKmLabel);
+      missing.add(l.mileageLabel);
     }
     if (selectedCondition == null || selectedCondition!.trim().isEmpty) {
       missing.add(l.conditionLabel);

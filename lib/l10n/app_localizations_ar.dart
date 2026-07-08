@@ -427,6 +427,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unit_km => 'كم';
 
   @override
+  String get unit_miles => 'ميل';
+
+  @override
   String get unit_liter_suffix => 'لتر';
 
   @override
