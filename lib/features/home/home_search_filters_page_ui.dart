@@ -79,6 +79,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             iconForOption: _searchFuelTypeIcon,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
+            tileWidth: 88,
           ),
           _searchMultiIconCardSection(
             context,
@@ -874,7 +875,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         ? 16.0
         : (slotHeight > 80 ? 16.0 : 20.0);
     const gap = 6.0;
-    const labelHeight = 15.0;
+    const labelHeight = 28.0;
     const borderAllowance = 4.0;
     return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
   }
@@ -970,7 +971,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 : (compactImageTile
                     ? 8
                     : ((imageHeight ?? 0) > 80 ? 8 : 10)),
-            horizontal: textOnly ? 12 : 8,
+            horizontal: textOnly
+                ? 12
+                : (AppResponsive.isCompactPhone(context) ? 6 : 8),
           ),
           decoration: BoxDecoration(
             color: isLight
@@ -993,8 +996,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               AppResponsive.fittedLabel(
                 label,
                 style: TextStyle(
-                  fontSize: textOnly ? 15 : 12,
-                  height: 1.2,
+                  fontSize: AppResponsive.filterIconLabelFontSize(
+                    context,
+                    textOnly: textOnly,
+                  ),
+                  height: 1.15,
                   fontWeight: FontWeight.w600,
                   color: selected ? _searchAccent : idleColor,
                 ),
@@ -1007,7 +1013,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     if (width == null) {
       return SizedBox(width: double.infinity, child: tile);
     }
-    return SizedBox(width: width, child: tile);
+    return SizedBox(
+      width: AppResponsive.filterIconTileWidth(context, width),
+      child: tile,
+    );
   }
 
   Widget _searchIconCardSection(

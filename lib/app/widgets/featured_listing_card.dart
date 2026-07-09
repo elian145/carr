@@ -15,6 +15,7 @@ import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/listings/listing_card_media.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/text/pretty_title_case.dart';
+import '../../shared/ui/responsive.dart';
 import '../../theme_provider.dart';
 import 'listing_network_image.dart';
 
@@ -438,75 +439,125 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           flex: 42,
                           child: ColoredBox(
                             color: colors.cardBg,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
-                                children: [
-                                  Row(
+                            child: LayoutBuilder(
+                              builder: (context, textConstraints) {
+                                final compact =
+                                    AppResponsive.isCompactPhone(context) ||
+                                        textConstraints.maxWidth < 300;
+                                final textPad = compact
+                                    ? const EdgeInsets.fromLTRB(12, 10, 12, 10)
+                                    : const EdgeInsets.fromLTRB(16, 14, 16, 14);
+                                final titleSize = compact ? 17.0 : 20.0;
+                                final priceSize = compact ? 18.0 : 21.0;
+                                final subtitleSize = compact ? 13.0 : 15.0;
+
+                                return Padding(
+                                  padding: textPad,
+                                  child: Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                        CrossAxisAlignment.stretch,
                                     children: [
-                                      Expanded(
-                                        child: AutoSizeText(
+                                      if (compact) ...[
+                                        AutoSizeText(
                                           title,
                                           maxLines: 2,
-                                          minFontSize: 14,
+                                          minFontSize: 13,
                                           stepGranularity: 0.5,
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             color: colors.title,
                                             fontWeight: FontWeight.w700,
-                                            fontSize: 20,
+                                            fontSize: titleSize,
+                                            height: 1.15,
+                                          ),
+                                        ),
+                                        if (hasPrice) ...[
+                                          const SizedBox(height: 4),
+                                          Align(
+                                            alignment:
+                                                AlignmentDirectional.centerStart,
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              alignment: AlignmentDirectional
+                                                  .centerStart,
+                                              child: Text(
+                                                price,
+                                                style: TextStyle(
+                                                  color: _kFeaturedAccent,
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: priceSize,
+                                                  height: 1.1,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ] else
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: AutoSizeText(
+                                                title,
+                                                maxLines: 2,
+                                                minFontSize: 14,
+                                                stepGranularity: 0.5,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: colors.title,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: titleSize,
+                                                  height: 1.2,
+                                                ),
+                                              ),
+                                            ),
+                                            if (hasPrice) ...[
+                                              const SizedBox(width: 12),
+                                              FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                alignment: AlignmentDirectional
+                                                    .topEnd,
+                                                child: Text(
+                                                  price,
+                                                  style: TextStyle(
+                                                    color: _kFeaturedAccent,
+                                                    fontWeight: FontWeight.w800,
+                                                    fontSize: priceSize,
+                                                    height: 1.2,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      if (subtitle.isNotEmpty) ...[
+                                        SizedBox(height: compact ? 3 : 5),
+                                        Text(
+                                          subtitle,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: colors.muted,
+                                            fontSize: subtitleSize,
                                             height: 1.2,
                                           ),
                                         ),
-                                      ),
-                                      if (hasPrice) ...[
-                                        const SizedBox(width: 12),
-                                        FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          alignment:
-                                              AlignmentDirectional.topEnd,
-                                          child: Text(
-                                            price,
-                                            style: const TextStyle(
-                                              color: _kFeaturedAccent,
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 21,
-                                              height: 1.2,
-                                            ),
-                                          ),
-                                        ),
                                       ],
+                                      const Spacer(),
+                                      _FeaturedSpecsRow(
+                                        mileage: mileage,
+                                        transmission: transmission,
+                                        fuel: fuel,
+                                        city: city,
+                                        muted: colors.muted,
+                                        divider: colors.divider,
+                                        compact: compact,
+                                      ),
                                     ],
                                   ),
-                                  if (subtitle.isNotEmpty) ...[
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      subtitle,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: colors.muted,
-                                        fontSize: 15,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ],
-                                  const Spacer(),
-                                  _FeaturedSpecsRow(
-                                    mileage: mileage,
-                                    transmission: transmission,
-                                    fuel: fuel,
-                                    city: city,
-                                    muted: colors.muted,
-                                    divider: colors.divider,
-                                  ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
                           ),
                         ),
@@ -531,6 +582,7 @@ class _FeaturedSpecsRow extends StatelessWidget {
     required this.city,
     required this.muted,
     required this.divider,
+    this.compact = false,
   });
 
   final String mileage;
@@ -539,6 +591,7 @@ class _FeaturedSpecsRow extends StatelessWidget {
   final String city;
   final Color muted;
   final Color divider;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -551,40 +604,48 @@ class _FeaturedSpecsRow extends StatelessWidget {
     ];
     if (items.isEmpty) return const SizedBox.shrink();
 
-    return SizedBox(
-      width: double.infinity,
-      child: FittedBox(
-        fit: BoxFit.fitWidth,
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < items.length; i++) ...[
-              if (i > 0) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(
-                    width: 1,
-                    height: 14,
-                    child: ColoredBox(color: divider),
+    final iconSize = compact ? 13.0 : 15.0;
+    final fontSize = compact ? 11.0 : 13.0;
+    final separatorPad = compact ? 5.0 : 8.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          width: constraints.maxWidth,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (var i = 0; i < items.length; i++) ...[
+                  if (i > 0) ...[
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: separatorPad),
+                      child: SizedBox(
+                        width: 1,
+                        height: compact ? 12 : 14,
+                        child: ColoredBox(color: divider),
+                      ),
+                    ),
+                  ],
+                  Icon(items[i].icon, size: iconSize, color: muted),
+                  SizedBox(width: compact ? 3 : 4),
+                  Text(
+                    items[i].text,
+                    style: TextStyle(
+                      color: muted,
+                      fontSize: fontSize,
+                      height: 1.1,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
+                ],
               ],
-              Icon(items[i].icon, size: 15, color: muted),
-              const SizedBox(width: 4),
-              Text(
-                items[i].text,
-                style: TextStyle(
-                  color: muted,
-                  fontSize: 13,
-                  height: 1.1,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

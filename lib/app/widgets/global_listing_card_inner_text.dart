@@ -13,17 +13,23 @@ Widget _buildGlobalCarCardInnerText(
   required Color dividerLineColor,
   required Color metaTextColor,
   bool pinBottomMeta = false,
+  bool listLayout = false,
 }) {
+  final bool compact = listLayout || AppResponsive.isCompactPhone(context);
   // Keep the title box height stable (prevents card overflows), but render the
   // brand+model text larger so it has stronger hierarchy than trim.
-  const double titleBoxFontSize = 15;
-  const double titleFontSize = 17;
-  const double yearFontSize = 16;
-  const double priceFontSize = 20;
+  final double titleBoxFontSize = compact ? 13 : 15;
+  final double titleFontSize = compact ? 14 : 17;
+  final double yearFontSize = compact ? 13 : 16;
+  final double priceFontSize = compact ? 16 : 20;
+  final double metaFontSize = compact ? 11 : 13;
+  final double trimFontSize = compact ? 12 : 15;
   const double titleLineHeight = 1.1;
-  const int titleMaxLines = 2;
+  final int titleMaxLines = listLayout ? 1 : 2;
   final double reservedTitleHeight =
       titleBoxFontSize * titleLineHeight * titleMaxLines;
+  final double sectionGap = compact ? 4.0 : 6.0;
+  final double blockGap = compact ? 6.0 : 8.0;
   final bool hasTrim = trimLine.isNotEmpty;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
 
@@ -34,12 +40,15 @@ Widget _buildGlobalCarCardInnerText(
       LayoutBuilder(
         builder: (context, constraints) {
           final double maxW = constraints.maxWidth;
-          final double logoSize = maxW < 150 ? 22 : (maxW < 175 ? 24 : 28);
+          final double logoSize =
+              maxW < 130 ? 20 : (maxW < 150 ? 22 : (maxW < 175 ? 24 : 28));
           final double logoInner = logoSize - 4;
-          final double gap = maxW < 150 ? 6 : 8;
-          final double effectiveTitleFontSize = maxW < 150
-              ? 15
-              : (maxW < 175 ? 16 : titleFontSize);
+          final double gap = maxW < 150 ? 4 : (maxW < 175 ? 6 : 8);
+          final double effectiveTitleFontSize = maxW < 130
+              ? 13
+              : (maxW < 150
+                  ? 14
+                  : (maxW < 175 ? 15 : titleFontSize));
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -106,7 +115,7 @@ Widget _buildGlobalCarCardInnerText(
           );
         },
       ),
-      const SizedBox(height: 8),
+      SizedBox(height: blockGap),
       Visibility(
         visible: hasTrim,
         maintainAnimation: true,
@@ -115,12 +124,12 @@ Widget _buildGlobalCarCardInnerText(
         child: Text(
           trimLine,
           textScaler: const TextScaler.linear(1.0),
-          style: TextStyle(color: metaTextColor, fontSize: 15, height: 1.1),
+          style: TextStyle(color: metaTextColor, fontSize: trimFontSize, height: 1.1),
           maxLines: 1,
-          overflow: TextOverflow.clip,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
-      const SizedBox(height: 6),
+      SizedBox(height: sectionGap),
       Visibility(
         visible: hasTrim,
         maintainAnimation: true,
@@ -128,7 +137,7 @@ Widget _buildGlobalCarCardInnerText(
         maintainState: true,
         child: Divider(height: 1, thickness: 1, color: dividerLineColor),
       ),
-      const SizedBox(height: 6),
+      SizedBox(height: sectionGap),
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -162,7 +171,7 @@ Widget _buildGlobalCarCardInnerText(
                       child: Text(
                         formatCurrency(context, car['price']),
                         textScaler: const TextScaler.linear(1.0),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Color(0xFFFF6B00),
                           fontWeight: FontWeight.w600,
                           fontSize: priceFontSize,
@@ -181,9 +190,9 @@ Widget _buildGlobalCarCardInnerText(
       ),
       if (pinBottomMeta) const Spacer(),
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
-        const SizedBox(height: 6),
+        SizedBox(height: sectionGap),
         Divider(height: 1, thickness: 1, color: dividerLineColor),
-        const SizedBox(height: 6),
+        SizedBox(height: sectionGap),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -201,7 +210,7 @@ Widget _buildGlobalCarCardInnerText(
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
-                          style: TextStyle(color: metaTextColor, fontSize: 13),
+                          style: TextStyle(color: metaTextColor, fontSize: metaFontSize),
                         ),
                       )
                     : const SizedBox.shrink(),
@@ -209,7 +218,7 @@ Widget _buildGlobalCarCardInnerText(
             ),
             if (mileageDisplay.isNotEmpty && cityLine.isNotEmpty) ...[
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 8),
                 child: Center(
                   child: Container(
                     width: 1,
@@ -236,10 +245,10 @@ Widget _buildGlobalCarCardInnerText(
                         children: [
                           Icon(
                             Icons.location_city,
-                            size: 12,
+                            size: compact ? 10 : 12,
                             color: metaTextColor,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: compact ? 2 : 4),
                           Text(
                             cityLine,
                             textScaler: const TextScaler.linear(1.0),
@@ -249,7 +258,7 @@ Widget _buildGlobalCarCardInnerText(
                             textAlign: TextAlign.end,
                             style: TextStyle(
                               color: metaTextColor,
-                              fontSize: 13,
+                              fontSize: metaFontSize,
                             ),
                           ),
                         ],

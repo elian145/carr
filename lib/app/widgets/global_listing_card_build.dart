@@ -137,7 +137,7 @@ Widget buildGlobalCarCard(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    flex: 4,
+                    flex: AppResponsive.isCompactPhone(context) ? 3 : 4,
                     child: ClipRRect(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(
@@ -170,7 +170,7 @@ Widget buildGlobalCarCard(
                     ),
                   ),
                   Expanded(
-                    flex: 6,
+                    flex: AppResponsive.isCompactPhone(context) ? 7 : 6,
                     child: LayoutBuilder(
                       builder: (context, textConstraints) {
                         return wrapCardTextTap(
@@ -194,6 +194,7 @@ Widget buildGlobalCarCard(
                                     titleTextColor: titleTextColor,
                                     dividerLineColor: dividerLineColor,
                                     metaTextColor: metaTextColor,
+                                    listLayout: true,
                                   ),
                                 ),
                               ),
@@ -211,7 +212,9 @@ Widget buildGlobalCarCard(
       : LayoutBuilder(
           builder: (context, constraints) {
             final bannerH = quickSell ? 35.0 : 0.0;
-            const textReserve = 136.0;
+            final textReserve = AppResponsive.isCompactPhone(context)
+                ? 118.0
+                : 136.0;
             final maxImage = (constraints.maxHeight - bannerH - textReserve)
                 .clamp(quickSell ? 100.0 : 120.0, 190.0);
             final imageH = AppResponsive.listingGridImageHeight(

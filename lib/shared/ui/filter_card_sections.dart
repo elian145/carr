@@ -194,7 +194,7 @@ double _filterIconTileHeight({
       ? 16.0
       : (slotHeight > 80 ? 16.0 : 20.0);
   const gap = 6.0;
-  const labelHeight = 15.0;
+  const labelHeight = 28.0;
   const borderAllowance = 4.0;
   return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
 }
@@ -309,7 +309,9 @@ class FilterIconOptionTile extends StatelessWidget {
                 : (compactImageTile
                     ? 8
                     : ((imageHeight ?? 0) > 80 ? 8 : 10)),
-            horizontal: textOnly ? 12 : 8,
+            horizontal: textOnly
+                ? 12
+                : (AppResponsive.isCompactPhone(context) ? 6 : 8),
           ),
           decoration: BoxDecoration(
             color: isLight
@@ -332,8 +334,11 @@ class FilterIconOptionTile extends StatelessWidget {
               AppResponsive.fittedLabel(
                 label,
                 style: TextStyle(
-                  fontSize: textOnly ? 15 : 12,
-                  height: 1.2,
+                  fontSize: AppResponsive.filterIconLabelFontSize(
+                    context,
+                    textOnly: textOnly,
+                  ),
+                  height: 1.15,
                   fontWeight: FontWeight.w600,
                   color: selected ? kFilterAccentColor : idleColor,
                 ),
@@ -443,7 +448,9 @@ class FilterIconCardSection extends StatelessWidget {
                 : imageAssetForOption?.call(option)),
         customGraphic: customGraphic,
         label: label,
-        width: scrollHorizontally ? tileWidth : null,
+        width: scrollHorizontally
+            ? AppResponsive.filterIconTileWidth(context, tileWidth)
+            : null,
         imageWidth: (usesImageAsset || customGraphic != null)
             ? tileImageWidth
             : null,

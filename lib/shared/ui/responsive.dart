@@ -178,27 +178,65 @@ abstract final class AppResponsive {
     return isNarrowPhone(context);
   }
 
-  /// Single-line label that scales down to fit its width without clipping.
+  /// Label that scales down (and may wrap to [maxLines]) to fit tile width.
   static Widget fittedLabel(
     String text, {
     required TextStyle style,
     TextAlign textAlign = TextAlign.center,
-    double minFontSize = 7,
+    double minFontSize = 6,
+    int maxLines = 2,
   }) {
     final maxFontSize = style.fontSize ?? 12;
-    return SizedBox(
-      width: double.infinity,
-      child: AutoSizeText(
-        text,
-        textAlign: textAlign,
-        maxLines: 1,
-        minFontSize: minFontSize,
-        maxFontSize: maxFontSize,
-        stepGranularity: 0.5,
-        overflow: TextOverflow.visible,
-        style: style,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        if (!width.isFinite || width <= 0) {
+          return Text(
+            text,
+            textAlign: textAlign,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            textScaler: const TextScaler.linear(1.0),
+            style: style,
+          );
+        }
+        return SizedBox(
+          width: width,
+          child: AutoSizeText(
+            text,
+            textAlign: textAlign,
+            maxLines: maxLines,
+            minFontSize: minFontSize,
+            maxFontSize: maxFontSize,
+            stepGranularity: 0.25,
+            overflow: TextOverflow.ellipsis,
+            wrapWords: false,
+            textScaleFactor: 1.0,
+            style: style,
+          ),
+        );
+      },
     );
+  }
+
+  /// Slightly wider filter tiles on compact phones so labels stay readable.
+  static double filterIconTileWidth(
+    BuildContext context,
+    double base, {
+    double compactBoost = 8,
+  }) {
+    if (!isCompactPhone(context)) return base;
+    return base + compactBoost;
+  }
+
+  /// Base font size for icon filter tile labels.
+  static double filterIconLabelFontSize(
+    BuildContext context, {
+    double regular = 12,
+    bool textOnly = false,
+  }) {
+    if (textOnly) return isCompactPhone(context) ? 14 : 15;
+    return isCompactPhone(context) ? 11 : regular;
   }
 
   /// Shrinks [text] to fit when horizontal space is tight (e.g. section summaries).

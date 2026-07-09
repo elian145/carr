@@ -211,6 +211,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
         requiredField: true,
         isError: errFuelType,
         scrollHorizontally: true,
+        tileWidth: 88,
         iconForOption: filterFuelTypeIcon,
         labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
         onSelected: (value) {

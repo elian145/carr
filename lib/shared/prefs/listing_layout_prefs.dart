@@ -58,8 +58,10 @@ class ListingLayoutPrefs {
 
   static double gridChildAspectRatioForWidth(int listingColumns, double width) {
     if (listingColumns == 1) {
-      if (width < 340) return 2.48;
-      if (width < 380) return 2.68;
+      // Taller horizontal cards on narrow phones so title/spec rows are not clipped.
+      if (width < 320) return 1.95;
+      if (width < 340) return 2.15;
+      if (width < 380) return 2.40;
       return 2.82;
     }
     if (width < 340) return 2.55;
