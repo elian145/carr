@@ -29,9 +29,9 @@ num? tryParseCurrencyValue(dynamic raw) {
 String formatCurrency(BuildContext context, dynamic raw, {String? symbol}) {
   final sym = symbol ?? globalSymbol;
   final value = tryParseCurrencyValue(raw);
-  if (value == null) {
-    return '';
-  }
   final formatter = decimalFormatterForLocale(context);
+  if (value == null) {
+    return sym + localizeDigits(context, formatter.format(0));
+  }
   return sym + localizeDigits(context, formatter.format(value));
 }
