@@ -310,33 +310,37 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final titleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
     final summaryColor = isLight ? const Color(0xFF8E8E93) : Colors.white70;
+    final summaryStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: summaryColor,
+    );
     return Row(
       children: [
-        Text(
-          title.toUpperCase(),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
-            color: titleColor,
+        Expanded(
+          child: Text(
+            title.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: titleColor,
+            ),
           ),
         ),
-        const Spacer(),
         InkWell(
           onTap: onSummaryTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.only(left: 8),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   valueSummary,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: summaryColor,
-                  ),
+                  style: summaryStyle,
                 ),
                 Icon(
                   Icons.keyboard_arrow_down_rounded,
@@ -433,6 +437,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       child: SizedBox(
         width: _searchBrandTileWidth,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               width: 52,
@@ -452,15 +457,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppResponsive.fittedLabel(
               label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: labelColor,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -487,6 +490,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       child: SizedBox(
         width: _searchBrandTileWidth,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
               decoration: BoxDecoration(
@@ -499,16 +503,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               child: _searchBrandLogoCircle(brand),
             ),
             const SizedBox(height: 8),
-            Text(
+            AppResponsive.fittedLabel(
               display,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: selected ? _searchAccent : labelColor,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -983,16 +984,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (graphic != null) ...[
-                graphic,
+                Center(child: graphic),
                 const SizedBox(height: 6),
               ],
-              Text(
+              AppResponsive.fittedLabel(
                 label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: textOnly ? 15 : 12,
                   height: 1.2,
@@ -1005,7 +1004,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         ),
       ),
     );
-    if (width == null) return tile;
+    if (width == null) {
+      return SizedBox(width: double.infinity, child: tile);
+    }
     return SizedBox(width: width, child: tile);
   }
 

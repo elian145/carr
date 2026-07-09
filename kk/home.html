@@ -95,16 +95,16 @@
                                                     <option value="" {% if not request.args.get('mileage') %}selected{% endif %}>Select mileage</option>
                                                     {# 1,000 km increments from 0 to 100,000 #}
                                                     {% for m in range(0, 100001, 1000) %}
-                                                    <option value="{{ m }}" {% if request.args.get('mileage') and request.args.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }}</option>
+                                                    <option value="{{ m }}" {% if request.args.get('mileage') and request.args.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }} km</option>
                                                     {% endfor %}
                                                     {# 5,000 km increments from 105,000 to 300,000 #}
                                                     {% for m in range(105000, 300001, 5000) %}
-                                                    <option value="{{ m }}" {% if request.args.get('mileage') and request.args.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }}</option>
+                                                    <option value="{{ m }}" {% if request.args.get('mileage') and request.args.get('mileage')|int == m %}selected{% endif %}>{{ "{:,.0f}".format(m) }} km</option>
                                                     {% endfor %}
                                                 </select>
                                             </div>
                                             <div id="searchMileageCustomContainer" style="display: none; width: 100%;">
-                                                <input type="number" class="form-control" id="searchMileageInput" name="mileage" placeholder="e.g. 60000" min="0" step="1000" value="{{ request.args.get('mileage', '') }}" disabled>
+                                                <input type="number" class="form-control" id="searchMileageInput" name="mileage" placeholder="e.g. 60000 km" min="0" step="1000" value="{{ request.args.get('mileage', '') }}" disabled>
                                             </div>
                                             <button type="button" class="btn btn-outline-secondary" id="searchMileageToggleBtn" onclick="toggleSearchMileage()" title="Switch to custom input"><i class="fas fa-edit"></i></button>
                                         </div>

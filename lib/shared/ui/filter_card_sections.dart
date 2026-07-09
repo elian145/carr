@@ -4,6 +4,7 @@ import '../../features/home/more_filters_dialog_style.dart';
 import '../../l10n/app_localizations.dart';
 import 'filter_icon_image.dart';
 import 'filter_option_icons.dart';
+import 'responsive.dart';
 
 const Color kFilterAccentColor = Color(0xFFFF6B00);
 
@@ -70,34 +71,39 @@ class FilterSectionHeader extends StatelessWidget {
     final summaryColor = isLight ? const Color(0xFF8E8E93) : Colors.white70;
     final displayTitle = requiredField ? '$title *' : title;
 
+    final summaryStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      color: summaryColor,
+    );
+
     return Row(
       children: [
-        Text(
-          displayTitle.toUpperCase(),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
-            color: titleColor,
+        Expanded(
+          child: Text(
+            displayTitle.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: titleColor,
+            ),
           ),
         ),
-        const Spacer(),
         if (onSummaryTap != null)
           InkWell(
             onTap: onSummaryTap,
             borderRadius: BorderRadius.circular(8),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              padding: const EdgeInsets.only(left: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     valueSummary,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: summaryColor,
-                    ),
+                    style: summaryStyle,
                   ),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
@@ -111,11 +117,7 @@ class FilterSectionHeader extends StatelessWidget {
         else
           Text(
             valueSummary,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: summaryColor,
-            ),
+            style: summaryStyle,
           ),
       ],
     );
@@ -321,16 +323,14 @@ class FilterIconOptionTile extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (graphic != null) ...[
-                graphic,
+                Center(child: graphic),
                 const SizedBox(height: 6),
               ],
-              Text(
+              AppResponsive.fittedLabel(
                 label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: textOnly ? 15 : 12,
                   height: 1.2,
@@ -344,7 +344,9 @@ class FilterIconOptionTile extends StatelessWidget {
       ),
     );
 
-    if (width == null) return tile;
+    if (width == null) {
+      return SizedBox(width: double.infinity, child: tile);
+    }
     return SizedBox(width: width, child: tile);
   }
 }

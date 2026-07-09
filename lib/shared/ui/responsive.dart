@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 import '../prefs/listing_layout_prefs.dart';
@@ -175,6 +176,48 @@ abstract final class AppResponsive {
   /// Tighter app bar button padding on narrow phones (labels always stay visible).
   static bool narrowAppBar(BuildContext context) {
     return isNarrowPhone(context);
+  }
+
+  /// Single-line label that scales down to fit its width without clipping.
+  static Widget fittedLabel(
+    String text, {
+    required TextStyle style,
+    TextAlign textAlign = TextAlign.center,
+    double minFontSize = 7,
+  }) {
+    final maxFontSize = style.fontSize ?? 12;
+    return SizedBox(
+      width: double.infinity,
+      child: AutoSizeText(
+        text,
+        textAlign: textAlign,
+        maxLines: 1,
+        minFontSize: minFontSize,
+        maxFontSize: maxFontSize,
+        stepGranularity: 0.5,
+        overflow: TextOverflow.visible,
+        style: style,
+      ),
+    );
+  }
+
+  /// Shrinks [text] to fit when horizontal space is tight (e.g. section summaries).
+  static Widget fittedLabelShrink(
+    String text, {
+    required TextStyle style,
+    TextAlign textAlign = TextAlign.end,
+    double minFontSize = 10,
+  }) {
+    final maxFontSize = style.fontSize ?? 14;
+    return AutoSizeText(
+      text,
+      textAlign: textAlign,
+      maxLines: 1,
+      minFontSize: minFontSize,
+      maxFontSize: maxFontSize,
+      stepGranularity: 0.5,
+      style: style,
+    );
   }
 
   /// Allow accessibility text scaling, but cap it to keep dense mobile layouts stable.

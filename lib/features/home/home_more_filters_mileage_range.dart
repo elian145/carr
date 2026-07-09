@@ -13,13 +13,14 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
     ];
 
     String formatMileage(int m) {
-      return localizeDigits(
+      final localizedNumber = localizeDigits(
         context,
         m.toString().replaceAllMapped(
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (mm) => '${mm[1]},',
         ),
       );
+      return '$localizedNumber ${loc.unit_km}';
     }
 
     return <Widget>[
