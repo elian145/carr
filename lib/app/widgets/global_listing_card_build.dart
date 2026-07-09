@@ -66,8 +66,8 @@ Widget buildGlobalCarCard(
   final bool showVideoCountBadge =
       car['videos'] != null && (car['videos'] as List).isNotEmpty;
   final EdgeInsets listingCardTextPadding = listLayout
-      // Horizontal cards: keep top tighter so title sits higher; keep a bit of bottom room.
-      ? const EdgeInsets.fromLTRB(8, 8, 8, 6)
+      // Horizontal cards: tighter padding so title + specs fit without bottom overflow.
+      ? const EdgeInsets.fromLTRB(8, 6, 8, 4)
       : const EdgeInsets.fromLTRB(12, 8, 12, 6);
 
   Widget wrapCardTextTap(Widget child) {
@@ -171,27 +171,36 @@ Widget buildGlobalCarCard(
                   ),
                   Expanded(
                     flex: 6,
-                    child: wrapCardTextTap(
-                      Padding(
-                        padding: listingCardTextPadding,
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: double.infinity,
-                          child: _buildGlobalCarCardInnerText(
-                            context,
-                            car,
-                            brandId: brandId,
-                            trimLine: trimLine,
-                            yearDisplay: yearDisplay,
-                            mileageDisplay: mileageDisplay,
-                            cityLine: cityLine,
-                            titleTextColor: titleTextColor,
-                            dividerLineColor: dividerLineColor,
-                            metaTextColor: metaTextColor,
-                            pinBottomMeta: true,
+                    child: LayoutBuilder(
+                      builder: (context, textConstraints) {
+                        return wrapCardTextTap(
+                          Padding(
+                            padding: listingCardTextPadding,
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.topCenter,
+                                child: SizedBox(
+                                  width: textConstraints.maxWidth,
+                                  child: _buildGlobalCarCardInnerText(
+                                    context,
+                                    car,
+                                    brandId: brandId,
+                                    trimLine: trimLine,
+                                    yearDisplay: yearDisplay,
+                                    mileageDisplay: mileageDisplay,
+                                    cityLine: cityLine,
+                                    titleTextColor: titleTextColor,
+                                    dividerLineColor: dividerLineColor,
+                                    metaTextColor: metaTextColor,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
                 ],

@@ -45,7 +45,7 @@ class ListingLayoutPrefs {
 
   /// Grid cell aspect ratio (width / height) — matches Home feed so cards do not overflow.
   static double gridChildAspectRatio(int listingColumns) {
-    if (listingColumns == 1) return 2.90;
+    if (listingColumns == 1) return 2.82;
     return Platform.isIOS ? 0.67 : 0.63;
   }
 
@@ -58,9 +58,9 @@ class ListingLayoutPrefs {
 
   static double gridChildAspectRatioForWidth(int listingColumns, double width) {
     if (listingColumns == 1) {
-      if (width < 340) return 2.55;
-      if (width < 380) return 2.75;
-      return 2.90;
+      if (width < 340) return 2.48;
+      if (width < 380) return 2.68;
+      return 2.82;
     }
     if (width < 340) return 2.55;
     if (width < 380) return Platform.isIOS ? 0.64 : 0.60;
