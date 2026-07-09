@@ -102,26 +102,6 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
                 Navigator.pushNamed(context, '/comparison');
               },
             ),
-            SizedBox(height: 12),
-            _buildActionButton(
-              Icons.edit_outlined,
-              AppLocalizations.of(context)!.editProfileAction,
-              () async {
-                if (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty) {
-                  _showAuthRequiredDialog(context);
-                  return;
-                }
-                final result = await Navigator.pushNamed(
-                  context,
-                  '/edit-profile',
-                );
-                // Refresh profile data if changes were made
-                if (result == true) {
-                  _loadMe();
-                }
-              },
-            ),
             if ((profile?['account_type'] ?? 'user').toString() == 'dealer') ...[
               SizedBox(height: 12),
               _buildActionButton(

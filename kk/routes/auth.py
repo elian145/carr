@@ -187,12 +187,28 @@ def _personal_account_exists_response():
     }), 409
 
 
+def _dealer_account_exists_response():
+    return jsonify({
+        "message": "This phone number is registered to a dealer account. Please use dealer login.",
+        "code": "dealer_account_exists",
+    }), 409
+
+
 def _reject_dealer_flow_for_personal(user: User | None, *, purpose: str):
     """Block dealer auth when the phone belongs to an established personal account."""
     if purpose != "dealer" or user is None or _is_dealer_account(user):
         return None
     if getattr(user, "is_verified", False):
         return _personal_account_exists_response()
+    return None
+
+
+def _reject_personal_flow_for_dealer(user: User | None, *, purpose: str):
+    """Block personal auth when the phone belongs to an established dealer account."""
+    if purpose == "dealer" or user is None or not _is_dealer_account(user):
+        return None
+    if getattr(user, "is_verified", False):
+        return _dealer_account_exists_response()
     return None
 
 
@@ -1474,6 +1490,9 @@ def phone_start():
         personal_conflict = _reject_dealer_flow_for_personal(existing, purpose=purpose)
         if personal_conflict is not None:
             return personal_conflict
+        dealer_conflict = _reject_personal_flow_for_dealer(existing, purpose=purpose)
+        if dealer_conflict is not None:
+            return dealer_conflict
         if not create_if_missing and not existing:
             return jsonify({
                 "message": "No account found with this phone number. Please sign up first.",
@@ -1609,6 +1628,9 @@ def phone_verify():
         personal_conflict = _reject_dealer_flow_for_personal(user, purpose=purpose)
         if personal_conflict is not None:
             return personal_conflict
+        dealer_conflict = _reject_personal_flow_for_dealer(user, purpose=purpose)
+        if dealer_conflict is not None:
+            return dealer_conflict
 
         from ..time_utils import utcnow
 

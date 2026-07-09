@@ -9,7 +9,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _pushEnabled = true;
-  String? _pushDiagSubtitle;
   final GlobalKey<PopupMenuButtonState<String?>> _languageMenuKey =
       GlobalKey<PopupMenuButtonState<String?>>();
 
@@ -36,9 +35,6 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _pushEnabled = enabled;
     });
-    if (enabled) {
-      await _refreshPushDiagnostics();
-    }
   }
 
   Future<void> _togglePush(bool v) async {
@@ -47,15 +43,6 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() {
       _pushEnabled = v;
     });
-    if (v) {
-      await _refreshPushDiagnostics();
-    }
-  }
-
-  Future<void> _refreshPushDiagnostics() async {
-    final msg = await PushNotificationService.syncNowForDiagnostics();
-    if (!mounted) return;
-    setState(() => _pushDiagSubtitle = msg);
   }
 
   @override
@@ -177,6 +164,23 @@ class _SettingsPageState extends State<SettingsPage> {
       children: [
         settingsCard([
           rowTile(
+            icon: Icons.edit_outlined,
+            title: loc.editProfileAction,
+            trailing: Icon(
+              Icons.chevron_right,
+              color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+            ),
+            onTap: () async {
+              if (ApiService.accessToken == null ||
+                  ApiService.accessToken!.isEmpty) {
+                Navigator.pushNamed(context, '/login');
+                return;
+              }
+              await Navigator.pushNamed(context, '/edit-profile');
+            },
+          ),
+          Divider(height: 1, color: dividerColor),
+          rowTile(
             icon: Icons.language,
             title: loc.settingsLanguageTitle,
             subtitle: localeLabel(currentLocale),
@@ -226,9 +230,6 @@ class _SettingsPageState extends State<SettingsPage> {
           rowTile(
             icon: Icons.notifications_active_outlined,
             title: loc.settingsEnablePush,
-            subtitle:
-                _pushDiagSubtitle ??
-                (_pushEnabled ? loc.enabledLabel : loc.disabledLabel),
             trailing: Switch.adaptive(
               value: _pushEnabled,
               activeThumbColor: const Color(0xFFFF6B00),

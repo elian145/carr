@@ -52,6 +52,14 @@ class _LoginPageState extends State<LoginPage> {
     return false;
   }
 
+  bool _isDealerAccountConflict(Object e) {
+    if (e is ApiException) {
+      final code = e.body?['code']?.toString();
+      if (code == 'dealer_account_exists') return true;
+    }
+    return false;
+  }
+
   Future<void> _showPersonalAccountConflictDialog() async {
     final loc = AppLocalizations.of(context)!;
     await showDialog<void>(
@@ -77,6 +85,37 @@ class _LoginPageState extends State<LoginPage> {
               _setAccountType(false);
             },
             child: Text(loc.personalAccountLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showDealerAccountConflictDialog() async {
+    final loc = AppLocalizations.of(context)!;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(loc.errorTitle),
+        content: Text(
+          trLegacyText(
+            context,
+            'This phone number is registered to a dealer account. Please use dealer login instead.',
+            ar: 'رقم الهاتف هذا مسجل لحساب وكيل. يرجى استخدام تسجيل دخول الوكيل.',
+            ku: 'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی وەکیل تۆمارکراوە. تکایە چوونەژوورەوەی وەکیل بەکاربهێنە.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(loc.okAction),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _setAccountType(true);
+            },
+            child: Text(loc.dealerFallbackLabel),
           ),
         ],
       ),
@@ -175,8 +214,18 @@ class _LoginPageState extends State<LoginPage> {
           _pendingNewDealerAccount = true;
         }
       } else {
-        resp = await authService.sendPhoneLoginCode(_formattedPhone());
-        _pendingNewDealerAccount = false;
+        try {
+          resp = await authService.sendPhoneLoginCode(_formattedPhone());
+          _pendingNewDealerAccount = false;
+        } on ApiException catch (e) {
+          if (_isDealerAccountConflict(e)) {
+            if (!mounted) return;
+            _resetOtpState();
+            await _showDealerAccountConflictDialog();
+            return;
+          }
+          rethrow;
+        }
       }
       if (!mounted) return;
       setState(() {
@@ -200,6 +249,11 @@ class _LoginPageState extends State<LoginPage> {
       if (_isPersonalAccountConflict(e)) {
         _resetOtpState();
         await _showPersonalAccountConflictDialog();
+        return;
+      }
+      if (_isDealerAccountConflict(e)) {
+        _resetOtpState();
+        await _showDealerAccountConflictDialog();
         return;
       }
       await _showApiErrorDialog(e);
@@ -259,6 +313,14 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
+      if (!_isDealer &&
+          AuthService.isDealerAccount(AuthService.userMapFrom(response['user']))) {
+        await authService.logout();
+        _resetOtpState();
+        await _showDealerAccountConflictDialog();
+        return;
+      }
+
       if (_isDealer && _pendingNewDealerAccount) {
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/dealer-onboarding',
@@ -274,6 +336,11 @@ class _LoginPageState extends State<LoginPage> {
         if (_isPersonalAccountConflict(e)) {
           _resetOtpState();
           await _showPersonalAccountConflictDialog();
+          return;
+        }
+        if (_isDealerAccountConflict(e)) {
+          _resetOtpState();
+          await _showDealerAccountConflictDialog();
           return;
         }
         await _showApiErrorDialog(e);
