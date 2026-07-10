@@ -264,14 +264,14 @@ class _FavoritesPageState extends State<FavoritesPage> {
       extendBody: true,
       bottomNavigationBar: buildFloatingBottomNav(
         context,
-        currentIndex: 1,
+        currentIndex: 3,
         onTap: (idx) {
           switch (idx) {
             case 0:
               navigateMainShellTab(context, '/');
               break;
             case 1:
-              // Already on favorites
+              navigateMainShellTab(context, '/sell');
               break;
             case 2:
               navigateMainShellTab(context, '/dealers');

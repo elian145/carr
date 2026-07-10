@@ -202,19 +202,12 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     final raw = localized.isNotEmpty
         ? localized
         : (widget.car['title']?.toString() ?? '').trim();
-    return prettyTitleCase(raw);
-  }
-
-  String _subtitle(BuildContext context) {
-    final bodyRaw = (widget.car['body_type'] ?? '').toString().trim();
+    final base = prettyTitleCase(raw);
     final yearRaw = (widget.car['year'] ?? '').toString().trim();
-    final body = bodyRaw.isEmpty
-        ? ''
-        : (translateListingValue(context, bodyRaw) ?? bodyRaw);
-    final year = yearRaw.isEmpty ? '' : localizeDigits(context, yearRaw);
-    if (body.isNotEmpty && year.isNotEmpty) return '$body • $year';
-    if (body.isNotEmpty) return body;
-    return year;
+    if (yearRaw.isEmpty) return base;
+    final year = localizeDigits(context, yearRaw);
+    if (base.isEmpty) return year;
+    return '$base $year';
   }
 
   String _mileage(BuildContext context) {
@@ -253,7 +246,6 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     final imageUrl = _firstImageUrl();
     final imageCount = _imageCount();
     final title = _title(context);
-    final subtitle = _subtitle(context);
     final hasPrice = tryParseCurrencyValue(widget.car['price']) != null;
     final price = formatCurrency(context, widget.car['price']);
     final mileage = _mileage(context);
@@ -316,249 +308,259 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                   child: ClipRRect(
                     borderRadius:
                         BorderRadius.circular(_kFeaturedRadius - 0.5),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Expanded(
-                          flex: 58,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (imageUrl != null && imageUrl.isNotEmpty)
-                                listingNetworkImage(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                )
-                              else
-                                ColoredBox(
-                                  color: colors.placeholderBg,
-                                  child: Icon(
-                                    Icons.directions_car,
-                                    size: 56,
-                                    color: colors.placeholderIcon,
+                        if (imageUrl != null && imageUrl.isNotEmpty)
+                          listingNetworkImage(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                        else
+                          ColoredBox(
+                            color: colors.placeholderBg,
+                            child: Icon(
+                              Icons.directions_car,
+                              size: 56,
+                              color: colors.placeholderIcon,
+                            ),
+                          ),
+                        // Soft bottom scrim so transparent text stays readable.
+                        const Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 140,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0x00000000),
+                                  Color(0x99000000),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          top: 12,
+                          start: 12,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _kFeaturedAccent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  color: Colors.white,
+                                  size: 17,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  featuredLabel,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                    letterSpacing: 0.6,
+                                    height: 1.1,
                                   ),
                                 ),
-                              PositionedDirectional(
-                                top: 12,
-                                start: 12,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                              ],
+                            ),
+                          ),
+                        ),
+                        PositionedDirectional(
+                          top: 4,
+                          end: 4,
+                          child: IconButton(
+                            onPressed: _toggleFavorite,
+                            tooltip:
+                                AppLocalizations.of(context)!.favoriteAction,
+                            icon: Icon(
+                              _isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: _isFavorite
+                                  ? _kFeaturedAccent
+                                  : Colors.white,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                        if (imageCount > 0)
+                          PositionedDirectional(
+                            top: 12,
+                            end: 48,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.55),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.photo_camera_outlined,
+                                    color: Colors.white,
+                                    size: 16,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: _kFeaturedAccent,
-                                    borderRadius: BorderRadius.circular(8),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    localizeDigits(
+                                      context,
+                                      imageCount.toString(),
+                                    ),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.1,
+                                    ),
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.star_rounded,
-                                        color: Colors.white,
-                                        size: 17,
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        featuredLabel,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                ],
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: LayoutBuilder(
+                            builder: (context, textConstraints) {
+                              final compact =
+                                  AppResponsive.isNarrowPhone(context) ||
+                                      textConstraints.maxWidth < 340;
+                              final textPad = compact
+                                  ? const EdgeInsets.fromLTRB(12, 10, 12, 12)
+                                  : const EdgeInsets.fromLTRB(16, 12, 16, 14);
+                              final titleSize = compact ? 17.0 : 20.0;
+                              final priceSize = compact ? 18.0 : 21.0;
+                              const overlayTitle = Colors.white;
+                              const overlayMuted = Color(0xFFE8E8E8);
+                              const overlayDivider = Color(0x66FFFFFF);
+                              const titleShadow = [
+                                Shadow(
+                                  color: Color(0x99000000),
+                                  blurRadius: 6,
+                                  offset: Offset(0, 1),
+                                ),
+                              ];
+
+                              return Padding(
+                                padding: textPad,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    if (compact) ...[
+                                      AutoSizeText(
+                                        title,
+                                        maxLines: 2,
+                                        minFontSize: 13,
+                                        stepGranularity: 0.5,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: overlayTitle,
                                           fontWeight: FontWeight.w700,
-                                          fontSize: 13,
-                                          letterSpacing: 0.6,
-                                          height: 1.1,
+                                          fontSize: titleSize,
+                                          height: 1.15,
+                                          shadows: titleShadow,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              PositionedDirectional(
-                                top: 4,
-                                end: 4,
-                                child: IconButton(
-                                  onPressed: _toggleFavorite,
-                                  tooltip: AppLocalizations.of(context)!
-                                      .favoriteAction,
-                                  icon: Icon(
-                                    _isFavorite
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
-                                    color: _isFavorite
-                                        ? _kFeaturedAccent
-                                        : colors.favoriteIdle,
-                                    size: 26,
-                                  ),
-                                ),
-                              ),
-                              if (imageCount > 0)
-                                PositionedDirectional(
-                                  bottom: 12,
-                                  end: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.black.withValues(alpha: 0.55),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.photo_camera_outlined,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          localizeDigits(
-                                            context,
-                                            imageCount.toString(),
-                                          ),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            height: 1.1,
+                                      if (hasPrice) ...[
+                                        const SizedBox(height: 4),
+                                        Align(
+                                          alignment:
+                                              AlignmentDirectional.centerStart,
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            alignment: AlignmentDirectional
+                                                .centerStart,
+                                            child: Text(
+                                              price,
+                                              style: TextStyle(
+                                                color: _kFeaturedAccent,
+                                                fontWeight: FontWeight.w800,
+                                                fontSize: priceSize,
+                                                height: 1.1,
+                                                shadows: titleShadow,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          flex: 42,
-                          child: ColoredBox(
-                            color: colors.cardBg,
-                            child: LayoutBuilder(
-                              builder: (context, textConstraints) {
-                                final compact =
-                                    AppResponsive.isCompactPhone(context) ||
-                                        textConstraints.maxWidth < 300;
-                                final textPad = compact
-                                    ? const EdgeInsets.fromLTRB(12, 10, 12, 10)
-                                    : const EdgeInsets.fromLTRB(16, 14, 16, 14);
-                                final titleSize = compact ? 17.0 : 20.0;
-                                final priceSize = compact ? 18.0 : 21.0;
-                                final subtitleSize = compact ? 13.0 : 15.0;
-
-                                return Padding(
-                                  padding: textPad,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      if (compact) ...[
-                                        AutoSizeText(
-                                          title,
-                                          maxLines: 2,
-                                          minFontSize: 13,
-                                          stepGranularity: 0.5,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: colors.title,
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: titleSize,
-                                            height: 1.15,
+                                    ] else
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: AutoSizeText(
+                                              title,
+                                              maxLines: 2,
+                                              minFontSize: 14,
+                                              stepGranularity: 0.5,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: overlayTitle,
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: titleSize,
+                                                height: 1.2,
+                                                shadows: titleShadow,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                        if (hasPrice) ...[
-                                          const SizedBox(height: 4),
-                                          Align(
-                                            alignment:
-                                                AlignmentDirectional.centerStart,
-                                            child: FittedBox(
+                                          if (hasPrice) ...[
+                                            const SizedBox(width: 12),
+                                            FittedBox(
                                               fit: BoxFit.scaleDown,
-                                              alignment: AlignmentDirectional
-                                                  .centerStart,
+                                              alignment:
+                                                  AlignmentDirectional.topEnd,
                                               child: Text(
                                                 price,
                                                 style: TextStyle(
                                                   color: _kFeaturedAccent,
                                                   fontWeight: FontWeight.w800,
                                                   fontSize: priceSize,
-                                                  height: 1.1,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ] else
-                                        Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: AutoSizeText(
-                                                title,
-                                                maxLines: 2,
-                                                minFontSize: 14,
-                                                stepGranularity: 0.5,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  color: colors.title,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: titleSize,
                                                   height: 1.2,
+                                                  shadows: titleShadow,
                                                 ),
                                               ),
                                             ),
-                                            if (hasPrice) ...[
-                                              const SizedBox(width: 12),
-                                              FittedBox(
-                                                fit: BoxFit.scaleDown,
-                                                alignment: AlignmentDirectional
-                                                    .topEnd,
-                                                child: Text(
-                                                  price,
-                                                  style: TextStyle(
-                                                    color: _kFeaturedAccent,
-                                                    fontWeight: FontWeight.w800,
-                                                    fontSize: priceSize,
-                                                    height: 1.2,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
                                           ],
-                                        ),
-                                      if (subtitle.isNotEmpty) ...[
-                                        SizedBox(height: compact ? 3 : 5),
-                                        Text(
-                                          subtitle,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            color: colors.muted,
-                                            fontSize: subtitleSize,
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                      ],
-                                      const Spacer(),
-                                      _FeaturedSpecsRow(
-                                        mileage: mileage,
-                                        transmission: transmission,
-                                        fuel: fuel,
-                                        city: city,
-                                        muted: colors.muted,
-                                        divider: colors.divider,
-                                        compact: compact,
+                                        ],
                                       ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
+                                    SizedBox(height: compact ? 8 : 10),
+                                    _FeaturedSpecsRow(
+                                      mileage: mileage,
+                                      transmission: transmission,
+                                      fuel: fuel,
+                                      city: city,
+                                      muted: overlayMuted,
+                                      divider: overlayDivider,
+                                      compact: compact,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],

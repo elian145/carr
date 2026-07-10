@@ -194,7 +194,7 @@ double _filterIconTileHeight({
       ? 16.0
       : (slotHeight > 80 ? 16.0 : 20.0);
   const gap = 6.0;
-  const labelHeight = 28.0;
+  const labelHeight = 15.0;
   const borderAllowance = 4.0;
   return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
 }
@@ -296,33 +296,29 @@ class FilterIconOptionTile extends StatelessWidget {
       );
     }
 
+    final hPad = textOnly
+        ? 12.0
+        : (AppResponsive.isCompactPhone(context) ? 4.0 : 6.0);
+    final vPad = textOnly
+        ? 14.0
+        : (compactImageTile
+            ? 8.0
+            : ((imageHeight ?? 0) > 80 ? 8.0 : 10.0));
     final tile = Material(
-      clipBehavior: Clip.none,
-      color: Colors.transparent,
+      color: isLight ? Colors.white : filterIconTileBackdropColor(context),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: selected ? kFilterAccentColor : const Color(0xFFE0E0E5),
+          width: selected ? 2 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          padding: EdgeInsets.symmetric(
-            vertical: textOnly
-                ? 14
-                : (compactImageTile
-                    ? 8
-                    : ((imageHeight ?? 0) > 80 ? 8 : 10)),
-            horizontal: textOnly
-                ? 12
-                : (AppResponsive.isCompactPhone(context) ? 6 : 8),
-          ),
-          decoration: BoxDecoration(
-            color: isLight
-                ? Colors.white
-                : filterIconTileBackdropColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? kFilterAccentColor : const Color(0xFFE0E0E5),
-              width: selected ? 2 : 1,
-            ),
-          ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: vPad, horizontal: hPad),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -333,12 +329,13 @@ class FilterIconOptionTile extends StatelessWidget {
               ],
               AppResponsive.fittedLabel(
                 label,
+                maxLines: 1,
                 style: TextStyle(
                   fontSize: AppResponsive.filterIconLabelFontSize(
                     context,
                     textOnly: textOnly,
                   ),
-                  height: 1.15,
+                  height: 1.1,
                   fontWeight: FontWeight.w600,
                   color: selected ? kFilterAccentColor : idleColor,
                 ),

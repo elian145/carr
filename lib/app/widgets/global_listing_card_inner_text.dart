@@ -15,21 +15,21 @@ Widget _buildGlobalCarCardInnerText(
   bool pinBottomMeta = false,
   bool listLayout = false,
 }) {
-  final bool compact = listLayout || AppResponsive.isCompactPhone(context);
-  // Keep the title box height stable (prevents card overflows), but render the
-  // brand+model text larger so it has stronger hierarchy than trim.
-  final double titleBoxFontSize = compact ? 13 : 15;
-  final double titleFontSize = compact ? 14 : 17;
-  final double yearFontSize = compact ? 13 : 16;
-  final double priceFontSize = compact ? 16 : 20;
-  final double metaFontSize = compact ? 11 : 13;
-  final double trimFontSize = compact ? 12 : 15;
+  // Horizontal cards have more width than grid tiles — use fuller type, not
+  // the compact-phone sizes that made text look tiny in the strip.
+  final bool compact = !listLayout && AppResponsive.isCompactPhone(context);
+  final double titleBoxFontSize = listLayout ? 15 : (compact ? 13 : 15);
+  final double titleFontSize = listLayout ? 16 : (compact ? 14 : 17);
+  final double yearFontSize = listLayout ? 15 : (compact ? 13 : 16);
+  final double priceFontSize = listLayout ? 18 : (compact ? 16 : 20);
+  final double metaFontSize = listLayout ? 13 : (compact ? 11 : 13);
+  final double trimFontSize = listLayout ? 14 : (compact ? 12 : 15);
   const double titleLineHeight = 1.1;
   final int titleMaxLines = listLayout ? 1 : 2;
   final double reservedTitleHeight =
       titleBoxFontSize * titleLineHeight * titleMaxLines;
-  final double sectionGap = compact ? 4.0 : 6.0;
-  final double blockGap = compact ? 6.0 : 8.0;
+  final double sectionGap = listLayout ? 5.0 : (compact ? 4.0 : 6.0);
+  final double blockGap = listLayout ? 6.0 : (compact ? 6.0 : 8.0);
   final bool hasTrim = trimLine.isNotEmpty;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
 

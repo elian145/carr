@@ -18,7 +18,7 @@ mixin _DealersDirectoryPageCore on _DealersDirectoryPageWidgets {
               navigateMainShellTab(context, '/');
               break;
             case 1:
-              navigateMainShellTab(context, '/favorites');
+              navigateMainShellTab(context, '/sell');
               break;
             case 2:
               break;

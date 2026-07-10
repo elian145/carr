@@ -79,7 +79,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             iconForOption: _searchFuelTypeIcon,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
-            tileWidth: 88,
+            tileWidth: 100,
           ),
           _searchMultiIconCardSection(
             context,
@@ -92,7 +92,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             imageAssetForOption: body_type_assets.bodyTypeImageAsset,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
-            tileWidth: 88,
+            tileWidth: 100,
             tileImageWidth: 64,
             tileImageHeight: 64,
             tileImageBorderRadius: 8,
@@ -211,7 +211,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             imageAssetForOption: plateTypeImageAsset,
             labelForOption: (ctx, o) => _translatePlateTypeLegacy(ctx, o),
             scrollHorizontally: true,
-            tileWidth: 104,
+            tileWidth: 120,
             tileImageWidth: 96,
             tileImageHeight: 24,
           ),
@@ -875,7 +875,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         ? 16.0
         : (slotHeight > 80 ? 16.0 : 20.0);
     const gap = 6.0;
-    const labelHeight = 28.0;
+    const labelHeight = 15.0;
     const borderAllowance = 4.0;
     return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
   }
@@ -958,33 +958,29 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         child: Center(child: slotChild),
       );
     }
+    final hPad = textOnly
+        ? 12.0
+        : (AppResponsive.isCompactPhone(context) ? 4.0 : 6.0);
+    final vPad = textOnly
+        ? 14.0
+        : (compactImageTile
+            ? 8.0
+            : ((imageHeight ?? 0) > 80 ? 8.0 : 10.0));
     final tile = Material(
-      clipBehavior: Clip.none,
-      color: Colors.transparent,
+      color: isLight ? Colors.white : filterIconTileBackdropColor(context),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: selected ? _searchAccent : const Color(0xFFE0E0E5),
+          width: selected ? 2 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          padding: EdgeInsets.symmetric(
-            vertical: textOnly
-                ? 14
-                : (compactImageTile
-                    ? 8
-                    : ((imageHeight ?? 0) > 80 ? 8 : 10)),
-            horizontal: textOnly
-                ? 12
-                : (AppResponsive.isCompactPhone(context) ? 6 : 8),
-          ),
-          decoration: BoxDecoration(
-            color: isLight
-                ? Colors.white
-                : filterIconTileBackdropColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: selected ? _searchAccent : const Color(0xFFE0E0E5),
-              width: selected ? 2 : 1,
-            ),
-          ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: vPad, horizontal: hPad),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -995,12 +991,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               ],
               AppResponsive.fittedLabel(
                 label,
+                maxLines: 1,
                 style: TextStyle(
                   fontSize: AppResponsive.filterIconLabelFontSize(
                     context,
                     textOnly: textOnly,
                   ),
-                  height: 1.15,
+                  height: 1.1,
                   fontWeight: FontWeight.w600,
                   color: selected ? _searchAccent : idleColor,
                 ),

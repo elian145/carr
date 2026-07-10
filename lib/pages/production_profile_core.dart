@@ -23,7 +23,7 @@ mixin _ProfilePageCore on _ProfilePageBody {
               navigateMainShellTab(context, '/');
               break;
             case 1:
-              navigateMainShellTab(context, '/favorites');
+              navigateMainShellTab(context, '/sell');
               break;
             case 2:
               navigateMainShellTab(context, '/dealers');

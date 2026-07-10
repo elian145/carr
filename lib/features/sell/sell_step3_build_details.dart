@@ -35,7 +35,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
         options: _plateTypeOptions,
         selected: selectedPlateType,
         scrollHorizontally: true,
-        tileWidth: 104,
+        tileWidth: 120,
         tileImageWidth: 96,
         tileImageHeight: 24,
         iconForOption: filterPlateTypeIcon,

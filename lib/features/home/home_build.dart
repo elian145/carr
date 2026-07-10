@@ -12,7 +12,9 @@ mixin _HomePageBuild on _HomePageSlivers {
         titleSpacing: NavigationToolbar.kMiddleSpacing,
         actions: [
           Padding(
-            padding: const EdgeInsetsDirectional.only(end: 8),
+            padding: const EdgeInsetsDirectional.only(
+              end: NavigationToolbar.kMiddleSpacing,
+            ),
             child: OutlinedButton.icon(
               onPressed: () =>
                   _openHomeSearchFiltersPage(context, focusSearchField: false),
@@ -26,37 +28,6 @@ mixin _HomePageBuild on _HomePageSlivers {
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.white70),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppResponsive.narrowAppBar(context) ? 8 : 12,
-                  vertical: AppResponsive.narrowAppBar(context) ? 6 : 8,
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsetsDirectional.only(
-              end: NavigationToolbar.kMiddleSpacing,
-            ),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                _persistCurrentHomeOffsetNow();
-                _switchMainTabNoAnimation(context, '/sell');
-              },
-              icon: const Icon(Icons.add, color: Colors.white, size: 20),
-              label: Text(
-                AppLocalizations.of(context)!.sellButton,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: AppResponsive.narrowAppBar(context) ? 12 : 14,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.white70),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -86,7 +57,7 @@ mixin _HomePageBuild on _HomePageSlivers {
               _scrollHomeToTopAndResetCardImages();
               break;
             case 1:
-              _switchMainTabNoAnimation(context, '/favorites');
+              _switchMainTabNoAnimation(context, '/sell');
               break;
             case 2:
               _switchMainTabNoAnimation(context, '/dealers');

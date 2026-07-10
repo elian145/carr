@@ -81,8 +81,8 @@ Widget buildFloatingBottomNav(
           label: AppLocalizations.of(context)!.navHome,
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.favorite),
-          label: AppLocalizations.of(context)!.navSaved,
+          icon: Icon(Icons.add),
+          label: AppLocalizations.of(context)!.sellButton,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.storefront_outlined),

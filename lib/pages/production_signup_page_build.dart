@@ -394,7 +394,7 @@ mixin _SignupPageBuild on _SignupPageActions {
               navigateMainShellTab(context, '/');
               break;
             case 1:
-              navigateMainShellTab(context, '/favorites');
+              navigateMainShellTab(context, '/sell');
               break;
             case 2:
               navigateMainShellTab(context, '/dealers');

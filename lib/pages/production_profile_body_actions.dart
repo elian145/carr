@@ -25,6 +25,19 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
             ),
             SizedBox(height: 20),
             _buildActionButton(
+              Icons.favorite_outline,
+              AppLocalizations.of(context)!.navSaved,
+              () {
+                if (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty) {
+                  _showAuthRequiredDialog(context);
+                  return;
+                }
+                Navigator.pushNamed(context, '/favorites');
+              },
+            ),
+            SizedBox(height: 12),
+            _buildActionButton(
               Icons.directions_car_outlined,
               AppLocalizations.of(context)!.myListingsTitle,
               () {

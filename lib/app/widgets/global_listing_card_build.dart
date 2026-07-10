@@ -173,30 +173,32 @@ Widget buildGlobalCarCard(
                     flex: AppResponsive.isCompactPhone(context) ? 7 : 6,
                     child: LayoutBuilder(
                       builder: (context, textConstraints) {
+                        final pad = listingCardTextPadding;
+                        final contentW =
+                            (textConstraints.maxWidth - pad.horizontal)
+                                .clamp(0.0, double.infinity);
+                        final contentH =
+                            (textConstraints.maxHeight - pad.vertical)
+                                .clamp(0.0, double.infinity);
                         return wrapCardTextTap(
                           Padding(
-                            padding: listingCardTextPadding,
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.topCenter,
-                                child: SizedBox(
-                                  width: textConstraints.maxWidth,
-                                  child: _buildGlobalCarCardInnerText(
-                                    context,
-                                    car,
-                                    brandId: brandId,
-                                    trimLine: trimLine,
-                                    yearDisplay: yearDisplay,
-                                    mileageDisplay: mileageDisplay,
-                                    cityLine: cityLine,
-                                    titleTextColor: titleTextColor,
-                                    dividerLineColor: dividerLineColor,
-                                    metaTextColor: metaTextColor,
-                                    listLayout: true,
-                                  ),
-                                ),
+                            padding: pad,
+                            child: SizedBox(
+                              width: contentW,
+                              height: contentH,
+                              child: _buildGlobalCarCardInnerText(
+                                context,
+                                car,
+                                brandId: brandId,
+                                trimLine: trimLine,
+                                yearDisplay: yearDisplay,
+                                mileageDisplay: mileageDisplay,
+                                cityLine: cityLine,
+                                titleTextColor: titleTextColor,
+                                dividerLineColor: dividerLineColor,
+                                metaTextColor: metaTextColor,
+                                listLayout: true,
+                                pinBottomMeta: true,
                               ),
                             ),
                           ),
@@ -283,34 +285,45 @@ Widget buildGlobalCarCard(
                     ),
                   ),
                 ),
-                // Content section sits directly under the image (no spacer gap).
                 Expanded(
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: constraints.maxWidth,
-                        child: Padding(
-                          padding: listingCardTextPadding,
-                          child: wrapCardTextTap(
-                            _buildGlobalCarCardInnerText(
-                              context,
-                              car,
-                              brandId: brandId,
-                              trimLine: trimLine,
-                              yearDisplay: yearDisplay,
-                              mileageDisplay: mileageDisplay,
-                              cityLine: cityLine,
-                              titleTextColor: titleTextColor,
-                              dividerLineColor: dividerLineColor,
-                              metaTextColor: metaTextColor,
+                  child: LayoutBuilder(
+                    builder: (context, textBox) {
+                      final pad = listingCardTextPadding;
+                      final contentW =
+                          (textBox.maxWidth - pad.horizontal)
+                              .clamp(0.0, double.infinity);
+                      final contentH =
+                          (textBox.maxHeight - pad.vertical)
+                              .clamp(0.0, double.infinity);
+                      return Padding(
+                        padding: pad,
+                        child: SizedBox(
+                          width: contentW,
+                          height: contentH,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.topCenter,
+                            child: SizedBox(
+                              width: contentW,
+                              child: wrapCardTextTap(
+                                _buildGlobalCarCardInnerText(
+                                  context,
+                                  car,
+                                  brandId: brandId,
+                                  trimLine: trimLine,
+                                  yearDisplay: yearDisplay,
+                                  mileageDisplay: mileageDisplay,
+                                  cityLine: cityLine,
+                                  titleTextColor: titleTextColor,
+                                  dividerLineColor: dividerLineColor,
+                                  metaTextColor: metaTextColor,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],

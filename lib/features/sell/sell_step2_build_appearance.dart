@@ -12,7 +12,7 @@ mixin _SellStep2BuildAppearance on _SellStep2BuildCore {
         requiredField: true,
         isError: errBodyType,
         scrollHorizontally: true,
-        tileWidth: 88,
+        tileWidth: 100,
         tileImageWidth: 64,
         tileImageHeight: 64,
         tileImageBorderRadius: 8,

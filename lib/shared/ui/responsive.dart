@@ -124,7 +124,10 @@ abstract final class AppResponsive {
   static double featuredCarouselHeight(BuildContext context) {
     final w = featuredCardWidth(context);
     // Keep a wide card: image-dominant, room for larger title/price/specs type.
-    return (w * 0.76).clamp(280.0, 400.0);
+    // Extra height on narrow phones so stacked title/price + specs aren't cramped.
+    final ratio = isNarrowPhone(context) ? 0.88 : 0.76;
+    final minH = isNarrowPhone(context) ? 300.0 : 280.0;
+    return (w * ratio).clamp(minH, 420.0);
   }
 
   static double featuredCardWidth(BuildContext context) {
@@ -178,54 +181,52 @@ abstract final class AppResponsive {
     return isNarrowPhone(context);
   }
 
-  /// Label that scales down (and may wrap to [maxLines]) to fit tile width.
+  /// Label that always scales down to fit its width (no first-frame clip).
+  ///
+  /// Prefer [FittedBox] over AutoSizeText here — AutoSizeText often paints at
+  /// full size on the first frame and only shrinks after a rebuild (e.g. tap).
   static Widget fittedLabel(
     String text, {
     required TextStyle style,
     TextAlign textAlign = TextAlign.center,
     double minFontSize = 6,
-    int maxLines = 2,
+    int maxLines = 1,
   }) {
-    final maxFontSize = style.fontSize ?? 12;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        if (!width.isFinite || width <= 0) {
-          return Text(
-            text,
-            textAlign: textAlign,
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
-            textScaler: const TextScaler.linear(1.0),
-            style: style,
-          );
-        }
-        return SizedBox(
-          width: width,
-          child: AutoSizeText(
-            text,
-            textAlign: textAlign,
-            maxLines: maxLines,
-            minFontSize: minFontSize,
-            maxFontSize: maxFontSize,
-            stepGranularity: 0.25,
-            overflow: TextOverflow.ellipsis,
-            wrapWords: false,
-            textScaleFactor: 1.0,
-            style: style,
+    // Keep API compatible; filter tiles stay single-line and scale to width.
+    return SizedBox(
+      width: double.infinity,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: textAlign == TextAlign.end
+            ? Alignment.centerRight
+            : (textAlign == TextAlign.start
+                ? Alignment.centerLeft
+                : Alignment.center),
+        child: Text(
+          text,
+          textAlign: textAlign,
+          maxLines: maxLines.clamp(1, 2),
+          softWrap: maxLines > 1,
+          textScaler: const TextScaler.linear(1.0),
+          style: style.copyWith(
+            fontSize: (style.fontSize ?? 12).clamp(minFontSize, 99),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  /// Slightly wider filter tiles on compact phones so labels stay readable.
+  /// Wider filter tiles on compact phones so labels stay readable.
   static double filterIconTileWidth(
     BuildContext context,
     double base, {
-    double compactBoost = 8,
+    double compactBoost = 16,
   }) {
-    if (!isCompactPhone(context)) return base;
+    if (!isCompactPhone(context)) {
+      // Still nudge narrow-but-not-compact phones a bit for long labels.
+      if (isNarrowPhone(context)) return base + 8;
+      return base;
+    }
     return base + compactBoost;
   }
 
@@ -235,8 +236,8 @@ abstract final class AppResponsive {
     double regular = 12,
     bool textOnly = false,
   }) {
-    if (textOnly) return isCompactPhone(context) ? 14 : 15;
-    return isCompactPhone(context) ? 11 : regular;
+    if (textOnly) return isCompactPhone(context) ? 13 : 15;
+    return isCompactPhone(context) ? 10 : regular;
   }
 
   /// Shrinks [text] to fit when horizontal space is tight (e.g. section summaries).
