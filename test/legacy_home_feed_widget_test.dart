@@ -31,7 +31,7 @@ void main() {
     for (var i = 0; i < 80; i++) {
       await tester.pump(const Duration(milliseconds: 50));
       if (find.text('Home').evaluate().isNotEmpty &&
-          find.text('Saved').evaluate().isNotEmpty &&
+          find.text('Sell').evaluate().isNotEmpty &&
           find.text('Dealerships').evaluate().isNotEmpty &&
           find.text('Profile').evaluate().isNotEmpty) {
         navReady = true;
