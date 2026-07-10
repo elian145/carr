@@ -198,6 +198,8 @@ mixin _HomePageFetchCore on _HomePageFields {
         loadErrorMessage = null;
       });
     }
+    await _resolveHomeInterestForFeed();
+    if (!mounted) return;
     Map<String, String> filters = _buildFilters();
     // Reset pagination
     _page = 1;
@@ -219,7 +221,10 @@ mixin _HomePageFetchCore on _HomePageFields {
     final sp = await SharedPreferences.getInstance();
     final cacheKey = 'cache_home_${query.hashCode}';
     String? cached;
-    if (!bypassCache) {
+    // Random explore should feel fresh; don't serve a sticky shuffled page from cache.
+    final skipCacheRead =
+        bypassCache || filters['sort_by'] == 'random';
+    if (!skipCacheRead) {
       // Use cached data to improve reliability and reduce API dependency
       cached = sp.getString(cacheKey);
       if (cached != null && cached.isNotEmpty) {
@@ -227,7 +232,7 @@ mixin _HomePageFetchCore on _HomePageFields {
         try {
           final decoded = json.decode(cached);
           final List<Map<String, dynamic>> parsed =
-              listingMapsFromApiResponse(decoded);
+              _applyDefaultFeedOrdering(listingMapsFromApiResponse(decoded));
           if (mounted) {
             setState(() {
               cars = _applyDamagedPartsExactFilter(parsed);
@@ -274,8 +279,9 @@ mixin _HomePageFetchCore on _HomePageFields {
             }
           } catch (e, st) { logNonFatal(e, st); }
         }
-        final List<Map<String, dynamic>> parsed =
-            listingMapsFromApiResponse(decoded);
+        final List<Map<String, dynamic>> parsed = _applyDefaultFeedOrdering(
+          listingMapsFromApiResponse(decoded),
+        );
 
         _debugLog('[home-feed] Parsed ${parsed.length} cars from response');
 
@@ -291,6 +297,9 @@ mixin _HomePageFetchCore on _HomePageFields {
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
           _HomePageFields._homeFeedCachePage = _page;
           _HomePageFields._homeFeedCacheHasNext = _hasNext;
+          if (selectedSortBy == null || selectedSortBy!.isEmpty) {
+            _HomePageFields._homeFeedCacheDefaultSort = _defaultFeedSortBy;
+          }
         }
         // Save fresh cache
         unawaited(sp.setString(cacheKey, response.body));
@@ -386,6 +395,10 @@ mixin _HomePageFetchCore on _HomePageFields {
     if (_isLoadingMore || !_hasNext) return;
     _isLoadingMore = true;
     try {
+      if (_homeInterestProfile == null &&
+          (selectedSortBy == null || selectedSortBy!.isEmpty)) {
+        await _resolveHomeInterestForFeed();
+      }
       final Map<String, String> filters = _buildFilters();
       filters['page'] = _page.toString();
       filters['per_page'] = '20';
@@ -404,8 +417,9 @@ mixin _HomePageFetchCore on _HomePageFields {
             }
           } catch (e, st) { logNonFatal(e, st); }
         }
-        final List<Map<String, dynamic>> more =
-            listingMapsFromApiResponse(decoded);
+        final List<Map<String, dynamic>> more = _applyDefaultFeedOrdering(
+          listingMapsFromApiResponse(decoded),
+        );
         if (mounted && more.isNotEmpty) {
           setState(() {
             cars.addAll(_applyDamagedPartsExactFilter(more));
@@ -456,7 +470,7 @@ mixin _HomePageFetchCore on _HomePageFields {
         final decoded = json.decode(resp.body);
         if (decoded is Map && decoded['cars'] is List) {
           final List<Map<String, dynamic>> parsed =
-              listingMapsFromApiResponse(decoded);
+              _applyDefaultFeedOrdering(listingMapsFromApiResponse(decoded));
           if (mounted) {
             setState(() {
               cars = _applyDamagedPartsExactFilter(parsed);
@@ -591,15 +605,90 @@ mixin _HomePageFetchCore on _HomePageFields {
         selectedDamagedParts: selectedDamagedParts,
       );
 
+  Future<void> _resolveHomeInterestForFeed() async {
+    final profile = await HomeInterestService.loadProfile();
+    if (!mounted) return;
+    _homeInterestProfile = profile;
+    if (selectedSortBy == null || selectedSortBy!.isEmpty) {
+      _defaultFeedSortBy = profile.defaultSortBy;
+    }
+  }
+
+  /// When a new user starts browsing, refresh home from random → recommended.
+  Future<void> _maybeRefreshFeedForInterestChange() async {
+    if (selectedSortBy != null && selectedSortBy!.isNotEmpty) return;
+    final profile = await HomeInterestService.loadProfile();
+    if (!mounted) return;
+    final next = profile.defaultSortBy;
+    final previous = _defaultFeedSortBy ??
+        _HomePageFields._homeFeedCacheDefaultSort;
+    if (previous == next) {
+      _homeInterestProfile = profile;
+      _defaultFeedSortBy = next;
+      return;
+    }
+    // Only auto-refresh when graduating from explore → personalized.
+    if (previous == 'random' && next == 'recommended') {
+      _homeInterestProfile = profile;
+      _defaultFeedSortBy = next;
+      _HomePageFields._homeFeedCache.clear();
+      _HomePageFields._homeFeedCacheDefaultSort = null;
+      await fetchCars(bypassCache: true);
+    } else {
+      _homeInterestProfile = profile;
+      _defaultFeedSortBy = next;
+    }
+  }
+
+  List<Map<String, dynamic>> _applyDefaultFeedOrdering(
+    List<Map<String, dynamic>> parsed,
+  ) {
+    if (selectedSortBy != null && selectedSortBy!.isNotEmpty) return parsed;
+    final sort = _defaultFeedSortBy;
+    if (sort == 'recommended') {
+      final profile = _homeInterestProfile;
+      if (profile != null && profile.hasInterest) {
+        return HomeInterestService.boostByInterest(parsed, profile);
+      }
+    }
+    if (sort == 'random') {
+      final shuffled = List<Map<String, dynamic>>.from(parsed)..shuffle();
+      shuffled.sort((a, b) {
+        final fa = (a['is_featured'] == true ||
+                a['isFeatured'] == true ||
+                a['is_featured']?.toString() == 'true')
+            ? 1
+            : 0;
+        final fb = (b['is_featured'] == true ||
+                b['isFeatured'] == true ||
+                b['is_featured']?.toString() == 'true')
+            ? 1
+            : 0;
+        return fb.compareTo(fa);
+      });
+      return shuffled;
+    }
+    return parsed;
+  }
+
   Map<String, String> _buildFilters({bool includeSort = true}) {
-    final apiSortValue = includeSort
-        ? _convertSortToApiValue(context, selectedSortBy)
-        : null;
-    return homeFiltersToApiQuery(
+    String? apiSortValue;
+    if (includeSort) {
+      apiSortValue = _convertSortToApiValue(context, selectedSortBy);
+      // Default home feed: random for new users, recommended after activity.
+      apiSortValue ??= _defaultFeedSortBy;
+    }
+    final out = homeFiltersToApiQuery(
       _homeFiltersSnapshot(),
       apiSortValue: apiSortValue,
       includeSort: includeSort,
     );
+    if (includeSort &&
+        apiSortValue == 'recommended' &&
+        _homeInterestProfile != null) {
+      out.addAll(_homeInterestProfile!.toPreferQueryParams());
+    }
+    return out;
   }
 
   // Intentionally disabled: auto-saving on every filter change created many duplicates.

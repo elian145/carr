@@ -4,8 +4,18 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
   List<Widget> _moreFiltersColorWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) => [
+    MoreFiltersDialogStyle style, {
+    bool includeAnyOption = true,
+  }) {
+    final colorOptions = includeAnyOption
+        ? getAvailableColors()
+        : getAvailableColors().where((c) => c != 'Any').toList();
+    final hasColor =
+        selectedColor != null &&
+        selectedColor!.isNotEmpty &&
+        selectedColor != 'Any';
+
+    return [
                           SizedBox(
                             height:
                                 style.fieldGap,
@@ -16,23 +26,19 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                             ),
                             readOnly: true,
                             style: TextStyle(
-                              color:
-                                  (selectedColor !=
-                                          null &&
-                                      selectedColor!
-                                          .isNotEmpty)
+                              color: hasColor
                                   ? style.onSurface
                                   : style.anyOrange,
                             ),
-                            initialValue:
-                                (_translateValueGlobal(
-                                  context,
-                                  selectedColor,
-                                ) ??
-                                selectedColor ??
-                                AppLocalizations.of(
-                                  context,
-                                )!.any),
+                            initialValue: hasColor
+                                ? (_translateValueGlobal(
+                                      context,
+                                      selectedColor,
+                                    ) ??
+                                    selectedColor!)
+                                : (includeAnyOption
+                                    ? AppLocalizations.of(context)!.any
+                                    : ''),
                             decoration: InputDecoration(
                               labelText:
                                   AppLocalizations.of(
@@ -200,13 +206,13 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                     10,
                                               ),
                                               itemCount:
-                                                  getAvailableColors().length,
+                                                  colorOptions.length,
                                               itemBuilder:
                                                   (
                                                     context,
                                                     index,
                                                   ) {
-                                                    final colorName = getAvailableColors()[index];
+                                                    final colorName = colorOptions[index];
                                                     Color
                                                     colorValue = Colors.grey;
                                                     switch (colorName.toLowerCase()) {
@@ -340,6 +346,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                           ),
                           SizedBox(height: 12),
       ];
+  }
 }
 
 mixin _HomePageMoreFiltersBodyColor on _HomePageMoreFiltersColor {

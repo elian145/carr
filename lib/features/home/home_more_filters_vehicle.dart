@@ -140,6 +140,10 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     required ValueChanged<String?>? onChanged,
     bool narrowMenu = false,
   }) {
+    final hasEmptyItem = items.any((item) => item.value == '');
+    final effectiveValue =
+        value.isEmpty ? (hasEmptyItem ? '' : null) : value;
+
     return InputDecorator(
       decoration: _moreFiltersColorMatchedFieldDecoration(style, label),
       isEmpty: false,
@@ -147,7 +151,8 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
         child: DropdownButton<String>(
           isExpanded: true,
           isDense: true,
-          value: value,
+          value: effectiveValue,
+          hint: hasEmptyItem ? null : const SizedBox.shrink(),
           items: items,
           onChanged: onChanged,
           menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),

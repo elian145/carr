@@ -36,6 +36,7 @@ import '../../navigation/app_page_route.dart';
 import '../../pages/saved_searches_page.dart';
 import '../../services/api_service.dart';
 import '../../services/car_spec_index.dart';
+import '../../services/home_interest_service.dart';
 import '../../services/saved_search_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/i18n/digits.dart';

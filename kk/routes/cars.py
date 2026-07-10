@@ -7,13 +7,15 @@ from datetime import datetime
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from ..security import rate_limit
-from sqlalchemy import or_, select, update, func
+from collections import Counter
+
+from sqlalchemy import case, or_, select, update, func
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..view_history import remove_listing_from_all_view_history
-from ..models import Car, ListingReport, User, db, user_viewed_listings
+from ..models import Car, ListingReport, User, db, user_favorites, user_viewed_listings
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url
@@ -45,6 +47,163 @@ def _listing_db_error_response(exc, *, action: str):
 def _public_listings_filter(query):
     """Browseable listings only (not soft-deleted). Sold listings remain visible."""
     return query.filter(Car.is_active.is_(True))
+
+
+def _split_prefer_csv(raw: str | None, *, limit: int = 8) -> list[str]:
+    if not raw:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for part in str(raw).split(","):
+        v = part.strip()
+        if not v:
+            continue
+        key = v.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(v)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _interest_from_user_activity(user: User) -> tuple[list[str], list[str], float | None, float | None]:
+    """Derive soft preferences from recently viewed + favorited listings."""
+    brand_counts: Counter[str] = Counter()
+    body_counts: Counter[str] = Counter()
+    prices: list[float] = []
+
+    viewed_rows = (
+        db.session.query(Car.brand, Car.body_type, Car.price)
+        .join(user_viewed_listings, user_viewed_listings.c.car_id == Car.id)
+        .filter(user_viewed_listings.c.user_id == user.id, Car.is_active.is_(True))
+        .order_by(user_viewed_listings.c.viewed_at.desc())
+        .limit(40)
+        .all()
+    )
+    fav_rows = (
+        db.session.query(Car.brand, Car.body_type, Car.price)
+        .join(user_favorites, user_favorites.c.car_id == Car.id)
+        .filter(user_favorites.c.user_id == user.id, Car.is_active.is_(True))
+        .limit(40)
+        .all()
+    )
+
+    for brand, body_type, price in [*viewed_rows, *fav_rows]:
+        b = (brand or "").strip()
+        if b:
+            brand_counts[b] += 1
+        bt = (body_type or "").strip()
+        if bt:
+            body_counts[bt.lower()] += 1
+        try:
+            if price is not None:
+                prices.append(float(price))
+        except (TypeError, ValueError):
+            pass
+
+    brands = [b for b, _ in brand_counts.most_common(5)]
+    bodies = [b for b, _ in body_counts.most_common(5)]
+    prefer_min = prefer_max = None
+    if prices:
+        prices.sort()
+        # Soft band around the median of activity prices.
+        mid = prices[len(prices) // 2]
+        prefer_min = max(0.0, mid * 0.55)
+        prefer_max = mid * 1.55
+    return brands, bodies, prefer_min, prefer_max
+
+
+def _apply_interest_ordering(
+    query,
+    *,
+    brands: list[str],
+    body_types: list[str],
+    prefer_min_price: float | None,
+    prefer_max_price: float | None,
+):
+    """Boost listings that match inferred interests; featured still ranks first."""
+    score = None
+    if brands:
+        brand_score = case(
+            (or_(*[Car.brand.ilike(b) for b in brands]), 4),
+            else_=0,
+        )
+        score = brand_score if score is None else (score + brand_score)
+    if body_types:
+        body_score = case(
+            (or_(*[func.lower(Car.body_type) == bt.lower() for bt in body_types]), 3),
+            else_=0,
+        )
+        score = body_score if score is None else (score + body_score)
+    if prefer_min_price is not None and prefer_max_price is not None:
+        price_score = case(
+            (
+                (Car.price >= prefer_min_price) & (Car.price <= prefer_max_price),
+                2,
+            ),
+            else_=0,
+        )
+        score = price_score if score is None else (score + price_score)
+
+    if score is None:
+        return query.order_by(Car.is_featured.desc(), func.random())
+
+    return query.order_by(
+        Car.is_featured.desc(),
+        score.desc(),
+        Car.created_at.desc(),
+    )
+
+
+def _order_cars_query(query, sort_by: str):
+    """Apply list ordering for GET /api/cars."""
+    if sort_by == "newest":
+        return query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+    if sort_by == "price_asc":
+        return query.order_by(Car.is_featured.desc(), Car.price.asc(), Car.created_at.desc())
+    if sort_by == "price_desc":
+        return query.order_by(Car.is_featured.desc(), Car.price.desc(), Car.created_at.desc())
+    if sort_by == "year_desc":
+        return query.order_by(Car.is_featured.desc(), Car.year.desc(), Car.created_at.desc())
+    if sort_by == "year_asc":
+        return query.order_by(Car.is_featured.desc(), Car.year.asc(), Car.created_at.desc())
+    if sort_by == "mileage_asc":
+        return query.order_by(Car.is_featured.desc(), Car.mileage.asc(), Car.created_at.desc())
+    if sort_by == "mileage_desc":
+        return query.order_by(Car.is_featured.desc(), Car.mileage.desc(), Car.created_at.desc())
+    if sort_by == "random":
+        return query.order_by(Car.is_featured.desc(), func.random())
+    if sort_by == "recommended":
+        brands = _split_prefer_csv(request.args.get("prefer_brand"))
+        body_types = _split_prefer_csv(request.args.get("prefer_body_type"))
+        prefer_min = _safe_float(request.args.get("prefer_min_price"))
+        prefer_max = _safe_float(request.args.get("prefer_max_price"))
+
+        if not brands and not body_types:
+            current_user = None
+            try:
+                verify_jwt_in_request(optional=True)
+                current_user = get_current_user()
+            except Exception:
+                current_user = None
+            if current_user:
+                brands, body_types, prefer_min, prefer_max = _interest_from_user_activity(
+                    current_user
+                )
+
+        return _apply_interest_ordering(
+            query,
+            brands=brands,
+            body_types=body_types,
+            prefer_min_price=prefer_min,
+            prefer_max_price=prefer_max,
+        )
+
+    # Default (no sort_by): newest, featured first — keep API compat for other clients.
+    return query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+
 
 # Best-effort anonymous view cooldown (in-memory, per process)
 _anon_view_cache: dict[tuple[str, int], float] = {}
@@ -359,22 +518,7 @@ def get_cars():
             query = query.filter(Car.plate_city.ilike(f"%{plate_city}%"))
 
         sort_by = (request.args.get("sort_by") or "").strip().lower()
-        if sort_by == "newest":
-            query = query.order_by(Car.is_featured.desc(), Car.created_at.desc())
-        elif sort_by == "price_asc":
-            query = query.order_by(Car.is_featured.desc(), Car.price.asc(), Car.created_at.desc())
-        elif sort_by == "price_desc":
-            query = query.order_by(Car.is_featured.desc(), Car.price.desc(), Car.created_at.desc())
-        elif sort_by == "year_desc":
-            query = query.order_by(Car.is_featured.desc(), Car.year.desc(), Car.created_at.desc())
-        elif sort_by == "year_asc":
-            query = query.order_by(Car.is_featured.desc(), Car.year.asc(), Car.created_at.desc())
-        elif sort_by == "mileage_asc":
-            query = query.order_by(Car.is_featured.desc(), Car.mileage.asc(), Car.created_at.desc())
-        elif sort_by == "mileage_desc":
-            query = query.order_by(Car.is_featured.desc(), Car.mileage.desc(), Car.created_at.desc())
-        else:
-            query = query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+        query = _order_cars_query(query, sort_by)
 
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         cars = [_with_media_compat(c) for c in pagination.items]

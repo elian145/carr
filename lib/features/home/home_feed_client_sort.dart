@@ -52,6 +52,11 @@ List<Map<String, dynamic>> homeFeedClientSortedListings(
             DateTime(1970);
         return dateB.compareTo(dateA);
       });
+    case 'random':
+      sorted.shuffle();
+    case 'recommended':
+      // Interest boost is applied by HomeInterestService on the home feed path.
+      break;
   }
 
   return sorted;

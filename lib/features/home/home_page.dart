@@ -13,12 +13,18 @@ abstract class _HomePageFields extends State<HomePage> {
   static int _homeFeedCachePage = 1;
   static bool _homeFeedCacheHasNext = true;
   static bool _homeDeleteHandlerRegistered = false;
+  /// Last default feed mode used for the in-memory cache (`random` / `recommended`).
+  static String? _homeFeedCacheDefaultSort;
 
   List<Map<String, dynamic>> cars = [];
   List<Map<String, dynamic>> featuredCars = [];
   bool isLoading = true;
   bool hasLoadedOnce = false;
   String? loadErrorMessage;
+
+  /// Inferred from browse history; used when [selectedSortBy] is unset.
+  HomeInterestProfile? _homeInterestProfile;
+  String? _defaultFeedSortBy;
 
   // Filter variables
   String? selectedBrand;
@@ -375,6 +381,7 @@ class _HomePageState extends _HomePageFields
       hasLoadedOnce = true;
       _page = _HomePageFields._homeFeedCachePage;
       _hasNext = _HomePageFields._homeFeedCacheHasNext;
+      _defaultFeedSortBy = _HomePageFields._homeFeedCacheDefaultSort;
     }
     // Restore last chosen layout (grid vs list) across pages.
     ListingLayoutPrefs.load().then((cols) {
@@ -415,6 +422,7 @@ class _HomePageState extends _HomePageFields
       }
       if (pendingSavedSearch || oneTimeFilters != null) {
         _HomePageFields._homeFeedCache.clear();
+        _HomePageFields._homeFeedCacheDefaultSort = null;
         if (mounted) {
           setState(() {
             cars = [];
@@ -429,6 +437,9 @@ class _HomePageState extends _HomePageFields
         // scroll's many rows with ~20 items, collapse maxScrollExtent, and wipe the
         // saved offset. User can pull-to-refresh or change filters to refetch.
         fetchCars();
+      } else {
+        // After the user browses listings, switch from random explore → interest feed.
+        unawaited(_maybeRefreshFeedForInterestChange());
       }
       unawaited(fetchFeaturedCars());
       // Kick restoration once the first frame is mounted, instead of waiting

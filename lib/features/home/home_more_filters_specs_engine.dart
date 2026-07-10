@@ -6,8 +6,18 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
     void Function(void Function()) setStateDialog,
     MoreFiltersDialogStyle style, {
     bool narrowMenu = false,
+    bool includeAnyOption = true,
   }) {
     final loc = AppLocalizations.of(context)!;
+
+    List<DropdownMenuItem<String>> anyItem() => includeAnyOption
+        ? [
+            DropdownMenuItem(
+              value: '',
+              child: Text(loc.any, style: TextStyle(color: style.anyOrange)),
+            ),
+          ]
+        : const [];
 
     return [
       const SizedBox(height: 12),
@@ -18,10 +28,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
         value: _getValidCylinderCountValue(),
         narrowMenu: narrowMenu,
         items: [
-          DropdownMenuItem(
-            value: '',
-            child: Text(loc.any, style: TextStyle(color: style.anyOrange)),
-          ),
+          ...anyItem(),
           ...getAvailableCylinderCounts()
               .where((c) => c != 'Any')
               .map(
@@ -33,7 +40,8 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
         ],
         onChanged: (value) {
           setState(() {
-            selectedCylinderCount = value == '' ? null : value;
+            selectedCylinderCount =
+                value == null || value.isEmpty ? null : value;
             _applyMoreFiltersEngineSyncFromCylinder(selectedCylinderCount);
           });
           setStateDialog(() {});
@@ -48,10 +56,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
         value: selectedSeating ?? '',
         narrowMenu: narrowMenu,
         items: [
-          DropdownMenuItem(
-            value: '',
-            child: Text(loc.any, style: TextStyle(color: style.anyOrange)),
-          ),
+          ...anyItem(),
           ...getAvailableSeatings()
               .where((s) => s != 'Any')
               .map(
@@ -62,7 +67,10 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
               ),
         ],
         onChanged: (value) {
-          setState(() => selectedSeating = value == '' ? null : value);
+          setState(
+            () => selectedSeating =
+                value == null || value.isEmpty ? null : value,
+          );
           _persistFilters();
         },
       ),
@@ -79,13 +87,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
                     value: _getValidEngineSizeValue(),
                     narrowMenu: narrowMenu,
                     items: [
-                      DropdownMenuItem(
-                        value: '',
-                        child: Text(
-                          loc.any,
-                          style: TextStyle(color: style.anyOrange),
-                        ),
-                      ),
+                      ...anyItem(),
                       ...getAvailableEngineSizes()
                           .where((e) => e != 'Any')
                           .map(
@@ -99,7 +101,8 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
                     ],
                     onChanged: (value) {
                       setState(() {
-                        selectedEngineSize = value == '' ? null : value;
+                        selectedEngineSize =
+                            value == null || value.isEmpty ? null : value;
                         _applyMoreFiltersCylinderSyncFromEngine(
                           selectedEngineSize,
                         );

@@ -2,7 +2,6 @@ part of 'home_flow.dart';
 
 mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   static const Color _searchAccent = Color(0xFFFF6B00);
-  static const IconData _searchAnyOptionIcon = Icons.grid_view_rounded;
 
   MoreFiltersDialogStyle _searchMoreFiltersStyle(BuildContext context) {
     final base = _moreFiltersStyle(context);
@@ -137,13 +136,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               context,
               setStateDialog,
               style,
+              includeAnyOption: false,
             ),
           ),
           _searchIconCardSection(
             context,
             setStateDialog,
             title: loc.titleStatus,
-            options: const ['Any', 'clean', 'damaged'],
+            options: const ['clean', 'damaged'],
             selected: selectedTitleStatus,
             onSelected: (v) {
               selectedTitleStatus = v;
@@ -165,7 +165,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             context,
             setStateDialog,
             title: loc.conditionLabel,
-            options: const ['Any', 'New', 'Used'],
+            options: const ['New', 'Used'],
             selected: selectedCondition,
             onSelected: (v) => selectedCondition = v ?? 'Any',
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
@@ -175,7 +175,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             context,
             setStateDialog,
             title: loc.regionSpecsLabel,
-            options: ['Any', ...kCarRegionSpecCodes],
+            options: kCarRegionSpecCodes,
             selected: selectedRegionSpecs,
             onSelected: (v) => selectedRegionSpecs = v,
             iconForOption: _searchRegionSpecIcon,
@@ -199,7 +199,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               ku: 'جۆری پڵەیت',
             ),
             options: const [
-              'Any',
               'private',
               'temporary',
               'commercial',
@@ -224,7 +223,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               ar: 'مدينة اللوحة',
               ku: 'شاری پڵەیت',
             ),
-            options: ['Any', ...kPlateCityFilterOptions],
+            options: kPlateCityFilterOptions,
             selected: selectedPlateCity,
             onSelected: (v) => selectedPlateCity = v,
             iconForOption: _searchPlateCityIcon,
@@ -249,11 +248,15 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     );
   }
 
-  String _searchBrandLabel(BuildContext context) => _homeBrandFilterLabel(context);
+  String _searchBrandLabel(BuildContext context) {
+    final brand = _homeSelectedBrand;
+    if (brand == null) return '';
+    final localized = CarNameTranslations.getLocalizedBrand(context, brand);
+    return localized.isNotEmpty ? localized : brand;
+  }
 
   String _searchModelLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    if (selectedModel == null || selectedModel!.isEmpty) return loc.any;
+    if (selectedModel == null || selectedModel!.isEmpty) return '';
     final localized = CarNameTranslations.getLocalizedModel(
       context,
       _homeSingleSelectedBrand,
@@ -263,8 +266,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   }
 
   String _searchTrimLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    if (selectedTrim == null || selectedTrim!.isEmpty) return loc.any;
+    if (selectedTrim == null || selectedTrim!.isEmpty) return '';
     return selectedTrim!;
   }
 
@@ -778,16 +780,12 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   }
 
   String _searchPlateCityLabel(BuildContext context, String city) {
-    final loc = AppLocalizations.of(context)!;
-    if (city == 'Any') return loc.any;
     return _translateValueGlobal(context, city) ?? city;
   }
 
   String _searchTitleStatusLabel(BuildContext context, String status) {
     final loc = AppLocalizations.of(context)!;
     switch (status) {
-      case 'Any':
-        return loc.any;
       case 'clean':
         return loc.value_title_clean;
       case 'damaged':
@@ -803,10 +801,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     MoreFiltersDialogStyle style,
   ) {
     final loc = AppLocalizations.of(context)!;
+    final current =
+        selectedDamagedParts != null && selectedDamagedParts!.isNotEmpty
+            ? selectedDamagedParts
+            : null;
 
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      initialValue: selectedDamagedParts ?? '',
+      value: current,
       decoration: InputDecoration(
         labelText: loc.damagedParts,
         filled: true,
@@ -820,26 +822,17 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-      items: [
-        DropdownMenuItem(
-          value: '',
+      items: List.generate(
+        15,
+        (i) => (i + 1).toString(),
+      ).map(
+        (p) => DropdownMenuItem(
+          value: p,
           child: Text(
-            loc.any,
-            style: TextStyle(color: style.anyOrange),
+            '${localizeDigits(context, p)} ${loc.damagedParts}',
           ),
         ),
-        ...List.generate(
-          15,
-          (i) => (i + 1).toString(),
-        ).map(
-          (p) => DropdownMenuItem(
-            value: p,
-            child: Text(
-              '${localizeDigits(context, p)} ${loc.damagedParts}',
-            ),
-          ),
-        ),
-      ],
+      ).toList(),
       onChanged: (value) {
         setState(() {
           selectedDamagedParts = value == null || value.isEmpty ? null : value;
@@ -854,9 +847,8 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     String? selected, {
     String Function(BuildContext, String)? labelForOption,
   }) {
-    final loc = AppLocalizations.of(context)!;
     if (selected == null || selected.isEmpty || selected == 'Any') {
-      return loc.any;
+      return '';
     }
     return labelForOption?.call(context, selected) ??
         _translateValueGlobal(context, selected) ??
@@ -1037,44 +1029,36 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     double? scrollListHeight,
     bool compactImageTile = false,
   }) {
-    final loc = AppLocalizations.of(context)!;
+    final visibleOptions =
+        options.where((option) => option != 'Any').toList(growable: false);
     final normalizedSelected =
         (selected == null || selected.isEmpty || selected == 'Any')
             ? null
             : selected;
 
-    final tiles = options.map((option) {
-      final isAny = option == 'Any';
-      final isSelected =
-          isAny ? normalizedSelected == null : normalizedSelected == option;
-      final label = isAny
-          ? loc.any
-          : (labelForOption?.call(context, option) ??
-              _translateValueGlobal(context, option) ??
-              option);
-      final customGraphic =
-          isAny ? null : graphicForOption?.call(option);
+    final tiles = visibleOptions.map((option) {
+      final isSelected = normalizedSelected == option;
+      final label = labelForOption?.call(context, option) ??
+          _translateValueGlobal(context, option) ??
+          option;
+      final customGraphic = graphicForOption?.call(option);
       final usesImageAsset = !textOnly &&
           customGraphic == null &&
           imageAssetForOption != null;
       return _searchIconOptionTile(
         context,
         selected: isSelected,
-        icon: isAny
-            ? _searchAnyOptionIcon
-            : (textOnly
-                ? null
-                : (customGraphic != null
-                    ? null
-                    : (usesImageAsset &&
-                            imageAssetForOption.call(option) == null
-                        ? iconForOption?.call(option)
-                        : (usesImageAsset ? null : iconForOption?.call(option))))),
-        imageAsset: isAny
+        icon: textOnly
             ? null
-            : (textOnly || customGraphic != null
+            : (customGraphic != null
                 ? null
-                : imageAssetForOption?.call(option)),
+                : (usesImageAsset &&
+                        imageAssetForOption.call(option) == null
+                    ? iconForOption?.call(option)
+                    : (usesImageAsset ? null : iconForOption?.call(option)))),
+        imageAsset: textOnly || customGraphic != null
+            ? null
+            : imageAssetForOption?.call(option),
         customGraphic: customGraphic,
         label: label,
         width: scrollHorizontally ? tileWidth : null,
@@ -1089,7 +1073,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         textOnly: textOnly,
         compactImageTile: compactImageTile,
         onTap: () {
-          setState(() => onSelected(isAny ? null : option));
+          setState(() => onSelected(isSelected ? null : option));
           setStateDialog(() {});
         },
       );
@@ -1121,7 +1105,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 height: scrollListHeight ??
                     _searchIconScrollListHeight(
                       textOnly: textOnly,
-                      options: options,
+                      options: visibleOptions,
                       tileImageHeight: tileImageHeight,
                       imageAssetForOption: imageAssetForOption,
                       graphicForOption: graphicForOption,
@@ -1173,27 +1157,21 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     double tileImageBorderRadius = 0,
     double? scrollListHeight,
   }) {
-    final loc = AppLocalizations.of(context)!;
+    final visibleOptions =
+        options.where((option) => option != 'Any').toList(growable: false);
 
-    final tiles = options.map((option) {
-      final isAny = option == 'Any';
-      final isSelected = isAny
-          ? selectedValues.isEmpty
-          : selectedValues.contains(option);
-      final label = isAny
-          ? loc.any
-          : (labelForOption?.call(context, option) ??
-              _translateValueGlobal(context, option) ??
-              option);
+    final tiles = visibleOptions.map((option) {
+      final isSelected = selectedValues.contains(option);
+      final label = labelForOption?.call(context, option) ??
+          _translateValueGlobal(context, option) ??
+          option;
       return _searchIconOptionTile(
         context,
         selected: isSelected,
-        icon: isAny
-            ? _searchAnyOptionIcon
-            : (imageAssetForOption?.call(option) == null
-                ? iconForOption?.call(option)
-                : null),
-        imageAsset: isAny ? null : imageAssetForOption?.call(option),
+        icon: imageAssetForOption?.call(option) == null
+            ? iconForOption?.call(option)
+            : null,
+        imageAsset: imageAssetForOption?.call(option),
         label: label,
         width: scrollHorizontally ? tileWidth : null,
         imageWidth: imageAssetForOption == null ? null : tileImageWidth,
@@ -1201,11 +1179,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         imageFit: tileImageFit,
         imageBorderRadius: tileImageBorderRadius,
         onTap: () {
-          if (isAny) {
-            setState(onClear);
-          } else {
-            setState(() => onToggle(option));
-          }
+          setState(() => onToggle(option));
           setStateDialog(() {});
         },
       );
@@ -1222,7 +1196,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               context,
               title: title,
               valueSummary: homeFilterSummaryLabel(
-                loc.any,
+                '',
                 selectedValues,
                 (value) =>
                     labelForOption?.call(context, value) ??
@@ -1240,7 +1214,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                 height: scrollListHeight ??
                     _searchIconScrollListHeight(
                       textOnly: false,
-                      options: options,
+                      options: visibleOptions,
                       tileImageHeight: tileImageHeight,
                       imageAssetForOption: imageAssetForOption,
                     ),
@@ -1275,7 +1249,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     BuildContext context,
     StateSetter setStateDialog,
   ) {
-    final loc = AppLocalizations.of(context)!;
     final isLight = Theme.of(context).brightness == Brightness.light;
     final brand = _homeSingleSelectedBrand;
     if (brand == null || brand.isEmpty) return const SizedBox.shrink();
@@ -1291,7 +1264,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       isExpanded: true,
       value: currentModel,
       decoration: InputDecoration(
-        hintText: loc.any,
         filled: true,
         fillColor: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
         border: OutlineInputBorder(
@@ -1307,31 +1279,19 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           ),
         ),
       ),
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(
-            loc.any,
-            style: TextStyle(
-              color: _searchAccent,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        ...modelList.map(
-          (model) {
-            final display =
-                CarNameTranslations.getLocalizedModel(context, brand, model)
-                        .isNotEmpty
-                    ? CarNameTranslations.getLocalizedModel(context, brand, model)
-                    : model;
-            return DropdownMenuItem<String>(
-              value: model,
-              child: Text(display, overflow: TextOverflow.ellipsis),
-            );
-          },
-        ),
-      ],
+      items: modelList.map(
+        (model) {
+          final display =
+              CarNameTranslations.getLocalizedModel(context, brand, model)
+                      .isNotEmpty
+                  ? CarNameTranslations.getLocalizedModel(context, brand, model)
+                  : model;
+          return DropdownMenuItem<String>(
+            value: model,
+            child: Text(display, overflow: TextOverflow.ellipsis),
+          );
+        },
+      ).toList(),
       onChanged: (value) {
         setState(() {
           selectedModel = value;
@@ -1348,7 +1308,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     StateSetter setStateDialog,
     List<String> trimList,
   ) {
-    final loc = AppLocalizations.of(context)!;
     final isLight = Theme.of(context).brightness == Brightness.light;
     final currentTrim = selectedTrim != null && trimList.contains(selectedTrim)
         ? selectedTrim
@@ -1358,7 +1317,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       isExpanded: true,
       value: currentTrim,
       decoration: InputDecoration(
-        hintText: loc.any,
         filled: true,
         fillColor: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
         border: OutlineInputBorder(
@@ -1374,24 +1332,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           ),
         ),
       ),
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(
-            loc.any,
-            style: TextStyle(
-              color: _searchAccent,
-              fontWeight: FontWeight.w600,
+      items: trimList
+          .map(
+            (trim) => DropdownMenuItem<String>(
+              value: trim,
+              child: Text(trim, overflow: TextOverflow.ellipsis),
             ),
-          ),
-        ),
-        ...trimList.map(
-          (trim) => DropdownMenuItem<String>(
-            value: trim,
-            child: Text(trim, overflow: TextOverflow.ellipsis),
-          ),
-        ),
-      ],
+          )
+          .toList(),
       onChanged: (value) {
         setState(() {
           selectedTrim = value;

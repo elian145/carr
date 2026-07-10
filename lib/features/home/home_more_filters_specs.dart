@@ -160,13 +160,15 @@ mixin _HomePageMoreFiltersSpecs on _HomePageMoreFiltersSpecsPlate {
   List<Widget> _moreFiltersSpecsDropdownWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) => [
+    MoreFiltersDialogStyle style, {
+    bool includeAnyOption = true,
+  }) => [
         ..._moreFiltersSpecsEngineWidgets(
           context,
           setStateDialog,
           style,
           narrowMenu: true,
+          includeAnyOption: includeAnyOption,
         ),
       ];
 }

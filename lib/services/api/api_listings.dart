@@ -411,8 +411,9 @@ abstract final class _ApiServiceListings {
   }) async {
       final uri = Uri.parse('${ApiService.baseUrl}/cars')
           .replace(queryParameters: queryParams);
+      // Include auth when available so `sort_by=recommended` can use server history.
       final headers = {
-        ...ApiService._getHeaders(includeAuth: false),
+        ...ApiService._getHeaders(includeAuth: true),
         ...?extraHeaders,
       };
       return ApiService._httpClient
