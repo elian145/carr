@@ -24,111 +24,114 @@ Widget carListingSpecsDetailRow(
     final iconCircleFill = isLight ? iconCircleFillLight : iconCircleFillDark;
     final valueColor = isLight ? Colors.black : Colors.white;
 
-    final row = ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: ColoredBox(
-        color: cardBg,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: iconCircleFill,
-                      shape: BoxShape.circle,
-                    ),
-                    alignment: Alignment.center,
-                    child: Icon(icon, size: 20, color: brandOrange),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          label,
-                          style: const TextStyle(
-                            color: labelGrey,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            height: 1.1,
-                          ),
-                        ),
-                        if (onTap == null && valueWidget == null) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            value!,
-                            style: TextStyle(
-                              color: valueColor,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              height: 1.15,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  if (valueWidget != null)
-                    valueWidget
-                  else if (onTap != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            value!,
-                            textAlign: TextAlign.end,
-                            style: const TextStyle(
-                              color: brandOrange,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: brandOrange,
-                          size: 22,
-                        ),
-                      ],
-                    ),
-                ],
+    final row = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconCircleFill,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, size: 20, color: brandOrange),
               ),
-            ),
-            const ColoredBox(
-              color: brandOrange,
-              child: SizedBox(height: 2.5, width: double.infinity),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        color: labelGrey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.1,
+                      ),
+                    ),
+                    if (onTap == null && valueWidget == null) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        value!,
+                        style: TextStyle(
+                          color: valueColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (valueWidget != null)
+                valueWidget
+              else if (onTap != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value!,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(
+                          color: brandOrange,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: brandOrange,
+                      size: 22,
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
-      ),
+        const ColoredBox(
+          color: brandOrange,
+          child: SizedBox(height: 2.5, width: double.infinity),
+        ),
+      ],
     );
 
     final card = Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
+        color: cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
-            blurRadius: isLight ? 8 : 10,
+            color: Colors.black.withValues(alpha: isLight ? 0.10 : 0.50),
+            blurRadius: isLight ? 18 : 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.28),
+            blurRadius: isLight ? 6 : 8,
             offset: const Offset(0, 2),
           ),
         ],
         border: onTap != null
             ? Border.all(color: brandOrange.withValues(alpha: 0.55))
-            : (isLight
-                ? null
-                : Border.all(color: Colors.white.withValues(alpha: 0.06))),
+            : Border.all(
+                color: isLight
+                    ? const Color(0xFFE8E8ED)
+                    : Colors.white.withValues(alpha: 0.08),
+              ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: row,
     );
 
@@ -160,22 +163,28 @@ Widget carListingSpecsCard(ListingSpecItem item) {
         return DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
+            color: cardBg,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
-                blurRadius: isLight ? 8 : 10,
+                color: Colors.black.withValues(alpha: isLight ? 0.10 : 0.50),
+                blurRadius: isLight ? 16 : 18,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.28),
+                blurRadius: isLight ? 4 : 6,
                 offset: const Offset(0, 2),
               ),
             ],
-            border: isLight
-                ? null
-                : Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            border: Border.all(
+              color: isLight
+                  ? const Color(0xFFE8E8ED)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            child: ColoredBox(
-              color: cardBg,
-              child: Column(
+            child: Column(
                 children: [
                   Expanded(
                     child: Padding(
@@ -292,8 +301,7 @@ Widget carListingSpecsCard(ListingSpecItem item) {
                 ],
               ),
             ),
-          ),
-        );
+          );
       },
     ),
   );

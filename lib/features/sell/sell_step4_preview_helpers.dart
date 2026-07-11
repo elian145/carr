@@ -129,79 +129,84 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
+          color: cardBg,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
-              blurRadius: isLight ? 8 : 10,
+              color: Colors.black.withValues(alpha: isLight ? 0.10 : 0.50),
+              blurRadius: isLight ? 16 : 18,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.28),
+              blurRadius: isLight ? 4 : 6,
               offset: const Offset(0, 2),
             ),
           ],
-          border: isLight
-              ? null
-              : Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          border: Border.all(
+            color: isLight
+                ? const Color(0xFFE8E8ED)
+                : Colors.white.withValues(alpha: 0.08),
+          ),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: ColoredBox(
-            color: cardBg,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: iconCircleFill,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: iconGlyph,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: iconCircleFill,
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 8),
-                      AutoSizeText(
-                        item.label,
-                        maxLines: 1,
-                        textAlign: TextAlign.center,
-                        textScaleFactor: 1.0,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          height: 1.1,
-                          color: labelGrey,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        minFontSize: 7,
-                        stepGranularity: 0.5,
-                        overflow: TextOverflow.clip,
+                      alignment: Alignment.center,
+                      child: iconGlyph,
+                    ),
+                    const SizedBox(height: 8),
+                    AutoSizeText(
+                      item.label,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      textScaleFactor: 1.0,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        height: 1.1,
+                        color: labelGrey,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 4),
-                      AutoSizeText(
-                        item.value!,
-                        maxLines: 1,
-                        textAlign: TextAlign.center,
-                        textScaleFactor: 1.0,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.1,
-                          color: valueColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        minFontSize: 10,
-                        stepGranularity: 0.5,
-                        overflow: TextOverflow.clip,
+                      minFontSize: 7,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
+                    ),
+                    const SizedBox(height: 4),
+                    AutoSizeText(
+                      item.value!,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      textScaleFactor: 1.0,
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.1,
+                        color: valueColor,
+                        fontWeight: FontWeight.w800,
                       ),
-                    ],
-                  ),
+                      minFontSize: 10,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
+                    ),
+                  ],
                 ),
-                const ColoredBox(
-                  color: brandOrange,
-                  child: SizedBox(height: 2.5, width: double.infinity),
-                ),
-              ],
-            ),
+              ),
+              const ColoredBox(
+                color: brandOrange,
+                child: SizedBox(height: 2.5, width: double.infinity),
+              ),
+            ],
           ),
         ),
       ),
@@ -222,79 +227,82 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
         isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);
     final valueColor = isLight ? Colors.black : Colors.white;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
+        color: cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
-            blurRadius: isLight ? 8 : 10,
+            color: Colors.black.withValues(alpha: isLight ? 0.10 : 0.50),
+            blurRadius: isLight ? 18 : 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.28),
+            blurRadius: isLight ? 6 : 8,
             offset: const Offset(0, 2),
           ),
         ],
-        border: isLight
-            ? null
-            : Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: ColoredBox(
-          color: cardBg,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: iconCircleFill,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Icon(icon, size: 20, color: brandOrange),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            label,
-                            style: const TextStyle(
-                              color: labelGrey,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              height: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            value,
-                            style: TextStyle(
-                              color: valueColor,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              height: 1.15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const ColoredBox(
-                color: brandOrange,
-                child: SizedBox(height: 2.5, width: double.infinity),
-              ),
-            ],
-          ),
+        border: Border.all(
+          color: isLight
+              ? const Color(0xFFE8E8ED)
+              : Colors.white.withValues(alpha: 0.08),
         ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: iconCircleFill,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(icon, size: 20, color: brandOrange),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          color: labelGrey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          color: valueColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          height: 1.15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const ColoredBox(
+            color: brandOrange,
+            child: SizedBox(height: 2.5, width: double.infinity),
+          ),
+        ],
       ),
     );
   }
