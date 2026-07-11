@@ -271,15 +271,35 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
 
   List<String> getAvailableDriveTypes() => driveTypes;
 
+  static const Set<String> _excludedCylinderFilterValues = {
+    '7',
+    '9',
+    '11',
+    '13',
+    '14',
+    '15',
+    'cylinder',
+  };
+
+  bool _isExcludedCylinderFilter(String value) {
+    final v = value.trim().toLowerCase();
+    if (v.isEmpty || v == 'any') return false;
+    return _excludedCylinderFilterValues.contains(v);
+  }
+
   List<String> getAvailableCylinderCounts() {
     final mot = _catalogMotorFilterOptions();
+    final List<String> raw;
     if (mot != null) {
       if (mot.cylinders.isNotEmpty) {
-        return ['Any', ...mot.cylinders];
+        raw = ['Any', ...mot.cylinders];
+      } else {
+        raw = const ['Any'];
       }
-      return const ['Any'];
+    } else {
+      raw = cylinderCounts;
     }
-    return cylinderCounts;
+    return raw.where((c) => !_isExcludedCylinderFilter(c)).toList(growable: false);
   }
 
   List<String> getAvailableSeatings() => seatings;

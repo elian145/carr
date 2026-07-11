@@ -20,19 +20,17 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
               valueSummary: '',
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
+            FilterDropdownField(
+              style: style,
+              label: loc.cylinderCount,
               value: selectedCylinderCount != null &&
                       getAvailableCylinderCounts()
                           .where((c) => c != 'Any')
                           .contains(selectedCylinderCount)
                   ? selectedCylinderCount
                   : null,
-              decoration: filterFieldDecoration(
-                style,
-                loc.cylinderCount,
-                errorText: errCylinderCount ? loc.pleaseSelectCylinderCount : null,
-              ),
+              errorText:
+                  errCylinderCount ? loc.pleaseSelectCylinderCount : null,
               items: getAvailableCylinderCounts()
                   .where((c) => c != 'Any')
                   .map(
@@ -61,19 +59,16 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
               },
             ),
             const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
+            FilterDropdownField(
+              style: style,
+              label: loc.seating,
               value: selectedSeating != null &&
                       getAvailableSeatings()
                           .where((s) => s != 'Any')
                           .contains(selectedSeating)
                   ? selectedSeating
                   : null,
-              decoration: filterFieldDecoration(
-                style,
-                loc.seating,
-                errorText: errSeating ? loc.pleaseSelectSeating : null,
-              ),
+              errorText: errSeating ? loc.pleaseSelectSeating : null,
               items: getAvailableSeatings()
                   .where((s) => s != 'Any')
                   .map(
@@ -130,21 +125,18 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
                             _syncStep2DraftToParent();
                           },
                         )
-                      : DropdownButtonFormField<String>(
-                          isExpanded: true,
+                      : FilterDropdownField(
+                          style: style,
+                          label: loc.engineSizeL,
                           value: selectedEngineSize != null &&
                                   getAvailableEngineSizes()
                                       .where((e) => e != 'Any')
                                       .contains(selectedEngineSize)
                               ? selectedEngineSize
                               : null,
-                          decoration: filterFieldDecoration(
-                            style,
-                            loc.engineSizeL,
-                            errorText: errEngineSize
-                                ? loc.pleaseSelectEngineSize
-                                : null,
-                          ),
+                          errorText: errEngineSize
+                              ? loc.pleaseSelectEngineSize
+                              : null,
                           items: getAvailableEngineSizes()
                               .where((e) => e != 'Any')
                               .map(
@@ -317,14 +309,11 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
       if ((selectedTitleStatus ?? '').toLowerCase() == 'damaged')
         FilterCard(
           isError: errDamagedParts,
-          child: DropdownButtonFormField<String>(
-            isExpanded: true,
+          child: FilterDropdownField(
+            style: style,
+            label: loc.damagedParts,
             value: selectedDamagedParts,
-            decoration: filterFieldDecoration(
-              style,
-              loc.damagedParts,
-              errorText: errDamagedParts ? loc.damagedParts : null,
-            ),
+            errorText: errDamagedParts ? loc.damagedParts : null,
             items: List.generate(20, (i) => (i + 1).toString())
                 .map(
                   (n) => DropdownMenuItem(

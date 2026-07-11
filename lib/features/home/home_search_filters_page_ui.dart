@@ -76,9 +76,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             onToggle: _homeToggleFuelType,
             onClear: () => _homeSetSelectedFuelTypes([]),
             iconForOption: _searchFuelTypeIcon,
+            imageAssetForOption: fuelTypeImageAsset,
             labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
             scrollHorizontally: true,
             tileWidth: 100,
+            tileImageWidth: 64,
+            tileImageHeight: 64,
+            tileImageBorderRadius: 8,
           ),
           _searchMultiIconCardSection(
             context,
@@ -136,7 +140,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
               context,
               setStateDialog,
               style,
-              includeAnyOption: false,
             ),
           ),
           _searchIconCardSection(
@@ -806,23 +809,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             ? selectedDamagedParts
             : null;
 
-    return DropdownButtonFormField<String>(
-      isExpanded: true,
-      menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
+    return FilterDropdownField(
+      style: style,
+      label: loc.damagedParts,
       value: current,
-      decoration: InputDecoration(
-        labelText: loc.damagedParts,
-        filled: true,
-        fillColor: style.fieldFill,
-        labelStyle: TextStyle(
-          color: style.onSurface,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
+      narrowMenu: true,
       items: List.generate(
         15,
         (i) => (i + 1).toString(),
@@ -834,6 +825,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           ),
         ),
       ).toList(),
+      hint: Text(
+        loc.tapToSelect,
+        style: TextStyle(
+          color: style.anyOrange,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       onChanged: (value) {
         setState(() {
           selectedDamagedParts = value == null || value.isEmpty ? null : value;
@@ -1250,7 +1248,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     BuildContext context,
     StateSetter setStateDialog,
   ) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
     final brand = _homeSingleSelectedBrand;
     if (brand == null || brand.isEmpty) return const SizedBox.shrink();
     final modelList = models[brand] ?? const <String>[];
@@ -1261,26 +1258,12 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             ? selectedModel
             : null;
 
-    return DropdownButtonFormField<String>(
-      isExpanded: true,
-      menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
+    final loc = AppLocalizations.of(context)!;
+    return FilterDropdownField(
+      style: _searchMoreFiltersStyle(context),
+      label: loc.modelLabel,
       value: currentModel,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: isLight ? const Color(0xFFE0E0E5) : Colors.white24,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: isLight ? const Color(0xFFE0E0E5) : Colors.white24,
-          ),
-        ),
-      ),
+      narrowMenu: false,
       items: modelList.map(
         (model) {
           final display =
@@ -1294,6 +1277,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
           );
         },
       ).toList(),
+      hint: Text(
+        loc.tapToSelect,
+        style: TextStyle(
+          color: _searchAccent,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       onChanged: (value) {
         setState(() {
           selectedModel = value;
@@ -1310,31 +1300,16 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     StateSetter setStateDialog,
     List<String> trimList,
   ) {
-    final isLight = Theme.of(context).brightness == Brightness.light;
     final currentTrim = selectedTrim != null && trimList.contains(selectedTrim)
         ? selectedTrim
         : null;
 
-    return DropdownButtonFormField<String>(
-      isExpanded: true,
-      menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
+    final loc = AppLocalizations.of(context)!;
+    return FilterDropdownField(
+      style: _searchMoreFiltersStyle(context),
+      label: loc.trimLabel,
       value: currentTrim,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: isLight ? const Color(0xFFE0E0E5) : Colors.white24,
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: isLight ? const Color(0xFFE0E0E5) : Colors.white24,
-          ),
-        ),
-      ),
+      narrowMenu: false,
       items: trimList
           .map(
             (trim) => DropdownMenuItem<String>(
@@ -1343,6 +1318,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             ),
           )
           .toList(),
+      hint: Text(
+        loc.tapToSelect,
+        style: TextStyle(
+          color: _searchAccent,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
       onChanged: (value) {
         setState(() {
           selectedTrim = value;

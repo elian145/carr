@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../features/home/more_filters_dialog_style.dart';
@@ -170,6 +172,315 @@ InputDecoration filterFieldDecoration(
       borderSide: const BorderSide(color: Color(0xFFE0E0E5)),
     ),
   );
+}
+
+/// Tall open-menu height used by search-page filter dropdowns.
+double filterDropdownMenuMaxHeight(BuildContext context) {
+  final height = MediaQuery.sizeOf(context).height;
+  return (height * 0.58).clamp(360.0, 560.0);
+}
+
+double filterDropdownMenuWidth(BuildContext context) {
+  final width = MediaQuery.sizeOf(context).width;
+  return (width * 0.48).clamp(160.0, 240.0);
+}
+
+/// Closed-field decoration matching search-page filter dropdowns.
+InputDecoration filterDropdownFieldDecoration(
+  MoreFiltersDialogStyle style,
+  String label, {
+  String? errorText,
+}) {
+  final labelStyle = TextStyle(
+    color: style.onSurface,
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+  );
+  return InputDecoration(
+    labelText: label,
+    errorText: errorText,
+    labelStyle: labelStyle,
+    floatingLabelStyle: labelStyle,
+    filled: true,
+    fillColor: style.fieldFill,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: errorText != null ? Colors.redAccent : const Color(0xFFE0E0E5),
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: errorText != null ? Colors.redAccent : kFilterAccentColor,
+        width: 1.5,
+      ),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.redAccent),
+    ),
+  );
+}
+
+/// Dense dropdown field sized like the search-page filter dropdowns.
+/// Opens a left-anchored menu (Material DropdownButton cannot reliably do this).
+class FilterDropdownField extends StatelessWidget {
+  const FilterDropdownField({
+    super.key,
+    required this.style,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+    this.errorText,
+    this.hint,
+    this.narrowMenu = true,
+  });
+
+  final MoreFiltersDialogStyle style;
+  final String label;
+  final String? value;
+  final List<DropdownMenuItem<String>> items;
+  final ValueChanged<String?>? onChanged;
+  final String? errorText;
+  final Widget? hint;
+  final bool narrowMenu;
+
+  String? get _effectiveValue {
+    final hasEmptyItem = items.any((item) => item.value == '');
+    final raw = value ?? '';
+    if (raw.isEmpty) return hasEmptyItem ? '' : null;
+    return items.any((item) => item.value == raw) ? raw : null;
+  }
+
+  Widget? _selectedChild() {
+    final current = _effectiveValue;
+    if (current == null) return hint;
+    for (final item in items) {
+      if (item.value == current) return item.child;
+    }
+    return hint;
+  }
+
+  Future<void> _openMenu(BuildContext context) async {
+    if (onChanged == null || items.isEmpty) return;
+
+    final fieldBox = context.findRenderObject() as RenderBox?;
+    if (fieldBox == null || !fieldBox.hasSize) return;
+
+    final media = MediaQuery.sizeOf(context);
+    final fieldTopLeft = fieldBox.localToGlobal(Offset.zero);
+    final fieldSize = fieldBox.size;
+    final padding = MediaQuery.paddingOf(context);
+
+    final menuWidth = narrowMenu
+        ? filterDropdownMenuWidth(context)
+        : fieldSize.width;
+    final left = fieldTopLeft.dx
+        .clamp(0.0, math.max(0.0, media.width - menuWidth))
+        .toDouble();
+
+    final menuItems = [
+      for (final item in items)
+        if (item.value != null) item,
+    ];
+    if (menuItems.isEmpty) return;
+
+    // showDialog treats a raw '' result awkwardly; map Any through a sentinel.
+    const anySentinel = '__filter_dropdown_any__';
+    const itemHeight = 48.0;
+    const listPaddingV = 6.0;
+
+    final selectedIndex = math.max(
+      0,
+      menuItems.indexWhere(
+        (item) => item.value == (_effectiveValue ?? ''),
+      ),
+    );
+
+    final preferredMaxHeight = filterDropdownMenuMaxHeight(context);
+    final availableHeight =
+        media.height - padding.top - padding.bottom - 24;
+    final menuMaxHeight = math
+        .min(preferredMaxHeight, availableHeight)
+        .clamp(120.0, preferredMaxHeight);
+    final contentHeight =
+        listPaddingV * 2 + menuItems.length * itemHeight;
+    final menuHeight = math.min(contentHeight, menuMaxHeight);
+
+    // Overlap the field: keep the selected row aligned with the control
+    // (Material-style), not hanging from the bottom edge.
+    final fieldCenterY = fieldTopLeft.dy + fieldSize.height / 2;
+    final selectedCenterInMenu =
+        listPaddingV + selectedIndex * itemHeight + itemHeight / 2;
+    final minTop = padding.top + 8;
+    final maxTop = media.height - padding.bottom - menuHeight - 8;
+    var menuTop = fieldCenterY - selectedCenterInMenu;
+    menuTop = menuTop.clamp(minTop, maxTop);
+
+    // If the list is taller than the menu, scroll so the selected row stays
+    // near the field.
+    final maxScroll = math.max(0.0, contentHeight - menuHeight);
+    final idealScroll = (selectedCenterInMenu - menuHeight / 2)
+        .clamp(0.0, maxScroll)
+        .toDouble();
+
+    final scrollController = ScrollController(
+      initialScrollOffset: idealScroll,
+    );
+    try {
+      final selected = await showDialog<String>(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.01),
+        builder: (dialogContext) {
+          final isLight =
+              Theme.of(dialogContext).brightness == Brightness.light;
+          return Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.pop(dialogContext),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              Positioned(
+                left: left,
+                top: menuTop,
+                width: menuWidth,
+                height: menuHeight,
+                child: Material(
+                  color: style.fieldFill,
+                  elevation: 8,
+                  shadowColor: Colors.black.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(8),
+                  clipBehavior: Clip.antiAlias,
+                  child: ScrollbarTheme(
+                    data: ScrollbarThemeData(
+                      thumbVisibility: const WidgetStatePropertyAll(true),
+                      trackVisibility: const WidgetStatePropertyAll(true),
+                      thickness: const WidgetStatePropertyAll(5),
+                      radius: const Radius.circular(8),
+                      thumbColor: WidgetStatePropertyAll(
+                        isLight
+                            ? const Color(0xFFB0B0B5)
+                            : Colors.white.withValues(alpha: 0.45),
+                      ),
+                      trackColor: WidgetStatePropertyAll(
+                        isLight
+                            ? const Color(0xFFE8E8ED)
+                            : Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                    child: Scrollbar(
+                      controller: scrollController,
+                      thumbVisibility: true,
+                      trackVisibility: true,
+                      child: ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: listPaddingV),
+                        itemExtent: itemHeight,
+                        itemCount: menuItems.length,
+                        itemBuilder: (context, index) {
+                          final item = menuItems[index];
+                          final rawValue = item.value!;
+                          final isSelected =
+                              rawValue == (_effectiveValue ?? '');
+                          return InkWell(
+                            onTap: () => Navigator.pop(
+                              dialogContext,
+                              rawValue.isEmpty ? anySentinel : rawValue,
+                            ),
+                            child: Container(
+                              height: itemHeight,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              color: isSelected
+                                  ? kFilterAccentColor.withValues(alpha: 0.1)
+                                  : null,
+                              alignment: Alignment.centerLeft,
+                              child: DefaultTextStyle(
+                                style: TextStyle(
+                                  color: style.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                ),
+                                child: item.child,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (selected != null) {
+        onChanged?.call(selected == anySentinel ? '' : selected);
+      }
+    } finally {
+      scrollController.dispose();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedChild = _selectedChild();
+    final enabled = onChanged != null;
+
+    return InputDecorator(
+      decoration: filterDropdownFieldDecoration(
+        style,
+        label,
+        errorText: errorText,
+      ),
+      // Keep label floated so closed height matches search dropdowns.
+      isEmpty: false,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enabled ? () => _openMenu(context) : null,
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(
+            height: 24,
+            child: Row(
+              children: [
+                Expanded(
+                  child: DefaultTextStyle(
+                    style: TextStyle(
+                      color: style.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: selectedChild ?? const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: style.onSurface.withValues(alpha: 0.7),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 MoreFiltersDialogStyle filterDialogStyle(BuildContext context) {
@@ -560,12 +871,21 @@ class FilterDropdownCardSection extends StatelessWidget {
             onSummaryTap: onClear,
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            isExpanded: true,
+          FilterDropdownField(
+            style: fieldStyle,
+            label: title,
             value: value,
-            decoration: filterFieldDecoration(fieldStyle, title),
             items: items,
             onChanged: onChanged,
+            hint: hint == null
+                ? null
+                : Text(
+                    hint!,
+                    style: TextStyle(
+                      color: fieldStyle.anyOrange,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
           ),
         ],
       ),

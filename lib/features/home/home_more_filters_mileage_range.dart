@@ -42,14 +42,14 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
       const SizedBox(height: 12),
       if (isMileageDropdown)
         _moreFiltersMinMaxRow(
-          minField: DropdownButtonFormField<String>(
-            isExpanded: true,
-            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-            initialValue: (selectedMinMileage != null &&
-                    selectedMinMileage!.isNotEmpty)
-                ? selectedMinMileage
+          minField: _moreFiltersDropdownField(
+            context: context,
+            style: style,
+            label: loc.minMileage,
+            value: (selectedMinMileage != null && selectedMinMileage!.isNotEmpty)
+                ? selectedMinMileage!
                 : '',
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.minMileage),
+            narrowMenu: true,
             items: [
               DropdownMenuItem(
                 value: '',
@@ -84,14 +84,14 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
               setStateDialog(() {});
             },
           ),
-          maxField: DropdownButtonFormField<String>(
-            isExpanded: true,
-            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-            initialValue: (selectedMaxMileage != null &&
-                    selectedMaxMileage!.isNotEmpty)
-                ? selectedMaxMileage
+          maxField: _moreFiltersDropdownField(
+            context: context,
+            style: style,
+            label: loc.maxMileage,
+            value: (selectedMaxMileage != null && selectedMaxMileage!.isNotEmpty)
+                ? selectedMaxMileage!
                 : '',
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.maxMileage),
+            narrowMenu: true,
             items: [
               DropdownMenuItem(
                 value: '',
@@ -131,8 +131,10 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
         _moreFiltersMinMaxRow(
           minField: TextFormField(
             controller: _minMileageController,
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.minMileage)
-                .copyWith(
+            decoration: _moreFiltersColorMatchedFieldDecoration(
+              style,
+              loc.minMileage,
+            ).copyWith(
               hintText: loc.any,
               hintStyle: TextStyle(color: style.anyOrange),
             ),
@@ -152,8 +154,10 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
           ),
           maxField: TextFormField(
             controller: _maxMileageController,
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.maxMileage)
-                .copyWith(
+            decoration: _moreFiltersColorMatchedFieldDecoration(
+              style,
+              loc.maxMileage,
+            ).copyWith(
               hintText: loc.any,
               hintStyle: TextStyle(color: style.anyOrange),
             ),
@@ -172,6 +176,7 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
             },
           ),
         ),
+      SizedBox(height: style.fieldGap),
     ];
   }
 }

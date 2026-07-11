@@ -125,6 +125,7 @@ flutter:
     - assets/region_spec_flags/
     - assets/transmission_types/
     - assets/drive_types/
+    - assets/fuel_types/
     - assets/listing_spec_icons/
     - assets/car_spec_dataset.json
     - assets/car_catalog.json

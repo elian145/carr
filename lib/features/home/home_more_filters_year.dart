@@ -31,11 +31,12 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
       const SizedBox(height: 12),
       if (isYearDropdown)
         _moreFiltersMinMaxRow(
-          minField: DropdownButtonFormField<String>(
-            isExpanded: true,
-            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-            initialValue: selectedMinYear ?? '',
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.minYear),
+          minField: _moreFiltersDropdownField(
+            context: context,
+            style: style,
+            label: loc.minYear,
+            value: selectedMinYear ?? '',
+            narrowMenu: true,
             items: [
               DropdownMenuItem(
                 value: '',
@@ -62,7 +63,8 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
             ],
             onChanged: (value) {
               setState(() {
-                selectedMinYear = value?.isEmpty == true ? null : value;
+                selectedMinYear =
+                    (value == null || value.isEmpty) ? null : value;
                 final min = int.tryParse(selectedMinYear ?? '');
                 final max = int.tryParse(selectedMaxYear ?? '');
                 if (min != null && max != null && min > max) {
@@ -73,11 +75,12 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
               setStateDialog(() {});
             },
           ),
-          maxField: DropdownButtonFormField<String>(
-            isExpanded: true,
-            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-            initialValue: selectedMaxYear ?? '',
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.maxYear),
+          maxField: _moreFiltersDropdownField(
+            context: context,
+            style: style,
+            label: loc.maxYear,
+            value: selectedMaxYear ?? '',
+            narrowMenu: true,
             items: [
               DropdownMenuItem(
                 value: '',
@@ -104,7 +107,8 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
             ],
             onChanged: (value) {
               setState(() {
-                selectedMaxYear = value?.isEmpty == true ? null : value;
+                selectedMaxYear =
+                    (value == null || value.isEmpty) ? null : value;
                 final min = int.tryParse(selectedMinYear ?? '');
                 final max = int.tryParse(selectedMaxYear ?? '');
                 if (min != null && max != null && max < min) {
@@ -120,8 +124,10 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
         _moreFiltersMinMaxRow(
           minField: TextFormField(
             controller: _minYearController,
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.minYear)
-                .copyWith(
+            decoration: _moreFiltersColorMatchedFieldDecoration(
+              style,
+              loc.minYear,
+            ).copyWith(
               hintText: loc.any,
               hintStyle: TextStyle(color: style.anyOrange),
             ),
@@ -142,8 +148,10 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
           ),
           maxField: TextFormField(
             controller: _maxYearController,
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.maxYear)
-                .copyWith(
+            decoration: _moreFiltersColorMatchedFieldDecoration(
+              style,
+              loc.maxYear,
+            ).copyWith(
               hintText: loc.any,
               hintStyle: TextStyle(color: style.anyOrange),
             ),

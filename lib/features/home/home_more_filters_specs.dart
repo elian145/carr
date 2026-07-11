@@ -51,52 +51,29 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
     MoreFiltersDialogStyle style,
   ) => [
                           const SizedBox(height: 12),
-                          DropdownButtonFormField<
-                            String
-                          >(
-                            menuMaxHeight:
-                                _moreFiltersDropdownMenuMaxHeight(context),
-                            initialValue:
-                                selectedPlateType ??
-                                '',
-                            decoration: InputDecoration(
-                              labelText: _trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
-                              filled: true,
-                              fillColor:
-                                  style.fieldFill,
-                              labelStyle: TextStyle(
-                                color:
-                                    style.onSurface,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                      12,
-                                    ),
-                              ),
+                          _moreFiltersDropdownField(
+                            context: context,
+                            style: style,
+                            label: _trLegacyText(
+                              context,
+                              'Plate type',
+                              ar: 'نوع اللوحة',
+                              ku: 'جۆری پڵەیت',
                             ),
+                            value: selectedPlateType ?? '',
+                            narrowMenu: true,
                             items: [
                               DropdownMenuItem(
                                 value: '',
                                 child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.any,
-                                  style: TextStyle(
-                                    color:
-                                        style.anyOrange,
-                                  ),
+                                  AppLocalizations.of(context)!.any,
+                                  style: TextStyle(color: style.anyOrange),
                                 ),
                               ),
                               DropdownMenuItem(
                                 value: 'private',
                                 child: Text(
-                                  _translatePlateTypeLegacy(
-                                    context,
-                                    'private',
-                                  ),
+                                  _translatePlateTypeLegacy(context, 'private'),
                                 ),
                               ),
                               DropdownMenuItem(
@@ -120,19 +97,14 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
                               DropdownMenuItem(
                                 value: 'taxi',
                                 child: Text(
-                                  _translatePlateTypeLegacy(
-                                    context,
-                                    'taxi',
-                                  ),
+                                  _translatePlateTypeLegacy(context, 'taxi'),
                                 ),
                               ),
                             ],
                             onChanged: (value) {
                               setState(() {
                                 selectedPlateType =
-                                    (value == null ||
-                                            value
-                                                .isEmpty)
+                                    (value == null || value.isEmpty)
                                     ? null
                                     : value;
                               });

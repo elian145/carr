@@ -19,6 +19,7 @@ bool _isFilterIconDarkVariantCandidate(String asset) {
       (asset.startsWith('assets/body_types_png/') ||
           asset.startsWith('assets/drive_types/') ||
           asset.startsWith('assets/transmission_types/') ||
+          asset.startsWith('assets/fuel_types/') ||
           asset.startsWith('assets/plate_types/'));
 }
 

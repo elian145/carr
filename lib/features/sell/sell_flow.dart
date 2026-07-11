@@ -54,6 +54,7 @@ import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/listings/drive_type_assets.dart';
+import '../../shared/listings/fuel_type_assets.dart';
 import '../../shared/listings/plate_type_assets.dart';
 import '../../shared/listings/region_spec_assets.dart';
 import '../../shared/listings/transmission_type_assets.dart';

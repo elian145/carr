@@ -31,11 +31,12 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
       const SizedBox(height: 12),
       if (isPriceDropdown)
         _moreFiltersMinMaxRow(
-          minField: DropdownButtonFormField<String>(
-            isExpanded: true,
-            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-            initialValue: selectedMinPrice ?? '',
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.minPrice),
+          minField: _moreFiltersDropdownField(
+            context: context,
+            style: style,
+            label: loc.minPrice,
+            value: selectedMinPrice ?? '',
+            narrowMenu: true,
             items: [
               DropdownMenuItem(
                 value: '',
@@ -58,7 +59,8 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
             ],
             onChanged: (value) {
               setState(() {
-                selectedMinPrice = value?.isEmpty == true ? null : value;
+                selectedMinPrice =
+                    (value == null || value.isEmpty) ? null : value;
                 final min = int.tryParse(selectedMinPrice ?? '');
                 final max = int.tryParse(selectedMaxPrice ?? '');
                 if (min != null && max != null && min > max) {
@@ -68,11 +70,12 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
               setStateDialog(() {});
             },
           ),
-          maxField: DropdownButtonFormField<String>(
-            isExpanded: true,
-            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-            initialValue: selectedMaxPrice ?? '',
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.maxPrice),
+          maxField: _moreFiltersDropdownField(
+            context: context,
+            style: style,
+            label: loc.maxPrice,
+            value: selectedMaxPrice ?? '',
+            narrowMenu: true,
             items: [
               DropdownMenuItem(
                 value: '',
@@ -95,7 +98,8 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
             ],
             onChanged: (value) {
               setState(() {
-                selectedMaxPrice = value?.isEmpty == true ? null : value;
+                selectedMaxPrice =
+                    (value == null || value.isEmpty) ? null : value;
                 final min = int.tryParse(selectedMinPrice ?? '');
                 final max = int.tryParse(selectedMaxPrice ?? '');
                 if (min != null && max != null && max < min) {
@@ -110,8 +114,10 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
         _moreFiltersMinMaxRow(
           minField: TextFormField(
             controller: _minPriceController,
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.minPrice)
-                .copyWith(
+            decoration: _moreFiltersColorMatchedFieldDecoration(
+              style,
+              loc.minPrice,
+            ).copyWith(
               hintText: loc.any,
               hintStyle: TextStyle(color: style.anyOrange),
             ),
@@ -131,8 +137,10 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
           ),
           maxField: TextFormField(
             controller: _maxPriceController,
-            decoration: _moreFiltersFilterFieldDecoration(style, loc.maxPrice)
-                .copyWith(
+            decoration: _moreFiltersColorMatchedFieldDecoration(
+              style,
+              loc.maxPrice,
+            ).copyWith(
               hintText: loc.any,
               hintStyle: TextStyle(color: style.anyOrange),
             ),

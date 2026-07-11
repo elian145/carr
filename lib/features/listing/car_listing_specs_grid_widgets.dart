@@ -56,12 +56,12 @@ Widget carListingSpecsDetailRow(
                         height: 1.1,
                       ),
                     ),
-                    if (onTap == null && valueWidget == null) ...[
+                    if (valueWidget == null && value != null) ...[
                       const SizedBox(height: 3),
                       Text(
                         value!,
                         style: TextStyle(
-                          color: valueColor,
+                          color: onTap != null ? brandOrange : valueColor,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                           height: 1.15,
@@ -74,27 +74,10 @@ Widget carListingSpecsDetailRow(
               if (valueWidget != null)
                 valueWidget
               else if (onTap != null)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        value!,
-                        textAlign: TextAlign.end,
-                        style: const TextStyle(
-                          color: brandOrange,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: brandOrange,
-                      size: 22,
-                    ),
-                  ],
+                const Icon(
+                  Icons.chevron_right,
+                  color: brandOrange,
+                  size: 22,
                 ),
             ],
           ),

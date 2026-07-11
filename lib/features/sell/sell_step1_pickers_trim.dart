@@ -176,11 +176,14 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                   'cat_year_${_catYear ?? years.first}_${years.join('-')}',
                 ),
                 isExpanded: true,
+                isDense: true,
+                menuMaxHeight: filterDropdownMenuMaxHeight(context),
                 initialValue: _catYear != null && years.contains(_catYear)
                     ? _catYear
                     : years.first,
-                decoration: InputDecoration(
-                  labelText: _trLegacyText(
+                decoration: filterDropdownFieldDecoration(
+                  filterDialogStyle(context),
+                  _trLegacyText(
                     context,
                     'Model year',
                     ar: 'سنة الموديل',

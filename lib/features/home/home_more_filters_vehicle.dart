@@ -9,59 +9,14 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     setStateDialog(() {});
   }
 
-  double _moreFiltersDropdownMenuMaxHeight(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height;
-    // Tall menus so lists open higher and show more options at once.
-    return (height * 0.58).clamp(360.0, 560.0);
-  }
-
-  InputDecoration _moreFiltersFilterFieldDecoration(
-    MoreFiltersDialogStyle style,
-    String label,
-  ) {
-    return InputDecoration(
-      labelText: label,
-      isDense: true,
-      labelStyle: TextStyle(
-        color: style.onSurface,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-      floatingLabelStyle: TextStyle(
-        color: style.onSurface,
-        fontSize: 15,
-        fontWeight: FontWeight.bold,
-      ),
-      filled: true,
-      fillColor: style.fieldFill,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    );
-  }
+  double _moreFiltersDropdownMenuMaxHeight(BuildContext context) =>
+      filterDropdownMenuMaxHeight(context);
 
   InputDecoration _moreFiltersColorMatchedFieldDecoration(
     MoreFiltersDialogStyle style,
     String label,
-  ) {
-    final labelStyle = TextStyle(
-      color: style.onSurface,
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
-    );
-    return InputDecoration(
-      labelText: label,
-      labelStyle: labelStyle,
-      floatingLabelStyle: labelStyle,
-      filled: true,
-      fillColor: style.fieldFill,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    );
-  }
+  ) =>
+      filterDropdownFieldDecoration(style, label);
 
   Widget _moreFiltersRangeModeToggle({
     required MoreFiltersDialogStyle style,
@@ -127,11 +82,6 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     );
   }
 
-  double _moreFiltersDropdownMenuWidth(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
-    return (width * 0.48).clamp(160.0, 240.0);
-  }
-
   Widget _moreFiltersDropdownField({
     required BuildContext context,
     required MoreFiltersDialogStyle style,
@@ -141,32 +91,13 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     required ValueChanged<String?>? onChanged,
     bool narrowMenu = false,
   }) {
-    final hasEmptyItem = items.any((item) => item.value == '');
-    final effectiveValue =
-        value.isEmpty ? (hasEmptyItem ? '' : null) : value;
-
-    return InputDecorator(
-      decoration: _moreFiltersColorMatchedFieldDecoration(style, label),
-      isEmpty: false,
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          isExpanded: true,
-          isDense: true,
-          value: effectiveValue,
-          hint: hasEmptyItem ? null : const SizedBox.shrink(),
-          items: items,
-          onChanged: onChanged,
-          menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
-          menuWidth: narrowMenu ? _moreFiltersDropdownMenuWidth(context) : null,
-          borderRadius: BorderRadius.circular(8),
-          dropdownColor: style.fieldFill,
-          alignment: AlignmentDirectional.centerStart,
-          icon: Icon(
-            Icons.arrow_drop_down,
-            color: style.onSurface.withValues(alpha: 0.7),
-          ),
-        ),
-      ),
+    return FilterDropdownField(
+      style: style,
+      label: label,
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      narrowMenu: narrowMenu,
     );
   }
 

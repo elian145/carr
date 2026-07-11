@@ -212,7 +212,11 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
         isError: errFuelType,
         scrollHorizontally: true,
         tileWidth: 100,
+        tileImageWidth: 64,
+        tileImageHeight: 64,
+        tileImageBorderRadius: 8,
         iconForOption: filterFuelTypeIcon,
+        imageAssetForOption: fuelTypeImageAsset,
         labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
         onSelected: (value) {
           setState(() {

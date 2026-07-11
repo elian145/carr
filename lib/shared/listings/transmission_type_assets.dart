@@ -1,6 +1,7 @@
 /// Transmission-type artwork for filter tiles.
 const Map<String, String> kTransmissionTypeImageAssets = {
   'automatic': 'assets/transmission_types/automatic.png',
+  'auto': 'assets/transmission_types/automatic.png',
   'manual': 'assets/transmission_types/manual.png',
 };
 

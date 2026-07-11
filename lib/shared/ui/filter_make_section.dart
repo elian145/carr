@@ -543,23 +543,18 @@ class _ModelDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final isLight = Theme.of(context).brightness == Brightness.light;
     final currentModel =
         selectedModel != null && modelList.contains(selectedModel)
             ? selectedModel
             : null;
     final style = filterDialogStyle(context);
 
-    return DropdownButtonFormField<String>(
-      isExpanded: true,
+    return FilterDropdownField(
+      style: style,
+      label: loc.modelLabel,
       value: currentModel,
-      decoration: filterFieldDecoration(
-        style,
-        loc.modelLabel,
-        errorText: isError ? loc.pleaseSelectModel : null,
-      ).copyWith(
-        fillColor: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
-      ),
+      errorText: isError ? loc.pleaseSelectModel : null,
+      narrowMenu: false,
       items: modelList.map((model) {
         final display = CarNameTranslations.getLocalizedModel(context, brand, model)
                 .isNotEmpty
@@ -595,21 +590,16 @@ class _TrimDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
-    final isLight = Theme.of(context).brightness == Brightness.light;
     final currentTrim =
         selectedTrim != null && trimList.contains(selectedTrim) ? selectedTrim : null;
     final style = filterDialogStyle(context);
 
-    return DropdownButtonFormField<String>(
-      isExpanded: true,
+    return FilterDropdownField(
+      style: style,
+      label: loc.trimLabel,
       value: currentTrim,
-      decoration: filterFieldDecoration(
-        style,
-        loc.trimLabel,
-        errorText: isError ? loc.pleaseSelectTrim : null,
-      ).copyWith(
-        fillColor: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
-      ),
+      errorText: isError ? loc.pleaseSelectTrim : null,
+      narrowMenu: false,
       items: trimList.map((trim) {
         return DropdownMenuItem<String>(
           value: trim,

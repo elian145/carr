@@ -49,17 +49,14 @@ mixin _SellStep1Build on _SellStep1Pickers {
                           return null;
                         },
                       )
-                    : DropdownButtonFormField<String>(
-                        isExpanded: true,
+                    : FilterDropdownField(
+                        style: style,
+                        label: loc.yearLabel,
                         value: selectedYear != null &&
                                 availableYears.contains(selectedYear)
                             ? selectedYear
                             : null,
-                        decoration: filterFieldDecoration(
-                          style,
-                          loc.yearLabel,
-                          errorText: errYear ? loc.pleaseSelectYear : null,
-                        ),
+                        errorText: errYear ? loc.pleaseSelectYear : null,
                         items: availableYears.map((year) {
                           return DropdownMenuItem<String>(
                             value: year,

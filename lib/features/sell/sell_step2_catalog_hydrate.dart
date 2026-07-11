@@ -6,6 +6,11 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
     CarSpecIndex? idx,
   ) {
     if (carData == null || idx == null) return null;
+    // Only narrow Step 2 lists when the user opted into catalog autofill.
+    // Skipping "Apply specs" should leave the full static option sets available.
+    final hasApplied = carData['_catalog_specs_applied'] != null ||
+        carData['_online_specs_applied'] != null;
+    if (!hasApplied) return null;
     final b = carData['brand']?.toString().trim() ?? '';
     final m = carData['model']?.toString().trim() ?? '';
     final y = int.tryParse(carData['year']?.toString().trim() ?? '');

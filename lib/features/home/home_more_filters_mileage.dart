@@ -76,56 +76,25 @@ mixin _HomePageMoreFiltersMileageChips on _HomePageMoreFiltersMileageRange {
                                 height:
                                     style.fieldGap,
                               ),
-                              DropdownButtonFormField<
-                                String
-                              >(
-                                menuMaxHeight:
-                                    _moreFiltersDropdownMenuMaxHeight(context),
-                                initialValue:
-                                    selectedDamagedParts ??
-                                    '',
-                                decoration: InputDecoration(
-                                  labelText:
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.damagedParts,
-                                  filled: true,
-                                  fillColor:
-                                      style.fieldFill,
-                                  labelStyle: TextStyle(
-                                    color:
-                                        style.onSurface,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(
-                                          12,
-                                        ),
-                                  ),
-                                ),
+                              _moreFiltersDropdownField(
+                                context: context,
+                                style: style,
+                                label: AppLocalizations.of(context)!.damagedParts,
+                                value: selectedDamagedParts ?? '',
+                                narrowMenu: true,
                                 items: [
                                   DropdownMenuItem(
                                     value: '',
                                     child: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      )!.any,
-                                      style: TextStyle(
-                                        color:
-                                            style.anyOrange,
-                                      ),
+                                      AppLocalizations.of(context)!.any,
+                                      style: TextStyle(color: style.anyOrange),
                                     ),
                                   ),
                                   ...List.generate(
                                     15,
-                                    (i) => (i + 1)
-                                        .toString(),
+                                    (i) => (i + 1).toString(),
                                   ).map(
-                                    (
-                                      p,
-                                    ) => DropdownMenuItem(
+                                    (p) => DropdownMenuItem(
                                       value: p,
                                       child: Text(
                                         '${_localizeDigitsGlobal(context, p)} ${AppLocalizations.of(context)!.damagedParts}',
@@ -135,16 +104,12 @@ mixin _HomePageMoreFiltersMileageChips on _HomePageMoreFiltersMileageRange {
                                 ],
                                 onChanged: (value) {
                                   setState(
-                                    () =>
-                                        selectedDamagedParts =
-                                            value ==
-                                                ''
+                                    () => selectedDamagedParts =
+                                        value == null || value.isEmpty
                                             ? null
                                             : value,
                                   );
-                                  setStateDialog(
-                                    () {},
-                                  );
+                                  setStateDialog(() {});
                                 },
                               ),
                             ],
