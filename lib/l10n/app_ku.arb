@@ -344,7 +344,7 @@
   "joinLabel": "بەشداری",
   "unknownSender": "نەناسراو",
   "justNow": "ئێستا",
-  "noMessagesYet": "هێشتا نامەیەک نییە. گفتوگۆیەک دەست پێبکە!",
+  "noMessagesYet": "هێشتا نامەیەک نییە.",
   "timeDaysAgo": "پێش {count} ڕۆژ",
   "timeHoursAgo": "پێش {count} کاتژمێر",
   "timeMinutesAgo": "پێش {count} خولەک",
@@ -506,7 +506,7 @@
 
   "savedSearchesTitle": "گەڕانە پاشەکەوتکراوەکان",
   "noSavedSearchesYet": "هێشتا هیچ گەڕانێک پاشەکەوت نەکراوە",
-  "savedSearchesHint": "گەڕانەکانت خۆکارانە لێرە پاشەکەوت دەکرێن",
+  "savedSearchesHint": "گەڕانێک لە پەڕەی گەڕان پاشەکەوت بکە بۆ ئاگاداری لە هاوتای نوێ",
 
   "compareLabel": "بەراورد +",
   "addedLabel": "زیادکرا",

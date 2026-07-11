@@ -62,7 +62,7 @@ void main() {
       for (var i = 0; i < 60; i++) {
         await tester.pump(const Duration(milliseconds: 50));
         if (find.byIcon(Icons.send).evaluate().isNotEmpty &&
-            find.text('No messages yet. Start a conversation!').evaluate().isNotEmpty) {
+            find.text('No messages yet.').evaluate().isNotEmpty) {
           ready = true;
           break;
         }

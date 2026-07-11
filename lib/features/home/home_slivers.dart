@@ -63,9 +63,10 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                PopupMenuButton<String>(
+                ListingSortButton(
                   tooltip: AppLocalizations.of(context)!.sortBy,
-                  icon: Icon(Icons.sort, size: 20),
+                  active:
+                      selectedSortBy != null && selectedSortBy!.isNotEmpty,
                   onSelected: (value) {
                     setState(() => selectedSortBy = value == '' ? null : value);
                     _persistFilters();
@@ -81,21 +82,12 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
                         .map((s) => PopupMenuItem(value: s, child: Text(s))),
                   ],
                 ),
-                ToggleButtons(
-                  isSelected: [
-                    listingColumns == 1,
-                    listingColumns == 2,
-                  ],
-                  onPressed: (index) {
-                    setState(() {
-                      listingColumns = index == 0 ? 1 : 2;
-                    });
-                    ListingLayoutPrefs.setColumns(listingColumns);
+                ListingLayoutToggle(
+                  columns: listingColumns,
+                  onChanged: (cols) {
+                    setState(() => listingColumns = cols);
+                    ListingLayoutPrefs.setColumns(cols);
                   },
-                  children: const [
-                    Icon(Icons.view_agenda),
-                    Icon(Icons.grid_view),
-                  ],
                 ),
               ],
             ),

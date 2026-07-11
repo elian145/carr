@@ -95,67 +95,115 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }
 
   Widget _buildSpecCard(_SpecItem item) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      constraints: BoxConstraints(minHeight: 84),
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B00),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(item.icon, size: 16, color: Colors.black87),
-              SizedBox(width: 6),
-              Flexible(
-                child: AutoSizeText(
-                  item.label,
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                  textScaleFactor: 1.0,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                    height: 1.1,
-                  ),
-                  minFontSize: 7,
-                  stepGranularity: 0.5,
-                  overflow: TextOverflow.clip,
-                ),
+    const brandOrange = Color(0xFFFF6B00);
+    const labelGrey = Color(0xFF8E8E93);
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
+    final iconCircleFill =
+        isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);
+    final valueColor = isLight ? Colors.black : Colors.white;
+    final asset = item.imageAsset;
+    final Widget iconGlyph = (asset != null && asset.isNotEmpty)
+        ? ColorFiltered(
+            colorFilter: const ColorFilter.mode(
+              brandOrange,
+              BlendMode.srcIn,
+            ),
+            child: Image.asset(
+              asset,
+              width: 26,
+              height: 26,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              errorBuilder: (context, error, stackTrace) => Icon(
+                item.icon,
+                size: 26,
+                color: brandOrange,
               ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
-            child: Divider(
-              height: 1,
-              thickness: 1,
-              color: Colors.black.withValues(alpha: 0.22),
+            ),
+          )
+        : Icon(item.icon, size: 26, color: brandOrange);
+
+    return Semantics(
+      label: '${item.label}: ${item.value ?? ''}',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
+              blurRadius: isLight ? 8 : 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: isLight
+              ? null
+              : Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: ColoredBox(
+            color: cardBg,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: iconCircleFill,
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: iconGlyph,
+                      ),
+                      const SizedBox(height: 8),
+                      AutoSizeText(
+                        item.label,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        textScaleFactor: 1.0,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          height: 1.1,
+                          color: labelGrey,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        minFontSize: 7,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
+                      ),
+                      const SizedBox(height: 4),
+                      AutoSizeText(
+                        item.value!,
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        textScaleFactor: 1.0,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.1,
+                          color: valueColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        minFontSize: 10,
+                        stepGranularity: 0.5,
+                        overflow: TextOverflow.clip,
+                      ),
+                    ],
+                  ),
+                ),
+                const ColoredBox(
+                  color: brandOrange,
+                  child: SizedBox(height: 2.5, width: double.infinity),
+                ),
+              ],
             ),
           ),
-          AutoSizeText(
-            item.value!,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            textScaleFactor: 1.0,
-            style: TextStyle(
-              fontSize: 15,
-              height: 1.15,
-              color: Colors.black,
-              fontWeight: FontWeight.w700,
-            ),
-            minFontSize: 10,
-            stepGranularity: 0.5,
-            overflow: TextOverflow.clip,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -165,56 +213,88 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     required String label,
     required String? value,
   }) {
-    if (value == null || value.isEmpty) return SizedBox.shrink();
+    if (value == null || value.isEmpty) return const SizedBox.shrink();
     final isLight = Theme.of(context).brightness == Brightness.light;
+    const brandOrange = Color(0xFFFF6B00);
+    const labelGrey = Color(0xFF8E8E93);
+    final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
+    final iconCircleFill =
+        isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);
+    final valueColor = isLight ? Colors.black : Colors.white;
     return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isLight
-            ? const Color(0xFFF3F3F3)
-            : Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isLight ? const Color(0xFFE0E0E0) : Colors.white12,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: Colors.black),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isLight ? const Color(0xFF3A3A3A) : Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
+            blurRadius: isLight ? 8 : 10,
+            offset: const Offset(0, 2),
           ),
         ],
+        border: isLight
+            ? null
+            : Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: ColoredBox(
+          color: cardBg,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: iconCircleFill,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(icon, size: 20, color: brandOrange),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            label,
+                            style: const TextStyle(
+                              color: labelGrey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              height: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            value,
+                            style: TextStyle(
+                              color: valueColor,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const ColoredBox(
+                color: brandOrange,
+                child: SizedBox(height: 2.5, width: double.infinity),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -233,9 +313,10 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
         value: data['mileage'] != null
             ? '${_localizeDigitsGlobal(context, _formatPrice(context, data['mileage'].toString()))} ${data['mileage_unit']?.toString() == 'miles' ? loc.unit_miles : loc.unit_km}'
             : null,
+        imageAsset: ListingSpecIcons.mileage,
       ),
       _SpecItem(
-        icon: Icons.settings_input_component,
+        icon: Icons.view_column_rounded,
         label: loc.detail_cylinders,
         value: () {
           final raw = _getFirstNonEmpty(data, [
@@ -246,13 +327,15 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
           if (raw == null) return null;
           return _localizeDigitsGlobal(context, raw);
         }(),
+        imageAsset: ListingSpecIcons.cylinders,
       ),
       _SpecItem(
-        icon: Icons.straighten,
+        icon: Icons.precision_manufacturing_outlined,
         label: loc.detail_engine,
         value: engineSize != null
             ? '${_localizeDigitsGlobal(context, engineSize.toString())}${loc.unit_liter_suffix}'
             : null,
+        imageAsset: ListingSpecIcons.engine,
       ),
       _SpecItem(
         icon: Icons.layers,
@@ -268,6 +351,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
           context,
           _getFirstNonEmpty(data, ['transmission']),
         ),
+        imageAsset: ListingSpecIcons.transmission,
       ),
       _SpecItem(
         icon: Icons.local_gas_station,
@@ -276,6 +360,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
           context,
           _getFirstNonEmpty(data, ['fuel_type']),
         ),
+        imageAsset: ListingSpecIcons.fuel,
       ),
     ];
     final List<Widget> details = [

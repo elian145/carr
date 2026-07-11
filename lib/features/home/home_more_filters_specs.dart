@@ -54,6 +54,8 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
                           DropdownButtonFormField<
                             String
                           >(
+                            menuMaxHeight:
+                                _moreFiltersDropdownMenuMaxHeight(context),
                             initialValue:
                                 selectedPlateType ??
                                 '',

@@ -15,28 +15,52 @@ mixin _HomePageBuild on _HomePageSlivers {
             padding: const EdgeInsetsDirectional.only(
               end: NavigationToolbar.kMiddleSpacing,
             ),
-            child: OutlinedButton.icon(
-              onPressed: () =>
-                  _openHomeSearchFiltersPage(context, focusSearchField: false),
-              icon: const Icon(Icons.search, color: Colors.white, size: 20),
-              label: Text(
-                AppLocalizations.of(context)!.homeSearchHeading,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: AppResponsive.narrowAppBar(context) ? 12 : 14,
+            child: Material(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                onTap: () => _openHomeSearchFiltersPage(
+                  context,
+                  focusSearchField: false,
                 ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.white70),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(20),
+                splashColor: Colors.white.withValues(alpha: 0.2),
+                highlightColor: Colors.white.withValues(alpha: 0.12),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppResponsive.narrowAppBar(context) ? 10 : 14,
+                    vertical: AppResponsive.narrowAppBar(context) ? 7 : 8,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        color: Colors.white,
+                        size: AppResponsive.narrowAppBar(context) ? 17 : 18,
+                      ),
+                      SizedBox(
+                        width: AppResponsive.narrowAppBar(context) ? 5 : 6,
+                      ),
+                      Text(
+                        AppLocalizations.of(context)!.homeSearchHeading,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize:
+                              AppResponsive.narrowAppBar(context) ? 12 : 13.5,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppResponsive.narrowAppBar(context) ? 8 : 12,
-                  vertical: AppResponsive.narrowAppBar(context) ? 6 : 8,
-                ),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
           ),

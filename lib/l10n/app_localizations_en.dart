@@ -974,7 +974,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get justNow => 'Just now';
 
   @override
-  String get noMessagesYet => 'No messages yet. Start a conversation!';
+  String get noMessagesYet => 'No messages yet.';
 
   @override
   String timeDaysAgo(Object count) {
@@ -1451,7 +1451,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savedSearchesHint =>
-      'Your searches will be automatically saved here';
+      'Save a search from the Search page to get alerts for new matches';
 
   @override
   String get compareLabel => 'compare +';

@@ -11,7 +11,8 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
 
   double _moreFiltersDropdownMenuMaxHeight(BuildContext context) {
     final height = MediaQuery.sizeOf(context).height;
-    return (height * 0.32).clamp(200.0, 280.0);
+    // Tall menus so lists open higher and show more options at once.
+    return (height * 0.58).clamp(360.0, 560.0);
   }
 
   InputDecoration _moreFiltersFilterFieldDecoration(
@@ -301,6 +302,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       const SizedBox(height: 12),
       DropdownButtonFormField<String>(
         isExpanded: true,
+        menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
         dropdownColor: dropdownMenuBg,
         style: TextStyle(color: dropdownInk, fontWeight: FontWeight.w600),
         value: selectedModel != null &&
@@ -356,6 +358,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       const SizedBox(height: 12),
       DropdownButtonFormField<String>(
         isExpanded: true,
+        menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
         dropdownColor: dropdownMenuBg,
         style: TextStyle(color: dropdownInk, fontWeight: FontWeight.w600),
         value: selectedTrim != null &&

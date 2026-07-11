@@ -44,6 +44,14 @@ class FilterMakeSection extends StatelessWidget {
     this.modelError = false,
     this.trimError = false,
     this.requiredFields = true,
+    this.allowCustomModel = false,
+    this.allowCustomTrim = false,
+    this.isModelManualInput = false,
+    this.isTrimManualInput = false,
+    this.modelManualController,
+    this.trimManualController,
+    this.onToggleModelManual,
+    this.onToggleTrimManual,
   });
 
   final List<String> brands;
@@ -62,6 +70,14 @@ class FilterMakeSection extends StatelessWidget {
   final bool modelError;
   final bool trimError;
   final bool requiredFields;
+  final bool allowCustomModel;
+  final bool allowCustomTrim;
+  final bool isModelManualInput;
+  final bool isTrimManualInput;
+  final TextEditingController? modelManualController;
+  final TextEditingController? trimManualController;
+  final VoidCallback? onToggleModelManual;
+  final VoidCallback? onToggleTrimManual;
 
   List<String> _featuredBrands() {
     if (featuredBrands != null && featuredBrands!.length >= 4) {
@@ -126,6 +142,18 @@ class FilterMakeSection extends StatelessWidget {
     final hasBrand = selectedBrand != null && selectedBrand!.isNotEmpty;
     final hasModel = selectedModel != null && selectedModel!.trim().isNotEmpty;
     final modelList = hasBrand ? (models[selectedBrand!] ?? const <String>[]) : const <String>[];
+    final showModel = hasBrand &&
+        onModelSelected != null &&
+        (modelList.isNotEmpty || allowCustomModel);
+    final modelManual =
+        allowCustomModel && (isModelManualInput || modelList.isEmpty);
+    final showTrim = hasBrand &&
+        hasModel &&
+        onTrimSelected != null &&
+        (trimList.isNotEmpty || allowCustomTrim);
+    final trimManual =
+        allowCustomTrim && (isTrimManualInput || trimList.isEmpty);
+    final style = filterDialogStyle(context);
 
     return FilterCard(
       isError: brandError,
@@ -221,7 +249,7 @@ class FilterMakeSection extends StatelessWidget {
                 },
               ),
             ),
-          if (hasBrand && modelList.isNotEmpty && onModelSelected != null) ...[
+          if (showModel) ...[
             const SizedBox(height: 16),
             FilterSectionHeader(
               title: loc.modelLabel,
@@ -232,15 +260,67 @@ class FilterMakeSection extends StatelessWidget {
                   : null,
             ),
             const SizedBox(height: 12),
-            _ModelDropdown(
-              brand: selectedBrand!,
-              modelList: modelList,
-              selectedModel: selectedModel,
-              isError: modelError,
-              onChanged: onModelSelected!,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: modelManual
+                      ? TextFormField(
+                          controller: modelManualController,
+                          decoration: filterFieldDecoration(
+                            style,
+                            loc.modelLabel,
+                            errorText:
+                                modelError ? loc.pleaseSelectModel : null,
+                          ).copyWith(
+                            fillColor: isLight
+                                ? Colors.white
+                                : Colors.black.withValues(alpha: 0.2),
+                          ),
+                          style: TextStyle(color: style.onSurface),
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: (value) {
+                            onModelSelected!(
+                              value.trim().isEmpty ? null : value.trim(),
+                            );
+                          },
+                        )
+                      : _ModelDropdown(
+                          brand: selectedBrand!,
+                          modelList: modelList,
+                          selectedModel: selectedModel,
+                          isError: modelError,
+                          onChanged: onModelSelected!,
+                        ),
+                ),
+                if (allowCustomModel && modelList.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: onToggleModelManual,
+                    icon: Icon(
+                      modelManual ? Icons.list : Icons.edit,
+                      color: kFilterAccentColor,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    tooltip: modelManual
+                        ? trLegacyText(
+                            context,
+                            'Select from list',
+                            ar: 'اختر من القائمة',
+                            ku: 'لە لیستەکە هەڵبژێرە',
+                          )
+                        : loc.typeManually,
+                  ),
+                ],
+              ],
             ),
           ],
-          if (hasBrand && hasModel && trimList.isNotEmpty && onTrimSelected != null) ...[
+          if (showTrim) ...[
             const SizedBox(height: 16),
             FilterSectionHeader(
               title: loc.trimLabel,
@@ -251,11 +331,62 @@ class FilterMakeSection extends StatelessWidget {
                   : null,
             ),
             const SizedBox(height: 12),
-            _TrimDropdown(
-              trimList: trimList,
-              selectedTrim: selectedTrim,
-              isError: trimError,
-              onChanged: onTrimSelected!,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: trimManual
+                      ? TextFormField(
+                          controller: trimManualController,
+                          decoration: filterFieldDecoration(
+                            style,
+                            loc.trimLabel,
+                            errorText: trimError ? loc.pleaseSelectTrim : null,
+                          ).copyWith(
+                            fillColor: isLight
+                                ? Colors.white
+                                : Colors.black.withValues(alpha: 0.2),
+                          ),
+                          style: TextStyle(color: style.onSurface),
+                          textCapitalization: TextCapitalization.words,
+                          onChanged: (value) {
+                            onTrimSelected!(
+                              value.trim().isEmpty ? null : value.trim(),
+                            );
+                          },
+                        )
+                      : _TrimDropdown(
+                          trimList: trimList,
+                          selectedTrim: selectedTrim,
+                          isError: trimError,
+                          onChanged: onTrimSelected!,
+                        ),
+                ),
+                if (allowCustomTrim && trimList.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: onToggleTrimManual,
+                    icon: Icon(
+                      trimManual ? Icons.list : Icons.edit,
+                      color: kFilterAccentColor,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    tooltip: trimManual
+                        ? trLegacyText(
+                            context,
+                            'Select from list',
+                            ar: 'اختر من القائمة',
+                            ku: 'لە لیستەکە هەڵبژێرە',
+                          )
+                        : loc.typeManually,
+                  ),
+                ],
+              ],
             ),
           ],
         ],

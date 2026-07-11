@@ -971,7 +971,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get justNow => 'الآن';
 
   @override
-  String get noMessagesYet => 'لا توجد رسائل بعد. ابدأ محادثة!';
+  String get noMessagesYet => 'لا توجد رسائل بعد.';
 
   @override
   String timeDaysAgo(Object count) {
@@ -1443,7 +1443,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noSavedSearchesYet => 'لا توجد عمليات بحث محفوظة بعد';
 
   @override
-  String get savedSearchesHint => 'سيتم حفظ بحثك تلقائياً هنا';
+  String get savedSearchesHint =>
+      'احفظ بحثاً من صفحة البحث لتلقي تنبيهات عند وجود نتائج جديدة';
 
   @override
   String get compareLabel => 'قارن +';

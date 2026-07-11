@@ -808,6 +808,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
 
     return DropdownButtonFormField<String>(
       isExpanded: true,
+      menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
       value: current,
       decoration: InputDecoration(
         labelText: loc.damagedParts,
@@ -1262,6 +1263,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
 
     return DropdownButtonFormField<String>(
       isExpanded: true,
+      menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
       value: currentModel,
       decoration: InputDecoration(
         filled: true,
@@ -1315,6 +1317,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
 
     return DropdownButtonFormField<String>(
       isExpanded: true,
+      menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
       value: currentTrim,
       decoration: InputDecoration(
         filled: true,
@@ -1662,20 +1665,32 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                                   ),
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () async {
-                                  await _resetSearchFiltersPage(
-                                    () => setStateDialog(() {}),
-                                  );
-                                  revertSnapshot[0] =
-                                      _searchFiltersPageSnapshot();
-                                },
-                                child: Text(
-                                  AppLocalizations.of(context)!.resetButton,
-                                  style: const TextStyle(
-                                    color: _searchAccent,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              IconButton(
+                                tooltip: _trLegacyText(
+                                  context,
+                                  'Save search',
+                                  ar: 'حفظ البحث',
+                                  ku: 'پاشەکەوتکردنی گەڕان',
+                                ),
+                                icon: const Icon(Icons.bookmark_add_outlined),
+                                color: _searchAccent,
+                                onPressed: () => unawaited(
+                                  _saveSearchFromFiltersPage(context),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: _trLegacyText(
+                                  context,
+                                  'Notify me',
+                                  ar: 'أعلمني',
+                                  ku: 'ئاگادارم بکە',
+                                ),
+                                icon: const Icon(
+                                  Icons.notifications_active_outlined,
+                                ),
+                                color: _searchAccent,
+                                onPressed: () => unawaited(
+                                  _enableSearchMatchAlerts(context),
                                 ),
                               ),
                             ],
@@ -1714,29 +1729,65 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
                           top: false,
                           minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                           child: SizedBox(
-                            width: double.infinity,
-                            height: 52,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _searchAccent,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                            height: 58,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: OutlinedButton(
+                                    onPressed: () async {
+                                      await _resetSearchFiltersPage(
+                                        () => setStateDialog(() {}),
+                                      );
+                                      revertSnapshot[0] =
+                                          _searchFiltersPageSnapshot();
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: _searchAccent,
+                                      side: const BorderSide(
+                                        color: _searchAccent,
+                                        width: 1.4,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      AppLocalizations.of(context)!.resetButton,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                                elevation: 0,
-                              ),
-                              onPressed: () {
-                                unawaited(_persistFilters());
-                                onFilterChanged();
-                                Navigator.pop(context, true);
-                              },
-                              child: Text(
-                                _searchShowCarsLabel(context),
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  flex: 5,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _searchAccent,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    onPressed: () {
+                                      unawaited(_persistFilters());
+                                      onFilterChanged();
+                                      Navigator.pop(context, true);
+                                    },
+                                    child: Text(
+                                      _searchShowCarsLabel(context),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
                           ),
                         ),

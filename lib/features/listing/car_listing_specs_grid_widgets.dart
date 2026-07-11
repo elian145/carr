@@ -9,207 +9,292 @@ Widget carListingSpecsDetailRow(
     VoidCallback? onTap,
   }) {
     if (valueWidget == null && (value == null || value.isEmpty)) {
-      return SizedBox.shrink();
+      return const SizedBox.shrink();
     }
     final isLight = Theme.of(context).brightness == Brightness.light;
-    final content = Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: onTap != null
-            ? (isLight ? const Color(0xFFFFF2E8) : Colors.white.withValues(alpha: 0.09))
-            : (isLight ? const Color(0xFFF3F3F3) : Colors.white.withValues(alpha: 0.06)),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: onTap != null
-              ? const Color(0xFFFF6B00).withValues(alpha: isLight ? 0.34 : 0.42)
-              : (isLight ? const Color(0xFFE0E0E0) : Colors.white12),
-          width: onTap != null ? 1.2 : 1,
-        ),
-        boxShadow: onTap != null
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.18),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : const [],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: onTap != null
-                  ? const Color(0xFFFF6B00)
-                  : const Color(0xFFFF6B00),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: Colors.black),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isLight ? const Color(0xFF3A3A3A) : Colors.white70,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          if (valueWidget != null)
-            valueWidget
-          else if (onTap != null)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B00),
-                    borderRadius: BorderRadius.circular(999),
+    const brandOrange = Color(0xFFFF6B00);
+    const iconCircleFillLight = Color(0xFFFFF0E6);
+    const iconCircleFillDark = Color(0xFFFFE8D6);
+    const labelGrey = Color(0xFF8E8E93);
+    final cardBg = onTap != null
+        ? (isLight
+            ? const Color(0xFFFFF7F0)
+            : const Color(0xFF2A211C))
+        : (isLight ? Colors.white : const Color(0xFF1E1E1E));
+    final iconCircleFill = isLight ? iconCircleFillLight : iconCircleFillDark;
+    final valueColor = isLight ? Colors.black : Colors.white;
+
+    final row = ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: ColoredBox(
+        color: cardBg,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: iconCircleFill,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(icon, size: 20, color: brandOrange),
                   ),
-                  child: Text(
-                    value!,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            color: labelGrey,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            height: 1.1,
+                          ),
+                        ),
+                        if (onTap == null && valueWidget == null) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            value!,
+                            style: TextStyle(
+                              color: valueColor,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right, color: Color(0xFFFF6B00)),
-              ],
-            )
-          else
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Color(0xFFFF6B00),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                value!,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
+                  if (valueWidget != null)
+                    valueWidget
+                  else if (onTap != null)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            value!,
+                            textAlign: TextAlign.end,
+                            style: const TextStyle(
+                              color: brandOrange,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: brandOrange,
+                          size: 22,
+                        ),
+                      ],
+                    ),
+                ],
               ),
             ),
-        ],
+            const ColoredBox(
+              color: brandOrange,
+              child: SizedBox(height: 2.5, width: double.infinity),
+            ),
+          ],
+        ),
       ),
     );
-    if (onTap == null) return content;
+
+    final card = Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
+            blurRadius: isLight ? 8 : 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: onTap != null
+            ? Border.all(color: brandOrange.withValues(alpha: 0.55))
+            : (isLight
+                ? null
+                : Border.all(color: Colors.white.withValues(alpha: 0.06))),
+      ),
+      child: row,
+    );
+
+    if (onTap == null) return card;
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: content,
+        child: card,
       ),
     );
   }
 
 Widget carListingSpecsCard(ListingSpecItem item) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Color(0xFFFF6B00),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final double labelFontSize =
-              (constraints.maxWidth * 0.13).clamp(9.0, 11.0);
-          final double valueFontSize =
-              (constraints.maxWidth * 0.16).clamp(10.0, 14.0);
+  const brandOrange = Color(0xFFFF6B00);
+  const labelGrey = Color(0xFF8E8E93);
 
-          final labelStyle = TextStyle(
-            fontSize: labelFontSize,
-            color: Colors.black87,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.3,
-            height: 1.05,
-          );
-          final valueStyle = TextStyle(
-            fontSize: valueFontSize,
-            height: 1.0,
-            color: Colors.black,
-            fontWeight: FontWeight.w800,
-          );
+  return Semantics(
+    label: '${item.label}: ${item.value ?? ''}',
+    child: Builder(
+      builder: (context) {
+        final isLight = Theme.of(context).brightness == Brightness.light;
+        final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
+        final iconCircleFill =
+            isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);
+        final valueColor = isLight ? Colors.black : Colors.white;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                flex: 6,
-                child: Center(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: constraints.maxWidth * 0.13,
-                        color: Colors.black87,
-                      ),
-                      const SizedBox(width: 4),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth:
-                              constraints.maxWidth - (constraints.maxWidth * 0.13) - 4,
-                        ),
-                        child: AutoSizeText(
-                          item.label,
-                          maxLines: 1,
-                          textAlign: TextAlign.center,
-                          softWrap: false,
-                          textScaleFactor: 1.0,
-                          style: labelStyle,
-                          minFontSize: 7,
-                          stepGranularity: 0.5,
-                          overflow: TextOverflow.clip,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  vertical: math.max(3.0, constraints.maxHeight * 0.02),
-                  horizontal: 6,
-                ),
-                child: Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: Colors.black.withValues(alpha: 0.22),
-                ),
-              ),
-              Expanded(
-                flex: 5,
-                child: Center(
-                  child: AutoSizeText(
-                    item.value!,
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    textScaleFactor: 1.0,
-                    style: valueStyle,
-                    minFontSize: 9,
-                    stepGranularity: 0.5,
-                    overflow: TextOverflow.clip,
-                  ),
-                ),
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
+                blurRadius: isLight ? 8 : 10,
+                offset: const Offset(0, 2),
               ),
             ],
-          );
-        },
-      ),
-    );
-  }
+            border: isLight
+                ? null
+                : Border.all(color: Colors.white.withValues(alpha: 0.06)),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: ColoredBox(
+              color: cardBg,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double iconSize =
+                              (constraints.maxWidth * 0.28).clamp(22.0, 30.0);
+                          final double circleSize =
+                              (constraints.maxWidth * 0.42).clamp(34.0, 44.0);
+                          final double labelFontSize =
+                              (constraints.maxWidth * 0.12).clamp(9.0, 11.0);
+                          final double valueFontSize =
+                              (constraints.maxWidth * 0.15).clamp(11.0, 14.0);
+
+                          final Widget iconGlyph;
+                          final asset = item.imageAsset;
+                          if (asset != null && asset.isNotEmpty) {
+                            iconGlyph = ColorFiltered(
+                              colorFilter: const ColorFilter.mode(
+                                brandOrange,
+                                BlendMode.srcIn,
+                              ),
+                              child: Image.asset(
+                                asset,
+                                width: iconSize,
+                                height: iconSize,
+                                fit: BoxFit.contain,
+                                filterQuality: FilterQuality.high,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(
+                                  item.icon,
+                                  size: iconSize,
+                                  color: brandOrange,
+                                ),
+                              ),
+                            );
+                          } else {
+                            iconGlyph = Icon(
+                              item.icon,
+                              size: iconSize,
+                              color: brandOrange,
+                            );
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: Center(
+                                  child: Container(
+                                    width: circleSize,
+                                    height: circleSize,
+                                    decoration: BoxDecoration(
+                                      color: iconCircleFill,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: iconGlyph,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Center(
+                                  child: AutoSizeText(
+                                    item.label,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                    textScaleFactor: 1.0,
+                                    style: TextStyle(
+                                      fontSize: labelFontSize,
+                                      height: 1.05,
+                                      color: labelGrey,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    minFontSize: 7,
+                                    stepGranularity: 0.5,
+                                    overflow: TextOverflow.clip,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Center(
+                                  child: AutoSizeText(
+                                    item.value!,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.center,
+                                    textScaleFactor: 1.0,
+                                    style: TextStyle(
+                                      fontSize: valueFontSize,
+                                      height: 1.05,
+                                      color: valueColor,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                    minFontSize: 9,
+                                    stepGranularity: 0.5,
+                                    overflow: TextOverflow.clip,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const ColoredBox(
+                    color: brandOrange,
+                    child: SizedBox(height: 2.5, width: double.infinity),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}

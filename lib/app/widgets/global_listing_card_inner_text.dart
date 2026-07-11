@@ -12,7 +12,6 @@ Widget _buildGlobalCarCardInnerText(
   required Color titleTextColor,
   required Color dividerLineColor,
   required Color metaTextColor,
-  bool pinBottomMeta = false,
   bool listLayout = false,
 }) {
   // Horizontal cards have more width than grid tiles — use fuller type, not
@@ -35,7 +34,7 @@ Widget _buildGlobalCarCardInnerText(
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
-    mainAxisSize: pinBottomMeta ? MainAxisSize.max : MainAxisSize.min,
+    mainAxisSize: MainAxisSize.min,
     children: [
       LayoutBuilder(
         builder: (context, constraints) {
@@ -188,7 +187,6 @@ Widget _buildGlobalCarCardInnerText(
           ),
         ],
       ),
-      if (pinBottomMeta) const Spacer(),
       if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
         SizedBox(height: sectionGap),
         Divider(height: 1, thickness: 1, color: dividerLineColor),

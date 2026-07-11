@@ -16,6 +16,8 @@ class _SellStep1PageState extends _SellStep1Fields
     super.initState();
     _yearController = TextEditingController();
     _makeModelSearchController = TextEditingController();
+    _modelManualController = TextEditingController();
+    _trimManualController = TextEditingController();
     _yearController.addListener(_onYearTextForCatalog);
     _resetSellFilters();
     _hydrateFromParentCarData();
@@ -50,6 +52,8 @@ class _SellStep1PageState extends _SellStep1Fields
     _yearController.removeListener(_onYearTextForCatalog);
     _yearController.dispose();
     _makeModelSearchController.dispose();
+    _modelManualController.dispose();
+    _trimManualController.dispose();
     super.dispose();
   }
 }

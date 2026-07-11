@@ -79,6 +79,8 @@ mixin _HomePageMoreFiltersSpecsDrive on _HomePageMoreFiltersMid {
                             key: ValueKey(
                               'home_more_region_specs_$_moreFiltersDialogFieldGeneration',
                             ),
+                            menuMaxHeight:
+                                _moreFiltersDropdownMenuMaxHeight(context),
                             initialValue:
                                 _getValidRegionSpecsValue(),
                             decoration: InputDecoration(

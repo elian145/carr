@@ -103,41 +103,51 @@ Widget buildCarListingSpecsGrid(
     translateListingValue(context, fuelRaw) ?? fuelRaw,
   );
 
+  final String? regionCode = () {
+    final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
+    final c = raw.toString().trim().toLowerCase();
+    if (!isValidCarRegionSpecCode(c)) return null;
+    return c;
+  }();
+
   final List<ListingSpecItem> primary = [
     ListingSpecItem(
       icon: Icons.speed,
       label: AppLocalizations.of(context)!.mileageLabel,
       value: mileageVal,
+      imageAsset: ListingSpecIcons.mileage,
     ),
     ListingSpecItem(
-      icon: Icons.settings_input_component,
+      icon: Icons.view_column_rounded,
       label: AppLocalizations.of(context)!.detail_cylinders,
       value: cylinderVal,
+      imageAsset: ListingSpecIcons.cylinders,
     ),
     ListingSpecItem(
-      icon: Icons.straighten,
+      icon: Icons.precision_manufacturing_outlined,
       label: AppLocalizations.of(context)!.detail_engine,
       value: engineCardVal,
+      imageAsset: ListingSpecIcons.engine,
     ),
     ListingSpecItem(
       icon: Icons.public,
       label: AppLocalizations.of(context)!.regionSpecsLabel,
-      value: orDash(() {
-        final raw = pickNE(car, ['region_specs', 'regionSpecs']) ?? '';
-        final c = raw.toString().trim().toLowerCase();
-        if (!isValidCarRegionSpecCode(c)) return '';
-        return carRegionSpecDisplayLabel(c);
-      }()),
+      value: orDash(
+        regionCode == null ? '' : carRegionSpecDisplayLabel(regionCode),
+      ),
+      imageAsset: ListingSpecIcons.region,
     ),
     ListingSpecItem(
       icon: Icons.settings,
       label: AppLocalizations.of(context)!.transmissionLabel,
       value: transmissionVal,
+      imageAsset: ListingSpecIcons.transmission,
     ),
     ListingSpecItem(
       icon: Icons.local_gas_station,
       label: AppLocalizations.of(context)!.detail_fuel,
       value: fuelVal,
+      imageAsset: ListingSpecIcons.fuel,
     ),
   ];
 
@@ -308,8 +318,8 @@ Widget buildCarListingSpecsGrid(
       const int crossCount = 3;
       final double maxW = constraints.maxWidth;
       final double tileW = (maxW - crossGap * (crossCount - 1)) / crossCount;
-      // Was ~1.5 (height = tileW/1.5); 1.72 shortens each row ~13%.
-      final double rowH = tileW / 1.72;
+      // Taller tiles for icon circle + label + value.
+      final double rowH = tileW / 1.05;
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -328,14 +338,16 @@ Widget buildCarListingSpecsGrid(
 
   final topSpecs = Container(
     width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
     decoration: BoxDecoration(
       color: isLightSpecs
-          ? const Color(0xFFEEEEEE)
-          : Colors.white.withValues(alpha: 0.08),
+          ? const Color(0xFFF5F5F7)
+          : const Color(0xFF161616),
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
-        color: isLightSpecs ? const Color(0xFFE0E0E0) : Colors.white24,
+        color: isLightSpecs
+            ? const Color(0xFFE8E8ED)
+            : Colors.white.withValues(alpha: 0.08),
       ),
     ),
     child: primGrid,

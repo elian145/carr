@@ -33,6 +33,7 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
         _moreFiltersMinMaxRow(
           minField: DropdownButtonFormField<String>(
             isExpanded: true,
+            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
             initialValue: selectedMinYear ?? '',
             decoration: _moreFiltersFilterFieldDecoration(style, loc.minYear),
             items: [
@@ -74,6 +75,7 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
           ),
           maxField: DropdownButtonFormField<String>(
             isExpanded: true,
+            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
             initialValue: selectedMaxYear ?? '',
             decoration: _moreFiltersFilterFieldDecoration(style, loc.maxYear),
             items: [

@@ -79,6 +79,8 @@ mixin _HomePageMoreFiltersMileageChips on _HomePageMoreFiltersMileageRange {
                               DropdownButtonFormField<
                                 String
                               >(
+                                menuMaxHeight:
+                                    _moreFiltersDropdownMenuMaxHeight(context),
                                 initialValue:
                                     selectedDamagedParts ??
                                     '',

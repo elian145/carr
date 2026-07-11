@@ -82,7 +82,7 @@ abstract class _SellStep2Fields extends State<SellStep2Page> {
     'Gold',
     'Other',
   ];
-  final List<String> driveTypes = ['FWD', 'RWD', 'AWD', '4WD'];
+  final List<String> driveTypes = ['FWD', 'RWD', 'AWD'];
   final List<String> seatings = ['2', '4', '5', '6', '7', '8'];
   // Same engine size options as More Filters (0.5 to 16.0 step 0.1)
   final List<String> engineSizes = kEngineSizeFilterOptions;

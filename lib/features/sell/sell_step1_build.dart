@@ -186,6 +186,10 @@ mixin _SellStep1Build on _SellStep1Pickers {
                   selectedBrand = brand;
                   selectedModel = null;
                   selectedTrim = null;
+                  isModelManualInput = false;
+                  isTrimManualInput = false;
+                  _modelManualController.clear();
+                  _trimManualController.clear();
                   errBrand = false;
                   _resetDsPicker();
                   _pruneYearOutsideCatalog();
@@ -198,6 +202,10 @@ mixin _SellStep1Build on _SellStep1Pickers {
                   selectedBrand = brand;
                   selectedModel = model;
                   selectedTrim = null;
+                  isModelManualInput = false;
+                  isTrimManualInput = false;
+                  _modelManualController.clear();
+                  _trimManualController.clear();
                   errBrand = false;
                   errModel = false;
                   _resetDsPicker();
@@ -216,6 +224,10 @@ mixin _SellStep1Build on _SellStep1Pickers {
                   selectedBrand = brand;
                   selectedModel = null;
                   selectedTrim = null;
+                  isModelManualInput = false;
+                  isTrimManualInput = false;
+                  _modelManualController.clear();
+                  _trimManualController.clear();
                   _resetDsPicker();
                   _pruneYearOutsideCatalog();
                 });
@@ -232,6 +244,11 @@ mixin _SellStep1Build on _SellStep1Pickers {
                 setState(() {
                   selectedModel = model;
                   selectedTrim = null;
+                  isTrimManualInput = false;
+                  _trimManualController.clear();
+                  if (!isModelManualInput) {
+                    _modelManualController.clear();
+                  }
                   _resetDsPicker();
                   _pruneYearOutsideCatalog();
                 });
@@ -243,10 +260,65 @@ mixin _SellStep1Build on _SellStep1Pickers {
               onTrimSelected: (trim) {
                 setState(() {
                   selectedTrim = trim;
+                  if (!isTrimManualInput) {
+                    _trimManualController.clear();
+                  }
                   _resetDsPicker();
                   _pruneYearOutsideCatalog();
                 });
                 _schedDsRefresh();
+                _syncStep1DraftToParent();
+              },
+              allowCustomModel: true,
+              allowCustomTrim: true,
+              isModelManualInput: isModelManualInput,
+              isTrimManualInput: isTrimManualInput,
+              modelManualController: _modelManualController,
+              trimManualController: _trimManualController,
+              onToggleModelManual: () {
+                setState(() {
+                  if (isModelManualInput) {
+                    final typed = _modelManualController.text.trim();
+                    final list = selectedBrand != null
+                        ? (models[selectedBrand!] ?? const <String>[])
+                        : const <String>[];
+                    selectedModel =
+                        typed.isNotEmpty && list.contains(typed) ? typed : null;
+                    selectedTrim = null;
+                    isTrimManualInput = false;
+                    _trimManualController.clear();
+                    isModelManualInput = false;
+                    _modelManualController.clear();
+                    _resetDsPicker();
+                  } else {
+                    isModelManualInput = true;
+                    _modelManualController.clear();
+                    selectedModel = null;
+                    selectedTrim = null;
+                    isTrimManualInput = false;
+                    _trimManualController.clear();
+                    _resetDsPicker();
+                  }
+                });
+                _schedDsRefresh();
+                _syncStep1DraftToParent();
+              },
+              onToggleTrimManual: () {
+                setState(() {
+                  if (isTrimManualInput) {
+                    final typed = _trimManualController.text.trim();
+                    selectedTrim = typed.isNotEmpty &&
+                            availableTrims.contains(typed)
+                        ? typed
+                        : null;
+                    isTrimManualInput = false;
+                    _trimManualController.clear();
+                  } else {
+                    isTrimManualInput = true;
+                    _trimManualController.clear();
+                    selectedTrim = null;
+                  }
+                });
                 _syncStep1DraftToParent();
               },
               brandError: errBrand,

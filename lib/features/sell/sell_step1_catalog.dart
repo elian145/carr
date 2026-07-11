@@ -14,6 +14,21 @@ mixin _SellStep1Catalog on _SellStep1Fields {
       _catYear = int.tryParse(data['_catalog_year']?.toString() ?? '');
       final yearText = data['year']?.toString() ?? '';
       _yearController.text = yearText;
+
+      final brand = selectedBrand;
+      final model = selectedModel;
+      final modelList =
+          brand != null ? (CarCatalog.models[brand] ?? const <String>[]) : const <String>[];
+      final trimList = CarCatalog.trimsFor(brand, model);
+      isModelManualInput =
+          model != null && model.isNotEmpty && !modelList.contains(model);
+      isTrimManualInput =
+          selectedTrim != null &&
+          selectedTrim!.isNotEmpty &&
+          !trimList.contains(selectedTrim);
+      _modelManualController.text = isModelManualInput ? (model ?? '') : '';
+      _trimManualController.text =
+          isTrimManualInput ? (selectedTrim ?? '') : '';
     });
   }
 
@@ -32,9 +47,13 @@ mixin _SellStep1Catalog on _SellStep1Fields {
           'errTrim': errTrim,
           'errYear': errYear,
           'isYearManualInput': isYearManualInput,
+          'isModelManualInput': isModelManualInput,
+          'isTrimManualInput': isTrimManualInput,
           'dsModelId': _dsModelId,
           'catYear': _catYear,
           'yearControllerText': _yearController.text,
+          'modelManualText': _modelManualController.text,
+          'trimManualText': _trimManualController.text,
         }),
       );
     } catch (e, st) { logNonFatal(e, st); }

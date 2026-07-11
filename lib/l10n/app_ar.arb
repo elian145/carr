@@ -344,7 +344,7 @@
   "joinLabel": "انضمام",
   "unknownSender": "غير معروف",
   "justNow": "الآن",
-  "noMessagesYet": "لا توجد رسائل بعد. ابدأ محادثة!",
+  "noMessagesYet": "لا توجد رسائل بعد.",
   "timeDaysAgo": "قبل {count} يوم",
   "timeHoursAgo": "قبل {count} ساعة",
   "timeMinutesAgo": "قبل {count} دقيقة",
@@ -506,7 +506,7 @@
 
   "savedSearchesTitle": "البحث المحفوظ",
   "noSavedSearchesYet": "لا توجد عمليات بحث محفوظة بعد",
-  "savedSearchesHint": "سيتم حفظ بحثك تلقائياً هنا",
+  "savedSearchesHint": "احفظ بحثاً من صفحة البحث لتلقي تنبيهات عند وجود نتائج جديدة",
 
   "compareLabel": "قارن +",
   "addedLabel": "تمت الإضافة",

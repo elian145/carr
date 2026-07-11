@@ -55,49 +55,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
       );
     }
     if (!_specIdx!.hasCoverage(b, m)) {
-      final hints = _specIdx!.catalogCoverageHints();
-      final sample = hints.take(12).join(' · ');
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        color: Colors.grey.shade100,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _trLegacyText(
-                  context,
-                  'No catalog auto-fill for this vehicle',
-                  ar: 'لا يوجد تعبئة تلقائية من الكتالوج لهذه السيارة',
-                  ku: 'پڕکردنەوەی خۆکار لە کاتالۆگ بۆ ئەم ئۆتۆمبێلە نییە',
-                ),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                _trLegacyText(
-                  context,
-                  'You selected $b $m. This build only includes some lines in the bundled file, e.g.:',
-                  ar: 'لقد اخترت $b $m. هذا الإصدار يحتوي فقط على بعض السطور في الملف المدمج، مثلا:',
-                  ku: 'تۆ $b $m هەڵبژارد. ئەم وەشانە تەنها هەندێک هێڵ لە پەڕگەی هاوپێکراودا هەیە، بۆ نموونە:',
-                ),
-                style: TextStyle(fontSize: 13, color: Colors.grey[800]),
-              ),
-              if (sample.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  sample,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     final idx = _specIdx!;

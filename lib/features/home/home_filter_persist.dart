@@ -259,7 +259,11 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     } catch (e, st) { logNonFatal(e, st); }
   }
 
-  Future<void> _saveCurrentSearch() async {
+  Future<void> _saveCurrentSearch({
+    bool forceNotify = false,
+    bool openSavedSearches = true,
+    BuildContext? messengerContext,
+  }) async {
     try {
       final sp = await SharedPreferences.getInstance();
       final List<dynamic> raw = json.decode(
@@ -284,19 +288,23 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
         }
       }
 
+      final bool notify = forceNotify
+          ? true
+          : (existing?['notify'] as bool? ?? false);
+
       final Map<String, dynamic> payload = existing != null
           ? {
               ...existing,
               'name': searchName,
               'filters': currentFilters,
-              'notify': existing['notify'] ?? true,
+              'notify': notify,
               'created_at': DateTime.now().toIso8601String(),
             }
           : {
               'id': DateTime.now().millisecondsSinceEpoch.toString(),
               'name': searchName,
               'filters': currentFilters,
-              'notify': true,
+              'notify': notify,
               'created_at': DateTime.now().toIso8601String(),
             };
 
@@ -325,16 +333,96 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
         unawaited(SavedSearchService.persistLocal(deduped));
       }
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.saved)),
+      final snackContext = messengerContext ?? context;
+      if (!snackContext.mounted) return;
+      final messenger = ScaffoldMessenger.of(snackContext);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            forceNotify
+                ? _trLegacyText(
+                    snackContext,
+                    "You'll be notified when a matching car is listed",
+                    ar: 'سيتم إشعارك عند توفر سيارة مطابقة',
+                    ku: 'کاتێک ئۆتۆمبێلێکی هاوتا دابنرێت ئاگادارت دەکەینەوە',
+                  )
+                : AppLocalizations.of(snackContext)!.saved,
+          ),
+          action: openSavedSearches
+              ? null
+              : SnackBarAction(
+                  label: _trLegacyText(
+                    snackContext,
+                    'View',
+                    ar: 'عرض',
+                    ku: 'بینین',
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      snackContext,
+                      AppPageRoute(
+                        builder: (_) => SavedSearchesPage(parentState: this),
+                      ),
+                    );
+                  },
+                ),
+        ),
       );
-      // Analytics tracking for saved search
-      // Navigate to saved searches for quick edit
-      Navigator.push(
-        context,
-        AppPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
-      );
+      if (openSavedSearches) {
+        Navigator.push(
+          context,
+          AppPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
+        );
+      }
     } catch (e, st) { logNonFatal(e, st); }
+  }
+
+  Future<bool> _prepareSavedSearchAction(BuildContext pageContext) async {
+    if (!AuthService().isAuthenticated) {
+      ScaffoldMessenger.of(pageContext).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(pageContext)!.loginRequired),
+          action: SnackBarAction(
+            label: _trLegacyText(
+              pageContext,
+              'Log in',
+              ar: 'تسجيل الدخول',
+              ku: 'چوونەژوورەوە',
+            ),
+            onPressed: () => Navigator.pushNamed(pageContext, '/login'),
+          ),
+        ),
+      );
+      return false;
+    }
+    if (!_homeFiltersSnapshot().hasActiveFilters) {
+      ScaffoldMessenger.of(pageContext).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(pageContext)!.noFiltersApplied),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _saveSearchFromFiltersPage(BuildContext pageContext) async {
+    if (!await _prepareSavedSearchAction(pageContext)) return;
+    await _saveCurrentSearch(
+      forceNotify: false,
+      openSavedSearches: false,
+      messengerContext: pageContext,
+    );
+  }
+
+  Future<void> _enableSearchMatchAlerts(BuildContext pageContext) async {
+    if (!await _prepareSavedSearchAction(pageContext)) return;
+    await _saveCurrentSearch(
+      forceNotify: true,
+      openSavedSearches: false,
+      messengerContext: pageContext,
+    );
   }
 
   // Get current filter state as a map

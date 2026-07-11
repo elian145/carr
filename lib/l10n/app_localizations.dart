@@ -1957,7 +1957,7 @@ abstract class AppLocalizations {
   /// No description provided for @noMessagesYet.
   ///
   /// In en, this message translates to:
-  /// **'No messages yet. Start a conversation!'**
+  /// **'No messages yet.'**
   String get noMessagesYet;
 
   /// No description provided for @timeDaysAgo.
@@ -2863,7 +2863,7 @@ abstract class AppLocalizations {
   /// No description provided for @savedSearchesHint.
   ///
   /// In en, this message translates to:
-  /// **'Your searches will be automatically saved here'**
+  /// **'Save a search from the Search page to get alerts for new matches'**
   String get savedSearchesHint;
 
   /// No description provided for @compareLabel.

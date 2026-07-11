@@ -33,6 +33,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
         _moreFiltersMinMaxRow(
           minField: DropdownButtonFormField<String>(
             isExpanded: true,
+            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
             initialValue: selectedMinPrice ?? '',
             decoration: _moreFiltersFilterFieldDecoration(style, loc.minPrice),
             items: [
@@ -69,6 +70,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
           ),
           maxField: DropdownButtonFormField<String>(
             isExpanded: true,
+            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
             initialValue: selectedMaxPrice ?? '',
             decoration: _moreFiltersFilterFieldDecoration(style, loc.maxPrice),
             items: [

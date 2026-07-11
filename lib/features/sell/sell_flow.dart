@@ -22,6 +22,7 @@ import '../../data/car_name_translations.dart';
 import '../../features/listing/car_listing_specs_grid.dart'
     as car_listing_specs_grid;
 import '../../shared/listings/listing_identity.dart' as listing_identity;
+import '../../features/listing/listing_spec_icons.dart';
 import '../../features/listing/listing_spec_item.dart';
 import '../../globals.dart';
 import '../../l10n/app_localizations.dart';

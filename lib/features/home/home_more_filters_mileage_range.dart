@@ -44,6 +44,7 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
         _moreFiltersMinMaxRow(
           minField: DropdownButtonFormField<String>(
             isExpanded: true,
+            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
             initialValue: (selectedMinMileage != null &&
                     selectedMinMileage!.isNotEmpty)
                 ? selectedMinMileage
@@ -85,6 +86,7 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
           ),
           maxField: DropdownButtonFormField<String>(
             isExpanded: true,
+            menuMaxHeight: _moreFiltersDropdownMenuMaxHeight(context),
             initialValue: (selectedMaxMileage != null &&
                     selectedMaxMileage!.isNotEmpty)
                 ? selectedMaxMileage

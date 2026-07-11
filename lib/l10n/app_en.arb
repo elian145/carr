@@ -344,7 +344,7 @@
   "joinLabel": "Join",
   "unknownSender": "Unknown",
   "justNow": "Just now",
-  "noMessagesYet": "No messages yet. Start a conversation!",
+  "noMessagesYet": "No messages yet.",
   "timeDaysAgo": "{count} days ago",
   "timeHoursAgo": "{count} hours ago",
   "timeMinutesAgo": "{count} minutes ago",
@@ -506,7 +506,7 @@
 
   "savedSearchesTitle": "Saved Searches",
   "noSavedSearchesYet": "No saved searches yet",
-  "savedSearchesHint": "Your searches will be automatically saved here",
+  "savedSearchesHint": "Save a search from the Search page to get alerts for new matches",
 
   "compareLabel": "compare +",
   "addedLabel": "Added",

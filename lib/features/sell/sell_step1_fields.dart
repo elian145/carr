@@ -12,6 +12,8 @@ abstract class _SellStep1Fields extends State<SellStep1Page> {
   bool errTrim = false;
   bool errYear = false;
   bool isYearManualInput = false;
+  bool isModelManualInput = false;
+  bool isTrimManualInput = false;
   bool brandsExpanded = false;
 
   CarSpecIndex? _specIdx;
@@ -27,5 +29,7 @@ abstract class _SellStep1Fields extends State<SellStep1Page> {
   // Controller for year input
   late TextEditingController _yearController;
   late TextEditingController _makeModelSearchController;
+  late TextEditingController _modelManualController;
+  late TextEditingController _trimManualController;
 
 }

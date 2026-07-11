@@ -974,7 +974,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get justNow => 'ئێستا';
 
   @override
-  String get noMessagesYet => 'هێشتا نامەیەک نییە. گفتوگۆیەک دەست پێبکە!';
+  String get noMessagesYet => 'هێشتا نامەیەک نییە.';
 
   @override
   String timeDaysAgo(Object count) {
@@ -1452,7 +1452,8 @@ class AppLocalizationsKu extends AppLocalizations {
   String get noSavedSearchesYet => 'هێشتا هیچ گەڕانێک پاشەکەوت نەکراوە';
 
   @override
-  String get savedSearchesHint => 'گەڕانەکانت خۆکارانە لێرە پاشەکەوت دەکرێن';
+  String get savedSearchesHint =>
+      'گەڕانێک لە پەڕەی گەڕان پاشەکەوت بکە بۆ ئاگاداری لە هاوتای نوێ';
 
   @override
   String get compareLabel => 'بەراورد +';
