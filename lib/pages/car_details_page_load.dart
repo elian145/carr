@@ -25,7 +25,7 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
       if (appliedFromNetwork && car != null) {
         _precacheListingImages();
         unawaited(_loadFavoriteStatus());
-        _loadSimilarAndRelated();
+        _loadSimilar();
         unawaited(sp.setString(cacheKey, json.encode(car)));
         _trackView();
         return;
@@ -92,14 +92,13 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
   }
 
 
-  Future<void> _loadSimilarAndRelated() async {
+  Future<void> _loadSimilar() async {
     if (car == null) return;
     final String brand = (car!['brand'] ?? '').toString().trim();
     if (brand.isEmpty) return;
     if (!mounted) return;
     setState(() {
       loadingSimilar = true;
-      loadingRelated = true;
     });
     try {
       final result = await loadCarDetailsRecommendations(
@@ -109,16 +108,14 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
       if (mounted) {
         setState(() {
           similarCars = result.similar;
-          relatedCars = result.related;
         });
       }
     } catch (e) {
-      appLog('Failed to load similar/related: $e');
+      appLog('Failed to load similar: $e');
     } finally {
       if (mounted) {
         setState(() {
           loadingSimilar = false;
-          loadingRelated = false;
         });
       }
     }

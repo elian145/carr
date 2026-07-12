@@ -7,6 +7,23 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                   stretch: true,
                   foregroundColor: isLightShell ? Colors.white : null,
                   expandedHeight: 300,
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(24),
+                    child: SizedBox(
+                      height: 24,
+                      width: double.infinity,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: isLightShell
+                              ? AppThemes.lightAppBackground
+                              : AppThemes.darkHomeShellBackground,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(24),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   leading: Semantics(
                     button: true,
                     label: AppLocalizations.of(context)!.backAction,
@@ -191,7 +208,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                         ),
                         if (_heroMediaCount > 1)
                           Positioned(
-                            bottom: 16,
+                            bottom: 36,
                             left: 0,
                             right: 0,
                             child: IgnorePointer(

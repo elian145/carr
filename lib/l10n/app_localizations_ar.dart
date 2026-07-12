@@ -522,8 +522,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsClearCaches => 'مسح الذاكرة المؤقتة';
 
   @override
-  String get settingsCachesSubtitle =>
-      'الرئيسية، التفاصيل، المفضلة، المشابهة/المرتبطة';
+  String get settingsCachesSubtitle => 'الرئيسية، التفاصيل، المفضلة، المشابهة';
 
   @override
   String get settingsCleared => 'تم مسح الذاكرة المؤقتة';
@@ -567,9 +566,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get similarListings => 'إعلانات مشابهة';
-
-  @override
-  String get relatedListings => 'إعلانات ذات صلة';
 
   @override
   String listingUploadPartialFail(Object code) {

@@ -50,16 +50,6 @@ void main() {
     });
   });
 
-  group('relatedListingQueryBands', () {
-    test('computes +/- bands', () {
-      final bands = relatedListingQueryBands({'price': 10000, 'year': 2020});
-      expect(bands.priceMin, 8500);
-      expect(bands.priceMax, 11500);
-      expect(bands.yearMin, 2018);
-      expect(bands.yearMax, 2022);
-    });
-  });
-
   group('listingIdentityIds', () {
     test('collects route and listing ids', () {
       final ids = listingIdentityIds(

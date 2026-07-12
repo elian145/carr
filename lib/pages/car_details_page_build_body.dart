@@ -6,14 +6,9 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
     return                 SliverToBoxAdapter(
                   child: Container(
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: isLightShell
-                          ? AppThemes.lightAppBackground
-                          : Colors.transparent,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(24),
-                      ),
-                    ),
+                    color: isLightShell
+                        ? AppThemes.lightAppBackground
+                        : AppThemes.darkHomeShellBackground,
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                     child: Theme(
                       data: isLightShell
@@ -335,47 +330,11 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                             CarDetailsHorizontalList(
                               items: similarCars,
                               listingColumnsPref: _listingColumnsPref,
-                              snapController: _similarSnapController,
                             ),
                             SizedBox(height: 28),
                           ] else if (loadingSimilar) ...[
                             Text(
                               AppLocalizations.of(context)!.similarListings,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isLightShell
-                                    ? AppThemes.darkHomeShellBackground
-                                    : Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            SizedBox(
-                              height: 120,
-                              child: Center(child: CircularProgressIndicator()),
-                            ),
-                            SizedBox(height: 28),
-                          ],
-                          if (relatedCars.isNotEmpty) ...[
-                            Text(
-                              AppLocalizations.of(context)!.relatedListings,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isLightShell
-                                    ? AppThemes.darkHomeShellBackground
-                                    : Colors.white,
-                              ),
-                            ),
-                            SizedBox(height: 12),
-                            CarDetailsHorizontalList(
-                              items: relatedCars,
-                              listingColumnsPref: _listingColumnsPref,
-                              snapController: _relatedSnapController,
-                            ),
-                          ] else if (loadingRelated) ...[
-                            Text(
-                              AppLocalizations.of(context)!.relatedListings,
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

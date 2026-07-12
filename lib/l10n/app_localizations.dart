@@ -1117,7 +1117,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCachesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Home, Details, Favorites, Similar/Related'**
+  /// **'Home, Details, Favorites, Similar'**
   String get settingsCachesSubtitle;
 
   /// No description provided for @settingsCleared.
@@ -1197,12 +1197,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Similar Listings'**
   String get similarListings;
-
-  /// No description provided for @relatedListings.
-  ///
-  /// In en, this message translates to:
-  /// **'Related Listings'**
-  String get relatedListings;
 
   /// No description provided for @listingUploadPartialFail.
   ///

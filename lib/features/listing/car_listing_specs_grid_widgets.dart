@@ -28,57 +28,69 @@ Widget carListingSpecsDetailRow(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          padding: const EdgeInsets.fromLTRB(12, 8, 20, 8),
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: iconCircleFill,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 20, color: brandOrange),
+                child: Icon(icon, size: 17, color: brandOrange),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: labelGrey,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 1.1,
-                      ),
-                    ),
-                    if (valueWidget == null && value != null) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        value!,
-                        style: TextStyle(
-                          color: onTap != null ? brandOrange : valueColor,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          height: 1.15,
-                        ),
-                      ),
-                    ],
-                  ],
+              Text(
+                label,
+                style: const TextStyle(
+                  color: labelGrey,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  height: 1.1,
                 ),
               ),
-              if (valueWidget != null)
-                valueWidget
-              else if (onTap != null)
+              if (valueWidget != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: valueWidget,
+                  ),
+                ),
+              ] else if (value != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    value!,
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: onTap != null ? brandOrange : valueColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                    ),
+                  ),
+                ),
+                if (onTap != null) ...[
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: brandOrange,
+                    size: 22,
+                  ),
+                ],
+              ] else if (onTap != null) ...[
+                const Spacer(),
                 const Icon(
                   Icons.chevron_right,
                   color: brandOrange,
                   size: 22,
                 ),
+              ],
             ],
           ),
         ),

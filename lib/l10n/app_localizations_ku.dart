@@ -523,8 +523,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get settingsClearCaches => 'پاککردنەوەی کەش';
 
   @override
-  String get settingsCachesSubtitle =>
-      'ماڵەوە، وردەکاری، دڵخواز، هاوشێوە/پەیوەندیدار';
+  String get settingsCachesSubtitle => 'ماڵەوە، وردەکاری، دڵخواز، هاوشێوە';
 
   @override
   String get settingsCleared => 'کەشی پاک کرا';
@@ -568,9 +567,6 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get similarListings => 'ڕێکلامی هاوشێوە';
-
-  @override
-  String get relatedListings => 'ڕێکلامی پەیوەندیدار';
 
   @override
   String listingUploadPartialFail(Object code) {

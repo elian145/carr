@@ -9,12 +9,14 @@ mixin _CarDetailsPageBuild on _CarDetailsPageBuildBody {
     return Scaffold(
       backgroundColor: isLightShell ? Colors.white : null,
       body: Stack(
+        clipBehavior: Clip.none,
         children: [
           loading
           ? Center(child: CircularProgressIndicator())
           : car == null
           ? Center(child: Text(AppLocalizations.of(context)!.carNotFound))
           : CustomScrollView(
+              clipBehavior: Clip.none,
               controller: _scrollController,
               slivers: [
                 _buildCarDetailsHeroSliver(context, isLightShell),

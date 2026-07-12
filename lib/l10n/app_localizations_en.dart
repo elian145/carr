@@ -523,8 +523,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsClearCaches => 'Clear Caches';
 
   @override
-  String get settingsCachesSubtitle =>
-      'Home, Details, Favorites, Similar/Related';
+  String get settingsCachesSubtitle => 'Home, Details, Favorites, Similar';
 
   @override
   String get settingsCleared => 'Caches cleared';
@@ -568,9 +567,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get similarListings => 'Similar Listings';
-
-  @override
-  String get relatedListings => 'Related Listings';
 
   @override
   String listingUploadPartialFail(Object code) {

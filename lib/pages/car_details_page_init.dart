@@ -22,8 +22,6 @@ mixin _CarDetailsPageInit on _CarDetailsPageLoad {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _imagePageController.dispose();
-    _similarSnapController.dispose();
-    _relatedSnapController.dispose();
     super.dispose();
   }
 }
