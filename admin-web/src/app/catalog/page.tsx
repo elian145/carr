@@ -253,7 +253,7 @@ export default function CatalogPage() {
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-surface-border bg-surface-card p-4">
           <p className="text-xs text-surface-muted">Brands</p>
           <p className="mt-1 text-2xl font-semibold">
@@ -264,6 +264,12 @@ export default function CatalogPage() {
           <p className="text-xs text-surface-muted">Models</p>
           <p className="mt-1 text-2xl font-semibold">
             {s ? `${s.active_models}/${s.models}` : "—"}
+          </p>
+        </div>
+        <div className="rounded-xl border border-surface-border bg-surface-card p-4">
+          <p className="text-xs text-surface-muted">Trims</p>
+          <p className="mt-1 text-2xl font-semibold">
+            {s ? `${s.active_trims ?? 0}/${s.trims ?? 0}` : "—"}
           </p>
         </div>
         <div className="rounded-xl border border-surface-border bg-surface-card p-4">
@@ -447,6 +453,9 @@ export default function CatalogPage() {
                                       }
                                     >
                                       {m.name}
+                                      {typeof m.trim_count === "number"
+                                        ? ` · ${m.trim_count} trim(s)`
+                                        : ""}
                                     </span>
                                     {canWrite ? (
                                       <button

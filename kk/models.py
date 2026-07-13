@@ -52,6 +52,8 @@ class User(db.Model):
     admin_role = db.Column(db.String(32), nullable=True)
     account_type = db.Column(db.String(20), nullable=False, default="user")  # user | dealer
     dealer_status = db.Column(db.String(20), nullable=False, default="none")  # none | pending | approved | rejected
+    # Ops flag: highlight approved dealers in browse/home (optional).
+    is_featured_dealer = db.Column(db.Boolean, default=False, nullable=False)
     dealership_name = db.Column(db.String(120), nullable=True)
     dealership_phone = db.Column(db.String(20), nullable=True)
     # JSON list: ["+9647....", "0750....", ...]
@@ -142,6 +144,7 @@ class User(db.Model):
             'dealership_latitude': self.dealership_latitude,
             'dealership_longitude': self.dealership_longitude,
             'dealership_opening_hours': self.dealership_opening_hours,
+            'is_featured_dealer': bool(getattr(self, "is_featured_dealer", False)),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }
@@ -920,9 +923,15 @@ class CatalogVehicleModel(db.Model):
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 
     brand = db.relationship("CatalogBrand", back_populates="models")
+    trims = db.relationship(
+        "CatalogTrim",
+        back_populates="model",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
 
-    def to_dict(self):
-        return {
+    def to_dict(self, include_trim_count: bool = False):
+        data = {
             "id": self.id,
             "brand_id": self.brand_id,
             "brand_name": self.brand.name if self.brand else None,
@@ -932,9 +941,47 @@ class CatalogVehicleModel(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+        if include_trim_count:
+            data["trim_count"] = self.trims.count()
+        return data
 
     def __repr__(self):
         return f"<CatalogVehicleModel {self.name}>"
+
+
+class CatalogTrim(db.Model):
+    """Optional trim level for a catalog model."""
+
+    __tablename__ = "catalog_trim"
+    __table_args__ = (
+        db.UniqueConstraint("model_id", "name", name="uq_catalog_trim_model_name"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    model_id = db.Column(
+        db.Integer, db.ForeignKey("catalog_vehicle_model.id"), nullable=False, index=True
+    )
+    name = db.Column(db.String(120), nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    model = db.relationship("CatalogVehicleModel", back_populates="trims")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "model_id": self.model_id,
+            "name": self.name,
+            "is_active": bool(self.is_active),
+            "sort_order": int(self.sort_order or 0),
+            "brand_name": self.model.brand.name if self.model and self.model.brand else None,
+            "model_name": self.model.name if self.model else None,
+        }
+
+    def __repr__(self):
+        return f"<CatalogTrim {self.name}>"
 
 
 class CatalogBodyType(db.Model):

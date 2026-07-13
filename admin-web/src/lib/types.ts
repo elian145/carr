@@ -19,6 +19,7 @@ export interface User {
   dealership_description?: string;
   dealership_cover_picture?: string;
   dealership_opening_hours?: string | Record<string, unknown>;
+  is_featured_dealer?: boolean;
   created_at?: string;
   last_login?: string;
   updated_at?: string;

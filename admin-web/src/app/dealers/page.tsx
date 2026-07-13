@@ -8,7 +8,7 @@ import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
 import { refreshNavBadges } from "@/components/NavBadges";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
-import { approveDealer, fetchDealers, rejectDealer } from "@/lib/api";
+import { approveDealer, fetchDealers, rejectDealer, setDealerFeatured } from "@/lib/api";
 import { displayName, formatDate, formatNumber } from "@/lib/format";
 import type { User } from "@/lib/types";
 
@@ -84,6 +84,29 @@ export default function DealersPage() {
       refreshNavBadges();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Reject failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleFeature(dealer: User) {
+    const next = !dealer.is_featured_dealer;
+    const ok = await confirm({
+      title: next ? "Feature this dealer?" : "Remove featured?",
+      description: next
+        ? `${displayName(dealer)} will be marked as a featured dealer.`
+        : `${displayName(dealer)} will no longer be featured.`,
+      confirmLabel: next ? "Feature" : "Unfeature",
+      tone: "brand",
+    });
+    if (!ok) return;
+    setBusyId(dealer.id);
+    try {
+      await setDealerFeatured(dealer.id, next);
+      toast.success(next ? "Dealer featured" : "Feature removed");
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Update failed");
     } finally {
       setBusyId(null);
     }
@@ -215,12 +238,27 @@ export default function DealersPage() {
                             </button>
                           </div>
                         ) : (
-                          <Link
-                            href={`/users/${d.id}`}
-                            className="text-xs text-brand-400 hover:underline"
-                          >
-                            Profile →
-                          </Link>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {d.dealer_status === "approved" ? (
+                              <button
+                                type="button"
+                                disabled={busyId === d.id}
+                                onClick={() => handleFeature(d)}
+                                className="rounded-lg border border-surface-border px-3 py-1.5 text-xs disabled:opacity-50"
+                              >
+                                {d.is_featured_dealer ? "Unfeature" : "Feature"}
+                              </button>
+                            ) : null}
+                            {d.is_featured_dealer ? (
+                              <span className="text-xs text-brand-300">Featured</span>
+                            ) : null}
+                            <Link
+                              href={`/users/${d.id}`}
+                              className="text-xs text-brand-400 hover:underline"
+                            >
+                              Profile →
+                            </Link>
+                          </div>
                         )}
                       </Td>
                     </tr>

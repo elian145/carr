@@ -367,6 +367,46 @@ def messages():
         return jsonify({"message": "Failed to get messages"}), 500
 
 
+@bp.route("/messages/thread", methods=["GET"])
+@admin_required
+def message_thread():
+    """Full conversation for a listing (car_id = public id)."""
+    try:
+        denied = _deny("messages")
+        if denied:
+            return denied
+        car_id = (request.args.get("car_id") or "").strip()
+        if not car_id:
+            return jsonify({"message": "car_id is required"}), 400
+        car = _find_car(car_id)
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+        rows = (
+            Message.query.options(
+                joinedload(Message.sender),
+                joinedload(Message.receiver),
+                joinedload(Message.car),
+            )
+            .filter(Message.car_id == car.id, Message.is_deleted.is_(False))
+            .order_by(Message.created_at.asc())
+            .limit(500)
+            .all()
+        )
+        return (
+            jsonify(
+                {
+                    "car": car.to_dict(),
+                    "messages": [m.to_dict() for m in rows],
+                    "count": len(rows),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("admin message_thread error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to load message thread"}), 500
+
+
 @bp.route("/notifications", methods=["GET"])
 @admin_required
 def notifications():
@@ -559,6 +599,43 @@ def dealers_reject(user_public_id: str):
         db.session.rollback()
         logger.error("admin dealers_reject error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to reject dealer application"}), 500
+
+
+@bp.route("/dealers/<user_public_id>/featured", methods=["PATCH"])
+@admin_required
+def dealers_set_featured(user_public_id: str):
+    """Toggle is_featured_dealer for an approved dealer."""
+    try:
+        denied = _deny("dealers")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        pid = (user_public_id or "").strip()
+        target = User.query.filter_by(public_id=pid).first()
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+        data = request.get_json(silent=True) or {}
+        if "is_featured_dealer" not in data:
+            return jsonify({"message": "is_featured_dealer is required"}), 400
+        featured = bool(data["is_featured_dealer"])
+        if featured and (target.dealer_status or "") != "approved":
+            return jsonify({"message": "Only approved dealers can be featured"}), 400
+        target.is_featured_dealer = featured
+        target.updated_at = utcnow()
+        db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_dealer_featured",
+                target_type="user",
+                target_id=pid,
+                metadata={"is_featured_dealer": featured},
+            )
+        return jsonify({"user": target.to_dict(include_private=True)}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin dealers_set_featured error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to update featured dealer"}), 500
 
 
 _VALID_REPORT_STATUSES = frozenset({"pending", "reviewed", "resolved", "dismissed"})
@@ -1400,6 +1477,121 @@ def delete_user(user_id: str):
         db.session.rollback()
         logger.error("admin delete_user error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to delete user"}), 500
+
+
+@bp.route("/cars/<car_id>/purge", methods=["DELETE"])
+@admin_required
+def purge_car(car_id: str):
+    """Permanently delete a listing and related rows (super_admin only)."""
+    try:
+        denied = _deny("purge")
+        if denied:
+            return denied
+        from ..favorites_cleanup import remove_listing_from_all_favorites
+        from ..view_history import remove_listing_from_all_view_history
+        from ..models import ListingAnalytics, ListingReport, SavedSearchAlert
+
+        admin_user = get_current_user()
+        car = _find_car(car_id)
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+        public_id = car.public_id or str(car.id)
+        car_pk = car.id
+
+        remove_listing_from_all_favorites(car_pk)
+        remove_listing_from_all_view_history(car_pk)
+        ListingReport.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
+        ListingAnalytics.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
+        SavedSearchAlert.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
+        Message.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
+        db.session.delete(car)
+        db.session.commit()
+
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_purge_listing",
+                target_type="car",
+                target_id=public_id,
+            )
+        return jsonify({"message": "Listing permanently deleted", "id": public_id}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin purge_car error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to purge listing"}), 500
+
+
+@bp.route("/users/<user_id>/purge", methods=["DELETE"])
+@admin_required
+def purge_user(user_id: str):
+    """Anonymize + deactivate a user permanently (super_admin). Keeps FK integrity."""
+    try:
+        denied = _deny("purge")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        if not admin_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        user = _find_user(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        if user.id == admin_user.id:
+            return jsonify({"message": "Cannot purge your own account"}), 400
+        if user.is_admin:
+            return jsonify({"message": "Cannot purge another admin account"}), 400
+
+        pid = user.public_id
+        suffix = pid.replace("-", "")[:8]
+        user.is_active = False
+        user.is_admin = False
+        user.admin_role = None
+        user.is_featured_dealer = False
+        user.username = f"deleted_{suffix}"
+        user.email = f"deleted_{suffix}@purged.local"
+        user.phone_number = f"deleted_{suffix}"
+        user.first_name = "Deleted"
+        user.last_name = "User"
+        user.profile_picture = None
+        user.firebase_token = None
+        user.dealership_name = None
+        user.dealership_phone = None
+        user.dealership_phones = None
+        user.dealership_description = None
+        user.dealership_cover_picture = None
+        user.dealer_status = "none"
+        user.account_type = "user"
+        user.updated_at = utcnow()
+
+        cars_updated = (
+            Car.query.filter_by(seller_id=user.id)
+            .filter(Car.is_active.is_(True))
+            .update(
+                {"is_active": False, "status": "hidden", "updated_at": utcnow()},
+                synchronize_session=False,
+            )
+        )
+        db.session.commit()
+        log_user_action(
+            admin_user,
+            "admin_purge_user",
+            target_type="user",
+            target_id=pid,
+            metadata={"listings_deactivated": int(cars_updated or 0)},
+        )
+        return (
+            jsonify(
+                {
+                    "message": "User purged (anonymized)",
+                    "listings_deactivated": int(cars_updated or 0),
+                    "user": user.to_dict(include_private=True),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin purge_user error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to purge user"}), 500
 
 
 @bp.route("/system/health", methods=["GET"])

@@ -499,6 +499,17 @@ export interface CatalogVehicleModel {
   name: string;
   is_active: boolean;
   sort_order: number;
+  trim_count?: number;
+}
+
+export interface CatalogTrim {
+  id: number;
+  model_id: number;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+  brand_name?: string | null;
+  model_name?: string | null;
 }
 
 export interface CatalogBodyType {
@@ -513,6 +524,8 @@ export async function fetchCatalogSummary(): Promise<{
   active_brands: number;
   models: number;
   active_models: number;
+  trims?: number;
+  active_trims?: number;
   body_types: number;
   active_body_types: number;
 }> {
@@ -612,5 +625,66 @@ export async function updateCatalogBodyType(
   return apiRequest(`/api/admin/catalog/body-types/${id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
+  });
+}
+
+export async function fetchCatalogTrims(
+  modelId: number,
+): Promise<{ model: CatalogVehicleModel; trims: CatalogTrim[] }> {
+  return apiRequest(`/api/admin/catalog/models/${modelId}/trims`);
+}
+
+export async function createCatalogTrim(payload: {
+  model_id: number;
+  name: string;
+  is_active?: boolean;
+}): Promise<{ trim: CatalogTrim }> {
+  return apiRequest("/api/admin/catalog/trims", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCatalogTrim(
+  id: number,
+  patch: { name?: string; is_active?: boolean; sort_order?: number },
+): Promise<{ trim: CatalogTrim }> {
+  return apiRequest(`/api/admin/catalog/trims/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function setDealerFeatured(
+  userId: string,
+  isFeatured: boolean,
+): Promise<{ user: User }> {
+  return apiRequest(`/api/admin/dealers/${encodeURIComponent(userId)}/featured`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_featured_dealer: isFeatured }),
+  });
+}
+
+export async function fetchMessageThread(carId: string): Promise<{
+  car: CarListing;
+  messages: Message[];
+  count: number;
+}> {
+  return apiRequest(
+    `/api/admin/messages/thread${buildQuery({ car_id: carId })}`,
+  );
+}
+
+export async function purgeListing(carId: string): Promise<{ message: string }> {
+  return apiRequest(`/api/admin/cars/${encodeURIComponent(carId)}/purge`, {
+    method: "DELETE",
+  });
+}
+
+export async function purgeUser(
+  userId: string,
+): Promise<{ message: string; listings_deactivated?: number }> {
+  return apiRequest(`/api/admin/users/${encodeURIComponent(userId)}/purge`, {
+    method: "DELETE",
   });
 }

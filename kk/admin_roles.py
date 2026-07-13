@@ -43,6 +43,7 @@ _PERMISSIONS: dict[str, frozenset[str]] = {
     "settings": frozenset({ROLE_SUPER_ADMIN}),
     "catalog.read": frozenset(VALID_ROLES),
     "catalog.write": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
+    "purge": frozenset({ROLE_SUPER_ADMIN}),
 }
 
 

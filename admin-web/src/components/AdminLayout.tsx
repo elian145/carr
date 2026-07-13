@@ -39,6 +39,7 @@ const NAV: NavItem[] = [
   { href: "/catalog", label: "Vehicle catalog" },
   { href: "/system", label: "System" },
   { href: "/settings", label: "Settings" },
+  { href: "/help", label: "Help" },
 ];
 
 function navForUser(user: User | null): NavItem[] {

@@ -17,6 +17,7 @@ export const NAV_PERMISSION: Record<string, string> = {
   "/system": "system",
   "/settings": "settings",
   "/catalog": "catalog.read",
+  "/help": "dashboard",
 };
 
 export const ADMIN_ROLE_LABELS: Record<string, string> = {

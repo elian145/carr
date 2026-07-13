@@ -154,13 +154,21 @@ export default function MessagesPage() {
                   </Td>
                   <Td>
                     {m.car_id ? (
-                      <Link
-                        href={`/listings/${m.car_id}`}
-                        className="text-xs text-brand-400 hover:underline"
-                        title={m.car_id}
-                      >
-                        View listing →
-                      </Link>
+                      <div className="flex flex-col gap-1">
+                        <Link
+                          href={`/messages/${m.car_id}`}
+                          className="text-xs text-brand-300 hover:underline"
+                        >
+                          Open thread →
+                        </Link>
+                        <Link
+                          href={`/listings/${m.car_id}`}
+                          className="text-xs text-surface-muted hover:underline"
+                          title={m.car_id}
+                        >
+                          Listing
+                        </Link>
+                      </div>
                     ) : (
                       "—"
                     )}

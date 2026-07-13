@@ -9,7 +9,7 @@ from flask import Blueprint, jsonify, request
 from ..auth import admin_required, get_current_user, log_user_action
 from ..admin_roles import assert_permission
 from ..catalog_service import seed_catalog
-from ..models import CatalogBodyType, CatalogBrand, CatalogVehicleModel, db
+from ..models import CatalogBodyType, CatalogBrand, CatalogTrim, CatalogVehicleModel, db
 from ..time_utils import utcnow
 
 bp = Blueprint("vehicle_catalog", __name__)
@@ -85,6 +85,33 @@ def public_body_types():
         return jsonify({"message": "Failed to load body types"}), 500
 
 
+@bp.route("/api/catalog/trims", methods=["GET"])
+def public_trims():
+    """Active trims for a brand+model (query: brand, model)."""
+    try:
+        brand_name = (request.args.get("brand") or "").strip()
+        model_name = (request.args.get("model") or "").strip()
+        if not brand_name or not model_name:
+            return jsonify({"message": "brand and model are required"}), 400
+        brand = CatalogBrand.query.filter_by(name=brand_name, is_active=True).first()
+        if not brand:
+            return jsonify({"trims": []}), 200
+        model = CatalogVehicleModel.query.filter_by(
+            brand_id=brand.id, name=model_name, is_active=True
+        ).first()
+        if not model:
+            return jsonify({"trims": []}), 200
+        rows = (
+            CatalogTrim.query.filter_by(model_id=model.id, is_active=True)
+            .order_by(CatalogTrim.sort_order.asc(), CatalogTrim.name.asc())
+            .all()
+        )
+        return jsonify({"trims": [t.to_dict() for t in rows]}), 200
+    except Exception as e:
+        logger.error("public catalog trims error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to load trims"}), 500
+
+
 # ── Admin catalog ────────────────────────────────────────────────────────────
 
 
@@ -102,6 +129,8 @@ def admin_catalog_summary():
                     "active_brands": CatalogBrand.query.filter_by(is_active=True).count(),
                     "models": CatalogVehicleModel.query.count(),
                     "active_models": CatalogVehicleModel.query.filter_by(is_active=True).count(),
+                    "trims": CatalogTrim.query.count(),
+                    "active_trims": CatalogTrim.query.filter_by(is_active=True).count(),
                     "body_types": CatalogBodyType.query.count(),
                     "active_body_types": CatalogBodyType.query.filter_by(is_active=True).count(),
                 }
@@ -262,7 +291,7 @@ def admin_list_models(brand_id: int):
             jsonify(
                 {
                     "brand": brand.to_dict(include_model_count=True),
-                    "models": [m.to_dict() for m in rows],
+                    "models": [m.to_dict(include_trim_count=True) for m in rows],
                 }
             ),
             200,
@@ -457,3 +486,112 @@ def admin_update_body_type(body_type_id: int):
         db.session.rollback()
         logger.error("admin update body type error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to update body type"}), 500
+
+
+@bp.route("/api/admin/catalog/models/<int:model_id>/trims", methods=["GET"])
+@admin_required
+def admin_list_trims(model_id: int):
+    try:
+        denied = _deny("catalog.read")
+        if denied:
+            return denied
+        model = CatalogVehicleModel.query.get(model_id)
+        if not model:
+            return jsonify({"message": "Model not found"}), 404
+        rows = (
+            CatalogTrim.query.filter_by(model_id=model_id)
+            .order_by(CatalogTrim.sort_order.asc(), CatalogTrim.name.asc())
+            .all()
+        )
+        return jsonify({"model": model.to_dict(include_trim_count=True), "trims": [t.to_dict() for t in rows]}), 200
+    except Exception as e:
+        logger.error("admin list trims error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to list trims"}), 500
+
+
+@bp.route("/api/admin/catalog/trims", methods=["POST"])
+@admin_required
+def admin_create_trim():
+    try:
+        denied = _deny("catalog.write")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        data = request.get_json(silent=True) or {}
+        model_id = data.get("model_id")
+        name = str(data.get("name") or "").strip()
+        if not model_id or not name:
+            return jsonify({"message": "model_id and name are required"}), 400
+        model = CatalogVehicleModel.query.get(int(model_id))
+        if not model:
+            return jsonify({"message": "Model not found"}), 404
+        if CatalogTrim.query.filter_by(model_id=model.id, name=name).first():
+            return jsonify({"message": "Trim already exists"}), 409
+        row = CatalogTrim(
+            model_id=model.id,
+            name=name,
+            is_active=_bool(data.get("is_active"), True),
+            sort_order=int(data.get("sort_order") or 0),
+            created_at=utcnow(),
+            updated_at=utcnow(),
+        )
+        db.session.add(row)
+        db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_catalog_create_trim",
+                target_type="catalog_trim",
+                target_id=str(row.id),
+                metadata={"model_id": model.id, "name": name},
+            )
+        return jsonify({"trim": row.to_dict()}), 201
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin create trim error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to create trim"}), 500
+
+
+@bp.route("/api/admin/catalog/trims/<int:trim_id>", methods=["PATCH"])
+@admin_required
+def admin_update_trim(trim_id: int):
+    try:
+        denied = _deny("catalog.write")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        row = CatalogTrim.query.get(trim_id)
+        if not row:
+            return jsonify({"message": "Trim not found"}), 404
+        data = request.get_json(silent=True) or {}
+        if "name" in data:
+            name = str(data.get("name") or "").strip()
+            if not name:
+                return jsonify({"message": "name cannot be empty"}), 400
+            clash = CatalogTrim.query.filter(
+                CatalogTrim.model_id == row.model_id,
+                CatalogTrim.name == name,
+                CatalogTrim.id != row.id,
+            ).first()
+            if clash:
+                return jsonify({"message": "Trim already exists"}), 409
+            row.name = name
+        if "is_active" in data:
+            row.is_active = bool(data["is_active"])
+        if "sort_order" in data:
+            row.sort_order = int(data["sort_order"] or 0)
+        row.updated_at = utcnow()
+        db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_catalog_update_trim",
+                target_type="catalog_trim",
+                target_id=str(row.id),
+                metadata=data,
+            )
+        return jsonify({"trim": row.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin update trim error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to update trim"}), 500

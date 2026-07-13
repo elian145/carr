@@ -12,6 +12,7 @@ import { useToast } from "@/context/ToastContext";
 import {
   deleteUser,
   fetchUserDetail,
+  purgeUser,
   updateUserAdminRole,
   updateUserStatus,
 } from "@/lib/api";
@@ -36,6 +37,7 @@ export default function UserDetailPage() {
   const [busy, setBusy] = useState(false);
   const canWriteUsers = hasPermission(me, "users.write");
   const canManageRoles = hasPermission(me, "users.role");
+  const canPurge = hasPermission(me, "purge");
 
   const { data, error, loading, reload } = useAsyncData(
     () => fetchUserDetail(userId),
@@ -91,6 +93,28 @@ export default function UserDetailPage() {
       reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePurge() {
+    const ok = await confirm({
+      title: "Permanently purge user?",
+      description:
+        "Anonymizes personal data, deactivates the account and their listings. Cannot purge admins. This cannot be undone.",
+      confirmLabel: "Purge forever",
+      tone: "danger",
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const result = await purgeUser(userId);
+      toast.success(result.message);
+      refreshNavBadges();
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Purge failed");
     } finally {
       setBusy(false);
     }
@@ -170,6 +194,16 @@ export default function UserDetailPage() {
                         className="rounded-lg border border-red-800/60 bg-red-950/40 px-4 py-2 text-sm text-red-200 hover:bg-red-900/40 disabled:opacity-50"
                       >
                         Soft-delete user
+                      </button>
+                    ) : null}
+                    {canPurge && !u.is_admin ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void handlePurge()}
+                        className="rounded-lg border border-red-900 bg-red-950/70 px-4 py-2 text-sm text-red-100 hover:bg-red-900/50 disabled:opacity-50"
+                      >
+                        Purge user
                       </button>
                     ) : null}
                   </div>

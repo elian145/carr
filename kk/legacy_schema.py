@@ -125,6 +125,7 @@ def ensure_minimal_schema_compat(app, db) -> None:
                     ("password", "TEXT"),
                     ("is_admin", "BOOLEAN DEFAULT 0"),
                     ("admin_role", "VARCHAR(32)"),
+                    ("is_featured_dealer", "BOOLEAN DEFAULT 0"),
                     ("is_active", "BOOLEAN DEFAULT 1"),
                     ("is_verified", "BOOLEAN DEFAULT 0"),
                     ("phone_verification_code_hash", "TEXT"),

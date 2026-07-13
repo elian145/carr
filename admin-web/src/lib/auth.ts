@@ -1,4 +1,5 @@
 const TOKEN_KEY = "carzo_admin_token";
+const AUTH_COOKIE = "carzo_admin_auth";
 
 /**
  * Browser calls go through the Next.js `/backend-api` rewrite (same-origin),
@@ -19,6 +20,20 @@ export function getPublicApiBase(): string {
   return base.replace(/\/+$/, "");
 }
 
+function setAuthCookie(present: boolean): void {
+  if (typeof document === "undefined") return;
+  if (present) {
+    // Flag cookie for Next middleware route protection (JWT stays in localStorage for API Bearer).
+    const secure =
+      typeof window !== "undefined" && window.location.protocol === "https:"
+        ? "; Secure"
+        : "";
+    document.cookie = `${AUTH_COOKIE}=1; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 14}${secure}`;
+  } else {
+    document.cookie = `${AUTH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  }
+}
+
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(TOKEN_KEY);
@@ -26,10 +41,12 @@ export function getToken(): string | null {
 
 export function setToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
+  setAuthCookie(true);
 }
 
 export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+  setAuthCookie(false);
 }
 
 export class ApiRequestError extends Error {

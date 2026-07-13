@@ -10,7 +10,7 @@ import { refreshNavBadges } from "@/components/NavBadges";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
-import { deleteListing, fetchListingDetail, updateListingStatus } from "@/lib/api";
+import { deleteListing, fetchListingDetail, purgeListing, updateListingStatus } from "@/lib/api";
 import { listingPublicUrl } from "@/lib/export";
 import { getFilterMeta } from "@/lib/filterMeta";
 import {
@@ -32,6 +32,7 @@ export default function ListingDetailPage() {
   const { user } = useAuth();
   const canWrite = hasPermission(user, "listings.write");
   const canDelete = hasPermission(user, "listings.delete");
+  const canPurge = hasPermission(user, "purge");
   const [busy, setBusy] = useState(false);
   const [statuses, setStatuses] = useState<string[]>(FALLBACK_STATUSES);
 
@@ -98,6 +99,28 @@ export default function ListingDetailPage() {
       router.push("/listings");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Delete failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePurge() {
+    const ok = await confirm({
+      title: "Permanently purge listing?",
+      description:
+        "Deletes the listing and related messages, reports, and analytics. This cannot be undone.",
+      confirmLabel: "Purge forever",
+      tone: "danger",
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      await purgeListing(carId);
+      toast.success("Listing purged");
+      refreshNavBadges();
+      router.push("/listings");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Purge failed");
     } finally {
       setBusy(false);
     }
@@ -184,6 +207,16 @@ export default function ListingDetailPage() {
                       className="rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-200 hover:bg-red-900/40 disabled:opacity-50"
                     >
                       Delete
+                    </button>
+                  ) : null}
+                  {canPurge ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void handlePurge()}
+                      className="rounded-lg border border-red-900 bg-red-950/70 px-3 py-2 text-sm text-red-100 hover:bg-red-900/50 disabled:opacity-50"
+                    >
+                      Purge
                     </button>
                   ) : null}
                 </div>
