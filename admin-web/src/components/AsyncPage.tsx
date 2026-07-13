@@ -6,8 +6,22 @@ import { RefreshButton } from "@/components/RefreshButton";
 
 export function LoadingBlock({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="rounded-xl border border-surface-border bg-surface-card px-6 py-16 text-center text-surface-muted">
-      {label}
+    <div
+      className="space-y-4"
+      role="status"
+      aria-live="polite"
+      aria-label={label}
+    >
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-24 animate-pulse rounded-xl border border-surface-border bg-surface-card"
+          />
+        ))}
+      </div>
+      <div className="h-64 animate-pulse rounded-xl border border-surface-border bg-surface-card" />
+      <p className="text-center text-sm text-surface-muted">{label}</p>
     </div>
   );
 }
@@ -20,8 +34,11 @@ export function ErrorBlock({
   onRetry?: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-red-900/50 bg-red-950/30 px-6 py-8">
-      <p className="font-medium text-red-300">Error</p>
+    <div
+      className="rounded-xl border border-red-900/50 bg-red-950/30 px-6 py-8"
+      role="alert"
+    >
+      <p className="font-medium text-red-300">Something went wrong</p>
       <p className="mt-2 text-sm text-red-200/80">{message}</p>
       {onRetry ? (
         <button
@@ -96,6 +113,10 @@ export function AsyncPageBody<T>({
   reload: () => void;
   children: (data: T) => React.ReactNode;
 }) {
+  const showInitialSkeleton = loading && !data;
+  const showError = !loading && error && !data;
+  const showStaleError = Boolean(error && data);
+
   return (
     <>
       <PageHeader
@@ -109,9 +130,25 @@ export function AsyncPageBody<T>({
           </>
         }
       />
-      {loading ? <LoadingBlock /> : null}
-      {!loading && error ? <ErrorBlock message={error} onRetry={reload} /> : null}
-      {!loading && !error && data ? children(data) : null}
+      {showInitialSkeleton ? <LoadingBlock /> : null}
+      {showError ? <ErrorBlock message={error!} onRetry={reload} /> : null}
+      {showStaleError ? (
+        <div className="mb-4 rounded-lg border border-amber-800/40 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
+          Refresh failed: {error}. Showing last loaded data.{" "}
+          <button
+            type="button"
+            onClick={reload}
+            className="underline hover:text-white"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+      {data ? (
+        <div className={loading ? "opacity-70 transition-opacity" : undefined}>
+          {children(data)}
+        </div>
+      ) : null}
     </>
   );
 }

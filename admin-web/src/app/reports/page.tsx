@@ -1,22 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { Suspense, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DataTable, Td, Th } from "@/components/DataTable";
 import { Pagination } from "@/components/Pagination";
+import { FilterSelect } from "@/components/FilterSelect";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
+import { refreshNavBadges } from "@/components/NavBadges";
+import { useConfirm } from "@/context/ConfirmContext";
+import { useToast } from "@/context/ToastContext";
 import { fetchReports, updateReport } from "@/lib/api";
 import { listingPublicUrl } from "@/lib/export";
 import { formatDate, listingTitle } from "@/lib/format";
+import { buildUrlQuery, paramPage, paramString } from "@/lib/urlParams";
 import type { AdminReport } from "@/lib/types";
 
 const STATUSES = ["pending", "reviewed", "resolved", "dismissed", "all"] as const;
+const TYPES = ["all", "user", "listing"] as const;
 
-export default function ReportsPage() {
-  const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<string>("pending");
+function ReportsPageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const toast = useToast();
+  const { confirm } = useConfirm();
+
+  const page = paramPage(searchParams);
+  const status = paramString(searchParams, "status", "pending");
+  const type = paramString(searchParams, "type", "all");
+
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notesFor, setNotesFor] = useState<AdminReport | null>(null);
   const [adminNotes, setAdminNotes] = useState("");
+
+  function replaceFilters(
+    patch: {
+      status?: string;
+      type?: string;
+      page?: number;
+    },
+    resetPage = true,
+  ) {
+    const nextStatus = patch.status ?? status;
+    const nextType = patch.type ?? type;
+    const nextPage = resetPage ? 1 : (patch.page ?? page);
+    router.replace(
+      `${pathname}${buildUrlQuery(
+        {
+          status: nextStatus === "pending" ? undefined : nextStatus,
+          type: nextType === "all" ? undefined : nextType,
+          page: nextPage > 1 ? nextPage : undefined,
+        },
+        { page: 1 },
+      )}`,
+    );
+  }
 
   const { data, error, loading, reload } = useAsyncData(
     () =>
@@ -24,9 +63,9 @@ export default function ReportsPage() {
         page,
         per_page: 20,
         status,
-        type: "all",
+        type,
       }),
-    [page, status],
+    [page, status, type],
   );
 
   async function handleStatus(
@@ -34,15 +73,29 @@ export default function ReportsPage() {
     newStatus: string,
     notes?: string,
   ) {
+    if (newStatus === "dismissed") {
+      const ok = await confirm({
+        title: "Dismiss report?",
+        description: "This marks the report as dismissed without further action.",
+        confirmLabel: "Dismiss",
+        tone: "warning",
+      });
+      if (!ok) return;
+    }
+
     const key = `${report.type}-${report.id}`;
     setBusyId(key);
     try {
       await updateReport(report.type, report.id, newStatus, notes);
       setNotesFor(null);
       setAdminNotes("");
+      toast.success(
+        newStatus === "resolved" ? "Report resolved" : "Report updated",
+      );
       reload();
+      refreshNavBadges();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Update failed");
+      toast.error(e instanceof Error ? e.message : "Update failed");
     } finally {
       setBusyId(null);
     }
@@ -58,20 +111,29 @@ export default function ReportsPage() {
       loading={loading}
       reload={reload}
       actions={
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-          className="rounded-lg border border-surface-border bg-black/30 px-3 py-2 text-sm"
-        >
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s.charAt(0).toUpperCase() + s.slice(1)}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          <FilterSelect
+            label="Type"
+            value={type}
+            onChange={(v) => replaceFilters({ type: v })}
+            options={TYPES.map((t) => ({
+              value: t,
+              label:
+                t === "all"
+                  ? "All types"
+                  : t.charAt(0).toUpperCase() + t.slice(1),
+            }))}
+          />
+          <FilterSelect
+            label="Status"
+            value={status}
+            onChange={(v) => replaceFilters({ status: v })}
+            options={STATUSES.map((s) => ({
+              value: s,
+              label: s.charAt(0).toUpperCase() + s.slice(1),
+            }))}
+          />
+        </div>
       }
     >
       {(result) => (
@@ -111,7 +173,19 @@ export default function ReportsPage() {
             </div>
           ) : null}
 
-          <DataTable empty={result.reports.length === 0}>
+          <DataTable
+            empty={result.reports.length === 0}
+            emptyTitle={
+              status === "pending"
+                ? "No pending reports"
+                : "No reports match these filters"
+            }
+            emptyDescription={
+              status === "pending"
+                ? "The moderation queue is clear. Great work."
+                : "Try another status or type filter."
+            }
+          >
             <thead>
               <tr>
                 <Th>Type</Th>
@@ -128,7 +202,9 @@ export default function ReportsPage() {
                 const subject =
                   r.type === "user"
                     ? r.reported_user?.username || "User report"
-                    : listingTitle(r.listing || {}) || r.listing?.id || "Listing report";
+                    : listingTitle(r.listing || {}) ||
+                      r.listing?.id ||
+                      "Listing report";
 
                 return (
                   <tr key={key}>
@@ -136,7 +212,7 @@ export default function ReportsPage() {
                     <Td>
                       <p className="font-medium">{subject}</p>
                       {r.details ? (
-                        <p className="mt-1 text-xs text-surface-muted line-clamp-2">
+                        <p className="mt-1 line-clamp-2 text-xs text-surface-muted">
                           {r.details}
                         </p>
                       ) : null}
@@ -146,14 +222,30 @@ export default function ReportsPage() {
                         </p>
                       ) : null}
                       {r.type === "listing" && r.listing?.id ? (
-                        <a
-                          href={listingPublicUrl(r.listing.id)}
-                          target="_blank"
-                          rel="noreferrer"
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <Link
+                            href={`/listings/${r.listing.id}`}
+                            className="text-xs text-brand-400 hover:underline"
+                          >
+                            Admin view →
+                          </Link>
+                          <a
+                            href={listingPublicUrl(r.listing.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-brand-400 hover:underline"
+                          >
+                            Public ↗
+                          </a>
+                        </div>
+                      ) : null}
+                      {r.type === "user" && r.reported_user?.id ? (
+                        <Link
+                          href={`/users/${r.reported_user.id}`}
                           className="mt-1 inline-block text-xs text-brand-400 hover:underline"
                         >
-                          View listing ↗
-                        </a>
+                          View user →
+                        </Link>
                       ) : null}
                     </Td>
                     <Td className="text-surface-muted">{r.reason || "—"}</Td>
@@ -162,7 +254,9 @@ export default function ReportsPage() {
                         {r.status}
                       </span>
                     </Td>
-                    <Td className="text-surface-muted">{formatDate(r.created_at)}</Td>
+                    <Td className="text-surface-muted">
+                      {formatDate(r.created_at)}
+                    </Td>
                     <Td>
                       {r.status === "pending" ? (
                         <div className="flex flex-wrap gap-1">
@@ -188,6 +282,14 @@ export default function ReportsPage() {
                           <button
                             type="button"
                             disabled={busyId === key}
+                            onClick={() => handleStatus(r, "reviewed")}
+                            className="rounded bg-sky-900/40 px-2 py-1 text-xs hover:bg-sky-900/60 disabled:opacity-50"
+                          >
+                            Mark reviewed
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busyId === key}
                             onClick={() => handleStatus(r, "dismissed")}
                             className="rounded bg-surface-border px-2 py-1 text-xs hover:bg-white/10 disabled:opacity-50"
                           >
@@ -203,9 +305,22 @@ export default function ReportsPage() {
               })}
             </tbody>
           </DataTable>
-          <Pagination pagination={result.pagination} onPageChange={setPage} />
+          <Pagination
+            pagination={result.pagination}
+            onPageChange={(p) =>
+              replaceFilters({ page: p > 1 ? p : undefined }, false)
+            }
+          />
         </>
       )}
     </AsyncPageBody>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={<p className="text-surface-muted">Loading reports…</p>}>
+      <ReportsPageInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,20 @@
 const TOKEN_KEY = "carzo_admin_token";
 
+/**
+ * Browser calls go through the Next.js `/backend-api` rewrite (same-origin),
+ * which proxies to the Flask API and avoids CORS failures.
+ * Server-side / tooling can still use NEXT_PUBLIC_API_BASE directly.
+ */
 export function getApiBase(): string {
+  if (typeof window !== "undefined") {
+    return "/backend-api";
+  }
+  const base = (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000").trim();
+  return base.replace(/\/+$/, "");
+}
+
+/** Absolute Flask origin for public listing links (not the proxy). */
+export function getPublicApiBase(): string {
   const base = (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000").trim();
   return base.replace(/\/+$/, "");
 }
@@ -42,7 +56,16 @@ export async function apiRequest<T>(
   }
 
   const url = `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
-  const res = await fetch(url, { ...options, headers });
+
+  let res: Response;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch {
+    throw new ApiRequestError(
+      `Cannot reach API via ${url}. Is the Flask server running, and is NEXT_PUBLIC_API_BASE / API_PROXY_TARGET correct?`,
+      0,
+    );
+  }
 
   let body: unknown = null;
   const text = await res.text();

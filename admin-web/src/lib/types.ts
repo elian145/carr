@@ -13,6 +13,10 @@ export interface User {
   dealership_name?: string;
   dealership_location?: string;
   dealership_phone?: string;
+  dealership_phones?: string[];
+  dealership_description?: string;
+  dealership_cover_picture?: string;
+  dealership_opening_hours?: string | Record<string, unknown>;
   created_at?: string;
   last_login?: string;
   updated_at?: string;
@@ -108,6 +112,10 @@ export interface Message {
   message_type?: string;
   is_read?: boolean;
   created_at?: string;
+  sender_name?: string;
+  sender_username?: string;
+  receiver_name?: string;
+  receiver_username?: string;
 }
 
 export interface Notification {

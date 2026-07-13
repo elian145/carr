@@ -1,4 +1,4 @@
-import { apiRequest } from "./auth";
+import { ApiRequestError, apiRequest } from "./auth";
 import { buildQuery } from "./query";
 import type {
   AdminReport,
@@ -114,6 +114,77 @@ export async function updateListingStatus(
   });
 }
 
+export async function bulkUpdateListingStatus(
+  ids: string[],
+  patch: { is_active?: boolean; status?: string; is_featured?: boolean },
+): Promise<{ updated: string[]; missing: string[]; message: string }> {
+  return apiRequest("/api/admin/cars/bulk-status", {
+    method: "POST",
+    body: JSON.stringify({ ids, ...patch }),
+  });
+}
+
+export async function broadcastNotification(payload: {
+  title: string;
+  message: string;
+  audience?: "all" | "dealers" | "users" | "user";
+  target_user_id?: string;
+  notification_type?: string;
+  send_push?: boolean;
+}): Promise<{
+  message: string;
+  created: number;
+  pushed: number;
+  push_configured: boolean;
+  audience: string;
+}> {
+  return apiRequest("/api/admin/notifications/broadcast", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteListing(carId: string): Promise<{ message: string }> {
+  return apiRequest(`/api/admin/cars/${encodeURIComponent(carId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteUser(
+  userId: string,
+): Promise<{ message: string; listings_deactivated?: number }> {
+  return apiRequest(`/api/admin/users/${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+}
+
+export interface SystemHealth {
+  status: string;
+  environment?: string;
+  checks: {
+    api: { ok: boolean };
+    database: { ok: boolean; error?: string | null };
+    redis: { configured: boolean; ok: boolean | null };
+    storage: { mode: string; r2_configured: boolean };
+    push: Record<string, unknown>;
+  };
+  counts: {
+    users: number;
+    active_users: number;
+    listings: number;
+    active_listings: number;
+    pending_reports: number;
+    pending_dealers: number;
+    messages: number;
+    notifications: number;
+  };
+  message?: string;
+}
+
+export async function fetchSystemHealth(): Promise<SystemHealth> {
+  return apiRequest<SystemHealth>("/api/admin/system/health");
+}
+
 export async function fetchReports(params: {
   page?: number;
   per_page?: number;
@@ -140,8 +211,57 @@ export async function updateReport(
 
 export async function fetchDealers(
   status = "all",
-): Promise<{ dealers: User[] }> {
-  return apiRequest(`/api/admin/dealers${buildQuery({ status })}`);
+  params: { page?: number; per_page?: number } = {},
+): Promise<{
+  dealers: User[];
+  pagination: Pagination;
+  counts: {
+    all: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+}> {
+  const page = params.page ?? 1;
+  const perPage = params.per_page ?? 20;
+  const raw = await apiRequest<{
+    dealers?: User[];
+    pagination?: Pagination;
+    counts?: {
+      all: number;
+      pending: number;
+      approved: number;
+      rejected: number;
+    };
+  }>(
+    `/api/admin/dealers${buildQuery({
+      status,
+      page,
+      per_page: perPage,
+    })}`,
+  );
+
+  const dealers = raw.dealers ?? [];
+  const total = raw.pagination?.total ?? dealers.length;
+  const pages = raw.pagination?.pages ?? Math.max(1, Math.ceil(total / perPage) || 1);
+
+  return {
+    dealers,
+    pagination: raw.pagination ?? {
+      page,
+      per_page: perPage,
+      total,
+      pages,
+      has_next: page < pages,
+      has_prev: page > 1,
+    },
+    counts: raw.counts ?? {
+      all: status === "all" ? total : 0,
+      pending: status === "pending" ? total : 0,
+      approved: status === "approved" ? total : 0,
+      rejected: status === "rejected" ? total : 0,
+    },
+  };
 }
 
 export async function fetchPendingDealers(): Promise<{ dealers: User[] }> {
@@ -186,6 +306,7 @@ export async function fetchUserActions(params: {
   action_type?: string;
   target_type?: string;
   user_id?: string;
+  scope?: "all" | "admin" | "user";
 }): Promise<{ actions: UserAction[]; pagination: Pagination }> {
   return apiRequest(`/api/admin/user-actions${buildQuery(params)}`);
 }
@@ -218,18 +339,64 @@ export interface NavBadges {
   auditLog: number;
 }
 
+const EMPTY_NAV_BADGES: NavBadges = {
+  pendingReports: 0,
+  pendingDealers: 0,
+  users: 0,
+  listings: 0,
+  dealers: 0,
+  messages: 0,
+  notifications: 0,
+  savedSearches: 0,
+  auditLog: 0,
+};
+
 export async function fetchNavBadges(): Promise<NavBadges> {
-  const dashboard = await fetchDashboard();
-  const s = dashboard.stats;
-  return {
-    pendingReports: s.pending_reports ?? 0,
-    pendingDealers: s.pending_dealers ?? 0,
-    users: s.total_users ?? 0,
-    listings: s.total_cars ?? 0,
-    dealers: s.dealer_accounts ?? 0,
-    messages: s.total_messages ?? 0,
-    notifications: s.total_notifications ?? 0,
-    savedSearches: s.total_saved_searches ?? 0,
-    auditLog: s.total_user_actions ?? 0,
-  };
+  try {
+    const s = await apiRequest<{
+      pending_reports?: number;
+      pending_dealers?: number;
+      users?: number;
+      listings?: number;
+      dealers?: number;
+      messages?: number;
+      notifications?: number;
+      saved_searches?: number;
+      audit_log?: number;
+    }>("/api/admin/meta/badges");
+    return {
+      pendingReports: s.pending_reports ?? 0,
+      pendingDealers: s.pending_dealers ?? 0,
+      users: s.users ?? 0,
+      listings: s.listings ?? 0,
+      dealers: s.dealers ?? 0,
+      messages: s.messages ?? 0,
+      notifications: s.notifications ?? 0,
+      savedSearches: s.saved_searches ?? 0,
+      auditLog: s.audit_log ?? 0,
+    };
+  } catch (first) {
+    // Network / CORS: don't fire a second request that will fail the same way.
+    if (first instanceof ApiRequestError && first.status === 0) {
+      return EMPTY_NAV_BADGES;
+    }
+    try {
+      // Older API deploys without /meta/badges
+      const dashboard = await fetchDashboard();
+      const s = dashboard.stats;
+      return {
+        pendingReports: s.pending_reports ?? 0,
+        pendingDealers: s.pending_dealers ?? 0,
+        users: s.total_users ?? 0,
+        listings: s.total_cars ?? 0,
+        dealers: s.dealer_accounts ?? 0,
+        messages: s.total_messages ?? 0,
+        notifications: s.total_notifications ?? 0,
+        savedSearches: s.total_saved_searches ?? 0,
+        auditLog: s.total_user_actions ?? 0,
+      };
+    } catch {
+      return EMPTY_NAV_BADGES;
+    }
+  }
 }

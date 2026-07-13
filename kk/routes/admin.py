@@ -148,6 +148,34 @@ def dashboard():
         return jsonify({"message": "Failed to get dashboard statistics"}), 500
 
 
+@bp.route("/meta/badges", methods=["GET"])
+@admin_required
+def meta_badges():
+    """Lightweight counts for sidebar badges (avoids full dashboard payload)."""
+    try:
+        pending_user_reports = UserReport.query.filter_by(status="pending").count()
+        pending_listing_reports = ListingReport.query.filter_by(status="pending").count()
+        return (
+            jsonify(
+                {
+                    "pending_reports": pending_user_reports + pending_listing_reports,
+                    "pending_dealers": User.query.filter(User.dealer_status == "pending").count(),
+                    "users": User.query.count(),
+                    "listings": Car.query.count(),
+                    "dealers": User.query.filter(User.account_type == "dealer").count(),
+                    "messages": Message.query.count(),
+                    "notifications": Notification.query.count(),
+                    "saved_searches": SavedSearch.query.count(),
+                    "audit_log": UserAction.query.count(),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("admin meta_badges error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to load badge counts"}), 500
+
+
 @bp.route("/users", methods=["GET"])
 @admin_required
 def users():
@@ -299,7 +327,11 @@ def messages():
         is_read = _bool_param("is_read")
         car_id = (request.args.get("car_id") or "").strip()
 
-        q = Message.query.filter(Message.is_deleted.is_(False))
+        q = Message.query.options(
+            joinedload(Message.sender),
+            joinedload(Message.receiver),
+            joinedload(Message.car),
+        ).filter(Message.is_deleted.is_(False))
         if search:
             q = q.filter(Message.content.ilike(f"%{search}%"))
         if is_read is not None:
@@ -374,8 +406,21 @@ def user_actions():
         action_type = (request.args.get("action_type") or "").strip()
         user_id = (request.args.get("user_id") or "").strip()
         target_type = (request.args.get("target_type") or "").strip()
+        scope = (request.args.get("scope") or "all").strip().lower()
 
         q = UserAction.query
+        if scope == "admin":
+            q = q.filter(
+                or_(
+                    UserAction.action_type.like("admin_%"),
+                    UserAction.action_type.like("dealer_%"),
+                )
+            )
+        elif scope == "user":
+            q = q.filter(
+                ~UserAction.action_type.like("admin_%"),
+                ~UserAction.action_type.like("dealer_%"),
+            )
         if action_type:
             q = q.filter(UserAction.action_type == action_type)
         if target_type:
@@ -726,6 +771,183 @@ def update_car_status(car_id: str):
         return jsonify({"message": "Failed to update listing"}), 500
 
 
+@bp.route("/cars/bulk-status", methods=["POST"])
+@admin_required
+def bulk_update_car_status():
+    """Apply the same status patch to multiple listings (max 50)."""
+    try:
+        admin_user = get_current_user()
+        data = request.get_json(silent=True) or {}
+        ids = data.get("ids") or []
+        if not isinstance(ids, list) or not ids:
+            return jsonify({"message": "ids array is required"}), 400
+        if len(ids) > 50:
+            return jsonify({"message": "Maximum 50 listings per bulk update"}), 400
+
+        patch = {}
+        if "is_active" in data:
+            patch["is_active"] = bool(data["is_active"])
+        if "is_featured" in data:
+            patch["is_featured"] = bool(data["is_featured"])
+        if "status" in data and str(data["status"]).strip():
+            patch["status"] = str(data["status"]).strip()
+        if not patch:
+            return jsonify({"message": "Provide is_active, is_featured, and/or status"}), 400
+
+        updated = []
+        missing = []
+        for raw_id in ids:
+            car = _find_car(str(raw_id))
+            if not car:
+                missing.append(str(raw_id))
+                continue
+            if "is_active" in patch:
+                car.is_active = patch["is_active"]
+            if "is_featured" in patch:
+                car.is_featured = patch["is_featured"]
+            if "status" in patch:
+                car.status = patch["status"]
+            car.updated_at = utcnow()
+            updated.append(car.public_id or str(car.id))
+
+        if not updated:
+            return jsonify({"message": "No matching listings found", "missing": missing}), 404
+
+        db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_bulk_update_listings",
+                target_type="car",
+                target_id=",".join(updated[:10]),
+                metadata={"patch": patch, "updated_count": len(updated), "missing": missing},
+            )
+        return (
+            jsonify(
+                {
+                    "message": f"Updated {len(updated)} listing(s)",
+                    "updated": updated,
+                    "missing": missing,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin bulk_update_car_status error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to bulk update listings"}), 500
+
+
+@bp.route("/notifications/broadcast", methods=["POST"])
+@admin_required
+def broadcast_notification():
+    """Create in-app notifications (and optional FCM push) for an audience."""
+    try:
+        from ..push import fcm_is_configured, send_push
+
+        admin_user = get_current_user()
+        data = request.get_json(silent=True) or {}
+        title = (data.get("title") or "").strip()
+        message = (data.get("message") or "").strip()
+        notification_type = (data.get("notification_type") or "admin").strip() or "admin"
+        audience = (data.get("audience") or "all").strip().lower()
+        target_user_id = (data.get("target_user_id") or "").strip()
+        send_push_flag = bool(data.get("send_push", True))
+
+        if not title or not message:
+            return jsonify({"message": "Title and message are required"}), 400
+        if len(title) > 200:
+            return jsonify({"message": "Title must be 200 characters or fewer"}), 400
+
+        if audience == "user" or target_user_id:
+            user = _find_user(target_user_id)
+            if not user:
+                return jsonify({"message": "Target user not found"}), 404
+            recipients = [user]
+        elif audience == "dealers":
+            recipients = (
+                User.query.filter(
+                    User.is_active.is_(True),
+                    or_(User.account_type == "dealer", User.dealer_status == "approved"),
+                )
+                .limit(5000)
+                .all()
+            )
+        elif audience == "users":
+            recipients = (
+                User.query.filter(
+                    User.is_active.is_(True),
+                    User.account_type != "dealer",
+                )
+                .limit(5000)
+                .all()
+            )
+        else:
+            recipients = User.query.filter(User.is_active.is_(True)).limit(5000).all()
+
+        created = 0
+        pushed = 0
+        push_ready = fcm_is_configured()
+        notif_data = {"source": "admin_broadcast", "audience": audience}
+
+        for user in recipients:
+            db.session.add(
+                Notification(
+                    user_id=user.id,
+                    title=title,
+                    message=message,
+                    notification_type=notification_type,
+                    is_read=False,
+                    data=notif_data,
+                )
+            )
+            created += 1
+            if send_push_flag and push_ready:
+                token = (getattr(user, "firebase_token", None) or "").strip()
+                if token and send_push(
+                    token,
+                    title=title,
+                    body=message,
+                    data={"type": notification_type, **notif_data},
+                ):
+                    pushed += 1
+            if created % 200 == 0:
+                db.session.commit()
+
+        db.session.commit()
+
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_broadcast_notification",
+                target_type="notification",
+                metadata={
+                    "title": title,
+                    "audience": audience,
+                    "created": created,
+                    "pushed": pushed,
+                    "send_push": send_push_flag,
+                },
+            )
+
+        return (
+            jsonify(
+                {
+                    "message": f"Notification created for {created} user(s)",
+                    "created": created,
+                    "pushed": pushed,
+                    "push_configured": push_ready,
+                    "audience": audience,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin broadcast_notification error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to broadcast notification"}), 500
+
+
 @bp.route("/users/<user_id>/status", methods=["PATCH"])
 @admin_required
 def update_user_status(user_id: str):
@@ -758,16 +980,36 @@ def update_user_status(user_id: str):
 @bp.route("/dealers", methods=["GET"])
 @admin_required
 def dealers_list():
-    """List dealer accounts with optional status filter."""
+    """List dealer accounts with optional status filter and pagination."""
     try:
+        page = request.args.get("page", 1, type=int)
+        per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
         status = (request.args.get("status") or "all").strip().lower()
-        q = User.query.filter(
+        base = User.query.filter(
             or_(User.account_type == "dealer", User.dealer_status != "none")
         )
+        counts = {
+            "all": base.count(),
+            "pending": base.filter(User.dealer_status == "pending").count(),
+            "approved": base.filter(User.dealer_status == "approved").count(),
+            "rejected": base.filter(User.dealer_status == "rejected").count(),
+        }
+        q = base
         if status != "all":
             q = q.filter(User.dealer_status == status)
-        rows = q.order_by(User.created_at.desc()).limit(500).all()
-        return jsonify({"dealers": [u.to_dict(include_private=True) for u in rows]}), 200
+        # Pending queue: oldest first so applications are reviewed in order
+        order = User.created_at.asc() if status == "pending" else User.created_at.desc()
+        pagination = q.order_by(order).paginate(page=page, per_page=per_page, error_out=False)
+        return (
+            jsonify(
+                {
+                    "dealers": [u.to_dict(include_private=True) for u in pagination.items],
+                    "pagination": _pagination_dict(pagination, page, per_page),
+                    "counts": counts,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("admin dealers_list error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to list dealers"}), 500
@@ -913,6 +1155,174 @@ def saved_searches():
     except Exception as e:
         logger.error("admin saved_searches error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to list saved searches"}), 500
+
+
+@bp.route("/cars/<car_id>", methods=["DELETE"])
+@admin_required
+def delete_car(car_id: str):
+    """Soft-delete a listing (hide from browse; keep row for audit)."""
+    try:
+        from ..favorites_cleanup import remove_listing_from_all_favorites
+        from ..view_history import remove_listing_from_all_view_history
+
+        admin_user = get_current_user()
+        car = _find_car(car_id)
+        if not car:
+            return jsonify({"message": "Listing not found"}), 404
+
+        remove_listing_from_all_favorites(car.id)
+        remove_listing_from_all_view_history(car.id)
+        car.is_active = False
+        if not (car.status or "").strip() or car.status == "active":
+            car.status = "hidden"
+        car.updated_at = utcnow()
+        db.session.commit()
+
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_delete_listing",
+                target_type="car",
+                target_id=car.public_id or str(car.id),
+            )
+        return jsonify({"message": "Listing soft-deleted", "car": car.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin delete_car error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to delete listing"}), 500
+
+
+@bp.route("/users/<user_id>", methods=["DELETE"])
+@admin_required
+def delete_user(user_id: str):
+    """Soft-delete a user: deactivate account and hide their listings."""
+    try:
+        admin_user = get_current_user()
+        if not admin_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        user = _find_user(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        if user.id == admin_user.id:
+            return jsonify({"message": "Cannot delete your own account"}), 400
+        if user.is_admin:
+            return jsonify({"message": "Cannot delete another admin account"}), 400
+
+        user.is_active = False
+        user.updated_at = utcnow()
+        cars_updated = (
+            Car.query.filter_by(seller_id=user.id)
+            .filter(Car.is_active.is_(True))
+            .update({"is_active": False, "updated_at": utcnow()}, synchronize_session=False)
+        )
+        db.session.commit()
+
+        log_user_action(
+            admin_user,
+            "admin_delete_user",
+            target_type="user",
+            target_id=user.public_id,
+            metadata={"listings_deactivated": int(cars_updated or 0)},
+        )
+        return (
+            jsonify(
+                {
+                    "message": "User deactivated",
+                    "listings_deactivated": int(cars_updated or 0),
+                    "user": user.to_dict(include_private=True),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin delete_user error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to delete user"}), 500
+
+
+@bp.route("/system/health", methods=["GET"])
+@admin_required
+def system_health():
+    """Admin ops snapshot: API/DB/push/storage readiness + key counts."""
+    try:
+        import os
+        from sqlalchemy import text
+
+        from ..push import fcm_public_status
+
+        db_ok = False
+        db_error = None
+        try:
+            db.session.execute(text("SELECT 1"))
+            db_ok = True
+        except Exception as exc:
+            db_error = str(exc)[:200]
+
+        redis_url = (os.environ.get("REDIS_URL") or "").strip()
+        redis_ok = None
+        if redis_url:
+            try:
+                import redis  # type: ignore
+
+                client = redis.from_url(redis_url, socket_connect_timeout=2)
+                redis_ok = bool(client.ping())
+            except Exception:
+                redis_ok = False
+
+        r2_ok = all(
+            (os.environ.get(k) or "").strip()
+            for k in (
+                "R2_ACCOUNT_ID",
+                "R2_BUCKET_NAME",
+                "R2_ACCESS_KEY_ID",
+                "R2_SECRET_ACCESS_KEY",
+                "R2_PUBLIC_URL",
+            )
+        )
+        upload_folder = (os.environ.get("UPLOAD_FOLDER") or "").strip()
+        storage = "r2" if r2_ok else ("disk" if upload_folder else "ephemeral")
+
+        push = fcm_public_status()
+        env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip()
+
+        return (
+            jsonify(
+                {
+                    "status": "ok" if db_ok else "degraded",
+                    "environment": env,
+                    "checks": {
+                        "api": {"ok": True},
+                        "database": {"ok": db_ok, "error": db_error},
+                        "redis": {
+                            "configured": bool(redis_url),
+                            "ok": redis_ok,
+                        },
+                        "storage": {
+                            "mode": storage,
+                            "r2_configured": r2_ok,
+                        },
+                        "push": push,
+                    },
+                    "counts": {
+                        "users": User.query.count(),
+                        "active_users": User.query.filter_by(is_active=True).count(),
+                        "listings": Car.query.count(),
+                        "active_listings": Car.query.filter_by(is_active=True).count(),
+                        "pending_reports": (
+                            UserReport.query.filter_by(status="pending").count()
+                            + ListingReport.query.filter_by(status="pending").count()
+                        ),
+                        "pending_dealers": User.query.filter(User.dealer_status == "pending").count(),
+                        "messages": Message.query.count(),
+                        "notifications": Notification.query.count(),
+                    },
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("admin system_health error: %s", e, exc_info=True)
+        return jsonify({"status": "error", "message": "Failed to load system health"}), 500
 
 
 @bp.route("/meta/filters", methods=["GET"])

@@ -89,6 +89,10 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     }
   }
 
+  void _selectSection(_DealerSection section) {
+    setState(() => _section = section);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -184,98 +188,89 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                   )
                 : ListView(
                     children: [
-                      SizedBox(
-                        height: bannerUrl.isNotEmpty ? 188 : 148,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned.fill(
-                              child: bannerUrl.isNotEmpty
-                                  ? Image.network(
-                                      bannerUrl,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              const ColoredBox(
-                                                color: Colors.black12,
-                                              ),
-                                    )
-                                  : const ColoredBox(color: Colors.black12),
-                            ),
-                            if (bannerUrl.isNotEmpty)
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.5),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            Positioned(
-                              left: 16,
-                              bottom: 12,
-                              child: Material(
-                                elevation: 6,
-                                shadowColor: Colors.black45,
-                                shape: const CircleBorder(),
-                                clipBehavior: Clip.antiAlias,
-                                child: CircleAvatar(
-                                  radius: 36,
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.surface,
-                                  child: CircleAvatar(
-                                    radius: 32,
-                                    backgroundImage: logoUrl.isNotEmpty
-                                        ? NetworkImage(logoUrl)
-                                        : null,
-                                    child: logoUrl.isEmpty
-                                        ? Text(
-                                            displayName.isNotEmpty
-                                                ? displayName[0].toUpperCase()
-                                                : 'D',
-                                            style: const TextStyle(
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      _buildDealerHero(
+                        bannerUrl: bannerUrl,
+                        logoUrl: logoUrl,
+                        displayName: displayName,
+                        isLightShell: isLightShell,
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               displayName,
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w800),
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.3,
+                                    height: 1.15,
+                                    color: isLightShell
+                                        ? AppThemes.darkHomeShellBackground
+                                        : const Color(0xFFF7F7F7),
+                                  ),
                             ),
+                            if (location.isNotEmpty ||
+                                _listings.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  if (location.isNotEmpty)
+                                    _metaChip(
+                                      icon: Icons.location_on_rounded,
+                                      label: location,
+                                      isLight: isLightShell,
+                                    ),
+                                  _metaChip(
+                                    icon: Icons.directions_car_filled_rounded,
+                                    label: _listings.length == 1
+                                        ? _tr(
+                                            '1 listing',
+                                            ar: 'إعلان واحد',
+                                            ku: '١ ڕێکلام',
+                                          )
+                                        : _tr(
+                                            '${_listings.length} listings',
+                                            ar: '${_listings.length} إعلانات',
+                                            ku: '${_listings.length} ڕێکلام',
+                                          ),
+                                    isLight: isLightShell,
+                                  ),
+                                ],
+                              ),
+                            ],
                             if (description.isNotEmpty) ...[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               Text(
                                 description,
-                                style: Theme.of(context).textTheme.bodySmall,
-                                maxLines: 3,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      height: 1.4,
+                                      color: isLightShell
+                                          ? const Color(0xFF5C5C5C)
+                                          : const Color(0xFFD8D8D8),
+                                    ),
+                                maxLines: 4,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
                             if (widget.allowOwnerEdit && isDealerOwner) ...[
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 14),
                               OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFFF6B00),
+                                  side: BorderSide(
+                                    color: const Color(
+                                      0xFFFF6B00,
+                                    ).withValues(alpha: 0.45),
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
                                 onPressed: () async {
                                   final changed = await Navigator.push<bool>(
                                     context,
@@ -287,7 +282,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                     await _load();
                                   }
                                 },
-                                icon: const Icon(Icons.edit_outlined),
+                                icon: const Icon(Icons.edit_outlined, size: 18),
                                 label: Text(
                                   _tr(
                                     'Edit dealer page',
@@ -297,171 +292,57 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 12),
-                            if (AppResponsive.isCompactPhone(context))
-                              DropdownButtonFormField<_DealerSection>(
-                                initialValue: _section,
-                                isExpanded: true,
-                                items: [
-                                  DropdownMenuItem(
-                                    value: _DealerSection.listings,
-                                    child: Text(
-                                      _tr(
-                                        'Listings',
-                                        ar: 'الإعلانات',
-                                        ku: 'ڕێکلامەکان',
-                                      ),
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: _DealerSection.about,
-                                    child: Text(
-                                      _tr('About', ar: 'حول', ku: 'دەربارە'),
-                                    ),
-                                  ),
-                                ],
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  setState(() => _section = value);
-                                },
-                              )
-                            else
-                              SegmentedButton<_DealerSection>(
-                                segments: [
-                                  ButtonSegment(
-                                    value: _DealerSection.listings,
-                                    label: Text(
-                                      _tr(
-                                        'Listings',
-                                        ar: 'الإعلانات',
-                                        ku: 'ڕێکلامەکان',
-                                      ),
-                                    ),
-                                  ),
-                                  ButtonSegment(
-                                    value: _DealerSection.about,
-                                    label: Text(
-                                      _tr('About', ar: 'حول', ku: 'دەربارە'),
-                                    ),
-                                  ),
-                                ],
-                                selected: {_section},
-                                onSelectionChanged: (s) {
-                                  if (s.isEmpty) return;
-                                  setState(() => _section = s.first);
-                                },
+                            const SizedBox(height: 16),
+                            _buildSectionControl(isLightShell),
+                            const SizedBox(height: 16),
+                            if (_section == _DealerSection.about)
+                              _buildAboutSection(
+                                phones: phones,
+                                email: email,
+                                location: location,
+                                mapLat: mapLat,
+                                mapLng: mapLng,
+                                openingHours: openingHours,
+                                isLightShell: isLightShell,
                               ),
-                            const SizedBox(height: 12),
-                            if (_section == _DealerSection.about) ...[
-                              if (phones.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      for (var i = 0; i < phones.length; i++)
-                                        Padding(
-                                          padding: EdgeInsets.only(
-                                            top: i == 0 ? 0 : 8,
-                                          ),
-                                          child: Tooltip(
-                                            message: _tr(
-                                              'Tap to call • Hold to copy',
-                                              ar: 'اضغط للاتصال • اضغط مطولاً للنسخ',
-                                              ku: 'کرتە بکە بۆ پەیوەندی • چەند چرکە هەڵبگرە بۆ کۆپی',
-                                            ),
-                                            child: SizedBox(
-                                              width: double.infinity,
-                                              child: FilledButton.icon(
-                                                onPressed: () =>
-                                                    _callDealer(phones[i]),
-                                                onLongPress: () => _copyToClipboard(
-                                                  phones[i],
-                                                  _tr(
-                                                    'Phone number copied to clipboard',
-                                                    ar: 'تم نسخ رقم الهاتف',
-                                                    ku: 'ژمارەی تەلەفۆن کۆپی کرا',
-                                                  ),
-                                                ),
-                                                icon: const Icon(
-                                                  Icons.phone_outlined,
-                                                ),
-                                                label: Text(
-                                                  phones[i],
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              _infoRow(
-                                Icons.location_on_outlined,
-                                _tr('Location', ar: 'الموقع', ku: 'شوێن'),
-                                location,
-                              ),
-                              if (mapLat != null &&
-                                  mapLng != null &&
-                                  isValidDealerLatLng(mapLat, mapLng)) ...[
-                                const SizedBox(height: 10),
-                                DealerLocationMapPreview(
-                                  latitude: mapLat,
-                                  longitude: mapLng,
-                                  onOpenInGoogleMaps: () =>
-                                      _openDealerOnGoogleMaps(mapLat, mapLng),
-                                ),
-                              ],
-                              if (email.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Tooltip(
-                                    message: _tr(
-                                      'Tap to send email • Hold to copy',
-                                      ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ',
-                                      ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی',
-                                    ),
-                                    child: SizedBox(
-                                      width: double.infinity,
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _emailDealer(email),
-                                        onLongPress: () => _copyToClipboard(
-                                          email,
-                                          _tr(
-                                            'Email copied to clipboard',
-                                            ar: 'تم نسخ البريد الإلكتروني',
-                                            ku: 'ئیمەیل کۆپی کرا',
-                                          ),
-                                        ),
-                                        icon: const Icon(Icons.email_outlined),
-                                        label: Text(
-                                          email,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              _openingHoursTable(openingHours),
-                            ],
                           ],
                         ),
                       ),
                       if (_section == _DealerSection.listings) ...[
-                        const Divider(height: 1),
                         if (_listings.isEmpty)
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
-                              _tr(
-                                'No active vehicles right now.',
-                                ar: 'لا توجد مركبات نشطة حالياً.',
-                                ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 28,
+                              ),
+                              decoration: _softCardDecoration(isLightShell),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.directions_car_outlined,
+                                    size: 36,
+                                    color: const Color(
+                                      0xFFFF6B00,
+                                    ).withValues(alpha: 0.7),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    _tr(
+                                      'No active vehicles right now.',
+                                      ar: 'لا توجد مركبات نشطة حالياً.',
+                                      ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: isLightShell
+                                          ? const Color(0xFF5C5C5C)
+                                          : Colors.white70,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           )
@@ -482,9 +363,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 physics: const NeverScrollableScrollPhysics(),
                                 padding: EdgeInsets.fromLTRB(
                                   listingColumns == 1 ? 4 : 12,
-                                  12,
+                                  0,
                                   listingColumns == 1 ? 4 : 12,
-                                  12,
+                                  16,
                                 ),
                                 gridDelegate:
                                     SliverGridDelegateWithFixedCrossAxisCount(

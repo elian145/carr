@@ -131,7 +131,12 @@ export default function DashboardPage() {
                     {dashboard.recent_activity.cars.map((c) => (
                       <tr key={c.id} className="hover:bg-white/[0.02]">
                         <Td>
-                          <p className="font-medium">{listingTitle(c)}</p>
+                          <Link
+                            href={`/listings/${c.id}`}
+                            className="font-medium text-brand-300 hover:underline"
+                          >
+                            {listingTitle(c)}
+                          </Link>
                           <p className="text-xs text-surface-muted">{c.location}</p>
                         </Td>
                         <Td className="text-surface-muted">{formatDate(c.created_at)}</Td>

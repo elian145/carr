@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { fetchNavBadges, type NavBadges } from "@/lib/api";
+import { getToken } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 
 const EMPTY_BADGES: NavBadges = {
@@ -16,19 +18,47 @@ const EMPTY_BADGES: NavBadges = {
   auditLog: 0,
 };
 
-export function useNavBadges() {
-  const [badges, setBadges] = useState<NavBadges>(EMPTY_BADGES);
+const REFRESH_EVENT = "carnet-nav-badges-refresh";
 
-  useEffect(() => {
+/** Call after moderation actions so sidebar counts stay current. */
+export function refreshNavBadges() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(REFRESH_EVENT));
+  }
+}
+
+export function useNavBadges() {
+  const { user } = useAuth();
+  const [badges, setBadges] = useState<NavBadges>(EMPTY_BADGES);
+  const [tick, setTick] = useState(0);
+
+  const load = useCallback(() => {
+    if (!user || !getToken()) {
+      setBadges(EMPTY_BADGES);
+      return () => {};
+    }
+
     let cancelled = false;
     fetchNavBadges()
       .then((b) => {
         if (!cancelled) setBadges(b);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setBadges(EMPTY_BADGES);
+      });
     return () => {
       cancelled = true;
     };
+  }, [user]);
+
+  useEffect(() => {
+    return load();
+  }, [load, tick]);
+
+  useEffect(() => {
+    const onRefresh = () => setTick((t) => t + 1);
+    window.addEventListener(REFRESH_EVENT, onRefresh);
+    return () => window.removeEventListener(REFRESH_EVENT, onRefresh);
   }, []);
 
   return badges;

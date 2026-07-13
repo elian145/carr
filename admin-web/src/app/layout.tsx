@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/context/AuthContext";
+import { ConfirmProvider } from "@/context/ConfirmContext";
+import { ToastProvider } from "@/context/ToastContext";
 import { AdminLayout } from "@/components/AdminLayout";
 import "./globals.css";
 
@@ -17,7 +19,11 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <AdminLayout>{children}</AdminLayout>
+          <ToastProvider>
+            <ConfirmProvider>
+              <AdminLayout>{children}</AdminLayout>
+            </ConfirmProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,23 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DataTable, Td, Th } from "@/components/DataTable";
 import { Pagination } from "@/components/Pagination";
 import { FilterSelect } from "@/components/FilterSelect";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
-import { fetchUsers } from "@/lib/api";
-import { downloadCsv } from "@/lib/export";
+import { fetchUsers, type UserListParams } from "@/lib/api";
+import { exportAllPagesCsv } from "@/lib/export";
 import { displayName, formatDate } from "@/lib/format";
+import type { User } from "@/lib/types";
+import { useToast } from "@/context/ToastContext";
+import {
+  buildUrlQuery,
+  paramPage,
+  paramString,
+} from "@/lib/urlParams";
 
-export default function UsersPage() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
-  const [accountType, setAccountType] = useState("all");
-  const [dealerStatus, setDealerStatus] = useState("all");
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [adminFilter, setAdminFilter] = useState("all");
+function UsersPageInner() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const toast = useToast();
+
+  const page = paramPage(searchParams);
+  const query = paramString(searchParams, "q");
+  const accountType = paramString(searchParams, "account_type", "all");
+  const dealerStatus = paramString(searchParams, "dealer_status", "all");
+  const activeFilter = paramString(searchParams, "active", "all");
+  const adminFilter = paramString(searchParams, "admin", "all");
+
+  const [search, setSearch] = useState(query);
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    setSearch(query);
+  }, [query]);
+
+  function replaceFilters(
+    patch: Record<string, string | number | boolean | undefined | null>,
+    resetPage = true,
+  ) {
+    const next = {
+      q: query || undefined,
+      account_type: accountType !== "all" ? accountType : undefined,
+      dealer_status: dealerStatus !== "all" ? dealerStatus : undefined,
+      active: activeFilter !== "all" ? activeFilter : undefined,
+      admin: adminFilter !== "all" ? adminFilter : undefined,
+      page: resetPage ? undefined : page > 1 ? page : undefined,
+      ...patch,
+    };
+    router.replace(
+      `${pathname}${buildUrlQuery(next, {
+        account_type: "all",
+        dealer_status: "all",
+        active: "all",
+        admin: "all",
+        page: 1,
+      })}`,
+    );
+  }
 
   const { data, error, loading, reload } = useAsyncData(
     () =>
@@ -33,6 +76,56 @@ export default function UsersPage() {
     [page, query, accountType, dealerStatus, activeFilter, adminFilter],
   );
 
+  const listParams: UserListParams = {
+    search: query || undefined,
+    account_type: accountType !== "all" ? accountType : undefined,
+    dealer_status: dealerStatus !== "all" ? dealerStatus : undefined,
+    is_active: activeFilter === "all" ? undefined : activeFilter === "active",
+    is_admin: adminFilter === "all" ? undefined : adminFilter === "yes",
+  };
+
+  async function handleExportAll() {
+    setExporting(true);
+    try {
+      const count = await exportAllPagesCsv<User>({
+        filename: `carnet-users-${new Date().toISOString().slice(0, 10)}.csv`,
+        headers: [
+          "Name",
+          "Username",
+          "Email",
+          "Phone",
+          "Type",
+          "Active",
+          "Admin",
+          "Joined",
+        ],
+        mapRow: (u) => [
+          displayName(u),
+          u.username || "",
+          u.email || "",
+          u.phone_number || "",
+          u.account_type || "user",
+          u.is_active ? "yes" : "no",
+          u.is_admin ? "yes" : "no",
+          u.created_at || "",
+        ],
+        fetchPage: async (p, perPage) => {
+          const res = await fetchUsers({
+            page: p,
+            per_page: perPage,
+            ...listParams,
+          });
+          return { items: res.users, pagination: res.pagination };
+        },
+      });
+      toast.success(`Exported ${count} user(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <AsyncPageBody
       title="Users"
@@ -45,27 +138,11 @@ export default function UsersPage() {
       actions={
         <button
           type="button"
-          disabled={!data?.users.length}
-          onClick={() => {
-            if (!data) return;
-            downloadCsv(
-              `carnet-users-page-${page}.csv`,
-              ["Name", "Username", "Email", "Phone", "Type", "Active", "Admin", "Joined"],
-              data.users.map((u) => [
-                displayName(u),
-                u.username || "",
-                u.email || "",
-                u.phone_number || "",
-                u.account_type || "user",
-                u.is_active ? "yes" : "no",
-                u.is_admin ? "yes" : "no",
-                u.created_at || "",
-              ]),
-            );
-          }}
+          disabled={exporting || !data?.users.length}
+          onClick={handleExportAll}
           className="rounded-lg border border-surface-border px-3 py-2 text-sm hover:bg-white/5 disabled:opacity-40"
         >
-          Export CSV
+          {exporting ? "Exporting…" : "Export CSV"}
         </button>
       }
     >
@@ -80,8 +157,7 @@ export default function UsersPage() {
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    setPage(1);
-                    setQuery(search.trim());
+                    replaceFilters({ q: search.trim() || undefined });
                   }
                 }}
                 placeholder="Name, email, phone, username…"
@@ -91,7 +167,9 @@ export default function UsersPage() {
             <FilterSelect
               label="Account"
               value={accountType}
-              onChange={(v) => { setAccountType(v); setPage(1); }}
+              onChange={(v) =>
+                replaceFilters({ account_type: v === "all" ? undefined : v })
+              }
               options={[
                 { value: "all", label: "All" },
                 { value: "user", label: "User" },
@@ -101,7 +179,9 @@ export default function UsersPage() {
             <FilterSelect
               label="Dealer status"
               value={dealerStatus}
-              onChange={(v) => { setDealerStatus(v); setPage(1); }}
+              onChange={(v) =>
+                replaceFilters({ dealer_status: v === "all" ? undefined : v })
+              }
               options={[
                 { value: "all", label: "All" },
                 { value: "none", label: "None" },
@@ -113,7 +193,9 @@ export default function UsersPage() {
             <FilterSelect
               label="Active"
               value={activeFilter}
-              onChange={(v) => { setActiveFilter(v); setPage(1); }}
+              onChange={(v) =>
+                replaceFilters({ active: v === "all" ? undefined : v })
+              }
               options={[
                 { value: "all", label: "All" },
                 { value: "active", label: "Active" },
@@ -123,7 +205,9 @@ export default function UsersPage() {
             <FilterSelect
               label="Admin"
               value={adminFilter}
-              onChange={(v) => { setAdminFilter(v); setPage(1); }}
+              onChange={(v) =>
+                replaceFilters({ admin: v === "all" ? undefined : v })
+              }
               options={[
                 { value: "all", label: "All" },
                 { value: "yes", label: "Admins" },
@@ -132,14 +216,18 @@ export default function UsersPage() {
             />
             <button
               type="button"
-              onClick={() => { setPage(1); setQuery(search.trim()); }}
+              onClick={() => replaceFilters({ q: search.trim() || undefined })}
               className="rounded-lg bg-brand-600 px-4 py-2 text-sm"
             >
               Search
             </button>
           </div>
 
-          <DataTable empty={result.users.length === 0}>
+          <DataTable
+            empty={result.users.length === 0}
+            emptyTitle="No users found"
+            emptyDescription="Adjust search or account filters and try again."
+          >
             <thead>
               <tr>
                 <Th>Name</Th>
@@ -155,7 +243,10 @@ export default function UsersPage() {
               {result.users.map((u) => (
                 <tr key={u.id} className="hover:bg-white/[0.02]">
                   <Td>
-                    <Link href={`/users/${u.id}`} className="font-medium text-brand-300 hover:underline">
+                    <Link
+                      href={`/users/${u.id}`}
+                      className="font-medium text-brand-300 hover:underline"
+                    >
                       {displayName(u)}
                     </Link>
                     <p className="text-xs text-surface-muted">{u.username}</p>
@@ -166,13 +257,18 @@ export default function UsersPage() {
                   </Td>
                   <Td>
                     {u.account_type || "user"}
-                    {u.dealer_status && u.dealer_status !== "none" ? ` (${u.dealer_status})` : ""}
+                    {u.dealer_status && u.dealer_status !== "none"
+                      ? ` (${u.dealer_status})`
+                      : ""}
                   </Td>
                   <Td>{u.is_active ? "Active" : "Inactive"}</Td>
                   <Td>{u.is_admin ? "Yes" : "—"}</Td>
                   <Td className="text-surface-muted">{formatDate(u.created_at)}</Td>
                   <Td>
-                    <Link href={`/users/${u.id}`} className="text-xs text-brand-400 hover:underline">
+                    <Link
+                      href={`/users/${u.id}`}
+                      className="text-xs text-brand-400 hover:underline"
+                    >
                       Details →
                     </Link>
                   </Td>
@@ -180,9 +276,22 @@ export default function UsersPage() {
               ))}
             </tbody>
           </DataTable>
-          <Pagination pagination={result.pagination} onPageChange={setPage} />
+          <Pagination
+            pagination={result.pagination}
+            onPageChange={(p) =>
+              replaceFilters({ page: p > 1 ? p : undefined }, false)
+            }
+          />
         </>
       )}
     </AsyncPageBody>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <Suspense fallback={<p className="text-surface-muted">Loading users…</p>}>
+      <UsersPageInner />
+    </Suspense>
   );
 }

@@ -85,20 +85,492 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     return '';
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
+  static const Color _brandOrange = Color(0xFFFF6B00);
+  static const Color _iconCircleFillLight = Color(0xFFFFF0E6);
+  static const Color _iconCircleFillDark = Color(0xFFFFE8D6);
+
+  BoxDecoration _softCardDecoration(bool isLight) {
+    return BoxDecoration(
+      color: isLight
+          ? Colors.white
+          : Color.alphaBlend(
+              Colors.white.withValues(alpha: 0.07),
+              AppThemes.darkHomeShellBackground,
+            ),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: isLight
+            ? const Color(0xFFE0E0E0)
+            : Colors.white.withValues(alpha: 0.12),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.35),
+          blurRadius: isLight ? 12 : 18,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDealerHero({
+    required String bannerUrl,
+    required String logoUrl,
+    required String displayName,
+    required bool isLightShell,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final sheetColor = isLightShell
+        ? AppThemes.lightAppBackground
+        : AppThemes.darkHomeShellBackground;
+
+    return SizedBox(
+      height: (bannerUrl.isNotEmpty ? 220 : 168) + 36,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: bannerUrl.isNotEmpty ? 220 : 168,
+            child: bannerUrl.isNotEmpty
+                ? Image.network(
+                    bannerUrl,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                    errorBuilder: (context, error, stackTrace) => ColoredBox(
+                      color: scheme.surfaceContainerHighest,
+                      child: Icon(
+                        Icons.storefront_rounded,
+                        size: 56,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : ColoredBox(
+                    color: scheme.surfaceContainerHighest,
+                    child: Center(
+                      child: Icon(
+                        Icons.storefront_rounded,
+                        size: 56,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: bannerUrl.isNotEmpty ? 220 : 168,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.12),
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.35),
+                    Colors.black.withValues(alpha: 0.55),
+                  ],
+                  stops: const [0.0, 0.28, 0.7, 1.0],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: (bannerUrl.isNotEmpty ? 220 : 168) - 28,
+            bottom: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: sheetColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 20,
+            bottom: 4,
+            child: Material(
+              elevation: 8,
+              shadowColor: Colors.black38,
+              shape: const CircleBorder(),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: sheetColor,
+                  border: Border.all(
+                    color: _brandOrange.withValues(alpha: 0.35),
+                    width: 1.5,
+                  ),
+                ),
+                child: CircleAvatar(
+                  radius: 34,
+                  backgroundColor: const Color(0x26FF6B00),
+                  backgroundImage:
+                      logoUrl.isNotEmpty ? NetworkImage(logoUrl) : null,
+                  child: logoUrl.isEmpty
+                      ? Text(
+                          displayName.isNotEmpty
+                              ? displayName[0].toUpperCase()
+                              : 'D',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: _brandOrange,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaChip({
+    required IconData icon,
+    required String label,
+    required bool isLight,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isLight
+            ? const Color(0xFFFFF0E6)
+            : _brandOrange.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: _brandOrange),
+          const SizedBox(width: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: isLight
+                    ? AppThemes.darkHomeShellBackground
+                    : const Color(0xFFF7F7F7),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionControl(bool isLight) {
+    final listingsLabel = _tr('Listings', ar: 'الإعلانات', ku: 'ڕێکلامەکان');
+    final aboutLabel = _tr('About', ar: 'حول', ku: 'دەربارە');
+
+    if (AppResponsive.isCompactPhone(context)) {
+      return DropdownButtonFormField<_DealerSection>(
+        initialValue: _section,
+        isExpanded: true,
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: isLight
+              ? const Color(0xFFF4F4F4)
+              : Colors.white.withValues(alpha: 0.06),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: isLight
+                  ? const Color(0xFFE0E0E0)
+                  : Colors.white.withValues(alpha: 0.12),
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: isLight
+                  ? const Color(0xFFE0E0E0)
+                  : Colors.white.withValues(alpha: 0.12),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _brandOrange, width: 1.5),
+          ),
+        ),
+        items: [
+          DropdownMenuItem(
+            value: _DealerSection.listings,
+            child: Text(listingsLabel),
+          ),
+          DropdownMenuItem(
+            value: _DealerSection.about,
+            child: Text(aboutLabel),
+          ),
+        ],
+        onChanged: (value) {
+          if (value == null) return;
+          _selectSection(value);
+        },
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<_DealerSection>(
+        showSelectedIcon: false,
+        style: SegmentedButton.styleFrom(
+          selectedBackgroundColor: _brandOrange.withValues(alpha: 0.14),
+          selectedForegroundColor: _brandOrange,
+          backgroundColor: isLight
+              ? const Color(0xFFF4F4F4)
+              : Colors.white.withValues(alpha: 0.06),
+          foregroundColor: isLight
+              ? const Color(0xFF5C5C5C)
+              : const Color(0xFFD8D8D8),
+          side: BorderSide(
+            color: isLight
+                ? const Color(0xFFE0E0E0)
+                : Colors.white.withValues(alpha: 0.12),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+        ),
+        segments: [
+          ButtonSegment(
+            value: _DealerSection.listings,
+            label: Text(listingsLabel),
+            icon: const Icon(Icons.grid_view_rounded, size: 16),
+          ),
+          ButtonSegment(
+            value: _DealerSection.about,
+            label: Text(aboutLabel),
+            icon: const Icon(Icons.info_outline_rounded, size: 16),
+          ),
+        ],
+        selected: {_section},
+        onSelectionChanged: (s) {
+          if (s.isEmpty) return;
+          _selectSection(s.first);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAboutSection({
+    required List<String> phones,
+    required String email,
+    required String location,
+    required double? mapLat,
+    required double? mapLng,
+    required Map<String, String> openingHours,
+    required bool isLightShell,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (phones.isNotEmpty || email.isNotEmpty || location.isNotEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: _softCardDecoration(isLightShell),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _tr('Contact', ar: 'التواصل', ku: 'پەیوەندی'),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                if (phones.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  for (var i = 0; i < phones.length; i++)
+                    Padding(
+                      padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
+                      child: Tooltip(
+                        message: _tr(
+                          'Tap to call • Hold to copy',
+                          ar: 'اضغط للاتصال • اضغط مطولاً للنسخ',
+                          ku: 'کرتە بکە بۆ پەیوەندی • چەند چرکە هەڵبگرە بۆ کۆپی',
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _brandOrange,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                            ),
+                            onPressed: () => _callDealer(phones[i]),
+                            onLongPress: () => _copyToClipboard(
+                              phones[i],
+                              _tr(
+                                'Phone number copied to clipboard',
+                                ar: 'تم نسخ رقم الهاتف',
+                                ku: 'ژمارەی تەلەفۆن کۆپی کرا',
+                              ),
+                            ),
+                            icon: const Icon(Icons.phone_outlined, size: 18),
+                            label: Text(
+                              phones[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+                if (email.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Tooltip(
+                    message: _tr(
+                      'Tap to send email • Hold to copy',
+                      ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ',
+                      ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی',
+                    ),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _brandOrange,
+                          side: BorderSide(
+                            color: _brandOrange.withValues(alpha: 0.4),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                        ),
+                        onPressed: () => _emailDealer(email),
+                        onLongPress: () => _copyToClipboard(
+                          email,
+                          _tr(
+                            'Email copied to clipboard',
+                            ar: 'تم نسخ البريد الإلكتروني',
+                            ku: 'ئیمەیل کۆپی کرا',
+                          ),
+                        ),
+                        icon: const Icon(Icons.email_outlined, size: 18),
+                        label: Text(
+                          email,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                _infoRow(
+                  Icons.location_on_outlined,
+                  _tr('Location', ar: 'الموقع', ku: 'شوێن'),
+                  location,
+                  isLight: isLightShell,
+                ),
+              ],
+            ),
+          ),
+        if (mapLat != null &&
+            mapLng != null &&
+            isValidDealerLatLng(mapLat, mapLng)) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: _softCardDecoration(isLightShell),
+            child: DealerLocationMapPreview(
+              latitude: mapLat,
+              longitude: mapLng,
+              onOpenInGoogleMaps: () =>
+                  _openDealerOnGoogleMaps(mapLat, mapLng),
+            ),
+          ),
+        ],
+        _openingHoursTable(openingHours, isLight: isLightShell),
+      ],
+    );
+  }
+
+  Widget _infoRow(
+    IconData icon,
+    String label,
+    String value, {
+    bool isLight = true,
+  }) {
     if (value.trim().isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16),
-          const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: isLight ? _iconCircleFillLight : _iconCircleFillDark,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 17, color: _brandOrange),
+          ),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              value,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isLight
+                        ? const Color(0xFF8E8E93)
+                        : Colors.white60,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isLight
+                        ? AppThemes.darkHomeShellBackground
+                        : const Color(0xFFF7F7F7),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -251,7 +723,10 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     return m;
   }
 
-  Widget _openingHoursTable(Map<String, String> hours) {
+  Widget _openingHoursTable(
+    Map<String, String> hours, {
+    bool isLight = true,
+  }) {
     const rows = <({String label, String key})>[
       (label: 'Sunday', key: 'sun'),
       (label: 'Monday', key: 'mon'),
@@ -263,89 +738,113 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     ];
 
     final allEmpty = rows.every((r) => (hours[r.key] ?? '').trim().isEmpty);
-    final borderColor = Theme.of(context)
-        .colorScheme
-        .outline
-        .withValues(alpha: Theme.of(context).brightness == Brightness.light ? 0.35 : 0.55);
+    final borderColor = isLight
+        ? const Color(0xFFE0E0E0)
+        : Colors.white.withValues(alpha: 0.12);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        Text(
-          _tr('Opening hours', ar: 'ساعات العمل', ku: 'کاتەکانی کارکردن'),
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
         Container(
           width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border.all(color: borderColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: _softCardDecoration(isLight),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Table(
-              columnWidths: const {
-                0: FlexColumnWidth(1),
-                1: FlexColumnWidth(2),
-              },
-              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-              border: TableBorder(
-                horizontalInside: BorderSide(color: borderColor, width: 1),
-              ),
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TableRow(
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
-                        .withValues(alpha: 0.55),
+                    color: isLight
+                        ? const Color(0xFFFFF7F0)
+                        : _brandOrange.withValues(alpha: 0.14),
                   ),
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text(
-                        _tr('Day', ar: 'اليوم', ku: 'ڕۆژ'),
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Text(
-                        _tr('Hours', ar: 'الساعات', ku: 'کاتەکان'),
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ),
-                for (final r in rows)
-                  TableRow(
+                  child: Row(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                      Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: isLight
+                              ? _iconCircleFillLight
+                              : _iconCircleFillDark,
+                          borderRadius: BorderRadius.circular(9),
                         ),
-                        child: Text(_dayLabel(r.key)),
+                        child: const Icon(
+                          Icons.schedule_rounded,
+                          size: 16,
+                          color: _brandOrange,
+                        ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
+                      const SizedBox(width: 10),
+                      Text(
+                        _tr(
+                          'Opening hours',
+                          ar: 'ساعات العمل',
+                          ku: 'کاتەکانی کارکردن',
                         ),
-                        child: Text(
-                          _localizedOpeningHoursValue(
-                            (hours[r.key] ?? '').trim(),
-                            allEmpty: allEmpty,
-                          ),
-                        ),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ],
                   ),
+                ),
+                Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(1),
+                    1: FlexColumnWidth(2),
+                  },
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  border: TableBorder(
+                    horizontalInside: BorderSide(color: borderColor, width: 1),
+                  ),
+                  children: [
+                    for (final r in rows)
+                      TableRow(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 11,
+                            ),
+                            child: Text(
+                              _dayLabel(r.key),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: isLight
+                                    ? const Color(0xFF5C5C5C)
+                                    : Colors.white70,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 11,
+                            ),
+                            child: Text(
+                              _localizedOpeningHoursValue(
+                                (hours[r.key] ?? '').trim(),
+                                allEmpty: allEmpty,
+                              ),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: isLight
+                                    ? AppThemes.darkHomeShellBackground
+                                    : const Color(0xFFF7F7F7),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
               ],
             ),
           ),

@@ -1,17 +1,47 @@
 import type { ReactNode } from "react";
 
+export function EmptyState({
+  title = "No records found",
+  description,
+  action,
+}: {
+  title?: string;
+  description?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-surface-border bg-surface-card/50 px-6 py-14 text-center">
+      <p className="text-sm font-medium text-white">{title}</p>
+      {description ? (
+        <p className="mx-auto mt-2 max-w-md text-sm text-surface-muted">
+          {description}
+        </p>
+      ) : null}
+      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
+    </div>
+  );
+}
+
 export function DataTable({
   children,
   empty,
+  emptyTitle,
+  emptyDescription,
+  emptyAction,
 }: {
   children: ReactNode;
   empty?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyAction?: ReactNode;
 }) {
   if (empty) {
     return (
-      <div className="rounded-xl border border-dashed border-surface-border bg-surface-card/50 px-6 py-16 text-center text-surface-muted">
-        No records found
-      </div>
+      <EmptyState
+        title={emptyTitle}
+        description={emptyDescription}
+        action={emptyAction}
+      />
     );
   }
 
@@ -24,7 +54,13 @@ export function DataTable({
   );
 }
 
-export function Th({ children, className = "" }: { children?: ReactNode; className?: string }) {
+export function Th({
+  children,
+  className = "",
+}: {
+  children?: ReactNode;
+  className?: string;
+}) {
   return (
     <th
       className={`whitespace-nowrap border-b border-surface-border bg-black/20 px-4 py-3 text-xs font-medium uppercase tracking-wide text-surface-muted ${className}`}
@@ -34,9 +70,20 @@ export function Th({ children, className = "" }: { children?: ReactNode; classNa
   );
 }
 
-export function Td({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Td({
+  children,
+  className = "",
+  colSpan,
+}: {
+  children: ReactNode;
+  className?: string;
+  colSpan?: number;
+}) {
   return (
-    <td className={`border-b border-surface-border/60 px-4 py-3 align-top ${className}`}>
+    <td
+      colSpan={colSpan}
+      className={`border-b border-surface-border/60 px-4 py-3 align-top ${className}`}
+    >
       {children}
     </td>
   );

@@ -523,7 +523,10 @@ class Message(db.Model):
             'is_deleted': self.is_deleted,
             'edited_at': self.edited_at.isoformat() if self.edited_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'sender_name': f"{self.sender.first_name} {self.sender.last_name}" if self.sender else None
+            'sender_name': f"{self.sender.first_name} {self.sender.last_name}".strip() if self.sender else None,
+            'sender_username': self.sender.username if self.sender else None,
+            'receiver_name': f"{self.receiver.first_name} {self.receiver.last_name}".strip() if self.receiver else None,
+            'receiver_username': self.receiver.username if self.receiver else None,
         }
     
     def __repr__(self):

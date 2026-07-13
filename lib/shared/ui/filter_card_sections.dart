@@ -177,7 +177,9 @@ InputDecoration filterFieldDecoration(
 /// Tall open-menu height used by search-page filter dropdowns.
 double filterDropdownMenuMaxHeight(BuildContext context) {
   final height = MediaQuery.sizeOf(context).height;
-  return (height * 0.58).clamp(360.0, 560.0);
+  // Tall enough that short ladders (e.g. cylinder counts through 16) fit
+  // without leaving 12/16 below the fold on typical phones.
+  return (height * 0.72).clamp(360.0, 640.0);
 }
 
 double filterDropdownMenuWidth(BuildContext context) {
@@ -306,11 +308,15 @@ class FilterDropdownField extends StatelessWidget {
     final preferredMaxHeight = filterDropdownMenuMaxHeight(context);
     final availableHeight =
         media.height - padding.top - padding.bottom - 24;
-    final menuMaxHeight = math
-        .min(preferredMaxHeight, availableHeight)
-        .clamp(120.0, preferredMaxHeight);
     final contentHeight =
         listPaddingV * 2 + menuItems.length * itemHeight;
+    // Prefer fitting the full list when it fits on screen; otherwise use as
+    // much vertical space as available (not only the preferred fraction).
+    final cappedAvailable = math.max(120.0, availableHeight);
+    final menuMaxHeight = math.min(
+      cappedAvailable,
+      math.max(preferredMaxHeight, contentHeight),
+    );
     final menuHeight = math.min(contentHeight, menuMaxHeight);
 
     // Overlap the field: keep the selected row aligned with the control
@@ -383,6 +389,7 @@ class FilterDropdownField extends StatelessWidget {
                       trackVisibility: true,
                       child: ListView.builder(
                         controller: scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(vertical: listPaddingV),
                         itemExtent: itemHeight,
                         itemCount: menuItems.length,

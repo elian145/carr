@@ -288,18 +288,11 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
   }
 
   List<String> getAvailableCylinderCounts() {
-    final mot = _catalogMotorFilterOptions();
-    final List<String> raw;
-    if (mot != null) {
-      if (mot.cylinders.isNotEmpty) {
-        raw = ['Any', ...mot.cylinders];
-      } else {
-        raw = const ['Any'];
-      }
-    } else {
-      raw = cylinderCounts;
-    }
-    return raw.where((c) => !_isExcludedCylinderFilter(c)).toList(growable: false);
+    // Always use the full static ladder (incl. 12 / 16). Catalog unions often
+    // stop at 10 and would hide valid search options when a make/model is set.
+    return cylinderCounts
+        .where((c) => !_isExcludedCylinderFilter(c))
+        .toList(growable: false);
   }
 
   List<String> getAvailableSeatings() => seatings;

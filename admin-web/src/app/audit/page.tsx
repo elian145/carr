@@ -6,7 +6,8 @@ import { DataTable, Td, Th } from "@/components/DataTable";
 import { Pagination } from "@/components/Pagination";
 import { FilterSelect } from "@/components/FilterSelect";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
-import { fetchFilterMeta, fetchUserActions } from "@/lib/api";
+import { getFilterMeta } from "@/lib/filterMeta";
+import { fetchUserActions } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 
 export default function AuditPage() {
@@ -14,11 +15,12 @@ export default function AuditPage() {
   const [actionType, setActionType] = useState("");
   const [query, setQuery] = useState("");
   const [targetType, setTargetType] = useState("all");
+  const [scope, setScope] = useState<"all" | "admin" | "user">("all");
   const [userId, setUserId] = useState("");
   const [actionTypes, setActionTypes] = useState<string[]>([]);
 
   useEffect(() => {
-    fetchFilterMeta()
+    getFilterMeta()
       .then((m) => setActionTypes(m.action_types))
       .catch(() => {});
   }, []);
@@ -31,14 +33,15 @@ export default function AuditPage() {
         action_type: query || undefined,
         target_type: targetType !== "all" ? targetType : undefined,
         user_id: userId.trim() || undefined,
+        scope,
       }),
-    [page, query, targetType, userId],
+    [page, query, targetType, userId, scope],
   );
 
   return (
     <AsyncPageBody
       title="Audit log"
-      description="User action history across the platform"
+      description="Platform action history — filter admin moderation events separately"
       count={data?.pagination.total}
       data={data}
       error={error}
@@ -49,6 +52,19 @@ export default function AuditPage() {
         <>
           <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-surface-border bg-surface-card/50 p-4">
             <FilterSelect
+              label="Scope"
+              value={scope}
+              onChange={(v) => {
+                setScope(v as "all" | "admin" | "user");
+                setPage(1);
+              }}
+              options={[
+                { value: "all", label: "All actions" },
+                { value: "admin", label: "Admin / dealer ops" },
+                { value: "user", label: "End-user only" },
+              ]}
+            />
+            <FilterSelect
               label="Action type"
               value={actionType || "all"}
               onChange={(v) => {
@@ -57,19 +73,23 @@ export default function AuditPage() {
                 setQuery(v === "all" ? "" : v);
               }}
               options={[
-                { value: "all", label: "All actions" },
+                { value: "all", label: "All types" },
                 ...actionTypes.map((t) => ({ value: t, label: t })),
               ]}
             />
             <FilterSelect
               label="Target type"
               value={targetType}
-              onChange={(v) => { setTargetType(v); setPage(1); }}
+              onChange={(v) => {
+                setTargetType(v);
+                setPage(1);
+              }}
               options={[
                 { value: "all", label: "All targets" },
                 { value: "car", label: "car" },
                 { value: "user", label: "user" },
                 { value: "message", label: "message" },
+                { value: "notification", label: "notification" },
               ]}
             />
             <label className="flex flex-col gap-1 text-xs text-surface-muted">
@@ -77,7 +97,10 @@ export default function AuditPage() {
               <input
                 type="text"
                 value={userId}
-                onChange={(e) => { setUserId(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setUserId(e.target.value);
+                  setPage(1);
+                }}
                 placeholder="User public id"
                 className="w-44 rounded-lg border border-surface-border bg-black/30 px-3 py-1.5 text-sm"
               />
@@ -99,7 +122,10 @@ export default function AuditPage() {
                   <Td className="font-medium">{a.action_type}</Td>
                   <Td>
                     {a.user_public_id ? (
-                      <Link href={`/users/${a.user_public_id}`} className="text-brand-300 hover:underline">
+                      <Link
+                        href={`/users/${a.user_public_id}`}
+                        className="text-brand-300 hover:underline"
+                      >
                         {a.user_username || a.user_public_id}
                       </Link>
                     ) : (
@@ -110,7 +136,9 @@ export default function AuditPage() {
                     {a.target_type ? `${a.target_type}: ` : ""}
                     {a.target_id || "—"}
                   </Td>
-                  <Td className="text-surface-muted">{formatDate(a.created_at)}</Td>
+                  <Td className="text-surface-muted">
+                    {formatDate(a.created_at)}
+                  </Td>
                 </tr>
               ))}
             </tbody>
