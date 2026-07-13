@@ -9,6 +9,7 @@ import { FilterSelect } from "@/components/FilterSelect";
 import { refreshNavBadges } from "@/components/NavBadges";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import { deleteListing, fetchListingDetail, updateListingStatus } from "@/lib/api";
 import { listingPublicUrl } from "@/lib/export";
 import { getFilterMeta } from "@/lib/filterMeta";
@@ -18,6 +19,7 @@ import {
   formatPrice,
   listingTitle,
 } from "@/lib/format";
+import { hasPermission } from "@/lib/permissions";
 
 const FALLBACK_STATUSES = ["active", "sold", "pending", "draft", "hidden"];
 
@@ -27,6 +29,9 @@ export default function ListingDetailPage() {
   const carId = String(params.id || "");
   const toast = useToast();
   const { confirm } = useConfirm();
+  const { user } = useAuth();
+  const canWrite = hasPermission(user, "listings.write");
+  const canDelete = hasPermission(user, "listings.delete");
   const [busy, setBusy] = useState(false);
   const [statuses, setStatuses] = useState<string[]>(FALLBACK_STATUSES);
 
@@ -143,38 +148,44 @@ export default function ListingDetailPage() {
                   >
                     Open public ↗
                   </a>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => patch({ is_active: !c.is_active })}
-                    className="rounded-lg bg-brand-700 px-3 py-2 text-sm hover:bg-brand-600 disabled:opacity-50"
-                  >
-                    {c.is_active ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => patch({ is_featured: !c.is_featured })}
-                    className="rounded-lg border border-surface-border px-3 py-2 text-sm hover:bg-white/5 disabled:opacity-50"
-                  >
-                    {c.is_featured ? "Unfeature" : "Feature"}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={handleDelete}
-                    className="rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-200 hover:bg-red-900/40 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                  <FilterSelect
-                    label="Listing status"
-                    value={statusValue}
-                    onChange={(v) => {
-                      if (v !== statusValue) patch({ status: v });
-                    }}
-                    options={statusOptions}
-                  />
+                  {canWrite ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => patch({ is_active: !c.is_active })}
+                        className="rounded-lg bg-brand-700 px-3 py-2 text-sm hover:bg-brand-600 disabled:opacity-50"
+                      >
+                        {c.is_active ? "Deactivate" : "Activate"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => patch({ is_featured: !c.is_featured })}
+                        className="rounded-lg border border-surface-border px-3 py-2 text-sm hover:bg-white/5 disabled:opacity-50"
+                      >
+                        {c.is_featured ? "Unfeature" : "Feature"}
+                      </button>
+                      <FilterSelect
+                        label="Listing status"
+                        value={statusValue}
+                        onChange={(v) => {
+                          if (v !== statusValue) patch({ status: v });
+                        }}
+                        options={statusOptions}
+                      />
+                    </>
+                  ) : null}
+                  {canDelete ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={handleDelete}
+                      className="rounded-lg border border-red-800/60 bg-red-950/40 px-3 py-2 text-sm text-red-200 hover:bg-red-900/40 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  ) : null}
                 </div>
               </div>
 

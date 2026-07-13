@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { displayName } from "@/lib/format";
+import { hasPermission, NAV_PERMISSION, roleLabel } from "@/lib/permissions";
 import { NavBadge, NavTotalBadge, useNavBadges } from "@/components/NavBadges";
 import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 import type { NavBadges } from "@/lib/api";
+import type { User } from "@/lib/types";
 
 type NavItem = {
   href: string;
@@ -34,21 +36,33 @@ const NAV: NavItem[] = [
   { href: "/notifications", label: "Notifications", totalKey: "notifications" },
   { href: "/saved-searches", label: "Saved searches", totalKey: "savedSearches" },
   { href: "/audit", label: "Audit log", totalKey: "auditLog" },
+  { href: "/catalog", label: "Vehicle catalog" },
   { href: "/system", label: "System" },
+  { href: "/settings", label: "Settings" },
 ];
+
+function navForUser(user: User | null): NavItem[] {
+  return NAV.filter((item) => {
+    const perm = NAV_PERMISSION[item.href];
+    if (!perm) return true;
+    return hasPermission(user, perm);
+  });
+}
 
 function SidebarNav({
   pathname,
   badges,
+  items,
   onNavigate,
 }: {
   pathname: string;
   badges: NavBadges;
+  items: NavItem[];
   onNavigate?: () => void;
 }) {
   return (
     <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-      {NAV.map((item) => {
+      {items.map((item) => {
         const active =
           pathname === item.href || pathname.startsWith(`${item.href}/`);
         const alertCount = item.alertKey ? badges[item.alertKey] : 0;
@@ -79,6 +93,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const badges = useNavBadges();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navItems = useMemo(() => navForUser(user), [user]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -118,12 +133,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <SidebarNav
         pathname={pathname}
         badges={badges}
+        items={navItems}
         onNavigate={() => setMobileOpen(false)}
       />
       <div className="border-t border-surface-border p-4">
         <p className="truncate text-sm font-medium">{displayName(user)}</p>
         <p className="truncate text-xs text-surface-muted">
-          {user.email || user.phone_number || user.username}
+          {roleLabel(user.admin_role)}
+          {user.email || user.phone_number
+            ? ` · ${user.email || user.phone_number}`
+            : ""}
         </p>
         <button
           type="button"
@@ -138,12 +157,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-surface-border bg-black/30 lg:flex">
         {sidebarBody}
       </aside>
 
-      {/* Mobile drawer */}
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
           <button
@@ -171,10 +188,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <SidebarNav
               pathname={pathname}
               badges={badges}
+              items={navItems}
               onNavigate={() => setMobileOpen(false)}
             />
             <div className="mt-auto border-t border-surface-border p-4">
               <p className="truncate text-sm font-medium">{displayName(user)}</p>
+              <p className="truncate text-xs text-surface-muted">
+                {roleLabel(user.admin_role)}
+              </p>
               <button
                 type="button"
                 onClick={logout}
@@ -199,7 +220,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             Menu
           </button>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-brand-400">CarNet Admin</p>
+            <p className="truncate text-sm font-semibold text-brand-400">
+              CarNet Admin
+            </p>
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">

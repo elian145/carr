@@ -139,6 +139,8 @@ def main() -> int:
                 f"phone_number={u.phone_number!r} was_admin={u.is_admin}"
             )
             u.is_admin = True
+            if hasattr(u, "admin_role"):
+                u.admin_role = "super_admin"
         if args.dry_run:
             db.session.rollback()
             print("SET_ADMIN_BY_PHONE_DRY_RUN no_commit")

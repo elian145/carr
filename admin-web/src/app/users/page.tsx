@@ -10,6 +10,7 @@ import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
 import { fetchUsers, type UserListParams } from "@/lib/api";
 import { exportAllPagesCsv } from "@/lib/export";
 import { displayName, formatDate } from "@/lib/format";
+import { roleLabel } from "@/lib/permissions";
 import type { User } from "@/lib/types";
 import { useToast } from "@/context/ToastContext";
 import {
@@ -234,7 +235,7 @@ function UsersPageInner() {
                 <Th>Contact</Th>
                 <Th>Type</Th>
                 <Th>Status</Th>
-                <Th>Admin</Th>
+                <Th>Role</Th>
                 <Th>Joined</Th>
                 <Th></Th>
               </tr>
@@ -262,7 +263,9 @@ function UsersPageInner() {
                       : ""}
                   </Td>
                   <Td>{u.is_active ? "Active" : "Inactive"}</Td>
-                  <Td>{u.is_admin ? "Yes" : "—"}</Td>
+                  <Td>
+                    {u.is_admin ? roleLabel(u.admin_role) : "—"}
+                  </Td>
                   <Td className="text-surface-muted">{formatDate(u.created_at)}</Td>
                   <Td>
                     <Link

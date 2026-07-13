@@ -24,7 +24,11 @@ def make_celery() -> Celery:
         "kk",
         broker=broker,
         backend=backend,
-        include=["kk.tasks.image_tasks", "kk.tasks.alert_tasks"],
+        include=[
+            "kk.tasks.image_tasks",
+            "kk.tasks.alert_tasks",
+            "kk.tasks.notification_tasks",
+        ],
     )
     c.conf.update(
         task_serializer="json",
@@ -34,6 +38,12 @@ def make_celery() -> Celery:
         enable_utc=True,
         task_track_started=True,
         broker_connection_retry_on_startup=True,
+        beat_schedule={
+            "process-due-scheduled-notifications": {
+                "task": "kk.tasks.notification_tasks.process_due_scheduled_notifications",
+                "schedule": 60.0,  # every minute
+            },
+        },
     )
     return c
 

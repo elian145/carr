@@ -81,6 +81,16 @@ export async function updateUserStatus(
   });
 }
 
+export async function updateUserAdminRole(
+  userId: string,
+  patch: { is_admin?: boolean; admin_role?: string },
+): Promise<{ user: User }> {
+  return apiRequest(`/api/admin/users/${encodeURIComponent(userId)}/role`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
 export interface ListingListParams {
   page?: number;
   per_page?: number;
@@ -131,16 +141,66 @@ export async function broadcastNotification(payload: {
   target_user_id?: string;
   notification_type?: string;
   send_push?: boolean;
+  scheduled_at?: string;
 }): Promise<{
   message: string;
-  created: number;
-  pushed: number;
-  push_configured: boolean;
-  audience: string;
+  created?: number;
+  pushed?: number;
+  push_configured?: boolean;
+  audience?: string;
+  scheduled?: boolean;
+  scheduled_notification?: ScheduledNotificationItem;
 }> {
   return apiRequest("/api/admin/notifications/broadcast", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export interface ScheduledNotificationItem {
+  id: number;
+  title: string;
+  message: string;
+  audience: string;
+  target_user_id?: string | null;
+  notification_type: string;
+  send_push: boolean;
+  scheduled_at: string;
+  status: string;
+  result?: Record<string, unknown> | null;
+  error_message?: string | null;
+  created_at?: string;
+  sent_at?: string | null;
+}
+
+export async function fetchScheduledNotifications(params?: {
+  page?: number;
+  per_page?: number;
+  status?: string;
+}): Promise<{
+  scheduled: ScheduledNotificationItem[];
+  pagination: Pagination;
+}> {
+  return apiRequest(
+    `/api/admin/notifications/scheduled${buildQuery((params || {}) as Record<string, string | number | boolean>)}`,
+  );
+}
+
+export async function cancelScheduledNotification(
+  id: number,
+): Promise<{ scheduled_notification: ScheduledNotificationItem }> {
+  return apiRequest(`/api/admin/notifications/scheduled/${id}/cancel`, {
+    method: "POST",
+  });
+}
+
+export async function processScheduledNotifications(): Promise<{
+  processed: number;
+  sent: number;
+  failed: number;
+}> {
+  return apiRequest("/api/admin/notifications/scheduled/process", {
+    method: "POST",
   });
 }
 
@@ -183,6 +243,26 @@ export interface SystemHealth {
 
 export async function fetchSystemHealth(): Promise<SystemHealth> {
   return apiRequest<SystemHealth>("/api/admin/system/health");
+}
+
+export interface PlatformSettingsPayload {
+  defaults: Record<string, string | number | null>;
+  overrides: Record<string, string | number | null | undefined>;
+  effective: Record<string, string | number | null>;
+  updated_at?: string | null;
+}
+
+export async function fetchSettings(): Promise<PlatformSettingsPayload> {
+  return apiRequest<PlatformSettingsPayload>("/api/admin/settings");
+}
+
+export async function updateSettings(
+  patch: Record<string, string | number | null | undefined>,
+): Promise<PlatformSettingsPayload> {
+  return apiRequest<PlatformSettingsPayload>("/api/admin/settings", {
+    method: "PUT",
+    body: JSON.stringify(patch),
+  });
 }
 
 export async function fetchReports(params: {
@@ -399,4 +479,138 @@ export async function fetchNavBadges(): Promise<NavBadges> {
       return EMPTY_NAV_BADGES;
     }
   }
+}
+
+// ── Vehicle catalog ─────────────────────────────────────────────────────────
+
+export interface CatalogBrand {
+  id: number;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+  model_count?: number;
+  active_model_count?: number;
+}
+
+export interface CatalogVehicleModel {
+  id: number;
+  brand_id: number;
+  brand_name?: string | null;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface CatalogBodyType {
+  id: number;
+  name: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+export async function fetchCatalogSummary(): Promise<{
+  brands: number;
+  active_brands: number;
+  models: number;
+  active_models: number;
+  body_types: number;
+  active_body_types: number;
+}> {
+  return apiRequest("/api/admin/catalog/summary");
+}
+
+export async function seedCatalog(force = false): Promise<{
+  message: string;
+  skipped_brand_seed?: boolean;
+  brands_created?: number;
+  models_created?: number;
+  body_types_created?: number;
+  totals?: Record<string, number>;
+}> {
+  return apiRequest("/api/admin/catalog/seed", {
+    method: "POST",
+    body: JSON.stringify({ force }),
+  });
+}
+
+export async function fetchCatalogBrands(params?: {
+  q?: string;
+  active?: boolean;
+}): Promise<{ brands: CatalogBrand[] }> {
+  return apiRequest(
+    `/api/admin/catalog/brands${buildQuery((params || {}) as Record<string, string | number | boolean>)}`,
+  );
+}
+
+export async function createCatalogBrand(payload: {
+  name: string;
+  is_active?: boolean;
+}): Promise<{ brand: CatalogBrand }> {
+  return apiRequest("/api/admin/catalog/brands", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCatalogBrand(
+  id: number,
+  patch: { name?: string; is_active?: boolean; sort_order?: number },
+): Promise<{ brand: CatalogBrand }> {
+  return apiRequest(`/api/admin/catalog/brands/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function fetchCatalogModels(
+  brandId: number,
+): Promise<{ brand: CatalogBrand; models: CatalogVehicleModel[] }> {
+  return apiRequest(`/api/admin/catalog/brands/${brandId}/models`);
+}
+
+export async function createCatalogModel(payload: {
+  brand_id: number;
+  name: string;
+  is_active?: boolean;
+}): Promise<{ model: CatalogVehicleModel }> {
+  return apiRequest("/api/admin/catalog/models", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCatalogModel(
+  id: number,
+  patch: { name?: string; is_active?: boolean; sort_order?: number },
+): Promise<{ model: CatalogVehicleModel }> {
+  return apiRequest(`/api/admin/catalog/models/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function fetchCatalogBodyTypes(): Promise<{
+  body_types: CatalogBodyType[];
+}> {
+  return apiRequest("/api/admin/catalog/body-types");
+}
+
+export async function createCatalogBodyType(payload: {
+  name: string;
+  is_active?: boolean;
+}): Promise<{ body_type: CatalogBodyType }> {
+  return apiRequest("/api/admin/catalog/body-types", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateCatalogBodyType(
+  id: number,
+  patch: { name?: string; is_active?: boolean; sort_order?: number },
+): Promise<{ body_type: CatalogBodyType }> {
+  return apiRequest(`/api/admin/catalog/body-types/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }

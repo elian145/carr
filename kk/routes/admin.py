@@ -7,12 +7,18 @@ from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import joinedload
 
 from ..auth import admin_required, get_current_user, log_user_action
+from ..admin_roles import (
+    VALID_ROLES,
+    assert_permission,
+    normalize_admin_role,
+)
 from ..models import (
     Car,
     ListingAnalytics,
     ListingReport,
     Message,
     Notification,
+    ScheduledNotification,
     SavedSearch,
     User,
     UserAction,
@@ -62,6 +68,11 @@ def _find_user(public_id: str) -> User | None:
     if not pid:
         return None
     return User.query.filter_by(public_id=pid).first()
+
+
+def _deny(permission: str):
+    _, err = assert_permission(permission)
+    return err
 
 
 def _action_to_admin_dict(action: UserAction) -> dict:
@@ -401,6 +412,9 @@ def notifications():
 def user_actions():
     """List user action audit records."""
     try:
+        denied = _deny("audit")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 50, type=int), 1), 100)
         action_type = (request.args.get("action_type") or "").strip()
@@ -452,6 +466,9 @@ def user_actions():
 def dealers_pending():
     """List users waiting for dealer verification (`dealer_status == pending`)."""
     try:
+        denied = _deny("dealers")
+        if denied:
+            return denied
         rows = (
             User.query.filter(User.dealer_status == "pending")
             .order_by(User.created_at.asc())
@@ -468,6 +485,9 @@ def dealers_pending():
 def dealers_approve(user_public_id: str):
     """Approve a pending dealer application."""
     try:
+        denied = _deny("dealers")
+        if denied:
+            return denied
         admin_user = get_current_user()
         if not admin_user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -504,6 +524,9 @@ def dealers_approve(user_public_id: str):
 def dealers_reject(user_public_id: str):
     """Reject a pending dealer application (user stays a normal account)."""
     try:
+        denied = _deny("dealers")
+        if denied:
+            return denied
         admin_user = get_current_user()
         if not admin_user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -555,6 +578,9 @@ def _apply_report_status(report, status: str, admin_notes: str | None):
 def list_reports():
     """List user and listing reports for moderation."""
     try:
+        denied = _deny("reports")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
         status = (request.args.get("status") or "pending").strip().lower()
@@ -626,6 +652,9 @@ def list_reports():
 def update_user_report(report_id: int):
     """Resolve or dismiss a user report."""
     try:
+        denied = _deny("reports")
+        if denied:
+            return denied
         report = UserReport.query.get(report_id)
         if not report:
             return jsonify({"message": "Report not found"}), 404
@@ -648,6 +677,9 @@ def update_user_report(report_id: int):
 def update_listing_report(report_id: int):
     """Resolve or dismiss a listing report."""
     try:
+        denied = _deny("reports")
+        if denied:
+            return denied
         report = ListingReport.query.get(report_id)
         if not report:
             return jsonify({"message": "Report not found"}), 404
@@ -743,6 +775,9 @@ def car_detail(car_id: str):
 def update_car_status(car_id: str):
     """Activate/deactivate or change listing status."""
     try:
+        denied = _deny("listings.write")
+        if denied:
+            return denied
         admin_user = get_current_user()
         car = _find_car(car_id)
         if not car:
@@ -776,6 +811,9 @@ def update_car_status(car_id: str):
 def bulk_update_car_status():
     """Apply the same status patch to multiple listings (max 50)."""
     try:
+        denied = _deny("listings.write")
+        if denied:
+            return denied
         admin_user = get_current_user()
         data = request.get_json(silent=True) or {}
         ids = data.get("ids") or []
@@ -841,9 +879,16 @@ def bulk_update_car_status():
 @bp.route("/notifications/broadcast", methods=["POST"])
 @admin_required
 def broadcast_notification():
-    """Create in-app notifications (and optional FCM push) for an audience."""
+    """Create in-app notifications now, or schedule for later via scheduled_at."""
     try:
-        from ..push import fcm_is_configured, send_push
+        denied = _deny("notifications.broadcast")
+        if denied:
+            return denied
+        from ..notification_broadcast import (
+            create_scheduled_notification,
+            execute_broadcast,
+            parse_scheduled_at,
+        )
 
         admin_user = get_current_user()
         data = request.get_json(silent=True) or {}
@@ -851,71 +896,53 @@ def broadcast_notification():
         message = (data.get("message") or "").strip()
         notification_type = (data.get("notification_type") or "admin").strip() or "admin"
         audience = (data.get("audience") or "all").strip().lower()
-        target_user_id = (data.get("target_user_id") or "").strip()
+        target_user_id = (data.get("target_user_id") or "").strip() or None
         send_push_flag = bool(data.get("send_push", True))
+        scheduled_raw = data.get("scheduled_at")
 
-        if not title or not message:
-            return jsonify({"message": "Title and message are required"}), 400
-        if len(title) > 200:
-            return jsonify({"message": "Title must be 200 characters or fewer"}), 400
-
-        if audience == "user" or target_user_id:
-            user = _find_user(target_user_id)
-            if not user:
-                return jsonify({"message": "Target user not found"}), 404
-            recipients = [user]
-        elif audience == "dealers":
-            recipients = (
-                User.query.filter(
-                    User.is_active.is_(True),
-                    or_(User.account_type == "dealer", User.dealer_status == "approved"),
-                )
-                .limit(5000)
-                .all()
+        if scheduled_raw:
+            scheduled_at = parse_scheduled_at(scheduled_raw)
+            row = create_scheduled_notification(
+                title=title,
+                message=message,
+                scheduled_at=scheduled_at,
+                audience=audience,
+                target_user_id=target_user_id,
+                notification_type=notification_type,
+                send_push_flag=send_push_flag,
+                created_by_user_id=admin_user.id if admin_user else None,
             )
-        elif audience == "users":
-            recipients = (
-                User.query.filter(
-                    User.is_active.is_(True),
-                    User.account_type != "dealer",
+            if admin_user:
+                log_user_action(
+                    admin_user,
+                    "admin_schedule_notification",
+                    target_type="scheduled_notification",
+                    target_id=str(row.id),
+                    metadata={
+                        "title": title,
+                        "audience": audience,
+                        "scheduled_at": scheduled_at.isoformat(),
+                    },
                 )
-                .limit(5000)
-                .all()
+            return (
+                jsonify(
+                    {
+                        "message": "Notification scheduled",
+                        "scheduled": True,
+                        "scheduled_notification": row.to_admin_dict(),
+                    }
+                ),
+                201,
             )
-        else:
-            recipients = User.query.filter(User.is_active.is_(True)).limit(5000).all()
 
-        created = 0
-        pushed = 0
-        push_ready = fcm_is_configured()
-        notif_data = {"source": "admin_broadcast", "audience": audience}
-
-        for user in recipients:
-            db.session.add(
-                Notification(
-                    user_id=user.id,
-                    title=title,
-                    message=message,
-                    notification_type=notification_type,
-                    is_read=False,
-                    data=notif_data,
-                )
-            )
-            created += 1
-            if send_push_flag and push_ready:
-                token = (getattr(user, "firebase_token", None) or "").strip()
-                if token and send_push(
-                    token,
-                    title=title,
-                    body=message,
-                    data={"type": notification_type, **notif_data},
-                ):
-                    pushed += 1
-            if created % 200 == 0:
-                db.session.commit()
-
-        db.session.commit()
-
+        result = execute_broadcast(
+            title=title,
+            message=message,
+            audience=audience,
+            target_user_id=target_user_id,
+            notification_type=notification_type,
+            send_push_flag=send_push_flag,
+        )
         if admin_user:
             log_user_action(
                 admin_user,
@@ -924,28 +951,104 @@ def broadcast_notification():
                 metadata={
                     "title": title,
                     "audience": audience,
-                    "created": created,
-                    "pushed": pushed,
+                    "created": result.get("created"),
+                    "pushed": result.get("pushed"),
                     "send_push": send_push_flag,
                 },
             )
+        return jsonify({**result, "scheduled": False}), 200
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin broadcast_notification error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to broadcast notification"}), 500
 
+
+@bp.route("/notifications/scheduled", methods=["GET"])
+@admin_required
+def list_scheduled_notifications():
+    """List scheduled broadcasts. Also processes any due items (beat fallback)."""
+    try:
+        denied = _deny("notifications.read")
+        if denied:
+            return denied
+        from ..notification_broadcast import process_due_scheduled_notifications
+
+        # Lazy delivery if Celery beat is not running
+        try:
+            process_due_scheduled_notifications(limit=10)
+        except Exception as e:
+            logger.warning("lazy process due scheduled notifications failed: %s", e)
+
+        status = (request.args.get("status") or "all").strip().lower()
+        page = request.args.get("page", 1, type=int)
+        per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
+        q = ScheduledNotification.query
+        if status != "all":
+            q = q.filter(ScheduledNotification.status == status)
+        pagination = q.order_by(ScheduledNotification.scheduled_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
         return (
             jsonify(
                 {
-                    "message": f"Notification created for {created} user(s)",
-                    "created": created,
-                    "pushed": pushed,
-                    "push_configured": push_ready,
-                    "audience": audience,
+                    "scheduled": [r.to_admin_dict() for r in pagination.items],
+                    "pagination": _pagination_dict(pagination, page, per_page),
                 }
             ),
             200,
         )
     except Exception as e:
+        logger.error("admin list_scheduled_notifications error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to list scheduled notifications"}), 500
+
+
+@bp.route("/notifications/scheduled/<int:item_id>/cancel", methods=["POST"])
+@admin_required
+def cancel_scheduled_notification(item_id: int):
+    try:
+        denied = _deny("notifications.broadcast")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        row = ScheduledNotification.query.get(item_id)
+        if not row:
+            return jsonify({"message": "Scheduled notification not found"}), 404
+        if row.status not in ("pending",):
+            return jsonify({"message": f"Cannot cancel status={row.status}"}), 400
+        row.status = "cancelled"
+        row.updated_at = utcnow()
+        db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_cancel_scheduled_notification",
+                target_type="scheduled_notification",
+                target_id=str(row.id),
+            )
+        return jsonify({"scheduled_notification": row.to_admin_dict()}), 200
+    except Exception as e:
         db.session.rollback()
-        logger.error("admin broadcast_notification error: %s", e, exc_info=True)
-        return jsonify({"message": "Failed to broadcast notification"}), 500
+        logger.error("admin cancel_scheduled_notification error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to cancel scheduled notification"}), 500
+
+
+@bp.route("/notifications/scheduled/process", methods=["POST"])
+@admin_required
+def process_scheduled_notifications():
+    """Manually process due scheduled notifications (ops / no-beat fallback)."""
+    try:
+        denied = _deny("notifications.broadcast")
+        if denied:
+            return denied
+        from ..notification_broadcast import process_due_scheduled_notifications
+
+        result = process_due_scheduled_notifications(limit=50)
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error("admin process_scheduled_notifications error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to process scheduled notifications"}), 500
 
 
 @bp.route("/users/<user_id>/status", methods=["PATCH"])
@@ -953,6 +1056,9 @@ def broadcast_notification():
 def update_user_status(user_id: str):
     """Activate/deactivate a user account."""
     try:
+        denied = _deny("users.write")
+        if denied:
+            return denied
         admin_user = get_current_user()
         user = _find_user(user_id)
         if not user:
@@ -977,11 +1083,61 @@ def update_user_status(user_id: str):
         return jsonify({"message": "Failed to update user"}), 500
 
 
+@bp.route("/users/<user_id>/role", methods=["PATCH"])
+@admin_required
+def update_user_admin_role(user_id: str):
+    """Grant/revoke admin access and set admin_role (super_admin only)."""
+    try:
+        denied = _deny("users.role")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        if not admin_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        user = _find_user(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        if user.id == admin_user.id:
+            return jsonify({"message": "Cannot change your own admin role"}), 400
+
+        data = request.get_json(silent=True) or {}
+        if "is_admin" in data:
+            user.is_admin = bool(data["is_admin"])
+        if not user.is_admin:
+            user.admin_role = None
+        else:
+            role = (data.get("admin_role") or user.admin_role or "moderator").strip().lower()
+            if role not in VALID_ROLES:
+                return jsonify({"message": f"Invalid admin_role. Use: {', '.join(VALID_ROLES)}"}), 400
+            user.admin_role = role
+
+        user.updated_at = utcnow()
+        db.session.commit()
+        log_user_action(
+            admin_user,
+            "admin_update_user_role",
+            target_type="user",
+            target_id=user.public_id,
+            metadata={
+                "is_admin": user.is_admin,
+                "admin_role": normalize_admin_role(user) if user.is_admin else None,
+            },
+        )
+        return jsonify({"user": user.to_dict(include_private=True)}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin update_user_admin_role error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to update admin role"}), 500
+
+
 @bp.route("/dealers", methods=["GET"])
 @admin_required
 def dealers_list():
     """List dealer accounts with optional status filter and pagination."""
     try:
+        denied = _deny("dealers")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
         status = (request.args.get("status") or "all").strip().lower()
@@ -1162,6 +1318,9 @@ def saved_searches():
 def delete_car(car_id: str):
     """Soft-delete a listing (hide from browse; keep row for audit)."""
     try:
+        denied = _deny("listings.delete")
+        if denied:
+            return denied
         from ..favorites_cleanup import remove_listing_from_all_favorites
         from ..view_history import remove_listing_from_all_view_history
 
@@ -1197,6 +1356,9 @@ def delete_car(car_id: str):
 def delete_user(user_id: str):
     """Soft-delete a user: deactivate account and hide their listings."""
     try:
+        denied = _deny("users.write")
+        if denied:
+            return denied
         admin_user = get_current_user()
         if not admin_user:
             return jsonify({"message": "Unauthorized"}), 401
@@ -1245,6 +1407,9 @@ def delete_user(user_id: str):
 def system_health():
     """Admin ops snapshot: API/DB/push/storage readiness + key counts."""
     try:
+        denied = _deny("system")
+        if denied:
+            return denied
         import os
         from sqlalchemy import text
 
@@ -1325,6 +1490,52 @@ def system_health():
         return jsonify({"status": "error", "message": "Failed to load system health"}), 500
 
 
+@bp.route("/settings", methods=["GET"])
+@admin_required
+def get_settings():
+    """Admin platform settings (contact, legal URLs, pricing)."""
+    try:
+        denied = _deny("settings")
+        if denied:
+            return denied
+        from ..app_settings import get_admin_settings_payload
+
+        return jsonify(get_admin_settings_payload()), 200
+    except Exception as e:
+        logger.error("admin get_settings error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to load settings"}), 500
+
+
+@bp.route("/settings", methods=["PUT", "PATCH"])
+@admin_required
+def update_settings():
+    """Update platform settings overrides (empty string clears back to env default)."""
+    try:
+        denied = _deny("settings")
+        if denied:
+            return denied
+        from ..app_settings import update_platform_settings
+
+        admin_user = get_current_user()
+        data = request.get_json(silent=True) or {}
+        if not isinstance(data, dict):
+            return jsonify({"message": "JSON object required"}), 400
+        payload = update_platform_settings(data)
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_update_settings",
+                target_type="settings",
+                target_id="platform",
+                metadata={"keys": sorted(list(data.keys()))},
+            )
+        return jsonify(payload), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin update_settings error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to update settings"}), 500
+
+
 @bp.route("/meta/filters", methods=["GET"])
 @admin_required
 def meta_filters():
@@ -1355,6 +1566,7 @@ def meta_filters():
                     "listing_statuses": statuses,
                     "action_types": action_types,
                     "notification_types": notification_types,
+                    "admin_roles": list(VALID_ROLES),
                 }
             ),
             200,

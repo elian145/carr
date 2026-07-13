@@ -6,6 +6,8 @@ export interface User {
   first_name?: string;
   last_name?: string;
   is_admin?: boolean;
+  admin_role?: string | null;
+  permissions?: string[];
   is_active?: boolean;
   is_verified?: boolean;
   account_type?: string;
@@ -200,4 +202,5 @@ export interface FilterMeta {
   listing_statuses: string[];
   action_types: string[];
   notification_types: string[];
+  admin_roles?: string[];
 }

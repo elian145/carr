@@ -6,9 +6,15 @@ import { useState } from "react";
 import { DataTable, Td, Th } from "@/components/DataTable";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
 import { refreshNavBadges } from "@/components/NavBadges";
+import { useAuth } from "@/context/AuthContext";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
-import { deleteUser, fetchUserDetail, updateUserStatus } from "@/lib/api";
+import {
+  deleteUser,
+  fetchUserDetail,
+  updateUserAdminRole,
+  updateUserStatus,
+} from "@/lib/api";
 import { listingPublicUrl } from "@/lib/export";
 import {
   displayName,
@@ -17,13 +23,19 @@ import {
   formatPrice,
   listingTitle,
 } from "@/lib/format";
+import { ADMIN_ROLE_LABELS, hasPermission, roleLabel } from "@/lib/permissions";
+
+const ROLE_OPTIONS = Object.keys(ADMIN_ROLE_LABELS);
 
 export default function UserDetailPage() {
   const params = useParams();
   const userId = String(params.id || "");
+  const { user: me } = useAuth();
   const toast = useToast();
   const { confirm } = useConfirm();
   const [busy, setBusy] = useState(false);
+  const canWriteUsers = hasPermission(me, "users.write");
+  const canManageRoles = hasPermission(me, "users.role");
 
   const { data, error, loading, reload } = useAsyncData(
     () => fetchUserDetail(userId),
@@ -84,6 +96,34 @@ export default function UserDetailPage() {
     }
   }
 
+  async function saveRole(nextRole: string, grantAdmin: boolean) {
+    const ok = await confirm({
+      title: grantAdmin ? "Update admin role?" : "Revoke admin access?",
+      description: grantAdmin
+        ? `Set this user to ${roleLabel(nextRole)}.`
+        : "They will lose access to the admin panel.",
+      confirmLabel: grantAdmin ? "Save role" : "Revoke admin",
+      tone: grantAdmin ? "brand" : "danger",
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      await updateUserAdminRole(
+        userId,
+        grantAdmin
+          ? { is_admin: true, admin_role: nextRole }
+          : { is_admin: false },
+      );
+      toast.success(grantAdmin ? "Admin role updated" : "Admin access revoked");
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Role update failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <AsyncPageBody
       title="User details"
@@ -103,6 +143,7 @@ export default function UserDetailPage() {
     >
       {(detail) => {
         const u = detail.user;
+        const currentRole = u.admin_role || (u.is_admin ? "super_admin" : "");
         return (
           <div className="space-y-8">
             <section className="rounded-xl border border-surface-border bg-surface-card p-6">
@@ -111,26 +152,28 @@ export default function UserDetailPage() {
                   <h2 className="text-xl font-semibold">{displayName(u)}</h2>
                   <p className="mt-1 text-sm text-surface-muted">@{u.username}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => toggleActive(!!u.is_active)}
-                    className="rounded-lg bg-brand-700 px-4 py-2 text-sm hover:bg-brand-600 disabled:opacity-50"
-                  >
-                    {u.is_active ? "Deactivate account" : "Activate account"}
-                  </button>
-                  {!u.is_admin ? (
+                {canWriteUsers ? (
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={handleDelete}
-                      className="rounded-lg border border-red-800/60 bg-red-950/40 px-4 py-2 text-sm text-red-200 hover:bg-red-900/40 disabled:opacity-50"
+                      onClick={() => toggleActive(!!u.is_active)}
+                      className="rounded-lg bg-brand-700 px-4 py-2 text-sm hover:bg-brand-600 disabled:opacity-50"
                     >
-                      Soft-delete user
+                      {u.is_active ? "Deactivate account" : "Activate account"}
                     </button>
-                  ) : null}
-                </div>
+                    {!u.is_admin ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={handleDelete}
+                        className="rounded-lg border border-red-800/60 bg-red-950/40 px-4 py-2 text-sm text-red-200 hover:bg-red-900/40 disabled:opacity-50"
+                      >
+                        Soft-delete user
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
               <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div>
@@ -154,7 +197,7 @@ export default function UserDetailPage() {
                   <dt className="text-xs text-surface-muted">Status</dt>
                   <dd className="mt-1 text-sm">
                     {u.is_active ? "Active" : "Inactive"}
-                    {u.is_admin ? " · Admin" : ""}
+                    {u.is_admin ? ` · ${roleLabel(u.admin_role)}` : ""}
                     {u.is_verified ? " · Verified" : ""}
                   </dd>
                 </div>
@@ -168,6 +211,55 @@ export default function UserDetailPage() {
                 </div>
               </dl>
             </section>
+
+            {canManageRoles && me?.id !== u.id ? (
+              <section className="rounded-xl border border-surface-border bg-surface-card p-6">
+                <h3 className="text-lg font-medium">Admin role</h3>
+                <p className="mt-1 text-sm text-surface-muted">
+                  Super admins can grant panel access and assign a role.
+                </p>
+                <div className="mt-4 flex flex-wrap items-end gap-3">
+                  <label className="block text-sm">
+                    <span className="text-xs text-surface-muted">Role</span>
+                    <select
+                      className="mt-1 block rounded-lg border border-surface-border bg-black/20 px-3 py-2"
+                      defaultValue={currentRole || "moderator"}
+                      id="admin-role-select"
+                      disabled={busy}
+                    >
+                      {ROLE_OPTIONS.map((r) => (
+                        <option key={r} value={r}>
+                          {ADMIN_ROLE_LABELS[r]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      const el = document.getElementById(
+                        "admin-role-select",
+                      ) as HTMLSelectElement | null;
+                      void saveRole(el?.value || "moderator", true);
+                    }}
+                    className="rounded-lg bg-brand-700 px-4 py-2 text-sm hover:bg-brand-600 disabled:opacity-50"
+                  >
+                    {u.is_admin ? "Update role" : "Grant admin"}
+                  </button>
+                  {u.is_admin ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void saveRole("moderator", false)}
+                      className="rounded-lg border border-red-800/60 px-4 py-2 text-sm text-red-200 hover:bg-red-950/40 disabled:opacity-50"
+                    >
+                      Revoke admin
+                    </button>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
 
             {u.dealership_name ||
             (u.dealer_status && u.dealer_status !== "none") ? (

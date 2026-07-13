@@ -47,6 +47,9 @@ class User(db.Model):
     phone_verification_locked_until = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    # Admin panel role when is_admin: super_admin | moderator | support | marketing
+    # Null + is_admin=True is treated as super_admin (legacy admins).
+    admin_role = db.Column(db.String(32), nullable=True)
     account_type = db.Column(db.String(20), nullable=False, default="user")  # user | dealer
     dealer_status = db.Column(db.String(20), nullable=False, default="none")  # none | pending | approved | rejected
     dealership_name = db.Column(db.String(120), nullable=True)
@@ -153,6 +156,15 @@ class User(db.Model):
                 'is_admin': self.is_admin,
                 'updated_at': self.updated_at.isoformat() if self.updated_at else None
             })
+            if self.is_admin:
+                from .admin_roles import normalize_admin_role, permissions_for_role
+
+                role = normalize_admin_role(self)
+                data['admin_role'] = role
+                data['permissions'] = permissions_for_role(role)
+            else:
+                data['admin_role'] = None
+                data['permissions'] = []
         
         return data
     
@@ -559,6 +571,52 @@ class Notification(db.Model):
     def __repr__(self):
         return f'<Notification {self.id}>'
 
+
+class ScheduledNotification(db.Model):
+    """Admin-scheduled broadcast to be delivered at scheduled_at."""
+
+    __tablename__ = "scheduled_notification"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    audience = db.Column(db.String(20), nullable=False, default="all")
+    target_user_public_id = db.Column(db.String(50), nullable=True)
+    notification_type = db.Column(db.String(50), nullable=False, default="admin")
+    send_push = db.Column(db.Boolean, nullable=False, default=True)
+    scheduled_at = db.Column(db.DateTime, nullable=False, index=True)
+    status = db.Column(
+        db.String(20), nullable=False, default="pending", index=True
+    )  # pending | sending | sent | cancelled | failed
+    result = db.Column(db.JSON, nullable=True)
+    error_message = db.Column(db.Text, nullable=True)
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+    sent_at = db.Column(db.DateTime, nullable=True)
+
+    def to_admin_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "message": self.message,
+            "audience": self.audience,
+            "target_user_id": self.target_user_public_id,
+            "notification_type": self.notification_type,
+            "send_push": bool(self.send_push),
+            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "status": self.status,
+            "result": self.result,
+            "error_message": self.error_message,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+        }
+
+    def __repr__(self):
+        return f"<ScheduledNotification {self.id} {self.status}>"
+
+
 class UserAction(db.Model):
     __tablename__ = 'user_action'
     
@@ -785,3 +843,122 @@ class TokenBlacklist(db.Model):
     
     def __repr__(self):
         return f'<TokenBlacklist {self.jti}>'
+
+
+class AppSetting(db.Model):
+    """Key/value JSON settings editable from the admin dashboard."""
+
+    __tablename__ = "app_setting"
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    value = db.Column(db.JSON, nullable=False, default=dict)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "key": self.key,
+            "value": self.value if isinstance(self.value, dict) else {},
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<AppSetting {self.key}>"
+
+
+class CatalogBrand(db.Model):
+    """Vehicle make for admin-managed catalog (mirrors Flutter car_catalog.json)."""
+
+    __tablename__ = "catalog_brand"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    models = db.relationship(
+        "CatalogVehicleModel",
+        back_populates="brand",
+        cascade="all, delete-orphan",
+        lazy="dynamic",
+    )
+
+    def to_dict(self, include_model_count: bool = False):
+        data = {
+            "id": self.id,
+            "name": self.name,
+            "is_active": bool(self.is_active),
+            "sort_order": int(self.sort_order or 0),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if include_model_count:
+            data["model_count"] = self.models.count()
+            data["active_model_count"] = self.models.filter_by(is_active=True).count()
+        return data
+
+    def __repr__(self):
+        return f"<CatalogBrand {self.name}>"
+
+
+class CatalogVehicleModel(db.Model):
+    """Vehicle model belonging to a catalog brand."""
+
+    __tablename__ = "catalog_vehicle_model"
+    __table_args__ = (
+        db.UniqueConstraint("brand_id", "name", name="uq_catalog_model_brand_name"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    brand_id = db.Column(db.Integer, db.ForeignKey("catalog_brand.id"), nullable=False, index=True)
+    name = db.Column(db.String(120), nullable=False, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    brand = db.relationship("CatalogBrand", back_populates="models")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "brand_id": self.brand_id,
+            "brand_name": self.brand.name if self.brand else None,
+            "name": self.name,
+            "is_active": bool(self.is_active),
+            "sort_order": int(self.sort_order or 0),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<CatalogVehicleModel {self.name}>"
+
+
+class CatalogBodyType(db.Model):
+    """Body type options for listings / filters."""
+
+    __tablename__ = "catalog_body_type"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "is_active": bool(self.is_active),
+            "sort_order": int(self.sort_order or 0),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+    def __repr__(self):
+        return f"<CatalogBodyType {self.name}>"
+

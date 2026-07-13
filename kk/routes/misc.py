@@ -33,17 +33,29 @@ def _listing_browser_image_url(rel: str) -> str:
 
 
 def _trust_config_payload() -> dict:
-    """Public trust/support URLs for mobile clients (env-driven)."""
-    def _env(key: str, default: str = "") -> str:
-        return (os.environ.get(key) or default).strip()
+    """Public trust/support URLs for mobile clients (env + admin DB overrides)."""
+    try:
+        from ..app_settings import get_platform_settings
 
-    return {
-        "support_email": _env("SUPPORT_EMAIL", "support@carzo.app"),
-        "support_phone": _env("SUPPORT_PHONE", ""),
-        "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
-        "terms_url": _env("TERMS_URL", "") or default_terms_url(),
-        "privacy_url": _env("PRIVACY_URL", "") or default_privacy_url(),
-    }
+        s = get_platform_settings()
+        return {
+            "support_email": s.get("support_email") or "support@carzo.app",
+            "support_phone": s.get("support_phone") or "",
+            "support_whatsapp": s.get("support_whatsapp") or "",
+            "terms_url": s.get("terms_url") or "",
+            "privacy_url": s.get("privacy_url") or "",
+        }
+    except Exception:
+        def _env(key: str, default: str = "") -> str:
+            return (os.environ.get(key) or default).strip()
+
+        return {
+            "support_email": _env("SUPPORT_EMAIL", "support@carzo.app"),
+            "support_phone": _env("SUPPORT_PHONE", ""),
+            "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
+            "terms_url": _env("TERMS_URL", "") or default_terms_url(),
+            "privacy_url": _env("PRIVACY_URL", "") or default_privacy_url(),
+        }
 
 
 @bp.route("/api/config/trust", methods=["GET"])

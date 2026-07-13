@@ -40,10 +40,26 @@ def default_privacy_url() -> str:
 
 
 def _support_email() -> str:
+    try:
+        from .app_settings import get_platform_settings
+
+        email = (get_platform_settings().get("support_email") or "").strip()
+        if email:
+            return email
+    except Exception:
+        pass
     return (os.environ.get("SUPPORT_EMAIL") or "support@carzo.app").strip()
 
 
 def _effective_date() -> str:
+    try:
+        from .app_settings import get_platform_settings
+
+        raw = (get_platform_settings().get("legal_effective_date") or "").strip()
+        if raw:
+            return raw
+    except Exception:
+        pass
     raw = (os.environ.get("LEGAL_EFFECTIVE_DATE") or "").strip()
     if raw:
         return raw

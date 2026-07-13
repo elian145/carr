@@ -10,6 +10,7 @@ import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
 import { refreshNavBadges } from "@/components/NavBadges";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   bulkUpdateListingStatus,
   fetchListings,
@@ -18,6 +19,7 @@ import {
 import { exportAllPagesCsv, listingPublicUrl } from "@/lib/export";
 import { getFilterMeta } from "@/lib/filterMeta";
 import { formatDate, formatNumber, formatPrice, listingTitle } from "@/lib/format";
+import { hasPermission } from "@/lib/permissions";
 import type { CarListing } from "@/lib/types";
 import {
   buildUrlQuery,
@@ -32,6 +34,8 @@ function ListingsPageInner() {
   const searchParams = useSearchParams();
   const toast = useToast();
   const { confirm } = useConfirm();
+  const { user } = useAuth();
+  const canWriteListings = hasPermission(user, "listings.write");
 
   const page = paramPage(searchParams);
   const query = paramString(searchParams, "q");
@@ -341,7 +345,7 @@ function ListingsPageInner() {
               </button>
             </div>
 
-            {selected.size > 0 ? (
+            {canWriteListings && selected.size > 0 ? (
               <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-brand-700/40 bg-brand-900/20 px-4 py-3 text-sm">
                 <span className="text-surface-muted">
                   {selected.size} selected
