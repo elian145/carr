@@ -1,27 +1,242 @@
 part of 'car_details_page.dart';
 
 mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
+  static const double _sheetTopRadius = 24;
+
+  double _carDetailsTitleHeaderHeight(BuildContext context) {
+    final bool hasQuickSell =
+        car!['is_quick_sell'] == true || car!['is_quick_sell'] == 'true';
+    final bool hasModelOrPrice = _displayModelName(context).isNotEmpty ||
+        tryParseCurrencyValue(car!['price']) != null;
+    final cityDetail =
+        (listingFirstNonEmpty(car!, ['city', 'location']) ?? '').trim();
+    final uploadedDetail = listingUploadedAgo(context, car!);
+    final bool hasMeta = cityDetail.isNotEmpty || uploadedDetail.isNotEmpty;
+
+    // Top pad + brand + optional model/price + meta + bottom pad.
+    // Extra slack avoids PreferredSize clipping/overflow.
+    double height = 14 + 26;
+    if (hasModelOrPrice) height += 4 + 32;
+    if (hasMeta) height += 10 + 24;
+    height += 6;
+    if (hasQuickSell) height += 44 + 16;
+    return height;
+  }
+
+  Widget _buildCarDetailsTitleHeader(BuildContext context, bool isLightShell) {
+    final bool hasPrice = tryParseCurrencyValue(car!['price']) != null;
+    final bg = isLightShell
+        ? AppThemes.lightAppBackground
+        : AppThemes.darkHomeShellBackground;
+
+    return Material(
+      color: bg,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(_sheetTopRadius),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+            if (car!['is_quick_sell'] == true ||
+                car!['is_quick_sell'] == 'true')
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 16,
+                ),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colors.orange, Colors.deepOrange],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.flash_on,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppLocalizations.of(context)!.quickSell,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: AutoSizeText(
+                    _displayBrandName(context),
+                    textScaleFactor: 1.0,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isLightShell
+                          ? AppThemes.darkHomeShellBackground
+                          : Colors.white,
+                    ),
+                    maxLines: 1,
+                    minFontSize: 11,
+                    stepGranularity: 0.5,
+                    overflow: TextOverflow.clip,
+                  ),
+                ),
+              ],
+            ),
+            if (_displayModelName(context).isNotEmpty || hasPrice) ...[
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: _displayModelName(context).isEmpty
+                        ? const SizedBox.shrink()
+                        : AutoSizeText(
+                            _displayModelName(context),
+                            textScaleFactor: 1.0,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: isLightShell
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                  : Colors.white70,
+                            ),
+                            maxLines: 1,
+                            minFontSize: 14,
+                            stepGranularity: 0.5,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                  ),
+                  if (hasPrice) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      formatCurrency(context, car!['price']),
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFFF6B00),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+            Builder(
+              builder: (context) {
+                final cityDetail =
+                    (listingFirstNonEmpty(car!, [
+                              'city',
+                              'location',
+                            ]) ??
+                            '')
+                        .trim();
+                final cityLabelStyle = TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isLightShell
+                      ? const Color(0xFF757575)
+                      : Colors.white70,
+                );
+                final uploadedDetail = listingUploadedAgo(context, car!);
+                if (cityDetail.isEmpty && uploadedDetail.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: cityDetail.isEmpty
+                              ? const SizedBox.shrink()
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.location_city,
+                                      size: 14,
+                                      color: isLightShell
+                                          ? const Color(0xFF757575)
+                                          : Colors.white70,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Flexible(
+                                      child: Text(
+                                        '${AppLocalizations.of(context)!.cityLabel}: '
+                                        '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
+                                        style: cityLabelStyle,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.clip,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                        if (uploadedDetail.isNotEmpty) ...[
+                          if (cityDetail.isNotEmpty) const SizedBox(width: 8),
+                          Text(
+                            uploadedDetail,
+                            style: cityLabelStyle.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+
   Widget _buildCarDetailsHeroSliver(BuildContext context, bool isLightShell) {
+    final titleHeaderHeight = _carDetailsTitleHeaderHeight(context);
+    // Keep a similar photo area as before (~296px above the sheet).
+    final expandedHeight = 296 + titleHeaderHeight;
     return                 SliverAppBar(
                   pinned: true,
                   stretch: true,
                   foregroundColor: isLightShell ? Colors.white : null,
-                  expandedHeight: 300,
+                  expandedHeight: expandedHeight,
                   bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(24),
+                    preferredSize: Size.fromHeight(titleHeaderHeight),
                     child: SizedBox(
-                      height: 24,
+                      height: titleHeaderHeight,
                       width: double.infinity,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: isLightShell
-                              ? AppThemes.lightAppBackground
-                              : AppThemes.darkHomeShellBackground,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(24),
-                          ),
-                        ),
-                      ),
+                      child: _buildCarDetailsTitleHeader(context, isLightShell),
                     ),
                   ),
                   leading: Semantics(
