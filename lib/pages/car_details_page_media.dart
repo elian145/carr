@@ -2,70 +2,86 @@ part of 'car_details_page.dart';
 
 mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
   List<String> get _imageUrls {
-    final List<String> urls = [];
-    if (car != null) {
-      final String primary = (car!['image_url'] ?? '').toString();
-      final List<dynamic> imgs = (car!['images'] is List)
-          ? (car!['images'] as List)
-          : const [];
-      if (primary.isNotEmpty) {
-        urls.add(buildLegacyFullImageUrl(primary));
-      }
+    return _heroImageEntries.map((e) => e.url).toList(growable: false);
+  }
+
+  /// Listing (non-damage) images with optional car-detection metadata for hero crop.
+  List<({String url, Map<String, dynamic>? meta})> get _heroImageEntries {
+    final List<({String url, Map<String, dynamic>? meta})> entries = [];
+    if (car == null) return entries;
+
+    final List<dynamic> imgs =
+        (car!['images'] is List) ? (car!['images'] as List) : const [];
+
+    void addUrl(String raw, Map<String, dynamic>? meta) {
+      if (raw.isEmpty) return;
+      final full = buildLegacyFullImageUrl(raw);
+      if (full.isEmpty) return;
+      if (entries.any((e) => e.url == full)) return;
+      entries.add((url: full, meta: meta));
+    }
+
+    Map<String, dynamic>? metaFrom(dynamic it) {
+      if (it is! Map) return null;
+      return Map<String, dynamic>.from(it);
+    }
+
+    bool isDamage(dynamic it) =>
+        it is Map &&
+        (it['kind'] ?? '').toString().toLowerCase() == 'damage';
+
+    final String primary = (car!['image_url'] ?? '').toString();
+    if (primary.isNotEmpty) {
+      Map<String, dynamic>? primaryMeta;
       for (final dynamic it in imgs) {
-        if (it is Map &&
-            (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
-          continue;
-        }
-        String s;
-        if (it is Map) {
-          s = (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-              .toString();
-        } else {
-          s = it.toString();
-        }
-        if (s.isNotEmpty) {
-          final full = buildLegacyFullImageUrl(s);
-          if (!urls.contains(full)) urls.add(full);
+        if (isDamage(it)) continue;
+        final s = it is Map
+            ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
+                .toString()
+            : it.toString();
+        if (s.isNotEmpty &&
+            (buildLegacyFullImageUrl(s) == buildLegacyFullImageUrl(primary) ||
+                s == primary)) {
+          primaryMeta = metaFrom(it);
+          break;
         }
       }
-      // If no explicit primary but images exist, treat first as primary
-      if (urls.isEmpty && imgs.isNotEmpty) {
-        final dynamic first = imgs.first;
-        if (first is Map &&
-            (first['kind'] ?? '').toString().toLowerCase() == 'damage') {
-          // First row is damage-only; find first listing image for hero.
-          for (final dynamic it in imgs) {
-            if (it is Map &&
-                (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
-              continue;
-            }
-            final String s = it is Map
-                ? (it['image_url'] ??
-                          it['url'] ??
-                          it['path'] ??
-                          it['src'] ??
-                          '')
-                      .toString()
-                : it.toString();
-            if (s.isNotEmpty) {
-              urls.add(buildLegacyFullImageUrl(s));
-              break;
-            }
-          }
-        } else {
-          final String s = first is Map
-              ? (first['image_url'] ??
-                        first['url'] ??
-                        first['path'] ??
-                        first['src'] ??
-                        '')
-                    .toString()
-              : first.toString();
-          if (s.isNotEmpty) urls.add(buildLegacyFullImageUrl(s));
+      // Listing-level detection metadata (rare) as fallback for primary.
+      primaryMeta ??= () {
+        final det = car!['car_detection'] ??
+            car!['primary_car_bbox'] ??
+            car!['hero_detection'];
+        if (det == null) return null;
+        return <String, dynamic>{'car_detection': det};
+      }();
+      addUrl(primary, primaryMeta);
+    }
+
+    for (final dynamic it in imgs) {
+      if (isDamage(it)) continue;
+      final s = it is Map
+          ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
+              .toString()
+          : it.toString();
+      addUrl(s, metaFrom(it));
+    }
+
+    // If no explicit primary but images exist, first listing image is hero.
+    if (entries.isEmpty && imgs.isNotEmpty) {
+      for (final dynamic it in imgs) {
+        if (isDamage(it)) continue;
+        final s = it is Map
+            ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
+                .toString()
+            : it.toString();
+        if (s.isNotEmpty) {
+          addUrl(s, metaFrom(it));
+          break;
         }
       }
     }
-    return urls;
+
+    return entries;
   }
 
   /// Normalizes API `videos` (strings and/or `{video_url: ...}` maps) to relative paths.

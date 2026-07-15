@@ -3,7 +3,20 @@ part of 'car_details_page.dart';
 mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
   static const double _sheetTopRadius = 24;
 
-  double _carDetailsTitleHeaderHeight(BuildContext context) {
+  /// Fixed gap between city / uploaded-ago and the divider (all screens).
+  static const double _metaToDividerGap = 10;
+
+  /// Visible photo height: ~35% of screen (clamped into the 32–38% band).
+  double _heroPhotoHeight(BuildContext context) {
+    final screenH = MediaQuery.sizeOf(context).height;
+    return (screenH * 0.35).clamp(screenH * 0.32, screenH * 0.38);
+  }
+
+  Color _carDetailsSheetColor(bool isLightShell) => isLightShell
+      ? AppThemes.lightAppBackground
+      : AppThemes.darkHomeShellBackground;
+
+  double _carDetailsTitleContentHeight(BuildContext context) {
     final bool hasQuickSell =
         car!['is_quick_sell'] == true || car!['is_quick_sell'] == 'true';
     final bool hasModelOrPrice = _displayModelName(context).isNotEmpty ||
@@ -13,21 +26,19 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
     final uploadedDetail = listingUploadedAgo(context, car!);
     final bool hasMeta = cityDetail.isNotEmpty || uploadedDetail.isNotEmpty;
 
-    // Top pad + brand + optional model/price + meta + bottom pad.
-    // Extra slack avoids PreferredSize clipping/overflow.
-    double height = 14 + 26;
-    if (hasModelOrPrice) height += 4 + 32;
-    if (hasMeta) height += 10 + 24;
-    height += 6;
+    // Sheet content from top padding through Specifications.
+    double height = 12 + 22;
+    if (hasModelOrPrice) height += 4 + 26;
+    if (hasMeta) height += 16 + 18;
+    height += _metaToDividerGap + 1;
+    height += 10 + 26; // gap + Specifications
     if (hasQuickSell) height += 44 + 16;
     return height;
   }
 
   Widget _buildCarDetailsTitleHeader(BuildContext context, bool isLightShell) {
     final bool hasPrice = tryParseCurrencyValue(car!['price']) != null;
-    final bg = isLightShell
-        ? AppThemes.lightAppBackground
-        : AppThemes.darkHomeShellBackground;
+    final bg = _carDetailsSheetColor(isLightShell);
 
     return Material(
       color: bg,
@@ -38,10 +49,11 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       child: Theme(
         data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: [
             if (car!['is_quick_sell'] == true ||
                 car!['is_quick_sell'] == 'true')
@@ -91,6 +103,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      height: 1.15,
                       color: isLightShell
                           ? AppThemes.darkHomeShellBackground
                           : Colors.white,
@@ -117,6 +130,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
+                              height: 1.15,
                               color: isLightShell
                                   ? Theme.of(context)
                                       .colorScheme
@@ -133,11 +147,13 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     const SizedBox(width: 12),
                     Text(
                       formatCurrency(context, car!['price']),
+                      textScaler: const TextScaler.linear(1.0),
                       maxLines: 1,
                       style: const TextStyle(
-                        fontSize: 26,
+                        fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFFFF6B00),
+                        height: 1.15,
                       ),
                     ),
                   ],
@@ -156,6 +172,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                 final cityLabelStyle = TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
+                  height: 1.2,
                   color: isLightShell
                       ? const Color(0xFF757575)
                       : Colors.white70,
@@ -167,7 +184,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 16),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -189,6 +206,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                       child: Text(
                                         '${AppLocalizations.of(context)!.cityLabel}: '
                                         '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
+                                        textScaler: const TextScaler.linear(1.0),
                                         style: cityLabelStyle,
                                         maxLines: 2,
                                         overflow: TextOverflow.clip,
@@ -201,6 +219,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                           if (cityDetail.isNotEmpty) const SizedBox(width: 8),
                           Text(
                             uploadedDetail,
+                            textScaler: const TextScaler.linear(1.0),
                             style: cityLabelStyle.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: 12,
@@ -215,6 +234,28 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                 );
               },
             ),
+            // Keep this gap in the same column as the meta row so it cannot
+            // vary with PreferredSize height slack across platforms.
+            const SizedBox(height: _metaToDividerGap),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: isLightShell
+                  ? const Color(0xFFE0E0E0)
+                  : Colors.white24,
+            ),
+            // Push Specs to the bottom of the sheet so PreferredSize slack can't
+            // open a gap between Specs and the grid below.
+            const Spacer(),
+            const SizedBox(height: 8),
+            Text(
+              AppLocalizations.of(context)!.specificationsLabel,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFFF6B00),
+              ),
+            ),
           ],
         ),
       ),
@@ -223,22 +264,29 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
   }
 
   Widget _buildCarDetailsHeroSliver(BuildContext context, bool isLightShell) {
-    final titleHeaderHeight = _carDetailsTitleHeaderHeight(context);
-    // Keep a similar photo area as before (~296px above the sheet).
-    final expandedHeight = 296 + titleHeaderHeight;
+    final titleContentHeight = _carDetailsTitleContentHeight(context);
+    final heroPhotoHeight = _heroPhotoHeight(context);
+    // Photo band + title sheet. Title lives in flexibleSpace (not `bottom`) so
+    // SliverAppBar's collapsing bottomOpacity cannot fade a white sheet over
+    // the photo while scrolling.
+    final expandedHeight = heroPhotoHeight + titleContentHeight;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
+    // flexibleSpace is full-bleed under the status bar; keep photo under the
+    // sheet's top radius so corners show the image before scroll.
+    final imageBleedHeight =
+        statusBarHeight + heroPhotoHeight + _sheetTopRadius;
+    final heroEntries = _heroImageEntries;
     return                 SliverAppBar(
-                  pinned: true,
+                  pinned: false,
                   stretch: true,
+                  forceMaterialTransparency: true,
+                  backgroundColor: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  clipBehavior: Clip.none,
                   foregroundColor: isLightShell ? Colors.white : null,
                   expandedHeight: expandedHeight,
-                  bottom: PreferredSize(
-                    preferredSize: Size.fromHeight(titleHeaderHeight),
-                    child: SizedBox(
-                      height: titleHeaderHeight,
-                      width: double.infinity,
-                      child: _buildCarDetailsTitleHeader(context, isLightShell),
-                    ),
-                  ),
                   leading: Semantics(
                     button: true,
                     label: AppLocalizations.of(context)!.backAction,
@@ -365,12 +413,16 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                         ],
                       ),
                   ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    background: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.zero,
+                  flexibleSpace: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                        // Photo sits in the visible band and under the sheet's
+                        // top radius so corners always reveal the car.
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          height: imageBleedHeight,
                           child: GestureDetector(
                             onTap: () {
                               if (_heroMediaCount == 0) return;
@@ -396,17 +448,16 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                     ),
                                     itemCount: _heroMediaCount,
                                     itemBuilder: (context, index) {
-                                      if (index < _imageUrls.length) {
-                                        final url = _imageUrls[index];
-                                        return listingNetworkImage(
-                                          url,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
+                                      if (index < heroEntries.length) {
+                                        final entry = heroEntries[index];
+                                        return ListingHeroImage(
+                                          url: entry.url,
+                                          detectionSource: entry.meta,
                                         );
                                       }
                                       return _buildHeroVideoSlide(
                                         context,
-                                        index - _imageUrls.length,
+                                        index - heroEntries.length,
                                       );
                                     },
                                   )
@@ -423,7 +474,8 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                         ),
                         if (_heroMediaCount > 1)
                           Positioned(
-                            bottom: 36,
+                            // Dots sit near the bottom of the visible photo band.
+                            top: statusBarHeight + heroPhotoHeight - 28,
                             left: 0,
                             right: 0,
                             child: IgnorePointer(
@@ -434,7 +486,9 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                   final int total = _heroMediaCount;
                                   final int visible =
                                       total < kMaxVisible ? total : kMaxVisible;
-                                  if (visible <= 1) return const SizedBox.shrink();
+                                  if (visible <= 1) {
+                                    return const SizedBox.shrink();
+                                  }
 
                                   int computeDotStart(int index) {
                                     if (total <= visible) return 0;
@@ -477,7 +531,11 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                             ),
                           ),
                         if (_isListingSold)
-                          Positioned.fill(
+                          Positioned(
+                            top: statusBarHeight,
+                            left: 0,
+                            right: 0,
+                            height: heroPhotoHeight,
                             child: IgnorePointer(
                               child: Center(
                                 child: Container(
@@ -506,8 +564,19 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                               ),
                             ),
                           ),
-                      ],
-                    ),
+                        // Title sheet over the photo — same stack as the image so
+                        // it never gets SliverAppBar bottomOpacity fade.
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: titleContentHeight,
+                          child: _buildCarDetailsTitleHeader(
+                            context,
+                            isLightShell,
+                          ),
+                        ),
+                    ],
                   ),
                 );
   }

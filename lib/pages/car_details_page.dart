@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../app/widgets/listing_network_image.dart';
+import '../app/widgets/listing_hero_image.dart';
 import '../data/car_name_translations.dart';
 import '../features/listing/car_details_listing_fields.dart';
 import '../features/listing/car_details_recommendations.dart';
@@ -64,7 +64,7 @@ part 'car_details_page_build.dart';
 class CarDetailsPage extends StatefulWidget {
   final String carId;
 
-  /// When false (default), owner edit/delete/sold controls are hidden — e.g. when
+  /// When false (default), owner edit/delete/sold controls are hidden â€” e.g. when
   /// opened from the home browse feed. Set true from My Listings.
   final bool allowOwnerManagement;
 

@@ -16,25 +16,10 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Divider(
-                            height: 1,
-                            thickness: 1,
-                            color: isLightShell
-                                ? const Color(0xFFE0E0E0)
-                                : Colors.white24,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            AppLocalizations.of(context)!.specificationsLabel,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFFF6B00),
-                            ),
-                          ),
-                          SizedBox(height: 20),
+                          // Specifications label lives in the title sheet above.
+                          const SizedBox(height: 12),
                           _buildSpecsGrid(),
-                          SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
                           Column(
                             mainAxisSize: MainAxisSize.min,

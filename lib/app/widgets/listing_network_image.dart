@@ -7,6 +7,7 @@ import '../../shared/debug/app_log.dart';
 Widget listingNetworkImage(
   String url, {
   BoxFit fit = BoxFit.cover,
+  Alignment alignment = Alignment.center,
   double? width,
   double? height,
 }) {
@@ -21,6 +22,7 @@ Widget listingNetworkImage(
   return _RetryingListingNetworkImage(
     url: url,
     fit: fit,
+    alignment: alignment,
     width: width,
     height: height,
   );
@@ -29,11 +31,13 @@ Widget listingNetworkImage(
 class _RetryingListingNetworkImage extends StatefulWidget {
   final String url;
   final BoxFit fit;
+  final Alignment alignment;
   final double? width;
   final double? height;
   const _RetryingListingNetworkImage({
     required this.url,
     required this.fit,
+    required this.alignment,
     this.width,
     this.height,
   });
@@ -100,6 +104,7 @@ class _RetryingListingNetworkImageState
       url,
       key: ValueKey('$url#$_attempt'),
       fit: widget.fit,
+      alignment: widget.alignment,
       width: widget.width,
       height: widget.height,
       loadingBuilder: (context, child, loadingProgress) {

@@ -37,6 +37,7 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                   SizedBox(height: 8),
                   Text(
                     AppLocalizations.of(context)!.savedSearchesHint,
+                    textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                 ],
