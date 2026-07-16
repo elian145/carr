@@ -6,8 +6,10 @@ String _sellReviewListingBrand(BuildContext context, Map<String, dynamic> car) {
     context,
     brand.isEmpty ? null : brand,
   );
-  if (locBrand.isNotEmpty) return locBrand;
-  return (car['title'] ?? '').toString().trim();
+  if (locBrand.isNotEmpty) return prettyTitleCase(locBrand);
+  return prettyTitleCase(
+    brand.isNotEmpty ? brand : (car['title'] ?? '').toString().trim(),
+  );
 }
 
 String _sellReviewListingModel(BuildContext context, Map<String, dynamic> car) {
@@ -20,9 +22,11 @@ String _sellReviewListingModel(BuildContext context, Map<String, dynamic> car) {
   );
   final displayModel = localizedModel.isNotEmpty ? localizedModel : model;
   final year = (car['year'] ?? '').toString().trim();
-  if (displayModel.isEmpty) return year;
-  if (year.isEmpty) return displayModel;
-  return '$displayModel $year';
+  final raw = [
+    if (displayModel.isNotEmpty) displayModel,
+    if (year.isNotEmpty) year,
+  ].join(' ').trim();
+  return prettyTitleCase(raw);
 }
 
 bool _sellReviewHasPrice(Map<String, dynamic> car) {
@@ -261,7 +265,7 @@ class _SellReviewCarDetailScrollViewState
                 top: Radius.circular(24),
               ),
             ),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             child: Theme(
               data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
               child: Column(
@@ -305,77 +309,71 @@ class _SellReviewCarDetailScrollViewState
                         ],
                       ),
                     ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              brandStr,
-                              style: TextStyle(
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                                color: isLightShell
-                                    ? AppThemes.darkHomeShellBackground
-                                    : Colors.white,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                      Expanded(
+                        child: AutoSizeText(
+                          brandStr,
+                          textScaleFactor: 1.0,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            height: 1.15,
+                            color: isLightShell
+                                ? AppThemes.darkHomeShellBackground
+                                : Colors.white,
                           ),
-                          if (_sellReviewHasPrice(car) && modelStr.isEmpty) ...[
-                            const SizedBox(width: 12),
-                            Text(
-                              _formatCurrencyGlobal(context, car['price']),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFFFF6B00),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      if (modelStr.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                modelStr,
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: isLightShell
-                                      ? Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant
-                                      : Colors.white70,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (_sellReviewHasPrice(car)) ...[
-                              const SizedBox(width: 12),
-                              Text(
-                                _formatCurrencyGlobal(context, car['price']),
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFFF6B00),
-                                ),
-                              ),
-                            ],
-                          ],
+                          maxLines: 1,
+                          minFontSize: 11,
+                          stepGranularity: 0.5,
+                          overflow: TextOverflow.clip,
                         ),
-                      ],
+                      ),
                     ],
                   ),
-                  // Match Home listing card: city / uploaded info goes below title + price.
+                  if (modelStr.isNotEmpty || _sellReviewHasPrice(car)) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: modelStr.isEmpty
+                              ? const SizedBox.shrink()
+                              : Text(
+                                  modelStr,
+                                  textScaler: const TextScaler.linear(1.0),
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.15,
+                                    color: isLightShell
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                        : Colors.white70,
+                                  ),
+                                ),
+                        ),
+                        if (_sellReviewHasPrice(car)) ...[
+                          const SizedBox(width: 12),
+                          Text(
+                            _formatCurrencyGlobal(context, car['price']),
+                            textScaler: const TextScaler.linear(1.0),
+                            maxLines: 1,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF6B00),
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                  // Match listing details: city / uploaded info below title + price.
                   Builder(
                     builder: (context) {
                       String? pickCity(List<String> keys) {
@@ -395,60 +393,66 @@ class _SellReviewCarDetailScrollViewState
                       final cityLabelStyle = TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
+                        height: 1.2,
                         color: isLightShell
                             ? const Color(0xFF757575)
                             : Colors.white70,
                       );
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: cityDetail.isEmpty
-                                  ? const SizedBox.shrink()
-                                  : Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.location_city,
-                                          size: 14,
-                                          color: isLightShell
-                                              ? const Color(0xFF757575)
-                                              : Colors.white70,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Flexible(
-                                          child: Text(
-                                            '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
-                                            style: cityLabelStyle,
-                                            // Allow long cities like "Sulaymaniyah" to show fully.
-                                            maxLines: 2,
-                                            overflow: TextOverflow.clip,
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: cityDetail.isEmpty
+                                    ? const SizedBox.shrink()
+                                    : Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.location_city,
+                                            size: 14,
+                                            color: isLightShell
+                                                ? const Color(0xFF757575)
+                                                : Colors.white70,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                            if (uploadedDetail.isNotEmpty) ...[
-                              if (cityDetail.isNotEmpty)
-                                const SizedBox(width: 8),
-                              Text(
-                                uploadedDetail,
-                                style: cityLabelStyle.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              '${AppLocalizations.of(context)!.cityLabel}: ${_translateValueGlobal(context, pickCity(['city', 'location'])) ?? pickCity(['city', 'location'])}',
+                                              textScaler:
+                                                  const TextScaler.linear(1.0),
+                                              style: cityLabelStyle,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.clip,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                               ),
+                              if (uploadedDetail.isNotEmpty) ...[
+                                if (cityDetail.isNotEmpty)
+                                  const SizedBox(width: 8),
+                                Text(
+                                  uploadedDetail,
+                                  textScaler: const TextScaler.linear(1.0),
+                                  style: cityLabelStyle.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
                             ],
-                          ],
-                        ),
+                          ),
+                        ],
                       );
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
                   Divider(
                     height: 1,
                     thickness: 1,
@@ -456,7 +460,7 @@ class _SellReviewCarDetailScrollViewState
                         ? const Color(0xFFE0E0E0)
                         : Colors.white24,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Text(
                     AppLocalizations.of(context)!.specificationsLabel,
                     style: const TextStyle(

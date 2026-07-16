@@ -16,6 +16,53 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       ? AppThemes.lightAppBackground
       : AppThemes.darkHomeShellBackground;
 
+  /// Model/price row height at fixed fontSize 22 (model may wrap).
+  double _modelPriceRowHeight(BuildContext context) {
+    const fontSize = 22.0;
+    const lineHeight = 1.15;
+    const singleLine = fontSize * lineHeight;
+
+    final modelName = _displayModelName(context);
+    final hasPrice = tryParseCurrencyValue(car!['price']) != null;
+    if (modelName.isEmpty) return singleLine;
+
+    final textDir = Directionality.of(context);
+    var maxWidth = MediaQuery.sizeOf(context).width - 32; // L/R padding
+    if (hasPrice) {
+      final pricePainter = TextPainter(
+        text: TextSpan(
+          text: formatCurrency(context, car!['price']),
+          style: const TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
+            height: lineHeight,
+          ),
+        ),
+        textDirection: textDir,
+        textScaler: TextScaler.noScaling,
+        maxLines: 1,
+      )..layout();
+      maxWidth -= 12 + pricePainter.width;
+    }
+
+    final modelPainter = TextPainter(
+      text: TextSpan(
+        text: modelName,
+        style: const TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w800,
+          height: lineHeight,
+        ),
+      ),
+      textDirection: textDir,
+      textScaler: TextScaler.noScaling,
+    )..layout(maxWidth: maxWidth.clamp(1.0, double.infinity));
+
+    return hasPrice
+        ? (modelPainter.height > singleLine ? modelPainter.height : singleLine)
+        : modelPainter.height;
+  }
+
   double _carDetailsTitleContentHeight(BuildContext context) {
     final bool hasQuickSell =
         car!['is_quick_sell'] == true || car!['is_quick_sell'] == 'true';
@@ -28,7 +75,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
 
     // Sheet content from top padding through Specifications.
     double height = 12 + 22;
-    if (hasModelOrPrice) height += 4 + 26;
+    if (hasModelOrPrice) height += 4 + _modelPriceRowHeight(context);
     if (hasMeta) height += 16 + 18;
     height += _metaToDividerGap + 1;
     height += 10 + 26; // gap + Specifications
@@ -119,14 +166,15 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
             if (_displayModelName(context).isNotEmpty || hasPrice) ...[
               const SizedBox(height: 4),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: _displayModelName(context).isEmpty
                         ? const SizedBox.shrink()
-                        : AutoSizeText(
+                        : Text(
                             _displayModelName(context),
-                            textScaleFactor: 1.0,
+                            textScaler: const TextScaler.linear(1.0),
+                            softWrap: true,
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
@@ -137,10 +185,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                                       .onSurfaceVariant
                                   : Colors.white70,
                             ),
-                            maxLines: 1,
-                            minFontSize: 14,
-                            stepGranularity: 0.5,
-                            overflow: TextOverflow.ellipsis,
                           ),
                   ),
                   if (hasPrice) ...[
@@ -271,10 +315,11 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
     // the photo while scrolling.
     final expandedHeight = heroPhotoHeight + titleContentHeight;
     final statusBarHeight = MediaQuery.paddingOf(context).top;
-    // flexibleSpace is full-bleed under the status bar; keep photo under the
-    // sheet's top radius so corners show the image before scroll.
-    final imageBleedHeight =
-        statusBarHeight + heroPhotoHeight + _sheetTopRadius;
+    // Keep the photo tucked under the sheet radius so stretch overscroll still
+    // reveals the image through the rounded corners (not the scaffold).
+    final sheetOverlap = titleContentHeight > _sheetTopRadius
+        ? titleContentHeight - _sheetTopRadius
+        : 0.0;
     final heroEntries = _heroImageEntries;
     return                 SliverAppBar(
                   pinned: false,
@@ -416,13 +461,13 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                   flexibleSpace: Stack(
                     fit: StackFit.expand,
                     children: [
-                        // Photo sits in the visible band and under the sheet's
-                        // top radius so corners always reveal the car.
+                        // Photo fills down under the sheet radius so stretch
+                        // overscroll keeps rounded corners over the image.
                         Positioned(
                           top: 0,
                           left: 0,
                           right: 0,
-                          height: imageBleedHeight,
+                          bottom: sheetOverlap,
                           child: GestureDetector(
                             onTap: () {
                               if (_heroMediaCount == 0) return;
@@ -474,10 +519,10 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                         ),
                         if (_heroMediaCount > 1)
                           Positioned(
-                            // Dots sit near the bottom of the visible photo band.
-                            top: statusBarHeight + heroPhotoHeight - 28,
+                            // Dots sit just above the title sheet.
                             left: 0,
                             right: 0,
+                            bottom: titleContentHeight + 12,
                             child: IgnorePointer(
                               ignoring: true,
                               child: Center(
@@ -535,7 +580,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                             top: statusBarHeight,
                             left: 0,
                             right: 0,
-                            height: heroPhotoHeight,
+                            bottom: titleContentHeight,
                             child: IgnorePointer(
                               child: Center(
                                 child: Container(
