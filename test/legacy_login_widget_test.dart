@@ -55,7 +55,10 @@ void main() {
   testWidgets('Login validates empty phone before submit', (tester) async {
     await openLogin(tester);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Login'));
+    final loginButton = find.widgetWithText(ElevatedButton, 'Login');
+    await tester.ensureVisible(loginButton);
+    await tester.pumpAndSettle();
+    await tester.tap(loginButton);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -69,7 +72,8 @@ void main() {
     await tester.tap(find.text('Dealer'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Dealer account'), findsOneWidget);
+    expect(find.text('Dealer'), findsOneWidget);
+    expect(find.text('Personal account'), findsOneWidget);
     expect(find.text('Dealership name'), findsNothing);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });

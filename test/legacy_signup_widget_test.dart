@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/app/production_app.dart' as legacy;
+import 'package:car_listing_app/pages/production_auth_pages.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
 
@@ -41,8 +42,12 @@ void main() {
   testWidgets('Signup route opens dealer phone auth by default', (tester) async {
     await openSignup(tester);
 
-    expect(find.text('Dealer account'), findsOneWidget);
+    expect(
+      tester.widget<LoginPage>(find.byType(LoginPage)).initialDealerMode,
+      isTrue,
+    );
     expect(find.text('Dealer'), findsOneWidget);
+    expect(find.text('Personal account'), findsOneWidget);
     expect(find.text('Dealership name'), findsNothing);
     expect(find.byType(TextFormField), findsNWidgets(2));
   });
