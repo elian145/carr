@@ -27,7 +27,12 @@ mixin _ProfilePageBodyGuest on _ProfilePageWidgets {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Guest',
+                    trLegacyText(
+                      context,
+                      'Guest',
+                      ar: 'زائر',
+                      ku: 'میوان',
+                    ),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -36,7 +41,12 @@ mixin _ProfilePageBodyGuest on _ProfilePageWidgets {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    'Sign in to access your profile features.',
+                    trLegacyText(
+                      context,
+                      'Sign in to access your profile features.',
+                      ar: 'سجّل الدخول للوصول إلى ميزات ملفك الشخصي.',
+                      ku: 'بچۆ ژوورەوە بۆ دەستگەیشتن بە تایبەتمەندییەکانی پرۆفایلەکەت.',
+                    ),
                     style: TextStyle(
                       fontSize: 13,
                       color: _profileSecondaryInk(context),

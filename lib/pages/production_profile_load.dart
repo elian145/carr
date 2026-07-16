@@ -107,13 +107,6 @@ mixin _ProfilePageLoad on _ProfilePageStyle {
               onPressed: () => Navigator.pop(ctx),
               child: Text(AppLocalizations.of(ctx)!.cancelAction),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.pushReplacementNamed(context, '/signup');
-              },
-              child: Text(AppLocalizations.of(ctx)!.dealerFallbackLabel),
-            ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(ctx);

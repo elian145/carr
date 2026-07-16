@@ -27,93 +27,98 @@ Widget _buildGlobalCarCardInnerText(
   final int titleMaxLines = listLayout ? 1 : 2;
   final double reservedTitleHeight =
       titleBoxFontSize * titleLineHeight * titleMaxLines;
-  final double sectionGap = listLayout ? 5.0 : (compact ? 4.0 : 6.0);
-  final double blockGap = listLayout ? 6.0 : (compact ? 6.0 : 8.0);
+  final double sectionGap = listLayout ? 4.0 : (compact ? 4.0 : 6.0);
+  final double blockGap = listLayout ? 8.0 : (compact ? 6.0 : 8.0);
   final bool hasTrim = trimLine.isNotEmpty;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
+  final bool hasMeta = mileageDisplay.isNotEmpty || cityLine.isNotEmpty;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final double maxW = constraints.maxWidth;
-          final double logoSize =
-              maxW < 130 ? 20 : (maxW < 150 ? 22 : (maxW < 175 ? 24 : 28));
-          final double logoInner = logoSize - 4;
-          final double gap = maxW < 150 ? 4 : (maxW < 175 ? 6 : 8);
-          final double effectiveTitleFontSize = maxW < 130
-              ? 13
-              : (maxW < 150
-                  ? 14
-                  : (maxW < 175 ? 15 : titleFontSize));
+  final Widget titleBlock = LayoutBuilder(
+    builder: (context, constraints) {
+      final double maxW = constraints.maxWidth;
+      // List cards are height-tight; keep the logo within the reserved title
+      // line so the spaceBetween column does not bottom-overflow by a few px.
+      final double logoSize = listLayout
+          ? reservedTitleHeight.clamp(16.0, 22.0)
+          : (maxW < 130 ? 20 : (maxW < 150 ? 22 : (maxW < 175 ? 24 : 28)));
+      final double logoInner = logoSize - 4;
+      final double gap = maxW < 150 ? 4 : (maxW < 175 ? 6 : 8);
+      final double effectiveTitleFontSize = maxW < 130
+          ? 13
+          : (maxW < 150
+              ? 14
+              : (maxW < 175 ? 15 : titleFontSize));
 
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (car['brand'] != null && car['brand'].toString().isNotEmpty)
-                SizedBox(
-                  width: logoSize,
-                  height: logoSize,
-                  child: Container(
-                    width: logoSize,
-                    height: logoSize,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: null,
-                    ),
-                    child: CachedNetworkImage(
-                      imageUrl:
-                          '${getApiBase()}/static/images/brands/$brandId.png',
-                      placeholder: (context, url) => SizedBox(
-                        width: logoInner,
-                        height: logoInner,
-                        child: const CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      errorWidget: (context, url, error) => const Icon(
-                        Icons.directions_car,
-                        size: 20,
-                        color: Color(0xFFFF6B00),
-                      ),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (car['brand'] != null && car['brand'].toString().isNotEmpty)
+            SizedBox(
+              width: logoSize,
+              height: logoSize,
+              child: Container(
+                width: logoSize,
+                height: logoSize,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: null,
                 ),
-              SizedBox(width: gap),
-              Expanded(
+                child: CachedNetworkImage(
+                  imageUrl:
+                      '${getApiBase()}/static/images/brands/$brandId.png',
+                  placeholder: (context, url) => SizedBox(
+                    width: logoInner,
+                    height: logoInner,
+                    child: const CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  errorWidget: (context, url, error) => const Icon(
+                    Icons.directions_car,
+                    size: 20,
+                    color: Color(0xFFFF6B00),
+                  ),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          SizedBox(width: gap),
+          Expanded(
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SizedBox(
+                height: reservedTitleHeight,
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: SizedBox(
-                    height: reservedTitleHeight,
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: AutoSizeText(
-                        localizedCarTitleForCard(context, car),
-                        textScaleFactor: 1.0,
-                        textAlign: TextAlign.start,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: titleTextColor,
-                          fontSize: effectiveTitleFontSize,
-                          height: titleLineHeight,
-                        ),
-                        maxLines: titleMaxLines,
-                        minFontSize: 8,
-                        stepGranularity: 0.25,
-                        overflow: TextOverflow.clip,
-                        softWrap: true,
-                      ),
+                  child: AutoSizeText(
+                    localizedCarTitleForCard(context, car),
+                    textScaleFactor: 1.0,
+                    textAlign: TextAlign.start,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: titleTextColor,
+                      fontSize: effectiveTitleFontSize,
+                      height: titleLineHeight,
                     ),
+                    maxLines: titleMaxLines,
+                    minFontSize: 8,
+                    stepGranularity: 0.25,
+                    overflow: TextOverflow.clip,
+                    softWrap: true,
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  final Widget trimBlock = Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
       SizedBox(height: blockGap),
       Visibility(
         visible: hasTrim,
@@ -128,14 +133,16 @@ Widget _buildGlobalCarCardInnerText(
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      SizedBox(height: sectionGap),
-      Visibility(
-        visible: hasTrim,
-        maintainAnimation: true,
-        maintainSize: true,
-        maintainState: true,
-        child: Divider(height: 1, thickness: 1, color: dividerLineColor),
-      ),
+    ],
+  );
+
+  final Widget yearPriceBlock = Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // Dividers stay attached to year/price so leftover height never opens
+      // a gap between the price row and its surrounding lines.
+      Divider(height: 1, thickness: 1, color: dividerLineColor),
       SizedBox(height: sectionGap),
       Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -187,87 +194,127 @@ Widget _buildGlobalCarCardInnerText(
           ),
         ],
       ),
-      if (mileageDisplay.isNotEmpty || cityLine.isNotEmpty) ...[
+      if (hasMeta) ...[
         SizedBox(height: sectionGap),
         Divider(height: 1, thickness: 1, color: dividerLineColor),
-        SizedBox(height: sectionGap),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              flex: 1,
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: mileageDisplay.isNotEmpty
-                    ? FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          mileageDisplay,
-                          textScaler: const TextScaler.linear(1.0),
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(color: metaTextColor, fontSize: metaFontSize),
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ),
-            if (mileageDisplay.isNotEmpty && cityLine.isNotEmpty) ...[
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 8),
-                child: Center(
-                  child: Container(
-                    width: 1,
-                    height: 12,
-                    color: metaTextColor.withValues(alpha: 0.35),
-                  ),
-                ),
-              ),
-            ],
-            if (cityLine.isNotEmpty)
-              Expanded(
-                flex: 1,
-                child: Padding(
-                  padding: EdgeInsets.zero,
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.location_city,
-                            size: compact ? 10 : 12,
-                            color: metaTextColor,
-                          ),
-                          SizedBox(width: compact ? 2 : 4),
-                          Text(
-                            cityLine,
-                            textScaler: const TextScaler.linear(1.0),
-                            maxLines: 1,
-                            softWrap: false,
-                            overflow: TextOverflow.visible,
-                            textAlign: TextAlign.end,
-                            style: TextStyle(
-                              color: metaTextColor,
-                              fontSize: metaFontSize,
-                            ),
-                          ),
-                        ],
-                      ),
+      ],
+    ],
+  );
+
+  final Widget mileageCityRow = Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Expanded(
+        flex: 1,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: mileageDisplay.isNotEmpty
+              ? FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    mileageDisplay,
+                    textScaler: const TextScaler.linear(1.0),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: TextStyle(
+                      color: metaTextColor,
+                      fontSize: metaFontSize,
                     ),
                   ),
-                ),
-              ),
-          ],
+                )
+              : const SizedBox.shrink(),
+        ),
+      ),
+      if (mileageDisplay.isNotEmpty && cityLine.isNotEmpty) ...[
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: compact ? 4 : 8),
+          child: Center(
+            child: Container(
+              width: 1,
+              height: 12,
+              color: metaTextColor.withValues(alpha: 0.35),
+            ),
+          ),
         ),
       ],
+      if (cityLine.isNotEmpty)
+        Expanded(
+          flex: 1,
+          child: Padding(
+            padding: EdgeInsets.zero,
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerEnd,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.location_city,
+                      size: compact ? 10 : 12,
+                      color: metaTextColor,
+                    ),
+                    SizedBox(width: compact ? 2 : 4),
+                    Text(
+                      cityLine,
+                      textScaler: const TextScaler.linear(1.0),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        color: metaTextColor,
+                        fontSize: metaFontSize,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+    ],
+  );
+
+  if (!listLayout) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        titleBlock,
+        trimBlock,
+        SizedBox(height: sectionGap),
+        yearPriceBlock,
+        if (hasMeta) ...[
+          SizedBox(height: sectionGap),
+          mileageCityRow,
+        ],
+      ],
+    );
+  }
+
+  // List layout: pin title to top and mileage to bottom. Extra height is
+  // shared between sections; dividers stay glued to the year/price row.
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.max,
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          titleBlock,
+          trimBlock,
+        ],
+      ),
+      yearPriceBlock,
+      if (hasMeta) mileageCityRow,
     ],
   );
 }

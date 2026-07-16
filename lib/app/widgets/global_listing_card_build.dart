@@ -66,8 +66,9 @@ Widget buildGlobalCarCard(
   final bool showVideoCountBadge =
       car['videos'] != null && (car['videos'] as List).isNotEmpty;
   final EdgeInsets listingCardTextPadding = listLayout
-      // Horizontal cards: tighter padding so title + specs fit without bottom overflow.
-      ? const EdgeInsets.fromLTRB(8, 6, 8, 4)
+      // Horizontal cards: enough inset that title/city don't kiss the edges,
+      // without the large empty bands taller phones used to show.
+      ? const EdgeInsets.fromLTRB(8, 6, 10, 6)
       : const EdgeInsets.fromLTRB(12, 8, 12, 6);
 
   Widget wrapCardTextTap(Widget child) {
@@ -186,21 +187,21 @@ Widget buildGlobalCarCard(
                             child: SizedBox(
                               width: contentW,
                               height: contentH,
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: _buildGlobalCarCardInnerText(
-                                  context,
-                                  car,
-                                  brandId: brandId,
-                                  trimLine: trimLine,
-                                  yearDisplay: yearDisplay,
-                                  mileageDisplay: mileageDisplay,
-                                  cityLine: cityLine,
-                                  titleTextColor: titleTextColor,
-                                  dividerLineColor: dividerLineColor,
-                                  metaTextColor: metaTextColor,
-                                  listLayout: true,
-                                ),
+                              // Fill the text column: title stays at the top,
+                              // mileage/city at the bottom (no vertical centering
+                              // that leaves empty bands on taller phones).
+                              child: _buildGlobalCarCardInnerText(
+                                context,
+                                car,
+                                brandId: brandId,
+                                trimLine: trimLine,
+                                yearDisplay: yearDisplay,
+                                mileageDisplay: mileageDisplay,
+                                cityLine: cityLine,
+                                titleTextColor: titleTextColor,
+                                dividerLineColor: dividerLineColor,
+                                metaTextColor: metaTextColor,
+                                listLayout: true,
                               ),
                             ),
                           ),

@@ -151,10 +151,10 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
 
   Future<void> _restoreFilters() async {
     try {
-      final sp = await SharedPreferences.getInstance();
-      final raw = sp.getString(_HomePageFields._filtersKey);
-      if (raw == null || raw.isEmpty) return;
-      final map = json.decode(raw) as Map<String, dynamic>;
+      // Drop disk leftovers from older builds; filters are session-memory only.
+      await _removeLegacyPersistedHomeFilters();
+      final map = _HomeFilterSessionPersistence.snapshot;
+      if (map == null || map.isEmpty) return;
       if (!mounted) return;
       setState(() {
         _applyParsedHomeFilterFields(
@@ -240,20 +240,30 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
   Future<void> _persistFilters() async {
     try {
       if (!_homeFiltersSnapshot().hasActiveFilters) {
-        await _clearFiltersOnly();
+        _HomeFilterSessionPersistence.clear();
+        await _removeLegacyPersistedHomeFilters();
         return;
       }
-      final sp = await SharedPreferences.getInstance();
       final map = homeFilterHomePersistMap(_homeFiltersSnapshot());
-      await sp.setString(_HomePageFields._filtersKey, json.encode(map));
+      _HomeFilterSessionPersistence.save(map);
+      // Keep SharedPreferences clean so a kill/relaunch cannot restore filters.
+      await _removeLegacyPersistedHomeFilters();
+    } catch (e, st) { logNonFatal(e, st); }
+  }
+
+  Future<void> _removeLegacyPersistedHomeFilters() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.remove(_HomePageFields._filtersKey);
+      await sp.remove(_HomePageFields._sellFiltersKey);
     } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _clearFiltersOnly() async {
     try {
+      _HomeFilterSessionPersistence.clear();
+      await _removeLegacyPersistedHomeFilters();
       final sp = await SharedPreferences.getInstance();
-      await sp.remove(_HomePageFields._filtersKey);
-      await sp.remove(_HomePageFields._sellFiltersKey);
       await sp.remove(_HomePageFields._savedSearchesKey);
       // Don't clear cached car data to improve reliability
     } catch (e, st) { logNonFatal(e, st); }

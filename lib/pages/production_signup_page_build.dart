@@ -400,12 +400,7 @@ mixin _SignupPageBuild on _SignupPageActions {
               navigateMainShellTab(context, '/dealers');
               break;
             case 3:
-              if (ApiService.accessToken == null ||
-                  ApiService.accessToken!.isEmpty) {
-                Navigator.pushReplacementNamed(context, '/login');
-              } else {
-                navigateMainShellTab(context, '/profile');
-              }
+              navigateMainShellTab(context, '/profile');
               break;
           }
         },

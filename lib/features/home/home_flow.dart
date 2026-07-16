@@ -167,6 +167,25 @@ class _HomeFeedScrollPersistence {
   }
 }
 
+/// Session-only home filters when main tabs dispose/rebuild [HomePage].
+/// Not written to SharedPreferences, so filters do not survive a cold start.
+class _HomeFilterSessionPersistence {
+  _HomeFilterSessionPersistence._();
+
+  static Map<String, dynamic>? _filters;
+
+  static Map<String, dynamic>? get snapshot =>
+      _filters == null ? null : Map<String, dynamic>.from(_filters!);
+
+  static void save(Map<String, dynamic> filters) {
+    _filters = Map<String, dynamic>.from(filters);
+  }
+
+  static void clear() {
+    _filters = null;
+  }
+}
+
 void _switchMainTabNoAnimation(BuildContext context, String routeName) {
   main_shell_navigation.navigateMainShellTab(context, routeName);
 }

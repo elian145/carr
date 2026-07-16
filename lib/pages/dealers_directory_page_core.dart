@@ -23,12 +23,7 @@ mixin _DealersDirectoryPageCore on _DealersDirectoryPageWidgets {
             case 2:
               break;
             case 3:
-              if (ApiService.accessToken == null ||
-                  ApiService.accessToken!.isEmpty) {
-                Navigator.pushReplacementNamed(context, '/login');
-              } else {
-                navigateMainShellTab(context, '/profile');
-              }
+              navigateMainShellTab(context, '/profile');
               break;
           }
         },

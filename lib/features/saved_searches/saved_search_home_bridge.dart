@@ -8,6 +8,8 @@ import '../../shared/debug/app_log.dart';
 abstract final class SavedSearchHomeBridge {
   static const String pendingFetchKey = 'home_pending_saved_search_fetch_v1';
   static const String oneTimeFiltersKey = 'home_apply_filters_once_v1';
+  /// Legacy disk key for home UI filters (no longer restored across launches).
+  static const String legacyHomeFiltersKey = 'home_filters_v1';
 
   static Future<void> markPendingFetch() async {
     try {
@@ -79,7 +81,7 @@ abstract final class SavedSearchHomeBridge {
         'sort_by': filters['sort_by'],
       };
       map.removeWhere((_, v) => v == null || v.toString().trim().isEmpty);
-      await sp.remove('home_filters_v1');
+      await sp.remove(legacyHomeFiltersKey);
       await sp.setString(oneTimeFiltersKey, json.encode(map));
       await markPendingFetch();
     } catch (e, st) {
@@ -87,12 +89,13 @@ abstract final class SavedSearchHomeBridge {
     }
   }
 
-  /// Clears orphaned one-time keys when the app starts before Home mounts.
+  /// Clears orphaned one-time / legacy home-filter keys on cold start.
   static Future<void> clearOrphanedStartupKeys() async {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.remove(oneTimeFiltersKey);
       await sp.remove(pendingFetchKey);
+      await sp.remove(legacyHomeFiltersKey);
     } catch (e, st) {
       logNonFatal(e, st);
     }

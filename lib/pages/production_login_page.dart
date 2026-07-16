@@ -374,154 +374,395 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _isDealer
-              ? trLegacyText(
-                  context,
-                  'Dealer account',
-                  ar: 'حساب الوكالة',
-                  ku: 'هەژماری ناوەندی فرۆشتن',
-                )
-              : loc.loginTitle,
+  InputDecoration _loginFieldDecoration(
+    BuildContext context, {
+    required String labelText,
+    String? hintText,
+    String? prefixText,
+    Widget? prefixIcon,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final fill = isLight ? const Color(0xFFF4F4F4) : Colors.white.withValues(alpha: 0.08);
+    final muted = isLight ? const Color(0xFF757575) : Colors.white70;
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixText: prefixText,
+      prefixIcon: prefixIcon,
+      filled: true,
+      fillColor: fill,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      labelStyle: TextStyle(color: muted, fontWeight: FontWeight.w500),
+      hintStyle: TextStyle(color: muted),
+      prefixStyle: const TextStyle(
+        color: Color(0xFFFF6B00),
+        fontWeight: FontWeight.w700,
+        fontSize: 16,
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: isLight ? const Color(0xFFE0E0E0) : Colors.white24,
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
-        child: Form(
-          key: _formKey,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFFF6B00), width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.error,
+          width: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _accountTypeCard({
+    required BuildContext context,
+    required bool selected,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final border = selected
+        ? const Color(0xFFFF6B00)
+        : (isLight ? const Color(0xFFE0E0E0) : Colors.white24);
+    final fill = selected
+        ? const Color(0xFFFF6B00).withValues(alpha: isLight ? 0.10 : 0.18)
+        : (isLight ? Colors.white : Colors.white.withValues(alpha: 0.06));
+    final ink = selected
+        ? const Color(0xFFFF6B00)
+        : (isLight ? const Color(0xFF424242) : Colors.white70);
+
+    return Material(
+      color: fill,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: border, width: selected ? 2 : 1),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                trLegacyText(
-                  context,
-                  'Account type',
-                  ar: 'نوع الحساب',
-                  ku: 'جۆری هەژمار',
-                ),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Icon(icon, color: ink, size: 26),
               const SizedBox(height: 8),
-              RadioGroup<String>(
-                groupValue: _isDealer ? 'dealer' : 'personal',
-                onChanged: (value) {
-                  if (value == null) return;
-                  _setAccountType(value == 'dealer');
-                },
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text(loc.personalAccountLabel),
-                        value: 'personal',
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                    ),
-                    Expanded(
-                      child: RadioListTile<String>(
-                        title: Text(loc.dealerFallbackLabel),
-                        value: 'dealer',
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
               Text(
-                trLegacyText(
-                  context,
-                  'Enter your phone number to log in or create an account.',
-                  ar: 'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.',
-                  ku: 'ژمارەی تەلەفۆنەکەت بنووسە بۆ چوونەژوورەوە یان دروستکردنی هەژمار.',
-                ),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: loc.enterPhoneNumber,
-                  hintText: '7XX XXX XXXX',
-                  prefixText: '+964 ',
-                ),
-                inputFormatters: [
-                  services.FilteringTextInputFormatter.allow(
-                    RegExp(r'[0-9]'),
-                  ),
-                  services.LengthLimitingTextInputFormatter(10),
-                ],
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? loc.requiredField
-                    : null,
-                onChanged: (_) => _resetOtpState(),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _otpController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: loc.sixDigitCodeLabel,
-                      ),
-                      inputFormatters: [
-                        services.FilteringTextInputFormatter.digitsOnly,
-                        services.LengthLimitingTextInputFormatter(6),
-                      ],
-                      validator: (v) => (!_otpSent)
-                          ? loc.sendCodeFirst
-                          : ((v == null || v.trim().length != 6)
-                                ? loc.requiredField
-                                : null),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: (_loading || _sendingOtp) ? null : _sendOtp,
-                    child: _sendingOtp
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(_otpSent ? loc.resend : loc.sendCode),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Semantics(
-                button: true,
-                label: loc.navLogin,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _loginWithPhone,
-                  child: _loading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(loc.navLogin),
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: ink,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final primaryInk = isLight ? const Color(0xFF1A1A1A) : Colors.white;
+    final secondaryInk = isLight ? const Color(0xFF757575) : Colors.white70;
+    final cardFill = isLight
+        ? Colors.white
+        : Color.alphaBlend(
+            Colors.white.withValues(alpha: 0.085),
+            AppThemes.darkHomeShellBackground,
+          );
+    final cardBorder =
+        isLight ? const Color(0xFFE0E0E0) : Colors.white.withValues(alpha: 0.12);
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(loc.loginTitle),
+        elevation: 0,
+        backgroundColor: const Color(0xFFFF6B00),
+        foregroundColor: Colors.white,
+      ),
+      body: Container(
+        decoration: AppThemes.shellBackgroundDecoration(
+          Theme.of(context).brightness,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+                  decoration: BoxDecoration(
+                    color: cardFill,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: cardBorder),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: isLight ? 0.06 : 0.35,
+                        ),
+                        blurRadius: isLight ? 16 : 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF6B00)
+                                .withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.phone_iphone_rounded,
+                            color: Color(0xFFFF6B00),
+                            size: 30,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        trLegacyText(
+                          context,
+                          'Welcome back',
+                          ar: 'مرحبًا بعودتك',
+                          ku: 'بەخێربێیتەوە',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: primaryInk,
+                          height: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        trLegacyText(
+                          context,
+                          'Enter your phone number to log in or create an account.',
+                          ar: 'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.',
+                          ku: 'ژمارەی تەلەفۆنەکەت بنووسە بۆ چوونەژوورەوە یان دروستکردنی هەژمار.',
+                        ),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: secondaryInk,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        trLegacyText(
+                          context,
+                          'Account type',
+                          ar: 'نوع الحساب',
+                          ku: 'جۆری هەژمار',
+                        ),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: secondaryInk,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _accountTypeCard(
+                              context: context,
+                              selected: !_isDealer,
+                              icon: Icons.person_outline_rounded,
+                              label: loc.personalAccountLabel,
+                              onTap: () => _setAccountType(false),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _accountTypeCard(
+                              context: context,
+                              selected: _isDealer,
+                              icon: Icons.storefront_outlined,
+                              label: loc.dealerFallbackLabel,
+                              onTap: () => _setAccountType(true),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        style: TextStyle(
+                          color: primaryInk,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        decoration: _loginFieldDecoration(
+                          context,
+                          labelText: loc.enterPhoneNumber,
+                          hintText: '7XX XXX XXXX',
+                          prefixText: '+964 ',
+                          prefixIcon: const Icon(
+                            Icons.phone_outlined,
+                            color: Color(0xFFFF6B00),
+                          ),
+                        ),
+                        inputFormatters: [
+                          services.FilteringTextInputFormatter.allow(
+                            RegExp(r'[0-9]'),
+                          ),
+                          services.LengthLimitingTextInputFormatter(10),
+                        ],
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? loc.requiredField
+                            : null,
+                        onChanged: (_) => _resetOtpState(),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _otpController,
+                              keyboardType: TextInputType.number,
+                              style: TextStyle(
+                                color: primaryInk,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                                letterSpacing: 2,
+                              ),
+                              decoration: _loginFieldDecoration(
+                                context,
+                                labelText: loc.sixDigitCodeLabel,
+                                prefixIcon: const Icon(
+                                  Icons.lock_outline_rounded,
+                                  color: Color(0xFFFF6B00),
+                                ),
+                              ),
+                              inputFormatters: [
+                                services.FilteringTextInputFormatter.digitsOnly,
+                                services.LengthLimitingTextInputFormatter(6),
+                              ],
+                              validator: (v) => (!_otpSent)
+                                  ? loc.sendCodeFirst
+                                  : ((v == null || v.trim().length != 6)
+                                        ? loc.requiredField
+                                        : null),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          SizedBox(
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed:
+                                  (_loading || _sendingOtp) ? null : _sendOtp,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF6B00),
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: const Color(0xFFFF6B00)
+                                    .withValues(alpha: 0.45),
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: _sendingOtp
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      _otpSent ? loc.resend : loc.sendCode,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 22),
+                      Semantics(
+                        button: true,
+                        label: loc.navLogin,
+                        child: SizedBox(
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _loginWithPhone,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF6B00),
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: const Color(0xFFFF6B00)
+                                  .withValues(alpha: 0.45),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.4,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    loc.navLogin,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

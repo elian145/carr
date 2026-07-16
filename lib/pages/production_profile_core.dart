@@ -29,12 +29,7 @@ mixin _ProfilePageCore on _ProfilePageBody {
               navigateMainShellTab(context, '/dealers');
               break;
             case 3:
-              if (ApiService.accessToken == null ||
-                  ApiService.accessToken!.isEmpty) {
-                Navigator.pushReplacementNamed(context, '/login');
-              } else {
-                navigateMainShellTab(context, '/profile');
-              }
+              // Already on Profile (guest or logged-in). Do not bounce to Login.
               break;
           }
         },
