@@ -227,84 +227,85 @@ Widget _buildGlobalCarCard(
                 ),
               ),
             Expanded(
-              child: Row(
-                textDirection: TextDirection.ltr,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 5,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.zero,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _buildGlobalCardImageCarousel(
-                            context,
-                            car,
-                            carouselResetSeed: carouselResetSeed,
-                            enableDetailTap: onCardTap == null,
-                            allowOwnerManagementOnOpen:
-                                allowOwnerManagementOnOpen,
-                          ),
-                          Positioned(
-                            top: 8,
-                            left: 8,
-                            child: _globalListingCardPhotoCountBadge(
-                              ListingCardMedia.collectFromCar(
-                                car,
-                                resolveNetworkUrl: buildLegacyFullImageUrl,
-                              ).length,
-                            ),
-                          ),
-                          if (showVideoCountBadge)
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: _globalListingCardVideoCountBadge(car),
-                            ),
-                          if (sold)
-                            Center(
-                              child: buildListingSoldBadge(
+              child: LayoutBuilder(
+                builder: (context, rowConstraints) {
+                  final imageWidth = AppResponsive.listingHorizontalImageWidth(
+                    context,
+                    cardWidth: rowConstraints.maxWidth,
+                    cardHeight: rowConstraints.maxHeight,
+                  );
+                  return Row(
+                    textDirection: TextDirection.ltr,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        width: imageWidth,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.zero,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              _buildGlobalCardImageCarousel(
                                 context,
-                                large: true,
+                                car,
+                                carouselResetSeed: carouselResetSeed,
+                                enableDetailTap: onCardTap == null,
+                                allowOwnerManagementOnOpen:
+                                    allowOwnerManagementOnOpen,
                               ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 7,
-                    child: LayoutBuilder(
-                      builder: (context, textConstraints) {
-                        final pad = listingCardTextPadding;
-                        final contentW =
-                            (textConstraints.maxWidth - pad.horizontal).clamp(
-                              0.0,
-                              double.infinity,
-                            );
-                        final contentH =
-                            (textConstraints.maxHeight - pad.vertical).clamp(
-                              0.0,
-                              double.infinity,
-                            );
-                        return wrapCardTextTap(
-                          Padding(
-                            padding: pad,
-                            child: SizedBox(
-                              width: contentW,
-                              height: contentH,
-                              // Fill the text column: title stays at the top,
-                              // mileage/city at the bottom (no vertical centering
-                              // that leaves empty bands on taller phones).
-                              child: buildCardText(horizontal: true),
-                            ),
+                              Positioned(
+                                top: 8,
+                                left: 8,
+                                child: _globalListingCardPhotoCountBadge(
+                                  ListingCardMedia.collectFromCar(
+                                    car,
+                                    resolveNetworkUrl: buildLegacyFullImageUrl,
+                                  ).length,
+                                ),
+                              ),
+                              if (showVideoCountBadge)
+                                Positioned(
+                                  top: 8,
+                                  right: 8,
+                                  child: _globalListingCardVideoCountBadge(car),
+                                ),
+                              if (sold)
+                                Center(
+                                  child: buildListingSoldBadge(
+                                    context,
+                                    large: true,
+                                  ),
+                                ),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                        ),
+                      ),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, textConstraints) {
+                            final pad = listingCardTextPadding;
+                            final contentW =
+                                (textConstraints.maxWidth - pad.horizontal)
+                                    .clamp(0.0, double.infinity);
+                            final contentH =
+                                (textConstraints.maxHeight - pad.vertical)
+                                    .clamp(0.0, double.infinity);
+                            return wrapCardTextTap(
+                              Padding(
+                                padding: pad,
+                                child: SizedBox(
+                                  width: contentW,
+                                  height: contentH,
+                                  child: buildCardText(horizontal: true),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -315,10 +316,10 @@ Widget _buildGlobalCarCard(
             // Keep enough white space for a two-line title without scaling
             // the specification chips and footer down.
             final textReserve = AppResponsive.isCompactPhone(context)
-                ? 140.0
-                : 152.0;
+                ? 128.0
+                : 140.0;
             final maxImage = (constraints.maxHeight - bannerH - textReserve)
-                .clamp(quickSell ? 100.0 : 120.0, 205.0);
+                .clamp(quickSell ? 100.0 : 120.0, 230.0);
             final baseImageH = AppResponsive.listingGridImageHeight(
               context,
               quickSell: quickSell,

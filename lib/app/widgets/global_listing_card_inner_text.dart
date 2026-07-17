@@ -85,6 +85,7 @@ Widget _buildGridCarCardInnerText(
   final double leadingShift = isRtl ? 6 : -6;
   final bool isArabic = languageCode == 'ar';
   final double trailingShift = isArabic ? -3 : (isRtl ? -6 : 6);
+  final double footerShiftY = compact ? 1 : 2;
   const Color priceAccent = Color(0xFFFF5A00);
 
   Widget infoChip(String value, {Color? color, bool scaleDown = false}) {
@@ -298,7 +299,7 @@ Widget _buildGridCarCardInnerText(
         if (cityLine.isNotEmpty)
           Expanded(
             child: Transform.translate(
-              offset: Offset(leadingShift, 6),
+              offset: Offset(leadingShift, footerShiftY),
               child: Row(
                 textDirection: textDirection,
                 children: [
@@ -336,7 +337,7 @@ Widget _buildGridCarCardInnerText(
         if (cityLine.isNotEmpty) const SizedBox.shrink(),
         if (cityLine.isEmpty) const Spacer(),
         Transform.translate(
-          offset: Offset(trailingShift, isArabic ? 3 : 6),
+          offset: Offset(trailingShift, footerShiftY),
           child: Transform.scale(
             scale: hasPrice ? 1 : 0.82,
             alignment: isRtl ? Alignment.centerLeft : Alignment.centerRight,

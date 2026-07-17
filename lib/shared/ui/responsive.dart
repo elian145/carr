@@ -158,18 +158,33 @@ abstract final class AppResponsive {
   }) {
     final w = screenSize(context).width;
     final colW = cardWidth ?? ((w - 24) / 2);
-    final ratio = quickSell ? 0.62 : 0.96;
+    // Standard marketplace 4:3 frame. It preserves more of typical landscape
+    // car photos while portrait photos use automatic downward vehicle bias.
+    final ratio = quickSell ? 0.62 : 0.75;
     var height = (colW * ratio).clamp(
-      quickSell ? 100.0 : 140.0,
-      quickSell ? 130.0 : 205.0,
+      quickSell ? 100.0 : 120.0,
+      quickSell ? 130.0 : 230.0,
     );
     if (maxHeight != null && maxHeight.isFinite) {
       height = height.clamp(
         quickSell ? 100.0 : 120.0,
-        maxHeight.clamp(quickSell ? 100.0 : 120.0, 205.0),
+        maxHeight.clamp(quickSell ? 100.0 : 120.0, 230.0),
       );
     }
     return height;
+  }
+
+  static double listingHorizontalImageWidth(
+    BuildContext context, {
+    required double cardWidth,
+    required double cardHeight,
+  }) {
+    final desiredFourByThreeWidth = cardHeight * 4 / 3;
+    final maxFraction = isCompactPhone(context) ? 0.44 : 0.46;
+    return desiredFourByThreeWidth.clamp(
+      cardWidth * 0.40,
+      cardWidth * maxFraction,
+    );
   }
 
   static double previewHeroHeight(BuildContext context) {
