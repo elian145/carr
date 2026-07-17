@@ -39,6 +39,64 @@ Widget buildGlobalCarCard(
       ? ''
       : (translateListingValue(context, cityRaw) ?? cityRaw).trim();
   final locCard = AppLocalizations.of(context)!;
+  String? firstCardValue(Map source, List<String> keys) {
+    for (final key in keys) {
+      final value = source[key];
+      if (value == null || value is Map || value is Iterable) continue;
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return null;
+  }
+
+  final engineKeys = const [
+    'engine_size',
+    'engine_size_liters',
+    'engine_size_l',
+    'engineSize',
+    'engineSizeLiters',
+    'engine',
+  ];
+  String? engineRaw = firstCardValue(car, engineKeys);
+  if (engineRaw == null) {
+    final specsRaw = car['specs'] ?? car['spec'] ?? car['details'];
+    if (specsRaw is Map) {
+      engineRaw = firstCardValue(specsRaw, engineKeys);
+    }
+  }
+  String engineLine = '';
+  if (engineRaw != null) {
+    final numericEngine = RegExp(
+      r'^(\d+(?:\.\d+)?)\s*(?:l|liters?)?$',
+      caseSensitive: false,
+    ).firstMatch(engineRaw);
+    if (numericEngine != null) {
+      final liters = double.tryParse(numericEngine.group(1)!);
+      if (liters != null && liters > 0) {
+        engineLine =
+            '${localizeDigits(context, liters.toStringAsFixed(1))}${locCard.unit_liter_suffix}';
+      }
+    }
+    if (engineLine.isEmpty) {
+      engineLine = localizeDigits(
+        context,
+        translateListingValue(context, engineRaw) ?? engineRaw,
+      );
+    }
+  }
+  if (engineLine.isEmpty) {
+    final fallbackRaw = firstCardValue(car, const [
+      'fuel_type',
+      'engine_type',
+      'drive_type',
+      'drivetrain',
+      'transmission',
+      'body_type',
+    ]);
+    if (fallbackRaw != null) {
+      engineLine = translateListingValue(context, fallbackRaw) ?? fallbackRaw;
+    }
+  }
   final String yearDisplay = yearRaw.isEmpty
       ? ''
       : localizeDigits(context, yearRaw);
@@ -50,9 +108,9 @@ Widget buildGlobalCarCard(
       : '${localizeDigits(context, mileageNum == null ? mileageRaw : decimalFormatterForLocale(context).format(mileageNum))} ${locCard.unit_km}';
 
   final isLight = Theme.of(context).brightness == Brightness.light;
-  // On dark shell: true frosted overlay. On light shell: pale grey card.
+  // White shell lets the grey specification chips read clearly in light mode.
   final cardFill = isLight
-      ? AppThemes.listingCardFillGridOnLightShell()
+      ? Colors.white
       : Colors.white.withValues(alpha: 0.10);
   final titleTextColor = isLight
       ? Theme.of(context).colorScheme.onSurface
@@ -66,9 +124,7 @@ Widget buildGlobalCarCard(
   final bool showVideoCountBadge =
       car['videos'] != null && (car['videos'] as List).isNotEmpty;
   final EdgeInsets listingCardTextPadding = listLayout
-      // Horizontal cards: enough inset that title/city don't kiss the edges,
-      // without the large empty bands taller phones used to show.
-      ? const EdgeInsets.fromLTRB(8, 6, 10, 6)
+      ? const EdgeInsets.fromLTRB(10, 7, 8, 0)
       : const EdgeInsets.fromLTRB(12, 8, 12, 6);
 
   Widget wrapCardTextTap(Widget child) {
@@ -138,16 +194,16 @@ Widget buildGlobalCarCard(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    flex: AppResponsive.isCompactPhone(context) ? 3 : 4,
+                    flex: 5,
                     child: ClipRRect(
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(
                           (car['is_quick_sell'] == true ||
                                   car['is_quick_sell'] == 'true')
                               ? 0
-                              : 20,
+                              : 14,
                         ),
-                        bottomLeft: const Radius.circular(20),
+                        bottomLeft: const Radius.circular(14),
                       ),
                       child: Stack(
                         fit: StackFit.expand,
@@ -160,6 +216,16 @@ Widget buildGlobalCarCard(
                             allowOwnerManagementOnOpen:
                                 allowOwnerManagementOnOpen,
                           ),
+                          Positioned(
+                            top: 8,
+                            left: 8,
+                            child: _globalListingCardPhotoCountBadge(
+                              ListingCardMedia.collectFromCar(
+                                car,
+                                resolveNetworkUrl: buildLegacyFullImageUrl,
+                              ).length,
+                            ),
+                          ),
                           if (showVideoCountBadge)
                             Positioned(
                               top: 8,
@@ -171,16 +237,20 @@ Widget buildGlobalCarCard(
                     ),
                   ),
                   Expanded(
-                    flex: AppResponsive.isCompactPhone(context) ? 7 : 6,
+                    flex: 7,
                     child: LayoutBuilder(
                       builder: (context, textConstraints) {
                         final pad = listingCardTextPadding;
                         final contentW =
-                            (textConstraints.maxWidth - pad.horizontal)
-                                .clamp(0.0, double.infinity);
+                            (textConstraints.maxWidth - pad.horizontal).clamp(
+                              0.0,
+                              double.infinity,
+                            );
                         final contentH =
-                            (textConstraints.maxHeight - pad.vertical)
-                                .clamp(0.0, double.infinity);
+                            (textConstraints.maxHeight - pad.vertical).clamp(
+                              0.0,
+                              double.infinity,
+                            );
                         return wrapCardTextTap(
                           Padding(
                             padding: pad,
@@ -195,6 +265,7 @@ Widget buildGlobalCarCard(
                                 car,
                                 brandId: brandId,
                                 trimLine: trimLine,
+                                engineLine: engineLine,
                                 yearDisplay: yearDisplay,
                                 mileageDisplay: mileageDisplay,
                                 cityLine: cityLine,
@@ -217,9 +288,11 @@ Widget buildGlobalCarCard(
       : LayoutBuilder(
           builder: (context, constraints) {
             final bannerH = quickSell ? 35.0 : 0.0;
+            // Keep enough white space for a two-line title without scaling
+            // the specification chips and footer down.
             final textReserve = AppResponsive.isCompactPhone(context)
-                ? 118.0
-                : 136.0;
+                ? 140.0
+                : 152.0;
             final maxImage = (constraints.maxHeight - bannerH - textReserve)
                 .clamp(quickSell ? 100.0 : 120.0, 190.0);
             final imageH = AppResponsive.listingGridImageHeight(
@@ -292,12 +365,12 @@ Widget buildGlobalCarCard(
                   child: LayoutBuilder(
                     builder: (context, textBox) {
                       final pad = listingCardTextPadding;
-                      final contentW =
-                          (textBox.maxWidth - pad.horizontal)
-                              .clamp(0.0, double.infinity);
-                      final contentH =
-                          (textBox.maxHeight - pad.vertical)
-                              .clamp(0.0, double.infinity);
+                      final contentW = (textBox.maxWidth - pad.horizontal)
+                          .clamp(0.0, double.infinity);
+                      final contentH = (textBox.maxHeight - pad.vertical).clamp(
+                        0.0,
+                        double.infinity,
+                      );
                       return Padding(
                         padding: pad,
                         child: SizedBox(
@@ -314,6 +387,7 @@ Widget buildGlobalCarCard(
                                   car,
                                   brandId: brandId,
                                   trimLine: trimLine,
+                                  engineLine: engineLine,
                                   yearDisplay: yearDisplay,
                                   mileageDisplay: mileageDisplay,
                                   cityLine: cityLine,
@@ -338,27 +412,28 @@ Widget buildGlobalCarCard(
   Widget cardShell = Container(
     decoration: BoxDecoration(
       color: cardFill,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(listLayout ? 14 : 20),
       border: null,
       boxShadow: featured
           ? null
           : [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: Offset(0, 4),
+                color: Colors.black.withValues(alpha: listLayout ? 0.17 : 0.2),
+                blurRadius: listLayout ? 16 : 8,
+                spreadRadius: listLayout ? 0.5 : 0,
+                offset: Offset(0, listLayout ? 6 : 4),
               ),
             ],
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(listLayout ? 14 : 20),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
           if (onCardTap == null)
             InkWell(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(listLayout ? 14 : 20),
               onTap: onPublishedCardTap,
               child: cardInner,
             )
@@ -374,16 +449,11 @@ Widget buildGlobalCarCard(
             Positioned(
               top: listLayout ? 8 : 10,
               left: listLayout ? 8 : 10,
-              child: buildListingFeaturedBadge(
-                context,
-                compact: listLayout,
-              ),
+              child: buildListingFeaturedBadge(context, compact: listLayout),
             ),
           if (sold)
             Positioned(
-              top: listLayout
-                  ? (featured ? 36 : 8)
-                  : (featured ? 42 : 12),
+              top: listLayout ? (featured ? 36 : 8) : (featured ? 42 : 12),
               left: listLayout ? 8 : 12,
               child: buildListingSoldBadge(context),
             ),

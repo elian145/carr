@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../i18n/locale_formatting.dart';
 import '../text/pretty_title_case.dart';
+
 /// Normalizes API listing / favorite payloads into the shape expected by listing cards.
 Map<String, dynamic> mapListingToGlobalCarCardData(
   BuildContext context,
@@ -55,9 +56,14 @@ Map<String, dynamic> mapListingToGlobalCarCardData(
     'body_type': listing['body_type'],
     'transmission': listing['transmission'],
     'fuel_type': listing['fuel_type'],
+    'engine_type': listing['engine_type'],
+    'engine_size':
+        listing['engine_size'] ??
+        listing['engine_size_liters'] ??
+        listing['engine_size_l'],
+    'drive_type': listing['drive_type'] ?? listing['drivetrain'],
     'is_featured': listing['is_featured'] ?? false,
-    'is_favorited':
-        listing['is_favorited'] ?? listing['favorited'] ?? false,
+    'is_favorited': listing['is_favorited'] ?? listing['favorited'] ?? false,
     'is_quick_sell': listing['is_quick_sell'] ?? false,
     'status': listing['status'],
     'created_at': listing['created_at'],

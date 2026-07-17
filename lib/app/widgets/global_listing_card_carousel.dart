@@ -26,6 +26,33 @@ Widget _globalListingCardVideoCountBadge(Map car) {
   );
 }
 
+/// Photo count pill matching the horizontal list card mockup.
+Widget _globalListingCardPhotoCountBadge(int count) {
+  if (count <= 0) return const SizedBox.shrink();
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+    decoration: BoxDecoration(
+      color: Colors.black54,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.photo_camera_outlined, color: Colors.white, size: 14),
+        const SizedBox(width: 4),
+        Text(
+          '$count',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 // Global image carousel for consistency
 Widget _buildGlobalCardImageCarousel(
   BuildContext context,

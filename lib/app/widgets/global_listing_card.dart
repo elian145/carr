@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import '../../data/brand_logo_filenames.dart';
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/analytics_service.dart';
+import '../../services/api_service.dart';
 import '../../services/recently_viewed_service.dart';
 import '../../shared/i18n/digits.dart';
 import '../../shared/i18n/listing_value_labels.dart';
@@ -19,7 +21,6 @@ import '../../shared/listings/listing_status.dart';
 import '../../shared/listings/listing_sold_badge.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/text/pretty_title_case.dart';
-import '../../theme_provider.dart';
 import '../app_api_base.dart';
 import 'listing_network_image.dart';
 
@@ -49,5 +50,4 @@ String localizedTrimForCard(BuildContext context, Map car) {
 Map<String, dynamic> mapListingToGlobalCarCardData(
   BuildContext context,
   Map<String, dynamic> listing,
-) =>
-    listing_card_data.mapListingToGlobalCarCardData(context, listing);
+) => listing_card_data.mapListingToGlobalCarCardData(context, listing);
