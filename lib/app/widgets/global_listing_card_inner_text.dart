@@ -292,58 +292,18 @@ Widget _buildGridCarCardInnerText(
 
   final Widget mileageCityRow = SizedBox(
     height: compact ? 23.0 : 29.0,
-    child: Row(
-      textDirection: textDirection,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (cityLine.isNotEmpty)
-          Expanded(
-            child: Transform.translate(
-              offset: Offset(leadingShift, footerShiftY),
-              child: Row(
-                textDirection: textDirection,
-                children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: priceAccent,
-                  ),
-                  const SizedBox(width: 2),
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: isRtl
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Text(
-                        cityLine,
-                        textDirection: textDirection,
-                        textScaler: const TextScaler.linear(1.0),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        style: TextStyle(
-                          color: titleTextColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        if (cityLine.isNotEmpty) const SizedBox.shrink(),
-        if (cityLine.isEmpty) const Spacer(),
-        Transform.translate(
-          offset: Offset(trailingShift, footerShiftY),
-          child: Transform.scale(
-            scale: hasPrice ? 1 : 0.82,
-            alignment: isRtl ? Alignment.centerLeft : Alignment.centerRight,
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        // Keep enough room for the city; long price labels shrink instead.
+        final double maxPriceWidth =
+            constraints.maxWidth * (hasPrice ? 0.62 : 0.52);
+        final Widget priceBadge = ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxPriceWidth),
+          child: Transform.translate(
+            offset: Offset(trailingShift, footerShiftY),
             child: Container(
               padding: EdgeInsets.symmetric(
-                horizontal: compact ? 7 : 10,
+                horizontal: compact ? (hasPrice ? 7 : 6) : (hasPrice ? 10 : 8),
                 vertical: compact ? 5 : 7,
               ),
               decoration: BoxDecoration(
@@ -359,15 +319,64 @@ Widget _buildGridCarCardInnerText(
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
-                    fontSize: compact ? 13 : 15,
+                    fontSize: compact
+                        ? (hasPrice ? 13 : 11)
+                        : (hasPrice ? 15 : 13),
                     height: 1,
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        );
+
+        return Row(
+          textDirection: textDirection,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (cityLine.isNotEmpty)
+              Expanded(
+                child: Transform.translate(
+                  offset: Offset(leadingShift, footerShiftY),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: isRtl
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Row(
+                      textDirection: textDirection,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 16,
+                          color: priceAccent,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          cityLine,
+                          textDirection: textDirection,
+                          textScaler: const TextScaler.linear(1.0),
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(
+                            color: titleTextColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            if (cityLine.isNotEmpty) SizedBox(width: compact ? 4 : 6),
+            if (cityLine.isEmpty) const Spacer(),
+            priceBadge,
+          ],
+        );
+      },
     ),
   );
 
@@ -479,11 +488,9 @@ Widget _buildListCarCardInnerText(
     ],
   );
 
-  final Widget priceBadge = Transform.scale(
-    scale: hasPrice ? 1 : 0.82,
-    alignment: isRtl ? Alignment.centerLeft : Alignment.centerRight,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+  Widget buildPriceBadge({double? maxWidth}) {
+    Widget badge = Container(
+      padding: EdgeInsets.symmetric(horizontal: hasPrice ? 12 : 8, vertical: 7),
       decoration: BoxDecoration(
         color: priceAccent,
         borderRadius: BorderRadius.circular(9),
@@ -497,13 +504,20 @@ Widget _buildListCarCardInnerText(
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w800,
-            fontSize: 16,
+            fontSize: hasPrice ? 16 : 13,
             height: 1,
           ),
         ),
       ),
-    ),
-  );
+    );
+    if (maxWidth != null) {
+      badge = ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: badge,
+      );
+    }
+    return badge;
+  }
 
   Widget infoChip(Widget child) {
     return Container(
@@ -587,49 +601,56 @@ Widget _buildListCarCardInnerText(
     ],
   );
 
-  final Widget priceRow = Row(
-    textDirection: textDirection,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      Expanded(
-        child: Transform.translate(
-          offset: Offset(leadingShift, 0),
-          child: Row(
-            textDirection: textDirection,
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: priceAccent,
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: isRtl
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Text(
-                    cityText,
-                    textDirection: textDirection,
-                    textScaler: const TextScaler.linear(1.0),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: TextStyle(
-                      color: titleTextColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+  final Widget priceRow = LayoutBuilder(
+    builder: (context, constraints) {
+      final double maxPriceWidth =
+          constraints.maxWidth * (hasPrice ? 0.62 : 0.52);
+      return Row(
+        textDirection: textDirection,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Transform.translate(
+              offset: Offset(leadingShift, 0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                child: Row(
+                  textDirection: textDirection,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: priceAccent,
                     ),
-                  ),
+                    const SizedBox(width: 2),
+                    Text(
+                      cityText,
+                      textDirection: textDirection,
+                      textScaler: const TextScaler.linear(1.0),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible,
+                      style: TextStyle(
+                        color: titleTextColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-      Transform.translate(offset: Offset(trailingShift, 0), child: priceBadge),
-    ],
+          const SizedBox(width: 6),
+          Transform.translate(
+            offset: Offset(trailingShift, 0),
+            child: buildPriceBadge(maxWidth: maxPriceWidth),
+          ),
+        ],
+      );
+    },
   );
 
   return Column(
