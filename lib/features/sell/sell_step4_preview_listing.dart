@@ -90,20 +90,26 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                           return _buildVideoCarouselSlide(slot.item);
                         }
                         final item = slot.item;
-                        if (item is XFile) {
+                        final local = ListingImageMedia.localFile(item);
+                        final alignment = ListingImageMedia.coverAlignment(
+                          item,
+                        );
+                        if (local != null) {
                           return Image.file(
-                            File(item.path),
+                            File(local.path),
                             fit: BoxFit.cover,
+                            alignment: alignment,
                             width: double.infinity,
                           );
                         }
-                        final url = item.toString().trim();
+                        final url = ListingImageMedia.source(item);
                         final fullUrl = url.startsWith('http')
                             ? url
                             : _buildFullImageUrl(url);
                         return _listingNetworkImage(
                           fullUrl,
                           fit: BoxFit.cover,
+                          alignment: alignment,
                           width: double.infinity,
                         );
                       },

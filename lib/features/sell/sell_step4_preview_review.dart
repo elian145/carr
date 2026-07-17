@@ -87,7 +87,10 @@ class _SellReviewCarDetailScrollViewState
     Navigator.of(context).push(
       AppPageRoute(
         builder: (_) => ListingPreviewMediaGridPage(
-          imageFilesOrUrls: images,
+          imageFilesOrUrls: images.map((item) {
+            final local = ListingImageMedia.localFile(item);
+            return local ?? ListingImageMedia.source(item);
+          }).toList(),
           videoFilesOrUrls: videos,
           initialIndex: i,
         ),
@@ -187,28 +190,35 @@ class _SellReviewCarDetailScrollViewState
                             return _buildVideoCarouselSlide(slot.item);
                           }
                           final item = slot.item;
-                          if (item is XFile) {
+                          final local = ListingImageMedia.localFile(item);
+                          final alignment = ListingImageMedia.coverAlignment(
+                            item,
+                          );
+                          if (local != null) {
                             return Image.file(
-                              File(item.path),
+                              File(local.path),
                               fit: BoxFit.cover,
+                              alignment: alignment,
                               width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey[900],
-                                child: Icon(
-                                  Icons.broken_image_outlined,
-                                  size: 48,
-                                  color: Colors.grey[400],
-                                ),
-                              ),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    color: Colors.grey[900],
+                                    child: Icon(
+                                      Icons.broken_image_outlined,
+                                      size: 48,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
                             );
                           }
-                          final url = item.toString().trim();
+                          final url = ListingImageMedia.source(item);
                           final fullUrl = url.startsWith('http')
                               ? url
                               : _buildFullImageUrl(url);
                           return _listingNetworkImage(
                             fullUrl,
                             fit: BoxFit.cover,
+                            alignment: alignment,
                             width: double.infinity,
                           );
                         },
@@ -349,9 +359,9 @@ class _SellReviewCarDetailScrollViewState
                                     fontWeight: FontWeight.w800,
                                     height: 1.15,
                                     color: isLightShell
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
+                                        ? Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant
                                         : Colors.white70,
                                   ),
                                 ),

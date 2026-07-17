@@ -351,6 +351,10 @@ class CarImage(db.Model):
     order = db.Column(db.Integer, default=0)
     # "listing" = normal gallery photos; "damage" = crash / damage disclosure (not in main carousel).
     kind = db.Column(db.String(20), nullable=False, default="listing")
+    # Normalized vertical focal point used by cover-fit clients. Null = automatic.
+    focus_y = db.Column(db.Float, nullable=True)
+    image_width = db.Column(db.Integer, nullable=True)
+    image_height = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     
     def to_dict(self):
@@ -360,6 +364,9 @@ class CarImage(db.Model):
             'is_primary': self.is_primary,
             'order': self.order,
             'kind': getattr(self, "kind", None) or "listing",
+            'focus_y': self.focus_y,
+            'image_width': self.image_width,
+            'image_height': self.image_height,
         }
     
     def __repr__(self):

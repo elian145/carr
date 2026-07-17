@@ -83,11 +83,7 @@ class _FeaturedCardColors {
 
 /// Wide featured listing card used in the home "Featured Listings" carousel.
 class FeaturedListingCard extends StatefulWidget {
-  const FeaturedListingCard({
-    super.key,
-    required this.car,
-    this.onTap,
-  });
+  const FeaturedListingCard({super.key, required this.car, this.onTap});
 
   final Map<String, dynamic> car;
   final VoidCallback? onTap;
@@ -120,7 +116,10 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
   }
 
   String get _carId =>
-      (widget.car['public_id'] ?? widget.car['id'] ?? widget.car['car_id'] ?? '')
+      (widget.car['public_id'] ??
+              widget.car['id'] ??
+              widget.car['car_id'] ??
+              '')
           .toString()
           .trim();
 
@@ -137,11 +136,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
       widget.onTap!();
       return;
     }
-    Navigator.pushNamed(
-      context,
-      '/car_detail',
-      arguments: {'carId': id},
-    );
+    Navigator.pushNamed(context, '/car_detail', arguments: {'carId': id});
   }
 
   Future<void> _toggleFavorite() async {
@@ -185,13 +180,13 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     return slots.length;
   }
 
-  String? _firstImageUrl() {
+  ListingCardImageSlot? _firstImage() {
     final slots = ListingCardMedia.collectFromCar(
       widget.car,
       resolveNetworkUrl: buildLegacyFullImageUrl,
     );
     if (slots.isEmpty) return null;
-    return slots.first.url;
+    return slots.first;
   }
 
   String _title(BuildContext context) {
@@ -243,7 +238,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
   @override
   Widget build(BuildContext context) {
     final colors = _FeaturedCardColors.of(context);
-    final imageUrl = _firstImageUrl();
+    final image = _firstImage();
     final imageCount = _imageCount();
     final title = _title(context);
     final hasPrice = tryParseCurrencyValue(widget.car['price']) != null;
@@ -270,20 +265,14 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
           // Soft outer rim only (stroke layers) — no filled boxShadow flood.
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_kFeaturedRadius + 3),
-            border: Border.all(
-              color: colors.outerBorder,
-              width: 3,
-            ),
+            border: Border.all(color: colors.outerBorder, width: 3),
           ),
           child: Padding(
             padding: const EdgeInsets.all(1.5),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(_kFeaturedRadius + 1.5),
-                border: Border.all(
-                  color: colors.midBorder,
-                  width: 2,
-                ),
+                border: Border.all(color: colors.midBorder, width: 2),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(1),
@@ -291,10 +280,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                   decoration: BoxDecoration(
                     color: colors.cardBg,
                     borderRadius: BorderRadius.circular(_kFeaturedRadius),
-                    border: Border.all(
-                      color: colors.innerBorder,
-                      width: 1.25,
-                    ),
+                    border: Border.all(color: colors.innerBorder, width: 1.25),
                     boxShadow: Theme.of(context).brightness == Brightness.light
                         ? [
                             BoxShadow(
@@ -306,17 +292,15 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                         : null,
                   ),
                   child: ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(_kFeaturedRadius - 0.5),
+                    borderRadius: BorderRadius.circular(_kFeaturedRadius - 0.5),
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        if (imageUrl != null && imageUrl.isNotEmpty)
-                          listingNetworkImage(
-                            imageUrl,
+                        if (image != null)
+                          ListingCardMedia.buildCarouselImage(
+                            image,
+                            networkBuilder: listingNetworkImage,
                             fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
                           )
                         else
                           ColoredBox(
@@ -338,10 +322,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0x00000000),
-                                  Color(0x99000000),
-                                ],
+                                colors: [Color(0x00000000), Color(0x99000000)],
                               ),
                             ),
                           ),
@@ -386,8 +367,9 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                           end: 4,
                           child: IconButton(
                             onPressed: _toggleFavorite,
-                            tooltip:
-                                AppLocalizations.of(context)!.favoriteAction,
+                            tooltip: AppLocalizations.of(
+                              context,
+                            )!.favoriteAction,
                             icon: Icon(
                               _isFavorite
                                   ? Icons.favorite
@@ -445,7 +427,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
                             builder: (context, textConstraints) {
                               final compact =
                                   AppResponsive.isNarrowPhone(context) ||
-                                      textConstraints.maxWidth < 340;
+                                  textConstraints.maxWidth < 340;
                               final textPad = compact
                                   ? const EdgeInsets.fromLTRB(12, 10, 12, 12)
                                   : const EdgeInsets.fromLTRB(16, 12, 16, 14);

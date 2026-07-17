@@ -340,6 +340,9 @@ def _with_media_compat(car: Car) -> dict:
                 "is_primary": bool(getattr(img, "is_primary", False)),
                 "order": int(getattr(img, "order", 0) or 0),
                 "kind": kind,
+                "focus_y": getattr(img, "focus_y", None),
+                "image_width": getattr(img, "image_width", None),
+                "image_height": getattr(img, "image_height", None),
             }
         )
 

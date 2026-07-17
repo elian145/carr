@@ -59,7 +59,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
             _imagesProcessed = data['imagesProcessed'] == true;
           }
         }
-      } catch (e, st) { logNonFatal(e, st); }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
 
       final mergedImages = SellDraftMediaPersistence.coalesceMediaLists(
         primary: parentImages is List ? List<dynamic>.from(parentImages) : null,
@@ -86,8 +88,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       }
       if (parentState != null) {
         parentState.carData['images'] = List<dynamic>.from(mergedImages);
-        parentState.carData['damage_images'] =
-            List<dynamic>.from(mergedDamage);
+        parentState.carData['damage_images'] = List<dynamic>.from(mergedDamage);
         parentState.carData['videos'] = List<XFile>.from(
           mergedVideos.whereType<XFile>(),
         );
@@ -114,8 +115,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
       final parentState = _parentState;
       if (parentState != null) {
         parentState.carData['images'] = List<dynamic>.from(_selectedImages);
-        parentState.carData['damage_images'] =
-            List<dynamic>.from(_damageImages);
+        parentState.carData['damage_images'] = List<dynamic>.from(
+          _damageImages,
+        );
         parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
         parentState.carData['images_processed'] = _imagesProcessed;
       }
@@ -161,7 +163,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
         _SellStep4Fields._draftKey,
         json.encode(<String, dynamic>{
           'selectedImages': images
-              .map((e) => e is XFile ? e.path : e.toString())
+              .map(
+                (e) => e is Map
+                    ? Map<String, dynamic>.from(e)
+                    : ListingImageMedia.map(e),
+              )
               .toList(),
           'damage_images': damage
               .map((e) => e is XFile ? e.path : e.toString())
@@ -181,7 +187,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData['images_processed'] = _imagesProcessed;
       }
       unawaited(parentState?._saveSellDraftSnapshot());
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   Future<void> _syncMediaDraftToParent() async {
@@ -213,13 +221,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
     });
     parentState.carData['images'] = List<dynamic>.from(images);
     parentState.carData['damage_images'] = List<dynamic>.from(damage);
-    parentState.carData['videos'] = List<XFile>.from(
-      videos.whereType<XFile>(),
-    );
+    parentState.carData['videos'] = List<XFile>.from(videos.whereType<XFile>());
     parentState.carData['images_processed'] = _imagesProcessed;
     if (_imagesProcessed) {
       parentState.carData['processed_image_paths'] = images
-          .map((e) => e is XFile ? e.path : e.toString())
+          .map(ListingImageMedia.source)
           .where((s) => s.trim().isNotEmpty)
           .toList();
     } else {
@@ -229,8 +235,43 @@ mixin _SellStep4Logic on _SellStep4Fields {
     unawaited(parentState._saveSellDraftSnapshot());
   }
 
-  String _imagePathKey(dynamic item) =>
-      item is XFile ? item.path : item.toString().trim();
+  String _imagePathKey(dynamic item) => ListingImageMedia.source(item);
+
+  Future<Map<String, dynamic>> _pickedImageMedia(XFile file) async {
+    int? width;
+    int? height;
+    try {
+      final bytes = await file.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+      width = frame.image.width;
+      height = frame.image.height;
+      frame.image.dispose();
+      codec.dispose();
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+    return ListingImageMedia.map(file, width: width, height: height);
+  }
+
+  Future<void> _adjustImageCrop(int index) async {
+    if (index < 0 || index >= _selectedImages.length) return;
+    final result = await VerticalCropEditor.show(
+      context,
+      media: _selectedImages[index],
+      networkUrl: (source) =>
+          source.startsWith('http') ? source : _buildFullImageUrl(source),
+    );
+    if (!mounted || result == null) return;
+    setState(() {
+      _selectedImages[index] = ListingImageMedia.withFocusY(
+        _selectedImages[index],
+        result.focusY,
+      );
+    });
+    await _syncMediaDraftToParent();
+    await _saveDraft();
+  }
 
   void _setPrimaryImage(int index) {
     if (index <= 0 || index >= _selectedImages.length) return;
@@ -248,7 +289,8 @@ mixin _SellStep4Logic on _SellStep4Fields {
       final files = await _imagePicker.pickMultiImage();
       if (files.isEmpty || !mounted) return;
       final existing = _selectedImages.map(_imagePathKey).toSet();
-      final additions = files.where((f) => !existing.contains(f.path)).toList();
+      final newFiles = files.where((f) => !existing.contains(f.path)).toList();
+      final additions = await Future.wait(newFiles.map(_pickedImageMedia));
       if (additions.isEmpty) return;
       setState(() {
         _selectedImages = [..._selectedImages, ...additions];
@@ -256,7 +298,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
       });
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   Future<void> _pickDamageImages() async {
@@ -271,7 +315,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
       });
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   Future<void> _processImages() async {
@@ -296,7 +342,10 @@ mixin _SellStep4Logic on _SellStep4Fields {
     try {
       // Blur only when user taps "Blur Plates": process/store images on the server
       // and replace the local picks with server paths for preview + later attach.
-      final local = _selectedImages.whereType<XFile>().toList();
+      final local = _selectedImages
+          .map(ListingImageMedia.localFile)
+          .whereType<XFile>()
+          .toList();
       if (local.isEmpty) {
         if (!mounted) return;
         setState(() {
@@ -357,9 +406,21 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
       if (!mounted) return;
       setState(() {
-        _selectedImages = blurredLocal.isNotEmpty
-            ? blurredLocal
+        final replacements = blurredLocal.isNotEmpty
+            ? blurredLocal.map((e) => e.path).toList()
             : List<String>.from(paths);
+        _selectedImages = List<dynamic>.generate(replacements.length, (i) {
+          final previous = i < _selectedImages.length
+              ? _selectedImages[i]
+              : replacements[i];
+          return ListingImageMedia.map(
+            previous,
+            source: replacements[i],
+            focusY: ListingImageMedia.focusY(previous),
+            width: ListingImageMedia.width(previous),
+            height: ListingImageMedia.height(previous),
+          );
+        });
         _imagesProcessed = true;
       });
 
@@ -410,7 +471,8 @@ mixin _SellStep4Logic on _SellStep4Fields {
       List<XFile> picked;
       try {
         picked = await _imagePicker.pickMultiVideo(maxDuration: maxDur);
-      } catch (e, st) { logNonFatal(e, st); 
+      } catch (e, st) {
+        logNonFatal(e, st);
         // Some platforms/plugins may not support multi-video selection.
         final single = await _imagePicker.pickVideo(
           source: ImageSource.gallery,
@@ -437,5 +499,4 @@ mixin _SellStep4Logic on _SellStep4Fields {
       ).showSnackBar(SnackBar(content: Text('Video selection failed: $e')));
     }
   }
-
 }

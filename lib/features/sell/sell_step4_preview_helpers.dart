@@ -1,7 +1,6 @@
 part of 'sell_flow.dart';
 
 extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
-
   void _openCarouselDetail(
     BuildContext context,
     List<_PreviewMediaEntry> media,
@@ -13,7 +12,10 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     Navigator.of(context).push(
       AppPageRoute(
         builder: (_) => ListingPreviewMediaGridPage(
-          imageFilesOrUrls: images,
+          imageFilesOrUrls: images.map((item) {
+            final local = ListingImageMedia.localFile(item);
+            return local ?? ListingImageMedia.source(item);
+          }).toList(),
           videoFilesOrUrls: videos,
           initialIndex: i,
         ),
@@ -89,7 +91,8 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
       if (value == null) return raw;
       final formatter = _decimalFormatterGlobal(context);
       return formatter.format(value);
-    } catch (e, st) { logNonFatal(e, st); 
+    } catch (e, st) {
+      logNonFatal(e, st);
       return raw;
     }
   }
@@ -99,27 +102,22 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     const labelGrey = Color(0xFF8E8E93);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
-    final iconCircleFill =
-        isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);
+    final iconCircleFill = isLight
+        ? const Color(0xFFFFF0E6)
+        : const Color(0xFFFFE8D6);
     final valueColor = isLight ? Colors.black : Colors.white;
     final asset = item.imageAsset;
     final Widget iconGlyph = (asset != null && asset.isNotEmpty)
         ? ColorFiltered(
-            colorFilter: const ColorFilter.mode(
-              brandOrange,
-              BlendMode.srcIn,
-            ),
+            colorFilter: const ColorFilter.mode(brandOrange, BlendMode.srcIn),
             child: Image.asset(
               asset,
               width: 26,
               height: 26,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
-              errorBuilder: (context, error, stackTrace) => Icon(
-                item.icon,
-                size: 26,
-                color: brandOrange,
-              ),
+              errorBuilder: (context, error, stackTrace) =>
+                  Icon(item.icon, size: 26, color: brandOrange),
             ),
           )
         : Icon(item.icon, size: 26, color: brandOrange);
@@ -223,8 +221,9 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
     const brandOrange = Color(0xFFFF6B00);
     const labelGrey = Color(0xFF8E8E93);
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
-    final iconCircleFill =
-        isLight ? const Color(0xFFFFF0E6) : const Color(0xFFFFE8D6);
+    final iconCircleFill = isLight
+        ? const Color(0xFFFFF0E6)
+        : const Color(0xFFFFE8D6);
     final valueColor = isLight ? Colors.black : Colors.white;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

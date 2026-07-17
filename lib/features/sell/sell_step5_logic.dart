@@ -10,20 +10,61 @@ mixin _SellStep5Logic on _SellStep5Fields {
     return item?.toString().trim();
   }
 
+  void _collectUploadedImageIds(
+    Map<String, int> idsBySource,
+    List<dynamic> sourceItems,
+    Map<String, dynamic>? response,
+  ) {
+    final rows = response?['images'] ?? response?['uploaded'];
+    if (rows is! List) return;
+    for (var i = 0; i < sourceItems.length && i < rows.length; i++) {
+      final row = rows[i];
+      if (row is! Map) continue;
+      final id = int.tryParse((row['id'] ?? '').toString());
+      final source = ListingImageMedia.source(sourceItems[i]);
+      if (id != null && source.isNotEmpty) idsBySource[source] = id;
+    }
+  }
+
+  Future<void> _saveListingImageLayout(
+    String carId,
+    List<dynamic> orderedImages,
+    Map<String, int> idsBySource,
+  ) async {
+    final payload = <Map<String, dynamic>>[];
+    for (var i = 0; i < orderedImages.length; i++) {
+      final item = orderedImages[i];
+      final source = ListingImageMedia.source(item);
+      final id = ListingImageMedia.id(item) ?? idsBySource[source];
+      if (id == null) continue;
+      final row = <String, dynamic>{
+        'id': id,
+        'order': i,
+        'is_primary': i == 0,
+        'focus_y': ListingImageMedia.focusY(item),
+      };
+      final width = ListingImageMedia.width(item);
+      final height = ListingImageMedia.height(item);
+      if (width != null) row['image_width'] = width;
+      if (height != null) row['image_height'] = height;
+      payload.add(row);
+    }
+    if (payload.isNotEmpty) {
+      await ApiService.updateCarImageLayout(carId, payload);
+    }
+  }
+
   String? _primaryListingImageRef(
     dynamic firstImage, {
     Map<String, dynamic>? listingMediaResponse,
   }) {
-    if (firstImage is String) {
-      final s = firstImage.trim();
-      if (s.isEmpty) return null;
-      if (s.startsWith('http://') ||
-          s.startsWith('https://') ||
-          s.startsWith('uploads/') ||
-          s.startsWith('static/') ||
-          s.startsWith('/static/')) {
-        return s;
-      }
+    final s = ListingImageMedia.source(firstImage);
+    if (s.startsWith('http://') ||
+        s.startsWith('https://') ||
+        s.startsWith('uploads/') ||
+        s.startsWith('static/') ||
+        s.startsWith('/static/')) {
+      return s;
     }
     if (listingMediaResponse != null) {
       final dynamic responseImages =
@@ -68,7 +109,8 @@ mixin _SellStep5Logic on _SellStep5Fields {
     final payload = buildSellCarCreatePayload(carData);
 
     try {
-      final editId = context
+      final editId =
+          context
               .findAncestorStateOfType<_SellCarPageState>()
               ?._editListingId
               ?.trim() ??
@@ -77,7 +119,10 @@ mixin _SellStep5Logic on _SellStep5Fields {
       String carId = '';
       if (editId.isNotEmpty) {
         try {
-          await ApiService.updateCar(editId, buildSellCarUpdatePayload(carData));
+          await ApiService.updateCar(
+            editId,
+            buildSellCarUpdatePayload(carData),
+          );
           carId = editId;
         } on ApiException catch (e) {
           throw Exception(e.message);
@@ -116,9 +161,9 @@ mixin _SellStep5Logic on _SellStep5Fields {
               : 'default';
           final storedMedia =
               await SellDraftMediaPersistence.prepareCarDataForStorage(
-            carData,
-            draftId: draftId,
-          );
+                carData,
+                draftId: draftId,
+              );
           carData['images'] = storedMedia['images'];
           carData['damage_images'] = storedMedia['damage_images'];
           carData['videos'] = storedMedia['videos'];
@@ -138,48 +183,73 @@ mixin _SellStep5Logic on _SellStep5Fields {
               : const [];
           final List<XFile> toUpload = <XFile>[];
           final List<String> toAttach = <String>[];
+          final List<dynamic> uploadItems = <dynamic>[];
+          final List<dynamic> attachItems = <dynamic>[];
+          final Map<String, int> imageIdsBySource = <String, int>{};
           final List<XFile> videosToUpload =
               SellDraftMediaPersistence.xFilesForUpload(vids);
           for (final dynamic img in imgs) {
-            if (img is XFile) {
-              if (File(img.path).existsSync()) {
-                toUpload.add(img);
-              }
-            } else if (img is String) {
-              final s = img.trim();
+            final existingId = ListingImageMedia.id(img);
+            final source = ListingImageMedia.source(img);
+            if (existingId != null && source.isNotEmpty) {
+              imageIdsBySource[source] = existingId;
+            }
+            final local = ListingImageMedia.localFile(img);
+            if (local != null && File(local.path).existsSync()) {
+              toUpload.add(local);
+              uploadItems.add(img);
+            } else {
+              final s = source;
               // If it's a server-relative path (from "Blur Plates"), attach it; don't treat it as a local file.
               if (s.startsWith('uploads/') ||
                   s.startsWith('static/') ||
                   s.startsWith('/static/')) {
-                toAttach.add(s);
+                if (existingId == null) {
+                  toAttach.add(s);
+                  attachItems.add(img);
+                }
               } else if (s.startsWith('http://') || s.startsWith('https://')) {
-                // We don't attach absolute URLs; if you ever store them, keep them as-is in DB via other flow.
-                // For now, ignore.
-              } else if (File(s).existsSync()) {
-                toUpload.add(XFile(s));
+                if (existingId == null) {
+                  toAttach.add(s);
+                  attachItems.add(img);
+                }
               }
             }
           }
+          Map<String, dynamic>? latestMediaResponse;
           if (toAttach.isNotEmpty) {
-            final attachResponse =
-                await CarService().attachCarImages(carId, toAttach);
-            await _applyPrimaryListingImage(
+            final attachResponse = await CarService().attachCarImages(
               carId,
-              imgs,
-              listingMediaResponse: attachResponse,
+              toAttach,
             );
-          } else if (toUpload.isNotEmpty) {
-            // No blur on submit; backend is called with skip_blur=1
-            final uploadResponse =
-                await CarService().uploadCarImages(carId, toUpload);
-            await _applyPrimaryListingImage(
-              carId,
-              imgs,
-              listingMediaResponse: uploadResponse,
+            latestMediaResponse = attachResponse;
+            _collectUploadedImageIds(
+              imageIdsBySource,
+              attachItems,
+              attachResponse,
             );
-          } else if (imgs.isNotEmpty) {
-            await _applyPrimaryListingImage(carId, imgs);
           }
+          if (toUpload.isNotEmpty) {
+            // No blur on submit; backend is called with skip_blur=1
+            final uploadResponse = await CarService().uploadCarImages(
+              carId,
+              toUpload,
+            );
+            latestMediaResponse = uploadResponse;
+            _collectUploadedImageIds(
+              imageIdsBySource,
+              uploadItems,
+              uploadResponse,
+            );
+          }
+          if (imgs.isNotEmpty) {
+            await _applyPrimaryListingImage(
+              carId,
+              imgs,
+              listingMediaResponse: latestMediaResponse,
+            );
+          }
+          await _saveListingImageLayout(carId, imgs, imageIdsBySource);
           if (videosToUpload.isNotEmpty) {
             try {
               final payload = await ApiService.uploadCarVideos(
@@ -222,8 +292,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
             }
           }
           final dynamic maybeDmg = carData['damage_images'];
-          final List<dynamic> dimgs =
-              (maybeDmg is List) ? maybeDmg : const [];
+          final List<dynamic> dimgs = (maybeDmg is List) ? maybeDmg : const [];
           final List<XFile> damageToUpload = <XFile>[];
           final List<String> damageToAttach = <String>[];
           for (final dynamic img in dimgs) {
@@ -261,7 +330,9 @@ mixin _SellStep5Logic on _SellStep5Fields {
           // Refresh list so new listing has server-confirmed image_url/images before success/navigation
           try {
             await CarService().getCars(refresh: true);
-          } catch (e, st) { logNonFatal(e, st); }
+          } catch (e, st) {
+            logNonFatal(e, st);
+          }
           // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
           if (mounted) {
             final svc = CarService();
@@ -322,7 +393,9 @@ mixin _SellStep5Logic on _SellStep5Fields {
                 if (url.isEmpty || !mounted) continue;
                 try {
                   await precacheImage(NetworkImage(url), context);
-                } catch (e, st) { logNonFatal(e, st); }
+                } catch (e, st) {
+                  logNonFatal(e, st);
+                }
               }
             }
           }
@@ -332,15 +405,15 @@ mixin _SellStep5Logic on _SellStep5Fields {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  AppLocalizations.of(
-                    context,
-                  )!.listingUploadPartialFail(
+                  AppLocalizations.of(context)!.listingUploadPartialFail(
                     AppLocalizations.of(context)!.errorTitle,
                   ),
                 ),
               ),
             );
-          } catch (e, st) { logNonFatal(e, st); }
+          } catch (e, st) {
+            logNonFatal(e, st);
+          }
         }
         _debugLog(
           editId.isNotEmpty
@@ -355,5 +428,4 @@ mixin _SellStep5Logic on _SellStep5Fields {
       rethrow;
     }
   }
-
 }

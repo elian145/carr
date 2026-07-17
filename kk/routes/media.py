@@ -238,6 +238,77 @@ def set_car_primary_image(car_id: str):
         return jsonify({"message": "Failed to set primary image"}), 500
 
 
+@bp.route("/api/cars/<car_id>/images/layout", methods=["PUT"])
+@jwt_required()
+def update_car_image_layout(car_id: str):
+    """Persist ordering and non-destructive vertical crop metadata."""
+    try:
+        current_user = get_current_user()
+        car = _get_car_by_any_id(car_id)
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            return jsonify({"message": "Not authorized to update images for this listing"}), 403
+
+        data = request.get_json(silent=True) or {}
+        rows = data.get("images")
+        if not isinstance(rows, list):
+            return jsonify({"message": "images must be a list"}), 400
+
+        by_id = {img.id: img for img in car.images}
+        updated = []
+        requested_primary = None
+        for index, raw in enumerate(rows):
+            if not isinstance(raw, dict):
+                return jsonify({"message": "Each image layout must be an object"}), 400
+            try:
+                image_id = int(raw.get("id"))
+            except (TypeError, ValueError):
+                return jsonify({"message": "Each image layout requires a valid id"}), 400
+            image = by_id.get(image_id)
+            if image is None:
+                return jsonify({"message": f"Image {image_id} is not on this listing"}), 400
+
+            focus = raw.get("focus_y")
+            if focus is None or focus == "":
+                image.focus_y = None
+            else:
+                try:
+                    focus = float(focus)
+                except (TypeError, ValueError):
+                    return jsonify({"message": "focus_y must be between 0 and 1"}), 400
+                if not 0.0 <= focus <= 1.0:
+                    return jsonify({"message": "focus_y must be between 0 and 1"}), 400
+                image.focus_y = focus
+
+            for field in ("image_width", "image_height"):
+                value = raw.get(field)
+                if value is not None:
+                    try:
+                        value = int(value)
+                    except (TypeError, ValueError):
+                        return jsonify({"message": f"{field} must be a positive integer"}), 400
+                    if value <= 0:
+                        return jsonify({"message": f"{field} must be a positive integer"}), 400
+                    setattr(image, field, value)
+
+            image.order = int(raw.get("order", index))
+            if raw.get("is_primary") is True and _normalize_car_image_kind(image.kind) == "listing":
+                requested_primary = image.id
+            updated.append(image)
+
+        if requested_primary is not None:
+            for image in car.images:
+                if _normalize_car_image_kind(image.kind) == "listing":
+                    image.is_primary = image.id == requested_primary
+
+        db.session.commit()
+        return jsonify({"images": [image.to_dict() for image in updated]}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to update image layout"}), 500
+
+
 @bp.route("/api/media/r2/sign-upload", methods=["POST"])
 @jwt_required()
 def r2_sign_upload():

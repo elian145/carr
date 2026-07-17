@@ -28,9 +28,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
             final spacing = 8.0;
             return GridView.builder(
               key: ValueKey(
-                _selectedImages
-                    .map((e) => e is XFile ? e.path : e.toString())
-                    .join('|'),
+                _selectedImages.map(ListingImageMedia.source).join('|'),
               ),
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
@@ -43,7 +41,8 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
               itemCount: _selectedImages.length,
               itemBuilder: (context, index) {
                 final image = _selectedImages[index];
-                final keyStr = image is XFile ? image.path : image.toString();
+                final keyStr = ListingImageMedia.source(image);
+                final localFile = ListingImageMedia.localFile(image);
                 final isPrimary = index == 0;
                 return Stack(
                   key: ValueKey(keyStr),
@@ -53,7 +52,10 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                         Navigator.of(context).push(
                           AppPageRoute(
                             builder: (_) => ListingPreviewGalleryPage(
-                              imageFilesOrUrls: _selectedImages,
+                              imageFilesOrUrls: _selectedImages.map((item) {
+                                final local = ListingImageMedia.localFile(item);
+                                return local ?? ListingImageMedia.source(item);
+                              }).toList(),
                               initialIndex: index,
                             ),
                           ),
@@ -77,13 +79,16 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                           ],
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: (image is XFile)
+                        child: localFile != null
                             ? Image.file(
-                                File(image.path),
+                                File(localFile.path),
                                 fit: BoxFit.cover,
+                                alignment: ListingImageMedia.coverAlignment(
+                                  image,
+                                ),
                                 width: double.infinity,
                                 height: double.infinity,
-                                key: ValueKey(image.path),
+                                key: ValueKey(localFile.path),
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
                                       color: Colors.grey.shade800,
@@ -95,10 +100,13 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                     ),
                               )
                             : _listingNetworkImage(
-                                (image.toString().trim().startsWith('http'))
-                                    ? image.toString().trim()
-                                    : _buildFullImageUrl(image.toString()),
+                                keyStr.startsWith('http')
+                                    ? keyStr
+                                    : _buildFullImageUrl(keyStr),
                                 fit: BoxFit.cover,
+                                alignment: ListingImageMedia.coverAlignment(
+                                  image,
+                                ),
                                 width: double.infinity,
                                 height: double.infinity,
                               ),
@@ -177,6 +185,25 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                           padding: EdgeInsets.all(6),
                           child: Icon(
                             Icons.close,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 6,
+                      bottom: 6,
+                      child: InkWell(
+                        onTap: () => _adjustImageCrop(index),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.all(6),
+                          child: const Icon(
+                            Icons.crop,
                             size: 18,
                             color: Colors.white,
                           ),

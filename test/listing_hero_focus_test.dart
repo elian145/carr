@@ -5,10 +5,20 @@ import 'package:car_listing_app/app/widgets/listing_hero_focus.dart';
 
 void main() {
   group('listingHeroAlignmentFor', () {
-    test('defaults to object-position center 70%', () {
-      expect(listingHeroAlignmentFor(null), kListingHeroObjectPosition);
-      expect(listingHeroAlignmentFor({}), kListingHeroObjectPosition);
-      expect(kListingHeroObjectPosition, const Alignment(0, 0.4));
+    test('centers legacy images without dimensions', () {
+      expect(listingHeroAlignmentFor(null), Alignment.center);
+      expect(listingHeroAlignmentFor({}), Alignment.center);
+    });
+
+    test('biases portrait images down and centers landscape images', () {
+      expect(
+        listingHeroAlignmentFor({'image_width': 1000, 'image_height': 1600}),
+        const Alignment(0, 0.4),
+      );
+      expect(
+        listingHeroAlignmentFor({'image_width': 1600, 'image_height': 1000}),
+        Alignment.center,
+      );
     });
 
     test('uses focus_y when present', () {
@@ -25,11 +35,24 @@ void main() {
       expect(a.x, closeTo(0.0, 0.001));
       expect(a.y, closeTo(0.2, 0.001));
     });
+
+    test('saved focus takes precedence over a detected car box', () {
+      final a = listingHeroAlignmentFor({
+        'focus_y': 0.8,
+        'car_bbox': {'left': 0.1, 'top': 0.1, 'width': 0.8, 'height': 0.2},
+      });
+      expect(a.y, closeTo(0.6, 0.001));
+    });
   });
 
   group('expandCarBBox', () {
     test('pads by 8% of box size and clamps', () {
-      const box = ListingHeroCarBBox(left: 0.2, top: 0.2, width: 0.5, height: 0.5);
+      const box = ListingHeroCarBBox(
+        left: 0.2,
+        top: 0.2,
+        width: 0.5,
+        height: 0.5,
+      );
       final padded = expandCarBBox(box, paddingFraction: 0.08);
       expect(padded.left, closeTo(0.16, 0.001));
       expect(padded.top, closeTo(0.16, 0.001));
@@ -40,7 +63,12 @@ void main() {
 
   group('resolveHeroCoverSourceRect', () {
     test('keeps padded car inside crop and prefers lower framing', () {
-      const box = ListingHeroCarBBox(left: 0.1, top: 0.55, width: 0.8, height: 0.35);
+      const box = ListingHeroCarBBox(
+        left: 0.1,
+        top: 0.55,
+        width: 0.8,
+        height: 0.35,
+      );
       final crop = resolveHeroCoverSourceRect(
         viewportAspect: 16 / 9,
         carBBox: box,
@@ -48,8 +76,14 @@ void main() {
       final padded = expandCarBBox(box);
       expect(crop.left, lessThanOrEqualTo(padded.left + 0.001));
       expect(crop.top, lessThanOrEqualTo(padded.top + 0.001));
-      expect(crop.right, greaterThanOrEqualTo(padded.left + padded.width - 0.001));
-      expect(crop.bottom, greaterThanOrEqualTo(padded.top + padded.height - 0.001));
+      expect(
+        crop.right,
+        greaterThanOrEqualTo(padded.left + padded.width - 0.001),
+      );
+      expect(
+        crop.bottom,
+        greaterThanOrEqualTo(padded.top + padded.height - 0.001),
+      );
       expect(crop.width / crop.height, closeTo(16 / 9, 0.05));
       // Car should dominate visible height (~70–90%).
       final fill = padded.height / crop.height;
@@ -79,7 +113,7 @@ void main() {
               'height': 100.0,
               'confidence': 0.9,
               'class': 'car',
-            }
+            },
           ],
           'image': {'width': 600.0, 'height': 800.0},
         },

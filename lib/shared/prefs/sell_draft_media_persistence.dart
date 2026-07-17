@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import '../../shared/debug/app_log.dart';
+import '../listings/listing_image_media.dart';
 
 /// Copies picked listing media into app documents so sell drafts survive restarts.
 class SellDraftMediaPersistence {
@@ -43,8 +44,7 @@ class SellDraftMediaPersistence {
     return trimmed.replaceAll(RegExp(r'[^A-Za-z0-9_.-]'), '_');
   }
 
-  static Future<Directory> draftDirectory(String draftId) =>
-      _draftDir(draftId);
+  static Future<Directory> draftDirectory(String draftId) => _draftDir(draftId);
 
   static Future<Directory> _draftDir(String draftId) async {
     final docs = await getApplicationDocumentsDirectory();
@@ -95,14 +95,17 @@ class SellDraftMediaPersistence {
       try {
         await src.copy(dest.path);
         return await dest.exists();
-      } catch (e, st) { logNonFatal(e, st); }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
     }
     try {
       final bytes = await XFile(local).readAsBytes();
       if (bytes.isEmpty) return false;
       await _writeBytesToFile(dest, bytes);
       return await dest.exists();
-    } catch (e, st) { logNonFatal(e, st); 
+    } catch (e, st) {
+      logNonFatal(e, st);
       return false;
     }
   }
@@ -116,7 +119,8 @@ class SellDraftMediaPersistence {
         bytes.length,
         Object.hashAll(bytes.sublist(0, sampleLen)),
       ).abs().toString();
-    } catch (e, st) { logNonFatal(e, st); 
+    } catch (e, st) {
+      logNonFatal(e, st);
       return Object.hashAll([local]).abs().toString();
     }
   }
@@ -135,7 +139,8 @@ class SellDraftMediaPersistence {
       try {
         await XFile(local).length();
         return local;
-      } catch (e, st) { logNonFatal(e, st); 
+      } catch (e, st) {
+        logNonFatal(e, st);
         return null;
       }
     }
@@ -169,13 +174,13 @@ class SellDraftMediaPersistence {
     final out = <dynamic>[];
     final seen = <String>{};
     for (final item in items) {
-      final raw = item is XFile
-          ? item.path
-          : item?.toString().trim() ?? '';
+      final raw = ListingImageMedia.source(item);
       if (raw.isEmpty) continue;
       if (isRetainedMediaReference(raw)) {
         final id = canonicalMediaIdentity(raw);
-        if (seen.add(id)) out.add(raw);
+        if (seen.add(id)) {
+          out.add(item is Map ? ListingImageMedia.map(item, source: raw) : raw);
+        }
         continue;
       }
       final stored = await _persistLocalPath(
@@ -186,7 +191,11 @@ class SellDraftMediaPersistence {
       if (stored == null || stored.isEmpty) continue;
       final id = canonicalMediaIdentity(stored);
       if (!seen.add(id)) continue;
-      out.add(XFile(stored));
+      out.add(
+        item is Map
+            ? ListingImageMedia.map(item, source: stored)
+            : XFile(stored),
+      );
     }
     return out;
   }
@@ -217,7 +226,7 @@ class SellDraftMediaPersistence {
       namePrefix: namePrefix,
     );
     return persisted
-        .map((e) => e is XFile ? e.path : e.toString())
+        .map(ListingImageMedia.source)
         .where((s) => s.trim().isNotEmpty)
         .toList();
   }
@@ -250,14 +259,15 @@ class SellDraftMediaPersistence {
         );
       }
       if (copy['processed_image_paths'] is List) {
-        copy['processed_image_paths'] = (await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['processed_image_paths'] as List),
-          draftId: draftId,
-          namePrefix: 'processed',
-        ))
-            .map((e) => e is XFile ? e.path : e.toString())
-            .where((s) => s.trim().isNotEmpty)
-            .toList();
+        copy['processed_image_paths'] =
+            (await _persistDynamicMediaListImpl(
+                  List<dynamic>.from(copy['processed_image_paths'] as List),
+                  draftId: draftId,
+                  namePrefix: 'processed',
+                ))
+                .map(ListingImageMedia.source)
+                .where((s) => s.trim().isNotEmpty)
+                .toList();
       }
       return copy;
     });
@@ -285,8 +295,7 @@ class SellDraftMediaPersistence {
   }
 
   static String _mediaIdentity(dynamic item) {
-    if (item is XFile) return item.path.trim();
-    return item?.toString().trim() ?? '';
+    return ListingImageMedia.source(item);
   }
 
   /// Stable dedupe key: draft files by basename, everything else by normalized path.
@@ -337,9 +346,9 @@ class SellDraftMediaPersistence {
   }
 
   static bool _isUnderSellDraftMedia(String local) {
-    return p.normalize(_localPath(local)).contains(
-      p.normalize('sell_draft_media'),
-    );
+    return p
+        .normalize(_localPath(local))
+        .contains(p.normalize('sell_draft_media'));
   }
 
   static List<dynamic> resolveDynamicMediaList(
@@ -350,17 +359,21 @@ class SellDraftMediaPersistence {
     final out = <dynamic>[];
     final seen = <String>{};
     for (final item in items) {
-      final raw = item is XFile ? item.path : item?.toString().trim() ?? '';
+      final raw = ListingImageMedia.source(item);
       if (raw.isEmpty) continue;
       dynamic resolved;
       if (isRetainedMediaReference(raw)) {
-        resolved = raw;
+        resolved = item is Map ? ListingImageMedia.map(item, source: raw) : raw;
       } else {
         final local = _localPath(raw);
         if (File(local).existsSync()) {
-          resolved = XFile(local);
+          resolved = item is Map
+              ? ListingImageMedia.map(item, source: local)
+              : XFile(local);
         } else if (includeMissingLocalPaths && _isUnderSellDraftMedia(local)) {
-          resolved = XFile(local);
+          resolved = item is Map
+              ? ListingImageMedia.map(item, source: local)
+              : XFile(local);
         } else {
           continue;
         }
@@ -373,14 +386,15 @@ class SellDraftMediaPersistence {
   }
 
   static List<String> resolvePathList(List<dynamic>? items) {
-    return resolveDynamicMediaList(items)
-        .map((e) => e is XFile ? e.path : e.toString())
-        .where((s) => s.trim().isNotEmpty)
-        .toList();
+    return resolveDynamicMediaList(
+      items,
+    ).map(ListingImageMedia.source).where((s) => s.trim().isNotEmpty).toList();
   }
 
   static List<XFile> xFilesForUpload(List<dynamic>? items) {
-    return resolveDynamicMediaList(items).whereType<XFile>().toList();
+    return resolveDynamicMediaList(
+      items,
+    ).map(ListingImageMedia.localFile).whereType<XFile>().toList();
   }
 
   /// Writes bytes into the draft folder so temp previews survive app restarts.

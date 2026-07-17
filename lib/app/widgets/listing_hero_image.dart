@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import '../../shared/debug/app_log.dart';
+import '../../shared/listings/listing_image_media.dart';
 import 'listing_hero_focus.dart';
 
 /// Hero listing photo: cover + vehicle bias, optional detection crop, fade-in.
@@ -33,7 +34,9 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
   static const int _maxRetries = 5;
 
   ListingHeroCarBBox? get _bbox =>
-      parseListingHeroCarBBox(widget.detectionSource);
+      ListingImageMedia.focusY(widget.detectionSource) != null
+      ? null
+      : parseListingHeroCarBBox(widget.detectionSource);
 
   Alignment get _alignment =>
       listingHeroAlignmentFor(widget.detectionSource ?? const {});

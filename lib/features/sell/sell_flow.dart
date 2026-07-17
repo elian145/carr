@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -48,6 +49,8 @@ import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
 import '../../shared/listings/plate_city_assets.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/listings/listing_uploaded_ago.dart';
+import '../../shared/listings/listing_image_media.dart';
+import '../../shared/listings/vertical_crop_editor.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
@@ -265,9 +268,16 @@ String _buildFullImageUrl(String rel) => buildLegacyFullImageUrl(rel);
 Widget _listingNetworkImage(
   String url, {
   BoxFit fit = BoxFit.cover,
+  Alignment alignment = Alignment.center,
   double? width,
   double? height,
-}) => listingNetworkImage(url, fit: fit, width: width, height: height);
+}) => listingNetworkImage(
+  url,
+  fit: fit,
+  alignment: alignment,
+  width: width,
+  height: height,
+);
 
 String? _translateValueGlobal(BuildContext context, String? raw) =>
     translateListingValue(context, raw);

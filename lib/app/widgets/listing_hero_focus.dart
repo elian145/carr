@@ -1,5 +1,7 @@
 import 'package:flutter/painting.dart';
 
+import '../../shared/listings/listing_image_media.dart';
+
 /// Default CSS-equivalent of `object-position: center 70%`.
 ///
 /// Flutter [Alignment] maps 0% → -1 and 100% → 1, so 70% → 0.4.
@@ -171,7 +173,11 @@ ListingHeroCarBBox? _bboxFromNumbers({
   return ListingHeroCarBBox(left: l, top: t, width: w, height: h);
 }
 
-ListingHeroCarBBox? _parseBBoxMap(Map raw, {double? imageWidth, double? imageHeight}) {
+ListingHeroCarBBox? _parseBBoxMap(
+  Map raw, {
+  double? imageWidth,
+  double? imageHeight,
+}) {
   final map = Map<String, dynamic>.from(raw);
   final img = map['image'];
   if (img is Map) {
@@ -183,7 +189,8 @@ ListingHeroCarBBox? _parseBBoxMap(Map raw, {double? imageWidth, double? imageHei
 
   final w = _asDouble(map['width'] ?? map['w']);
   final h = _asDouble(map['height'] ?? map['h']);
-  final looksCentered = map.containsKey('center_x') ||
+  final looksCentered =
+      map.containsKey('center_x') ||
       map.containsKey('cx') ||
       map.containsKey('center_y') ||
       map.containsKey('cy') ||
@@ -222,7 +229,11 @@ ListingHeroCarBBox? _parseBBoxMap(Map raw, {double? imageWidth, double? imageHei
   );
 }
 
-ListingHeroCarBBox? _parseBBoxList(List raw, {double? imageWidth, double? imageHeight}) {
+ListingHeroCarBBox? _parseBBoxList(
+  List raw, {
+  double? imageWidth,
+  double? imageHeight,
+}) {
   if (raw.length < 4) return null;
   final a = _asDouble(raw[0]);
   final b = _asDouble(raw[1]);
@@ -299,8 +310,16 @@ ListingHeroCarBBox? parseListingHeroCarBBox(dynamic source) {
         if (first is Map) {
           final p = _parseBBoxMap(
             first,
-            imageWidth: imageWidth ?? _asDouble((value['image'] is Map) ? value['image']['width'] : null),
-            imageHeight: imageHeight ?? _asDouble((value['image'] is Map) ? value['image']['height'] : null),
+            imageWidth:
+                imageWidth ??
+                _asDouble(
+                  (value['image'] is Map) ? value['image']['width'] : null,
+                ),
+            imageHeight:
+                imageHeight ??
+                _asDouble(
+                  (value['image'] is Map) ? value['image']['height'] : null,
+                ),
           );
           if (p != null) return p;
         }
@@ -316,12 +335,18 @@ ListingHeroCarBBox? parseListingHeroCarBBox(dynamic source) {
   }
 
   // Direct bbox fields on the image object.
-  final direct = _parseBBoxMap(map, imageWidth: imageWidth, imageHeight: imageHeight);
+  final direct = _parseBBoxMap(
+    map,
+    imageWidth: imageWidth,
+    imageHeight: imageHeight,
+  );
   if (direct != null &&
       (map.containsKey('left') ||
           map.containsKey('xmin') ||
           map.containsKey('bbox_left') ||
-          (map.containsKey('width') && map.containsKey('height') && map.containsKey('x')))) {
+          (map.containsKey('width') &&
+              map.containsKey('height') &&
+              map.containsKey('x')))) {
     return direct;
   }
 
@@ -330,12 +355,22 @@ ListingHeroCarBBox? parseListingHeroCarBBox(dynamic source) {
 
 /// Focus point alignment from metadata, else [kListingHeroObjectPosition].
 Alignment listingHeroAlignmentFor(dynamic source) {
+  // A seller's explicit crop always wins over detection metadata.
+  if (ListingImageMedia.focusY(source) != null) {
+    return ListingImageMedia.coverAlignment(source);
+  }
+
   final bbox = parseListingHeroCarBBox(source);
   if (bbox != null) return bbox.centerAlignment;
 
   if (source is Map) {
     final map = Map<String, dynamic>.from(source);
-    for (final key in ['object_position', 'focus', 'focus_point', 'crop_focus']) {
+    for (final key in [
+      'object_position',
+      'focus',
+      'focus_point',
+      'crop_focus',
+    ]) {
       final value = map[key];
       if (value is Map) {
         final x = _asDouble(value['x']);
@@ -343,7 +378,10 @@ Alignment listingHeroAlignmentFor(dynamic source) {
         if (x != null && y != null) {
           final nx = x > 1.0 ? 0.5 : x; // ignore invalid
           final ny = y > 1.0 ? 0.7 : y;
-          return Alignment(nx.clamp(0.0, 1.0) * 2 - 1, ny.clamp(0.0, 1.0) * 2 - 1);
+          return Alignment(
+            nx.clamp(0.0, 1.0) * 2 - 1,
+            ny.clamp(0.0, 1.0) * 2 - 1,
+          );
         }
       }
     }
@@ -356,5 +394,9 @@ Alignment listingHeroAlignmentFor(dynamic source) {
     }
   }
 
-  return kListingHeroObjectPosition;
+  if (ListingImageMedia.width(source) != null &&
+      ListingImageMedia.height(source) != null) {
+    return ListingImageMedia.coverAlignment(source);
+  }
+  return Alignment.center;
 }

@@ -158,15 +158,15 @@ abstract final class AppResponsive {
   }) {
     final w = screenSize(context).width;
     final colW = cardWidth ?? ((w - 24) / 2);
-    final ratio = quickSell ? 0.62 : 0.88;
+    final ratio = quickSell ? 0.62 : 0.96;
     var height = (colW * ratio).clamp(
       quickSell ? 100.0 : 140.0,
-      quickSell ? 130.0 : 190.0,
+      quickSell ? 130.0 : 205.0,
     );
     if (maxHeight != null && maxHeight.isFinite) {
       height = height.clamp(
         quickSell ? 100.0 : 120.0,
-        maxHeight.clamp(quickSell ? 100.0 : 120.0, 190.0),
+        maxHeight.clamp(quickSell ? 100.0 : 120.0, 205.0),
       );
     }
     return height;
@@ -200,8 +200,8 @@ abstract final class AppResponsive {
         alignment: textAlign == TextAlign.end
             ? Alignment.centerRight
             : (textAlign == TextAlign.start
-                ? Alignment.centerLeft
-                : Alignment.center),
+                  ? Alignment.centerLeft
+                  : Alignment.center),
         child: Text(
           text,
           textAlign: textAlign,
