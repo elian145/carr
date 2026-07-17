@@ -20,13 +20,11 @@ import '../../shared/ui/responsive.dart';
 import '../../shared/listings/listing_status.dart';
 import '../../shared/listings/listing_sold_badge.dart';
 import '../../shared/media/media_url.dart';
-import '../../shared/prefs/listing_layout_prefs.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../app_api_base.dart';
 import 'listing_network_image.dart';
 
 part 'global_listing_card_inner_text.dart';
-part 'global_listing_card_variants.dart';
 part 'global_listing_card_carousel.dart';
 part 'global_listing_card_build.dart';
 

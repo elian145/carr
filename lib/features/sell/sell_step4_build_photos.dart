@@ -191,25 +191,6 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                         ),
                       ),
                     ),
-                    Positioned(
-                      right: 6,
-                      bottom: 6,
-                      child: InkWell(
-                        onTap: () => _adjustImageCrop(index),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.all(6),
-                          child: const Icon(
-                            Icons.crop,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 );
               },

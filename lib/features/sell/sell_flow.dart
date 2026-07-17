@@ -50,7 +50,6 @@ import '../../shared/listings/plate_city_assets.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/listings/listing_uploaded_ago.dart';
 import '../../shared/listings/listing_image_media.dart';
-import '../../shared/listings/vertical_crop_editor.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';

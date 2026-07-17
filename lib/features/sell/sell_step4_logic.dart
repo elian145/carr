@@ -254,25 +254,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
     return ListingImageMedia.map(file, width: width, height: height);
   }
 
-  Future<void> _adjustImageCrop(int index) async {
-    if (index < 0 || index >= _selectedImages.length) return;
-    final result = await VerticalCropEditor.show(
-      context,
-      media: _selectedImages[index],
-      networkUrl: (source) =>
-          source.startsWith('http') ? source : _buildFullImageUrl(source),
-    );
-    if (!mounted || result == null) return;
-    setState(() {
-      _selectedImages[index] = ListingImageMedia.withFocusY(
-        _selectedImages[index],
-        result.focusY,
-      );
-    });
-    await _syncMediaDraftToParent();
-    await _saveDraft();
-  }
-
   void _setPrimaryImage(int index) {
     if (index <= 0 || index >= _selectedImages.length) return;
     setState(() {
