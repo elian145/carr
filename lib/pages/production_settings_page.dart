@@ -45,6 +45,104 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  String _cardDesignLabel(BuildContext context) {
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'ar':
+        return 'تصميم البطاقة';
+      case 'ku':
+        return 'دیزاینی کارت';
+      default:
+        return 'Card design';
+    }
+  }
+
+  String _designLabel(BuildContext context, int design) {
+    final number = design.toString().padLeft(2, '0');
+    switch (Localizations.localeOf(context).languageCode) {
+      case 'ar':
+        return 'التصميم $number';
+      case 'ku':
+        return 'دیزاین $number';
+      default:
+        return 'Design $number';
+    }
+  }
+
+  Future<void> _showCardDesignPicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => DefaultTabController(
+        length: 2,
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * .82,
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(sheetContext).colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _cardDesignLabel(sheetContext),
+                        style: Theme.of(sheetContext).textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              const TabBar(
+                tabs: [
+                  Tab(text: 'Horizontal'),
+                  Tab(text: 'Grid'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _CardDesignPreviewGrid(
+                      notifier: ListingLayoutPrefs.horizontalCardDesign,
+                      horizontal: true,
+                      labelBuilder: (value) =>
+                          _designLabel(sheetContext, value),
+                      onSelected: ListingLayoutPrefs.setHorizontalCardDesign,
+                    ),
+                    _CardDesignPreviewGrid(
+                      notifier: ListingLayoutPrefs.gridCardDesign,
+                      horizontal: false,
+                      labelBuilder: (value) =>
+                          _designLabel(sheetContext, value),
+                      onSelected: ListingLayoutPrefs.setGridCardDesign,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -227,6 +325,26 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: theme.toggleTheme,
           ),
           Divider(height: 1, color: dividerColor),
+          ValueListenableBuilder<int>(
+            valueListenable: ListingLayoutPrefs.horizontalCardDesign,
+            builder: (context, horizontalDesign, _) {
+              return ValueListenableBuilder<int>(
+                valueListenable: ListingLayoutPrefs.gridCardDesign,
+                builder: (context, gridDesign, _) => rowTile(
+                  icon: Icons.view_carousel_outlined,
+                  title: _cardDesignLabel(context),
+                  subtitle:
+                      'Horizontal ${horizontalDesign.toString().padLeft(2, '0')} · Grid ${gridDesign.toString().padLeft(2, '0')}',
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color: isLightShell ? Colors.grey.shade700 : Colors.white70,
+                  ),
+                  onTap: _showCardDesignPicker,
+                ),
+              );
+            },
+          ),
+          Divider(height: 1, color: dividerColor),
           rowTile(
             icon: Icons.notifications_active_outlined,
             title: loc.settingsEnablePush,
@@ -264,5 +382,212 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
     );
+  }
+}
+
+class _CardDesignPreviewGrid extends StatelessWidget {
+  const _CardDesignPreviewGrid({
+    required this.notifier,
+    required this.horizontal,
+    required this.labelBuilder,
+    required this.onSelected,
+  });
+
+  final ValueNotifier<int> notifier;
+  final bool horizontal;
+  final String Function(int) labelBuilder;
+  final Future<void> Function(int) onSelected;
+
+  static const _accents = [
+    Color(0xFFFF5A00),
+    Color(0xFF1677FF),
+    Color(0xFF00897B),
+    Color(0xFF7E57C2),
+    Color(0xFFE53935),
+    Color(0xFF3949AB),
+    Color(0xFF2E7D32),
+    Color(0xFFF9A825),
+    Color(0xFFD81B60),
+    Color(0xFF00838F),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 700
+            ? 4
+            : constraints.maxWidth >= 430
+            ? 3
+            : 2;
+        return ValueListenableBuilder<int>(
+          valueListenable: notifier,
+          builder: (context, selected, _) => GridView.builder(
+            padding: const EdgeInsets.all(14),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: horizontal ? 1.35 : .92,
+            ),
+            itemCount: 20,
+            itemBuilder: (context, index) {
+              final design = index + 1;
+              final accent = _accents[index % _accents.length];
+              final active = design == selected;
+              return InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => onSelected(design),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: active
+                        ? accent.withValues(alpha: .12)
+                        : Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: active
+                          ? accent
+                          : Theme.of(context).colorScheme.outlineVariant,
+                      width: active ? 2 : 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: _AbstractCardPreview(
+                          design: design,
+                          horizontal: horizontal,
+                          accent: accent,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (active) ...[
+                            Icon(Icons.check_circle, size: 14, color: accent),
+                            const SizedBox(width: 3),
+                          ],
+                          Flexible(
+                            child: Text(
+                              labelBuilder(design),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: active
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AbstractCardPreview extends StatelessWidget {
+  const _AbstractCardPreview({
+    required this.design,
+    required this.horizontal,
+    required this.accent,
+  });
+
+  final int design;
+  final bool horizontal;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final composition = design % 5;
+    final image = Container(
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: .22),
+        borderRadius: BorderRadius.circular(design.isEven ? 4 : 10),
+      ),
+      child: Icon(Icons.directions_car, color: accent, size: 25),
+    );
+    final lines = Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: composition == 4
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        FractionallySizedBox(
+          widthFactor: .85,
+          child: Container(
+            height: 7,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSurface,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ),
+        if (composition != 1)
+          FractionallySizedBox(
+            widthFactor: .58,
+            child: Container(
+              height: composition == 3 ? 2 : 6,
+              color: composition == 3
+                  ? accent
+                  : Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 25,
+              height: 10,
+              decoration: BoxDecoration(
+                color: composition.isEven
+                    ? accent.withValues(alpha: .18)
+                    : Colors.transparent,
+                border: composition.isOdd ? Border.all(color: accent) : null,
+                borderRadius: BorderRadius.circular(composition == 2 ? 8 : 3),
+              ),
+            ),
+            Container(
+              width: 34,
+              height: 12,
+              decoration: BoxDecoration(
+                color: design % 4 == 0 ? Colors.transparent : accent,
+                border: design % 4 == 0 ? Border.all(color: accent) : null,
+                borderRadius: BorderRadius.circular(design % 3 == 0 ? 10 : 3),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+    return horizontal
+        ? Row(
+            textDirection: design % 3 == 0
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+            children: [
+              Expanded(flex: 4 + design % 3, child: image),
+              const SizedBox(width: 6),
+              Expanded(flex: 6, child: lines),
+            ],
+          )
+        : Column(
+            children: [
+              Expanded(flex: 4 + design % 3, child: image),
+              const SizedBox(height: 5),
+              Expanded(flex: 5, child: lines),
+            ],
+          );
   }
 }

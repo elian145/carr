@@ -10,8 +10,13 @@ import '../../shared/debug/app_log.dart';
 /// - `1` = list (1 column / horizontal card)
 class ListingLayoutPrefs {
   static const String _key = 'listing_columns_v1';
+  static const String _horizontalDesignKey =
+      'listing_horizontal_card_design_v1';
+  static const String _gridDesignKey = 'listing_grid_card_design_v1';
 
   static final ValueNotifier<int> columns = ValueNotifier<int>(2);
+  static final ValueNotifier<int> horizontalCardDesign = ValueNotifier<int>(1);
+  static final ValueNotifier<int> gridCardDesign = ValueNotifier<int>(1);
 
   static int _sanitize(dynamic v) {
     final n = v is int ? v : int.tryParse(v?.toString() ?? '');
@@ -19,15 +24,27 @@ class ListingLayoutPrefs {
     return 2;
   }
 
+  @visibleForTesting
+  static int sanitizeCardDesign(dynamic value) {
+    final parsed = value is int ? value : int.tryParse(value?.toString() ?? '');
+    return parsed != null && parsed >= 1 && parsed <= 20 ? parsed : 1;
+  }
+
   static Future<int> load() async {
     try {
       final sp = await SharedPreferences.getInstance();
       final v = _sanitize(sp.getInt(_key) ?? 2);
+      horizontalCardDesign.value = sanitizeCardDesign(
+        sp.getInt(_horizontalDesignKey),
+      );
+      gridCardDesign.value = sanitizeCardDesign(sp.getInt(_gridDesignKey));
       columns.value = v;
       return v;
     } catch (e, st) {
       logNonFatal(e, st);
       columns.value = 2;
+      horizontalCardDesign.value = 1;
+      gridCardDesign.value = 1;
       return 2;
     }
   }
@@ -38,6 +55,27 @@ class ListingLayoutPrefs {
     try {
       final sp = await SharedPreferences.getInstance();
       await sp.setInt(_key, v);
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+  }
+
+  static Future<void> setHorizontalCardDesign(int value) =>
+      _setCardDesign(horizontalCardDesign, _horizontalDesignKey, value);
+
+  static Future<void> setGridCardDesign(int value) =>
+      _setCardDesign(gridCardDesign, _gridDesignKey, value);
+
+  static Future<void> _setCardDesign(
+    ValueNotifier<int> notifier,
+    String key,
+    int value,
+  ) async {
+    final sanitized = sanitizeCardDesign(value);
+    notifier.value = sanitized;
+    try {
+      final sp = await SharedPreferences.getInstance();
+      await sp.setInt(key, sanitized);
     } catch (e, st) {
       logNonFatal(e, st);
     }

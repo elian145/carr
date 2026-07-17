@@ -9,6 +9,33 @@ Widget buildGlobalCarCard(
   VoidCallback? onCardTap,
   bool allowOwnerManagementOnOpen = false,
 }) {
+  final design = listLayout
+      ? ListingLayoutPrefs.horizontalCardDesign
+      : ListingLayoutPrefs.gridCardDesign;
+  return ValueListenableBuilder<int>(
+    valueListenable: design,
+    builder: (context, value, _) => _buildGlobalCarCardForDesign(
+      context,
+      car,
+      listLayout: listLayout,
+      design: value,
+      carouselResetSeed: carouselResetSeed,
+      onCardTap: onCardTap,
+      allowOwnerManagementOnOpen: allowOwnerManagementOnOpen,
+    ),
+  );
+}
+
+Widget _buildGlobalCarCardForDesign(
+  BuildContext context,
+  Map car, {
+  required bool listLayout,
+  required int design,
+  required int carouselResetSeed,
+  required VoidCallback? onCardTap,
+  required bool allowOwnerManagementOnOpen,
+}) {
+  final preset = _cardPreset(listLayout, design);
   final brand = car['brand'] ?? '';
   final brandId =
       brandLogoFilenames[brand] ??
@@ -39,6 +66,10 @@ Widget buildGlobalCarCard(
       ? ''
       : (translateListingValue(context, cityRaw) ?? cityRaw).trim();
   final locCard = AppLocalizations.of(context)!;
+  final languageCode = Localizations.localeOf(context).languageCode;
+  final literSeparator = languageCode == 'ar' || languageCode == 'ku'
+      ? ' '
+      : '';
   String? firstCardValue(Map source, List<String> keys) {
     for (final key in keys) {
       final value = source[key];
@@ -74,7 +105,7 @@ Widget buildGlobalCarCard(
       final liters = double.tryParse(numericEngine.group(1)!);
       if (liters != null && liters > 0) {
         engineLine =
-            '${localizeDigits(context, liters.toStringAsFixed(1))}${locCard.unit_liter_suffix}';
+            '${localizeDigits(context, liters.toStringAsFixed(1))}$literSeparator${locCard.unit_liter_suffix}';
       }
     }
     if (engineLine.isEmpty) {
@@ -124,14 +155,47 @@ Widget buildGlobalCarCard(
   final bool showVideoCountBadge =
       car['videos'] != null && (car['videos'] as List).isNotEmpty;
   final EdgeInsets listingCardTextPadding = listLayout
-      ? const EdgeInsets.fromLTRB(10, 7, 8, 0)
-      : const EdgeInsets.fromLTRB(12, 8, 12, 6);
+      ? EdgeInsets.fromLTRB(design == 1 ? 10 : 9, 7, 8, design == 1 ? 0 : 7)
+      : EdgeInsets.fromLTRB(design == 1 ? 12 : 10, 8, design == 1 ? 12 : 10, 6);
 
   Widget wrapCardTextTap(Widget child) {
     if (onCardTap == null) return child;
     return Material(
       color: Colors.transparent,
       child: InkWell(onTap: onCardTap, child: child),
+    );
+  }
+
+  Widget buildCardText({required bool horizontal}) {
+    if (design == 1) {
+      return _buildGlobalCarCardInnerText(
+        context,
+        car,
+        brandId: brandId,
+        trimLine: trimLine,
+        engineLine: engineLine,
+        yearDisplay: yearDisplay,
+        mileageDisplay: mileageDisplay,
+        cityLine: cityLine,
+        titleTextColor: titleTextColor,
+        dividerLineColor: dividerLineColor,
+        metaTextColor: metaTextColor,
+        listLayout: horizontal,
+      );
+    }
+    return _buildPresetCardText(
+      context,
+      car,
+      preset: preset,
+      brandId: brandId,
+      trimLine: trimLine,
+      engineLine: engineLine,
+      yearDisplay: yearDisplay,
+      mileageDisplay: mileageDisplay,
+      cityLine: cityLine,
+      titleColor: titleTextColor,
+      metaColor: metaTextColor,
+      listLayout: horizontal,
     );
   }
 
@@ -191,20 +255,15 @@ Widget buildGlobalCarCard(
               ),
             Expanded(
               child: Row(
+                textDirection: preset.imageTrailing
+                    ? TextDirection.rtl
+                    : TextDirection.ltr,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    flex: 5,
+                    flex: preset.imageFlex,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(
-                          (car['is_quick_sell'] == true ||
-                                  car['is_quick_sell'] == 'true')
-                              ? 0
-                              : 14,
-                        ),
-                        bottomLeft: const Radius.circular(14),
-                      ),
+                      borderRadius: BorderRadius.zero,
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
@@ -232,12 +291,19 @@ Widget buildGlobalCarCard(
                               right: 8,
                               child: _globalListingCardVideoCountBadge(car),
                             ),
+                          if (sold)
+                            Center(
+                              child: buildListingSoldBadge(
+                                context,
+                                large: true,
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ),
                   Expanded(
-                    flex: 7,
+                    flex: 12 - preset.imageFlex,
                     child: LayoutBuilder(
                       builder: (context, textConstraints) {
                         final pad = listingCardTextPadding;
@@ -260,20 +326,7 @@ Widget buildGlobalCarCard(
                               // Fill the text column: title stays at the top,
                               // mileage/city at the bottom (no vertical centering
                               // that leaves empty bands on taller phones).
-                              child: _buildGlobalCarCardInnerText(
-                                context,
-                                car,
-                                brandId: brandId,
-                                trimLine: trimLine,
-                                engineLine: engineLine,
-                                yearDisplay: yearDisplay,
-                                mileageDisplay: mileageDisplay,
-                                cityLine: cityLine,
-                                titleTextColor: titleTextColor,
-                                dividerLineColor: dividerLineColor,
-                                metaTextColor: metaTextColor,
-                                listLayout: true,
-                              ),
+                              child: buildCardText(horizontal: true),
                             ),
                           ),
                         );
@@ -295,11 +348,15 @@ Widget buildGlobalCarCard(
                 : 152.0;
             final maxImage = (constraints.maxHeight - bannerH - textReserve)
                 .clamp(quickSell ? 100.0 : 120.0, 190.0);
-            final imageH = AppResponsive.listingGridImageHeight(
+            final baseImageH = AppResponsive.listingGridImageHeight(
               context,
               quickSell: quickSell,
               maxHeight: maxImage,
               cardWidth: constraints.maxWidth,
+            );
+            final imageH = (baseImageH * preset.imageScale).clamp(
+              78.0,
+              maxImage,
             );
 
             return Column(
@@ -352,12 +409,22 @@ Widget buildGlobalCarCard(
                           : Radius.circular(20),
                       bottom: Radius.zero,
                     ),
-                    child: _buildGlobalCardImageCarousel(
-                      context,
-                      car,
-                      carouselResetSeed: carouselResetSeed,
-                      enableDetailTap: onCardTap == null,
-                      allowOwnerManagementOnOpen: allowOwnerManagementOnOpen,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        _buildGlobalCardImageCarousel(
+                          context,
+                          car,
+                          carouselResetSeed: carouselResetSeed,
+                          enableDetailTap: onCardTap == null,
+                          allowOwnerManagementOnOpen:
+                              allowOwnerManagementOnOpen,
+                        ),
+                        if (sold)
+                          Center(
+                            child: buildListingSoldBadge(context, large: true),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -382,19 +449,7 @@ Widget buildGlobalCarCard(
                             child: SizedBox(
                               width: contentW,
                               child: wrapCardTextTap(
-                                _buildGlobalCarCardInnerText(
-                                  context,
-                                  car,
-                                  brandId: brandId,
-                                  trimLine: trimLine,
-                                  engineLine: engineLine,
-                                  yearDisplay: yearDisplay,
-                                  mileageDisplay: mileageDisplay,
-                                  cityLine: cityLine,
-                                  titleTextColor: titleTextColor,
-                                  dividerLineColor: dividerLineColor,
-                                  metaTextColor: metaTextColor,
-                                ),
+                                buildCardText(horizontal: false),
                               ),
                             ),
                           ),
@@ -409,36 +464,64 @@ Widget buildGlobalCarCard(
         );
 
   final titleForA11y = localizedCarTitleForCard(context, car);
+  final shellRadius = design == 1 ? (listLayout ? 14.0 : 20.0) : preset.radius;
   Widget cardShell = Container(
     decoration: BoxDecoration(
       color: cardFill,
-      borderRadius: BorderRadius.circular(listLayout ? 14 : 20),
-      border: null,
+      borderRadius: BorderRadius.circular(shellRadius),
+      border: design == 1 || preset.borderWidth == 0
+          ? null
+          : Border.all(
+              color: preset.accent.withValues(alpha: 0.55),
+              width: preset.borderWidth,
+            ),
       boxShadow: featured
+          ? null
+          : preset.elevation <= 0
           ? null
           : [
               BoxShadow(
                 color: Colors.black.withValues(alpha: listLayout ? 0.17 : 0.2),
-                blurRadius: listLayout ? 16 : 8,
+                blurRadius: design == 1
+                    ? (listLayout ? 16 : 8)
+                    : preset.elevation,
                 spreadRadius: listLayout ? 0.5 : 0,
-                offset: Offset(0, listLayout ? 6 : 4),
+                offset: Offset(0, preset.elevation > 12 ? 7 : 4),
               ),
             ],
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(listLayout ? 14 : 20),
+      borderRadius: BorderRadius.circular(shellRadius),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
           if (onCardTap == null)
             InkWell(
-              borderRadius: BorderRadius.circular(listLayout ? 14 : 20),
+              borderRadius: BorderRadius.circular(shellRadius),
               onTap: onPublishedCardTap,
-              child: cardInner,
+              child: design > 1 && preset.accentEdge
+                  ? DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: BorderDirectional(
+                          start: BorderSide(color: preset.accent, width: 4),
+                        ),
+                      ),
+                      child: cardInner,
+                    )
+                  : cardInner,
             )
           else
-            cardInner,
+            design > 1 && preset.accentEdge
+                ? DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: BorderDirectional(
+                        start: BorderSide(color: preset.accent, width: 4),
+                      ),
+                    ),
+                    child: cardInner,
+                  )
+                : cardInner,
           if (!listLayout && showVideoCountBadge)
             Positioned(
               top: 12,
@@ -451,19 +534,13 @@ Widget buildGlobalCarCard(
               left: listLayout ? 8 : 10,
               child: buildListingFeaturedBadge(context, compact: listLayout),
             ),
-          if (sold)
-            Positioned(
-              top: listLayout ? (featured ? 36 : 8) : (featured ? 42 : 12),
-              left: listLayout ? 8 : 12,
-              child: buildListingSoldBadge(context),
-            ),
         ],
       ),
     ),
   );
 
   if (featured) {
-    cardShell = wrapListingFeaturedGlow(child: cardShell, radius: 20);
+    cardShell = wrapListingFeaturedGlow(child: cardShell, radius: shellRadius);
   }
 
   return Semantics(

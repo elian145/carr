@@ -71,14 +71,27 @@ Widget _buildGridCarCardInnerText(
   final double sectionGap = compact ? 4.0 : 6.0;
   final double blockGap = compact ? 6.0 : 8.0;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
-  final bool hasMeta = cityLine.isNotEmpty || hasPrice;
+  final String priceText = hasPrice
+      ? formatCurrency(context, car['price'])
+      : AppLocalizations.of(context)!.contactForPrice;
   final bool isLight = Theme.of(context).brightness == Brightness.light;
+  final inheritedTextDirection = Directionality.of(context);
+  final languageCode = Localizations.localeOf(context).languageCode;
+  final bool isRtl =
+      inheritedTextDirection == TextDirection.rtl ||
+      languageCode == 'ar' ||
+      languageCode == 'ku';
+  final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
+  final double leadingShift = isRtl ? 6 : -6;
+  final bool isArabic = languageCode == 'ar';
+  final double trailingShift = isArabic ? -3 : (isRtl ? -6 : 6);
   const Color priceAccent = Color(0xFFFF5A00);
 
   Widget infoChip(String value, {Color? color, bool scaleDown = false}) {
     final text = Text(
       value,
-      textAlign: TextAlign.left,
+      textDirection: textDirection,
+      textAlign: TextAlign.start,
       textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
@@ -104,7 +117,7 @@ Widget _buildGridCarCardInnerText(
       child: scaleDown
           ? FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
+              alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
               child: text,
             )
           : text,
@@ -138,7 +151,7 @@ Widget _buildGridCarCardInnerText(
           ),
         ),
         maxLines: 1,
-        textDirection: Directionality.of(context),
+        textDirection: textDirection,
         textScaler: TextScaler.noScaling,
       )..layout(maxWidth: titleMaxWidth);
       final bool titleIsSingleLine = !titleProbe.didExceedMaxLines;
@@ -147,9 +160,9 @@ Widget _buildGridCarCardInnerText(
           : logoSize;
 
       return Transform.translate(
-        offset: const Offset(-6, 0),
+        offset: Offset(leadingShift, 0),
         child: Row(
-          textDirection: TextDirection.ltr,
+          textDirection: textDirection,
           crossAxisAlignment: titleIsSingleLine
               ? CrossAxisAlignment.center
               : CrossAxisAlignment.start,
@@ -194,12 +207,13 @@ Widget _buildGridCarCardInnerText(
                 height: titleRowHeight,
                 child: Align(
                   alignment: titleIsSingleLine
-                      ? Alignment.centerLeft
-                      : Alignment.topLeft,
+                      ? (isRtl ? Alignment.centerRight : Alignment.centerLeft)
+                      : (isRtl ? Alignment.topRight : Alignment.topLeft),
                   child: AutoSizeText(
                     titleText,
+                    textDirection: textDirection,
                     textScaleFactor: 1.0,
-                    textAlign: TextAlign.left,
+                    textAlign: TextAlign.start,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: titleTextColor,
@@ -221,57 +235,54 @@ Widget _buildGridCarCardInnerText(
     },
   );
 
+  final bool hasDetail = engineLine.isNotEmpty || trimLine.isNotEmpty;
   final Widget trimBlock = Padding(
     padding: EdgeInsets.only(top: blockGap),
     child: Transform.translate(
-      offset: const Offset(-6, 0),
+      offset: Offset(leadingShift, 0),
       child: Row(
-        textDirection: TextDirection.ltr,
+        textDirection: textDirection,
         children: [
-          Flexible(
-            flex: 2,
-            child: infoChip(
-              engineLine.isEmpty ? '—' : engineLine,
-              color: metaTextColor,
-              scaleDown: true,
+          if (engineLine.isNotEmpty)
+            Flexible(
+              flex: 2,
+              child: infoChip(
+                engineLine,
+                color: metaTextColor,
+                scaleDown: true,
+              ),
             ),
-          ),
-          SizedBox(width: compact ? 4 : 6),
-          Flexible(
-            flex: 4,
-            child: infoChip(
-              trimLine.isEmpty ? '—' : trimLine,
-              color: metaTextColor,
-              scaleDown: true,
+          if (engineLine.isNotEmpty && trimLine.isNotEmpty)
+            SizedBox(width: compact ? 4 : 6),
+          if (trimLine.isNotEmpty) ...[
+            Flexible(
+              flex: 4,
+              child: infoChip(trimLine, color: metaTextColor, scaleDown: true),
             ),
-          ),
+          ],
         ],
       ),
     ),
   );
 
+  final bool hasSpecs = yearDisplay.isNotEmpty || mileageDisplay.isNotEmpty;
   final Widget yearPriceBlock = Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     mainAxisSize: MainAxisSize.min,
     children: [
       SizedBox(height: sectionGap),
       Transform.translate(
-        offset: const Offset(-6, 0),
+        offset: Offset(leadingShift, 0),
         child: Row(
-          textDirection: TextDirection.ltr,
+          textDirection: textDirection,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            infoChip(
-              yearDisplay.isEmpty ? '—' : yearDisplay,
-              color: metaTextColor,
-            ),
-            SizedBox(width: compact ? 4 : 6),
-            Flexible(
-              child: infoChip(
-                mileageDisplay.isEmpty ? '—' : mileageDisplay,
-                color: metaTextColor,
-              ),
-            ),
+            if (yearDisplay.isNotEmpty)
+              infoChip(yearDisplay, color: metaTextColor),
+            if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
+              SizedBox(width: compact ? 4 : 6),
+            if (mileageDisplay.isNotEmpty)
+              Flexible(child: infoChip(mileageDisplay, color: metaTextColor)),
           ],
         ),
       ),
@@ -281,14 +292,15 @@ Widget _buildGridCarCardInnerText(
   final Widget mileageCityRow = SizedBox(
     height: compact ? 23.0 : 29.0,
     child: Row(
-      textDirection: TextDirection.ltr,
+      textDirection: textDirection,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         if (cityLine.isNotEmpty)
           Expanded(
             child: Transform.translate(
-              offset: const Offset(-6, 0),
+              offset: Offset(leadingShift, 6),
               child: Row(
+                textDirection: textDirection,
                 children: [
                   const Icon(
                     Icons.location_on_outlined,
@@ -299,10 +311,12 @@ Widget _buildGridCarCardInnerText(
                   Expanded(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
+                      alignment: isRtl
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
                       child: Text(
                         cityLine,
-                        textDirection: Directionality.of(context),
+                        textDirection: textDirection,
                         textScaler: const TextScaler.linear(1.0),
                         maxLines: 1,
                         softWrap: false,
@@ -319,11 +333,13 @@ Widget _buildGridCarCardInnerText(
               ),
             ),
           ),
-        if (cityLine.isNotEmpty && hasPrice) const SizedBox.shrink(),
-        if (cityLine.isEmpty && hasPrice) const Spacer(),
-        if (hasPrice)
-          Transform.translate(
-            offset: const Offset(6, 0),
+        if (cityLine.isNotEmpty) const SizedBox.shrink(),
+        if (cityLine.isEmpty) const Spacer(),
+        Transform.translate(
+          offset: Offset(trailingShift, isArabic ? 3 : 6),
+          child: Transform.scale(
+            scale: hasPrice ? 1 : 0.82,
+            alignment: isRtl ? Alignment.centerLeft : Alignment.centerRight,
             child: Container(
               padding: EdgeInsets.symmetric(
                 horizontal: compact ? 7 : 10,
@@ -336,7 +352,7 @@ Widget _buildGridCarCardInnerText(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  formatCurrency(context, car['price']),
+                  priceText,
                   textScaler: const TextScaler.linear(1.0),
                   maxLines: 1,
                   style: TextStyle(
@@ -349,6 +365,7 @@ Widget _buildGridCarCardInnerText(
               ),
             ),
           ),
+        ),
       ],
     ),
   );
@@ -358,10 +375,10 @@ Widget _buildGridCarCardInnerText(
     mainAxisSize: MainAxisSize.min,
     children: [
       titleBlock,
-      trimBlock,
+      if (hasDetail) trimBlock,
+      if (hasSpecs) yearPriceBlock,
       SizedBox(height: sectionGap),
-      yearPriceBlock,
-      if (hasMeta) ...[SizedBox(height: sectionGap), mileageCityRow],
+      mileageCityRow,
     ],
   );
 }
@@ -381,6 +398,15 @@ Widget _buildListCarCardInnerText(
   required Color metaTextColor,
 }) {
   final bool isLight = Theme.of(context).brightness == Brightness.light;
+  final inheritedTextDirection = Directionality.of(context);
+  final languageCode = Localizations.localeOf(context).languageCode;
+  final bool isRtl =
+      inheritedTextDirection == TextDirection.rtl ||
+      languageCode == 'ar' ||
+      languageCode == 'ku';
+  final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
+  final double leadingShift = isRtl ? 6 : -6;
+  final double trailingShift = isRtl ? -4 : 4;
   final String titleText = localizedCarTitleForCard(context, car);
   final bool hasTrim = trimLine.isNotEmpty;
   final bool hasEngine = engineLine.isNotEmpty;
@@ -388,7 +414,7 @@ Widget _buildListCarCardInnerText(
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
   final String priceText = hasPrice
       ? formatCurrency(context, car['price'])
-      : '';
+      : AppLocalizations.of(context)!.contactForPrice;
   final String yearText = yearDisplay.isNotEmpty ? yearDisplay : '—';
   final String mileageText = mileageDisplay.isNotEmpty ? mileageDisplay : '—';
   final String cityText = cityLine.isNotEmpty ? cityLine : '—';
@@ -397,6 +423,7 @@ Widget _buildListCarCardInnerText(
       car['brand'] != null && car['brand'].toString().trim().isNotEmpty;
 
   final Widget titleRow = Row(
+    textDirection: textDirection,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       if (showLogo) ...[
@@ -430,6 +457,7 @@ Widget _buildListCarCardInnerText(
       Expanded(
         child: AutoSizeText(
           titleText,
+          textDirection: textDirection,
           textScaleFactor: 1.0,
           textAlign: TextAlign.start,
           style: TextStyle(
@@ -450,23 +478,27 @@ Widget _buildListCarCardInnerText(
     ],
   );
 
-  final Widget priceBadge = Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-    decoration: BoxDecoration(
-      color: priceAccent,
-      borderRadius: BorderRadius.circular(9),
-    ),
-    child: FittedBox(
-      fit: BoxFit.scaleDown,
-      child: Text(
-        priceText,
-        textScaler: const TextScaler.linear(1.0),
-        maxLines: 1,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: 16,
-          height: 1,
+  final Widget priceBadge = Transform.scale(
+    scale: hasPrice ? 1 : 0.82,
+    alignment: isRtl ? Alignment.centerLeft : Alignment.centerRight,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: priceAccent,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          priceText,
+          textScaler: const TextScaler.linear(1.0),
+          maxLines: 1,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            height: 1,
+          ),
         ),
       ),
     ),
@@ -486,6 +518,7 @@ Widget _buildListCarCardInnerText(
   }
 
   final Widget specsRow = Row(
+    textDirection: textDirection,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       infoChip(
@@ -494,7 +527,7 @@ Widget _buildListCarCardInnerText(
           textScaler: const TextScaler.linear(1.0),
           maxLines: 1,
           style: TextStyle(
-            color: titleTextColor,
+            color: metaTextColor,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             height: 1,
@@ -510,7 +543,7 @@ Widget _buildListCarCardInnerText(
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: titleTextColor,
+              color: metaTextColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
               height: 1,
@@ -524,6 +557,7 @@ Widget _buildListCarCardInnerText(
   Widget adaptiveDetailText(String value, Color color) {
     return AutoSizeText(
       value,
+      textDirection: textDirection,
       textScaleFactor: 1.0,
       maxLines: 1,
       minFontSize: 10,
@@ -539,11 +573,12 @@ Widget _buildListCarCardInnerText(
   }
 
   final Widget engineTrimRow = Row(
+    textDirection: textDirection,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       if (hasEngine)
         Flexible(
-          child: infoChip(adaptiveDetailText(engineLine, titleTextColor)),
+          child: infoChip(adaptiveDetailText(engineLine, metaTextColor)),
         ),
       if (hasEngine && hasTrim) const SizedBox(width: 6),
       if (hasTrim)
@@ -552,13 +587,14 @@ Widget _buildListCarCardInnerText(
   );
 
   final Widget priceRow = Row(
-    textDirection: TextDirection.ltr,
+    textDirection: textDirection,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Expanded(
         child: Transform.translate(
-          offset: const Offset(-6, 0),
+          offset: Offset(leadingShift, 0),
           child: Row(
+            textDirection: textDirection,
             children: [
               const Icon(
                 Icons.location_on_outlined,
@@ -569,10 +605,12 @@ Widget _buildListCarCardInnerText(
               Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
+                  alignment: isRtl
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Text(
                     cityText,
-                    textDirection: Directionality.of(context),
+                    textDirection: textDirection,
                     textScaler: const TextScaler.linear(1.0),
                     maxLines: 1,
                     softWrap: false,
@@ -589,8 +627,7 @@ Widget _buildListCarCardInnerText(
           ),
         ),
       ),
-      if (hasPrice)
-        Transform.translate(offset: const Offset(4, 0), child: priceBadge),
+      Transform.translate(offset: Offset(trailingShift, 0), child: priceBadge),
     ],
   );
 
@@ -600,25 +637,58 @@ Widget _buildListCarCardInnerText(
     children: [
       Expanded(
         flex: 4,
-        child: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: titleRow,
+        child: LayoutBuilder(
+          builder: (context, titleConstraints) {
+            final reservedWidth = (showLogo ? 32.0 : 0.0) + 36.0;
+            final availableTitleWidth =
+                (titleConstraints.maxWidth - reservedWidth).clamp(
+                  0.0,
+                  double.infinity,
+                );
+            final titleProbe = TextPainter(
+              text: TextSpan(
+                text: titleText,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  height: 1.1,
+                ),
+              ),
+              maxLines: 1,
+              textDirection: textDirection,
+              textScaler: TextScaler.noScaling,
+            )..layout(maxWidth: availableTitleWidth);
+            final singleLine = !titleProbe.didExceedMaxLines;
+
+            return Align(
+              alignment: singleLine
+                  ? (isRtl ? Alignment.topRight : Alignment.topLeft)
+                  : (isRtl ? Alignment.centerRight : Alignment.centerLeft),
+              child: titleRow,
+            );
+          },
         ),
       ),
       if (hasDetailRow) ...[
         Expanded(
           flex: 3,
           child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: engineTrimRow,
+            alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+            child: Transform.translate(
+              offset: const Offset(0, -2),
+              child: engineTrimRow,
+            ),
           ),
         ),
       ],
       Expanded(
         flex: 3,
         child: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: specsRow,
+          alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+          child: Transform.translate(
+            offset: const Offset(0, -2),
+            child: specsRow,
+          ),
         ),
       ),
       Expanded(flex: 3, child: priceRow),
