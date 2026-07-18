@@ -103,3 +103,22 @@ export async function apiRequest<T>(
 
   return body as T;
 }
+
+export async function apiBlobRequest(path: string): Promise<Blob> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const url = `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body.message) message = body.message;
+    } catch {
+      // Keep the status-based fallback for non-JSON responses.
+    }
+    throw new ApiRequestError(message, res.status);
+  }
+  return res.blob();
+}

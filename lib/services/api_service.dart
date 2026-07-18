@@ -304,6 +304,10 @@ class ApiService {
     XFile imageFile,
   ) => _ApiServiceAuth.uploadDealerCoverPicture(imageFile);
 
+  static Future<Map<String, dynamic>> uploadDealerVerificationPhoto(
+    XFile imageFile,
+  ) => _ApiServiceAuth.uploadDealerVerificationPhoto(imageFile);
+
   // Listings, favorites, saved searches (api/api_listings.dart)
   static Future<Map<String, dynamic>> getCars({
     int page = 1,

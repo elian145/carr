@@ -45,6 +45,8 @@ export interface DealerApplication {
   dealership_description?: string | null;
   business_registration_number?: string | null;
   document_urls?: string[];
+  has_verification_photo?: boolean;
+  verification_photo_url?: string;
   review_reason?: string | null;
   submitted_at?: string | null;
   reviewed_at?: string | null;

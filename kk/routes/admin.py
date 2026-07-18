@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+import os
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import joinedload
 
@@ -510,6 +511,10 @@ def _dealer_admin_dict(user: User) -> dict:
     if application:
         data["dealer_status"] = application.status
         data["dealer_application"] = application.to_dict(include_decisions=True)
+        if application.verification_photo_filename:
+            data["dealer_application"]["verification_photo_url"] = (
+                f"/api/admin/dealers/{user.public_id}/verification-photo"
+            )
     return data
 
 
@@ -587,7 +592,7 @@ def _review_dealer_application(
         ),
         "approved": (
             "Dealer application approved",
-            "Your dealership is verified and your dealer profile is now active.",
+            "Your dealership is verified and active. Complete your public profile with a logo, cover image, opening hours, and contact details.",
         ),
         "rejected": (
             "Dealer application declined",
@@ -625,6 +630,34 @@ def dealers_pending():
     except Exception as e:
         logger.error("admin dealers_pending error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to list pending dealers"}), 500
+
+
+@bp.route("/dealers/<user_public_id>/verification-photo", methods=["GET"])
+@admin_required
+def dealer_verification_photo(user_public_id: str):
+    """Return a private dealership photo to authorized dealer reviewers."""
+    denied = _deny("dealers")
+    if denied:
+        return denied
+    target = User.query.filter_by(public_id=(user_public_id or "").strip()).first()
+    application = target.dealer_application if target else None
+    filename = application.verification_photo_filename if application else None
+    if not filename:
+        return jsonify({"message": "Verification photo not found"}), 404
+    folder = os.path.join(
+        current_app.config["PRIVATE_UPLOAD_FOLDER"],
+        "dealer_verification",
+    )
+    response = send_from_directory(
+        folder,
+        os.path.basename(filename),
+        as_attachment=False,
+        max_age=0,
+    )
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 @bp.route("/dealers/<user_public_id>/approve", methods=["POST"])

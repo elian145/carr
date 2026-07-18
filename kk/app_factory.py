@@ -399,6 +399,16 @@ def create_app():
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "car_videos"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "profile_pictures"), exist_ok=True)
     os.makedirs(os.path.join(app.config["UPLOAD_FOLDER"], "dealer_covers"), exist_ok=True)
+    _private_upload_env = (os.environ.get("PRIVATE_UPLOAD_FOLDER") or "").strip()
+    app.config["PRIVATE_UPLOAD_FOLDER"] = (
+        os.path.abspath(_private_upload_env)
+        if _private_upload_env
+        else os.path.join(app.instance_path, "private_uploads")
+    )
+    os.makedirs(
+        os.path.join(app.config["PRIVATE_UPLOAD_FOLDER"], "dealer_verification"),
+        exist_ok=True,
+    )
 
     init_jwt_callbacks(jwt)
     register_blueprints(app)

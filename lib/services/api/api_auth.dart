@@ -491,4 +491,21 @@ abstract final class _ApiServiceAuth {
       return request;
     });
   }
+
+  static Future<Map<String, dynamic>> uploadDealerVerificationPhoto(
+    XFile imageFile,
+  ) async {
+    return ApiService._sendAuthenticatedMultipart(() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse(
+          '${ApiService.baseUrl}/user/upload-dealer-verification-photo',
+        ),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+      return request;
+    });
+  }
 }

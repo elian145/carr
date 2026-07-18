@@ -497,6 +497,25 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> uploadDealerVerificationPhoto(
+    dynamic imageFile,
+  ) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.uploadDealerVerificationPhoto(
+        imageFile,
+      );
+      final application = _currentUser?['dealer_application'];
+      if (application is Map && response['has_verification_photo'] == true) {
+        application['has_verification_photo'] = true;
+        notifyListeners();
+      }
+      return response;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Clear authentication state
   Future<void> _clearAuthState() async {
     _isAuthenticated = false;

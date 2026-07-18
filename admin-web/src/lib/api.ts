@@ -1,4 +1,4 @@
-import { ApiRequestError, apiRequest } from "./auth";
+import { ApiRequestError, apiBlobRequest, apiRequest } from "./auth";
 import { buildQuery } from "./query";
 import type {
   AdminReport,
@@ -358,6 +358,12 @@ export async function fetchDealers(
 
 export async function fetchPendingDealers(): Promise<{ dealers: User[] }> {
   return apiRequest("/api/admin/dealers/pending");
+}
+
+export async function fetchDealerVerificationPhoto(userId: string): Promise<Blob> {
+  return apiBlobRequest(
+    `/api/admin/dealers/${encodeURIComponent(userId)}/verification-photo`,
+  );
 }
 
 export async function approveDealer(userId: string): Promise<void> {

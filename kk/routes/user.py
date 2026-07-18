@@ -103,6 +103,10 @@ def _save_dealer_application(user: User, data: dict) -> DealerApplication:
         raise ValueError("Dealership location is required")
 
     submit = _to_bool(data.get("submit", True))
+    if submit and (
+        application is None or not application.verification_photo_filename
+    ):
+        raise ValueError("A dealership verification photo is required")
     next_status = "submitted" if submit else "draft"
     now = utcnow()
     if application is None:
@@ -507,6 +511,77 @@ def upload_profile_picture():
 
     except Exception:
         return jsonify({"message": "Failed to upload profile picture"}), 500
+
+
+@bp.route("/api/user/upload-dealer-verification-photo", methods=["POST"])
+@jwt_required()
+def upload_dealer_verification_photo():
+    """Store a dealership photo privately for dealer-application review."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        application = current_user.dealer_application
+        if application is None:
+            return jsonify({"message": "Save the dealer application first"}), 400
+        if application.status in {"submitted", "under_review", "approved"}:
+            return jsonify(
+                {"message": "This dealer application cannot currently be changed"}
+            ), 400
+        if "file" not in request.files:
+            return jsonify({"message": "No file provided"}), 400
+
+        file = request.files["file"]
+        allowed = {"jpg", "jpeg", "png", "webp", "heic", "heif"}
+        is_valid, message = validate_file_upload(
+            file,
+            max_size_mb=8,
+            allowed_extensions=allowed,
+        )
+        if not is_valid:
+            return jsonify({"message": message}), 400
+
+        safe_name = generate_secure_filename(file.filename)
+        extension = os.path.splitext(safe_name)[1].lower() or ".jpg"
+        filename = f"{secrets.token_hex(24)}{extension}"
+        folder = os.path.join(
+            current_app.config["PRIVATE_UPLOAD_FOLDER"],
+            "dealer_verification",
+        )
+        os.makedirs(folder, exist_ok=True)
+        file.save(os.path.join(folder, filename))
+
+        previous = application.verification_photo_filename
+        application.verification_photo_filename = filename
+        application.updated_at = utcnow()
+        db.session.commit()
+
+        if previous and previous != filename:
+            try:
+                os.remove(os.path.join(folder, os.path.basename(previous)))
+            except OSError:
+                pass
+
+        log_user_action(
+            current_user,
+            "dealer_verification_photo_upload",
+            target_type="dealer_application",
+            target_id=application.public_id,
+        )
+        return jsonify(
+            {
+                "message": "Dealership verification photo uploaded",
+                "has_verification_photo": True,
+            }
+        ), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception(
+            "upload_dealer_verification_photo failed: %s",
+            e,
+        )
+        return jsonify({"message": "Failed to upload verification photo"}), 500
 
 
 @bp.route("/api/user/upload-dealer-cover", methods=["POST"])

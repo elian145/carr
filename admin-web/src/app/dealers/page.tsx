@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { DataTable, Td, Th } from "@/components/DataTable";
 import { Pagination } from "@/components/Pagination";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
@@ -10,6 +10,7 @@ import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
 import {
   approveDealer,
+  fetchDealerVerificationPhoto,
   fetchDealers,
   rejectDealer,
   reviewDealer,
@@ -42,6 +43,14 @@ export default function DealersPage() {
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [verificationPhotoUrl, setVerificationPhotoUrl] = useState<string | null>(null);
+
+  useEffect(
+    () => () => {
+      if (verificationPhotoUrl) URL.revokeObjectURL(verificationPhotoUrl);
+    },
+    [verificationPhotoUrl],
+  );
 
   const { data, error, loading, reload } = useAsyncData(
     () => fetchDealers(tab === "all" ? "all" : tab, { page, per_page: 20 }),
@@ -58,6 +67,19 @@ export default function DealersPage() {
         rejected: data.counts.rejected,
       }
     : EMPTY_COUNTS;
+
+  async function viewVerificationPhoto(dealer: User) {
+    setBusyId(dealer.id);
+    try {
+      const blob = await fetchDealerVerificationPhoto(dealer.id);
+      if (verificationPhotoUrl) URL.revokeObjectURL(verificationPhotoUrl);
+      setVerificationPhotoUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Unable to load verification photo");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function handleApprove(dealer: User) {
     const ok = await confirm({
@@ -175,7 +197,8 @@ export default function DealersPage() {
   ];
 
   return (
-    <AsyncPageBody
+    <>
+      <AsyncPageBody
       title="Dealers"
       description="Dealer applications and accounts"
       count={data?.pagination?.total ?? data?.dealers?.length}
@@ -349,13 +372,6 @@ export default function DealersPage() {
                                   d.dealership_description ||
                                   "No description provided."}
                               </p>
-                              <p className="mt-3 text-xs text-surface-muted">
-                                Business registration
-                              </p>
-                              <p className="mt-1">
-                                {d.dealer_application?.business_registration_number ||
-                                  "—"}
-                              </p>
                               {d.dealer_application?.review_reason ? (
                                 <>
                                   <p className="mt-3 text-xs text-surface-muted">
@@ -383,24 +399,21 @@ export default function DealersPage() {
                                     : "—"}
                               </p>
                               <p className="mt-3 text-xs text-surface-muted">
-                                Documents
+                                Private dealership verification
                               </p>
-                              {d.dealer_application?.document_urls?.length ? (
-                                <div className="mt-1 flex flex-col gap-1">
-                                  {d.dealer_application.document_urls.map((url, index) => (
-                                    <a
-                                      key={`${url}-${index}`}
-                                      href={url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="break-all text-brand-400 hover:underline"
-                                    >
-                                      Document {index + 1}
-                                    </a>
-                                  ))}
-                                </div>
+                              {d.dealer_application?.has_verification_photo ? (
+                                <button
+                                  type="button"
+                                  disabled={busyId === d.id}
+                                  onClick={() => viewVerificationPhoto(d)}
+                                  className="mt-2 rounded-lg border border-brand-500/60 px-3 py-2 text-xs font-medium text-brand-300 hover:bg-brand-500/10 disabled:opacity-50"
+                                >
+                                  {busyId === d.id
+                                    ? "Loading photo…"
+                                    : "View dealership photo"}
+                                </button>
                               ) : (
-                                <p className="mt-1 text-surface-muted">—</p>
+                                <p className="mt-1 text-amber-300">Not provided</p>
                               )}
                             </div>
                             {d.dealer_application?.decisions?.length ? (
@@ -444,6 +457,43 @@ export default function DealersPage() {
           ) : null}
         </>
       )}
-    </AsyncPageBody>
+      </AsyncPageBody>
+      {verificationPhotoUrl ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Private dealership verification photo"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setVerificationPhotoUrl(null)}
+        >
+          <div
+            className="max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl border border-surface-border bg-surface-card p-3 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between gap-4">
+              <div>
+                <p className="font-semibold">Private dealership verification</p>
+                <p className="text-xs text-surface-muted">
+                  For authorized dealer review only. Never displayed publicly.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVerificationPhotoUrl(null)}
+                className="rounded-lg border border-surface-border px-3 py-1.5 text-sm"
+              >
+                Close
+              </button>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={verificationPhotoUrl}
+              alt="Dealership verification"
+              className="max-h-[75vh] w-full rounded-xl object-contain"
+            />
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

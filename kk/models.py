@@ -243,6 +243,7 @@ class DealerApplication(db.Model):
     dealership_description = db.Column(db.Text, nullable=True)
     business_registration_number = db.Column(db.String(120), nullable=True)
     document_urls = db.Column(db.JSON, nullable=True)
+    verification_photo_filename = db.Column(db.String(255), nullable=True)
     review_reason = db.Column(db.Text, nullable=True)
     submitted_at = db.Column(db.DateTime, nullable=True)
     reviewed_at = db.Column(db.DateTime, nullable=True)
@@ -266,6 +267,7 @@ class DealerApplication(db.Model):
             "dealership_description": self.dealership_description,
             "business_registration_number": self.business_registration_number,
             "document_urls": self.document_urls or [],
+            "has_verification_photo": bool(self.verification_photo_filename),
         }
 
     def to_dict(self, include_decisions=False):
