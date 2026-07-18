@@ -14,6 +14,9 @@ from ..admin_roles import (
 )
 from ..models import (
     Car,
+    DealerApplication,
+    DealerDecision,
+    DealerProfile,
     ListingAnalytics,
     ListingReport,
     Message,
@@ -501,6 +504,109 @@ def user_actions():
         return jsonify({"message": "Failed to get user actions"}), 500
 
 
+def _dealer_admin_dict(user: User) -> dict:
+    data = user.to_dict(include_private=True)
+    application = user.dealer_application
+    if application:
+        data["dealer_status"] = application.status
+        data["dealer_application"] = application.to_dict(include_decisions=True)
+    return data
+
+
+def _review_dealer_application(
+    target: User, admin_user: User, action: str, reason: str | None = None
+) -> DealerApplication:
+    application = target.dealer_application
+    if not application:
+        raise ValueError("Dealer application not found")
+
+    action = (action or "").strip().lower()
+    allowed = {
+        "submitted": {"under_review", "needs_changes", "approved", "rejected"},
+        "under_review": {"needs_changes", "approved", "rejected"},
+    }
+    if action not in allowed.get(application.status, set()):
+        raise ValueError(
+            f"Cannot move dealer application from {application.status} to {action}"
+        )
+    if action in {"needs_changes", "rejected"} and not reason:
+        raise ValueError("A reason is required for this decision")
+
+    now = utcnow()
+    application.status = action
+    application.review_reason = reason if action in {"needs_changes", "rejected"} else None
+    application.reviewed_at = now if action in {"needs_changes", "approved", "rejected"} else None
+    application.updated_at = now
+    target.updated_at = now
+
+    if action == "approved":
+        target.account_type = "dealer"
+        target.dealer_status = "approved"
+        target.dealership_name = application.dealership_name
+        target.dealership_phone = application.dealership_phone
+        target.dealership_phones = application.dealership_phones
+        target.dealership_location = application.dealership_location
+        target.dealership_description = application.dealership_description
+        profile = target.dealer_profile
+        if profile is None:
+            profile = DealerProfile(user=target)
+            db.session.add(profile)
+        profile.dealership_name = application.dealership_name
+        profile.dealership_phone = application.dealership_phone
+        profile.dealership_phones = application.dealership_phones
+        profile.dealership_location = application.dealership_location
+        profile.dealership_description = application.dealership_description
+        profile.dealership_cover_picture = target.dealership_cover_picture
+        profile.dealership_latitude = target.dealership_latitude
+        profile.dealership_longitude = target.dealership_longitude
+        profile.dealership_opening_hours = target.dealership_opening_hours
+        profile.is_featured = bool(target.is_featured_dealer)
+    else:
+        target.account_type = "user"
+        target.dealer_status = (
+            "pending" if action in {"under_review", "needs_changes"} else action
+        )
+
+    db.session.add(
+        DealerDecision(
+            application=application,
+            reviewer=admin_user,
+            decision=action,
+            reason=reason,
+            application_snapshot=application.snapshot(),
+        )
+    )
+    messages = {
+        "under_review": (
+            "Dealer application under review",
+            "An administrator has started reviewing your dealer application.",
+        ),
+        "needs_changes": (
+            "Dealer application needs changes",
+            reason or "Please update your dealer application.",
+        ),
+        "approved": (
+            "Dealer application approved",
+            "Your dealership is verified and your dealer profile is now active.",
+        ),
+        "rejected": (
+            "Dealer application declined",
+            reason or "Your dealer application was not approved.",
+        ),
+    }
+    title, message = messages[action]
+    db.session.add(
+        Notification(
+            user_id=target.id,
+            title=title,
+            message=message,
+            notification_type="dealer_application",
+            data={"application_id": application.public_id, "status": action},
+        )
+    )
+    return application
+
+
 @bp.route("/dealers/pending", methods=["GET"])
 @admin_required
 def dealers_pending():
@@ -510,11 +616,12 @@ def dealers_pending():
         if denied:
             return denied
         rows = (
-            User.query.filter(User.dealer_status == "pending")
-            .order_by(User.created_at.asc())
+            User.query.join(DealerApplication)
+            .filter(DealerApplication.status.in_(("submitted", "under_review")))
+            .order_by(DealerApplication.submitted_at.asc())
             .all()
         )
-        return jsonify({"dealers": [u.to_dict(include_private=True) for u in rows]}), 200
+        return jsonify({"dealers": [_dealer_admin_dict(u) for u in rows]}), 200
     except Exception as e:
         logger.error("admin dealers_pending error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to list pending dealers"}), 500
@@ -537,12 +644,7 @@ def dealers_approve(user_public_id: str):
         target = User.query.filter_by(public_id=pid).first()
         if not target:
             return jsonify({"message": "User not found"}), 404
-        if getattr(target, "dealer_status", None) != "pending":
-            return jsonify({"message": "This user is not pending dealer approval"}), 400
-
-        target.account_type = "dealer"
-        target.dealer_status = "approved"
-        target.updated_at = utcnow()
+        application = _review_dealer_application(target, admin_user, "approved")
         db.session.commit()
 
         log_user_action(
@@ -550,9 +652,15 @@ def dealers_approve(user_public_id: str):
             "dealer_approve",
             target_type="user",
             target_id=pid,
-            metadata={"approved_user_internal_id": target.id},
+            metadata={
+                "approved_user_internal_id": target.id,
+                "application_id": application.public_id,
+            },
         )
-        return jsonify({"message": "Dealer approved", "user": target.to_dict(include_private=True)}), 200
+        return jsonify({"message": "Dealer approved", "user": _dealer_admin_dict(target)}), 200
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 400
     except Exception as e:
         db.session.rollback()
         logger.error("admin dealers_approve error: %s", e, exc_info=True)
@@ -576,15 +684,9 @@ def dealers_reject(user_public_id: str):
         target = User.query.filter_by(public_id=pid).first()
         if not target:
             return jsonify({"message": "User not found"}), 404
-        if getattr(target, "dealer_status", None) != "pending":
-            return jsonify({"message": "This user is not pending dealer approval"}), 400
-
         data = request.get_json(silent=True) or {}
         reason = (data.get("reason") or "").strip() or None
-
-        target.account_type = "user"
-        target.dealer_status = "rejected"
-        target.updated_at = utcnow()
+        application = _review_dealer_application(target, admin_user, "rejected", reason)
         db.session.commit()
 
         log_user_action(
@@ -592,13 +694,59 @@ def dealers_reject(user_public_id: str):
             "dealer_reject",
             target_type="user",
             target_id=pid,
-            metadata={"reason": reason} if reason else None,
+            metadata={"reason": reason, "application_id": application.public_id},
         )
-        return jsonify({"message": "Dealer application rejected", "user": target.to_dict(include_private=True)}), 200
+        return jsonify({"message": "Dealer application rejected", "user": _dealer_admin_dict(target)}), 200
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 400
     except Exception as e:
         db.session.rollback()
         logger.error("admin dealers_reject error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to reject dealer application"}), 500
+
+
+@bp.route("/dealers/<user_public_id>/review", methods=["POST"])
+@admin_required
+def dealers_review(user_public_id: str):
+    """Start review or request changes using an explicit lifecycle transition."""
+    try:
+        denied = _deny("dealers")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        if not admin_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        target = _find_user(user_public_id)
+        if not target:
+            return jsonify({"message": "User not found"}), 404
+        data = request.get_json(silent=True) or {}
+        action = (data.get("action") or "").strip().lower()
+        reason = (data.get("reason") or "").strip() or None
+        if action not in {"under_review", "needs_changes"}:
+            return jsonify({"message": "action must be under_review or needs_changes"}), 400
+        application = _review_dealer_application(target, admin_user, action, reason)
+        db.session.commit()
+        log_user_action(
+            admin_user,
+            f"dealer_{action}",
+            target_type="dealer_application",
+            target_id=application.public_id,
+            metadata={"reason": reason} if reason else None,
+        )
+        return jsonify(
+            {
+                "message": "Dealer application updated",
+                "user": _dealer_admin_dict(target),
+            }
+        ), 200
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin dealers_review error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to review dealer application"}), 500
 
 
 @bp.route("/dealers/<user_public_id>/featured", methods=["PATCH"])
@@ -621,6 +769,9 @@ def dealers_set_featured(user_public_id: str):
         if featured and (target.dealer_status or "") != "approved":
             return jsonify({"message": "Only approved dealers can be featured"}), 400
         target.is_featured_dealer = featured
+        if target.dealer_profile:
+            target.dealer_profile.is_featured = featured
+            target.dealer_profile.updated_at = utcnow()
         target.updated_at = utcnow()
         db.session.commit()
         if admin_user:
@@ -1218,25 +1369,39 @@ def dealers_list():
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
         status = (request.args.get("status") or "all").strip().lower()
-        base = User.query.filter(
-            or_(User.account_type == "dealer", User.dealer_status != "none")
-        )
+        base = User.query.join(DealerApplication)
         counts = {
             "all": base.count(),
-            "pending": base.filter(User.dealer_status == "pending").count(),
-            "approved": base.filter(User.dealer_status == "approved").count(),
-            "rejected": base.filter(User.dealer_status == "rejected").count(),
+            "draft": base.filter(DealerApplication.status == "draft").count(),
+            "submitted": base.filter(DealerApplication.status == "submitted").count(),
+            "under_review": base.filter(
+                DealerApplication.status == "under_review"
+            ).count(),
+            "needs_changes": base.filter(
+                DealerApplication.status == "needs_changes"
+            ).count(),
+            "approved": base.filter(DealerApplication.status == "approved").count(),
+            "rejected": base.filter(DealerApplication.status == "rejected").count(),
         }
+        counts["pending"] = counts["submitted"] + counts["under_review"]
         q = base
-        if status != "all":
-            q = q.filter(User.dealer_status == status)
+        if status == "pending":
+            q = q.filter(
+                DealerApplication.status.in_(("submitted", "under_review"))
+            )
+        elif status != "all":
+            q = q.filter(DealerApplication.status == status)
         # Pending queue: oldest first so applications are reviewed in order
-        order = User.created_at.asc() if status == "pending" else User.created_at.desc()
+        order = (
+            DealerApplication.submitted_at.asc()
+            if status in {"pending", "submitted", "under_review"}
+            else DealerApplication.updated_at.desc()
+        )
         pagination = q.order_by(order).paginate(page=page, per_page=per_page, error_out=False)
         return (
             jsonify(
                 {
-                    "dealers": [u.to_dict(include_private=True) for u in pagination.items],
+                    "dealers": [_dealer_admin_dict(u) for u in pagination.items],
                     "pagination": _pagination_dict(pagination, page, per_page),
                     "counts": counts,
                 }

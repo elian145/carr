@@ -152,6 +152,13 @@ class ApiService {
   static Future<Map<String, dynamic>> confirmSignup(String token) =>
       _ApiServiceAuth.confirmSignup(token);
 
+  static Future<Map<String, dynamic>> getDealerApplication() =>
+      _ApiServiceAuth.getDealerApplication();
+
+  static Future<Map<String, dynamic>> saveDealerApplication(
+    Map<String, dynamic> applicationData,
+  ) => _ApiServiceAuth.saveDealerApplication(applicationData);
+
   static Future<Map<String, dynamic>> login(
     String emailOrPhone,
     String password,

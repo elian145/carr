@@ -19,10 +19,38 @@ export interface User {
   dealership_description?: string;
   dealership_cover_picture?: string;
   dealership_opening_hours?: string | Record<string, unknown>;
+  dealer_application?: DealerApplication;
   is_featured_dealer?: boolean;
   created_at?: string;
   last_login?: string;
   updated_at?: string;
+}
+
+export interface DealerDecision {
+  id: string;
+  decision: string;
+  reason?: string | null;
+  application_snapshot?: Record<string, unknown>;
+  reviewer?: { id: string; username: string } | null;
+  created_at?: string;
+}
+
+export interface DealerApplication {
+  id: string;
+  status: string;
+  dealership_name: string;
+  dealership_phone: string;
+  dealership_phones?: string[];
+  dealership_location: string;
+  dealership_description?: string | null;
+  business_registration_number?: string | null;
+  document_urls?: string[];
+  review_reason?: string | null;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  decisions?: DealerDecision[];
 }
 
 export interface Pagination {

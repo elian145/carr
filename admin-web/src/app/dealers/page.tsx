@@ -8,14 +8,28 @@ import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
 import { refreshNavBadges } from "@/components/NavBadges";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
-import { approveDealer, fetchDealers, rejectDealer, setDealerFeatured } from "@/lib/api";
+import {
+  approveDealer,
+  fetchDealers,
+  rejectDealer,
+  reviewDealer,
+  setDealerFeatured,
+} from "@/lib/api";
 import { displayName, formatDate, formatNumber } from "@/lib/format";
 import type { User } from "@/lib/types";
 
-type DealerTab = "pending" | "all" | "approved" | "rejected";
+type DealerTab =
+  | "submitted"
+  | "under_review"
+  | "needs_changes"
+  | "all"
+  | "approved"
+  | "rejected";
 
 const EMPTY_COUNTS: Record<DealerTab, number> = {
-  pending: 0,
+  submitted: 0,
+  under_review: 0,
+  needs_changes: 0,
   all: 0,
   approved: 0,
   rejected: 0,
@@ -24,7 +38,7 @@ const EMPTY_COUNTS: Record<DealerTab, number> = {
 export default function DealersPage() {
   const toast = useToast();
   const { confirm, prompt } = useConfirm();
-  const [tab, setTab] = useState<DealerTab>("pending");
+  const [tab, setTab] = useState<DealerTab>("submitted");
   const [page, setPage] = useState(1);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -36,7 +50,9 @@ export default function DealersPage() {
 
   const tabCounts = data?.counts
     ? {
-        pending: data.counts.pending,
+        submitted: data.counts.submitted,
+        under_review: data.counts.under_review,
+        needs_changes: data.counts.needs_changes,
         all: data.counts.all,
         approved: data.counts.approved,
         rejected: data.counts.rejected,
@@ -68,22 +84,59 @@ export default function DealersPage() {
   async function handleReject(dealer: User) {
     const reason = await prompt({
       title: "Reject dealer application?",
-      description: `Reject ${displayName(dealer)}. Optional reason is stored with the rejection.`,
+      description: `Reject ${displayName(dealer)}. A reason will be shown to the applicant.`,
       confirmLabel: "Reject",
       tone: "danger",
-      inputLabel: "Reason (optional)",
+      inputLabel: "Reason",
       placeholder: "e.g. incomplete documents",
     });
-    if (reason === null) return;
+    if (reason === null || !reason.trim()) return;
 
     setBusyId(dealer.id);
     try {
-      await rejectDealer(dealer.id, reason.trim() || undefined);
+      await rejectDealer(dealer.id, reason.trim());
       toast.success("Dealer rejected");
       reload();
       refreshNavBadges();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Reject failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleStartReview(dealer: User) {
+    setBusyId(dealer.id);
+    try {
+      await reviewDealer(dealer.id, "under_review");
+      toast.success("Review started");
+      reload();
+      refreshNavBadges();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleNeedsChanges(dealer: User) {
+    const reason = await prompt({
+      title: "Request application changes",
+      description: `Tell ${displayName(dealer)} exactly what must be corrected.`,
+      confirmLabel: "Request changes",
+      tone: "brand",
+      inputLabel: "Required changes",
+      placeholder: "e.g. upload a valid business registration document",
+    });
+    if (reason === null || !reason.trim()) return;
+    setBusyId(dealer.id);
+    try {
+      await reviewDealer(dealer.id, "needs_changes", reason.trim());
+      toast.success("Changes requested");
+      reload();
+      refreshNavBadges();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Update failed");
     } finally {
       setBusyId(null);
     }
@@ -113,7 +166,9 @@ export default function DealersPage() {
   }
 
   const tabs: { id: DealerTab; label: string }[] = [
-    { id: "pending", label: "Pending" },
+    { id: "submitted", label: "Submitted" },
+    { id: "under_review", label: "Under review" },
+    { id: "needs_changes", label: "Needs changes" },
     { id: "all", label: "All dealers" },
     { id: "approved", label: "Approved" },
     { id: "rejected", label: "Rejected" },
@@ -155,12 +210,12 @@ export default function DealersPage() {
           <DataTable
             empty={result.dealers.length === 0}
             emptyTitle={
-              tab === "pending"
-                ? "No pending dealer applications"
+              tab === "submitted"
+                ? "No submitted dealer applications"
                 : "No dealers in this view"
             }
             emptyDescription={
-              tab === "pending"
+              tab === "submitted"
                 ? "New dealer applications will show up here for review."
                 : "Try another tab or check back later."
             }
@@ -215,11 +270,24 @@ export default function DealersPage() {
                       </Td>
                       <Td>{d.dealer_status || "—"}</Td>
                       <Td className="text-surface-muted">
-                        {formatDate(d.created_at)}
+                        {formatDate(
+                          d.dealer_application?.submitted_at ?? d.created_at,
+                        )}
                       </Td>
                       <Td>
-                        {d.dealer_status === "pending" ? (
+                        {d.dealer_status === "submitted" ||
+                        d.dealer_status === "under_review" ? (
                           <div className="flex flex-wrap gap-2">
+                            {d.dealer_status === "submitted" ? (
+                              <button
+                                type="button"
+                                disabled={busyId === d.id}
+                                onClick={() => handleStartReview(d)}
+                                className="rounded-lg border border-brand-500 px-3 py-1.5 text-xs text-brand-300 disabled:opacity-50"
+                              >
+                                Start review
+                              </button>
+                            ) : null}
                             <button
                               type="button"
                               disabled={busyId === d.id}
@@ -227,6 +295,14 @@ export default function DealersPage() {
                               className="rounded-lg bg-emerald-700 px-3 py-1.5 text-xs disabled:opacity-50"
                             >
                               Approve
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === d.id}
+                              onClick={() => handleNeedsChanges(d)}
+                              className="rounded-lg border border-amber-600 px-3 py-1.5 text-xs text-amber-300 disabled:opacity-50"
+                            >
+                              Request changes
                             </button>
                             <button
                               type="button"
@@ -269,8 +345,27 @@ export default function DealersPage() {
                             <div>
                               <p className="text-xs text-surface-muted">Description</p>
                               <p className="mt-1 whitespace-pre-wrap text-surface-muted">
-                                {d.dealership_description || "No description provided."}
+                                {d.dealer_application?.dealership_description ||
+                                  d.dealership_description ||
+                                  "No description provided."}
                               </p>
+                              <p className="mt-3 text-xs text-surface-muted">
+                                Business registration
+                              </p>
+                              <p className="mt-1">
+                                {d.dealer_application?.business_registration_number ||
+                                  "—"}
+                              </p>
+                              {d.dealer_application?.review_reason ? (
+                                <>
+                                  <p className="mt-3 text-xs text-surface-muted">
+                                    Latest review reason
+                                  </p>
+                                  <p className="mt-1 whitespace-pre-wrap text-amber-300">
+                                    {d.dealer_application.review_reason}
+                                  </p>
+                                </>
+                              ) : null}
                             </div>
                             <div>
                               <p className="text-xs text-surface-muted">Phones</p>
@@ -287,7 +382,51 @@ export default function DealersPage() {
                                     ? JSON.stringify(d.dealership_opening_hours)
                                     : "—"}
                               </p>
+                              <p className="mt-3 text-xs text-surface-muted">
+                                Documents
+                              </p>
+                              {d.dealer_application?.document_urls?.length ? (
+                                <div className="mt-1 flex flex-col gap-1">
+                                  {d.dealer_application.document_urls.map((url, index) => (
+                                    <a
+                                      key={`${url}-${index}`}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="break-all text-brand-400 hover:underline"
+                                    >
+                                      Document {index + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="mt-1 text-surface-muted">—</p>
+                              )}
                             </div>
+                            {d.dealer_application?.decisions?.length ? (
+                              <div className="sm:col-span-2">
+                                <p className="text-xs text-surface-muted">Review history</p>
+                                <div className="mt-2 space-y-2">
+                                  {d.dealer_application.decisions.map((decision) => (
+                                    <div
+                                      key={decision.id}
+                                      className="rounded-lg border border-surface-border p-2"
+                                    >
+                                      <span className="font-medium">
+                                        {decision.decision.replaceAll("_", " ")}
+                                      </span>
+                                      {decision.reviewer?.username
+                                        ? ` by ${decision.reviewer.username}`
+                                        : ""}
+                                      {decision.reason ? ` — ${decision.reason}` : ""}
+                                      <span className="ml-2 text-xs text-surface-muted">
+                                        {formatDate(decision.created_at)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
                         </Td>
                       </tr>

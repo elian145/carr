@@ -11,7 +11,16 @@ from sqlalchemy import or_
 from sqlalchemy.orm import selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
-from ..models import Car, User, db, user_viewed_listings
+from ..models import (
+    Car,
+    DealerApplication,
+    DealerDecision,
+    DealerProfile,
+    Notification,
+    User,
+    db,
+    user_viewed_listings,
+)
 from ..security import generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..time_utils import utcnow
@@ -55,6 +64,163 @@ def _clean_phone_list(value) -> list[str]:
         seen.add(p)
         deduped.append(p)
     return deduped
+
+
+def _clean_document_urls(value) -> list[str]:
+    if not isinstance(value, (list, tuple, set)):
+        return []
+    urls = [str(item).strip() for item in value if str(item).strip()]
+    if len(urls) > 10:
+        raise ValueError("A maximum of 10 verification documents is allowed")
+    if any(len(url) > 2048 or not url.lower().startswith("https://") for url in urls):
+        raise ValueError("Verification document links must use HTTPS")
+    return urls
+
+
+def _save_dealer_application(user: User, data: dict) -> DealerApplication:
+    """Create/update the current application while retaining immutable decisions."""
+    if not user.is_verified:
+        raise ValueError("Verify your phone or email before applying as a dealer")
+
+    application = user.dealer_application
+    previous_status = application.status if application else None
+    if previous_status == "approved":
+        raise ValueError("This dealer account is already approved")
+    if previous_status in {"submitted", "under_review"}:
+        raise ValueError("Your dealer application is already being reviewed")
+
+    dealership_name = (data.get("dealership_name") or "").strip()
+    phones = _clean_phone_list(data.get("dealership_phones"))
+    dealership_phone = (
+        phones[0] if phones else (data.get("dealership_phone") or "").strip()
+    )
+    dealership_location = (data.get("dealership_location") or "").strip()
+    if not dealership_name:
+        raise ValueError("Dealership name is required")
+    if not dealership_phone:
+        raise ValueError("Dealership phone is required")
+    if not dealership_location:
+        raise ValueError("Dealership location is required")
+
+    submit = _to_bool(data.get("submit", True))
+    next_status = "submitted" if submit else "draft"
+    now = utcnow()
+    if application is None:
+        application = DealerApplication(
+            user=user,
+            dealership_name=dealership_name,
+            dealership_phone=dealership_phone,
+            dealership_location=dealership_location,
+        )
+        db.session.add(application)
+
+    application.status = next_status
+    application.dealership_name = dealership_name
+    application.dealership_phone = dealership_phone
+    application.dealership_phones = phones or [dealership_phone]
+    application.dealership_location = dealership_location
+    application.dealership_description = (
+        (data.get("dealership_description") or "").strip() or None
+    )
+    application.business_registration_number = (
+        (data.get("business_registration_number") or "").strip() or None
+    )
+    application.document_urls = _clean_document_urls(data.get("document_urls"))
+    application.review_reason = None
+    application.reviewed_at = None
+    application.updated_at = now
+    if submit:
+        application.submitted_at = now
+
+    # Keep old clients and existing public serializers working during migration.
+    user.account_type = "user"
+    user.dealer_status = "pending" if submit else "none"
+    user.dealership_name = dealership_name
+    user.dealership_phone = dealership_phone
+    user.dealership_phones = application.dealership_phones
+    user.dealership_location = dealership_location
+    user.dealership_description = application.dealership_description
+    user.updated_at = now
+
+    db.session.flush()
+    event = (
+        "resubmitted"
+        if previous_status in {"needs_changes", "rejected"}
+        else ("submitted" if submit else "draft")
+    )
+    db.session.add(
+        DealerDecision(
+            application=application,
+            decision=event,
+            application_snapshot=application.snapshot(),
+        )
+    )
+    if submit:
+        db.session.add(
+            Notification(
+                user_id=user.id,
+                title="Dealer application submitted",
+                message="Your dealership details were received and are ready for review.",
+                notification_type="dealer_application",
+                data={"application_id": application.public_id, "status": next_status},
+            )
+        )
+    return application
+
+
+@bp.route("/api/user/dealer-application", methods=["GET"])
+@jwt_required()
+def get_dealer_application():
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+    application = current_user.dealer_application
+    return jsonify(
+        {
+            "application": (
+                application.to_dict(include_decisions=True) if application else None
+            )
+        }
+    ), 200
+
+
+@bp.route("/api/user/dealer-application", methods=["PUT", "POST"])
+@jwt_required()
+def save_dealer_application():
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+        data = validate_input_sanitization(request.get_json(silent=True) or {})
+        application = _save_dealer_application(current_user, data)
+        db.session.commit()
+        log_user_action(
+            current_user,
+            "dealer_application_submit"
+            if application.status == "submitted"
+            else "dealer_application_draft",
+            target_type="dealer_application",
+            target_id=application.public_id,
+            metadata={"status": application.status},
+        )
+        return jsonify(
+            {
+                "message": (
+                    "Dealer application submitted"
+                    if application.status == "submitted"
+                    else "Dealer application draft saved"
+                ),
+                "application": application.to_dict(include_decisions=True),
+                "user": current_user.to_dict(include_private=True),
+            }
+        ), 200
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({"message": str(exc)}), 400
+    except Exception as exc:
+        db.session.rollback()
+        current_app.logger.exception("save_dealer_application failed: %s", exc)
+        return jsonify({"message": "Failed to save dealer application"}), 500
 
 
 @bp.route("/api/user/profile", methods=["GET"])
@@ -234,28 +400,9 @@ def update_profile():
             current_user.email = data["email"]
             current_user.is_verified = False
 
-        # Dealer request flow: keep account_type as user until admin approval.
+        # Backwards-compatible dealer request flow for older mobile clients.
         if _to_bool(data.get("is_dealer")):
-            dealership_name = (data.get("dealership_name") or "").strip()
-            phones = _clean_phone_list(data.get("dealership_phones"))
-            dealership_phone = (phones[0] if phones else (data.get("dealership_phone") or "")).strip()
-            dealership_location = (data.get("dealership_location") or "").strip()
-            if not dealership_name:
-                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
-            if not dealership_phone:
-                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
-            if not dealership_location:
-                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
-            current_user.account_type = "user"
-            current_user.dealer_status = "pending"
-            current_user.dealership_name = dealership_name
-            current_user.dealership_phone = dealership_phone
-            try:
-                current_user.dealership_phones = phones or ([dealership_phone] if dealership_phone else None)
-            except Exception:
-                # Older schemas may not have this column; ignore in that case.
-                pass
-            current_user.dealership_location = dealership_location
+            _save_dealer_application(current_user, data)
         elif "is_dealer" in data and not _to_bool(data.get("is_dealer")):
             if (current_user.dealer_status or "none") == "none":
                 current_user.account_type = "user"
@@ -275,7 +422,11 @@ def update_profile():
 
         return jsonify({"message": "Profile updated successfully", "user": current_user.to_dict(include_private=True)}), 200
 
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({"message": str(exc)}), 400
     except Exception:
+        db.session.rollback()
         return jsonify({"message": "Failed to update profile"}), 500
 
 
@@ -425,6 +576,9 @@ def upload_dealer_cover():
             cover_url = f"uploads/dealer_covers/{filename}"
 
         current_user.dealership_cover_picture = cover_url
+        if current_user.dealer_profile:
+            current_user.dealer_profile.dealership_cover_picture = cover_url
+            current_user.dealer_profile.updated_at = utcnow()
         current_user.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "dealer_cover_upload")
@@ -445,12 +599,19 @@ def upload_dealer_cover():
 
 def _public_dealer_search_dict(user: User) -> dict:
     """Minimal fields for directory search (no personal phone / email)."""
+    profile = user.dealer_profile
     return {
         "id": user.public_id,
-        "dealership_name": (user.dealership_name or "").strip(),
-        "dealership_location": (user.dealership_location or "").strip(),
+        "dealership_name": (
+            (profile.dealership_name if profile else user.dealership_name) or ""
+        ).strip(),
+        "dealership_location": (
+            (profile.dealership_location if profile else user.dealership_location) or ""
+        ).strip(),
         "profile_picture": user.profile_picture,
-        "dealership_cover_picture": user.dealership_cover_picture,
+        "dealership_cover_picture": (
+            profile.dealership_cover_picture if profile else user.dealership_cover_picture
+        ),
     }
 
 
@@ -554,7 +715,13 @@ def dealer_profile(dealer_public_id: str):
             "featured_listings": sum(1 for c in listing_dicts if c.get("is_featured") is True),
         }
 
-        return jsonify({"dealer": dealer.to_dict(), "listings": listing_dicts, "stats": stats}), 200
+        dealer_data = dealer.to_dict()
+        if dealer.dealer_profile:
+            dealer_data.update(dealer.dealer_profile.to_dict())
+            dealer_data["id"] = dealer.public_id
+            dealer_data["account_type"] = "dealer"
+            dealer_data["dealer_status"] = "approved"
+        return jsonify({"dealer": dealer_data, "listings": listing_dicts, "stats": stats}), 200
     except Exception as e:
         current_app.logger.exception("dealer_profile failed: %s", e)
         return jsonify({"message": "Failed to load dealer profile"}), 500
@@ -661,6 +828,26 @@ def update_dealer_profile():
                 current_user.dealership_latitude = lat
                 current_user.dealership_longitude = lng
 
+        profile = current_user.dealer_profile
+        if profile is None:
+            profile = DealerProfile(
+                user=current_user,
+                dealership_name=current_user.dealership_name,
+                dealership_phone=current_user.dealership_phone,
+                dealership_location=current_user.dealership_location,
+            )
+            db.session.add(profile)
+        profile.dealership_name = current_user.dealership_name
+        profile.dealership_phone = current_user.dealership_phone
+        profile.dealership_phones = current_user.dealership_phones
+        profile.dealership_location = current_user.dealership_location
+        profile.dealership_description = current_user.dealership_description
+        profile.dealership_cover_picture = current_user.dealership_cover_picture
+        profile.dealership_latitude = current_user.dealership_latitude
+        profile.dealership_longitude = current_user.dealership_longitude
+        profile.dealership_opening_hours = current_user.dealership_opening_hours
+        profile.is_featured = bool(current_user.is_featured_dealer)
+        profile.updated_at = utcnow()
         current_user.updated_at = utcnow()
         db.session.commit()
         log_user_action(current_user, "dealer_profile_update")

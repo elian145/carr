@@ -298,6 +298,10 @@ export async function fetchDealers(
   counts: {
     all: number;
     pending: number;
+    draft: number;
+    submitted: number;
+    under_review: number;
+    needs_changes: number;
     approved: number;
     rejected: number;
   };
@@ -310,6 +314,10 @@ export async function fetchDealers(
     counts?: {
       all: number;
       pending: number;
+      draft: number;
+      submitted: number;
+      under_review: number;
+      needs_changes: number;
       approved: number;
       rejected: number;
     };
@@ -338,6 +346,10 @@ export async function fetchDealers(
     counts: raw.counts ?? {
       all: status === "all" ? total : 0,
       pending: status === "pending" ? total : 0,
+      draft: status === "draft" ? total : 0,
+      submitted: status === "submitted" ? total : 0,
+      under_review: status === "under_review" ? total : 0,
+      needs_changes: status === "needs_changes" ? total : 0,
       approved: status === "approved" ? total : 0,
       rejected: status === "rejected" ? total : 0,
     },
@@ -358,6 +370,17 @@ export async function rejectDealer(userId: string, reason?: string): Promise<voi
   await apiRequest(`/api/admin/dealers/${encodeURIComponent(userId)}/reject`, {
     method: "POST",
     body: JSON.stringify(reason ? { reason } : {}),
+  });
+}
+
+export async function reviewDealer(
+  userId: string,
+  action: "under_review" | "needs_changes",
+  reason?: string,
+): Promise<void> {
+  await apiRequest(`/api/admin/dealers/${encodeURIComponent(userId)}/review`, {
+    method: "POST",
+    body: JSON.stringify({ action, ...(reason ? { reason } : {}) }),
   });
 }
 

@@ -33,7 +33,17 @@ from ..auth import (
     verify_password_reset_token,
 )
 from ..extensions import mail
-from ..models import EmailVerification, Message, PasswordReset, PendingSignup, TokenBlacklist, User, db
+from ..models import (
+    DealerApplication,
+    DealerDecision,
+    EmailVerification,
+    Message,
+    PasswordReset,
+    PendingSignup,
+    TokenBlacklist,
+    User,
+    db,
+)
 from ..security import check_rate_limit, rate_limit, validate_input_sanitization
 
 bp = Blueprint("auth", __name__)
@@ -127,11 +137,30 @@ def _apply_dealer_profile(
 ) -> None:
     """Apply dealer profile request without auto-approving dealer role."""
     if is_dealer_requested:
+        from ..time_utils import utcnow
+
         user.account_type = "user"
         user.dealer_status = "pending"
         user.dealership_name = (dealership_name or "").strip() or None
         user.dealership_phone = (dealership_phone or "").strip() or None
         user.dealership_location = (dealership_location or "").strip() or None
+        application = getattr(user, "dealer_application", None)
+        if application is None:
+            application = DealerApplication(
+                user=user,
+                status="submitted",
+                dealership_name=user.dealership_name,
+                dealership_phone=user.dealership_phone,
+                dealership_phones=[user.dealership_phone] if user.dealership_phone else [],
+                dealership_location=user.dealership_location,
+                submitted_at=utcnow(),
+            )
+            application.decisions.append(
+                DealerDecision(
+                    decision="submitted",
+                    application_snapshot=application.snapshot(),
+                )
+            )
     elif not getattr(user, "dealer_status", None):
         user.account_type = "user"
         user.dealer_status = "none"
@@ -175,7 +204,15 @@ def _is_dealer_account(user: User) -> bool:
     dealer_status = (getattr(user, "dealer_status", None) or "none").strip().lower()
     if account_type == "dealer":
         return True
-    if dealer_status in ("pending", "approved", "rejected"):
+    if dealer_status in (
+        "draft",
+        "pending",
+        "submitted",
+        "under_review",
+        "needs_changes",
+        "approved",
+        "rejected",
+    ):
         return True
     return False
 

@@ -24,9 +24,10 @@ class AuthService extends ChangeNotifier {
     return map;
   }
 
-  static Map<String, dynamic> profileFromResponse(Map<String, dynamic> response) {
-    return userMapFrom(response['user']) ??
-        Map<String, dynamic>.from(response);
+  static Map<String, dynamic> profileFromResponse(
+    Map<String, dynamic> response,
+  ) {
+    return userMapFrom(response['user']) ?? Map<String, dynamic>.from(response);
   }
 
   bool _isAuthenticated = false;
@@ -155,9 +156,7 @@ class AuthService extends ChangeNotifier {
     try {
       final data = await ApiService.confirmSignup(token);
       if (data['user'] is Map) {
-        await activateSession(
-          user: userMapFrom(data['user']),
-        );
+        await activateSession(user: userMapFrom(data['user']));
       } else if (ApiService.isAuthenticated) {
         await activateSession();
       }
@@ -205,12 +204,28 @@ class AuthService extends ChangeNotifier {
 
   static bool isDealerAccount(Map<String, dynamic>? user) {
     if (user == null) return false;
-    final accountType =
-        (user['account_type'] ?? 'user').toString().trim().toLowerCase();
+    final accountType = (user['account_type'] ?? 'user')
+        .toString()
+        .trim()
+        .toLowerCase();
+    final rawApplication = user['dealer_application'];
+    final applicationStatus = rawApplication is Map
+        ? rawApplication['status']
+        : null;
     final dealerStatus =
-        (user['dealer_status'] ?? 'none').toString().trim().toLowerCase();
+        (user['dealer_application_status'] ??
+                applicationStatus ??
+                user['dealer_status'] ??
+                'none')
+            .toString()
+            .trim()
+            .toLowerCase();
     if (accountType == 'dealer') return true;
     if (dealerStatus == 'pending' ||
+        dealerStatus == 'draft' ||
+        dealerStatus == 'submitted' ||
+        dealerStatus == 'under_review' ||
+        dealerStatus == 'needs_changes' ||
         dealerStatus == 'approved' ||
         dealerStatus == 'rejected') {
       return true;
@@ -424,6 +439,23 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> saveDealerApplication(
+    Map<String, dynamic> applicationData,
+  ) async {
+    _setLoading(true);
+    try {
+      final response = await ApiService.saveDealerApplication(applicationData);
+      final user = userMapFrom(response['user']);
+      if (user != null) {
+        _currentUser = user;
+        notifyListeners();
+      }
+      return response;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Upload profile picture
   Future<Map<String, dynamic>> uploadProfilePicture(dynamic imageFile) async {
     _setLoading(true);
@@ -445,11 +477,14 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> uploadDealerCoverPicture(dynamic imageFile) async {
+  Future<Map<String, dynamic>> uploadDealerCoverPicture(
+    dynamic imageFile,
+  ) async {
     _setLoading(true);
     try {
       final response = await ApiService.uploadDealerCoverPicture(imageFile);
-      if (_currentUser != null && response['dealership_cover_picture'] != null) {
+      if (_currentUser != null &&
+          response['dealership_cover_picture'] != null) {
         _currentUser!['dealership_cover_picture'] =
             response['dealership_cover_picture'];
         notifyListeners();
@@ -487,7 +522,8 @@ class AuthService extends ChangeNotifier {
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
-    _currentUser = userMapFrom(user) ??
+    _currentUser =
+        userMapFrom(user) ??
         userMapFrom({
           'id': 1,
           'username': 'test',

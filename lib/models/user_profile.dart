@@ -47,7 +47,7 @@ class UserProfile {
       isVerified: json['is_verified'] == true,
       isAdmin: json['is_admin'] == true,
       accountType: json['account_type']?.toString(),
-      dealerName: json['dealer_name']?.toString(),
+      dealerName: (json['dealership_name'] ?? json['dealer_name'])?.toString(),
       raw: Map<String, dynamic>.from(json),
     );
   }
@@ -62,6 +62,6 @@ class UserProfile {
     'is_verified': isVerified,
     'is_admin': isAdmin,
     if (accountType != null) 'account_type': accountType,
-    if (dealerName != null) 'dealer_name': dealerName,
+    if (dealerName != null) 'dealership_name': dealerName,
   };
 }

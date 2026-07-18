@@ -78,6 +78,19 @@ class User(db.Model):
     favorites = db.relationship('Car', secondary=user_favorites, backref='favorited_by_users', lazy='dynamic')
     viewed_listings = db.relationship('Car', secondary=user_viewed_listings, backref='viewed_by_users', lazy='dynamic')
     user_actions = db.relationship('UserAction', backref='user', lazy=True, cascade='all, delete-orphan')
+    dealer_application = db.relationship(
+        'DealerApplication',
+        foreign_keys='DealerApplication.user_id',
+        back_populates='user',
+        uselist=False,
+        cascade='all, delete-orphan',
+    )
+    dealer_profile = db.relationship(
+        'DealerProfile',
+        back_populates='user',
+        uselist=False,
+        cascade='all, delete-orphan',
+    )
     
     # Firebase token for push notifications
     firebase_token = db.Column(db.Text, nullable=True)
@@ -148,7 +161,7 @@ class User(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None
         }
-        
+
         # Only include email if it exists and isn't an internal placeholder.
         # Phone OTP flows may create a stable placeholder email for legacy DB schemas.
         if self.email and not str(self.email).lower().endswith("@phone.local"):
@@ -159,6 +172,13 @@ class User(db.Model):
                 'is_admin': self.is_admin,
                 'updated_at': self.updated_at.isoformat() if self.updated_at else None
             })
+            application = getattr(self, "dealer_application", None)
+            if application is not None:
+                data["dealer_application"] = application.to_dict()
+                data["dealer_application_status"] = application.status
+            profile = getattr(self, "dealer_profile", None)
+            if profile is not None:
+                data["dealer_profile"] = profile.to_dict()
             if self.is_admin:
                 from .admin_roles import normalize_admin_role, permissions_for_role
 
@@ -199,6 +219,152 @@ class PendingSignup(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False, nullable=False)
+
+
+class DealerApplication(db.Model):
+    """Current dealer application. Decisions preserve its immutable review history."""
+
+    __tablename__ = "dealer_application"
+
+    VALID_STATUSES = frozenset(
+        {"draft", "submitted", "under_review", "needs_changes", "approved", "rejected"}
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="draft", index=True)
+    dealership_name = db.Column(db.String(120), nullable=False)
+    dealership_phone = db.Column(db.String(20), nullable=False)
+    dealership_phones = db.Column(db.JSON, nullable=True)
+    dealership_location = db.Column(db.String(200), nullable=False)
+    dealership_description = db.Column(db.Text, nullable=True)
+    business_registration_number = db.Column(db.String(120), nullable=True)
+    document_urls = db.Column(db.JSON, nullable=True)
+    review_reason = db.Column(db.Text, nullable=True)
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    user = db.relationship("User", foreign_keys=[user_id], back_populates="dealer_application")
+    decisions = db.relationship(
+        "DealerDecision",
+        back_populates="application",
+        cascade="all, delete-orphan",
+        order_by="DealerDecision.created_at.desc()",
+    )
+
+    def snapshot(self):
+        return {
+            "dealership_name": self.dealership_name,
+            "dealership_phone": self.dealership_phone,
+            "dealership_phones": self.dealership_phones or [],
+            "dealership_location": self.dealership_location,
+            "dealership_description": self.dealership_description,
+            "business_registration_number": self.business_registration_number,
+            "document_urls": self.document_urls or [],
+        }
+
+    def to_dict(self, include_decisions=False):
+        data = {
+            "id": self.public_id,
+            "status": self.status,
+            **self.snapshot(),
+            "review_reason": self.review_reason,
+            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
+            "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+        if include_decisions:
+            data["decisions"] = [decision.to_dict() for decision in self.decisions]
+        return data
+
+
+class DealerProfile(db.Model):
+    """Approved public dealership data, independent from application review state."""
+
+    __tablename__ = "dealer_profile"
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    dealership_name = db.Column(db.String(120), nullable=False)
+    dealership_phone = db.Column(db.String(20), nullable=False)
+    dealership_phones = db.Column(db.JSON, nullable=True)
+    dealership_location = db.Column(db.String(200), nullable=False)
+    dealership_description = db.Column(db.Text, nullable=True)
+    dealership_cover_picture = db.Column(db.String(200), nullable=True)
+    dealership_latitude = db.Column(db.Float, nullable=True)
+    dealership_longitude = db.Column(db.Float, nullable=True)
+    dealership_opening_hours = db.Column(db.JSON, nullable=True)
+    is_featured = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    user = db.relationship("User", back_populates="dealer_profile")
+
+    def to_dict(self):
+        return {
+            "id": self.public_id,
+            "dealership_name": self.dealership_name,
+            "dealership_phone": self.dealership_phone,
+            "dealership_phones": self.dealership_phones or [],
+            "dealership_location": self.dealership_location,
+            "dealership_description": self.dealership_description,
+            "dealership_cover_picture": self.dealership_cover_picture,
+            "dealership_latitude": self.dealership_latitude,
+            "dealership_longitude": self.dealership_longitude,
+            "dealership_opening_hours": self.dealership_opening_hours,
+            "is_featured_dealer": bool(self.is_featured),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class DealerDecision(db.Model):
+    """Immutable audit event for a dealer application transition."""
+
+    __tablename__ = "dealer_decision"
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    application_id = db.Column(
+        db.Integer, db.ForeignKey("dealer_application.id"), nullable=False, index=True
+    )
+    reviewer_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    decision = db.Column(db.String(20), nullable=False)
+    reason = db.Column(db.Text, nullable=True)
+    application_snapshot = db.Column(db.JSON, nullable=False, default=dict)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False, index=True)
+
+    application = db.relationship("DealerApplication", back_populates="decisions")
+    reviewer = db.relationship("User", foreign_keys=[reviewer_id])
+
+    def to_dict(self):
+        return {
+            "id": self.public_id,
+            "decision": self.decision,
+            "reason": self.reason,
+            "application_snapshot": self.application_snapshot or {},
+            "reviewer": (
+                {
+                    "id": self.reviewer.public_id,
+                    "username": self.reviewer.username,
+                }
+                if self.reviewer
+                else None
+            ),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
 
 class Car(db.Model):
     __tablename__ = 'car'
