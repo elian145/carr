@@ -159,6 +159,22 @@ class ApiService {
     Map<String, dynamic> applicationData,
   ) => _ApiServiceAuth.saveDealerApplication(applicationData);
 
+  static Future<Map<String, dynamic>> getUserNotifications({
+    bool unreadOnly = false,
+    String? type,
+    int page = 1,
+    int perPage = 20,
+  }) => _ApiServiceAuth.getUserNotifications(
+    unreadOnly: unreadOnly,
+    type: type,
+    page: page,
+    perPage: perPage,
+  );
+
+  static Future<Map<String, dynamic>> markUserNotificationRead(
+    String notificationId,
+  ) => _ApiServiceAuth.markUserNotificationRead(notificationId);
+
   static Future<Map<String, dynamic>> login(
     String emailOrPhone,
     String password,

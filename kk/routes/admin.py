@@ -8,6 +8,8 @@ from sqlalchemy import asc, desc, func, or_
 from sqlalchemy.orm import joinedload
 
 from ..auth import admin_required, get_current_user, log_user_action
+from ..extensions import socketio
+from ..push import send_push
 from ..admin_roles import (
     VALID_ROLES,
     assert_permission,
@@ -520,7 +522,7 @@ def _dealer_admin_dict(user: User) -> dict:
 
 def _review_dealer_application(
     target: User, admin_user: User, action: str, reason: str | None = None
-) -> DealerApplication:
+) -> tuple[DealerApplication, Notification]:
     application = target.dealer_application
     if not application:
         raise ValueError("Dealer application not found")
@@ -600,16 +602,15 @@ def _review_dealer_application(
         ),
     }
     title, message = messages[action]
-    db.session.add(
-        Notification(
-            user_id=target.id,
-            title=title,
-            message=message,
-            notification_type="dealer_application",
-            data={"application_id": application.public_id, "status": action},
-        )
+    notification = Notification(
+        user_id=target.id,
+        title=title,
+        message=message,
+        notification_type="dealer_application",
+        data={"application_id": application.public_id, "status": action},
     )
-    return application
+    db.session.add(notification)
+    return application, notification
 
 
 @bp.route("/dealers/pending", methods=["GET"])
@@ -677,8 +678,43 @@ def dealers_approve(user_public_id: str):
         target = User.query.filter_by(public_id=pid).first()
         if not target:
             return jsonify({"message": "User not found"}), 404
-        application = _review_dealer_application(target, admin_user, "approved")
+        application, notification = _review_dealer_application(
+            target,
+            admin_user,
+            "approved",
+        )
         db.session.commit()
+
+        push_data = {
+            "type": "dealer_application",
+            "status": "approved",
+            "notification_id": notification.public_id,
+            "application_id": application.public_id,
+        }
+        if target.firebase_token:
+            try:
+                send_push(
+                    target.firebase_token,
+                    title=notification.title,
+                    body=notification.message,
+                    data=push_data,
+                )
+            except Exception:
+                logger.exception(
+                    "Dealer approval push failed for user %s",
+                    target.public_id,
+                )
+        try:
+            socketio.emit(
+                "new_notification",
+                notification.to_dict(),
+                room=f"user:{target.public_id}",
+            )
+        except Exception:
+            logger.exception(
+                "Dealer approval realtime notification failed for user %s",
+                target.public_id,
+            )
 
         log_user_action(
             admin_user,
@@ -719,7 +755,12 @@ def dealers_reject(user_public_id: str):
             return jsonify({"message": "User not found"}), 404
         data = request.get_json(silent=True) or {}
         reason = (data.get("reason") or "").strip() or None
-        application = _review_dealer_application(target, admin_user, "rejected", reason)
+        application, _notification = _review_dealer_application(
+            target,
+            admin_user,
+            "rejected",
+            reason,
+        )
         db.session.commit()
 
         log_user_action(
@@ -758,7 +799,12 @@ def dealers_review(user_public_id: str):
         reason = (data.get("reason") or "").strip() or None
         if action not in {"under_review", "needs_changes"}:
             return jsonify({"message": "action must be under_review or needs_changes"}), 400
-        application = _review_dealer_application(target, admin_user, action, reason)
+        application, _notification = _review_dealer_application(
+            target,
+            admin_user,
+            action,
+            reason,
+        )
         db.session.commit()
         log_user_action(
             admin_user,

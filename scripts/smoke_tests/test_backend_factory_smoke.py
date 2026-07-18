@@ -276,7 +276,11 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("reports", body)
 
     def test_admin_dealer_approve_and_reject(self):
+        from unittest.mock import patch
+
         with self.app.app_context():
+            from kk.models import DealerApplication
+
             pending_approve = self._User(
                 username="dealer_pending_ok",
                 phone_number="07000000091",
@@ -289,6 +293,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 dealer_status="pending",
                 dealership_name="Approve Motors",
                 dealership_location="Erbil",
+                firebase_token="test-fcm-token",
                 public_id="pd_appr",
             )
             pending_approve.set_password("Aa123456")
@@ -309,9 +314,31 @@ class BackendFactorySmokeTest(unittest.TestCase):
             )
             pending_reject.set_password("Aa123456")
             self._db.session.add_all([pending_approve, pending_reject])
+            self._db.session.flush()
+            self._db.session.add_all(
+                [
+                    DealerApplication(
+                        user=pending_approve,
+                        status="submitted",
+                        dealership_name="Approve Motors",
+                        dealership_phone="07000000091",
+                        dealership_location="Erbil",
+                        verification_photo_filename="approve.jpg",
+                    ),
+                    DealerApplication(
+                        user=pending_reject,
+                        status="submitted",
+                        dealership_name="Reject Motors",
+                        dealership_phone="07000000092",
+                        dealership_location="Baghdad",
+                        verification_photo_filename="reject.jpg",
+                    ),
+                ]
+            )
             self._db.session.commit()
             approve_id = pending_approve.public_id
             reject_id = pending_reject.public_id
+        approve_token = self._login("dealer_pending_ok", "Aa123456")
 
         pending = self.client.get(
             "/api/admin/dealers/pending",
@@ -323,16 +350,43 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn(approve_id, public_ids)
         self.assertIn(reject_id, public_ids)
 
-        approved = self.client.post(
-            f"/api/admin/dealers/{approve_id}/approve",
-            headers=self._auth(self.admin_token),
-        )
+        with patch("kk.routes.admin.send_push", return_value=True) as push_mock:
+            approved = self.client.post(
+                f"/api/admin/dealers/{approve_id}/approve",
+                headers=self._auth(self.admin_token),
+            )
+        push_mock.assert_called_once()
+        push_payload = push_mock.call_args.kwargs
+        self.assertEqual(push_payload["data"]["type"], "dealer_application")
+        self.assertEqual(push_payload["data"]["status"], "approved")
         self.assertEqual(approved.status_code, 200, approved.data)
         approved_body = approved.get_json() or {}
         self.assertEqual(
             (approved_body.get("user") or {}).get("dealer_status"),
             "approved",
         )
+        notifications = self.client.get(
+            "/api/user/notifications?unread_only=true&type=dealer_application",
+            headers=self._auth(approve_token),
+        )
+        self.assertEqual(notifications.status_code, 200, notifications.data)
+        approval_rows = (notifications.get_json() or {}).get("notifications") or []
+        self.assertEqual(len(approval_rows), 1)
+        self.assertEqual(
+            (approval_rows[0].get("data") or {}).get("status"),
+            "approved",
+        )
+        notification_id = approval_rows[0]["id"]
+        forbidden_read = self.client.patch(
+            f"/api/user/notifications/{notification_id}/read",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(forbidden_read.status_code, 404, forbidden_read.data)
+        marked_read = self.client.patch(
+            f"/api/user/notifications/{notification_id}/read",
+            headers=self._auth(approve_token),
+        )
+        self.assertEqual(marked_read.status_code, 200, marked_read.data)
 
         rejected = self.client.post(
             f"/api/admin/dealers/{reject_id}/reject",

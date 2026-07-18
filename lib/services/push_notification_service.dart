@@ -22,6 +22,13 @@ const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
   importance: Importance.high,
 );
 
+const AndroidNotificationChannel _updatesChannel = AndroidNotificationChannel(
+  'carzo_updates',
+  'Account updates',
+  description: 'Important account and dealership updates',
+  importance: Importance.high,
+);
+
 final FlutterLocalNotificationsPlugin _localNotifications =
     FlutterLocalNotificationsPlugin();
 
@@ -41,19 +48,19 @@ class PushNotificationService {
   static bool _refreshListenerAttached = false;
   static bool _openHandlersAttached = false;
   static GlobalKey<NavigatorState>? _navigatorKey;
-  static Map<String, dynamic>? _pendingChatNavigation;
+  static Map<String, dynamic>? _pendingNavigation;
 
-  /// Wire the app navigator so notification taps can open chat.
+  /// Wire the app navigator so notification taps can open their destination.
   static void attachNavigator(GlobalKey<NavigatorState> key) {
     _navigatorKey = key;
-    _consumePendingChatNavigation();
+    _consumePendingNavigation();
   }
 
-  static void _consumePendingChatNavigation() {
-    final pending = _pendingChatNavigation;
+  static void _consumePendingNavigation() {
+    final pending = _pendingNavigation;
     if (pending == null) return;
-    _pendingChatNavigation = null;
-    _openChatFromNotificationData(pending);
+    _pendingNavigation = null;
+    _openFromNotificationData(pending);
   }
 
   static bool _isChatNotification(Map<String, dynamic> data) {
@@ -61,38 +68,44 @@ class PushNotificationService {
     return type.isEmpty || type == 'chat_message';
   }
 
-  static void _openChatFromNotificationData(Map<String, dynamic> data) {
-    if (!_isChatNotification(data)) return;
+  static void _openFromNotificationData(Map<String, dynamic> data) {
+    final type = (data['type'] ?? '').toString();
+    final route = type == 'dealer_application'
+        ? '/profile'
+        : (_isChatNotification(data) ? '/chat' : null);
+    if (route == null) return;
 
     void tryNavigate(int frame) {
       final nav = _navigatorKey?.currentState;
       if (nav == null) {
-        _pendingChatNavigation = data;
+        _pendingNavigation = data;
         if (frame < 360) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => tryNavigate(frame + 1));
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => tryNavigate(frame + 1),
+          );
         }
         return;
       }
-      _pendingChatNavigation = null;
-      nav.pushNamed('/chat');
+      _pendingNavigation = null;
+      nav.pushNamed(route);
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) => tryNavigate(0));
   }
 
   static void _handleRemoteMessageOpen(RemoteMessage message) {
-    _openChatFromNotificationData(message.data);
+    _openFromNotificationData(message.data);
   }
 
   static void _handleLocalNotificationPayload(String? payload) {
     if (payload == null || payload.trim().isEmpty) {
-      _openChatFromNotificationData(const {'type': 'chat_message'});
+      _openFromNotificationData(const {'type': 'chat_message'});
       return;
     }
     try {
       final decoded = jsonDecode(payload);
       if (decoded is Map) {
-        _openChatFromNotificationData(
+        _openFromNotificationData(
           Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
         );
         return;
@@ -100,7 +113,7 @@ class PushNotificationService {
     } catch (e, st) {
       logNonFatal(e, st, 'PushNotificationService.localPayload');
     }
-    _openChatFromNotificationData(const {'type': 'chat_message'});
+    _openFromNotificationData(const {'type': 'chat_message'});
   }
 
   static void _attachOpenHandlers() {
@@ -131,6 +144,11 @@ class PushNotificationService {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.createNotificationChannel(_chatChannel);
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.createNotificationChannel(_updatesChannel);
     }
     _localNotificationsReady = true;
   }
@@ -143,15 +161,19 @@ class PushNotificationService {
     final payload = message.data.isNotEmpty
         ? jsonEncode(message.data)
         : jsonEncode(const {'type': 'chat_message'});
+    final channel =
+        (message.data['type'] ?? '').toString() == 'dealer_application'
+        ? _updatesChannel
+        : _chatChannel;
     await _localNotifications.show(
       id,
       notification.title,
       notification.body,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          _chatChannel.id,
-          _chatChannel.name,
-          channelDescription: _chatChannel.description,
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
           importance: Importance.high,
           priority: Priority.high,
         ),
@@ -230,7 +252,9 @@ class PushNotificationService {
         await sp.remove('push_last_sync_error');
         if (kDebugMode) {
           // ignore: avoid_print
-          print('PushNotificationService: FCM token cached (${token.length} chars)');
+          print(
+            'PushNotificationService: FCM token cached (${token.length} chars)',
+          );
         }
         if (ApiService.isAuthenticated) {
           await syncTokenWithBackend();

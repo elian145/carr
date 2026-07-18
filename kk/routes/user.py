@@ -29,6 +29,72 @@ from .media import _r2_configured, _r2_client, _r2_public_base
 bp = Blueprint("user", __name__)
 
 
+@bp.route("/api/user/notifications", methods=["GET"])
+@jwt_required()
+def user_notifications():
+    """Return only the authenticated user's persisted notifications."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+
+    page = max(1, request.args.get("page", 1, type=int))
+    per_page = min(50, max(1, request.args.get("per_page", 20, type=int)))
+    unread_only = (request.args.get("unread_only") or "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+    notification_type = (request.args.get("type") or "").strip()
+
+    query = Notification.query.filter_by(user_id=current_user.id)
+    if unread_only:
+        query = query.filter(Notification.is_read.is_(False))
+    if notification_type:
+        query = query.filter(Notification.notification_type == notification_type)
+    pagination = query.order_by(Notification.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False,
+    )
+    unread_count = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False,
+    ).count()
+    return jsonify(
+        {
+            "notifications": [item.to_dict() for item in pagination.items],
+            "unread_count": unread_count,
+            "pagination": {
+                "page": pagination.page,
+                "per_page": pagination.per_page,
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            },
+        }
+    ), 200
+
+
+@bp.route("/api/user/notifications/<notification_public_id>/read", methods=["PATCH"])
+@jwt_required()
+def mark_user_notification_read(notification_public_id: str):
+    """Mark one owned notification read without exposing other users' rows."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+    notification = Notification.query.filter_by(
+        public_id=(notification_public_id or "").strip(),
+        user_id=current_user.id,
+    ).first()
+    if not notification:
+        return jsonify({"message": "Notification not found"}), 404
+    if not notification.is_read:
+        notification.is_read = True
+        db.session.commit()
+    return jsonify({"notification": notification.to_dict()}), 200
+
+
 def _to_bool(value) -> bool:
     if isinstance(value, bool):
         return value

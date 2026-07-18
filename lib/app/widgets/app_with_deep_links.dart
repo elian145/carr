@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/deep_link_service.dart';
 import '../../services/push_notification_service.dart';
@@ -139,22 +140,54 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
     final navigatorContext = widget.navigatorKey.currentContext;
     if (navigatorContext == null) return;
     final missing = _missingPublicProfileItems(navigatorContext, user);
-    if (missing.isEmpty) return;
 
     _checkingDealerProfile = true;
     try {
-      final application = user['dealer_application'];
-      final reviewedAt = application is Map
-          ? (application['reviewed_at'] ?? '').toString()
-          : '';
-      final userId = (user['id'] ?? user['public_id'] ?? 'dealer').toString();
-      final marker = reviewedAt.isEmpty ? 'approved' : reviewedAt;
-      final safeMarker = marker.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
-      final promptKey = 'dealer_public_profile_prompt_v1_${userId}_$safeMarker';
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool(promptKey) == true || !mounted) return;
+      Map<String, dynamic>? approvalNotification;
+      try {
+        final response = await ApiService.getUserNotifications(
+          unreadOnly: true,
+          type: 'dealer_application',
+          perPage: 20,
+        );
+        final notifications = response['notifications'];
+        if (notifications is List) {
+          for (final raw in notifications) {
+            if (raw is! Map) continue;
+            final item = Map<String, dynamic>.from(
+              raw.map((key, value) => MapEntry(key.toString(), value)),
+            );
+            final data = item['data'];
+            final status = data is Map
+                ? (data['status'] ?? '').toString().toLowerCase()
+                : '';
+            if (status == 'approved') {
+              approvalNotification = item;
+              break;
+            }
+          }
+        }
+      } catch (e, st) {
+        logNonFatal(e, st, 'AppWithDeepLinks.loadApprovalNotification');
+        return;
+      }
 
-      await prefs.setBool(promptKey, true);
+      if (approvalNotification == null) {
+        if (missing.isEmpty) return;
+        final application = user['dealer_application'];
+        final reviewedAt = application is Map
+            ? (application['reviewed_at'] ?? '').toString()
+            : '';
+        final userId = (user['id'] ?? user['public_id'] ?? 'dealer').toString();
+        final marker = reviewedAt.isEmpty ? 'approved' : reviewedAt;
+        final safeMarker = marker.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_');
+        final promptKey =
+            'dealer_public_profile_prompt_v1_${userId}_$safeMarker';
+        final prefs = await SharedPreferences.getInstance();
+        if (prefs.getBool(promptKey) == true || !mounted) return;
+        await prefs.setBool(promptKey, true);
+      }
+
       _dealerPromptOpen = true;
       if (!navigatorContext.mounted) return;
       final completeNow = await showDialog<bool>(
@@ -264,6 +297,16 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
           );
         },
       );
+      final notificationId = (approvalNotification?['id'] ?? '')
+          .toString()
+          .trim();
+      if (notificationId.isNotEmpty) {
+        try {
+          await ApiService.markUserNotificationRead(notificationId);
+        } catch (e, st) {
+          logNonFatal(e, st, 'AppWithDeepLinks.markApprovalNotificationRead');
+        }
+      }
       if (completeNow == true && mounted) {
         widget.navigatorKey.currentState?.pushNamed('/dealer/edit');
       }

@@ -442,6 +442,35 @@ abstract final class _ApiServiceAuth {
     );
   }
 
+  static Future<Map<String, dynamic>> getUserNotifications({
+    bool unreadOnly = false,
+    String? type,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final query = <String, String>{
+      'page': '$page',
+      'per_page': '$perPage',
+      if (unreadOnly) 'unread_only': 'true',
+      if ((type ?? '').trim().isNotEmpty) 'type': type!.trim(),
+    };
+    final endpoint = Uri(
+      path: '/user/notifications',
+      queryParameters: query,
+    ).toString();
+    return ApiService._makeAuthenticatedRequest('GET', endpoint);
+  }
+
+  static Future<Map<String, dynamic>> markUserNotificationRead(
+    String notificationId,
+  ) async {
+    final id = Uri.encodeComponent(notificationId.trim());
+    return ApiService._makeAuthenticatedRequest(
+      'PATCH',
+      '/user/notifications/$id/read',
+    );
+  }
+
   static Future<Map<String, dynamic>> updateDealerProfile(
     Map<String, dynamic> dealerData,
   ) async {
