@@ -98,6 +98,7 @@ def main() -> int:
     os.environ.setdefault("APP_ENV", "development")
 
     from kk import app_new as app_module
+    from kk.admin_identity import ensure_detached_admin_account
     from kk.models import User, db
     from sqlalchemy import or_
     from sqlalchemy.exc import OperationalError
@@ -141,6 +142,12 @@ def main() -> int:
             u.is_admin = True
             if hasattr(u, "admin_role"):
                 u.admin_role = "super_admin"
+            admin_account = ensure_detached_admin_account(u)
+            print(
+                "SET_ADMIN_BY_PHONE_DASHBOARD_IDENTITY "
+                f"admin_account_id={admin_account.id} "
+                f"principal_user_id={admin_account.principal_user_id}"
+            )
         if args.dry_run:
             db.session.rollback()
             print("SET_ADMIN_BY_PHONE_DRY_RUN no_commit")

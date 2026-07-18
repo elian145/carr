@@ -24,8 +24,19 @@ def _drop_vin_unique(conn) -> None:
     for uq in insp.get_unique_constraints("car"):
         cols = uq.get("column_names") or []
         if cols == ["vin"]:
-            with op.batch_alter_table("car", schema=None) as batch_op:
-                batch_op.drop_constraint(uq["name"], type_="unique")
+            # SQLite commonly stores inline UNIQUE constraints without a name.
+            # Give reflected constraints a deterministic name so Alembic's
+            # batch table recreation can target the VIN constraint.
+            naming_convention = {
+                "uq": "uq_%(table_name)s_%(column_0_name)s",
+            }
+            constraint_name = uq.get("name") or "uq_car_vin"
+            with op.batch_alter_table(
+                "car",
+                schema=None,
+                naming_convention=naming_convention,
+            ) as batch_op:
+                batch_op.drop_constraint(constraint_name, type_="unique")
             return
     # PostgreSQL default name from initial migration.
     if conn.dialect.name == "postgresql":

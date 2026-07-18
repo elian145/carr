@@ -18,10 +18,24 @@ depends_on = None
 
 
 def upgrade():
+    conn = op.get_bind()
+    columns = {
+        column["name"]
+        for column in sa.inspect(conn).get_columns("user")
+    }
+    if "admin_role" in columns:
+        return
     with op.batch_alter_table("user") as batch:
         batch.add_column(sa.Column("admin_role", sa.String(length=32), nullable=True))
 
 
 def downgrade():
+    conn = op.get_bind()
+    columns = {
+        column["name"]
+        for column in sa.inspect(conn).get_columns("user")
+    }
+    if "admin_role" not in columns:
+        return
     with op.batch_alter_table("user") as batch:
         batch.drop_column("admin_role")

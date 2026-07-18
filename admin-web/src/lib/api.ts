@@ -28,7 +28,7 @@ interface LoginResponse {
 export async function login(username: string, password: string): Promise<string> {
   const data = await apiRequest<LoginResponse>("/api/auth/login", {
     method: "POST",
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, account_scope: "admin" }),
   });
   const token = data.access_token || data.token;
   if (!token) throw new Error("No token in login response");

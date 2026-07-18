@@ -34,6 +34,7 @@ from ..auth import (
 )
 from ..extensions import mail
 from ..models import (
+    AdminAccount,
     DealerApplication,
     DealerDecision,
     EmailVerification,
@@ -713,13 +714,41 @@ def login():
         if not data.get("username") or not data.get("password"):
             return jsonify({"message": "Email/phone and password are required"}), 400
 
-        # Find user by email, phone number, or username (support legacy clients)
+        # Dashboard credentials are intentionally separate from mobile accounts.
+        # Deleting a mobile User must not remove the principal used by admin APIs.
         from sqlalchemy import or_
 
         ident = data["username"]
-        user = User.query.filter(or_(User.email == ident, User.phone_number == ident, User.username == ident)).first()
+        account_scope = str(data.get("account_scope") or "").strip().lower()
+        admin_account = None
+        if account_scope == "admin":
+            admin_account = AdminAccount.query.filter(
+                or_(
+                    AdminAccount.email == ident,
+                    AdminAccount.phone_number == ident,
+                    AdminAccount.username == ident,
+                )
+            ).first()
+            if not admin_account or not admin_account.check_password(data["password"]):
+                return jsonify({"message": "Invalid credentials"}), 401
+            user = admin_account.principal
+            if (
+                not admin_account.is_active
+                or not user
+                or not user.is_active
+                or not user.is_admin
+            ):
+                return jsonify({"message": "Admin account is deactivated"}), 401
+        else:
+            user = User.query.filter(
+                or_(User.email == ident, User.phone_number == ident, User.username == ident)
+            ).first()
+            if user and AdminAccount.query.filter_by(principal_user_id=user.id).first():
+                return jsonify({"message": "Invalid credentials"}), 401
 
-        if not user or not user.check_password(data["password"]):
+        if account_scope != "admin" and (
+            not user or not user.check_password(data["password"])
+        ):
             return jsonify({"message": "Invalid credentials"}), 401
 
         if not user.is_active:
@@ -737,6 +766,8 @@ def login():
         from ..time_utils import utcnow
 
         user.last_login = utcnow()
+        if admin_account is not None:
+            admin_account.last_login = user.last_login
         db.session.commit()
 
         identity = getattr(user, "public_id", None) or f"user:{user.id}"
@@ -939,6 +970,8 @@ def delete_account():
         current_user = get_current_user()
         if not current_user:
             return jsonify({"message": "Unauthorized"}), 401
+        if AdminAccount.query.filter_by(principal_user_id=current_user.id).first():
+            return jsonify({"message": "Dashboard admin accounts cannot be deleted"}), 403
 
         data = request.get_json(silent=True) or {}
         password = (data.get("password") or data.get("current_password") or "").strip()

@@ -195,6 +195,46 @@ class User(db.Model):
         return f'<User {self.username}>'
 
 
+class AdminAccount(db.Model):
+    """Dashboard credentials backed by a dedicated admin-only User principal."""
+
+    __tablename__ = "admin_account"
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    principal_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.id", ondelete="RESTRICT"),
+        unique=True,
+        nullable=False,
+        index=True,
+    )
+    origin_user_public_id = db.Column(db.String(50), nullable=True, index=True)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=True, index=True)
+    phone_number = db.Column(db.String(20), unique=True, nullable=True, index=True)
+    password_hash = db.Column(db.String(128), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    admin_role = db.Column(db.String(32), nullable=False, default="super_admin")
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow, onupdate=utcnow)
+    last_login = db.Column(db.DateTime, nullable=True)
+
+    principal = db.relationship("User", foreign_keys=[principal_user_id], lazy="joined")
+
+    def set_password(self, password):
+        self.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+
+    def check_password(self, password):
+        try:
+            return bool(self.password_hash) and bcrypt.check_password_hash(self.password_hash, password)
+        except Exception:
+            return False
+
+    def __repr__(self):
+        return f"<AdminAccount {self.username}>"
+
+
 class PendingSignup(db.Model):
     """
     Pending email-based signup that must be confirmed before creating a real User.

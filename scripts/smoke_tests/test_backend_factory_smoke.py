@@ -33,6 +33,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.app, self.socketio, *_ = create_app()
         self.client = self.app.test_client()
 
+        from kk.admin_identity import ensure_detached_admin_account
         from kk.models import Car, User, db
 
         self._db = db
@@ -82,6 +83,8 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
             db.session.add_all([seller, viewer, admin])
             db.session.commit()
+            ensure_detached_admin_account(admin)
+            db.session.commit()
 
             car = Car(
                 seller_id=seller.id,
@@ -108,7 +111,8 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
         self.seller_token = self._login("seller", "Aa123456")
         self.viewer_token = self._login("viewer", "Aa123456")
-        self.admin_token = self._login("admin", "Aa123456")
+        self.admin_app_token = self._login("admin", "Aa123456")
+        self.admin_token = self._login("admin", "Aa123456", account_scope="admin")
 
     def tearDown(self):
         try:
@@ -124,8 +128,11 @@ class BackendFactorySmokeTest(unittest.TestCase):
         finally:
             self._tmp.cleanup()
 
-    def _login(self, username: str, password: str) -> str:
-        r = self.client.post("/api/auth/login", json={"username": username, "password": password})
+    def _login(self, username: str, password: str, account_scope: str | None = None) -> str:
+        payload = {"username": username, "password": password}
+        if account_scope:
+            payload["account_scope"] = account_scope
+        r = self.client.post("/api/auth/login", json=payload)
         self.assertEqual(r.status_code, 200, r.data)
         data = r.get_json()
         self.assertIn("access_token", data)
@@ -586,6 +593,38 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
         me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))
         self.assertIn(me.status_code, (401, 404, 422))
+
+    def test_deleting_mobile_account_preserves_dashboard_admin(self):
+        deleted = self.client.delete(
+            "/api/auth/delete-account",
+            headers=self._auth(self.admin_app_token),
+            json={"password": "Aa123456"},
+        )
+        self.assertEqual(deleted.status_code, 200, deleted.data)
+
+        mobile_me = self.client.get(
+            "/api/auth/me",
+            headers=self._auth(self.admin_app_token),
+        )
+        self.assertIn(mobile_me.status_code, (401, 404, 422))
+
+        dashboard_token = self._login(
+            "admin",
+            "Aa123456",
+            account_scope="admin",
+        )
+        dashboard = self.client.get(
+            "/api/admin/dashboard",
+            headers=self._auth(dashboard_token),
+        )
+        self.assertEqual(dashboard.status_code, 200, dashboard.data)
+
+        protected = self.client.delete(
+            "/api/auth/delete-account",
+            headers=self._auth(dashboard_token),
+            json={"password": "Aa123456"},
+        )
+        self.assertEqual(protected.status_code, 403, protected.data)
 
     def test_create_car_requires_phone_verification(self):
         with self.app.app_context():

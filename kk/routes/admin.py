@@ -1366,11 +1366,24 @@ def update_user_admin_role(user_id: str):
             user.is_admin = bool(data["is_admin"])
         if not user.is_admin:
             user.admin_role = None
+            from ..models import AdminAccount
+
+            detached = AdminAccount.query.filter_by(
+                origin_user_public_id=user.public_id,
+            ).first()
+            if detached:
+                detached.is_active = False
+                detached.principal.is_active = False
         else:
             role = (data.get("admin_role") or user.admin_role or "moderator").strip().lower()
             if role not in VALID_ROLES:
                 return jsonify({"message": f"Invalid admin_role. Use: {', '.join(VALID_ROLES)}"}), 400
             user.admin_role = role
+            from ..admin_identity import ensure_detached_admin_account
+
+            detached = ensure_detached_admin_account(user)
+            detached.admin_role = role
+            detached.principal.admin_role = role
 
         user.updated_at = utcnow()
         db.session.commit()
