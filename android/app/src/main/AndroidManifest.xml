@@ -73,6 +73,10 @@
                 <data android:scheme="https" android:host="${airbridgeHostAirbridgeIo}"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.yalantis.ucrop.UCropActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
         <!-- Allow HTTP for backend (emulator/LAN); Flutter network policy -->
         <meta-data
             android:name="io.flutter.network-policy"

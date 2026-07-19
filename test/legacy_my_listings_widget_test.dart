@@ -37,7 +37,9 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Legacy my listings shows empty state from /my_listings', (tester) async {
+  testWidgets('Legacy my listings shows empty state from /my_listings', (
+    tester,
+  ) async {
     await tester.pumpWidget(const legacy.MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
@@ -55,8 +57,24 @@ void main() {
       }
     }
 
+    await tester.pumpAndSettle();
     expect(ready, isTrue, reason: 'My listings should render empty state');
     expect(find.text('My listings'), findsWidgets);
     expect(find.text('No Listings Yet'), findsOneWidget);
+    expect(find.text('Active'), findsOneWidget);
+    expect(find.text('Sold'), findsOneWidget);
+    expect(find.text('Draft'), findsOneWidget);
+
+    final draftFilter = find.byKey(
+      const ValueKey<String>('my-listings-filter-draft'),
+    );
+    await tester.drag(
+      find.byKey(const ValueKey<String>('my-listings-filter-list')),
+      const Offset(-300, 0),
+    );
+    await tester.pump();
+    await tester.tap(draftFilter);
+    await tester.pump();
+    expect(find.text('No drafts'), findsOneWidget);
   });
 }

@@ -981,6 +981,31 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("pagination", body)
         self.assertGreaterEqual(len(body.get("cars") or []), 1)
 
+    def test_user_my_listings_filters_by_status(self):
+        sold = self.client.post(
+            f"/api/cars/{self.car_public}/mark-sold",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(sold.status_code, 200, sold.data)
+
+        sold_listings = self.client.get(
+            "/api/user/my-listings?status=sold",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(sold_listings.status_code, 200, sold_listings.data)
+        sold_cars = (sold_listings.get_json() or {}).get("cars") or []
+        self.assertIn(self.car_public, {car.get("id") for car in sold_cars})
+        self.assertTrue(all(car.get("status") == "sold" for car in sold_cars))
+
+        active_listings = self.client.get(
+            "/api/user/my-listings?status=active",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(active_listings.status_code, 200, active_listings.data)
+        active_cars = (active_listings.get_json() or {}).get("cars") or []
+        self.assertNotIn(self.car_public, {car.get("id") for car in active_cars})
+        self.assertTrue(all(car.get("status") == "active" for car in active_cars))
+
     def test_socket_send_success_for_verified_user(self):
         client = self.socketio.test_client(
             self.app,

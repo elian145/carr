@@ -30,15 +30,16 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
   }
 
   String _formatLocalTime(TimeOfDay t) {
-    return MaterialLocalizations.of(context).formatTimeOfDay(
-      t,
-      alwaysUse24HourFormat: false,
-    );
+    return MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(t, alwaysUse24HourFormat: false);
   }
 
   String _localizedOpeningHoursValue(String raw, {required bool allEmpty}) {
     final v = raw.trim();
-    if (allEmpty) return _tr('Not provided', ar: 'غير متوفر', ku: 'بەردەست نییە');
+    if (allEmpty) {
+      return _tr('Not provided', ar: 'غير متوفر', ku: 'بەردەست نییە');
+    }
     if (v.isEmpty) return _tr('Closed', ar: 'مغلق', ku: 'داخراوە');
 
     final normalized = v
@@ -66,8 +67,6 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     }
     return v;
   }
-
-
 
   String _firstListingImage() {
     for (final listing in _listings) {
@@ -123,9 +122,14 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     final sheetColor = isLightShell
         ? AppThemes.lightAppBackground
         : AppThemes.darkHomeShellBackground;
+    final bannerHeight = bannerUrl.isNotEmpty
+        ? (MediaQuery.sizeOf(context).width * 2 / 3)
+              .clamp(210.0, 360.0)
+              .toDouble()
+        : 168.0;
 
     return SizedBox(
-      height: (bannerUrl.isNotEmpty ? 220 : 168) + 36,
+      height: bannerHeight + 48,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -133,7 +137,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
             top: 0,
             left: 0,
             right: 0,
-            height: bannerUrl.isNotEmpty ? 220 : 168,
+            height: bannerHeight,
             child: bannerUrl.isNotEmpty
                 ? Image.network(
                     bannerUrl,
@@ -164,7 +168,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
             top: 0,
             left: 0,
             right: 0,
-            height: bannerUrl.isNotEmpty ? 220 : 168,
+            height: bannerHeight,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -184,7 +188,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
           Positioned(
             left: 0,
             right: 0,
-            top: (bannerUrl.isNotEmpty ? 220 : 168) - 28,
+            top: bannerHeight,
             bottom: 0,
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -216,8 +220,9 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                 child: CircleAvatar(
                   radius: 34,
                   backgroundColor: const Color(0x26FF6B00),
-                  backgroundImage:
-                      logoUrl.isNotEmpty ? NetworkImage(logoUrl) : null,
+                  backgroundImage: logoUrl.isNotEmpty
+                      ? NetworkImage(logoUrl)
+                      : null,
                   child: logoUrl.isEmpty
                       ? Text(
                           displayName.isNotEmpty
@@ -261,8 +266,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
             constraints: const BoxConstraints(maxWidth: 220),
             child: Text(
               label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              softWrap: true,
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -279,7 +283,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
 
   Widget _buildSectionControl(bool isLight) {
     final listingsLabel = _tr('Listings', ar: 'الإعلانات', ku: 'ڕێکلامەکان');
-    final aboutLabel = _tr('About', ar: 'حول', ku: 'دەربارە');
+    final aboutLabel = _tr('Info', ar: 'معلومات', ku: 'زانیاری');
 
     if (AppResponsive.isCompactPhone(context)) {
       return DropdownButtonFormField<_DealerSection>(
@@ -354,7 +358,10 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
             borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
+          textStyle: const TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 13.5,
+          ),
         ),
         segments: [
           ButtonSegment(
@@ -399,9 +406,9 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
               children: [
                 Text(
                   _tr('Contact', ar: 'التواصل', ku: 'پەیوەندی'),
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 if (phones.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -511,8 +518,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
             child: DealerLocationMapPreview(
               latitude: mapLat,
               longitude: mapLng,
-              onOpenInGoogleMaps: () =>
-                  _openDealerOnGoogleMaps(mapLat, mapLng),
+              onOpenInGoogleMaps: () => _openDealerOnGoogleMaps(mapLat, mapLng),
             ),
           ),
         ],
@@ -552,9 +558,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: isLight
-                        ? const Color(0xFF8E8E93)
-                        : Colors.white60,
+                    color: isLight ? const Color(0xFF8E8E93) : Colors.white60,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -610,7 +614,15 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     }
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Could not start a call', ar: 'تعذر بدء الاتصال', ku: 'نەتوانرا پەیوەندی دەستپێبکرێت'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Could not start a call',
+              ar: 'تعذر بدء الاتصال',
+              ku: 'نەتوانرا پەیوەندی دەستپێبکرێت',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -624,9 +636,10 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
         if (s.isNotEmpty) out.add(s);
       }
     }
-    final legacy = (dealer?['dealership_phone'] ?? dealer?['phone_number'] ?? '')
-        .toString()
-        .trim();
+    final legacy =
+        (dealer?['dealership_phone'] ?? dealer?['phone_number'] ?? '')
+            .toString()
+            .trim();
     if (out.isEmpty && legacy.isNotEmpty) out.add(legacy);
     // De-dupe (preserve order)
     final seen = <String>{};
@@ -650,7 +663,15 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     }
     if (!launched && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Could not open email app', ar: 'تعذر فتح تطبيق البريد الإلكتروني', ku: 'نەکرا ئەپی ئیمەیل بکرێتەوە'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Could not open email app',
+              ar: 'تعذر فتح تطبيق البريد الإلكتروني',
+              ku: 'نەکرا ئەپی ئیمەیل بکرێتەوە',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -660,19 +681,24 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     if (t.isEmpty) return;
     Clipboard.setData(ClipboardData(text: t));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(snackbarMessage)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(snackbarMessage)));
   }
 
-  Future<void> _openDealerOnGoogleMaps(
-    double lat,
-    double lng,
-  ) async {
+  Future<void> _openDealerOnGoogleMaps(double lat, double lng) async {
     final ok = await openGoogleMapsAt(lat, lng);
     if (!ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Could not open Google Maps', ar: 'تعذر فتح خرائط Google', ku: 'نەکرا نەخشەی گووگڵ بکرێتەوە'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Could not open Google Maps',
+              ar: 'تعذر فتح خرائط Google',
+              ku: 'نەکرا نەخشەی گووگڵ بکرێتەوە',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -685,7 +711,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
   ) {
     dynamic raw;
     if (dealer != null) {
-      raw = dealer['dealership_opening_hours'] ??
+      raw =
+          dealer['dealership_opening_hours'] ??
           dealer['opening_hours'] ??
           dealer['dealership_hours'];
     }
@@ -693,14 +720,16 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     if (raw is! Map && listings.isNotEmpty) {
       final seller = listings.first['seller'];
       if (seller is Map) {
-        raw = seller['dealership_opening_hours'] ??
+        raw =
+            seller['dealership_opening_hours'] ??
             seller['opening_hours'] ??
             seller['dealership_hours'];
       }
     }
     // Fallback for owner: use locally refreshed /auth/me payload.
     if (raw is! Map && isDealerOwner && currentUser != null) {
-      raw = currentUser['dealership_opening_hours'] ??
+      raw =
+          currentUser['dealership_opening_hours'] ??
           currentUser['opening_hours'] ??
           currentUser['dealership_hours'];
     }
@@ -708,7 +737,9 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is Map) raw = decoded;
-      } catch (e, st) { logNonFatal(e, st); }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
     }
     if (raw is! Map) return const {};
 
@@ -723,10 +754,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     return m;
   }
 
-  Widget _openingHoursTable(
-    Map<String, String> hours, {
-    bool isLight = true,
-  }) {
+  Widget _openingHoursTable(Map<String, String> hours, {bool isLight = true}) {
     const rows = <({String label, String key})>[
       (label: 'Sunday', key: 'sun'),
       (label: 'Monday', key: 'mon'),
@@ -787,8 +815,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                           ku: 'کاتەکانی کارکردن',
                         ),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),

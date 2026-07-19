@@ -502,7 +502,12 @@ class ApiService {
   static Future<Map<String, dynamic>> getMyListings({
     int page = 1,
     int perPage = 20,
-  }) => _ApiServiceListings.getMyListings(page: page, perPage: perPage);
+    String? status,
+  }) => _ApiServiceListings.getMyListings(
+    page: page,
+    perPage: perPage,
+    status: status,
+  );
 
   static Future<List<Map<String, dynamic>>> getMyListingsCompat() =>
       _ApiServiceListings.getMyListingsCompat();

@@ -69,6 +69,7 @@ dependencies:
   audioplayers: ^6.6.0
   path_provider: ^2.1.5
   sentry_flutter: ^9.10.0
+  image_cropper: ^12.2.1
 
 dev_dependencies:
   flutter_test:

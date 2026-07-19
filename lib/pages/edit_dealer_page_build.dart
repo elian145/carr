@@ -1,6 +1,34 @@
 part of 'edit_dealer_page.dart';
 
 mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
+  void _openPublicDealerPreview() {
+    final user = context.read<AuthService>().currentUser;
+    final dealerPublicId =
+        (user?['public_id'] ?? user?['id'] ?? user?['user_id'] ?? '')
+            .toString()
+            .trim();
+    if (dealerPublicId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr(
+              'Unable to open your public page',
+              ar: 'تعذر فتح صفحتك العامة',
+              ku: 'نەتوانرا پەڕەی گشتییەکەت بکرێتەوە',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushNamed(
+      context,
+      '/dealer/profile',
+      arguments: {'dealerPublicId': dealerPublicId, 'previewAsVisitor': true},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
@@ -13,7 +41,9 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
     if (_hydratingProfile) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(_tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل')),
+          title: Text(
+            _tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل'),
+          ),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -21,10 +51,21 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل')),
+        title: Text(
+          _tr('Edit dealer', ar: 'تعديل الوكيل', ku: 'دەستکاری وەکیل'),
+        ),
         backgroundColor: _editDealerAccent,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          TextButton.icon(
+            onPressed: _openPublicDealerPreview,
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            icon: const Icon(Icons.visibility_outlined),
+            label: Text(_tr('Preview', ar: 'معاينة', ku: 'پێشبینین')),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       bottomNavigationBar: SafeArea(
@@ -42,10 +83,9 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(26),
                   side: BorderSide(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .outline
-                        .withValues(alpha: isLightShell ? 0.12 : 0.18),
+                    color: Theme.of(context).colorScheme.outline.withValues(
+                      alpha: isLightShell ? 0.12 : 0.18,
+                    ),
                   ),
                 ),
                 child: Padding(
@@ -68,12 +108,17 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Icon(Icons.save_outlined),
-                    label: Text(_saving ? (_loc?.savingLabel ?? 'Saving...') : (_loc?.saveChangesButton ?? 'Save changes')),
+                    label: Text(
+                      _saving
+                          ? (_loc?.savingLabel ?? 'Saving...')
+                          : (_loc?.saveChangesButton ?? 'Save changes'),
+                    ),
                   ),
                 ),
               ),

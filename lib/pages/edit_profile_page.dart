@@ -6,6 +6,7 @@ import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/media/pick_circular_image.dart';
 import '../theme_provider.dart';
 import 'package:provider/provider.dart';
 

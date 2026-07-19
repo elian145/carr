@@ -434,10 +434,19 @@ abstract final class _ApiServiceListings {
   static Future<Map<String, dynamic>> getMyListings({
     int page = 1,
     int perPage = 20,
+    String? status,
   }) async {
+    final query = Uri(
+      queryParameters: <String, String>{
+        'page': '$page',
+        'per_page': '$perPage',
+        if (status != null && status.trim().isNotEmpty)
+          'status': status.trim().toLowerCase(),
+      },
+    ).query;
     return await ApiService._makeAuthenticatedRequest(
       'GET',
-      '/user/my-listings?page=$page&per_page=$perPage',
+      '/user/my-listings?$query',
     );
   }
 

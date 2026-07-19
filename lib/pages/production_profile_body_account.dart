@@ -6,40 +6,80 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
     Map<String, dynamic>? profile,
     bool isLightShell,
   ) {
+    final accountType = (profile?['account_type'] ?? 'user')
+        .toString()
+        .trim()
+        .toLowerCase();
+    final coverPath = (profile?['dealership_cover_picture'] ?? '')
+        .toString()
+        .trim();
+    final profilePicturePath = (profile?['profile_picture'] ?? '')
+        .toString()
+        .trim();
+    final profilePictureUrl = profilePicturePath.isNotEmpty
+        ? buildLegacyFullImageUrl(profilePicturePath)
+        : '';
+    final dealerCoverUrl = accountType == 'dealer' && coverPath.isNotEmpty
+        ? buildMediaUrl(coverPath)
+        : '';
+    final hasDealerCover = dealerCoverUrl.isNotEmpty;
+    final headerDecoration =
+        _profileCardDecoration(
+          context,
+          radius: 20,
+          blur: 16,
+          shadowOpacity: 0.08,
+        ).copyWith(
+          image: hasDealerCover
+              ? DecorationImage(
+                  image: NetworkImage(dealerCoverUrl),
+                  fit: BoxFit.cover,
+                  alignment: Alignment.center,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: 0.48),
+                    BlendMode.darken,
+                  ),
+                )
+              : null,
+        );
+
     return [
       // Profile Header
       Container(
         width: double.infinity,
         padding: EdgeInsets.all(24),
-        decoration: _profileCardDecoration(
-          context,
-          radius: 20,
-          blur: 16,
-          shadowOpacity: 0.08,
-        ),
+        decoration: headerDecoration,
         child: Column(
           children: [
             Container(
-              padding: EdgeInsets.all(20),
+              width: 88,
+              height: 88,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                color: Color(0xFFFF6B00).withValues(alpha: 0.1),
+                color: hasDealerCover
+                    ? Colors.white.withValues(alpha: 0.88)
+                    : Color(0xFFFF6B00).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
+                border: hasDealerCover
+                    ? Border.all(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        width: 3,
+                      )
+                    : null,
               ),
-              child: () {
-                final picture = profile?['profile_picture']?.toString() ?? '';
-                if (picture.isNotEmpty) {
-                  return CircleAvatar(
-                    radius: 24,
-                    backgroundImage: NetworkImage(
-                      buildLegacyFullImageUrl(picture),
-                    ),
-                    backgroundColor: isLightShell
-                        ? Colors.grey[200]
-                        : Colors.white.withValues(alpha: 0.12),
-                  );
-                }
-                return Icon(Icons.person, size: 48, color: Color(0xFFFF6B00));
-              }(),
+              child: profilePictureUrl.isNotEmpty
+                  ? Image.network(
+                      profilePictureUrl,
+                      width: 88,
+                      height: 88,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Icon(
+                        Icons.person,
+                        size: 48,
+                        color: Color(0xFFFF6B00),
+                      ),
+                    )
+                  : Icon(Icons.person, size: 48, color: Color(0xFFFF6B00)),
             ),
             SizedBox(height: 16),
             Text(
@@ -65,7 +105,18 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: _profilePrimaryInk(context),
+                color: hasDealerCover
+                    ? Colors.white
+                    : _profilePrimaryInk(context),
+                shadows: hasDealerCover
+                    ? const [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ]
+                    : null,
               ),
             ),
             SizedBox(height: 12),

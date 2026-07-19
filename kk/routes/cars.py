@@ -1146,11 +1146,16 @@ def get_my_listings():
 
         page = request.args.get("page", 1, type=int)
         per_page = min(request.args.get("per_page", 10, type=int), 50)
+        status = (request.args.get("status") or "").strip().lower()
+        if status not in {"", "active", "sold"}:
+            return jsonify({"message": "Invalid listing status"}), 400
 
-        pagination = (
-            Car.query.filter_by(seller_id=current_user.id, is_active=True)
-            .order_by(Car.created_at.desc())
-            .paginate(page=page, per_page=per_page, error_out=False)
+        query = Car.query.filter_by(seller_id=current_user.id, is_active=True)
+        if status:
+            query = query.filter(Car.status == status)
+        pagination = query.order_by(Car.created_at.desc()).paginate(
+            page=page,
+            per_page=per_page,
         )
         cars = [car.to_dict(include_private=True) for car in pagination.items]
         return (

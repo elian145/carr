@@ -53,12 +53,12 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
 
   Future<void> _pickImage() async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
+      final localizations = AppLocalizations.of(context)!;
+      final image = await pickCircularImage(
+        context,
+        title: localizations.profilePictureTitle,
+        doneLabel: localizations.save,
+        cancelLabel: localizations.cancelAction,
       );
 
       if (image != null && mounted) {

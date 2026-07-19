@@ -1,6 +1,41 @@
 part of 'my_listings_page.dart';
 
 extension _MyListingsPageWidgets on _MyListingsPageState {
+  Widget _buildListingFilters() {
+    final filters = <(_MyListingsFilter, String)>[
+      (_MyListingsFilter.all, _text('All', ar: 'الكل', ku: 'هەموو')),
+      (_MyListingsFilter.active, _text('Active', ar: 'نشط', ku: 'چالاک')),
+      (_MyListingsFilter.sold, _text('Sold', ar: 'مُباع', ku: 'فرۆشراو')),
+      (_MyListingsFilter.draft, _text('Draft', ar: 'مسودة', ku: 'ڕەشنووس')),
+    ];
+
+    return SizedBox(
+      height: 56,
+      child: ListView.separated(
+        key: const ValueKey('my-listings-filter-list'),
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        itemCount: filters.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final (filter, label) = filters[index];
+          return ChoiceChip(
+            key: ValueKey('my-listings-filter-${filter.name}'),
+            label: Text(label),
+            selected: _filter == filter,
+            onSelected: (_) => _selectFilter(filter),
+            selectedColor: const Color(0xFFFF6B00),
+            labelStyle: TextStyle(
+              color: _filter == filter ? Colors.white : null,
+              fontWeight: FontWeight.w700,
+            ),
+            showCheckmark: false,
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildDraftCard(
     Map<String, dynamic> snapshot, {
     required bool listLayout,
@@ -27,13 +62,13 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
         (carData['images'] is List)
             ? List<dynamic>.from(carData['images'] as List)
             : (carData['image_paths'] is List)
-                ? List<dynamic>.from(carData['image_paths'] as List)
-                : null,
+            ? List<dynamic>.from(carData['image_paths'] as List)
+            : null,
       ),
       'videos': (carData['videos'] is List)
           ? List<dynamic>.from(carData['videos'] as List)
           : (carData['video_paths'] is List)
-              ? List<dynamic>.from(carData['video_paths'] as List)
+          ? List<dynamic>.from(carData['video_paths'] as List)
           : const <dynamic>[],
       'is_quick_sell': carData['is_quick_sell'] ?? false,
     };
@@ -111,8 +146,47 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({required _MyListingsFilter filter}) {
     final loc = AppLocalizations.of(context);
+    final (title, hint) = switch (filter) {
+      _MyListingsFilter.active => (
+        _text(
+          'No active listings',
+          ar: 'لا توجد إعلانات نشطة',
+          ku: 'هیچ ڕێکلامێکی چالاک نییە',
+        ),
+        _text(
+          'Listings available to buyers will appear here.',
+          ar: 'الإعلانات المتاحة للمشترين ستظهر هنا.',
+          ku: 'ڕێکلامە بەردەستەکان بۆ کڕیاران لێرە دەردەکەون.',
+        ),
+      ),
+      _MyListingsFilter.sold => (
+        _text(
+          'No sold listings',
+          ar: 'لا توجد إعلانات مُباعة',
+          ku: 'هیچ ڕێکلامێکی فرۆشراو نییە',
+        ),
+        _text(
+          'Listings marked as sold will appear here.',
+          ar: 'الإعلانات المحددة كمُباعة ستظهر هنا.',
+          ku: 'ڕێکلامە فرۆشراوەکان لێرە دەردەکەون.',
+        ),
+      ),
+      _MyListingsFilter.draft => (
+        _text('No drafts', ar: 'لا توجد مسودات', ku: 'هیچ ڕەشنووسێک نییە'),
+        _text(
+          'Unfinished listings will appear here.',
+          ar: 'الإعلانات غير المكتملة ستظهر هنا.',
+          ku: 'ڕێکلامە تەواونەکراوەکان لێرە دەردەکەون.',
+        ),
+      ),
+      _MyListingsFilter.all => (
+        loc?.noListingsYet ?? 'No listings yet',
+        loc?.noListingsEmptyHint ??
+            'Create your first car listing to see it here.',
+      ),
+    };
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -133,20 +207,19 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
             ),
             const SizedBox(height: 24),
             Text(
-              loc?.noListingsYet ?? 'No listings yet',
+              title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
-              loc?.noListingsEmptyHint ??
-                  'Create your first car listing to see it here.',
+              hint,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
@@ -268,10 +341,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     );
   }
 
-  void _showListingAnalyticsPopup(
-    Map<String, dynamic> car,
-    String listingId,
-  ) {
+  void _showListingAnalyticsPopup(Map<String, dynamic> car, String listingId) {
     final loc = AppLocalizations.of(context);
     if (listingId.isEmpty) return;
 
@@ -301,11 +371,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                 final a = snapshot.data;
                 if (a == null) return const Text('No analytics available.');
 
-                Widget metricRow(
-                  IconData icon,
-                  String label,
-                  String value,
-                ) {
+                Widget metricRow(IconData icon, String label, String value) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
@@ -320,9 +386,8 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                         ),
                         Text(
                           value,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -340,8 +405,8 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                        fontWeight: FontWeight.w700,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

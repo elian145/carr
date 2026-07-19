@@ -24,6 +24,8 @@ import '../app/listing_shell.dart'
 
 part 'my_listings_page_widgets.dart';
 
+enum _MyListingsFilter { all, active, sold, draft }
+
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
 
@@ -38,9 +40,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
   bool _loadingMore = false;
   bool _hasNext = true;
   int _page = 1;
+  int _fetchGeneration = 0;
   String? _error;
   bool _loadingDraft = true;
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
+  _MyListingsFilter _filter = _MyListingsFilter.all;
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
@@ -84,12 +88,24 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _fetch({required bool refresh}) async {
+    final requestGeneration = refresh ? ++_fetchGeneration : _fetchGeneration;
     final auth = Provider.of<AuthService>(context, listen: false);
     if (!auth.isAuthenticated) {
       setState(() {
         _loading = false;
         _error =
             AppLocalizations.of(context)?.loginRequired ?? 'Login required';
+      });
+      return;
+    }
+
+    if (_filter == _MyListingsFilter.draft) {
+      setState(() {
+        _loading = false;
+        _loadingMore = false;
+        _error = null;
+        _hasNext = false;
+        _cars.clear();
       });
       return;
     }
@@ -110,7 +126,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
     }
 
     try {
-      final data = await ApiService.getMyListings(page: _page, perPage: 20);
+      final status = switch (_filter) {
+        _MyListingsFilter.active => 'active',
+        _MyListingsFilter.sold => 'sold',
+        _ => null,
+      };
+      final data = await ApiService.getMyListings(
+        page: _page,
+        perPage: 20,
+        status: status,
+      );
       final items = listingMapsFromApiResponse(data);
 
       bool hasNext = false;
@@ -121,7 +146,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         hasNext = items.length >= 20;
       }
 
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _fetchGeneration) return;
       setState(() {
         _cars.addAll(items);
         _hasNext = hasNext;
@@ -129,7 +154,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         _loadingMore = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _fetchGeneration) return;
       setState(() {
         _error = userErrorText(
           context,
@@ -145,9 +170,19 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _loadMore() async {
-    if (_loadingMore || !_hasNext) return;
+    if (_filter == _MyListingsFilter.draft || _loadingMore || !_hasNext) return;
     _page += 1;
     await _fetch(refresh: false);
+  }
+
+  void _selectFilter(_MyListingsFilter filter) {
+    if (_filter == filter) return;
+    if (_controller.hasClients) _controller.jumpTo(0);
+    setState(() {
+      _filter = filter;
+      _error = null;
+    });
+    unawaited(_fetch(refresh: true));
   }
 
   Future<void> _loadDrafts() async {
@@ -264,41 +299,45 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final auth = context.watch<AuthService>();
 
     final bottomInset = MediaQuery.paddingOf(context).bottom;
-    final authenticatedBody = RefreshIndicator(
-      onRefresh: () async {
-        await Future.wait([_fetch(refresh: true), _loadDrafts()]);
-      },
-      child: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : (_error != null)
-          ? ListView(
-              children: [
-                const SizedBox(height: 40),
-                Center(child: Text(_error!)),
-                const SizedBox(height: 12),
-                Center(
-                  child: OutlinedButton(
-                    onPressed: () => _fetch(refresh: true),
-                    child: Text(loc?.retryAction ?? 'Retry'),
-                  ),
-                ),
-              ],
-            )
-          : ValueListenableBuilder<int>(
-              valueListenable: ListingLayoutPrefs.columns,
-              builder: (context, cols, _) {
-                final screenWidth = MediaQuery.sizeOf(context).width;
-                final listingColumns =
-                    ListingLayoutPrefs.effectiveColumnsForWidth(
-                      cols == 1 ? 1 : 2,
-                      screenWidth,
-                    );
-                final draftCount = _drafts.length;
-                final totalCards = _cars.length + draftCount;
-                return Column(
-                  children: [
-                    Expanded(
-                      child: totalCards == 0
+    final showDrafts =
+        _filter == _MyListingsFilter.all || _filter == _MyListingsFilter.draft;
+    final visibleDrafts = showDrafts ? _drafts : const <Map<String, dynamic>>[];
+    final authenticatedBody = Column(
+      children: [
+        _buildListingFilters(),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await Future.wait([_fetch(refresh: true), _loadDrafts()]);
+            },
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : (_error != null)
+                ? ListView(
+                    children: [
+                      const SizedBox(height: 40),
+                      Center(child: Text(_error!)),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: OutlinedButton(
+                          onPressed: () => _fetch(refresh: true),
+                          child: Text(loc?.retryAction ?? 'Retry'),
+                        ),
+                      ),
+                    ],
+                  )
+                : ValueListenableBuilder<int>(
+                    valueListenable: ListingLayoutPrefs.columns,
+                    builder: (context, cols, _) {
+                      final screenWidth = MediaQuery.sizeOf(context).width;
+                      final listingColumns =
+                          ListingLayoutPrefs.effectiveColumnsForWidth(
+                            cols == 1 ? 1 : 2,
+                            screenWidth,
+                          );
+                      final draftCount = visibleDrafts.length;
+                      final totalCards = _cars.length + draftCount;
+                      return totalCards == 0
                           ? ListView(
                               controller: _controller,
                               padding: const EdgeInsets.fromLTRB(
@@ -308,7 +347,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                 12,
                               ),
                               children: [
-                                if (_loadingDraft)
+                                if (_loadingDraft && showDrafts)
                                   const Padding(
                                     padding: EdgeInsets.symmetric(vertical: 24),
                                     child: Center(
@@ -316,7 +355,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                     ),
                                   )
                                 else
-                                  _buildEmptyState(),
+                                  _buildEmptyState(filter: _filter),
                               ],
                             )
                           : GridView.builder(
@@ -357,7 +396,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
                                 if (index < draftCount) {
                                   return _buildDraftCard(
-                                    _drafts[index],
+                                    visibleDrafts[index],
                                     listLayout: listingColumns == 1,
                                   );
                                 }
@@ -383,12 +422,12 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                   loc: loc,
                                 );
                               },
-                            ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                            );
+                    },
+                  ),
+          ),
+        ),
+      ],
     );
 
     final isLightShell = Theme.of(context).brightness == Brightness.light;

@@ -33,10 +33,14 @@ class DealerProfilePage extends StatefulWidget {
   /// When false (default), the owner cannot edit from this browse view.
   final bool allowOwnerEdit;
 
+  /// Shows the public-facing page without owner-only behavior.
+  final bool previewAsVisitor;
+
   const DealerProfilePage({
     super.key,
     required this.dealerPublicId,
     this.allowOwnerEdit = false,
+    this.previewAsVisitor = false,
   });
 
   @override
@@ -131,8 +135,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                 '')
             .toString()
             .trim();
-    final isDealerOwner =
+    final isActualDealerOwner =
         auth.isAuthenticated && currentUserPublicId == widget.dealerPublicId;
+    final isDealerOwner = isActualDealerOwner && !widget.previewAsVisitor;
     final openingHours = _openingHoursFromAnySource(
       dealer,
       _listings,
@@ -145,7 +150,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       appBar: AppBar(
         title: Text(_tr('Dealer', ar: 'الوكيل', ku: 'وەکیل')),
         actions: [
-          if (auth.isAuthenticated && !isDealerOwner)
+          if (auth.isAuthenticated && !isActualDealerOwner)
             IconButton(
               tooltip: _tr(
                 'Report user',
