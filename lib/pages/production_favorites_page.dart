@@ -202,7 +202,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       listingColumns == 1 ? 4 : 8,
                       8,
                       listingColumns == 1 ? 4 : 8,
-                      110,
+                      16,
                     ),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: listingColumns,
@@ -260,27 +260,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
               ),
             ),
         ],
-      ),
-      extendBody: true,
-      bottomNavigationBar: buildFloatingBottomNav(
-        context,
-        currentIndex: 3,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              navigateMainShellTab(context, '/');
-              break;
-            case 1:
-              navigateMainShellTab(context, '/sell');
-              break;
-            case 2:
-              navigateMainShellTab(context, '/dealers');
-              break;
-            case 3:
-              navigateMainShellTab(context, '/profile');
-              break;
-          }
-        },
       ),
     );
   }

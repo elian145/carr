@@ -81,7 +81,26 @@ class BackendFactorySmokeTest(unittest.TestCase):
             )
             admin.set_password("Aa123456")
 
-            db.session.add_all([seller, viewer, admin])
+            dealer = User(
+                username="dealer",
+                phone_number="07000000004",
+                first_name="D",
+                last_name="R",
+                email="dealer@test.example",
+                is_active=True,
+                is_verified=True,
+                account_type="dealer",
+                dealer_status="approved",
+                dealership_name="Dealer Test",
+                dealership_phone="07000000004",
+                dealership_phones=["07000000004"],
+                dealership_verified_phones=["07000000004"],
+                dealership_location="Erbil",
+                public_id="pd",
+            )
+            dealer.set_password("Aa123456")
+
+            db.session.add_all([seller, viewer, admin, dealer])
             db.session.commit()
             ensure_detached_admin_account(admin)
             db.session.commit()
@@ -113,6 +132,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.viewer_token = self._login("viewer", "Aa123456")
         self.admin_app_token = self._login("admin", "Aa123456")
         self.admin_token = self._login("admin", "Aa123456", account_scope="admin")
+        self.dealer_token = self._login("dealer", "Aa123456")
 
     def tearDown(self):
         try:
@@ -140,6 +160,106 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
     def _auth(self, token: str) -> dict[str, str]:
         return {"Authorization": f"Bearer {token}"}
+
+    def test_dealer_phone_must_be_verified_before_profile_save(self):
+        from unittest.mock import patch
+
+        new_phone = "07500000005"
+        rejected = self.client.put(
+            "/api/user/dealer-profile",
+            json={
+                "dealership_phone": new_phone,
+                "dealership_phones": [new_phone],
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(rejected.status_code, 400, rejected.data)
+        self.assertEqual(
+            rejected.get_json().get("code"),
+            "dealer_phone_verification_required",
+        )
+
+        captured = {}
+
+        def capture_sms(phone, code):
+            captured["phone"] = phone
+            captured["code"] = code
+            return True
+
+        with patch("kk.sms_service.send_verification_sms", side_effect=capture_sms):
+            sent = self.client.post(
+                "/api/user/dealer-phone/send-verification",
+                json={"phone_number": new_phone},
+                headers=self._auth(self.dealer_token),
+            )
+        self.assertEqual(sent.status_code, 200, sent.data)
+        self.assertEqual(captured["phone"], new_phone)
+
+        invalid = self.client.post(
+            "/api/user/dealer-phone/verify",
+            json={"phone_number": new_phone, "verification_code": "000000"},
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(invalid.status_code, 400, invalid.data)
+
+        verified = self.client.post(
+            "/api/user/dealer-phone/verify",
+            json={
+                "phone_number": new_phone,
+                "verification_code": captured["code"],
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(verified.status_code, 200, verified.data)
+
+        saved = self.client.put(
+            "/api/user/dealer-profile",
+            json={
+                "dealership_phone": new_phone,
+                "dealership_phones": [new_phone],
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(saved.status_code, 200, saved.data)
+        self.assertEqual(
+            saved.get_json()["user"]["dealership_verified_phones"],
+            [new_phone],
+        )
+
+    def test_non_dealer_cannot_verify_dealership_phone(self):
+        response = self.client.post(
+            "/api/user/dealer-phone/send-verification",
+            json={"phone_number": "07500000006"},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(response.status_code, 403, response.data)
+
+    def test_expired_dealer_phone_code_is_rejected(self):
+        from datetime import timedelta
+
+        with self.app.app_context():
+            from kk.routes.user import _hash_dealer_phone_code
+            from kk.time_utils import utcnow
+
+            dealer = self._User.query.filter_by(username="dealer").first()
+            dealer.phone_verification_code_hash = _hash_dealer_phone_code(
+                "07500000007",
+                "123456",
+            )
+            dealer.phone_verification_expires_at = utcnow() - timedelta(seconds=1)
+            dealer.phone_verification_attempts = 0
+            self._db.session.commit()
+
+        response = self.client.post(
+            "/api/user/dealer-phone/verify",
+            json={
+                "phone_number": "07500000007",
+                "verification_code": "123456",
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("expired", response.get_json()["message"].lower())
 
     def test_analytics_track_and_list(self):
         r = self.client.post(

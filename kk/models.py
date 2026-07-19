@@ -59,6 +59,8 @@ class User(db.Model):
     # JSON list: ["+9647....", "0750....", ...]
     # Keep `dealership_phone` as a single primary number for backwards compatibility.
     dealership_phones = db.Column(db.JSON, nullable=True)
+    # Canonical digit-only phone values that completed the dealer SMS challenge.
+    dealership_verified_phones = db.Column(db.JSON, nullable=True)
     dealership_location = db.Column(db.String(200), nullable=True)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
@@ -136,6 +138,13 @@ class User(db.Model):
             phones_out = []
         if not phones_out and self.dealership_phone:
             phones_out = [str(self.dealership_phone).strip()]
+        verified_phones = getattr(self, "dealership_verified_phones", None)
+        if isinstance(verified_phones, list):
+            verified_phones_out = [
+                str(x).strip() for x in verified_phones if str(x).strip()
+            ]
+        else:
+            verified_phones_out = []
 
         data = {
             'id': self.public_id,
@@ -151,6 +160,7 @@ class User(db.Model):
             'dealership_name': self.dealership_name,
             'dealership_phone': self.dealership_phone,
             'dealership_phones': phones_out,
+            'dealership_verified_phones': verified_phones_out,
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,

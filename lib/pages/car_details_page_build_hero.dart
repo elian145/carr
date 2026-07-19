@@ -152,8 +152,8 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                       fontWeight: FontWeight.bold,
                       height: 1.15,
                       color: isLightShell
-                          ? AppThemes.darkHomeShellBackground
-                          : Colors.white,
+                          ? const Color(0xFF858585)
+                          : Colors.white60,
                     ),
                     maxLines: 1,
                     minFontSize: 11,

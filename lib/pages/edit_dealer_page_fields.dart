@@ -2,6 +2,18 @@ part of 'edit_dealer_page.dart';
 
 const Color _editDealerAccent = Color(0xFFFF6B00);
 const int _editDealerMaxPhones = 5;
+
+String normalizeDealerPhoneForVerification(String value) {
+  var digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.startsWith('964') && digits.length >= 12) {
+    digits = digits.substring(3);
+  }
+  if (digits.length > 11) {
+    digits = digits.substring(digits.length - 11);
+  }
+  return digits;
+}
+
 const List<({String key, String label})> _editDealerDays = [
   (key: 'sun', label: 'Sunday'),
   (key: 'mon', label: 'Monday'),
@@ -32,6 +44,7 @@ abstract class _EditDealerPageFields extends State<EditDealerPage> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final List<TextEditingController> _phones = [];
+  final Set<String> _verifiedPhones = {};
   final _location = TextEditingController();
   final _description = TextEditingController();
   final _coordLat = TextEditingController();

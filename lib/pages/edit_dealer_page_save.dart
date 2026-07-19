@@ -1,6 +1,6 @@
 part of 'edit_dealer_page.dart';
 
-mixin _EditDealerPageSave on _EditDealerPageMedia {
+mixin _EditDealerPageSave on _EditDealerPagePhoneVerification {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -11,7 +11,34 @@ mixin _EditDealerPageSave on _EditDealerPageMedia {
     if (phones.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Please enter at least one phone number.', ar: 'يرجى إدخال رقم هاتف واحد على الأقل.', ku: 'تکایە لانیکەم یەک ژمارەی تەلەفۆن بنووسە.'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Please enter at least one phone number.',
+              ar: 'يرجى إدخال رقم هاتف واحد على الأقل.',
+              ku: 'تکایە لانیکەم یەک ژمارەی تەلەفۆن بنووسە.',
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+    final unverifiedPhones = phones
+        .where((phone) => !_isDealerPhoneVerified(phone))
+        .toList();
+    if (unverifiedPhones.isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr(
+              'Verify every phone number before saving.',
+              ar: 'تحقق من كل رقم هاتف قبل الحفظ.',
+              ku: 'پێش پاشەکەوتکردن هەموو ژمارەکانی تەلەفۆن پشتڕاست بکەرەوە.',
+            ),
+          ),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -29,7 +56,9 @@ mixin _EditDealerPageSave on _EditDealerPageMedia {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_tr('Please select both From and To for', ar: 'يرجى اختيار وقت من وإلى ليوم', ku: 'تکایە کاتی لە و بۆ هەڵبژێرە بۆ')} ${_dayLabel(d.key)}.'),
+            content: Text(
+              '${_tr('Please select both From and To for', ar: 'يرجى اختيار وقت من وإلى ليوم', ku: 'تکایە کاتی لە و بۆ هەڵبژێرە بۆ')} ${_dayLabel(d.key)}.',
+            ),
             backgroundColor: Colors.orange,
           ),
         );
@@ -47,7 +76,13 @@ mixin _EditDealerPageSave on _EditDealerPageMedia {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_tr('Enter both latitude and longitude, or leave both empty.', ar: 'أدخل خط العرض وخط الطول معًا، أو اتركهما فارغين.', ku: 'هەردوو لاتیتوود و لۆنگیتوود بنووسە یان هەردووکیان بەتاڵ بهێڵە.')),
+          content: Text(
+            _tr(
+              'Enter both latitude and longitude, or leave both empty.',
+              ar: 'أدخل خط العرض وخط الطول معًا، أو اتركهما فارغين.',
+              ku: 'هەردوو لاتیتوود و لۆنگیتوود بنووسە یان هەردووکیان بەتاڵ بهێڵە.',
+            ),
+          ),
         ),
       );
       return;
@@ -55,7 +90,15 @@ mixin _EditDealerPageSave on _EditDealerPageMedia {
     if (lat != null && lng != null && !isValidDealerLatLng(lat, lng)) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_tr('Coordinates are out of range.', ar: 'الإحداثيات خارج النطاق.', ku: 'کۆئۆردیناتەکان لە دەورە دەرچوون.'))),
+        SnackBar(
+          content: Text(
+            _tr(
+              'Coordinates are out of range.',
+              ar: 'الإحداثيات خارج النطاق.',
+              ku: 'کۆئۆردیناتەکان لە دەورە دەرچوون.',
+            ),
+          ),
+        ),
       );
       return;
     }

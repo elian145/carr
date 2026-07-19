@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+import hashlib
+import hmac
+from datetime import datetime, timedelta
 import secrets
 
 from flask import Blueprint, jsonify, request, current_app
@@ -130,6 +132,36 @@ def _clean_phone_list(value) -> list[str]:
         seen.add(p)
         deduped.append(p)
     return deduped
+
+
+def _normalize_dealer_phone(value) -> str:
+    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+    if digits.startswith("964") and len(digits) >= 12:
+        digits = digits[3:]
+    if len(digits) > 11:
+        digits = digits[-11:]
+    return digits
+
+
+def _hash_dealer_phone_code(phone_digits: str, code: str) -> str:
+    key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    message = f"dealer-phone:{phone_digits}:{code}".encode("utf-8")
+    return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
+def _verified_dealer_phone_digits(user: User) -> list[str]:
+    raw = getattr(user, "dealership_verified_phones", None)
+    verified = raw if isinstance(raw, list) else []
+    output: list[str] = []
+    for value in verified:
+        normalized = _normalize_dealer_phone(value)
+        if normalized and normalized not in output:
+            output.append(normalized)
+    account_phone = _normalize_dealer_phone(getattr(user, "phone_number", None))
+    if bool(getattr(user, "is_verified", False)) and account_phone:
+        if account_phone not in output:
+            output.append(account_phone)
+    return output
 
 
 def _clean_document_urls(value) -> list[str]:
@@ -868,6 +900,143 @@ def dealer_profile(dealer_public_id: str):
         return jsonify({"message": "Failed to load dealer profile"}), 500
 
 
+@bp.route("/api/user/dealer-phone/send-verification", methods=["POST"])
+@jwt_required()
+def send_dealer_phone_verification():
+    """Send an ownership code for a dealership contact number."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+    if (current_user.account_type or "").strip().lower() != "dealer":
+        return jsonify({"message": "Only dealers can verify dealership phones"}), 403
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
+    phone_digits = _normalize_dealer_phone(raw_phone)
+    if len(phone_digits) not in {10, 11}:
+        return jsonify({"message": "Enter a valid phone number"}), 400
+
+    verified = _verified_dealer_phone_digits(current_user)
+    if phone_digits in verified:
+        current_user.dealership_verified_phones = verified
+        db.session.commit()
+        return jsonify({"message": "Phone number is already verified", "verified": True}), 200
+
+    now = utcnow()
+    locked_until = getattr(current_user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    last_sent = getattr(current_user, "phone_verification_last_sent_at", None)
+    if last_sent and (now - last_sent).total_seconds() < 60:
+        return jsonify({"message": "Please wait before requesting another code"}), 429
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    current_user.phone_verification_code_hash = _hash_dealer_phone_code(
+        phone_digits,
+        code,
+    )
+    current_user.phone_verification_expires_at = now + timedelta(minutes=10)
+    current_user.phone_verification_attempts = 0
+    current_user.phone_verification_last_sent_at = now
+    current_user.phone_verification_locked_until = None
+    db.session.commit()
+
+    from ..sms_service import send_verification_sms
+
+    if not send_verification_sms(phone_digits, code):
+        current_user.phone_verification_code_hash = None
+        current_user.phone_verification_expires_at = None
+        current_user.phone_verification_attempts = 0
+        db.session.commit()
+        payload = {
+            "message": "Failed to send verification code",
+            "sent": False,
+        }
+        if current_app.config.get("DEBUG") or (
+            os.environ.get("APP_ENV") or ""
+        ).strip().lower() == "development":
+            payload["dev_code"] = code
+        return jsonify(payload), 502
+
+    payload = {"message": "Verification code sent", "sent": True}
+    if current_app.config.get("DEBUG") or (
+        os.environ.get("APP_ENV") or ""
+    ).strip().lower() == "development":
+        payload["dev_code"] = code
+    return jsonify(payload), 200
+
+
+@bp.route("/api/user/dealer-phone/verify", methods=["POST"])
+@jwt_required()
+def verify_dealer_phone():
+    """Confirm a dealership contact number and persist ownership."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+    if (current_user.account_type or "").strip().lower() != "dealer":
+        return jsonify({"message": "Only dealers can verify dealership phones"}), 403
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
+    code = str(data.get("verification_code") or data.get("code") or "").strip()
+    phone_digits = _normalize_dealer_phone(raw_phone)
+    if len(phone_digits) not in {10, 11} or len(code) != 6 or not code.isdigit():
+        return jsonify({"message": "Phone number and a six-digit code are required"}), 400
+
+    verified = _verified_dealer_phone_digits(current_user)
+    if phone_digits in verified:
+        current_user.dealership_verified_phones = verified
+        db.session.commit()
+        return jsonify(
+            {
+                "message": "Phone number verified successfully",
+                "verified_phone": phone_digits,
+                "dealership_verified_phones": verified,
+            }
+        ), 200
+
+    now = utcnow()
+    locked_until = getattr(current_user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    expires_at = getattr(current_user, "phone_verification_expires_at", None)
+    code_hash = getattr(current_user, "phone_verification_code_hash", None)
+    if not expires_at or not code_hash or expires_at <= now:
+        current_user.phone_verification_code_hash = None
+        current_user.phone_verification_expires_at = None
+        current_user.phone_verification_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    expected = _hash_dealer_phone_code(phone_digits, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = int(getattr(current_user, "phone_verification_attempts", 0) or 0) + 1
+        current_user.phone_verification_attempts = attempts
+        if attempts >= 5:
+            current_user.phone_verification_locked_until = now + timedelta(minutes=15)
+            current_user.phone_verification_code_hash = None
+            current_user.phone_verification_expires_at = None
+            current_user.phone_verification_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    verified.append(phone_digits)
+    current_user.dealership_verified_phones = verified
+    current_user.phone_verification_code_hash = None
+    current_user.phone_verification_expires_at = None
+    current_user.phone_verification_attempts = 0
+    current_user.phone_verification_locked_until = None
+    db.session.commit()
+    log_user_action(current_user, "dealer_phone_verified")
+    return jsonify(
+        {
+            "message": "Phone number verified successfully",
+            "verified_phone": phone_digits,
+            "dealership_verified_phones": verified,
+        }
+    ), 200
+
+
 @bp.route("/api/user/dealer-profile", methods=["PUT"])
 @jwt_required()
 def update_dealer_profile():
@@ -894,8 +1063,30 @@ def update_dealer_profile():
             phones = _clean_phone_list(data.get("dealership_phones"))
             if not phones:
                 return jsonify({"message": "At least one dealership phone is required"}), 400
+            normalized_phones = [
+                _normalize_dealer_phone(phone) for phone in phones
+            ]
+            if any(len(phone) not in {10, 11} for phone in normalized_phones):
+                return jsonify({"message": "Enter valid dealership phone numbers"}), 400
+            verified_phones = set(_verified_dealer_phone_digits(current_user))
+            unverified = [
+                phones[index]
+                for index, phone in enumerate(normalized_phones)
+                if phone not in verified_phones
+            ]
+            if unverified:
+                return jsonify(
+                    {
+                        "message": "Verify every dealership phone before saving",
+                        "code": "dealer_phone_verification_required",
+                        "unverified_phones": unverified,
+                    }
+                ), 400
             try:
                 current_user.dealership_phones = phones
+                current_user.dealership_verified_phones = list(
+                    dict.fromkeys(normalized_phones)
+                )
             except Exception:
                 # If column doesn't exist, fall back to single phone.
                 pass
@@ -906,10 +1097,20 @@ def update_dealer_profile():
             v = (data.get("dealership_phone") or "").strip()
             if not v:
                 return jsonify({"message": "Dealership phone is required"}), 400
+            normalized_phone = _normalize_dealer_phone(v)
+            if normalized_phone not in _verified_dealer_phone_digits(current_user):
+                return jsonify(
+                    {
+                        "message": "Verify the dealership phone before saving",
+                        "code": "dealer_phone_verification_required",
+                        "unverified_phones": [v],
+                    }
+                ), 400
             current_user.dealership_phone = v
             # Keep list in sync when caller only sends the legacy field.
             try:
                 current_user.dealership_phones = _clean_phone_list([v])
+                current_user.dealership_verified_phones = [normalized_phone]
             except Exception:
                 pass
 

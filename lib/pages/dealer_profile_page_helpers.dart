@@ -123,10 +123,10 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
         ? AppThemes.lightAppBackground
         : AppThemes.darkHomeShellBackground;
     final bannerHeight = bannerUrl.isNotEmpty
-        ? (MediaQuery.sizeOf(context).width * 2 / 3)
-              .clamp(210.0, 360.0)
+        ? (MediaQuery.sizeOf(context).width * 0.46)
+              .clamp(160.0, 260.0)
               .toDouble()
-        : 168.0;
+        : 144.0;
 
     return SizedBox(
       height: bannerHeight + 48,

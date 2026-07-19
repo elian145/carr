@@ -74,7 +74,9 @@ class _ChatListPageState extends State<ChatListPage>
           if (image.isNotEmpty) {
             chat['car_image_url'] = image;
           }
-        } catch (e, st) { logNonFatal(e, st); }
+        } catch (e, st) {
+          logNonFatal(e, st);
+        }
       }());
     }
     if (tasks.isNotEmpty) {
@@ -104,7 +106,8 @@ class _ChatListPageState extends State<ChatListPage>
           ..clear()
           ..addAll(data);
       });
-    } catch (e, st) { logNonFatal(e, st); 
+    } catch (e, st) {
+      logNonFatal(e, st);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -136,210 +139,187 @@ class _ChatListPageState extends State<ChatListPage>
   Widget build(BuildContext context) {
     final useLightInk = Theme.of(context).brightness == Brightness.light;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.chatTitle),
-        actions: [
-          IconButton(
-            tooltip: _chatText(
-              context,
-              'Notifications',
-              ar: 'الإشعارات',
-              ku: 'ئاگادارکردنەوەکان',
-            ),
-            onPressed: () => Navigator.pushNamed(context, '/notifications'),
-            icon: const Icon(Icons.notifications_none),
-          ),
-        ],
-      ),
-            body: RefreshIndicator(
-              onRefresh: _loadChats,
-              child: _loading && _chats.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : _chats.isEmpty
-                  ? ListView(
-                      children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.6,
-                          child: Center(child: Text(_noMessagesText(context))),
-                        ),
-                      ],
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(12),
-                      itemCount: _chats.length,
-                      itemBuilder: (context, index) {
-                        final c = _chats[index];
-                        final other = c['other_user'] is Map
-                            ? Map<String, dynamic>.from(
-                                (c['other_user'] as Map)
-                                    .cast<String, dynamic>(),
-                              )
-                            : <String, dynamic>{};
-                        final last = c['last_message'] is Map
-                            ? Map<String, dynamic>.from(
-                                (c['last_message'] as Map)
-                                    .cast<String, dynamic>(),
-                              )
-                            : <String, dynamic>{};
-                        final carId =
-                            (c['car_id'] ??
-                                    c['conversation_id'] ??
-                                    last['car_id'] ??
-                                    '')
-                                .toString();
-                        final receiverId = (other['id'] ?? '').toString();
-                        final carTitle = localizedListingTitle(
-                          context,
-                          listingMetaFromChatRow(c),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.chatTitle)),
+      body: RefreshIndicator(
+        onRefresh: _loadChats,
+        child: _loading && _chats.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : _chats.isEmpty
+            ? ListView(
+                children: [
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: Center(child: Text(_noMessagesText(context))),
+                  ),
+                ],
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: _chats.length,
+                itemBuilder: (context, index) {
+                  final c = _chats[index];
+                  final other = c['other_user'] is Map
+                      ? Map<String, dynamic>.from(
+                          (c['other_user'] as Map).cast<String, dynamic>(),
+                        )
+                      : <String, dynamic>{};
+                  final last = c['last_message'] is Map
+                      ? Map<String, dynamic>.from(
+                          (c['last_message'] as Map).cast<String, dynamic>(),
+                        )
+                      : <String, dynamic>{};
+                  final carId =
+                      (c['car_id'] ??
+                              c['conversation_id'] ??
+                              last['car_id'] ??
+                              '')
+                          .toString();
+                  final receiverId = (other['id'] ?? '').toString();
+                  final carTitle = localizedListingTitle(
+                    context,
+                    listingMetaFromChatRow(c),
+                  );
+                  final carImageUrl = resolveListingImageUrl(
+                    (c['car_image_url'] ?? c['image_url'] ?? '').toString(),
+                  );
+                  final preview = _chatLastMessagePreview(context, last);
+                  final ts = _rawChatListTimestamp(last, c);
+                  DateTime? dt;
+                  try {
+                    if (ts.isNotEmpty) dt = parseApiDateTime(ts);
+                  } catch (e, st) {
+                    logNonFatal(e, st);
+                  }
+                  final unread = (c['unread_count'] is num)
+                      ? (c['unread_count'] as num).toInt()
+                      : 0;
+                  final theme = Theme.of(context);
+                  final cs = theme.colorScheme;
+                  final nameStyle = TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: useLightInk
+                        ? _kChatListRowInkLight
+                        : _kChatListRowInkDarkPrimary,
+                  );
+                  final previewStyle = TextStyle(
+                    fontSize: 14,
+                    height: 1.3,
+                    color: useLightInk
+                        ? _kChatListRowInkLight
+                        : _kChatListRowInkDarkMuted,
+                  );
+                  final timeStyle = TextStyle(
+                    fontSize: 12,
+                    height: 1.2,
+                    color: useLightInk
+                        ? _kChatListRowInkLight
+                        : _kChatListRowInkDarkMuted,
+                  );
+                  final trailingTime = dt == null
+                      ? null
+                      : Text(
+                          _relativeTime(context, dt),
+                          textAlign: TextAlign.right,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: timeStyle,
                         );
-                        final carImageUrl = resolveListingImageUrl(
-                          (c['car_image_url'] ??
-                                  c['image_url'] ??
-                                  '')
-                              .toString(),
-                        );
-                        final preview = _chatLastMessagePreview(context, last);
-                        final ts = _rawChatListTimestamp(last, c);
-                        DateTime? dt;
-                        try {
-                          if (ts.isNotEmpty) dt = parseApiDateTime(ts);
-                        } catch (e, st) { logNonFatal(e, st); }
-                        final unread = (c['unread_count'] is num)
-                            ? (c['unread_count'] as num).toInt()
-                            : 0;
-                        final theme = Theme.of(context);
-                        final cs = theme.colorScheme;
-                        final nameStyle = TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: useLightInk
-                              ? _kChatListRowInkLight
-                              : _kChatListRowInkDarkPrimary,
-                        );
-                        final previewStyle = TextStyle(
-                          fontSize: 14,
-                          height: 1.3,
-                          color: useLightInk
-                              ? _kChatListRowInkLight
-                              : _kChatListRowInkDarkMuted,
-                        );
-                        final timeStyle = TextStyle(
-                          fontSize: 12,
-                          height: 1.2,
-                          color: useLightInk
-                              ? _kChatListRowInkLight
-                              : _kChatListRowInkDarkMuted,
-                        );
-                        final trailingTime = dt == null
-                            ? null
-                            : Text(
-                                _relativeTime(context, dt),
-                                textAlign: TextAlign.right,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: timeStyle,
+                  final trailingBadge = unread > 0
+                      ? CircleAvatar(
+                          radius: 11,
+                          backgroundColor: cs.primary,
+                          child: Text(
+                            unread.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                            ),
+                          ),
+                        )
+                      : null;
+                  final hasTrailing =
+                      trailingTime != null || trailingBadge != null;
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: carId.isEmpty
+                          ? null
+                          : () async {
+                              await Navigator.pushNamed(
+                                context,
+                                '/chat/conversation',
+                                arguments: {
+                                  'carId': carId,
+                                  if (receiverId.isNotEmpty)
+                                    'receiverId': receiverId,
+                                  if (carTitle.isNotEmpty) 'carTitle': carTitle,
+                                  if (carImageUrl.isNotEmpty)
+                                    'carImageUrl': carImageUrl,
+                                },
                               );
-                        final trailingBadge = unread > 0
-                            ? CircleAvatar(
-                                radius: 11,
-                                backgroundColor: cs.primary,
-                                child: Text(
-                                  unread.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              )
-                            : null;
-                        final hasTrailing =
-                            trailingTime != null || trailingBadge != null;
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: InkWell(
-                            onTap: carId.isEmpty
-                                ? null
-                                : () async {
-                                    await Navigator.pushNamed(
-                                      context,
-                                      '/chat/conversation',
-                                      arguments: {
-                                        'carId': carId,
-                                        if (receiverId.isNotEmpty)
-                                          'receiverId': receiverId,
-                                        if (carTitle.isNotEmpty)
-                                          'carTitle': carTitle,
-                                        if (carImageUrl.isNotEmpty)
-                                          'carImageUrl': carImageUrl,
-                                      },
-                                    );
-                                    if (mounted) _loadChats();
-                                  },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 10,
-                              ),
-                              child: Row(
+                              if (mounted) _loadChats();
+                            },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            buildChatListingAvatar(
+                              context,
+                              imageUrl: carImageUrl,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  buildChatListingAvatar(
-                                    context,
-                                    imageUrl: carImageUrl,
+                                  Text(
+                                    carTitle.isNotEmpty
+                                        ? carTitle
+                                        : AppLocalizations.of(
+                                            context,
+                                          )!.listingTitle,
+                                    style: nameStyle,
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          carTitle.isNotEmpty
-                                              ? carTitle
-                                              : AppLocalizations.of(
-                                                  context,
-                                                )!.listingTitle,
-                                          style: nameStyle,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          preview.isEmpty ? '...' : preview,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: previewStyle,
-                                        ),
-                                      ],
-                                    ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    preview.isEmpty ? '...' : preview,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: previewStyle,
                                   ),
-                                  if (hasTrailing) ...[
-                                    const SizedBox(width: 8),
-                                    SizedBox(
-                                      width: 78,
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (trailingBadge != null)
-                                            trailingBadge,
-                                          if (trailingBadge != null &&
-                                              trailingTime != null)
-                                            const SizedBox(height: 6),
-                                          if (trailingTime != null)
-                                            trailingTime,
-                                        ],
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ),
-                          ),
-                        );
-                      },
+                            if (hasTrailing) ...[
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 78,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (trailingBadge != null) trailingBadge,
+                                    if (trailingBadge != null &&
+                                        trailingTime != null)
+                                      const SizedBox(height: 6),
+                                    if (trailingTime != null) trailingTime,
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
-            ),
+                  );
+                },
+              ),
+      ),
     );
   }
 }
-

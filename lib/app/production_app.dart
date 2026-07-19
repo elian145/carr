@@ -41,59 +41,60 @@ class MyApp extends StatelessWidget {
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
-          final routes = buildProductionRoutes();
-          registerAppRoutes(routes);
-          return AppWithDeepLinks(
-            navigatorKey: productionNavigatorKey,
-            child: MaterialApp(
+            final routes = buildProductionRoutes();
+            registerAppRoutes(routes);
+            return AppWithDeepLinks(
               navigatorKey: productionNavigatorKey,
-              title: 'CarNet',
-              builder: (context, child) {
-                final shellColor = Theme.of(context).scaffoldBackgroundColor;
-                return AppResponsive.wrapApp(
-                  context,
-                  ColoredBox(
-                    color: shellColor,
-                    child: EdgeSwipeBack(
-                      navigatorKey: productionNavigatorKey,
-                      child: child ?? const SizedBox.shrink(),
+              child: MaterialApp(
+                navigatorKey: productionNavigatorKey,
+                navigatorObservers: [appRouteTracker],
+                title: 'CarNet',
+                builder: (context, child) {
+                  final shellColor = Theme.of(context).scaffoldBackgroundColor;
+                  return AppResponsive.wrapApp(
+                    context,
+                    ColoredBox(
+                      color: shellColor,
+                      child: EdgeSwipeBack(
+                        navigatorKey: productionNavigatorKey,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
-                  ),
-                );
-              },
-              locale: locale,
-              supportedLocales: const [
-                Locale('en'),
-                Locale('ar'),
-                Locale('ku'),
-              ],
-              localizationsDelegates: [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-                const KuMaterialLocalizationsDelegate(),
-                const KuWidgetsLocalizationsDelegate(),
-                const KuCupertinoLocalizationsDelegate(),
-              ],
-              localeResolutionCallback: (deviceLocale, supported) {
-                if (locale != null) return locale;
-                if (deviceLocale == null) return const Locale('en');
-                for (final l in supported) {
-                  if (l.languageCode == deviceLocale.languageCode) return l;
-                }
-                return const Locale('en');
-              },
-              theme: AppThemes.lightTheme,
-              darkTheme: AppThemes.darkTheme,
-              themeMode: themeProvider.themeMode,
-              debugShowCheckedModeBanner: false,
-              initialRoute: '/',
-              onGenerateRoute: (settings) =>
-                  appOnGenerateRoute(settings, routes),
-            ),
-          );
-        },
+                  );
+                },
+                locale: locale,
+                supportedLocales: const [
+                  Locale('en'),
+                  Locale('ar'),
+                  Locale('ku'),
+                ],
+                localizationsDelegates: [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                  const KuMaterialLocalizationsDelegate(),
+                  const KuWidgetsLocalizationsDelegate(),
+                  const KuCupertinoLocalizationsDelegate(),
+                ],
+                localeResolutionCallback: (deviceLocale, supported) {
+                  if (locale != null) return locale;
+                  if (deviceLocale == null) return const Locale('en');
+                  for (final l in supported) {
+                    if (l.languageCode == deviceLocale.languageCode) return l;
+                  }
+                  return const Locale('en');
+                },
+                theme: AppThemes.lightTheme,
+                darkTheme: AppThemes.darkTheme,
+                themeMode: themeProvider.themeMode,
+                debugShowCheckedModeBanner: false,
+                initialRoute: '/',
+                onGenerateRoute: (settings) =>
+                    appOnGenerateRoute(settings, routes),
+              ),
+            );
+          },
         ),
       ),
     );

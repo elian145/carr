@@ -412,15 +412,8 @@ Widget _buildGlobalCarCard(
                         child: SizedBox(
                           width: contentW,
                           height: contentH,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.topCenter,
-                            child: SizedBox(
-                              width: contentW,
-                              child: wrapCardTextTap(
-                                buildCardText(horizontal: false),
-                              ),
-                            ),
+                          child: wrapCardTextTap(
+                            buildCardText(horizontal: false),
                           ),
                         ),
                       );

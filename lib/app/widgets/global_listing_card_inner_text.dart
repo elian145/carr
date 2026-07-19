@@ -83,8 +83,7 @@ Widget _buildGridCarCardInnerText(
       languageCode == 'ku';
   final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
   final double leadingShift = isRtl ? 6 : -6;
-  final bool isArabic = languageCode == 'ar';
-  final double trailingShift = isArabic ? -3 : (isRtl ? -6 : 6);
+  final double trailingShift = isRtl ? -4 : 4;
   final double footerShiftY = compact ? 1 : 2;
   const Color priceAccent = Color(0xFFFF5A00);
 
@@ -380,16 +379,33 @@ Widget _buildGridCarCardInnerText(
     ),
   );
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      titleBlock,
-      if (hasDetail) trimBlock,
-      if (hasSpecs) yearPriceBlock,
-      SizedBox(height: sectionGap),
-      mileageCityRow,
-    ],
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final topDetails = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          titleBlock,
+          if (hasDetail) trimBlock,
+          if (hasSpecs) yearPriceBlock,
+        ],
+      );
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.topCenter,
+              child: SizedBox(width: constraints.maxWidth, child: topDetails),
+            ),
+          ),
+          SizedBox(height: sectionGap),
+          mileageCityRow,
+        ],
+      );
+    },
   );
 }
 

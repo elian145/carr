@@ -64,6 +64,10 @@ class ListingLayoutPrefs {
     }
     if (width < 340) return 2.55;
     if (width < 380) return 0.63;
+    // Extra-wide phones produce wider photos, but the details block remains
+    // roughly fixed-height. A slightly wider tile removes the empty strip
+    // below the city/price row on devices such as iPhone Pro Max.
+    if (width >= 420) return 0.68;
     return gridChildAspectRatio(listingColumns);
   }
 }

@@ -34,11 +34,13 @@ class CarzoApp extends StatelessWidget {
                 navigatorKey: appNavigatorKey,
                 child: MaterialApp(
                   navigatorKey: appNavigatorKey,
+                  navigatorObservers: [appRouteTracker],
                   title: 'CarNet',
                   debugShowCheckedModeBanner: false,
                   builder: (context, child) {
-                    final shellColor =
-                        Theme.of(context).scaffoldBackgroundColor;
+                    final shellColor = Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor;
                     return AppResponsive.wrapApp(
                       context,
                       ColoredBox(

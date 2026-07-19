@@ -8,7 +8,7 @@ class EdgeSwipeBack extends StatefulWidget {
     super.key,
     required this.child,
     required this.navigatorKey,
-    this.edgeWidth = 20,
+    this.edgeWidth = 32,
   });
 
   final Widget child;
@@ -24,7 +24,17 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
 
   bool _canPop() {
     final nav = widget.navigatorKey.currentState;
-    return nav != null && nav.canPop();
+    if (nav == null || !nav.canPop() || nav.userGestureInProgress) {
+      return false;
+    }
+
+    final route = _topAppPageRoute(nav);
+    final controller = route?.routeAnimationController;
+    return route != null &&
+        route.isCurrent &&
+        route.popDisposition == RoutePopDisposition.pop &&
+        controller != null &&
+        !controller.isAnimating;
   }
 
   AppPageRoute<dynamic>? _topAppPageRoute(NavigatorState navigator) {
@@ -40,7 +50,7 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
 
   void _onDragStart() {
     final nav = widget.navigatorKey.currentState;
-    if (nav == null || !nav.canPop()) return;
+    if (nav == null || !_canPop()) return;
 
     final route = _topAppPageRoute(nav);
     final controller = route?.routeAnimationController;
@@ -76,17 +86,17 @@ class _EdgeSwipeBackState extends State<EdgeSwipeBack> {
       gestures: {
         _EdgeBackGestureRecognizer:
             GestureRecognizerFactoryWithHandlers<_EdgeBackGestureRecognizer>(
-          () => _EdgeBackGestureRecognizer(
-            canStart: _canPop,
-            edgeWidth: widget.edgeWidth,
-          ),
-          (recognizer) {
-            recognizer.onStart = (_) => _onDragStart();
-            recognizer.onUpdate = _onDragUpdate;
-            recognizer.onEnd = _onDragEnd;
-            recognizer.onCancel = _onDragCancel;
-          },
-        ),
+              () => _EdgeBackGestureRecognizer(
+                canStart: _canPop,
+                edgeWidth: widget.edgeWidth,
+              ),
+              (recognizer) {
+                recognizer.onStart = (_) => _onDragStart();
+                recognizer.onUpdate = _onDragUpdate;
+                recognizer.onEnd = _onDragEnd;
+                recognizer.onCancel = _onDragCancel;
+              },
+            ),
       },
       child: widget.child,
     );
@@ -101,9 +111,11 @@ class _AppBackGestureController {
     required this.screenWidth,
   });
 
-  static const double _minFlingVelocity = 1.0;
-  static const Duration _droppedPageAnimationDuration =
-      Duration(milliseconds: 180);
+  static const double _minFlingVelocityPxPerSecond = 600.0;
+  static const double _minimumDragProgress = 0.35;
+  static const Duration _droppedPageAnimationDuration = Duration(
+    milliseconds: 180,
+  );
 
   final NavigatorState navigator;
   final AppPageRoute<dynamic> route;
@@ -115,16 +127,16 @@ class _AppBackGestureController {
   }
 
   void dragEnd(double velocityPxPerSec) {
-    final velocity = velocityPxPerSec / screenWidth;
     final isCurrent = route.isCurrent;
+    final dragProgress = 1.0 - animationController.value;
     final bool animateForward;
 
     if (!isCurrent) {
       animateForward = route.isActive;
-    } else if (velocity.abs() >= _minFlingVelocity) {
-      animateForward = velocity <= 0;
+    } else if (velocityPxPerSec.abs() >= _minFlingVelocityPxPerSecond) {
+      animateForward = velocityPxPerSec <= 0;
     } else {
-      animateForward = animationController.value > 0.5;
+      animateForward = dragProgress < _minimumDragProgress;
     }
 
     if (animateForward) {
@@ -163,11 +175,20 @@ class _EdgeBackGestureRecognizer extends HorizontalDragGestureRecognizer {
   _EdgeBackGestureRecognizer({
     required bool Function() canStart,
     required double edgeWidth,
-  })  : _canStart = canStart,
-        _edgeWidth = edgeWidth;
+  }) : _canStart = canStart,
+       _edgeWidth = edgeWidth;
 
   final bool Function() _canStart;
   final double _edgeWidth;
+
+  @override
+  bool hasSufficientGlobalDistanceToAccept(
+    PointerDeviceKind pointerDeviceKind,
+    double? deviceTouchSlop,
+  ) {
+    return globalDistanceMoved >
+        computeHitSlop(pointerDeviceKind, gestureSettings);
+  }
 
   @override
   void addAllowedPointer(PointerDownEvent event) {

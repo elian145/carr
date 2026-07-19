@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_localizations.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/maps/dealer_map_coords.dart';
@@ -29,6 +30,7 @@ part 'edit_dealer_page_hours.dart';
 part 'edit_dealer_page_profile.dart';
 part 'edit_dealer_page_location.dart';
 part 'edit_dealer_page_media.dart';
+part 'edit_dealer_page_phone_verification.dart';
 part 'edit_dealer_page_save.dart';
 part 'edit_dealer_page_build_body_upper.dart';
 part 'edit_dealer_page_build_body_lower.dart';
@@ -49,6 +51,7 @@ class _EditDealerPageState extends _EditDealerPageFields
         _EditDealerPageProfile,
         _EditDealerPageLocation,
         _EditDealerPageMedia,
+        _EditDealerPagePhoneVerification,
         _EditDealerPageSave,
         _EditDealerPageBuildBodyUpper,
         _EditDealerPageBuildBodyLower,

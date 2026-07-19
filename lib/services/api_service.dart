@@ -309,6 +309,15 @@ class ApiService {
     Map<String, dynamic> dealerData,
   ) => _ApiServiceAuth.updateDealerProfile(dealerData);
 
+  static Future<Map<String, dynamic>> sendDealerPhoneVerification(
+    String phoneNumber,
+  ) => _ApiServiceAuth.sendDealerPhoneVerification(phoneNumber);
+
+  static Future<Map<String, dynamic>> verifyDealerPhone(
+    String phoneNumber,
+    String code,
+  ) => _ApiServiceAuth.verifyDealerPhone(phoneNumber, code);
+
   static Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> profileData,
   ) => _ApiServiceAuth.updateProfile(profileData);

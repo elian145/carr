@@ -9,6 +9,27 @@ import '../../services/push_notification_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/i18n/legacy_inline_text.dart';
 
+final AppRouteTracker appRouteTracker = AppRouteTracker();
+
+class AppRouteTracker extends NavigatorObserver {
+  String? currentRouteName;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    currentRouteName = route.settings.name;
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    currentRouteName = previousRoute?.settings.name;
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    currentRouteName = newRoute?.settings.name;
+  }
+}
+
 /// Wraps [MaterialApp] and initializes [DeepLinkService] after the first frame.
 class AppWithDeepLinks extends StatefulWidget {
   const AppWithDeepLinks({
@@ -190,6 +211,7 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
 
       _dealerPromptOpen = true;
       if (!navigatorContext.mounted) return;
+      final alreadyEditing = appRouteTracker.currentRouteName == '/dealer/edit';
       final completeNow = await showDialog<bool>(
         context: navigatorContext,
         barrierDismissible: false,
@@ -212,9 +234,15 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
             title: Text(
               trLegacyText(
                 dialogContext,
-                'Your dealership is approved!',
-                ar: 'تمت الموافقة على وكالتك!',
-                ku: 'ناوەندی فرۆشتنەکەت پەسەند کرا!',
+                alreadyEditing
+                    ? 'Set up your dealer page'
+                    : 'Your dealership is approved!',
+                ar: alreadyEditing
+                    ? 'أكمل إعداد صفحة وكالتك'
+                    : 'تمت الموافقة على وكالتك!',
+                ku: alreadyEditing
+                    ? 'پەڕەی ناوەندی فرۆشتنەکەت ئامادە بکە'
+                    : 'ناوەندی فرۆشتنەکەت پەسەند کرا!',
               ),
               textAlign: TextAlign.center,
             ),
@@ -225,9 +253,15 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
                 Text(
                   trLegacyText(
                     dialogContext,
-                    'Complete your public dealer page so buyers can recognize your business and know when to contact you.',
-                    ar: 'أكمل صفحة وكالتك العامة ليتمكن المشترون من التعرف على نشاطك ومعرفة أوقات التواصل.',
-                    ku: 'پەڕەی گشتی ناوەندی فرۆشتنەکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.',
+                    alreadyEditing
+                        ? 'Your dealership is approved. Fill in the information on this page to finish setting up the dealer page buyers will see.'
+                        : 'Complete your public dealer page so buyers can recognize your business and know when to contact you.',
+                    ar: alreadyEditing
+                        ? 'تمت الموافقة على وكالتك. املأ المعلومات في هذه الصفحة لإكمال إعداد صفحة الوكالة التي سيراها المشترون.'
+                        : 'أكمل صفحة وكالتك العامة ليتمكن المشترون من التعرف على نشاطك ومعرفة أوقات التواصل.',
+                    ku: alreadyEditing
+                        ? 'ناوەندی فرۆشتنەکەت پەسەند کرا. زانیارییەکانی ئەم پەڕەیە پڕ بکەرەوە بۆ تەواوکردنی پەڕەی ناوەندەکەت کە کڕیاران دەیبینن.'
+                        : 'پەڕەی گشتی ناوەندی فرۆشتنەکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.',
                   ),
                   style: TextStyle(color: colors.onSurfaceVariant, height: 1.4),
                 ),
@@ -270,29 +304,44 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
               ],
             ),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(
-                  trLegacyText(
-                    dialogContext,
-                    'Later',
-                    ar: 'لاحقاً',
-                    ku: 'دواتر',
+              if (alreadyEditing)
+                FilledButton.icon(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  icon: const Icon(Icons.check_rounded, size: 18),
+                  label: Text(
+                    trLegacyText(
+                      dialogContext,
+                      'Got it',
+                      ar: 'حسناً',
+                      ku: 'باشە',
+                    ),
+                  ),
+                )
+              else ...[
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(
+                    trLegacyText(
+                      dialogContext,
+                      'Later',
+                      ar: 'لاحقاً',
+                      ku: 'دواتر',
+                    ),
                   ),
                 ),
-              ),
-              FilledButton.icon(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: Text(
-                  trLegacyText(
-                    dialogContext,
-                    'Complete profile',
-                    ar: 'إكمال الملف',
-                    ku: 'تەواوکردنی پڕۆفایل',
+                FilledButton.icon(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: Text(
+                    trLegacyText(
+                      dialogContext,
+                      'Complete profile',
+                      ar: 'إكمال الملف',
+                      ku: 'تەواوکردنی پڕۆفایل',
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           );
         },

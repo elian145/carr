@@ -5,7 +5,8 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
   void initState() {
     super.initState();
     _openingHours = {
-      for (final d in _editDealerDays) d.key: _DayHours(enabled: false, is24h: false),
+      for (final d in _editDealerDays)
+        d.key: _DayHours(enabled: false, is24h: false),
     };
     _openingHoursTileControllers = {
       for (final d in _editDealerDays) d.key: ExpansibleController(),
@@ -45,6 +46,22 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
     _phones
       ..clear()
       ..addAll(initialPhones.map((p) => TextEditingController(text: p)));
+    _verifiedPhones.clear();
+    final rawVerifiedPhones = me?['dealership_verified_phones'];
+    if (rawVerifiedPhones is List) {
+      for (final value in rawVerifiedPhones) {
+        final normalized = normalizeDealerPhoneForVerification(
+          (value ?? '').toString(),
+        );
+        if (normalized.isNotEmpty) _verifiedPhones.add(normalized);
+      }
+    }
+    if (me?['is_verified'] == true) {
+      final accountPhone = normalizeDealerPhoneForVerification(
+        (me?['phone_number'] ?? '').toString(),
+      );
+      if (accountPhone.isNotEmpty) _verifiedPhones.add(accountPhone);
+    }
     _location.text = (me?['dealership_location'] ?? '').toString();
     _description.text = (me?['dealership_description'] ?? '').toString();
     final rawHours = me?['dealership_opening_hours'];
@@ -57,7 +74,9 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
         if (decoded is Map) {
           hoursMap = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
         }
-      } catch (e, st) { logNonFatal(e, st); }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
     }
     if (hoursMap != null) {
       for (final d in _editDealerDays) {
