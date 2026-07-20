@@ -1234,7 +1234,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String stepXOf5(Object step) {
-    return 'Step $step of 5';
+    return 'Step $step of 6';
   }
 
   @override

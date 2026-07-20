@@ -433,7 +433,7 @@
   "addYourFirstCar": "Add Your First Car",
   "emailOrPhoneRequired": "Email or phone number is required",
 
-  "stepXOf5": "Step {step} of 5",
+  "stepXOf5": "Step {step} of 6",
   "basicInformationTitle": "Basic Information",
   "basicInformationSubtitle": "Tell us about your car's basic details",
   "carDetailsTitle": "Car Details",

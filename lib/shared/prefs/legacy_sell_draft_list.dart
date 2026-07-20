@@ -13,7 +13,7 @@ class LegacySellDraftList {
 
   static String _newDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
 
-  static int readStep(dynamic raw, {int maxIdx = 4}) =>
+  static int readStep(dynamic raw, {int maxIdx = 5}) =>
       readSellDraftStepDynamic(raw, maxIdx: maxIdx);
 
   static int _mergeStep({required int jsonStep, int? prefsStep}) =>

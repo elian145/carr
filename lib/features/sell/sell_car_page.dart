@@ -14,7 +14,11 @@ class SellCarPage extends StatefulWidget {
   State<SellCarPage> createState() => _SellCarPageState();
 }
 
-class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist, _SellCarPageDraftBanner {
+class _SellCarPageState extends _SellCarPageFields
+    with
+        _SellCarPageDraftPersist,
+        _SellCarPagePlateBlur,
+        _SellCarPageDraftBanner {
   @override
   void initState() {
     super.initState();
@@ -92,7 +96,7 @@ class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist
               Container(
                 padding: EdgeInsets.all(16),
                 child: Row(
-                  children: List.generate(5, (index) {
+                  children: List.generate(_SellCarPageFields._kSellStepCount, (index) {
                     bool isCompleted = completedSteps.contains(index);
                     bool isCurrent = index == currentStep;
                     bool isAccessible = index <= currentStep || isCompleted;
@@ -167,14 +171,21 @@ class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist
     final l = AppLocalizations.of(context)!;
     switch (step) {
       case 0:
-        return l.basicInformationTitle;
-      case 1:
-        return l.carDetailsTitle;
-      case 2:
-        return l.pricingContactTitle;
-      case 3:
         return l.photosVideosTitle;
+      case 1:
+        return l.basicInformationTitle;
+      case 2:
+        return l.carDetailsTitle;
+      case 3:
+        return l.pricingContactTitle;
       case 4:
+        return _trLegacyText(
+          context,
+          'License plates',
+          ar: 'لوحات المركبات',
+          ku: 'تابلۆی ئۆتۆمبێل',
+        );
+      case 5:
         return l.reviewSubmitTitle;
       default:
         return '';
@@ -184,7 +195,10 @@ class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist
   // Method to validate if a step is completed
   bool _isStepCompleted(int step) {
     switch (step) {
-      case 0: // Basic Information
+      case 0: // Photos & Videos
+        return carData['images'] != null &&
+            (carData['images'] as List).isNotEmpty;
+      case 1: // Basic Information
         return carData['brand'] != null &&
             carData['brand'].toString().isNotEmpty &&
             carData['model'] != null &&
@@ -193,7 +207,7 @@ class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist
             carData['trim'].toString().isNotEmpty &&
             carData['year'] != null &&
             carData['year'].toString().isNotEmpty;
-      case 1: // Car Details
+      case 2: // Car Details
         return carData['mileage'] != null &&
             carData['mileage'].toString().isNotEmpty &&
             carData['condition'] != null &&
@@ -217,16 +231,15 @@ class _SellCarPageState extends _SellCarPageFields with _SellCarPageDraftPersist
             ) &&
             carData['title_status'] != null &&
             carData['title_status'].toString().isNotEmpty;
-      case 2: // Pricing & Contact
+      case 3: // Pricing & Contact
         return carData['city'] != null &&
             carData['city'].toString().isNotEmpty &&
             carData['contact_phone'] != null &&
             carData['contact_phone'].toString().isNotEmpty;
-      case 3: // Photos & Videos
-        return carData['images'] != null &&
-            (carData['images'] as List).isNotEmpty;
-      case 4: // Review & Submit
-        return true; // This step is always accessible for review
+      case 4: // Plate blur choice
+        return carData['use_blurred_plates'] is bool;
+      case 5: // Review & Submit
+        return true;
       default:
         return false;
     }

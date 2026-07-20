@@ -79,6 +79,7 @@ import 'sell_video_helpers.dart' as sell_video_helpers;
 
 part 'sell_car_page_fields.dart';
 part 'sell_car_page_draft_persist.dart';
+part 'sell_car_page_plate_blur.dart';
 part 'sell_car_page_draft_banner.dart';
 part 'sell_car_page.dart';
 part 'sell_step1_fields.dart';
@@ -114,6 +115,10 @@ part 'sell_step4.dart';
 part 'sell_step4_preview_helpers.dart';
 part 'sell_step4_preview_listing.dart';
 part 'sell_step4_preview_review.dart';
+part 'sell_plate_blur_choice.dart';
+part 'sell_step_blur_choice.dart';
+part 'sell_step_blur_choice_logic.dart';
+part 'sell_step_blur_choice_build.dart';
 part 'sell_step5_fields.dart';
 part 'sell_step5_logic.dart';
 part 'sell_step5_build.dart';
@@ -246,11 +251,11 @@ List<Map<String, dynamic>> _decodeSellDraftArchive(String? raw) =>
 String _encodeSellDraftArchive(List<Map<String, dynamic>> drafts) =>
     sell_draft_helpers.encodeSellDraftArchive(drafts);
 
-int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 4}) =>
+int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 5}) =>
     readSellDraftStepDynamic(raw, maxIdx: maxIdx);
 
-int _mergeSellDraftStep({int? jsonStep, int? prefsStep}) =>
-    mergeSellDraftStep(jsonStep: jsonStep, prefsStep: prefsStep);
+int _mergeSellDraftStep({int? jsonStep, int? prefsStep, int maxIdx = 5}) =>
+    mergeSellDraftStep(jsonStep: jsonStep, prefsStep: prefsStep, maxIdx: maxIdx);
 
 void _dismissAnyKeyboard([BuildContext? context]) =>
     dismissAnyKeyboard(context);

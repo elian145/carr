@@ -2437,7 +2437,7 @@ abstract class AppLocalizations {
   /// No description provided for @stepXOf5.
   ///
   /// In en, this message translates to:
-  /// **'Step {step} of 5'**
+  /// **'Step {step} of 6'**
   String stepXOf5(Object step);
 
   /// No description provided for @basicInformationTitle.

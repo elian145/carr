@@ -433,7 +433,7 @@
   "addYourFirstCar": "یەکەم ئۆتۆمبێلت زیاد بکە",
   "emailOrPhoneRequired": "ئیمەیل یان ژمارەی تەلەفۆن پێویستە",
 
-  "stepXOf5": "هەنگاوە {step} لە ٥",
+  "stepXOf5": "هەنگاوە {step} لە ٦",
   "basicInformationTitle": "زانیاری بنەڕەتی",
   "basicInformationSubtitle": "پێمان بڵێ دەربارەی وردەکاری بنەڕەتی ئۆتۆمبێلەکەت",
   "carDetailsTitle": "وردەکاری ئۆتۆمبێل",

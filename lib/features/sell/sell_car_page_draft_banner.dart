@@ -6,13 +6,14 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
       return const SizedBox.shrink();
     }
     final labels = <String>[
-      'Step 1: Basic info',
-      'Step 2: Details',
-      'Step 3: Pricing',
-      'Step 4: Photos',
-      'Step 5: Review',
+      'Step 1: Photos',
+      'Step 2: Basic info',
+      'Step 3: Details',
+      'Step 4: Pricing',
+      'Step 5: Plates',
+      'Step 6: Review',
     ];
-    final stepLabel = labels[_draftPreviewStep.clamp(0, 4).toInt()];
+    final stepLabel = labels[_draftPreviewStep.clamp(0, 5).toInt()];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Container(

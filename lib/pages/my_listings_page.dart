@@ -195,7 +195,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       if (modernDraft != null && _hasMeaningfulDraftData(modernDraft)) {
         drafts.add(<String, dynamic>{
           'draftId': 'modern_$ownerKey',
-          'currentStep': modernDraft['complete'] == true ? 4 : 0,
+          'currentStep': modernDraft['complete'] == true ? 5 : 0,
           'carData': modernDraft,
           'isModern': true,
         });

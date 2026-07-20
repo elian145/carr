@@ -14,6 +14,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       if (mounted) {
         setState(() {
           _selectedImages = [];
+          _blurredImages = [];
           _damageImages = [];
           _selectedVideos.clear();
           _imagesProcessed = false;
@@ -22,16 +23,26 @@ mixin _SellStep4Logic on _SellStep4Fields {
       }
       if (parentState != null) {
         parentState.carData.remove('images');
+        parentState.carData.remove('original_images');
+        parentState.carData.remove('blurred_images');
         parentState.carData.remove('damage_images');
+        parentState.carData.remove('original_damage_images');
+        parentState.carData.remove('blurred_damage_images');
         parentState.carData.remove('videos');
         parentState.carData.remove('images_processed');
         parentState.carData.remove('processed_image_paths');
+        parentState.carData.remove('use_blurred_plates');
       }
     } else {
-      final parentImages = parentState?.carData['images'];
-      final parentDamage = parentState?.carData['damage_images'];
+      final parentImages = parentState?.carData['original_images'] ??
+          parentState?.carData['images'];
+      final parentBlurred = parentState?.carData['blurred_images'];
+      final parentDamage = parentState?.carData['original_damage_images'] ??
+          parentState?.carData['damage_images'];
+      final parentDamageBlurred = parentState?.carData['blurred_damage_images'];
       final parentVideos = parentState?.carData['videos'];
       List<dynamic> stepImages = const [];
+      List<dynamic> stepBlurred = const [];
       List<dynamic> stepDamage = const [];
       List<XFile> stepVideos = const [];
       try {
@@ -45,6 +56,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
             );
             if (data['selectedImages'] is List) {
               stepImages = List<dynamic>.from(data['selectedImages'] as List);
+            }
+            if (data['blurredImages'] is List) {
+              stepBlurred = List<dynamic>.from(data['blurredImages'] as List);
             }
             if (data['damage_images'] is List) {
               stepDamage = List<dynamic>.from(data['damage_images'] as List);
@@ -67,6 +81,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
         primary: parentImages is List ? List<dynamic>.from(parentImages) : null,
         secondary: stepImages,
       );
+      final mergedBlurred = SellDraftMediaPersistence.coalesceMediaLists(
+        primary:
+            parentBlurred is List ? List<dynamic>.from(parentBlurred) : null,
+        secondary: stepBlurred,
+      );
       final mergedDamage = SellDraftMediaPersistence.coalesceMediaLists(
         primary: parentDamage is List ? List<dynamic>.from(parentDamage) : null,
         secondary: stepDamage,
@@ -76,9 +95,14 @@ mixin _SellStep4Logic on _SellStep4Fields {
         secondary: stepVideos.map((e) => e.path).toList(),
       );
 
+      if (parentState?.carData['images_processed'] == true) {
+        _imagesProcessed = true;
+      }
+
       if (mounted) {
         setState(() {
           _selectedImages = mergedImages;
+          _blurredImages = mergedBlurred;
           _damageImages = mergedDamage;
           _selectedVideos
             ..clear()
@@ -87,12 +111,24 @@ mixin _SellStep4Logic on _SellStep4Fields {
         });
       }
       if (parentState != null) {
+        parentState.carData['original_images'] =
+            List<dynamic>.from(mergedImages);
+        parentState.carData['blurred_images'] =
+            List<dynamic>.from(mergedBlurred);
         parentState.carData['images'] = List<dynamic>.from(mergedImages);
-        parentState.carData['damage_images'] = List<dynamic>.from(mergedDamage);
+        parentState.carData['original_damage_images'] =
+            List<dynamic>.from(mergedDamage);
+        if (parentDamageBlurred is List) {
+          parentState.carData['blurred_damage_images'] =
+              List<dynamic>.from(parentDamageBlurred);
+        }
+        parentState.carData['damage_images'] =
+            List<dynamic>.from(mergedDamage);
         parentState.carData['videos'] = List<XFile>.from(
           mergedVideos.whereType<XFile>(),
         );
         parentState.carData['images_processed'] = _imagesProcessed;
+        parentState.carData['sell_wizard_v2'] = true;
       }
     }
     if (!mounted) return;
@@ -100,6 +136,12 @@ mixin _SellStep4Logic on _SellStep4Fields {
         _damageImages.isNotEmpty ||
         _selectedVideos.isNotEmpty) {
       await _syncMediaDraftToParent();
+    }
+    if (_selectedImages.isNotEmpty &&
+        parentState != null &&
+        !parentState.hasBlurredPlatesReady &&
+        !parentState.isBlurringPlates) {
+      unawaited(parentState.startBackgroundPlateBlur());
     }
   }
 
@@ -114,12 +156,13 @@ mixin _SellStep4Logic on _SellStep4Fields {
     if (!LegacySellDraftPrefs.suppressPersist) {
       final parentState = _parentState;
       if (parentState != null) {
-        parentState.carData['images'] = List<dynamic>.from(_selectedImages);
-        parentState.carData['damage_images'] = List<dynamic>.from(
-          _damageImages,
+        _writeMediaListsToParent(
+          parentState,
+          images: _selectedImages,
+          blurred: _blurredImages,
+          damage: _damageImages,
+          videos: _selectedVideos,
         );
-        parentState.carData['videos'] = List<XFile>.from(_selectedVideos);
-        parentState.carData['images_processed'] = _imagesProcessed;
       }
       unawaited(
         _saveDraft().then((_) {
@@ -137,7 +180,12 @@ mixin _SellStep4Logic on _SellStep4Fields {
       final images = await SellDraftMediaPersistence.persistDynamicMediaList(
         _selectedImages,
         draftId: draftId,
-        namePrefix: 'listing',
+        namePrefix: 'listing_orig',
+      );
+      final blurred = await SellDraftMediaPersistence.persistDynamicMediaList(
+        _blurredImages,
+        draftId: draftId,
+        namePrefix: 'listing_blur',
       );
       final damage = await SellDraftMediaPersistence.persistDynamicMediaList(
         _damageImages,
@@ -152,6 +200,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       if (mounted) {
         setState(() {
           _selectedImages = images;
+          _blurredImages = blurred;
           _damageImages = damage;
           _selectedVideos
             ..clear()
@@ -169,6 +218,13 @@ mixin _SellStep4Logic on _SellStep4Fields {
                     : ListingImageMedia.map(e),
               )
               .toList(),
+          'blurredImages': blurred
+              .map(
+                (e) => e is Map
+                    ? Map<String, dynamic>.from(e)
+                    : ListingImageMedia.map(e),
+              )
+              .toList(),
           'damage_images': damage
               .map((e) => e is XFile ? e.path : e.toString())
               .toList(),
@@ -179,12 +235,13 @@ mixin _SellStep4Logic on _SellStep4Fields {
         }),
       );
       if (parentState != null) {
-        parentState.carData['images'] = List<dynamic>.from(images);
-        parentState.carData['damage_images'] = List<dynamic>.from(damage);
-        parentState.carData['videos'] = List<XFile>.from(
-          videos.whereType<XFile>(),
+        _writeMediaListsToParent(
+          parentState,
+          images: images,
+          blurred: blurred,
+          damage: damage,
+          videos: videos.whereType<XFile>().toList(),
         );
-        parentState.carData['images_processed'] = _imagesProcessed;
       }
       unawaited(parentState?._saveSellDraftSnapshot());
     } catch (e, st) {
@@ -199,7 +256,12 @@ mixin _SellStep4Logic on _SellStep4Fields {
     final images = await SellDraftMediaPersistence.persistDynamicMediaList(
       _selectedImages,
       draftId: draftId,
-      namePrefix: 'listing',
+      namePrefix: 'listing_orig',
+    );
+    final blurred = await SellDraftMediaPersistence.persistDynamicMediaList(
+      _blurredImages,
+      draftId: draftId,
+      namePrefix: 'listing_blur',
     );
     final damage = await SellDraftMediaPersistence.persistDynamicMediaList(
       _damageImages,
@@ -214,17 +276,21 @@ mixin _SellStep4Logic on _SellStep4Fields {
     if (!mounted) return;
     setState(() {
       _selectedImages = images;
+      _blurredImages = blurred;
       _damageImages = damage;
       _selectedVideos
         ..clear()
         ..addAll(videos.whereType<XFile>());
     });
-    parentState.carData['images'] = List<dynamic>.from(images);
-    parentState.carData['damage_images'] = List<dynamic>.from(damage);
-    parentState.carData['videos'] = List<XFile>.from(videos.whereType<XFile>());
-    parentState.carData['images_processed'] = _imagesProcessed;
-    if (_imagesProcessed) {
-      parentState.carData['processed_image_paths'] = images
+    _writeMediaListsToParent(
+      parentState,
+      images: images,
+      blurred: blurred,
+      damage: damage,
+      videos: videos.whereType<XFile>().toList(),
+    );
+    if (_imagesProcessed && blurred.isNotEmpty) {
+      parentState.carData['processed_image_paths'] = blurred
           .map(ListingImageMedia.source)
           .where((s) => s.trim().isNotEmpty)
           .toList();
@@ -236,6 +302,56 @@ mixin _SellStep4Logic on _SellStep4Fields {
   }
 
   String _imagePathKey(dynamic item) => ListingImageMedia.source(item);
+
+  void _writeMediaListsToParent(
+    _SellCarPageState parentState, {
+    required List<dynamic> images,
+    required List<dynamic> blurred,
+    required List<dynamic> damage,
+    required List<XFile> videos,
+  }) {
+    parentState.carData['original_images'] = List<dynamic>.from(images);
+    parentState.carData['original_damage_images'] =
+        List<dynamic>.from(damage);
+    parentState.carData['videos'] = List<XFile>.from(videos);
+    parentState.carData['sell_wizard_v2'] = true;
+
+    // Don't wipe parent blurred results while background blur is running or
+    // when this step still has an empty local blurred cache.
+    final parentBlurred = parentState.carData['blurred_images'];
+    if (blurred.isNotEmpty) {
+      parentState.carData['blurred_images'] = List<dynamic>.from(blurred);
+      parentState.carData['images_processed'] = true;
+      _imagesProcessed = true;
+      _blurredImages = List<dynamic>.from(blurred);
+    } else if (parentState.isBlurringPlates) {
+      // Keep existing blurred_images / processed flag untouched.
+    } else if (parentBlurred is List && parentBlurred.isNotEmpty) {
+      parentState.carData['images_processed'] = true;
+      _imagesProcessed = true;
+      _blurredImages = List<dynamic>.from(parentBlurred);
+    } else {
+      parentState.carData['blurred_images'] = <dynamic>[];
+      parentState.carData['images_processed'] = _imagesProcessed;
+    }
+
+    // Keep damage active list as originals until blur-choice applies.
+    // Preserve any already-blurred damage produced by the parent job.
+    final parentDamageBlurred = parentState.carData['blurred_damage_images'];
+    if (!parentState.isBlurringPlates &&
+        (parentDamageBlurred is! List || parentDamageBlurred.isEmpty) &&
+        damage.isEmpty) {
+      parentState.carData['blurred_damage_images'] = <dynamic>[];
+    }
+
+    final useBlur = parentState.carData['use_blurred_plates'] == true;
+    if (useBlur) {
+      applySellPlateBlurChoice(parentState.carData, true);
+    } else {
+      parentState.carData['images'] = List<dynamic>.from(images);
+      parentState.carData['damage_images'] = List<dynamic>.from(damage);
+    }
+  }
 
   Future<Map<String, dynamic>> _pickedImageMedia(XFile file) async {
     int? width;
@@ -256,29 +372,49 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
   void _setPrimaryImage(int index) {
     if (index <= 0 || index >= _selectedImages.length) return;
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     setState(() {
       final item = _selectedImages.removeAt(index);
       _selectedImages.insert(0, item);
+      if (index < _blurredImages.length) {
+        final blurred = _blurredImages.removeAt(index);
+        _blurredImages.insert(0, blurred);
+      } else {
+        _blurredImages = [];
+        _imagesProcessed = false;
+      }
     });
+    parentState?.carData.remove('use_blurred_plates');
+    if (_blurredImages.isEmpty) {
+      parentState?.invalidatePlateBlurJob();
+    }
     unawaited(_syncMediaDraftToParent());
     unawaited(_saveDraft());
+    if (_blurredImages.isEmpty) {
+      unawaited(parentState?.startBackgroundPlateBlur());
+    }
   }
 
   Future<void> _pickImages() async {
     try {
-      // Upload full-resolution images to improve YOLO/OCR accuracy
       final files = await _imagePicker.pickMultiImage();
       if (files.isEmpty || !mounted) return;
       final existing = _selectedImages.map(_imagePathKey).toSet();
       final newFiles = files.where((f) => !existing.contains(f.path)).toList();
       final additions = await Future.wait(newFiles.map(_pickedImageMedia));
-      if (additions.isEmpty) return;
+      if (!mounted || additions.isEmpty) return;
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       setState(() {
         _selectedImages = [..._selectedImages, ...additions];
         _imagesProcessed = false;
+        _blurredImages = [];
+        _isProcessingImages = false;
       });
+      parentState?.carData.remove('use_blurred_plates');
+      parentState?.invalidatePlateBlurJob();
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
+      unawaited(parentState?.startBackgroundPlateBlur());
     } catch (e, st) {
       logNonFatal(e, st);
     }
@@ -291,158 +427,17 @@ mixin _SellStep4Logic on _SellStep4Fields {
       final existing = _damageImages.map(_imagePathKey).toSet();
       final additions = files.where((f) => !existing.contains(f.path)).toList();
       if (additions.isEmpty) return;
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       setState(() {
         _damageImages = [..._damageImages, ...additions];
       });
+      parentState?.carData.remove('use_blurred_plates');
+      parentState?.invalidatePlateBlurJob();
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
+      unawaited(parentState?.startBackgroundPlateBlur());
     } catch (e, st) {
       logNonFatal(e, st);
-    }
-  }
-
-  Future<void> _processImages() async {
-    if (_selectedImages.isEmpty) {
-      _debugLog('AI UI: No images selected for processing');
-      return;
-    }
-
-    if (!await ensurePhoneVerifiedForAction(context)) {
-      return;
-    }
-
-    _debugLog(
-      'AI UI: Starting image processing for ${_selectedImages.length} images',
-    );
-
-    if (!mounted) return;
-    setState(() {
-      _isProcessingImages = true;
-    });
-
-    try {
-      // Blur only when user taps "Blur Plates": process/store images on the server
-      // and replace the local picks with server paths for preview + later attach.
-      final local = _selectedImages
-          .map(ListingImageMedia.localFile)
-          .whereType<XFile>()
-          .toList();
-      if (local.isEmpty) {
-        if (!mounted) return;
-        setState(() {
-          _imagesProcessed = true;
-        });
-        return;
-      }
-
-      _debugLog('AI UI: Calling AiService.processCarImagesToServerPayload...');
-      final payload = await AiService.processCarImagesToServerPayload(local);
-      final paths = payload?['paths'] ?? const <String>[];
-      final b64 = payload?['base64'] ?? const <String>[];
-
-      if (paths.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to blur plates. Please try again.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
-          ),
-        );
-        return;
-      }
-
-      // Build local preview files from base64 (avoids loading many /static/ URLs concurrently, which can drop connections)
-      final List<XFile> blurredLocal = <XFile>[];
-      final List<String> okPaths = <String>[];
-      if (!mounted) return;
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-      final draftId = parentState?._currentDraftId ?? 'default';
-      try {
-        final int n = paths.length;
-        for (int i = 0; i < n; i++) {
-          final String path = paths[i].toString();
-          final String? dataUri = (i < b64.length) ? b64[i].toString() : null;
-          if (dataUri != null &&
-              dataUri.startsWith('data:') &&
-              dataUri.contains('base64,')) {
-            final idx = dataUri.indexOf('base64,');
-            final raw = base64Decode(dataUri.substring(idx + 7));
-            final stored = await SellDraftMediaPersistence.persistBytesToDraft(
-              raw,
-              draftId: draftId,
-              namePrefix: 'listing_blur',
-            );
-            if (stored != null && stored.isNotEmpty) {
-              blurredLocal.add(XFile(stored));
-              okPaths.add(path);
-            }
-          } else if (i < local.length) {
-            blurredLocal.add(local[i]);
-          }
-        }
-      } catch (e) {
-        _debugLog('AI UI: Failed to build local previews from base64: $e');
-      }
-
-      if (!mounted) return;
-      setState(() {
-        final replacements = blurredLocal.isNotEmpty
-            ? blurredLocal.map((e) => e.path).toList()
-            : List<String>.from(paths);
-        _selectedImages = List<dynamic>.generate(replacements.length, (i) {
-          final previous = i < _selectedImages.length
-              ? _selectedImages[i]
-              : replacements[i];
-          return ListingImageMedia.map(
-            previous,
-            source: replacements[i],
-            focusY: ListingImageMedia.focusY(previous),
-            width: ListingImageMedia.width(previous),
-            height: ListingImageMedia.height(previous),
-          );
-        });
-        _imagesProcessed = true;
-      });
-
-      unawaited(_syncMediaDraftToParent());
-      if (parentState != null) {
-        parentState.carData['processed_image_paths'] = List<String>.from(
-          okPaths.isNotEmpty ? okPaths : paths,
-        );
-        parentState.setState(() {});
-        unawaited(parentState._saveSellDraftSnapshot());
-      }
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Plates blurred successfully.')));
-    } catch (e) {
-      _debugLog('AI UI: Error processing images: $e');
-      if (!mounted) return;
-      if (isPhoneVerificationRequired(e)) {
-        await ensurePhoneVerifiedForAction(context);
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: 'Failed to blur plates. Please try again.',
-            ),
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessingImages = false;
-        });
-      }
     }
   }
 
@@ -454,7 +449,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
         picked = await _imagePicker.pickMultiVideo(maxDuration: maxDur);
       } catch (e, st) {
         logNonFatal(e, st);
-        // Some platforms/plugins may not support multi-video selection.
         final single = await _imagePicker.pickVideo(
           source: ImageSource.gallery,
           maxDuration: maxDur,

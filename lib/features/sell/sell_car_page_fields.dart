@@ -24,20 +24,22 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
   // Track completed steps
   Set<int> completedSteps = {};
 
-  static const int _kSellStepCount = 5;
+  static const int _kSellStepCount = 6;
 
   /// Step 2 key bumps when catalog specs are applied so Car Details reloads from [carData].
   Widget _sellStepChild(int index) {
-    if (index == 4) {
+    if (index == 5) {
       return SellStep5Page(key: ValueKey(_step5ImagesKey));
     }
     switch (index) {
       case 0:
+        return const SellStep4Page();
+      case 1:
         return SellStep1Page(
           resumeDraftToken: _draftResumeToken,
           key: ValueKey('s1_$_draftResumeToken'),
         );
-      case 1:
+      case 2:
         return SellStep2Page(
           key: ValueKey(
             's2_${carData['_catalog_specs_applied'] ?? 0}_${carData['_online_specs_applied'] ?? 0}_${carData['brand']}_${carData['model']}_${carData['trim']}_${carData['year']}',
@@ -45,20 +47,21 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
           specsHydrateToken:
               '${carData['_catalog_specs_applied'] ?? 0}_${carData['_online_specs_applied'] ?? 0}',
         );
-      case 2:
-        return const SellStep3Page();
       case 3:
-        return const SellStep4Page();
+        return const SellStep3Page();
+      case 4:
+        return const SellStepBlurChoicePage();
       default:
         return const SizedBox.shrink();
     }
   }
 
-  /// Key that changes when carData images/videos change so Step 5 (summary) rebuilds.
+  /// Key that changes when carData images/videos change so Review rebuilds.
   String get _step5ImagesKey {
     final imgs = carData['images'];
     final vids = carData['videos'];
     final dmg = carData['damage_images'];
+    final blurChoice = carData['use_blurred_plates'];
     final dmgPart = (dmg == null || dmg is! List || dmg.isEmpty)
         ? ''
         : dmg.map((e) => e is XFile ? e.path : e.toString()).join('|');
@@ -68,7 +71,9 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
     final vidPart = (vids == null || vids is! List || vids.isEmpty)
         ? ''
         : vids.map((e) => e is XFile ? e.path : e.toString()).join('|');
-    if (imgPart.isEmpty && vidPart.isEmpty && dmgPart.isEmpty) return '0';
-    return '$imgPart::$vidPart::$dmgPart';
+    if (imgPart.isEmpty && vidPart.isEmpty && dmgPart.isEmpty) {
+      return '0::$blurChoice';
+    }
+    return '$imgPart::$vidPart::$dmgPart::$blurChoice';
   }
 }

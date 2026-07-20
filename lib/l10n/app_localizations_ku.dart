@@ -1234,7 +1234,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String stepXOf5(Object step) {
-    return 'هەنگاوە $step لە ٥';
+    return 'هەنگاوە $step لە ٦';
   }
 
   @override

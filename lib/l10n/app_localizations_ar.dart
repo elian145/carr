@@ -1228,7 +1228,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String stepXOf5(Object step) {
-    return 'الخطوة $step من 5';
+    return 'الخطوة $step من 6';
   }
 
   @override

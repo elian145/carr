@@ -132,7 +132,7 @@ Future<void> openSellDraftStep(
   await tester.pump();
 
   var ready = false;
-  final stepLabel = 'Step ${step + 1} of 5';
+  final stepLabel = 'Step ${step + 1} of 6';
   for (var i = 0; i < 60; i++) {
     await tester.pump(const Duration(milliseconds: 50));
     if (find.text(stepLabel).evaluate().isNotEmpty) {
@@ -154,12 +154,12 @@ Future<void> openSellStep1Fresh(WidgetTester tester) async {
   var ready = false;
   for (var i = 0; i < 80; i++) {
     await tester.pump(const Duration(milliseconds: 50));
-    if (find.text('Step 1 of 5').evaluate().isNotEmpty) {
+    if (find.text('Step 1 of 6').evaluate().isNotEmpty) {
       ready = true;
       break;
     }
   }
-  expect(ready, isTrue, reason: 'Sell wizard should show Step 1 of 5');
+  expect(ready, isTrue, reason: 'Sell wizard should show Step 1 of 6');
   await tester.pump(const Duration(milliseconds: 400));
 }
 

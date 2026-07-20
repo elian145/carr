@@ -127,13 +127,13 @@ mixin _SellStep5Build on _SellStep5Logic {
                                   }
                                   if (missing.isNotEmpty) {
                                     int stepFor(String k) {
-                                      const step1 = {
+                                      const basic = {
                                         'brand',
                                         'model',
                                         'trim',
                                         'year',
                                       };
-                                      const step2 = {
+                                      const details = {
                                         'mileage',
                                         'condition',
                                         'transmission',
@@ -145,8 +145,9 @@ mixin _SellStep5Build on _SellStep5Logic {
                                         'region_specs',
                                         'title_status',
                                       };
-                                      if (step1.contains(k)) return 1;
-                                      if (step2.contains(k)) return 2;
+                                      // Wizard indices: 0 photos, 1 basic, 2 details, 3 pricing
+                                      if (basic.contains(k)) return 1;
+                                      if (details.contains(k)) return 2;
                                       return 3;
                                     }
 
@@ -155,7 +156,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                                     // Navigate user to the step containing the first missing field
                                     if (parentState != null) {
                                       parentState._jumpSellWizardToIndex(
-                                        targetStep - 1,
+                                        targetStep,
                                       );
                                     }
                                     ScaffoldMessenger.of(context).showSnackBar(

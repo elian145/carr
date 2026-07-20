@@ -52,8 +52,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Add Listing'), findsWidgets);
-    expect(find.text('Step 1 of 5'), findsOneWidget);
-    expect(find.text('Basic Information'), findsWidgets);
-    expect(find.text('Tap to select'), findsWidgets);
+    expect(find.text('Step 1 of 6'), findsOneWidget);
+    expect(find.text('Photos & Videos'), findsWidgets);
+    expect(find.text('Add Photos'), findsWidgets);
   });
 }

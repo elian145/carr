@@ -40,15 +40,19 @@ void main() {
     await FakeApiServer.stop();
   });
 
-  testWidgets('Legacy sell step 1 advances to step 2 when fields are set', (tester) async {
+  testWidgets('Legacy sell basic info advances to details when fields are set', (
+    tester,
+  ) async {
     await tester.pumpWidget(const legacy.MyApp());
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
     await openSellDraftStep(
       tester,
-      step: 0,
+      step: 1,
       carData: {
+        'sell_wizard_v2': true,
+        'images': <dynamic>['uploads/test_photo.jpg'],
         'brand': 'Toyota',
         'model': 'Camry',
         'trim': 'LE',
@@ -61,13 +65,13 @@ void main() {
     var ready = false;
     for (var i = 0; i < 120; i++) {
       await tester.pump(const Duration(milliseconds: 50));
-      if (find.text('Step 2 of 5').evaluate().isNotEmpty) {
+      if (find.text('Step 3 of 6').evaluate().isNotEmpty) {
         ready = true;
         break;
       }
     }
 
-    expect(ready, isTrue, reason: 'Sell wizard should advance to step 2');
+    expect(ready, isTrue, reason: 'Sell wizard should advance to car details');
     expect(find.text('Car Details'), findsWidgets);
   });
 }

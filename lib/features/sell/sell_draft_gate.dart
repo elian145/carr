@@ -281,13 +281,13 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   }
 
   Widget _buildStepProgress(int currentStep) {
-    final step = currentStep.clamp(0, 4);
+    final step = currentStep.clamp(0, 5);
     return Row(
-      children: List.generate(5, (index) {
+      children: List.generate(6, (index) {
         final filled = index <= step;
         return Expanded(
           child: Container(
-            margin: EdgeInsets.only(right: index < 4 ? 4 : 0),
+            margin: EdgeInsets.only(right: index < 5 ? 4 : 0),
             height: 4,
             decoration: BoxDecoration(
               color: filled
@@ -413,13 +413,14 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         ? Map<String, dynamic>.from((draft['carData'] as Map).cast<String, dynamic>())
         : <String, dynamic>{};
     final currentStep = readSellDraftStepDynamic(draft['currentStep']);
-    final stepIndex = currentStep.clamp(0, 4).toInt();
+    final stepIndex = currentStep.clamp(0, 5).toInt();
     final labels = <String>[
-      trLegacyText(context, 'Step 1: Basic info', ar: 'الخطوة 1: المعلومات الأساسية', ku: 'هەنگاو 1: زانیاری سەرەکی'),
-      trLegacyText(context, 'Step 2: Details', ar: 'الخطوة 2: التفاصيل', ku: 'هەنگاو 2: وردەکاری'),
-      trLegacyText(context, 'Step 3: Pricing', ar: 'الخطوة 3: السعر', ku: 'هەنگاو 3: نرخ'),
-      trLegacyText(context, 'Step 4: Photos', ar: 'الخطوة 4: الصور', ku: 'هەنگاو 4: وێنەکان'),
-      trLegacyText(context, 'Step 5: Review', ar: 'الخطوة 5: المراجعة', ku: 'هەنگاو 5: پێداچوونەوە'),
+      trLegacyText(context, 'Step 1: Photos', ar: 'الخطوة 1: الصور', ku: 'هەنگاو 1: وێنەکان'),
+      trLegacyText(context, 'Step 2: Basic info', ar: 'الخطوة 2: المعلومات الأساسية', ku: 'هەنگاو 2: زانیاری سەرەکی'),
+      trLegacyText(context, 'Step 3: Details', ar: 'الخطوة 3: التفاصيل', ku: 'هەنگاو 3: وردەکاری'),
+      trLegacyText(context, 'Step 4: Pricing', ar: 'الخطوة 4: السعر', ku: 'هەنگاو 4: نرخ'),
+      trLegacyText(context, 'Step 5: Plates', ar: 'الخطوة 5: اللوحات', ku: 'هەنگاو 5: تابلۆ'),
+      trLegacyText(context, 'Step 6: Review', ar: 'الخطوة 6: المراجعة', ku: 'هەنگاو 6: پێداچوونەوە'),
     ];
     final label = labels[stepIndex];
     final title = _draftTitle(carData);

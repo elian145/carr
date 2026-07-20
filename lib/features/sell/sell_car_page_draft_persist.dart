@@ -11,12 +11,18 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     return v.toString().trim().isNotEmpty;
   }
 
-  /// Highest wizard index (0–4) that already has saved field data.
-  /// Used so "Back" from step 2 to step 1 does not persist [currentStep] = 0
-  /// while car details (e.g. transmission) remain in [carData].
+  /// Highest wizard index that already has saved field data.
+  /// Used so "Back" does not persist an earlier [currentStep] while later
+  /// step fields remain in [carData].
   int _deepestSellWizardStepHintFromCarData() {
     final d = carData;
     int maxIdx = 0;
+    if (_sellPersistFieldNonEmpty(d['brand']) ||
+        _sellPersistFieldNonEmpty(d['model']) ||
+        _sellPersistFieldNonEmpty(d['trim']) ||
+        _sellPersistFieldNonEmpty(d['year'])) {
+      maxIdx = 1;
+    }
     if (_sellPersistFieldNonEmpty(d['mileage']) ||
         _sellPersistFieldNonEmpty(d['condition']) ||
         _sellPersistFieldNonEmpty(d['transmission']) ||
@@ -30,7 +36,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         _sellPersistFieldNonEmpty(d['cylinder_count']) ||
         _sellPersistFieldNonEmpty(d['title_status']) ||
         _sellPersistFieldNonEmpty(d['damaged_parts'])) {
-      maxIdx = 1;
+      maxIdx = math.max(maxIdx, 2);
     }
     if (_sellPersistFieldNonEmpty(d['price']) ||
         _sellPersistFieldNonEmpty(d['city']) ||
@@ -38,19 +44,10 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         _sellPersistFieldNonEmpty(d['plate_type']) ||
         _sellPersistFieldNonEmpty(d['plate_city']) ||
         _sellPersistFieldNonEmpty(d['description'])) {
-      maxIdx = math.max(maxIdx, 2);
-    }
-    final imgs = d['images'];
-    if (imgs is List && imgs.isNotEmpty) {
       maxIdx = math.max(maxIdx, 3);
     }
-    final dmg = d['damage_images'];
-    if (dmg is List && dmg.isNotEmpty) {
-      maxIdx = math.max(maxIdx, 3);
-    }
-    final vids = d['videos'];
-    if (vids is List && vids.isNotEmpty) {
-      maxIdx = math.max(maxIdx, 3);
+    if (d['use_blurred_plates'] is bool) {
+      maxIdx = math.max(maxIdx, 4);
     }
     return maxIdx.clamp(0, _SellCarPageFields._kSellStepCount - 1);
   }
@@ -190,6 +187,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         return;
       }
       final persistedStep = _effectivePersistedDraftStep();
+      carData['sell_wizard_v2'] = true;
       final storedCarData =
           await SellDraftMediaPersistence.prepareCarDataForStorage(
         carData,
@@ -252,8 +250,10 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       }
       if (!mounted) return;
       setState(() {
-        currentStep = restoredStep.clamp(0, _SellCarPageFields._kSellStepCount - 1);
+        final migratedStep = migrateSellWizardStep(restoredStep, restoredCarData);
+        currentStep = migratedStep;
         carData = _resolveCarDataMedia(restoredCarData);
+        carData['sell_wizard_v2'] = true;
         _hasDraftSnapshot = true;
         _draftPreviewStep = currentStep;
         _draftPreviewCarData = carData;
@@ -310,7 +310,15 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
 
   Map<String, dynamic> _resolveCarDataMedia(Map<String, dynamic> data) {
     final copy = Map<String, dynamic>.from(data);
-    for (final key in ['images', 'damage_images', 'videos']) {
+    for (final key in [
+      'images',
+      'original_images',
+      'blurred_images',
+      'damage_images',
+      'original_damage_images',
+      'blurred_damage_images',
+      'videos',
+    ]) {
       if (copy[key] is List) {
         copy[key] = SellDraftMediaPersistence.resolveDynamicMediaList(
           List<dynamic>.from(copy[key] as List),
@@ -324,7 +332,6 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     Map<String, dynamic> snapshot, {
     bool restoreCurrentStep = true,
   }) {
-    final currentStepValue = _readSellDraftStepDynamic(snapshot['currentStep']);
     final rawCarData = snapshot['carData'];
     final restoredCarData = rawCarData is Map
         ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
@@ -338,10 +345,15 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       _skipDraftPersistOnDispose = true;
     }
 
+    final migratedStep = migrateSellWizardStep(
+      _readSellDraftStepDynamic(snapshot['currentStep']),
+      restoredCarData,
+    );
     if (restoreCurrentStep) {
-      currentStep = currentStepValue.clamp(0, _SellCarPageFields._kSellStepCount - 1);
+      currentStep = migratedStep;
     }
     carData = _resolveCarDataMedia(restoredCarData);
+    carData['sell_wizard_v2'] = true;
     _hasDraftSnapshot = true;
     _draftPreviewStep = currentStep;
     _draftPreviewCarData = carData;
@@ -387,8 +399,9 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       if (!mounted) return;
       setState(() {
         _hasDraftSnapshot = true;
-        _draftPreviewStep = restoredStep.clamp(0, _SellCarPageFields._kSellStepCount - 1);
-        _draftPreviewCarData = restoredCarData;
+        final previewData = Map<String, dynamic>.from(restoredCarData);
+        _draftPreviewStep = migrateSellWizardStep(restoredStep, previewData);
+        _draftPreviewCarData = previewData;
       });
     } catch (e, st) { logNonFatal(e, st); }
   }

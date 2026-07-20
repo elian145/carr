@@ -29,14 +29,34 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
           final parentState =
               context.findAncestorStateOfType<_SellCarPageState>();
           if (parentState != null) {
-            parentState.carData['images'] = List<dynamic>.from(
-              _selectedImages,
-            );
+            parentState.carData['original_images'] =
+                List<dynamic>.from(_selectedImages);
+            // Preserve any background-blurred results already on the parent.
+            final existingBlurred = parentState.carData['blurred_images'];
+            if (_blurredImages.isNotEmpty) {
+              parentState.carData['blurred_images'] =
+                  List<dynamic>.from(_blurredImages);
+            } else if (existingBlurred is! List || existingBlurred.isEmpty) {
+              parentState.carData['blurred_images'] = <dynamic>[];
+            }
+            parentState.carData['images'] =
+                List<dynamic>.from(_selectedImages);
+            parentState.carData['original_damage_images'] =
+                List<dynamic>.from(_damageImages);
             parentState.carData['damage_images'] =
                 List<dynamic>.from(_damageImages);
             parentState.carData['videos'] = List<XFile>.from(
               _selectedVideos,
             );
+            parentState.carData['images_processed'] =
+                parentState.hasBlurredPlatesReady || _imagesProcessed;
+            parentState.carData['sell_wizard_v2'] = true;
+            // Keep blur running after leaving photos.
+            if (!parentState.hasBlurredPlatesReady &&
+                !parentState.isBlurringPlates &&
+                _selectedImages.isNotEmpty) {
+              unawaited(parentState.startBackgroundPlateBlur());
+            }
             parentState._goToNextStep();
           }
         },
@@ -47,7 +67,7 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -244,11 +244,39 @@ class SellDraftMediaPersistence {
           namePrefix: 'listing',
         );
       }
+      if (copy['original_images'] is List) {
+        copy['original_images'] = await _persistDynamicMediaListImpl(
+          List<dynamic>.from(copy['original_images'] as List),
+          draftId: draftId,
+          namePrefix: 'listing_orig',
+        );
+      }
+      if (copy['blurred_images'] is List) {
+        copy['blurred_images'] = await _persistDynamicMediaListImpl(
+          List<dynamic>.from(copy['blurred_images'] as List),
+          draftId: draftId,
+          namePrefix: 'listing_blur',
+        );
+      }
       if (copy['damage_images'] is List) {
         copy['damage_images'] = await _persistDynamicMediaListImpl(
           List<dynamic>.from(copy['damage_images'] as List),
           draftId: draftId,
           namePrefix: 'damage',
+        );
+      }
+      if (copy['original_damage_images'] is List) {
+        copy['original_damage_images'] = await _persistDynamicMediaListImpl(
+          List<dynamic>.from(copy['original_damage_images'] as List),
+          draftId: draftId,
+          namePrefix: 'damage_orig',
+        );
+      }
+      if (copy['blurred_damage_images'] is List) {
+        copy['blurred_damage_images'] = await _persistDynamicMediaListImpl(
+          List<dynamic>.from(copy['blurred_damage_images'] as List),
+          draftId: draftId,
+          namePrefix: 'damage_blur',
         );
       }
       if (copy['videos'] is List) {

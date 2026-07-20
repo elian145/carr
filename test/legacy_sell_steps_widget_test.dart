@@ -50,11 +50,15 @@ void main() {
     await bootSellWizard(tester);
     await openSellDraftStep(
       tester,
-      step: 1,
-      carData: sellCarDataThroughStep2(),
+      step: 2,
+      carData: {
+        ...sellCarDataThroughStep2(),
+        'sell_wizard_v2': true,
+        'images': <dynamic>['uploads/test_photo.jpg'],
+      },
     );
 
-    expect(find.text('Step 2 of 5'), findsOneWidget);
+    expect(find.text('Step 3 of 6'), findsOneWidget);
     expect(find.text('Car Details'), findsWidgets);
   });
 
@@ -62,35 +66,47 @@ void main() {
     await bootSellWizard(tester);
     await openSellDraftStep(
       tester,
-      step: 2,
-      carData: sellCarDataThroughStep3(),
+      step: 3,
+      carData: {
+        ...sellCarDataThroughStep3(),
+        'sell_wizard_v2': true,
+        'images': <dynamic>['uploads/test_photo.jpg'],
+      },
     );
 
-    expect(find.text('Step 3 of 5'), findsOneWidget);
+    expect(find.text('Step 4 of 6'), findsOneWidget);
     expect(find.text('Pricing & Contact'), findsWidgets);
   });
 
-  testWidgets('Legacy sell step 4 opens from draft snapshot', (tester) async {
+  testWidgets('Legacy sell photos step opens from draft snapshot', (tester) async {
     await bootSellWizard(tester);
     await openSellDraftStep(
       tester,
-      step: 3,
-      carData: sellCarDataThroughStep3(),
+      step: 0,
+      carData: {
+        'sell_wizard_v2': true,
+        'images': <dynamic>['uploads/test_photo.jpg'],
+      },
     );
 
-    expect(find.text('Step 4 of 5'), findsOneWidget);
+    expect(find.text('Step 1 of 6'), findsOneWidget);
     expect(find.text('Photos & Videos'), findsWidgets);
   });
 
-  testWidgets('Legacy sell step 5 opens from draft snapshot', (tester) async {
+  testWidgets('Legacy sell review step opens from draft snapshot', (tester) async {
     await bootSellWizard(tester);
     await openSellDraftStep(
       tester,
-      step: 4,
-      carData: sellCarDataThroughStep3(),
+      step: 5,
+      carData: {
+        ...sellCarDataThroughStep3(),
+        'sell_wizard_v2': true,
+        'images': <dynamic>['uploads/test_photo.jpg'],
+        'use_blurred_plates': false,
+      },
     );
 
-    expect(find.text('Step 5 of 5'), findsOneWidget);
+    expect(find.text('Step 6 of 6'), findsOneWidget);
     expect(find.text('Review & Submit'), findsWidgets);
     expect(find.text('Submit Listing'), findsOneWidget);
   });

@@ -36,7 +36,7 @@ void main() {
   group('maxSellDraftStep', () {
     test('returns highest clamped value', () {
       expect(maxSellDraftStep(1, 3, 2), 3);
-      expect(maxSellDraftStep(9, 1, 0), 4);
+      expect(maxSellDraftStep(9, 1, 0), 5);
     });
   });
 }
