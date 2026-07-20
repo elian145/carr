@@ -43,9 +43,8 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                 ],
               ),
             )
-          : ListView.separated(
+          : ListView.builder(
               itemCount: _items.length,
-              separatorBuilder: (context, index) => Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = _items[index];
                 final filters = item['filters'] as Map<String, dynamic>? ?? {};
@@ -105,11 +104,6 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                           icon: Icon(Icons.search, color: Colors.green),
                           onPressed: () => _applySearch(filters),
                           tooltip: AppLocalizations.of(context)!.applySearch,
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () => _rename(index),
-                          tooltip: AppLocalizations.of(context)!.renameTooltip,
                         ),
                         IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),

@@ -8,7 +8,10 @@ import 'package:url_launcher/url_launcher.dart';
 import '../l10n/app_localizations.dart';
 import '../navigation/app_page_route.dart';
 import '../app/listing_shell.dart'
-    show buildGlobalCarCard, mapListingToGlobalCarCardData;
+    show
+        FullScreenGalleryPage,
+        buildGlobalCarCard,
+        mapListingToGlobalCarCardData;
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../shared/maps/dealer_map_coords.dart';

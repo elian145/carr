@@ -17,12 +17,15 @@ mixin _EditDealerPageMedia on _EditDealerPageLocation {
   }
 
   Future<void> _pickCover() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1600,
-      maxHeight: 900,
-      imageQuality: 85,
+    final picked = await pickCoverImage(
+      context,
+      title: _tr(
+        'Position your cover photo',
+        ar: 'حدّد موضع صورة الغلاف',
+        ku: 'شوێنی وێنەی کاڤەر دیاری بکە',
+      ),
+      doneLabel: _tr('Done', ar: 'تم', ku: 'تەواو'),
+      cancelLabel: _tr('Cancel', ar: 'إلغاء', ku: 'هەڵوەشاندنەوە'),
     );
     if (picked == null || !mounted) return;
     setState(() => _cover = picked);

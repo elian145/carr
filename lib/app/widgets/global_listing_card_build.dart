@@ -145,7 +145,8 @@ Widget _buildGlobalCarCard(
       car['videos'] != null && (car['videos'] as List).isNotEmpty;
   final EdgeInsets listingCardTextPadding = listLayout
       ? const EdgeInsets.fromLTRB(10, 7, 8, 0)
-      : const EdgeInsets.fromLTRB(12, 8, 12, 6);
+      // Tight, fixed top inset so image→logo gap matches on iOS and Android.
+      : const EdgeInsets.fromLTRB(12, 6, 12, 6);
 
   Widget wrapCardTextTap(Widget child) {
     if (onCardTap == null) return child;
@@ -313,11 +314,11 @@ Widget _buildGlobalCarCard(
       : LayoutBuilder(
           builder: (context, constraints) {
             final bannerH = quickSell ? 35.0 : 0.0;
-            // Keep enough white space for a two-line title without scaling
-            // the specification chips and footer down.
+            // Room for two-line title + chips + footer at fixed sizes (no
+            // FittedBox shrink in the details block).
             final textReserve = AppResponsive.isCompactPhone(context)
-                ? 128.0
-                : 140.0;
+                ? 132.0
+                : 148.0;
             final maxImage = (constraints.maxHeight - bannerH - textReserve)
                 .clamp(quickSell ? 100.0 : 120.0, 230.0);
             final baseImageH = AppResponsive.listingGridImageHeight(

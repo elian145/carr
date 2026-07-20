@@ -62,12 +62,15 @@ Widget _buildGridCarCardInnerText(
 }) {
   // Grid tiles: brand logo + title, trim, year/price, mileage/city.
   final bool compact = AppResponsive.isCompactPhone(context);
-  final double titleBoxFontSize = compact ? 13 : 15;
-  final double titleFontSize = compact ? 14 : 17;
+  // Fixed title metrics so the brand logo sits at the same spot on every card.
+  const double titleFontSize = 15;
   const double titleLineHeight = 1.12;
   const int titleMaxLines = 2;
-  final double reservedTitleHeight =
-      titleBoxFontSize * titleLineHeight * titleMaxLines;
+  const double logoSize = 24;
+  const double logoPad = 4.0;
+  const double logoTitleGap = 6.0;
+  final double titleLineBoxHeight = titleFontSize * titleLineHeight;
+  final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines;
   final double sectionGap = compact ? 4.0 : 6.0;
   final double blockGap = compact ? 6.0 : 8.0;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
@@ -124,115 +127,138 @@ Widget _buildGridCarCardInnerText(
     );
   }
 
-  final Widget titleBlock = LayoutBuilder(
-    builder: (context, constraints) {
-      final double maxW = constraints.maxWidth;
-      final double logoSize = maxW < 130
-          ? 20
-          : (maxW < 150 ? 22 : (maxW < 175 ? 24 : 28));
-      const double logoPad = 4.0;
-      final double logoInner = logoSize - (logoPad * 2);
-      final double gap = maxW < 150 ? 4 : (maxW < 175 ? 6 : 8);
-      final double effectiveTitleFontSize = maxW < 130
-          ? 13
-          : (maxW < 150 ? 14 : (maxW < 175 ? 15 : titleFontSize));
-      final bool showLogo =
-          car['brand'] != null && car['brand'].toString().trim().isNotEmpty;
-      final String titleText = localizedCarTitleForCard(context, car);
-      final double titleMaxWidth = (maxW - (showLogo ? logoSize + gap : 0))
-          .clamp(0.0, double.infinity);
-      final titleProbe = TextPainter(
-        text: TextSpan(
-          text: titleText,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: effectiveTitleFontSize,
-            height: titleLineHeight,
-          ),
+  /// Year / mileage chips: soft accent tint + icon so specs feel less flat.
+  Widget yearMileageChip(String value, {required IconData icon}) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 5 : 7,
+        vertical: compact ? 4 : 5.5,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? [
+                  priceAccent.withValues(alpha: 0.10),
+                  priceAccent.withValues(alpha: 0.04),
+                ]
+              : [
+                  priceAccent.withValues(alpha: 0.22),
+                  priceAccent.withValues(alpha: 0.10),
+                ],
         ),
-        maxLines: 1,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
+          width: 1,
+        ),
+      ),
+      child: Row(
         textDirection: textDirection,
-        textScaler: TextScaler.noScaling,
-      )..layout(maxWidth: titleMaxWidth);
-      final bool titleIsSingleLine = !titleProbe.didExceedMaxLines;
-      final double titleRowHeight = reservedTitleHeight > logoSize
-          ? reservedTitleHeight
-          : logoSize;
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: compact ? 11 : 12, color: priceAccent),
+          SizedBox(width: compact ? 3 : 4),
+          Text(
+            value,
+            textDirection: textDirection,
+            textAlign: TextAlign.start,
+            textScaler: const TextScaler.linear(1.0),
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyle(
+              color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
+              fontSize: compact ? 11 : 12.5,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              letterSpacing: 0.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-      return Transform.translate(
-        offset: Offset(leadingShift, 0),
-        child: Row(
-          textDirection: textDirection,
-          crossAxisAlignment: titleIsSingleLine
-              ? CrossAxisAlignment.center
-              : CrossAxisAlignment.start,
-          children: [
-            if (showLogo)
-              SizedBox(
+  const double logoInner = logoSize - (logoPad * 2);
+  final bool showLogo =
+      car['brand'] != null && car['brand'].toString().trim().isNotEmpty;
+  final String titleText = localizedCarTitleForCard(context, car);
+  final titleStyle = TextStyle(
+    fontWeight: FontWeight.bold,
+    color: titleTextColor,
+    fontSize: titleFontSize,
+    height: titleLineHeight,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+  final titleStrut = StrutStyle(
+    fontSize: titleFontSize,
+    height: titleLineHeight,
+    fontWeight: FontWeight.bold,
+    forceStrutHeight: true,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  final Widget titleBlock = Transform.translate(
+    offset: Offset(leadingShift, 0),
+    child: SizedBox(
+      height: reservedTitleHeight,
+      child: Row(
+        textDirection: textDirection,
+        // Center logo with the title block so one- and two-line names share
+        // the same vertical midpoint (logo sits slightly below the top edge).
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (showLogo)
+            SizedBox(
+              width: logoSize,
+              height: logoSize,
+              child: Container(
                 width: logoSize,
                 height: logoSize,
-                child: Container(
-                  width: logoSize,
-                  height: logoSize,
-                  padding: const EdgeInsets.all(logoPad),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                      color: isLight
-                          ? const Color(0xFFD0D0D0)
-                          : Colors.white.withValues(alpha: 0.30),
-                    ),
-                    borderRadius: BorderRadius.circular(8),
+                padding: const EdgeInsets.all(logoPad),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: isLight
+                        ? const Color(0xFFD0D0D0)
+                        : Colors.white.withValues(alpha: 0.30),
                   ),
-                  child: CachedNetworkImage(
-                    imageUrl:
-                        '${getApiBase()}/static/images/brands/$brandId.png',
-                    placeholder: (context, url) => SizedBox(
-                      width: logoInner,
-                      height: logoInner,
-                      child: const CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    errorWidget: (context, url, error) => const Icon(
-                      Icons.directions_car,
-                      size: 20,
-                      color: Color(0xFFFF6B00),
-                    ),
-                    fit: BoxFit.contain,
-                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-            if (showLogo) SizedBox(width: gap),
-            Expanded(
-              child: SizedBox(
-                height: titleRowHeight,
-                child: Align(
-                  alignment: titleIsSingleLine
-                      ? (isRtl ? Alignment.centerRight : Alignment.centerLeft)
-                      : (isRtl ? Alignment.topRight : Alignment.topLeft),
-                  child: AutoSizeText(
-                    titleText,
-                    textDirection: textDirection,
-                    textScaleFactor: 1.0,
-                    textAlign: TextAlign.start,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: titleTextColor,
-                      fontSize: effectiveTitleFontSize,
-                      height: titleLineHeight,
-                    ),
-                    maxLines: titleMaxLines,
-                    minFontSize: 8,
-                    stepGranularity: 0.25,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: true,
+                child: CachedNetworkImage(
+                  imageUrl: '${getApiBase()}/static/images/brands/$brandId.png',
+                  placeholder: (context, url) => const SizedBox(
+                    width: logoInner,
+                    height: logoInner,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
+                  errorWidget: (context, url, error) => const Icon(
+                    Icons.directions_car,
+                    size: 20,
+                    color: Color(0xFFFF6B00),
+                  ),
+                  fit: BoxFit.contain,
                 ),
               ),
             ),
-          ],
-        ),
-      );
-    },
+          if (showLogo) const SizedBox(width: logoTitleGap),
+          Expanded(
+            child: Text(
+              titleText,
+              textDirection: textDirection,
+              textScaler: TextScaler.noScaling,
+              textAlign: TextAlign.start,
+              style: titleStyle,
+              strutStyle: titleStrut,
+              maxLines: titleMaxLines,
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+            ),
+          ),
+        ],
+      ),
+    ),
   );
 
   final bool hasDetail = engineLine.isNotEmpty || trimLine.isNotEmpty;
@@ -278,11 +304,23 @@ Widget _buildGridCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (yearDisplay.isNotEmpty)
-              infoChip(yearDisplay, color: metaTextColor),
+              yearMileageChip(
+                yearDisplay,
+                icon: Icons.calendar_today_rounded,
+              ),
             if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
               SizedBox(width: compact ? 4 : 6),
             if (mileageDisplay.isNotEmpty)
-              Flexible(child: infoChip(mileageDisplay, color: metaTextColor)),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                  child: yearMileageChip(
+                    mileageDisplay,
+                    icon: Icons.speed_rounded,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -379,33 +417,18 @@ Widget _buildGridCarCardInnerText(
     ),
   );
 
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      final topDetails = Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          titleBlock,
-          if (hasDetail) trimBlock,
-          if (hasSpecs) yearPriceBlock,
-        ],
-      );
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.topCenter,
-              child: SizedBox(width: constraints.maxWidth, child: topDetails),
-            ),
-          ),
-          SizedBox(height: sectionGap),
-          mileageCityRow,
-        ],
-      );
-    },
+  // Fixed spacing (no FittedBox): leftover height sits between the specs and
+  // the footer so logo/title/chip sizes stay identical across phone sizes.
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      titleBlock,
+      if (hasDetail) trimBlock,
+      if (hasSpecs) yearPriceBlock,
+      const Spacer(),
+      SizedBox(height: sectionGap),
+      mileageCityRow,
+    ],
   );
 }
 
@@ -481,10 +504,10 @@ Widget _buildListCarCardInnerText(
         const SizedBox(width: 6),
       ],
       Expanded(
-        child: AutoSizeText(
+        child: Text(
           titleText,
           textDirection: textDirection,
-          textScaleFactor: 1.0,
+          textScaler: TextScaler.noScaling,
           textAlign: TextAlign.start,
           style: TextStyle(
             fontWeight: FontWeight.w800,
@@ -493,8 +516,6 @@ Widget _buildListCarCardInnerText(
             height: 1.1,
           ),
           maxLines: 2,
-          minFontSize: 11,
-          stepGranularity: 0.25,
           overflow: TextOverflow.ellipsis,
           softWrap: true,
         ),
@@ -548,37 +569,66 @@ Widget _buildListCarCardInnerText(
     );
   }
 
+  Widget yearMileageChip(String value, {required IconData icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? [
+                  priceAccent.withValues(alpha: 0.10),
+                  priceAccent.withValues(alpha: 0.04),
+                ]
+              : [
+                  priceAccent.withValues(alpha: 0.22),
+                  priceAccent.withValues(alpha: 0.10),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        textDirection: textDirection,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: priceAccent),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            textScaler: const TextScaler.linear(1.0),
+            maxLines: 1,
+            softWrap: false,
+            style: TextStyle(
+              color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              letterSpacing: 0.1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   final Widget specsRow = Row(
     textDirection: textDirection,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      infoChip(
-        Text(
-          yearText,
-          textScaler: const TextScaler.linear(1.0),
-          maxLines: 1,
-          style: TextStyle(
-            color: metaTextColor,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            height: 1,
-          ),
-        ),
-      ),
+      yearMileageChip(yearText, icon: Icons.calendar_today_rounded),
       const SizedBox(width: 6),
       Flexible(
-        child: infoChip(
-          Text(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+          child: yearMileageChip(
             mileageText,
-            textScaler: const TextScaler.linear(1.0),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: metaTextColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              height: 1,
-            ),
+            icon: Icons.speed_rounded,
           ),
         ),
       ),

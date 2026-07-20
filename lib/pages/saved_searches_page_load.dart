@@ -36,38 +36,6 @@ mixin _SavedSearchesPageLoad on _SavedSearchesPageFields {
     await SavedSearchService.persistLocal(_items);
   }
 
-  void _rename(int index) async {
-    final controller = TextEditingController(
-      text: _items[index]['name']?.toString() ?? '',
-    );
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Rename'),
-        content: TextField(controller: controller, autofocus: true),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context)!.ok),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(AppLocalizations.of(context)!.save),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) {
-      setState(() {
-        _items[index]['name'] = controller.text.trim().isEmpty
-            ? _items[index]['name']
-            : controller.text.trim();
-      });
-      await _save();
-      unawaited(SavedSearchService.pushItemToServer(_items[index]));
-    }
-  }
-
   void _delete(int index) async {
     final id = (_items[index]['id'] ?? '').toString();
     setState(() {

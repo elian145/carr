@@ -123,8 +123,8 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
         ? AppThemes.lightAppBackground
         : AppThemes.darkHomeShellBackground;
     final bannerHeight = bannerUrl.isNotEmpty
-        ? (MediaQuery.sizeOf(context).width * 0.46)
-              .clamp(160.0, 260.0)
+        ? (MediaQuery.sizeOf(context).width * 0.68)
+              .clamp(220.0, 360.0)
               .toDouble()
         : 144.0;
 
@@ -138,50 +138,63 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
             left: 0,
             right: 0,
             height: bannerHeight,
-            child: bannerUrl.isNotEmpty
-                ? Image.network(
-                    bannerUrl,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                    errorBuilder: (context, error, stackTrace) => ColoredBox(
-                      color: scheme.surfaceContainerHighest,
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        size: 56,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                : ColoredBox(
-                    color: scheme.surfaceContainerHighest,
-                    child: Center(
-                      child: Icon(
-                        Icons.storefront_rounded,
-                        size: 56,
-                        color: scheme.onSurfaceVariant,
+            child: GestureDetector(
+              onTap: bannerUrl.isEmpty
+                  ? null
+                  : () {
+                      Navigator.of(context).push(
+                        AppPageRoute(
+                          builder: (_) => FullScreenGalleryPage(
+                            imageUrls: [bannerUrl],
+                          ),
+                        ),
+                      );
+                    },
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  bannerUrl.isNotEmpty
+                      ? Image.network(
+                          bannerUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                          errorBuilder: (context, error, stackTrace) =>
+                              ColoredBox(
+                            color: scheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.storefront_rounded,
+                              size: 56,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      : ColoredBox(
+                          color: scheme.surfaceContainerHighest,
+                          child: Center(
+                            child: Icon(
+                              Icons.storefront_rounded,
+                              size: 56,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.12),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.55),
+                        ],
+                        stops: const [0.0, 0.28, 0.7, 1.0],
                       ),
                     ),
                   ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: bannerHeight,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.12),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.35),
-                    Colors.black.withValues(alpha: 0.55),
-                  ],
-                  stops: const [0.0, 0.28, 0.7, 1.0],
-                ),
+                ],
               ),
             ),
           ),
