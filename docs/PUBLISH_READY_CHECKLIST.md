@@ -80,3 +80,7 @@ Runs static preflight, `flutter analyze`, `flutter test`, and backend factory sm
 - Launcher icons generated: `dart run flutter_launcher_icons` (source: `assets/icon/app_icon.png`).
 - App screenshots, icon, and release notes are finalized.
 - See `docs/STORE_SUBMISSION.md` for permission justifications and data safety/privacy label inputs.
+- Account delete requires password; force-update gates live at `/api/config/app` (admin Settings).
+- Production listings start as `pending` unless `LISTING_REQUIRE_APPROVAL=0`.
+- App Links setup: [`ANDROID_APP_LINKS_SETUP.md`](ANDROID_APP_LINKS_SETUP.md).
+- Store creatives starters are in `store_assets/` (icon + feature graphic + listing copy). **Phone screenshots still required.**

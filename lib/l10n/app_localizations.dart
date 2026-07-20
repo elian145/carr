@@ -190,29 +190,11 @@ abstract class AppLocalizations {
   /// **'Search'**
   String get homeSearchHeading;
 
-  /// No description provided for @paymentHistoryTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Payment History'**
-  String get paymentHistoryTitle;
-
-  /// No description provided for @paymentInitiateTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Payment Initiate'**
-  String get paymentInitiateTitle;
-
   /// No description provided for @chatConversationTitle.
   ///
   /// In en, this message translates to:
   /// **'Chat Conversation'**
   String get chatConversationTitle;
-
-  /// No description provided for @paymentStatusTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Payment Status'**
-  String get paymentStatusTitle;
 
   /// No description provided for @editListingTitle.
   ///
@@ -1981,19 +1963,25 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In en, this message translates to:
-  /// **'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.'**
+  /// **'This will permanently delete your account and all your data (listings, messages, favorites). If full deletion is blocked by system constraints, your account is deactivated and personal data and listing media are scrubbed. This cannot be undone.'**
   String get deleteAccountBody;
+
+  /// No description provided for @passwordRequiredConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordRequiredConfirm;
 
   /// No description provided for @passwordOptionalConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Password (optional)'**
+  /// **'Password'**
   String get passwordOptionalConfirm;
 
   /// No description provided for @confirmWithPasswordHint.
   ///
   /// In en, this message translates to:
-  /// **'Confirm with password if you have one'**
+  /// **'Enter your account password to confirm'**
   String get confirmWithPasswordHint;
 
   /// No description provided for @deleteMyAccount.
@@ -2319,12 +2307,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Help & Support'**
   String get helpSupportTitle;
-
-  /// No description provided for @helpSupportComingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Help & Support feature coming soon!'**
-  String get helpSupportComingSoon;
 
   /// No description provided for @carComparisonCount.
   ///
@@ -3165,6 +3147,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select multiple videos'**
   String get chatSendVideoSubtitle;
+
+  /// No description provided for @listingSubmittedPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing submitted for review. Track it under My Listings → Pending.'**
+  String get listingSubmittedPending;
+
+  /// No description provided for @listingSubmittedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing submitted! It may appear after admin review.'**
+  String get listingSubmittedSuccess;
+
+  /// No description provided for @homeOfflineCachedBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline. Showing cached listings.'**
+  String get homeOfflineCachedBanner;
+
+  /// No description provided for @myListingsPendingFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get myListingsPendingFilter;
+
+  /// No description provided for @myListingsNoPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No pending listings'**
+  String get myListingsNoPendingTitle;
+
+  /// No description provided for @myListingsNoPendingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Listings waiting for admin approval will appear here.'**
+  String get myListingsNoPendingHint;
 }
 
 class _AppLocalizationsDelegate

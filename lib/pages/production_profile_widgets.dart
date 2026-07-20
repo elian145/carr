@@ -127,10 +127,10 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
   Future<void> _showDeleteAccountDialog(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
     final password = await showDeleteAccountPasswordDialog(context);
-    if (password == null || !context.mounted) return;
+    if (password == null || password.isEmpty || !context.mounted) return;
     try {
       await AuthService().deleteAccount(
-        password: password.isEmpty ? null : password,
+        password: password,
       );
       if (!context.mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);

@@ -26,7 +26,9 @@ mixin _SellStep3Catalog on _SellStep3Fields {
           ? data['currency'].toString()
           : selectedCurrency;
       final rawPrice = selectedPrice ?? '';
-      _priceController.text = rawPrice.replaceAll(RegExp(r'[^\d.]'), '');
+      _priceController.text = ThousandsSeparatorInputFormatter.format(
+        rawPrice.replaceAll(RegExp(r'[^\d.]'), ''),
+      );
       _phoneController.text = (contactPhone ?? '').replaceFirst(RegExp(r'^\+964'), '');
       _descriptionController.text = data['description']?.toString() ?? '';
     });

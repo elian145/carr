@@ -67,6 +67,7 @@ import '../../shared/ui/make_model_keyword_search.dart';
 import '../../shared/ui/filter_option_icons.dart';
 import '../../shared/ui/keyboard.dart';
 import '../../shared/ui/responsive.dart';
+import '../../shared/ui/thousands_separator_input_formatter.dart';
 import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_listing_payload.dart';
@@ -426,4 +427,4 @@ String _pleaseSelectPhotoTextGlobal(BuildContext context) =>
     pleaseSelectPhotoText(context);
 
 String _listingSubmittedSuccessTextGlobal(BuildContext context) =>
-    listingSubmittedSuccessText(context);
+    listingSubmittedPendingText(context);

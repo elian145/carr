@@ -2,20 +2,28 @@
 
 Create these before Play Console / App Store Connect submission. Not bundled in the app.
 
-## Required
+## Ready in this folder
+
+| File | Use |
+|------|-----|
+| `play_icon_512.png` | Google Play high-res icon (512×512) |
+| `app_store_icon_1024.png` | App Store icon (1024×1024) |
+| `play_feature_graphic.png` | Google Play feature graphic (1024×500) |
+| `listing_copy.md` | Short/full description drafts |
+
+## Still needed (device screenshots)
 
 | Asset | Android | iOS |
 |-------|---------|-----|
-| App icon | 512×512 PNG (Play) | 1024×1024 PNG (App Store) — source: `assets/icon/app_icon.png` |
 | Phone screenshots | 2–8 images, min 320px short side | 6.7" and 5.5" sizes per App Store Connect |
-| Feature graphic | 1024×500 PNG | N/A |
+| Tablet screenshots | Optional (7" / 10") | Optional |
 
-## Recommended
+Capture from a **prod** build: home feed, listing detail, sell flow, chat, dealers.
 
-- Tablet screenshots (7" and 10" for Play)
-- Short description (80 chars) and full description
-- Privacy policy URL: `{API_BASE}/privacy`
-- Terms URL: `{API_BASE}/terms`
-- Support email from `/api/config/trust`
+## URLs for store forms
+
+- Privacy: `https://carr-5hrm.onrender.com/privacy`
+- Terms: `https://carr-5hrm.onrender.com/terms`
+- Support: from `/api/config/trust` (`SUPPORT_EMAIL`)
 
 See `docs/STORE_SUBMISSION.md` for Data Safety and App Privacy form answers.

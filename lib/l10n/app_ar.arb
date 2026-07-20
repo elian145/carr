@@ -15,10 +15,7 @@
   "signupTitle": "إنشاء حساب",
   "profileTitle": "الملف الشخصي",
   "homeSearchHeading": "بحث",
-  "paymentHistoryTitle": "سجل الدفعات",
-  "paymentInitiateTitle": "بدء الدفع",
   "chatConversationTitle": "المحادثة",
-  "paymentStatusTitle": "حالة الدفع",
   "editListingTitle": "تعديل الإعلان",
   "brandLabel": "العلامة التجارية",
   "anyBrand": "أي علامة",
@@ -349,9 +346,10 @@
   "timeMinutesAgo": "قبل {count} دقيقة",
 
   "deleteAccountTitle": "حذف الحساب",
-  "deleteAccountBody": "سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. لا يمكن التراجع عن ذلك.",
-  "passwordOptionalConfirm": "كلمة المرور (اختياري)",
-  "confirmWithPasswordHint": "أكد بكلمة المرور إن وجدت",
+  "deleteAccountBody": "سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. إذا تعذر الحذف الكامل، يتم تعطيل الحساب وإزالة البيانات الشخصية ووسائط الإعلانات. لا يمكن التراجع عن ذلك.",
+  "passwordRequiredConfirm": "كلمة المرور",
+  "passwordOptionalConfirm": "كلمة المرور",
+  "confirmWithPasswordHint": "أدخل كلمة مرور حسابك للتأكيد",
   "deleteMyAccount": "حذف حسابي",
   "accountDeletedSnackbar": "تم حذف حسابك",
   "apiBaseTitle": "عنوان واجهة API",
@@ -411,7 +409,6 @@
 
   "accountActionsTitle": "إجراءات الحساب",
   "helpSupportTitle": "المساعدة والدعم",
-  "helpSupportComingSoon": "ميزة المساعدة والدعم قريباً!",
   "carComparisonCount": "مقارنة السيارات",
   "addNewButton": "إضافة جديد +",
   "yourListingsCount": "إعلاناتك ({count})",
@@ -561,6 +558,13 @@
   "chatSendImageTitle": "إرسال صورة",
   "chatSendImageSubtitle": "اختر عدة صور",
   "chatSendVideoTitle": "إرسال فيديو",
-  "chatSendVideoSubtitle": "اختر عدة فيديوهات"
+  "chatSendVideoSubtitle": "اختر عدة فيديوهات",
+
+  "listingSubmittedPending": "تم إرسال الإعلان للمراجعة. تابعه في إعلاناتي ← قيد المراجعة.",
+  "listingSubmittedSuccess": "تم إرسال الإعلان! قد يظهر بعد مراجعة المشرف.",
+  "homeOfflineCachedBanner": "أنت غير متصل. يتم عرض الإعلانات المخزنة.",
+  "myListingsPendingFilter": "قيد المراجعة",
+  "myListingsNoPendingTitle": "لا توجد إعلانات قيد المراجعة",
+  "myListingsNoPendingHint": "الإعلانات بانتظار موافقة المشرف ستظهر هنا."
 }
 

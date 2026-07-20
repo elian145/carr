@@ -26,6 +26,12 @@ SETTING_KEYS = (
     "dealer_subscription_price",
     "dealer_subscription_currency",
     "pricing_notes",
+    "min_app_version",
+    "min_android_build",
+    "min_ios_build",
+    "force_update_message",
+    "android_store_url",
+    "ios_store_url",
 )
 
 
@@ -50,6 +56,18 @@ def default_platform_settings() -> dict[str, Any]:
         "dealer_subscription_price": None,
         "dealer_subscription_currency": _env("DEALER_SUBSCRIPTION_CURRENCY", "USD"),
         "pricing_notes": "",
+        "min_app_version": _env("MIN_APP_VERSION", ""),
+        "min_android_build": _env("MIN_ANDROID_BUILD", ""),
+        "min_ios_build": _env("MIN_IOS_BUILD", ""),
+        "force_update_message": _env(
+            "FORCE_UPDATE_MESSAGE",
+            "Please update CarNet to continue.",
+        ),
+        "android_store_url": _env(
+            "ANDROID_STORE_URL",
+            "https://play.google.com/store/apps/details?id=com.carzo.app",
+        ),
+        "ios_store_url": _env("IOS_STORE_URL", ""),
     }
 
 

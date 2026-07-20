@@ -9,6 +9,7 @@ import { formatNumber } from "@/lib/format";
 const EMPTY_BADGES: NavBadges = {
   pendingReports: 0,
   pendingDealers: 0,
+  pendingListings: 0,
   users: 0,
   listings: 0,
   dealers: 0,

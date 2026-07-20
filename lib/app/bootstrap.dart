@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../services/connectivity_service.dart';
 import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
@@ -79,6 +80,9 @@ void _runZonedApp(Widget app) {
       Future.microtask(() async {
         try {
           await PushNotificationService.initialize();
+        } catch (e, st) { logNonFatal(e, st); }
+        try {
+          await ConnectivityService.instance.start();
         } catch (e, st) { logNonFatal(e, st); }
         try {
           await LocaleController.loadSavedLocale();

@@ -14,10 +14,7 @@
   "signupTitle": "Sign Up",
   "profileTitle": "Profile",
   "homeSearchHeading": "Search",
-  "paymentHistoryTitle": "Payment History",
-  "paymentInitiateTitle": "Payment Initiate",
   "chatConversationTitle": "Chat Conversation",
-  "paymentStatusTitle": "Payment Status",
   "editListingTitle": "Edit Listing",
   "brandLabel": "Brand",
   "anyBrand": "Any Brand",
@@ -349,9 +346,10 @@
   "timeMinutesAgo": "{count} minutes ago",
 
   "deleteAccountTitle": "Delete account",
-  "deleteAccountBody": "This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.",
-  "passwordOptionalConfirm": "Password (optional)",
-  "confirmWithPasswordHint": "Confirm with password if you have one",
+  "deleteAccountBody": "This will permanently delete your account and all your data (listings, messages, favorites). If full deletion is blocked by system constraints, your account is deactivated and personal data and listing media are scrubbed. This cannot be undone.",
+  "passwordRequiredConfirm": "Password",
+  "passwordOptionalConfirm": "Password",
+  "confirmWithPasswordHint": "Enter your account password to confirm",
   "deleteMyAccount": "Delete my account",
   "accountDeletedSnackbar": "Your account has been deleted",
   "apiBaseTitle": "API base",
@@ -411,7 +409,6 @@
 
   "accountActionsTitle": "Account Actions",
   "helpSupportTitle": "Help & Support",
-  "helpSupportComingSoon": "Help & Support feature coming soon!",
   "carComparisonCount": "Car Comparison",
   "addNewButton": "Add New +",
   "yourListingsCount": "Your Listings ({count})",
@@ -561,6 +558,13 @@
   "chatSendImageTitle": "Send image",
   "chatSendImageSubtitle": "Select multiple images",
   "chatSendVideoTitle": "Send video",
-  "chatSendVideoSubtitle": "Select multiple videos"
+  "chatSendVideoSubtitle": "Select multiple videos",
+
+  "listingSubmittedPending": "Listing submitted for review. Track it under My Listings → Pending.",
+  "listingSubmittedSuccess": "Listing submitted! It may appear after admin review.",
+  "homeOfflineCachedBanner": "You are offline. Showing cached listings.",
+  "myListingsPendingFilter": "Pending",
+  "myListingsNoPendingTitle": "No pending listings",
+  "myListingsNoPendingHint": "Listings waiting for admin approval will appear here."
 }
 

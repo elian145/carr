@@ -31,6 +31,7 @@ Widget _buildGlobalCarCard(
   final bool quickSell =
       car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
   final bool sold = isListingSold(Map<String, dynamic>.from(car));
+  final bool pending = listingShowsPendingBadge(Map<String, dynamic>.from(car));
   final bool featured = listingIsFeatured(car);
   final String yearRaw = (car['year'] ?? '').toString().trim();
   final String mileageRaw = (car['mileage'] ?? '').toString().trim();
@@ -259,6 +260,13 @@ Widget _buildGlobalCarCard(
                                     context,
                                     large: true,
                                   ),
+                                )
+                              else if (pending)
+                                Center(
+                                  child: buildListingPendingBadge(
+                                    context,
+                                    large: true,
+                                  ),
                                 ),
                             ],
                           ),
@@ -376,6 +384,13 @@ Widget _buildGlobalCarCard(
                         if (sold)
                           Center(
                             child: buildListingSoldBadge(context, large: true),
+                          )
+                        else if (pending)
+                          Center(
+                            child: buildListingPendingBadge(
+                              context,
+                              large: true,
+                            ),
                           ),
                       ],
                     ),

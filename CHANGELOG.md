@@ -79,6 +79,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Planned (not yet complete)
 
 - Set `REDIS_URL` in production for multi-worker rate limits (see `docs/DEPLOY_ENV_CHECKLIST.md`).
+- Set `ANDROID_SHA256_CERT_FINGERPRINTS` on Render so `/.well-known/assetlinks.json` returns 200.
+- Produce Play/App Store screenshots and feature graphic under `store_assets/`.
+- Confirm monitored `SUPPORT_EMAIL` and pass `SENTRY_DSN` on store builds.
+- Optional: migrate remaining `trLegacyText` call sites to gen-l10n; expand Semantics beyond nav/home/delete.
 
 ## [1.0.0] - 2026-05-20
 

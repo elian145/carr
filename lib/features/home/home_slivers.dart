@@ -132,6 +132,54 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
               ),
             ),
           ),
+        if (servingCachedFeed && cars.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Semantics(
+              liveRegion: true,
+              label: homeFeedOfflineBannerText(context),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_off, color: Colors.orange, size: 16),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        ConnectivityService.instance.isOnline.value
+                            ? homeFeedCachedResultsBannerText(context)
+                            : homeFeedOfflineBannerText(context),
+                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => fetchCars(bypassCache: true),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        minimumSize: Size(0, 0),
+                      ),
+                      child: Text(
+                        homeFeedRefreshText(context),
+                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         Builder(
           builder: (context) {
             final feedCars = mixFeaturedIntoListingFeed(

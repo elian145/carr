@@ -11,7 +11,7 @@ from werkzeug.utils import safe_join
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..media_processing import process_and_store_image
 from ..models import Car, CarImage, CarVideo, db
-from ..security import generate_secure_filename, validate_file_upload
+from ..security import generate_secure_filename, validate_file_upload, rate_limit
 
 bp = Blueprint("media", __name__)
 
@@ -311,6 +311,7 @@ def update_car_image_layout(car_id: str):
 
 @bp.route("/api/media/r2/sign-upload", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=60, window_minutes=60, per_ip=False)
 def r2_sign_upload():
     """
     Return a presigned PUT URL for uploading one file to R2 (image or video).
@@ -369,6 +370,7 @@ def r2_sign_upload():
 
 @bp.route("/api/cars/<car_id>/images", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=60, window_minutes=60, per_ip=False)
 def upload_car_images(car_id: str):
     """Upload car images (accepts 'files' or 'images') and save them."""
     try:
@@ -546,6 +548,7 @@ def attach_car_images(car_id: str):
 
 @bp.route("/api/cars/<car_id>/videos", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=20, window_minutes=60, per_ip=False)
 def upload_car_videos(car_id: str):
     """Upload car videos"""
     try:

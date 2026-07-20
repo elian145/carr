@@ -214,9 +214,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
             imageAssetForOption: plateTypeImageAsset,
             labelForOption: (ctx, o) => _translatePlateTypeLegacy(ctx, o),
             scrollHorizontally: true,
-            tileWidth: 120,
-            tileImageWidth: 96,
-            tileImageHeight: 24,
+            tileWidth: 148,
+            tileImageWidth: 132,
+            tileImageHeight: 40,
+            compactImageTile: true,
           ),
           _searchIconCardSection(
             context,
@@ -275,12 +276,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
   }
 
   String _searchShowCarsLabel(BuildContext context) {
-    final count = localizeDigits(context, cars.length.toString());
     return _trLegacyText(
       context,
-      'Show $count Cars',
-      ar: 'عرض $count سيارة',
-      ku: 'نیشاندانی $count ئۆتۆمبێل',
+      'Show Cars',
+      ar: 'عرض السيارات',
+      ku: 'نیشاندانی ئۆتۆمبێلەکان',
     );
   }
 

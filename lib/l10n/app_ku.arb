@@ -15,10 +15,7 @@
   "signupTitle": "خۆتۆمارکردن",
   "profileTitle": "پرۆفایل",
   "homeSearchHeading": "گەڕان",
-  "paymentHistoryTitle": "مێژووی پارەدان",
-  "paymentInitiateTitle": "دەستپێکردنی پارەدان",
   "chatConversationTitle": "گفتوگۆ",
-  "paymentStatusTitle": "دۆخی پارەدان",
   "editListingTitle": "دەستکاری ڕێکلام",
   "brandLabel": "بران",
   "anyBrand": "هەر برانێک",
@@ -349,9 +346,10 @@
   "timeMinutesAgo": "پێش {count} خولەک",
 
   "deleteAccountTitle": "سڕینەوەی هەژمار",
-  "deleteAccountBody": "هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ناگەڕێتەوە.",
-  "passwordOptionalConfirm": "وشەی نهێنی (هەلبژاردە)",
-  "confirmWithPasswordHint": "بە وشەی نهێنی پشتڕاست بکەرەوە ئەگەر هەتبێت",
+  "deleteAccountBody": "هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ئەگەر سڕینەوەی تەواو ئەستەم بوو، هەژمارەکە ناچالاک دەکرێت و زانیاری کەسی و میدیای ڕێکلام دەسڕدرێنەوە. ناگەڕێتەوە.",
+  "passwordRequiredConfirm": "وشەی نهێنی",
+  "passwordOptionalConfirm": "وشەی نهێنی",
+  "confirmWithPasswordHint": "وشەی نهێنی هەژمارەکەت بنووسە بۆ پشتڕاستکردنەوە",
   "deleteMyAccount": "هەژمارەکەم بسڕمەوە",
   "accountDeletedSnackbar": "هەژمارەکەت سڕایەوە",
   "apiBaseTitle": "بنەڕەتی API",
@@ -411,7 +409,6 @@
 
   "accountActionsTitle": "کردارەکانی هەژمار",
   "helpSupportTitle": "یارمەتی و پشتگیری",
-  "helpSupportComingSoon": "تایبەتمەندی یارمەتی و پشتگیری بەم زووانە!",
   "carComparisonCount": "بەراوردی ئۆتۆمبێل",
   "addNewButton": "زیادکردنی نوێ +",
   "yourListingsCount": "ڕێکلامەکانت ({count})",
@@ -561,6 +558,13 @@
   "chatSendImageTitle": "ناردنی وێنە",
   "chatSendImageSubtitle": "چەند وێنە هەڵبژێرە",
   "chatSendVideoTitle": "ناردنی ڤیدیۆ",
-  "chatSendVideoSubtitle": "چەند ڤیدیۆ هەڵبژێرە"
+  "chatSendVideoSubtitle": "چەند ڤیدیۆ هەڵبژێرە",
+
+  "listingSubmittedPending": "ڕیکلام بۆ پێداچوونەوە نێردرا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.",
+  "listingSubmittedSuccess": "ڕیکلام نێردرا! لەوانەیە دوای پێداچوونەوەی بەڕێوەبەر دەربکەوێت.",
+  "homeOfflineCachedBanner": "ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.",
+  "myListingsPendingFilter": "چاوەڕوان",
+  "myListingsNoPendingTitle": "هیچ ڕێکلامێکی چاوەڕوان نییە",
+  "myListingsNoPendingHint": "ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون."
 }
 

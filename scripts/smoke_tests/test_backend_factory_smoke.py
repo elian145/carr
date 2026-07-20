@@ -26,6 +26,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory(prefix="carlist_backend_smoke_")
         os.environ["APP_ENV"] = "testing"
         os.environ["SMS_PROVIDER"] = "console"
+        os.environ["LISTING_REQUIRE_APPROVAL"] = "0"
         os.environ["DB_PATH"] = os.path.join(self._tmp.name, "t.db")
 
         from kk.app_factory import create_app
@@ -747,6 +748,14 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertTrue((payload.get("privacy_url") or "").strip())
         self.assertTrue((payload.get("terms_url") or "").strip())
 
+        app_cfg = self.client.get("/api/config/app")
+        self.assertEqual(app_cfg.status_code, 200, app_cfg.data)
+        app_body = app_cfg.get_json() or {}
+        self.assertIn("min_app_version", app_body)
+        self.assertIn("android_store_url", app_body)
+        self.assertIn("listing_require_approval", app_body)
+        self.assertFalse(app_body.get("listing_require_approval"))
+
         terms = self.client.get("/terms")
         self.assertEqual(terms.status_code, 200, terms.data)
         self.assertIn(b"CarNet", terms.data)
@@ -754,6 +763,14 @@ class BackendFactorySmokeTest(unittest.TestCase):
         privacy = self.client.get("/privacy")
         self.assertEqual(privacy.status_code, 200, privacy.data)
         self.assertIn(b"CarNet", privacy.data)
+
+    def test_delete_account_requires_password(self):
+        missing = self.client.delete(
+            "/api/auth/delete-account",
+            headers=self._auth(self.viewer_token),
+            json={},
+        )
+        self.assertEqual(missing.status_code, 400, missing.data)
 
     def test_delete_account(self):
         r = self.client.delete(

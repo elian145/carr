@@ -73,9 +73,14 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
               ),
               style: TextStyle(color: style.onSurface),
               keyboardType: TextInputType.number,
+              inputFormatters: const [
+                ThousandsSeparatorInputFormatter(),
+              ],
               onChanged: (value) {
+                final digits =
+                    ThousandsSeparatorInputFormatter.digitsOnly(value);
                 setState(() {
-                  selectedMileage = value.isEmpty ? null : value;
+                  selectedMileage = digits.isEmpty ? null : digits;
                 });
                 _syncStep2DraftToParent();
               },
@@ -83,7 +88,9 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                 if (value == null || value.isEmpty) {
                   return loc.pleaseEnterMileage;
                 }
-                final mileage = int.tryParse(value);
+                final mileage = int.tryParse(
+                  ThousandsSeparatorInputFormatter.digitsOnly(value),
+                );
                 if (mileage == null) return loc.invalidMileage;
                 if (mileage < 0) return loc.mileageNegative;
                 return null;

@@ -24,6 +24,12 @@ type FormState = {
   dealer_subscription_price: string;
   dealer_subscription_currency: string;
   pricing_notes: string;
+  min_app_version: string;
+  min_android_build: string;
+  min_ios_build: string;
+  force_update_message: string;
+  android_store_url: string;
+  ios_store_url: string;
 };
 
 function toForm(payload: PlatformSettingsPayload): FormState {
@@ -50,6 +56,12 @@ function toForm(payload: PlatformSettingsPayload): FormState {
     dealer_subscription_price: pick("dealer_subscription_price"),
     dealer_subscription_currency: pick("dealer_subscription_currency") || "USD",
     pricing_notes: pick("pricing_notes"),
+    min_app_version: pick("min_app_version"),
+    min_android_build: pick("min_android_build"),
+    min_ios_build: pick("min_ios_build"),
+    force_update_message: pick("force_update_message"),
+    android_store_url: pick("android_store_url"),
+    ios_store_url: pick("ios_store_url"),
   };
 }
 
@@ -119,6 +131,12 @@ export default function SettingsPage() {
           : null,
         dealer_subscription_currency: form.dealer_subscription_currency,
         pricing_notes: form.pricing_notes,
+        min_app_version: form.min_app_version,
+        min_android_build: form.min_android_build,
+        min_ios_build: form.min_ios_build,
+        force_update_message: form.force_update_message,
+        android_store_url: form.android_store_url,
+        ios_store_url: form.ios_store_url,
       });
       setForm(toForm(payload));
       toast.success("Settings saved");
@@ -153,6 +171,12 @@ export default function SettingsPage() {
         dealer_subscription_price: null,
         dealer_subscription_currency: "",
         pricing_notes: "",
+        min_app_version: "",
+        min_android_build: "",
+        min_ios_build: "",
+        force_update_message: "",
+        android_store_url: "",
+        ios_store_url: "",
       });
       setForm(toForm(payload));
       toast.success("Overrides cleared");
@@ -278,10 +302,72 @@ export default function SettingsPage() {
             </section>
 
             <section className="rounded-xl border border-surface-border bg-surface-card p-5">
+              <h2 className="text-lg font-medium">Force update</h2>
+              <p className="mt-1 text-xs text-surface-muted">
+                Block older mobile builds. Leave version/build fields empty to
+                allow all installed versions. Exposed at{" "}
+                <code className="text-[11px]">/api/config/app</code>.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Field label="Min app version" hint="Semver, e.g. 1.0.1">
+                  <input
+                    className={inputClass}
+                    value={form.min_app_version}
+                    onChange={(e) => setField("min_app_version", e.target.value)}
+                    placeholder="1.0.1"
+                  />
+                </Field>
+                <Field label="Force update message">
+                  <input
+                    className={inputClass}
+                    value={form.force_update_message}
+                    onChange={(e) =>
+                      setField("force_update_message", e.target.value)
+                    }
+                  />
+                </Field>
+                <Field label="Min Android build number" hint="versionCode">
+                  <input
+                    className={inputClass}
+                    value={form.min_android_build}
+                    onChange={(e) =>
+                      setField("min_android_build", e.target.value)
+                    }
+                    placeholder="4"
+                  />
+                </Field>
+                <Field label="Min iOS build number" hint="CFBundleVersion">
+                  <input
+                    className={inputClass}
+                    value={form.min_ios_build}
+                    onChange={(e) => setField("min_ios_build", e.target.value)}
+                    placeholder="4"
+                  />
+                </Field>
+                <Field label="Android store URL">
+                  <input
+                    className={inputClass}
+                    value={form.android_store_url}
+                    onChange={(e) =>
+                      setField("android_store_url", e.target.value)
+                    }
+                  />
+                </Field>
+                <Field label="iOS store URL">
+                  <input
+                    className={inputClass}
+                    value={form.ios_store_url}
+                    onChange={(e) => setField("ios_store_url", e.target.value)}
+                  />
+                </Field>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-surface-border bg-surface-card p-5">
               <h2 className="text-lg font-medium">Feature & dealer pricing</h2>
               <p className="mt-1 text-xs text-surface-muted">
-                Reference pricing for ops/marketing. Payment checkout can wire to
-                these later.
+                Reference-only pricing for ops/marketing. In-app checkout is not
+                enabled — deals stay off-platform.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Field label="Featured listing price">

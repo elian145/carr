@@ -114,7 +114,9 @@ abstract final class _ApiServiceHttp {
           } else if (retryAfter is num) {
             retryAfterSeconds = retryAfter.toInt();
           }
-        } catch (_) {}
+        } catch (_) {
+          // Malformed rate-limit body — keep generic message.
+        }
 
         final retryHeader = response.headers['retry-after'];
         if (retryAfterSeconds == null && retryHeader != null) {
@@ -286,7 +288,9 @@ abstract final class _ApiServiceHttp {
             return true;
           }
         }
-      } catch (_) {}
+      } catch (e, st) {
+        logNonFatal(e, st, 'ApiService._tryRefreshToken');
+      }
       return false;
     }
 

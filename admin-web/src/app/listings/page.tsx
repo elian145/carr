@@ -275,9 +275,29 @@ function ListingsPageInner() {
                 }
                 options={[
                   { value: "all", label: "All" },
-                  ...statuses.map((s) => ({ value: s, label: s })),
+                  ...Array.from(
+                    new Set([
+                      "pending",
+                      "active",
+                      "sold",
+                      "hidden",
+                      "draft",
+                      ...statuses,
+                    ]),
+                  ).map((s) => ({ value: s, label: s })),
                 ]}
               />
+              <button
+                type="button"
+                onClick={() => replaceFilters({ status: "pending" })}
+                className={`rounded-lg px-3 py-1.5 text-xs ${
+                  status === "pending"
+                    ? "bg-amber-700 text-white"
+                    : "border border-amber-700/60 text-amber-200 hover:bg-amber-900/40"
+                }`}
+              >
+                Pending review
+              </button>
               <FilterSelect
                 label="Sort"
                 value={sort}
@@ -350,6 +370,16 @@ function ListingsPageInner() {
                 <span className="text-surface-muted">
                   {selected.size} selected
                 </span>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    runBulk("Approve for publish", { status: "active", is_active: true })
+                  }
+                  className="rounded-lg bg-amber-700 px-3 py-1.5 text-xs disabled:opacity-50"
+                >
+                  Approve (publish)
+                </button>
                 <button
                   type="button"
                   disabled={busy}

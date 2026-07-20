@@ -420,6 +420,17 @@ class FakeApiServer {
           'privacy_url': 'https://example.com/privacy',
           'terms_url': 'https://example.com/terms',
         });
+      case '/api/config/app':
+        return _json(200, {
+          'min_app_version': '',
+          'min_android_build': null,
+          'min_ios_build': null,
+          'force_update_message': 'Please update CarNet to continue.',
+          'android_store_url':
+              'https://play.google.com/store/apps/details?id=com.carzo.app',
+          'ios_store_url': '',
+          'listing_require_approval': false,
+        });
       case '/api/push/preferences':
         return _json(200, {'push_enabled': true});
       case '/api/dealers':

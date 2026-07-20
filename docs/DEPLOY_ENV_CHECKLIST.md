@@ -40,6 +40,8 @@ See [`kk/docs/UPLOAD_PERSISTENCE.md`](../kk/docs/UPLOAD_PERSISTENCE.md).
 |----------|-------|
 | `APPLE_TEAM_ID` | 10-character Apple Team ID |
 | `ANDROID_SHA256_CERT_FINGERPRINTS` | Release keystore SHA-256 (comma-separated). Generate locally: `python scripts/print_android_app_link_sha.py` |
+| `LISTING_REQUIRE_APPROVAL` | `1`/`true` to force new listings into `pending` until admin activates (default **on** when `APP_ENV=production`) |
+| `MIN_APP_VERSION` / `MIN_ANDROID_BUILD` / `MIN_IOS_BUILD` | Optional force-update gates (also editable in admin Settings) |
 
 Verify:
 

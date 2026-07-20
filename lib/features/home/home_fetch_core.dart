@@ -239,6 +239,7 @@ mixin _HomePageFetchCore on _HomePageFields {
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
+              servingCachedFeed = false;
               if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
             });
             _scheduleHomeScrollRestoreAfterListReady();
@@ -292,6 +293,7 @@ mixin _HomePageFetchCore on _HomePageFields {
             hasLoadedOnce = true;
             loadErrorMessage =
                 null; // Clear any previous error message on success
+            servingCachedFeed = false;
             if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
           });
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
@@ -378,14 +380,20 @@ mixin _HomePageFetchCore on _HomePageFields {
 
     // Only show error if all fallback strategies failed
     if (mounted) {
+      final offline = !ConnectivityService.instance.isOnline.value;
       setState(() {
         isLoading = false;
         hasLoadedOnce = true;
-        // Only show error if bypassing cache OR no cached data is available
-        if (bypassCache || cached == null) {
+        // Prefer cached feed when offline or when cache was already hydrated.
+        if (cars.isNotEmpty && (offline || cached != null)) {
+          loadErrorMessage = null;
+          servingCachedFeed = true;
+        } else if (bypassCache || cached == null) {
           loadErrorMessage = errorMessage;
+          servingCachedFeed = false;
         } else {
-          loadErrorMessage = null; // Clear error when using cached data
+          loadErrorMessage = null;
+          servingCachedFeed = true;
         }
       });
     }

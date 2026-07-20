@@ -962,8 +962,26 @@ def change_password():
         return jsonify({"message": "Failed to change password"}), 500
 
 
+def _scrub_user_listings_on_delete(user_id: int) -> None:
+    """Deactivate and scrub listing PII/media when hard-delete falls back to anonymize."""
+    from ..models import Car
+
+    cars = Car.query.filter_by(seller_id=user_id).all()
+    for car in cars:
+        car.is_active = False
+        car.status = "hidden"
+        car.description = None
+        car.vin = None
+        car.location = None
+        for img in list(car.images or []):
+            db.session.delete(img)
+        for vid in list(car.videos or []):
+            db.session.delete(vid)
+
+
 @bp.route("/api/auth/delete-account", methods=["POST", "DELETE"])
 @jwt_required()
+@rate_limit(max_requests=5, window_minutes=60, per_ip=False)
 def delete_account():
     """Permanently delete the authenticated user's account and all related data."""
     try:
@@ -976,8 +994,10 @@ def delete_account():
         data = request.get_json(silent=True) or {}
         password = (data.get("password") or data.get("current_password") or "").strip()
 
-        # If password is provided, verify it for extra confirmation
-        if password and not current_user.check_password(password):
+        # Always require password confirmation so a stolen JWT alone cannot wipe an account.
+        if not password:
+            return jsonify({"message": "Password is required to delete your account"}), 400
+        if not current_user.check_password(password):
             return jsonify({"message": "Incorrect password"}), 400
 
         user_id = current_user.id
@@ -1006,6 +1026,11 @@ def delete_account():
         if "email_verification" in table_names:
             EmailVerification.query.filter_by(user_id=user_id).delete()
 
+        if "saved_search" in table_names:
+            from ..models import SavedSearch
+
+            SavedSearch.query.filter_by(user_id=user_id).delete(synchronize_session=False)
+
         log_user_action(current_user, "account_deleted")
 
         try:
@@ -1013,11 +1038,37 @@ def delete_account():
             db.session.commit()
             return jsonify({"message": "Account deleted successfully"}), 200
         except Exception as hard_delete_error:
-            # Fallback: anonymize/deactivate account so the same phone can be re-used
-            # for new signup even if full hard delete fails due legacy constraints.
+            # Fallback: anonymize/deactivate and scrub listings so PII/media are not left public.
             db.session.rollback()
             suffix = secrets.token_hex(4)
             from ..time_utils import utcnow
+
+            # Re-load user after rollback
+            current_user = db.session.get(User, user_id)
+            if not current_user:
+                return jsonify({"message": "Account deleted successfully"}), 200
+
+            # Re-apply association clears after rollback
+            current_user.favorites = []
+            current_user.viewed_listings = []
+            if "message" in table_names:
+                Message.query.filter(
+                    (Message.sender_id == user_id) | (Message.receiver_id == user_id),
+                ).delete(synchronize_session=False)
+            if "saved_search" in table_names:
+                from ..models import SavedSearch
+
+                SavedSearch.query.filter_by(user_id=user_id).delete(
+                    synchronize_session=False
+                )
+            try:
+                _scrub_user_listings_on_delete(user_id)
+            except Exception as scrub_err:
+                current_app.logger.warning(
+                    "Listing scrub failed during anonymize for user_id=%s: %s",
+                    user_id,
+                    scrub_err,
+                )
 
             current_user.username = f"deleted_{suffix}"
             current_user.phone_number = f"del_{int(time.time())}_{suffix}"[:20]
@@ -1026,6 +1077,8 @@ def delete_account():
             current_user.last_name = "User"
             current_user.is_active = False
             current_user.is_verified = False
+            current_user.firebase_token = None
+            current_user.set_password(secrets.token_urlsafe(24))
             current_user.updated_at = utcnow()
             db.session.commit()
             current_app.logger.warning(

@@ -32,6 +32,22 @@ _ALLOWED_REGION_SPECS = frozenset(
 
 _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
 _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
+_PUBLIC_LISTING_STATUSES = frozenset({"active", "sold"})
+_MODERATION_LISTING_STATUSES = frozenset({"pending", "hidden", "draft"})
+
+
+def _listing_require_approval() -> bool:
+    """When true, new listings start as pending until an admin activates them."""
+    raw = (os.environ.get("LISTING_REQUIRE_APPROVAL") or "").strip().lower()
+    if raw in ("1", "true", "yes", "on"):
+        return True
+    if raw in ("0", "false", "no", "off"):
+        return False
+    env = (
+        os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production"
+    ).strip().lower()
+    return env == "production"
+
 
 def _normalize_vin(val) -> str | None:
     v = (val if isinstance(val, str) else str(val or "")).strip().upper()
@@ -45,8 +61,23 @@ def _listing_db_error_response(exc, *, action: str):
 
 
 def _public_listings_filter(query):
-    """Browseable listings only (not soft-deleted). Sold listings remain visible."""
-    return query.filter(Car.is_active.is_(True))
+    """Browseable listings only (active + sold). Pending/hidden/draft stay private."""
+    return query.filter(
+        Car.is_active.is_(True),
+        or_(Car.status.is_(None), Car.status.in_(tuple(_PUBLIC_LISTING_STATUSES))),
+    )
+
+
+def _listing_visible_to_viewer(car, viewer) -> bool:
+    """Public statuses are visible to everyone; pending/hidden only to owner/admin."""
+    status = (car.status or "active").strip().lower()
+    if status in _PUBLIC_LISTING_STATUSES or status == "":
+        return True
+    if viewer is None:
+        return False
+    if getattr(viewer, "is_admin", False):
+        return True
+    return getattr(viewer, "id", None) == getattr(car, "seller_id", None)
 
 
 def _split_prefer_csv(raw: str | None, *, limit: int = 8) -> list[str]:
@@ -695,6 +726,9 @@ def get_car(car_id: str):
         except Exception:
             current_user = None
 
+        if not _listing_visible_to_viewer(car, current_user):
+            return jsonify({"message": "Car not found"}), 404
+
         if current_user:
             log_user_action(current_user, "view_listing", "car", car.public_id)
 
@@ -711,6 +745,7 @@ def get_car(car_id: str):
 
 @bp.route("/api/cars", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=20, window_minutes=60, per_ip=False)
 def create_car():
     """Create new car listing."""
     try:
@@ -783,7 +818,8 @@ def create_car():
         currency = _s(raw.get("currency"), "USD")[:3] or "USD"
         trim = _s(raw.get("trim"), "base")
         seating = _i(raw.get("seating"), 5)
-        status = _s(raw.get("status"), "active")
+        # Clients cannot self-publish past moderation; status is server-controlled.
+        status = "pending" if _listing_require_approval() else "active"
         title_status_raw = _s(raw.get("title_status"), "clean").lower()
         # Persist title status submitted by sell flows; default to clean for unknown values.
         title_status = title_status_raw if title_status_raw in {"clean", "damaged"} else "clean"
@@ -1022,6 +1058,21 @@ def update_car(car_id: str):
             st = (str(data.get("status") or "").strip().lower())
             if st not in _ALLOWED_LISTING_STATUSES:
                 return jsonify({"message": "Invalid status"}), 400
+            current_status = (car.status or "active").strip().lower()
+            # Sellers cannot self-approve moderated listings.
+            if (
+                current_status in _MODERATION_LISTING_STATUSES
+                and st == "active"
+                and not getattr(current_user, "is_admin", False)
+            ):
+                return (
+                    jsonify(
+                        {
+                            "message": "Listing is awaiting admin review",
+                        }
+                    ),
+                    403,
+                )
             car.status = st
 
         if (car.title_status or "").lower() == "clean":
@@ -1125,6 +1176,19 @@ def mark_car_active(car_id: str):
         if err:
             return err
 
+        current_status = (car.status or "active").strip().lower()
+        if current_status in _MODERATION_LISTING_STATUSES:
+            return (
+                jsonify(
+                    {
+                        "message": "Listing is awaiting admin review and cannot be published by the seller",
+                    }
+                ),
+                403,
+            )
+        if current_status not in ("sold", "active"):
+            return jsonify({"message": "Listing cannot be marked active"}), 400
+
         car.status = "active"
         car.updated_at = utcnow()
         db.session.commit()
@@ -1147,7 +1211,7 @@ def get_my_listings():
         page = request.args.get("page", 1, type=int)
         per_page = min(request.args.get("per_page", 10, type=int), 50)
         status = (request.args.get("status") or "").strip().lower()
-        if status not in {"", "active", "sold"}:
+        if status not in {"", "active", "sold", "pending", "hidden", "draft"}:
             return jsonify({"message": "Invalid listing status"}), 400
 
         query = Car.query.filter_by(seller_id=current_user.id, is_active=True)

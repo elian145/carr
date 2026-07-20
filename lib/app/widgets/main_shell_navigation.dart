@@ -79,18 +79,22 @@ Widget buildFloatingBottomNav(
         BottomNavigationBarItem(
           icon: Icon(Icons.home),
           label: AppLocalizations.of(context)!.navHome,
+          tooltip: AppLocalizations.of(context)!.navHome,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.add),
           label: AppLocalizations.of(context)!.sellButton,
+          tooltip: AppLocalizations.of(context)!.sellButton,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.storefront_outlined),
           label: AppLocalizations.of(context)!.navDealers,
+          tooltip: AppLocalizations.of(context)!.navDealers,
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: AppLocalizations.of(context)!.navProfile,
+          tooltip: AppLocalizations.of(context)!.navProfile,
         ),
       ],
     ),
@@ -104,7 +108,8 @@ Widget buildFloatingBottomNav(
         );
 
   return Semantics(
-    label: AppLocalizations.of(context)!.navHome,
+    container: true,
+    label: 'Main navigation',
     child: Padding(
       padding: EdgeInsets.fromLTRB(compact ? 8 : 12, 0, compact ? 8 : 12, 10),
       child: SafeArea(

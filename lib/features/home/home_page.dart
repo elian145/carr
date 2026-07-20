@@ -21,6 +21,8 @@ abstract class _HomePageFields extends State<HomePage> {
   bool isLoading = true;
   bool hasLoadedOnce = false;
   String? loadErrorMessage;
+  /// True when feed is shown from cache after a network/offline failure.
+  bool servingCachedFeed = false;
 
   /// Inferred from browse history; used when [selectedSortBy] is unset.
   HomeInterestProfile? _homeInterestProfile;
@@ -398,6 +400,8 @@ class _HomePageState extends _HomePageFields
       ListingEvents.addDeleteHandler(_purgeDeletedFromHomeFeedCache);
     }
     ListingEvents.deletedListingId.addListener(_onHomeListingDeleted);
+    unawaited(ConnectivityService.instance.start());
+    ConnectivityService.instance.isOnline.addListener(_onConnectivityChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Avoid network calls during `flutter test` runs.
       // `FLUTTER_TEST` isn't reliably set as a compile-time define for all builds,
@@ -471,6 +475,17 @@ class _HomePageState extends _HomePageFields
     _HomePageFields._homeFeedCache.removeWhere((c) => listingMatchesId(c, id));
   }
 
+  void _onConnectivityChanged() {
+    if (!mounted) return;
+    final online = ConnectivityService.instance.isOnline.value;
+    if (online && servingCachedFeed) {
+      // Came back online — refresh feed quietly.
+      unawaited(fetchCars(bypassCache: true));
+    } else if (!online && cars.isNotEmpty) {
+      setState(() => servingCachedFeed = true);
+    }
+  }
+
   void _onHomeListingDeleted() {
     final id = ListingEvents.deletedListingId.value;
     if (id == null || id.isEmpty || !mounted) return;
@@ -482,6 +497,7 @@ class _HomePageState extends _HomePageFields
   @override
   void dispose() {
     ListingEvents.deletedListingId.removeListener(_onHomeListingDeleted);
+    ConnectivityService.instance.isOnline.removeListener(_onConnectivityChanged);
     _sortDebounceTimer?.cancel();
     unawaited(_persistFilters());
     _minPriceController.dispose();

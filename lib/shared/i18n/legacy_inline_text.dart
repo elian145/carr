@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 
+import '../../l10n/app_localizations.dart';
+
 /// Lightweight helpers for translating UI snippets not covered by [AppLocalizations].
 String trLegacyText(
   BuildContext context,
@@ -37,12 +39,23 @@ String pleaseSelectPhotoText(BuildContext context) {
 }
 
 String listingSubmittedSuccessText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Listing submitted successfully!',
-    ar: 'تم إرسال الإعلان بنجاح!',
-    ku: 'ڕیکلام بە سەرکەوتوویی نێردرا!',
-  );
+  return AppLocalizations.of(context)?.listingSubmittedSuccess ??
+      trLegacyText(
+        context,
+        'Listing submitted! It may appear after admin review.',
+        ar: 'تم إرسال الإعلان! قد يظهر بعد مراجعة المشرف.',
+        ku: 'ڕیکلام نێردرا! لەوانەیە دوای پێداچوونەوەی بەڕێوەبەر دەربکەوێت.',
+      );
+}
+
+String listingSubmittedPendingText(BuildContext context) {
+  return AppLocalizations.of(context)?.listingSubmittedPending ??
+      trLegacyText(
+        context,
+        'Listing submitted for review. You can track it under My Listings → Pending.',
+        ar: 'تم إرسال الإعلان للمراجعة. يمكنك متابعته في إعلاناتي ← قيد المراجعة.',
+        ku: 'ڕیکلام بۆ پێداچوونەوە نێردرا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.',
+      );
 }
 
 String couldNotLoadListingsText(BuildContext context) {
@@ -79,6 +92,16 @@ String homeFeedCachedResultsBannerText(BuildContext context) {
     ar: 'عرض النتائج المخزنة مؤقتاً',
     ku: 'پیشاندانی ئەنجامە کاشکراوەکان',
   );
+}
+
+String homeFeedOfflineBannerText(BuildContext context) {
+  return AppLocalizations.of(context)?.homeOfflineCachedBanner ??
+      trLegacyText(
+        context,
+        'You are offline. Showing cached listings.',
+        ar: 'أنت غير متصل. يتم عرض الإعلانات المخزنة.',
+        ku: 'ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.',
+      );
 }
 
 String homeFeedSortedLocallyText(BuildContext context) {

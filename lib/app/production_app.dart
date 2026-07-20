@@ -14,6 +14,7 @@ import 'carzo_shared.dart';
 import 'route_registry.dart';
 import 'production_routes.dart';
 import 'widgets/app_with_deep_links.dart';
+import 'widgets/force_update_gate.dart';
 
 export 'carzo_shared.dart'
     show
@@ -51,13 +52,15 @@ class MyApp extends StatelessWidget {
                 title: 'CarNet',
                 builder: (context, child) {
                   final shellColor = Theme.of(context).scaffoldBackgroundColor;
-                  return AppResponsive.wrapApp(
-                    context,
-                    ColoredBox(
-                      color: shellColor,
-                      child: EdgeSwipeBack(
-                        navigatorKey: productionNavigatorKey,
-                        child: child ?? const SizedBox.shrink(),
+                  return ForceUpdateGate(
+                    child: AppResponsive.wrapApp(
+                      context,
+                      ColoredBox(
+                        color: shellColor,
+                        child: EdgeSwipeBack(
+                          navigatorKey: productionNavigatorKey,
+                          child: child ?? const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                   );

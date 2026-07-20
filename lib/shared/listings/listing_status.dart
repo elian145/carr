@@ -4,4 +4,10 @@ bool isListingSold(Map<String, dynamic>? listing) {
   return status == 'sold';
 }
 
-bool isListingActive(Map<String, dynamic>? listing) => !isListingSold(listing);
+bool isListingPendingReview(Map<String, dynamic>? listing) {
+  final status = (listing?['status'] ?? '').toString().trim().toLowerCase();
+  return status == 'pending' || status == 'draft' || status == 'hidden';
+}
+
+bool isListingActive(Map<String, dynamic>? listing) =>
+    !isListingSold(listing) && !isListingPendingReview(listing);

@@ -80,10 +80,15 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
     }
 
     setState(() {
-      selectedMileage = d['mileage']?.toString();
+      final mileageRaw = ThousandsSeparatorInputFormatter.digitsOnly(
+        d['mileage']?.toString() ?? '',
+      );
+      selectedMileage = mileageRaw.isEmpty ? null : mileageRaw;
       selectedMileageUnit =
           d['mileage_unit']?.toString() == 'miles' ? 'miles' : 'km';
-      final mileageText = selectedMileage ?? '';
+      final mileageText = ThousandsSeparatorInputFormatter.format(
+        selectedMileage ?? '',
+      );
       if (_mileageController.text != mileageText) {
         _mileageController.text = mileageText;
       }

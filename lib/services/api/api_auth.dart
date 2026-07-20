@@ -210,7 +210,9 @@ abstract final class _ApiServiceAuth {
             body: body,
           )
           .timeout(ApiService._defaultTimeout);
-    } catch (_) {}
+    } catch (e, st) {
+      logNonFatal(e, st, 'ApiService.logout');
+    }
     await ApiService.clearTokens();
   }
 
@@ -226,14 +228,17 @@ abstract final class _ApiServiceAuth {
   }
 
   static Future<Map<String, dynamic>> deleteAccount({String? password}) async {
-    final body = <String, dynamic>{};
-    if (password != null && password.trim().isNotEmpty) {
-      body['password'] = password.trim();
+    final trimmed = (password ?? '').trim();
+    if (trimmed.isEmpty) {
+      throw ApiException(
+        statusCode: 400,
+        message: 'Password is required to delete your account',
+      );
     }
     return await ApiService._makeAuthenticatedRequest(
       'POST',
       '/auth/delete-account',
-      body: body.isNotEmpty ? body : null,
+      body: {'password': trimmed},
     );
   }
 

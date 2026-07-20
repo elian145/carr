@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
 import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/debug/app_log.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
@@ -24,7 +25,7 @@ import '../app/listing_shell.dart'
 
 part 'my_listings_page_widgets.dart';
 
-enum _MyListingsFilter { all, active, sold, draft }
+enum _MyListingsFilter { all, active, pending, sold, draft }
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -128,6 +129,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     try {
       final status = switch (_filter) {
         _MyListingsFilter.active => 'active',
+        _MyListingsFilter.pending => 'pending',
         _MyListingsFilter.sold => 'sold',
         _ => null,
       };

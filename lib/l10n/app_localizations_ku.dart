@@ -54,16 +54,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get homeSearchHeading => 'گەڕان';
 
   @override
-  String get paymentHistoryTitle => 'مێژووی پارەدان';
-
-  @override
-  String get paymentInitiateTitle => 'دەستپێکردنی پارەدان';
-
-  @override
   String get chatConversationTitle => 'گفتوگۆ';
-
-  @override
-  String get paymentStatusTitle => 'دۆخی پارەدان';
 
   @override
   String get editListingTitle => 'دەستکاری ڕێکلام';
@@ -992,14 +983,17 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ناگەڕێتەوە.';
+      'هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ئەگەر سڕینەوەی تەواو ئەستەم بوو، هەژمارەکە ناچالاک دەکرێت و زانیاری کەسی و میدیای ڕێکلام دەسڕدرێنەوە. ناگەڕێتەوە.';
 
   @override
-  String get passwordOptionalConfirm => 'وشەی نهێنی (هەلبژاردە)';
+  String get passwordRequiredConfirm => 'وشەی نهێنی';
+
+  @override
+  String get passwordOptionalConfirm => 'وشەی نهێنی';
 
   @override
   String get confirmWithPasswordHint =>
-      'بە وشەی نهێنی پشتڕاست بکەرەوە ئەگەر هەتبێت';
+      'وشەی نهێنی هەژمارەکەت بنووسە بۆ پشتڕاستکردنەوە';
 
   @override
   String get deleteMyAccount => 'هەژمارەکەم بسڕمەوە';
@@ -1165,10 +1159,6 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get helpSupportTitle => 'یارمەتی و پشتگیری';
-
-  @override
-  String get helpSupportComingSoon =>
-      'تایبەتمەندی یارمەتی و پشتگیری بەم زووانە!';
 
   @override
   String get carComparisonCount => 'بەراوردی ئۆتۆمبێل';
@@ -1616,4 +1606,26 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get chatSendVideoSubtitle => 'چەند ڤیدیۆ هەڵبژێرە';
+
+  @override
+  String get listingSubmittedPending =>
+      'ڕیکلام بۆ پێداچوونەوە نێردرا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.';
+
+  @override
+  String get listingSubmittedSuccess =>
+      'ڕیکلام نێردرا! لەوانەیە دوای پێداچوونەوەی بەڕێوەبەر دەربکەوێت.';
+
+  @override
+  String get homeOfflineCachedBanner =>
+      'ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.';
+
+  @override
+  String get myListingsPendingFilter => 'چاوەڕوان';
+
+  @override
+  String get myListingsNoPendingTitle => 'هیچ ڕێکلامێکی چاوەڕوان نییە';
+
+  @override
+  String get myListingsNoPendingHint =>
+      'ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون.';
 }

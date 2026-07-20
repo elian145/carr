@@ -15,7 +15,7 @@ type NavItem = {
   href: string;
   label: string;
   totalKey?: keyof NavBadges;
-  alertKey?: "pendingReports" | "pendingDealers";
+  alertKey?: "pendingReports" | "pendingDealers" | "pendingListings";
 };
 
 const NAV: NavItem[] = [
@@ -24,7 +24,12 @@ const NAV: NavItem[] = [
   { href: "/insights", label: "Insights" },
   { href: "/analytics", label: "Engagement" },
   { href: "/users", label: "Users", totalKey: "users" },
-  { href: "/listings", label: "Listings", totalKey: "listings" },
+  {
+    href: "/listings",
+    label: "Listings",
+    totalKey: "listings",
+    alertKey: "pendingListings",
+  },
   { href: "/reports", label: "Reports", alertKey: "pendingReports" },
   {
     href: "/dealers",

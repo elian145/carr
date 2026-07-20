@@ -5,6 +5,11 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     final filters = <(_MyListingsFilter, String)>[
       (_MyListingsFilter.all, _text('All', ar: 'الكل', ku: 'هەموو')),
       (_MyListingsFilter.active, _text('Active', ar: 'نشط', ku: 'چالاک')),
+      (
+        _MyListingsFilter.pending,
+        AppLocalizations.of(context)?.myListingsPendingFilter ??
+            _text('Pending', ar: 'قيد المراجعة', ku: 'چاوەڕوان'),
+      ),
       (_MyListingsFilter.sold, _text('Sold', ar: 'مُباع', ku: 'فرۆشراو')),
       (_MyListingsFilter.draft, _text('Draft', ar: 'مسودة', ku: 'ڕەشنووس')),
     ];
@@ -30,6 +35,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
               fontWeight: FontWeight.w700,
             ),
             showCheckmark: false,
+            tooltip: label,
           );
         },
       ),
@@ -160,6 +166,20 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
           ar: 'الإعلانات المتاحة للمشترين ستظهر هنا.',
           ku: 'ڕێکلامە بەردەستەکان بۆ کڕیاران لێرە دەردەکەون.',
         ),
+      ),
+      _MyListingsFilter.pending => (
+        loc?.myListingsNoPendingTitle ??
+            _text(
+              'No pending listings',
+              ar: 'لا توجد إعلانات قيد المراجعة',
+              ku: 'هیچ ڕێکلامێکی چاوەڕوان نییە',
+            ),
+        loc?.myListingsNoPendingHint ??
+            _text(
+              'Listings waiting for admin approval will appear here.',
+              ar: 'الإعلانات بانتظار موافقة المشرف ستظهر هنا.',
+              ku: 'ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون.',
+            ),
       ),
       _MyListingsFilter.sold => (
         _text(
@@ -293,7 +313,8 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
       final a = await AnalyticsService.getListingAnalytics(listingId);
       if (a.listingId.toString().isNotEmpty) return a;
       // If backend returned an empty id (unlikely), fall back to defaults.
-    } catch (_) {
+    } catch (e, st) {
+      logNonFatal(e, st);
       // Fall through to fallback below.
     }
 

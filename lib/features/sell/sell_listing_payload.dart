@@ -4,7 +4,10 @@ import '../../shared/i18n/region_spec_labels.dart';
 const double _kmPerMile = 1.609344;
 
 int sellMileageKmFromCarData(Map<String, dynamic> carData) {
-  final raw = int.tryParse(carData['mileage']?.toString() ?? '0') ?? 0;
+  final raw = int.tryParse(
+        (carData['mileage']?.toString() ?? '0').replaceAll(RegExp(r'[^0-9]'), ''),
+      ) ??
+      0;
   final unit = carData['mileage_unit']?.toString() ?? 'km';
   if (unit == 'miles') return (raw * _kmPerMile).round();
   return raw;

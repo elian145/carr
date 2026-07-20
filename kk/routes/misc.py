@@ -58,10 +58,69 @@ def _trust_config_payload() -> dict:
         }
 
 
+def _app_config_payload() -> dict:
+    """Public client version gates + store URLs (no secrets)."""
+    try:
+        from ..app_settings import get_platform_settings
+
+        s = get_platform_settings()
+    except Exception:
+        s = {}
+
+    def _s(key: str, default: str = "") -> str:
+        val = s.get(key)
+        if val is None:
+            return default
+        return str(val).strip()
+
+    def _i(key: str) -> int | None:
+        raw = _s(key)
+        if not raw:
+            return None
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    # Keep in sync with kk.routes.cars._listing_require_approval
+    raw_approval = (os.environ.get("LISTING_REQUIRE_APPROVAL") or "").strip().lower()
+    if raw_approval in ("1", "true", "yes", "on"):
+        require_approval = True
+    elif raw_approval in ("0", "false", "no", "off"):
+        require_approval = False
+    else:
+        env = (
+            os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production"
+        ).strip().lower()
+        require_approval = env == "production"
+
+    return {
+        "min_app_version": _s("min_app_version"),
+        "min_android_build": _i("min_android_build"),
+        "min_ios_build": _i("min_ios_build"),
+        "force_update_message": _s(
+            "force_update_message",
+            "Please update CarNet to continue.",
+        ),
+        "android_store_url": _s(
+            "android_store_url",
+            "https://play.google.com/store/apps/details?id=com.carzo.app",
+        ),
+        "ios_store_url": _s("ios_store_url"),
+        "listing_require_approval": require_approval,
+    }
+
+
 @bp.route("/api/config/trust", methods=["GET"])
 def trust_config():
     """Support contact + legal URLs for Help, signup, and settings."""
     return jsonify(_trust_config_payload()), 200
+
+
+@bp.route("/api/config/app", methods=["GET"])
+def app_config():
+    """Minimum client version gates + store URLs for force-update."""
+    return jsonify(_app_config_payload()), 200
 
 
 @bp.route("/terms", methods=["GET"])

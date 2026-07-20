@@ -9,15 +9,14 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
     if (b == null || m == null) return const SizedBox.shrink();
 
     if (!_specDbReady) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
+      return FilterCard(
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
               const SizedBox(
-                width: 22,
-                height: 22,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: 12),
@@ -25,10 +24,11 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                 child: Text(
                   _trLegacyText(
                     context,
-                    'Loading vehicle spec database...',
-                    ar: 'جاري تحميل قاعدة بيانات مواصفات السيارة...',
-                    ku: 'بنکەی زانیاری سپێسی ئۆتۆمبێل بار دەکرێت...',
+                    'Loading vehicle specs…',
+                    ar: 'جاري تحميل مواصفات السيارة…',
+                    ku: 'سپێسی ئۆتۆمبێل بار دەکرێت…',
                   ),
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ),
             ],
@@ -37,20 +37,17 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
       );
     }
     if (_specIdx == null) {
-      return Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        color: Colors.orange.shade50,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Text(
-            _specLoadErr ??
-                _trLegacyText(
-                  context,
-                  'Spec database unavailable. Run a full app restart after flutter pub get.',
-                  ar: 'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بالكامل بعد flutter pub get.',
-                  ku: 'بنکەی زانیاری سپێس بەردەست نییە. دوای flutter pub get ئەپەکە بە تەواوی دووبارە بکەرەوە.',
-                ),
-          ),
+      return FilterCard(
+        isError: true,
+        child: Text(
+          _specLoadErr ??
+              _trLegacyText(
+                context,
+                'Spec database unavailable. Restart the app after flutter pub get.',
+                ar: 'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بعد flutter pub get.',
+                ku: 'بنکەی زانیاری سپێس بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.',
+              ),
+          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
         ),
       );
     }
@@ -62,9 +59,6 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
     final variants = idx.variantsForAppModel(b, m);
     if (variants.isEmpty) return const SizedBox.shrink();
 
-    final listingYear =
-        int.tryParse(_yearController.text.trim()) ??
-        int.tryParse((selectedYear ?? '').trim());
     final years = idx.yearsForCatalogStep(
       b,
       m,
@@ -91,139 +85,156 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
           )
         : null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    final style = filterDialogStyle(context);
+    final canApply = preview != null || unionPreview != null;
+
+    String? previewSummary;
+    if (preview != null) {
+      previewSummary = [
+        _translateValueGlobal(context, preview.engineType) ?? preview.engineType,
+        _translateValueGlobal(context, preview.transmission) ??
+            preview.transmission,
+        _translateValueGlobal(context, preview.driveType) ?? preview.driveType,
+        _translateValueGlobal(context, preview.bodyType) ?? preview.bodyType,
+      ].where((s) => s.trim().isNotEmpty).join(' · ');
+    }
+
+    return FilterCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            _trLegacyText(
+              context,
+              'Catalog auto-fill',
+              ar: 'تعبئة تلقائية من الكتالوج',
+              ku: 'پڕکردنەوەی خۆکاری کاتالۆگ',
+            ),
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              color: style.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _trLegacyText(
+              context,
+              'Select a model year to load matching specs.',
+              ar: 'اختر سنة الموديل لتحميل المواصفات المطابقة.',
+              ku: 'ساڵی مۆدێل هەڵبژێرە بۆ بارکردنی سپێسی گونجاو.',
+            ),
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.35,
+              color: Colors.grey[600],
+            ),
+          ),
+          if (years.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            DropdownButtonFormField<int>(
+              key: ValueKey(
+                'cat_year_${_catYear ?? years.first}_${years.join('-')}',
+              ),
+              isExpanded: true,
+              isDense: true,
+              menuMaxHeight: filterDropdownMenuMaxHeight(context),
+              dropdownColor: style.menuFill,
+              initialValue: _catYear != null && years.contains(_catYear)
+                  ? _catYear
+                  : years.first,
+              decoration: filterDropdownFieldDecoration(
+                style,
+                _trLegacyText(
+                  context,
+                  'Model year',
+                  ar: 'سنة الموديل',
+                  ku: 'ساڵی مۆدێل',
+                ),
+              ),
+              items: years
+                  .map(
+                    (y) => DropdownMenuItem<int>(
+                      value: y,
+                      child: Text(_localizeDigitsGlobal(context, '$y')),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (y) {
+                if (y == null) return;
+                setState(() => _catYear = y);
+                _schedDsRefresh();
+              },
+            ),
+          ],
+          if (previewSummary != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              previewSummary,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+                color: kFilterAccentColor,
+              ),
+            ),
+            const SizedBox(height: 2),
             Text(
               _trLegacyText(
                 context,
-                'Catalog auto-fill',
-                ar: 'تعبئة تلقائية من الكتالوج',
-                ku: 'پڕکردنەوەی خۆکاری کاتالۆگ',
+                'You can change these in step 2.',
+                ar: 'يمكنك تغييرها في الخطوة 2.',
+                ku: 'دەتوانیت لە هەنگاوی 2 بیانگۆڕیت.',
               ),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
             ),
-            const SizedBox(height: 8),
-            Text(
-              listingYear != null
-                  ? _trLegacyText(
-                      context,
-                      'Pick catalog year and apply. Step 2 lists every engine and spec row we have for this model—choose what matches your car.',
-                      ar: 'اختر سنة الكتالوج ثم طبّق. الخطوة 2 تعرض كل خيارات المحرك والمواصفات لهذا الموديل — اختر ما يناسب سيارتك.',
-                      ku: 'ساڵی کاتالۆگ هەڵبژێرە و جێبەجێی بکە. هەنگاوی 2 هەموو هەڵبژاردەکانی مەکینە و سپێس بۆ ئەم مۆدێلە پیشان دەدات — ئەوە هەڵبژێرە کە لەگەڵ ئۆتۆمبێلەکەت دەگونجێت.',
-                    )
-                  : _trLegacyText(
-                      context,
-                      'Enter or pick a year above, choose catalog year, then apply. Step 2 is where you pick engine and other specs.',
-                      ar: 'أدخل أو اختر سنة بالأعلى، ثم اختر سنة الكتالوج وبعدها طبّق. في الخطوة 2 تختار المحرك وباقي المواصفات.',
-                      ku: 'لە سەرەوە ساڵ بنووسە یان هەڵیبژێرە، پاشان ساڵی کاتالۆگ هەڵبژێرە و جێبەجێی بکە. لە هەنگاوی 2 مەکینە و سپێسی تر هەڵدەبژێریت.',
-                    ),
-              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-            ),
-            if (preview != null || unionPreview != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFFFF6B00).withValues(alpha: 0.25),
-                  ),
-                ),
-                child: Text(
-                  () {
-                    var engExtra = '';
-                    if (unionPreview != null &&
-                        unionPreview.engineSizes.length > 1) {
-                      final engList = unionPreview.engineSizes.toList()
-                        ..sort(
-                          (a, b) => (double.tryParse(a) ?? 0).compareTo(
-                            double.tryParse(b) ?? 0,
-                          ),
-                        );
-                      engExtra =
-                          '\n${_trLegacyText(context, 'Step 2 will offer engines:', ar: 'الخطوة 2 ستعرض المحركات:', ku: 'هەنگاوی 2 ئەم مەکینانە پیشان دەدات:')} ${engList.join(', ')} L';
-                    }
-                    if (preview != null) {
-                      return '${_trLegacyText(context, 'Preview (smallest engine in list — change in step 2 if needed):', ar: 'معاينة (أصغر محرك في القائمة — يمكنك تغييره في الخطوة 2 إذا لزم):', ku: 'پێشبینین (بچووکترین مەکینە لە لیستەکە — دەتوانیت لە هەنگاوی 2 بیگۆڕیت ئەگەر پێویست بوو):')} ${_translateValueGlobal(context, preview.engineType) ?? preview.engineType}, ${_translateValueGlobal(context, preview.transmission) ?? preview.transmission}, ${_translateValueGlobal(context, preview.driveType) ?? preview.driveType}, ${_translateValueGlobal(context, preview.bodyType) ?? preview.bodyType}$engExtra';
-                    }
-                    return '${_trLegacyText(context, 'This year has catalog coverage — apply to load step 2 options (engine, cylinders, etc.).', ar: 'هذه السنة مدعومة في الكتالوج — طبّق لتحميل خيارات الخطوة 2 (المحرك، الأسطوانات، إلخ).', ku: 'ئەم ساڵە پشتگیری کاتالۆگی هەیە — جێبەجێ بکە بۆ بارکردنی هەڵبژاردەکانی هەنگاوی 2 (مەکینە، سیلەندەر، هتد).')}$engExtra';
-                  }(),
-                  softWrap: true,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                    color: Color(0xFFFF6B00),
-                  ),
-                ),
-              ),
-            ],
-            if (years.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              DropdownButtonFormField<int>(
-                key: ValueKey(
-                  'cat_year_${_catYear ?? years.first}_${years.join('-')}',
-                ),
-                isExpanded: true,
-                isDense: true,
-                menuMaxHeight: filterDropdownMenuMaxHeight(context),
-                dropdownColor: filterDialogStyle(context).menuFill,
-                initialValue: _catYear != null && years.contains(_catYear)
-                    ? _catYear
-                    : years.first,
-                decoration: filterDropdownFieldDecoration(
-                  filterDialogStyle(context),
-                  _trLegacyText(
-                    context,
-                    'Model year',
-                    ar: 'سنة الموديل',
-                    ku: 'ساڵی مۆدێل',
-                  ),
-                ),
-                items: years
-                    .map(
-                      (y) => DropdownMenuItem<int>(value: y, child: Text('$y')),
-                    )
-                    .toList(),
-                onChanged: (y) {
-                  if (y == null) return;
-                  setState(() => _catYear = y);
-                  _schedDsRefresh();
-                },
-              ),
-            ],
+          ] else if (canApply) ...[
             const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: (preview == null && unionPreview == null)
-                  ? null
-                  : _applyCatalogSpecsToFlow,
-              icon: const Icon(Icons.auto_fix_high),
-              label: Text(
-                _trLegacyText(
-                  context,
-                  'Apply specs to listing',
-                  ar: 'تطبيق المواصفات على الإعلان',
-                  ku: 'سپێسەکان بخرە ناو ڕیکلامەکە',
-                ),
+            Text(
+              _trLegacyText(
+                context,
+                'Specs available for this year.',
+                ar: 'المواصفات متاحة لهذه السنة.',
+                ku: 'سپێس بۆ ئەم ساڵە بەردەستە.',
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B00),
-                foregroundColor: Colors.white,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: kFilterAccentColor,
               ),
             ),
           ],
-        ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: canApply ? _applyCatalogSpecsToFlow : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kFilterAccentColor,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor:
+                    kFilterAccentColor.withValues(alpha: 0.35),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                _trLegacyText(
+                  context,
+                  'Apply specs',
+                  ar: 'تطبيق المواصفات',
+                  ku: 'جێبەجێکردنی سپێس',
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

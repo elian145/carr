@@ -104,6 +104,10 @@ def dashboard():
         pending_user_reports = UserReport.query.filter_by(status="pending").count()
         pending_listing_reports = ListingReport.query.filter_by(status="pending").count()
         pending_dealers = User.query.filter(User.dealer_status == "pending").count()
+        pending_listings = Car.query.filter(
+            Car.is_active.is_(True),
+            Car.status == "pending",
+        ).count()
         dealer_accounts = User.query.filter(User.account_type == "dealer").count()
         featured_cars = Car.query.filter_by(is_featured=True, is_active=True).count()
         total_saved_searches = SavedSearch.query.count()
@@ -141,6 +145,7 @@ def dashboard():
                         "pending_user_reports": pending_user_reports,
                         "pending_listing_reports": pending_listing_reports,
                         "pending_dealers": pending_dealers,
+                        "pending_listings": pending_listings,
                         "dealer_accounts": dealer_accounts,
                         "featured_cars": featured_cars,
                         "total_saved_searches": total_saved_searches,
@@ -177,6 +182,10 @@ def meta_badges():
                 {
                     "pending_reports": pending_user_reports + pending_listing_reports,
                     "pending_dealers": User.query.filter(User.dealer_status == "pending").count(),
+                    "pending_listings": Car.query.filter(
+                        Car.is_active.is_(True),
+                        Car.status == "pending",
+                    ).count(),
                     "users": User.query.count(),
                     "listings": Car.query.count(),
                     "dealers": User.query.filter(User.account_type == "dealer").count(),

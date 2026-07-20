@@ -54,16 +54,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSearchHeading => 'Search';
 
   @override
-  String get paymentHistoryTitle => 'Payment History';
-
-  @override
-  String get paymentInitiateTitle => 'Payment Initiate';
-
-  @override
   String get chatConversationTitle => 'Chat Conversation';
-
-  @override
-  String get paymentStatusTitle => 'Payment Status';
 
   @override
   String get editListingTitle => 'Edit Listing';
@@ -992,13 +983,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This will permanently delete your account and all your data (listings, messages, favorites). This cannot be undone.';
+      'This will permanently delete your account and all your data (listings, messages, favorites). If full deletion is blocked by system constraints, your account is deactivated and personal data and listing media are scrubbed. This cannot be undone.';
 
   @override
-  String get passwordOptionalConfirm => 'Password (optional)';
+  String get passwordRequiredConfirm => 'Password';
 
   @override
-  String get confirmWithPasswordHint => 'Confirm with password if you have one';
+  String get passwordOptionalConfirm => 'Password';
+
+  @override
+  String get confirmWithPasswordHint =>
+      'Enter your account password to confirm';
 
   @override
   String get deleteMyAccount => 'Delete my account';
@@ -1165,9 +1160,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get helpSupportTitle => 'Help & Support';
-
-  @override
-  String get helpSupportComingSoon => 'Help & Support feature coming soon!';
 
   @override
   String get carComparisonCount => 'Car Comparison';
@@ -1615,4 +1607,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatSendVideoSubtitle => 'Select multiple videos';
+
+  @override
+  String get listingSubmittedPending =>
+      'Listing submitted for review. Track it under My Listings → Pending.';
+
+  @override
+  String get listingSubmittedSuccess =>
+      'Listing submitted! It may appear after admin review.';
+
+  @override
+  String get homeOfflineCachedBanner =>
+      'You are offline. Showing cached listings.';
+
+  @override
+  String get myListingsPendingFilter => 'Pending';
+
+  @override
+  String get myListingsNoPendingTitle => 'No pending listings';
+
+  @override
+  String get myListingsNoPendingHint =>
+      'Listings waiting for admin approval will appear here.';
 }

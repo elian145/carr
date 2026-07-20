@@ -35,6 +35,8 @@ mixin _LoginPageBuild on _LoginPageActions {
                   prefixIcon: const Icon(Icons.person),
                   border: const OutlineInputBorder(),
                 ),
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.username, AutofillHints.email],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return _pleaseEnterUsernameOrEmail(context);
@@ -51,6 +53,9 @@ mixin _LoginPageBuild on _LoginPageActions {
                   prefixIcon: const Icon(Icons.lock),
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? 'Show password'
+                        : 'Hide password',
                     icon: Icon(
                       _obscurePassword
                           ? Icons.visibility
@@ -61,6 +66,11 @@ mixin _LoginPageBuild on _LoginPageActions {
                     },
                   ),
                 ),
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.password],
+                onFieldSubmitted: (_) {
+                  if (!_isLoading) _login();
+                },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return _pleaseEnterPassword(context);
@@ -69,11 +79,15 @@ mixin _LoginPageBuild on _LoginPageActions {
                 },
               ),
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : Text(AppLocalizations.of(context)!.loginAction),
+              Semantics(
+                button: true,
+                label: AppLocalizations.of(context)!.loginAction,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  child: _isLoading
+                      ? const CircularProgressIndicator()
+                      : Text(AppLocalizations.of(context)!.loginAction),
+                ),
               ),
               const SizedBox(height: 16),
               TextButton(

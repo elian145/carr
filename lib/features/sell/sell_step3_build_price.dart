@@ -51,16 +51,18 @@ mixin _SellStep3BuildPrice on _SellStep3Pickers {
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _dismissKeyboard(),
                     onTapOutside: (_) => _dismissKeyboard(),
-                    inputFormatters: [
-                      services.FilteringTextInputFormatter.digitsOnly,
+                    inputFormatters: const [
+                      ThousandsSeparatorInputFormatter(),
                     ],
                     onChanged: (value) {
+                      final digits =
+                          ThousandsSeparatorInputFormatter.digitsOnly(value);
                       setState(() {
-                        selectedPrice = value.isEmpty
+                        selectedPrice = digits.isEmpty
                             ? null
                             : (selectedCurrency == 'IQD'
-                                  ? 'IQD $value'
-                                  : '\$$value');
+                                  ? 'IQD $digits'
+                                  : '\$$digits');
                       });
                       _syncStep3DraftToParent();
                     },
@@ -68,7 +70,11 @@ mixin _SellStep3BuildPrice on _SellStep3Pickers {
                       if (value == null || value.trim().isEmpty) {
                         return null;
                       }
-                      final price = int.tryParse(value.trim());
+                      final price = int.tryParse(
+                        ThousandsSeparatorInputFormatter.digitsOnly(
+                          value.trim(),
+                        ),
+                      );
                       if (price == null) {
                         return _trLegacyText(
                           context,
@@ -104,7 +110,10 @@ mixin _SellStep3BuildPrice on _SellStep3Pickers {
                           RegExp(r'[^\d.]'),
                           '',
                         );
-                        _priceController.text = numericValue;
+                        _priceController.text =
+                            ThousandsSeparatorInputFormatter.format(
+                              numericValue,
+                            );
                       }
                       selectedCurrency =
                           selectedCurrency == 'USD' ? 'IQD' : 'USD';

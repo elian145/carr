@@ -439,6 +439,7 @@ export async function fetchSavedSearches(params: {
 export interface NavBadges {
   pendingReports: number;
   pendingDealers: number;
+  pendingListings: number;
   users: number;
   listings: number;
   dealers: number;
@@ -451,6 +452,7 @@ export interface NavBadges {
 const EMPTY_NAV_BADGES: NavBadges = {
   pendingReports: 0,
   pendingDealers: 0,
+  pendingListings: 0,
   users: 0,
   listings: 0,
   dealers: 0,
@@ -465,6 +467,7 @@ export async function fetchNavBadges(): Promise<NavBadges> {
     const s = await apiRequest<{
       pending_reports?: number;
       pending_dealers?: number;
+      pending_listings?: number;
       users?: number;
       listings?: number;
       dealers?: number;
@@ -476,6 +479,7 @@ export async function fetchNavBadges(): Promise<NavBadges> {
     return {
       pendingReports: s.pending_reports ?? 0,
       pendingDealers: s.pending_dealers ?? 0,
+      pendingListings: s.pending_listings ?? 0,
       users: s.users ?? 0,
       listings: s.listings ?? 0,
       dealers: s.dealers ?? 0,
@@ -496,6 +500,7 @@ export async function fetchNavBadges(): Promise<NavBadges> {
       return {
         pendingReports: s.pending_reports ?? 0,
         pendingDealers: s.pending_dealers ?? 0,
+        pendingListings: (s as { pending_listings?: number }).pending_listings ?? 0,
         users: s.total_users ?? 0,
         listings: s.total_cars ?? 0,
         dealers: s.dealer_accounts ?? 0,

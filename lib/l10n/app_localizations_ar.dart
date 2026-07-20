@@ -54,16 +54,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get homeSearchHeading => 'بحث';
 
   @override
-  String get paymentHistoryTitle => 'سجل الدفعات';
-
-  @override
-  String get paymentInitiateTitle => 'بدء الدفع';
-
-  @override
   String get chatConversationTitle => 'المحادثة';
-
-  @override
-  String get paymentStatusTitle => 'حالة الدفع';
 
   @override
   String get editListingTitle => 'تعديل الإعلان';
@@ -989,13 +980,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. لا يمكن التراجع عن ذلك.';
+      'سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. إذا تعذر الحذف الكامل، يتم تعطيل الحساب وإزالة البيانات الشخصية ووسائط الإعلانات. لا يمكن التراجع عن ذلك.';
 
   @override
-  String get passwordOptionalConfirm => 'كلمة المرور (اختياري)';
+  String get passwordRequiredConfirm => 'كلمة المرور';
 
   @override
-  String get confirmWithPasswordHint => 'أكد بكلمة المرور إن وجدت';
+  String get passwordOptionalConfirm => 'كلمة المرور';
+
+  @override
+  String get confirmWithPasswordHint => 'أدخل كلمة مرور حسابك للتأكيد';
 
   @override
   String get deleteMyAccount => 'حذف حسابي';
@@ -1161,9 +1155,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get helpSupportTitle => 'المساعدة والدعم';
-
-  @override
-  String get helpSupportComingSoon => 'ميزة المساعدة والدعم قريباً!';
 
   @override
   String get carComparisonCount => 'مقارنة السيارات';
@@ -1606,4 +1597,26 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatSendVideoSubtitle => 'اختر عدة فيديوهات';
+
+  @override
+  String get listingSubmittedPending =>
+      'تم إرسال الإعلان للمراجعة. تابعه في إعلاناتي ← قيد المراجعة.';
+
+  @override
+  String get listingSubmittedSuccess =>
+      'تم إرسال الإعلان! قد يظهر بعد مراجعة المشرف.';
+
+  @override
+  String get homeOfflineCachedBanner =>
+      'أنت غير متصل. يتم عرض الإعلانات المخزنة.';
+
+  @override
+  String get myListingsPendingFilter => 'قيد المراجعة';
+
+  @override
+  String get myListingsNoPendingTitle => 'لا توجد إعلانات قيد المراجعة';
+
+  @override
+  String get myListingsNoPendingHint =>
+      'الإعلانات بانتظار موافقة المشرف ستظهر هنا.';
 }
