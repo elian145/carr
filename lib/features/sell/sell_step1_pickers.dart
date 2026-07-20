@@ -348,9 +348,6 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                         itemCount: filteredBrands.length,
                         itemBuilder: (context, index) {
                           final brand = filteredBrands[index];
-                          final logoFile = sellBrandSlug(brand);
-                          final logoUrl =
-                              '${getApiBase()}/static/images/brands/$logoFile.png';
                           return InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => Navigator.pop(context, brand),
@@ -372,21 +369,10 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: CachedNetworkImage(
-                                      imageUrl: logoUrl,
-                                      placeholder: (context, url) => SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          Image.network(
-                                            '${getApiBase()}/static/images/brands/default.png',
-                                            fit: BoxFit.contain,
-                                          ),
-                                      fit: BoxFit.contain,
+                                    child: BrandLogoImage(
+                                      brand: brand,
+                                      placeholderSize: 24,
+                                      errorIconSize: 22,
                                     ),
                                   ),
                                   SizedBox(height: 4),

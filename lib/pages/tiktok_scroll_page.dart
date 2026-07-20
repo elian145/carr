@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
-import '../services/config.dart';
 import '../shared/media/media_url.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../shared/ui/brand_logo_image.dart';
 import '../data/car_name_translations.dart';
+import '../data/brand_logo_filenames.dart';
 import '../l10n/app_localizations.dart';
 import '../globals.dart';
 

@@ -310,13 +310,10 @@ class FilterDropdownField extends StatelessWidget {
         media.height - padding.top - padding.bottom - 24;
     final contentHeight =
         listPaddingV * 2 + menuItems.length * itemHeight;
-    // Prefer fitting the full list when it fits on screen; otherwise use as
-    // much vertical space as available (not only the preferred fraction).
+    // Cap at the preferred fraction so long lists scroll instead of spanning
+    // nearly the full screen.
     final cappedAvailable = math.max(120.0, availableHeight);
-    final menuMaxHeight = math.min(
-      cappedAvailable,
-      math.max(preferredMaxHeight, contentHeight),
-    );
+    final menuMaxHeight = math.min(preferredMaxHeight, cappedAvailable);
     final menuHeight = math.min(contentHeight, menuMaxHeight);
 
     // Overlap the field: keep the selected row aligned with the control
@@ -343,6 +340,9 @@ class FilterDropdownField extends StatelessWidget {
       final selected = await showDialog<String>(
         context: context,
         barrierColor: Colors.black.withValues(alpha: 0.01),
+        // Global field coords include the status bar; SafeArea would shift the
+        // Stack and mis-anchor the menu.
+        useSafeArea: false,
         builder: (dialogContext) {
           final isLight =
               Theme.of(dialogContext).brightness == Brightness.light;
@@ -361,7 +361,7 @@ class FilterDropdownField extends StatelessWidget {
                 width: menuWidth,
                 height: menuHeight,
                 child: Material(
-                  color: style.fieldFill,
+                  color: style.menuFill,
                   elevation: 8,
                   shadowColor: Colors.black.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(8),
@@ -497,6 +497,7 @@ MoreFiltersDialogStyle filterDialogStyle(BuildContext context) {
     muted: isLight ? const Color(0xFF8E8E93) : Colors.white70,
     anyOrange: kFilterAccentColor,
     fieldFill: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
+    menuFill: isLight ? Colors.white : const Color(0xFF2A2A2E),
     fieldGap: 12,
   );
 }

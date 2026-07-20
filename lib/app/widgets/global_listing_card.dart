@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/brand_logo_filenames.dart';
+import '../../shared/ui/brand_logo_image.dart';
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/analytics_service.dart';

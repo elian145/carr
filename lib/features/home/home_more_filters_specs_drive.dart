@@ -81,6 +81,7 @@ mixin _HomePageMoreFiltersSpecsDrive on _HomePageMoreFiltersMid {
                             ),
                             menuMaxHeight:
                                 _moreFiltersDropdownMenuMaxHeight(context),
+                            dropdownColor: style.menuFill,
                             initialValue:
                                 _getValidRegionSpecsValue(),
                             decoration: InputDecoration(

@@ -196,20 +196,11 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   padding: const EdgeInsets.all(2),
-                  child: CachedNetworkImage(
-                    imageUrl:
-                        '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrand!] ?? _homeSelectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
-                    placeholder: (context, url) => const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    errorWidget: (context, url, error) => Icon(
-                      Icons.directions_car,
-                      size: 16,
-                      color: style.anyOrange,
-                    ),
-                    fit: BoxFit.contain,
+                  child: BrandLogoImage(
+                    brand: _homeSelectedBrand!,
+                    placeholderSize: 16,
+                    errorIconSize: 16,
+                    errorIconColor: style.anyOrange,
                   ),
                 )
               else

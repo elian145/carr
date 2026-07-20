@@ -67,15 +67,6 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                         itemBuilder: (context, index) {
                           final brand = homeBrands[index];
                           final isSelected = selected == brand;
-                          final logoFile =
-                              brandLogoFilenames[brand] ??
-                              brand
-                                  .toLowerCase()
-                                  .replaceAll(' ', '-')
-                                  .replaceAll('Ã©', 'e')
-                                  .replaceAll('Ã¶', 'o');
-                          final logoUrl =
-                              '${getApiBase()}/static/images/brands/$logoFile.png';
                           return InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () =>
@@ -103,23 +94,10 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: CachedNetworkImage(
-                                      imageUrl: logoUrl,
-                                      placeholder: (context, url) =>
-                                          const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          const Icon(
-                                        Icons.directions_car,
-                                        size: 22,
-                                        color: Color(0xFFFF6B00),
-                                      ),
-                                      fit: BoxFit.contain,
+                                    child: BrandLogoImage(
+                                      brand: brand,
+                                      placeholderSize: 24,
+                                      errorIconSize: 22,
                                     ),
                                   ),
                                   const SizedBox(height: 4),

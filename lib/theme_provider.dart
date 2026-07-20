@@ -236,6 +236,7 @@ class AppThemes {
           onSurfaceVariant: _darkInkMuted,
           outline: const Color(0xFF9E9E9E),
           outlineVariant: const Color(0xFF5C5C5C),
+          surfaceTint: Colors.transparent,
         );
 
     final base = ThemeData(
@@ -262,6 +263,30 @@ class AppThemes {
         color: scheme.surface,
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: const Color(0xFF2A2A2E),
+        surfaceTintColor: Colors.transparent,
+        textStyle: TextStyle(color: scheme.onSurface),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(Color(0xFF2A2A2E)),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          shadowColor: WidgetStatePropertyAll(
+            Colors.black.withValues(alpha: 0.35),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(Color(0xFF2A2A2E)),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

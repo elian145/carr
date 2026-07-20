@@ -1,11 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../../app/app_api_base.dart' show getApiBase;
-import '../../data/brand_logo_filenames.dart';
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/i18n/legacy_inline_text.dart';
+import 'brand_logo_image.dart';
 import 'filter_card_sections.dart';
 
 const double _brandRowHeight = 92;
@@ -18,11 +16,6 @@ int _brandGridCrossAxisCount(double maxWidth) {
           (_brandTileWidth + _brandGridSpacing))
       .floor()
       .clamp(3, 8);
-}
-
-String _brandLogoSlug(String brand) {
-  return brandLogoFilenames[brand] ??
-      brand.toLowerCase().replaceAll(' ', '-');
 }
 
 class FilterMakeSection extends StatelessWidget {
@@ -465,7 +458,6 @@ class _BrandTile extends StatelessWidget {
     final display = CarNameTranslations.getLocalizedBrand(context, brand).isNotEmpty
         ? CarNameTranslations.getLocalizedBrand(context, brand)
         : brand;
-    final slug = _brandLogoSlug(brand);
 
     return InkWell(
       onTap: onTap,
@@ -490,19 +482,11 @@ class _BrandTile extends StatelessWidget {
                   color: Colors.white,
                 ),
                 padding: const EdgeInsets.all(8),
-                child: CachedNetworkImage(
-                  imageUrl: '${getApiBase()}/static/images/brands/$slug.png',
-                  placeholder: (context, url) => const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  errorWidget: (context, url, error) => Icon(
-                    Icons.directions_car,
-                    size: 22,
-                    color: kFilterAccentColor,
-                  ),
-                  fit: BoxFit.contain,
+                child: BrandLogoImage(
+                  brand: brand,
+                  placeholderSize: 20,
+                  errorIconSize: 22,
+                  errorIconColor: kFilterAccentColor,
                 ),
               ),
             ),

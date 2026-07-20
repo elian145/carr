@@ -6,9 +6,10 @@ mixin _SellStep5Build on _SellStep5Logic {
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     final carData = parentState?.carData ?? {};
     final isLight = Theme.of(context).brightness == Brightness.light;
+    // Match [CarDetailsPage] shell so the review preview blends with listing detail.
     final shellBg = isLight
         ? Colors.white
-        : Theme.of(context).scaffoldBackgroundColor;
+        : AppThemes.darkHomeShellBackground;
 
     return ColoredBox(
       color: shellBg,

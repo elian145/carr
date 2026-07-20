@@ -143,6 +143,7 @@ flutter:
     - assets/listing_spec_icons/transmission.png
     - assets/listing_spec_icons/trim.png
     - assets/icon/
+    - assets/brand_logos/
     - assets/car_spec_dataset.json
     - assets/car_catalog.json
 

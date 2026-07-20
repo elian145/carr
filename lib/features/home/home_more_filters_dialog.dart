@@ -20,6 +20,9 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
       fieldFill: isLightMoreFilters
           ? Colors.grey.shade200
           : Colors.black.withValues(alpha: 0.2),
+      menuFill: isLightMoreFilters
+          ? Colors.white
+          : const Color(0xFF2A2A2E),
     );
   }
 

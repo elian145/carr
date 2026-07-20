@@ -226,19 +226,10 @@ Widget _buildGridCarCardInnerText(
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: CachedNetworkImage(
-                  imageUrl: '${getApiBase()}/static/images/brands/$brandId.png',
-                  placeholder: (context, url) => const SizedBox(
-                    width: logoInner,
-                    height: logoInner,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  errorWidget: (context, url, error) => const Icon(
-                    Icons.directions_car,
-                    size: 20,
-                    color: Color(0xFFFF6B00),
-                  ),
-                  fit: BoxFit.contain,
+                child: BrandLogoImage(
+                  brand: brandId,
+                  placeholderSize: logoInner,
+                  errorIconSize: 20,
                 ),
               ),
             ),
@@ -489,16 +480,11 @@ Widget _buildListCarCardInnerText(
             ),
             borderRadius: BorderRadius.circular(7),
           ),
-          child: CachedNetworkImage(
-            imageUrl: '${getApiBase()}/static/images/brands/$brandId.png',
-            placeholder: (context, url) => const SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(strokeWidth: 1.5),
-            ),
-            errorWidget: (context, url, error) =>
-                const Icon(Icons.directions_car, size: 18, color: priceAccent),
-            fit: BoxFit.contain,
+          child: BrandLogoImage(
+            brand: brandId,
+            placeholderSize: 14,
+            errorIconSize: 18,
+            errorIconColor: priceAccent,
           ),
         ),
         const SizedBox(width: 6),

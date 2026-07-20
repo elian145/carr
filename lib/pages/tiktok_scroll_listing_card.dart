@@ -61,13 +61,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
     return symbol + NumberFormat.decimalPattern().format(value);
   }
 
-  String _normalizeBrandId(String brand) {
-    return brand
-        .trim()
-        .toLowerCase()
-        .replaceAll(' ', '-')
-        .replaceAll(RegExp(r'[^a-z0-9\\-]'), '');
-  }
+  String _normalizeBrandId(String brand) => brandLogoSlug(brand);
 
   @override
   Widget build(BuildContext context) {
@@ -243,15 +237,9 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: CachedNetworkImage(
-                          imageUrl:
-                              '${effectiveApiBase()}/static/images/brands/$brandId.png',
-                          fit: BoxFit.contain,
-                          errorWidget: (context, url, error) => const Icon(
-                            Icons.directions_car,
-                            size: 18,
-                            color: Color(0xFFFF6B00),
-                          ),
+                        child: BrandLogoImage(
+                          brand: brand,
+                          errorIconSize: 18,
                         ),
                       ),
                     if (brandId.isNotEmpty) const SizedBox(width: 10),

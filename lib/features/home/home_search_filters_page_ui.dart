@@ -11,6 +11,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
       muted: base.muted,
       anyOrange: base.anyOrange,
       fieldFill: isLight ? Colors.white : base.fieldFill,
+      menuFill: base.menuFill,
       fieldGap: 12,
     );
   }
@@ -361,13 +362,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
     );
   }
 
-  String _searchBrandLogoSlug(String brand) {
-    return brandLogoFilenames[brand] ??
-        brand.toLowerCase().replaceAll(' ', '-');
-  }
-
   Widget _searchBrandLogoCircle(String brand, {double size = 52}) {
-    final slug = _searchBrandLogoSlug(brand);
     return Container(
       width: size,
       height: size,
@@ -376,19 +371,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageMoreFiltersDialog {
         color: Colors.white,
       ),
       padding: const EdgeInsets.all(8),
-      child: CachedNetworkImage(
-        imageUrl: '${getApiBase()}/static/images/brands/$slug.png',
-        placeholder: (context, url) => const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-        errorWidget: (context, url, error) => Icon(
-          Icons.directions_car,
-          size: 22,
-          color: _searchAccent,
-        ),
-        fit: BoxFit.contain,
+      child: BrandLogoImage(
+        brand: brand,
+        placeholderSize: 20,
+        errorIconSize: 22,
+        errorIconColor: _searchAccent,
       ),
     );
   }

@@ -50,20 +50,10 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       padding: EdgeInsets.all(2),
-                      child: CachedNetworkImage(
-                        imageUrl:
-                            '${getApiBase()}/static/images/brands/${brandLogoFilenames[_homeSelectedBrand!] ?? _homeSelectedBrand!.toLowerCase().replaceAll(' ', '-')}.png',
-                        placeholder: (context, url) => SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        errorWidget: (context, url, error) => Icon(
-                          Icons.directions_car,
-                          size: 16,
-                          color: Color(0xFFFF6B00),
-                        ),
-                        fit: BoxFit.contain,
+                      child: BrandLogoImage(
+                        brand: _homeSelectedBrand!,
+                        placeholderSize: 16,
+                        errorIconSize: 16,
                       ),
                     )
                   else

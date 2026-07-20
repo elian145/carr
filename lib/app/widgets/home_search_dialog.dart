@@ -1,12 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/brand_logo_filenames.dart';
 import '../../data/car_name_translations.dart';
 import '../../shared/i18n/legacy_inline_text.dart';
+import '../../shared/ui/brand_logo_image.dart';
 import '../../shared/ui/responsive.dart';
-import '../app_api_base.dart';
 
 // Search Dialog Widget
 class HomeSearchDialog extends StatefulWidget {
@@ -249,14 +247,6 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
       itemCount: _filteredBrands.length,
       itemBuilder: (context, index) {
         final brand = _filteredBrands[index];
-        final logoFile =
-            brandLogoFilenames[brand] ??
-            brand
-                .toLowerCase()
-                .replaceAll(' ', '-')
-                .replaceAll('Ã©', 'e')
-                .replaceAll('Ã¶', 'o');
-        final logoUrl = '${getApiBase()}/static/images/brands/$logoFile.png';
 
         return ListTile(
           leading: Container(
@@ -267,19 +257,10 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
               borderRadius: BorderRadius.circular(8),
             ),
             padding: EdgeInsets.all(4),
-            child: CachedNetworkImage(
-              imageUrl: logoUrl,
-              placeholder: (context, url) => SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              errorWidget: (context, url, error) => Icon(
-                Icons.directions_car,
-                size: 24,
-                color: Color(0xFFFF6B00),
-              ),
-              fit: BoxFit.contain,
+            child: BrandLogoImage(
+              brand: brand,
+              placeholderSize: 32,
+              errorIconSize: 24,
             ),
           ),
           title: Text(
@@ -320,14 +301,6 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
         final item = _filteredModels[index];
         final brand = item['brand']!;
         final model = item['model']!;
-        final logoFile =
-            brandLogoFilenames[brand] ??
-            brand
-                .toLowerCase()
-                .replaceAll(' ', '-')
-                .replaceAll('Ã©', 'e')
-                .replaceAll('Ã¶', 'o');
-        final logoUrl = '${getApiBase()}/static/images/brands/$logoFile.png';
 
         return ListTile(
           leading: Container(
@@ -338,19 +311,10 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
               borderRadius: BorderRadius.circular(8),
             ),
             padding: EdgeInsets.all(4),
-            child: CachedNetworkImage(
-              imageUrl: logoUrl,
-              placeholder: (context, url) => SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              errorWidget: (context, url, error) => Icon(
-                Icons.directions_car,
-                size: 24,
-                color: Color(0xFFFF6B00),
-              ),
-              fit: BoxFit.contain,
+            child: BrandLogoImage(
+              brand: brand,
+              placeholderSize: 32,
+              errorIconSize: 24,
             ),
           ),
           title: Text(

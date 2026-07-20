@@ -302,6 +302,9 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
       return DropdownButtonFormField<_DealerSection>(
         initialValue: _section,
         isExpanded: true,
+        dropdownColor: isLight
+            ? Colors.white
+            : const Color(0xFF2A2A2E),
         decoration: InputDecoration(
           filled: true,
           fillColor: isLight

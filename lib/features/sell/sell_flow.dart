@@ -71,6 +71,7 @@ import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_listing_payload.dart';
 import 'sell_brand_slug.dart';
+import '../../shared/ui/brand_logo_image.dart';
 import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;

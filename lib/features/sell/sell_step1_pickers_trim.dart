@@ -178,6 +178,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                 isExpanded: true,
                 isDense: true,
                 menuMaxHeight: filterDropdownMenuMaxHeight(context),
+                dropdownColor: filterDialogStyle(context).menuFill,
                 initialValue: _catYear != null && years.contains(_catYear)
                     ? _catYear
                     : years.first,

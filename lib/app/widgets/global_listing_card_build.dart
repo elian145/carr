@@ -26,14 +26,7 @@ Widget _buildGlobalCarCard(
   required bool allowOwnerManagementOnOpen,
 }) {
   final brand = car['brand'] ?? '';
-  final brandId =
-      brandLogoFilenames[brand] ??
-      brand
-          .toString()
-          .toLowerCase()
-          .replaceAll(' ', '-')
-          .replaceAll('Ã©', 'e')
-          .replaceAll('Ã¶', 'o');
+  final brandId = brandLogoSlug(brand.toString());
   final trimLine = localizedTrimForCard(context, car);
   final bool quickSell =
       car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';

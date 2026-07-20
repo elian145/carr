@@ -289,6 +289,9 @@ class _EditListingPageState extends State<EditListingPage> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _condition,
+              dropdownColor: Theme.of(context).brightness == Brightness.light
+                  ? Colors.white
+                  : const Color(0xFF2A2A2E),
               decoration: InputDecoration(
                 labelText: loc?.conditionLabel ?? 'Condition',
               ),
