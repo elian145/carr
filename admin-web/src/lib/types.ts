@@ -97,14 +97,56 @@ export interface DashboardData {
   user_actions: { action_type: string; count: number }[];
 }
 
+export interface CarImage {
+  id?: number;
+  image_url: string;
+  is_primary?: boolean;
+  order?: number;
+  kind?: string;
+  focus_y?: number | null;
+  image_width?: number | null;
+  image_height?: number | null;
+}
+
+export interface CarVideo {
+  id?: number;
+  video_url: string;
+  thumbnail_url?: string | null;
+  duration?: number | null;
+  order?: number;
+}
+
 export interface CarListing {
   id: string;
   title?: string;
   brand?: string;
   model?: string;
+  trim?: string;
   year?: number;
+  mileage?: number;
+  engine_type?: string;
+  fuel_type?: string;
+  transmission?: string;
+  drive_type?: string;
+  condition?: string;
+  body_type?: string;
+  title_status?: string;
+  damaged_parts?: number | null;
+  seating?: number;
+  color?: string;
+  fuel_economy?: string;
+  vin?: string;
+  engine_size?: number | null;
+  cylinder_count?: number | null;
+  cylinders?: number | null;
+  region_specs?: string;
+  plate_type?: string;
+  plate_city?: string;
   price?: number;
+  currency?: string;
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status?: string;
   is_active?: boolean;
   is_featured?: boolean;
@@ -114,7 +156,16 @@ export interface CarListing {
   seller_id?: string;
   seller?: User;
   description?: string;
-  images?: { image_url: string; is_primary?: boolean }[];
+  images?: CarImage[];
+  videos?: CarVideo[];
+  ai_analyzed?: boolean;
+  ai_detected_brand?: string;
+  ai_detected_model?: string;
+  ai_detected_color?: string;
+  ai_detected_body_type?: string;
+  ai_detected_condition?: string | null;
+  ai_confidence_score?: number | null;
+  ai_analysis_timestamp?: string | null;
 }
 
 export interface ListingAnalytics {

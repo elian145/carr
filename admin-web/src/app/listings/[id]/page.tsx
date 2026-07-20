@@ -14,14 +14,127 @@ import { deleteListing, fetchListingDetail, purgeListing, updateListingStatus } 
 import { listingPublicUrl } from "@/lib/export";
 import { getFilterMeta } from "@/lib/filterMeta";
 import {
+  dash,
+  displayName,
   formatDate,
+  formatMileage,
   formatNumber,
   formatPrice,
   listingTitle,
+  mediaUrl,
 } from "@/lib/format";
 import { hasPermission } from "@/lib/permissions";
+import type { CarImage, CarListing, CarVideo } from "@/lib/types";
 
 const FALLBACK_STATUSES = ["active", "sold", "pending", "draft", "hidden"];
+
+function Spec({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number | null;
+}) {
+  return (
+    <div>
+      <dt className="text-xs text-surface-muted">{label}</dt>
+      <dd className="mt-1 text-sm">{dash(value)}</dd>
+    </div>
+  );
+}
+
+function sortedImages(images: CarImage[] | undefined, kind?: string): CarImage[] {
+  const list = (images || []).filter((img) =>
+    kind ? (img.kind || "listing") === kind : true,
+  );
+  return [...list].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1;
+    if (!a.is_primary && b.is_primary) return 1;
+    return (a.order ?? 0) - (b.order ?? 0);
+  });
+}
+
+function sortedVideos(videos: CarVideo[] | undefined): CarVideo[] {
+  return [...(videos || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+function ImageGallery({
+  title,
+  images,
+}: {
+  title: string;
+  images: CarImage[];
+}) {
+  if (images.length === 0) return null;
+  return (
+    <div>
+      <h4 className="mb-2 text-sm font-medium text-surface-muted">
+        {title} ({images.length})
+      </h4>
+      <div className="flex flex-wrap gap-2">
+        {images.map((img, i) => {
+          const src = mediaUrl(img.image_url);
+          return (
+            <a
+              key={img.id ?? `${img.image_url}-${i}`}
+              href={src}
+              target="_blank"
+              rel="noreferrer"
+              className="relative block overflow-hidden rounded-lg border border-surface-border"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={src}
+                alt=""
+                className="h-24 w-36 object-cover"
+              />
+              {img.is_primary ? (
+                <span className="absolute left-1 top-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
+                  Primary
+                </span>
+              ) : null}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function vehicleSpecs(c: CarListing): { label: string; value?: string | number | null }[] {
+  const cylinders = c.cylinder_count ?? c.cylinders;
+  return [
+    { label: "Brand", value: c.brand },
+    { label: "Model", value: c.model },
+    { label: "Trim", value: c.trim },
+    { label: "Year", value: c.year },
+    { label: "Mileage", value: c.mileage != null ? formatMileage(c.mileage) : null },
+    { label: "Condition", value: c.condition },
+    { label: "Body type", value: c.body_type },
+    { label: "Color", value: c.color },
+    { label: "Transmission", value: c.transmission },
+    { label: "Drive type", value: c.drive_type },
+    { label: "Fuel type", value: c.fuel_type },
+    { label: "Engine type", value: c.engine_type },
+    {
+      label: "Engine size",
+      value: c.engine_size != null ? `${c.engine_size} L` : null,
+    },
+    { label: "Cylinders", value: cylinders },
+    { label: "Fuel economy", value: c.fuel_economy },
+    { label: "Seating", value: c.seating },
+    { label: "Title status", value: c.title_status },
+    {
+      label: "Damaged parts",
+      value: c.damaged_parts != null ? formatNumber(c.damaged_parts) : null,
+    },
+    { label: "Region specs", value: c.region_specs },
+    { label: "Plate type", value: c.plate_type },
+    { label: "Plate city", value: c.plate_city },
+    { label: "VIN", value: c.vin },
+    { label: "Currency", value: c.currency },
+  ];
+}
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -146,10 +259,19 @@ export default function ListingDetailPage() {
       {(detail) => {
         const c = detail.car;
         const a = detail.analytics;
+        const seller = c.seller;
         const statusValue = c.status || "active";
         const statusOptions = Array.from(
           new Set([statusValue, ...statuses]),
         ).map((s) => ({ value: s, label: s }));
+        const listingImages = sortedImages(c.images, "listing");
+        const damageImages = sortedImages(c.images, "damage");
+        const otherImages = (c.images || []).filter((img) => {
+          const kind = img.kind || "listing";
+          return kind !== "listing" && kind !== "damage";
+        });
+        const videos = sortedVideos(c.videos);
+        const specs = vehicleSpecs(c);
 
         return (
           <div className="space-y-8">
@@ -159,7 +281,7 @@ export default function ListingDetailPage() {
                   <h2 className="text-xl font-semibold">{listingTitle(c)}</h2>
                   <p className="mt-1 text-sm text-surface-muted">{c.location}</p>
                   <p className="mt-2 text-2xl font-bold text-brand-300">
-                    {formatPrice(c.price)}
+                    {formatPrice(c.price, c.currency)}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-end gap-2">
@@ -223,61 +345,181 @@ export default function ListingDetailPage() {
               </div>
 
               <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <dt className="text-xs text-surface-muted">Status</dt>
-                  <dd className="mt-1">
-                    {c.status} · {c.is_active ? "active" : "inactive"}
-                    {c.is_featured ? " · featured" : ""}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-surface-muted">Views (car)</dt>
-                  <dd className="mt-1">{formatNumber(c.views_count)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-surface-muted">Created</dt>
-                  <dd className="mt-1">{formatDate(c.created_at)}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs text-surface-muted">Seller</dt>
-                  <dd className="mt-1">
-                    {c.seller?.id ? (
-                      <Link
-                        href={`/users/${c.seller.id}`}
-                        className="text-brand-300 hover:underline"
-                      >
-                        {c.seller.username || c.seller.id}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
-                  </dd>
-                </div>
+                <Spec
+                  label="Status"
+                  value={`${c.status || "—"} · ${c.is_active ? "active" : "inactive"}${
+                    c.is_featured ? " · featured" : ""
+                  }`}
+                />
+                <Spec label="Views (car)" value={formatNumber(c.views_count)} />
+                <Spec label="Created" value={formatDate(c.created_at)} />
+                <Spec label="Updated" value={formatDate(c.updated_at)} />
               </dl>
+            </section>
 
-              {c.description ? (
-                <p className="mt-4 whitespace-pre-wrap text-sm text-surface-muted">
+            <section className="rounded-xl border border-surface-border bg-surface-card p-6">
+              <h3 className="text-lg font-medium">Vehicle details</h3>
+              <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {specs.map((s) => (
+                  <Spec key={s.label} label={s.label} value={s.value} />
+                ))}
+              </dl>
+              {(c.latitude != null || c.longitude != null) && (
+                <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <Spec label="Latitude" value={c.latitude} />
+                  <Spec label="Longitude" value={c.longitude} />
+                </dl>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-surface-border bg-surface-card p-6">
+              <h3 className="text-lg font-medium">Description</h3>
+              {c.description?.trim() ? (
+                <p className="mt-3 whitespace-pre-wrap text-sm text-surface-muted">
                   {c.description}
                 </p>
-              ) : null}
-
-              {c.images && c.images.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {c.images.slice(0, 6).map((img, i) => (
-                    <img
-                      key={i}
-                      src={
-                        img.image_url.startsWith("http")
-                          ? img.image_url
-                          : `${process.env.NEXT_PUBLIC_API_BASE}${img.image_url}`
-                      }
-                      alt=""
-                      className="h-20 w-28 rounded-lg border border-surface-border object-cover"
-                    />
-                  ))}
-                </div>
-              ) : null}
+              ) : (
+                <p className="mt-3 text-sm text-surface-muted">No description.</p>
+              )}
             </section>
+
+            <section className="rounded-xl border border-surface-border bg-surface-card p-6">
+              <h3 className="mb-4 text-lg font-medium">
+                Media (
+                {(c.images?.length || 0) + (c.videos?.length || 0)})
+              </h3>
+              {(c.images?.length || 0) + (c.videos?.length || 0) === 0 ? (
+                <p className="text-sm text-surface-muted">No photos or videos.</p>
+              ) : (
+                <div className="space-y-6">
+                  <ImageGallery title="Listing photos" images={listingImages} />
+                  <ImageGallery title="Damage photos" images={damageImages} />
+                  {otherImages.length > 0 ? (
+                    <ImageGallery title="Other photos" images={otherImages} />
+                  ) : null}
+                  {videos.length > 0 ? (
+                    <div>
+                      <h4 className="mb-2 text-sm font-medium text-surface-muted">
+                        Videos ({videos.length})
+                      </h4>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {videos.map((v, i) => {
+                          const src = mediaUrl(v.video_url);
+                          const thumb = mediaUrl(v.thumbnail_url);
+                          return (
+                            <a
+                              key={v.id ?? `${v.video_url}-${i}`}
+                              href={src}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="overflow-hidden rounded-lg border border-surface-border hover:bg-white/5"
+                            >
+                              {thumb ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={thumb}
+                                  alt=""
+                                  className="h-36 w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-36 items-center justify-center bg-black/30 text-sm text-surface-muted">
+                                  Video
+                                </div>
+                              )}
+                              <div className="px-3 py-2 text-xs text-surface-muted">
+                                {v.duration != null
+                                  ? `${formatNumber(v.duration)}s · `
+                                  : ""}
+                                Open video ↗
+                              </div>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-surface-border bg-surface-card p-6">
+              <h3 className="text-lg font-medium">Seller</h3>
+              {seller ? (
+                <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div>
+                    <dt className="text-xs text-surface-muted">Name</dt>
+                    <dd className="mt-1 text-sm">
+                      {seller.id ? (
+                        <Link
+                          href={`/users/${seller.id}`}
+                          className="text-brand-300 hover:underline"
+                        >
+                          {displayName(seller)}
+                        </Link>
+                      ) : (
+                        displayName(seller)
+                      )}
+                    </dd>
+                  </div>
+                  <Spec label="Username" value={seller.username} />
+                  <Spec label="Phone" value={seller.phone_number} />
+                  <Spec label="Email" value={seller.email} />
+                  <Spec
+                    label="Account"
+                    value={`${seller.account_type || "user"}${
+                      seller.dealer_status && seller.dealer_status !== "none"
+                        ? ` · ${seller.dealer_status}`
+                        : ""
+                    }`}
+                  />
+                  <Spec
+                    label="Dealership"
+                    value={seller.dealership_name}
+                  />
+                  <Spec
+                    label="Dealership phone"
+                    value={seller.dealership_phone}
+                  />
+                  <Spec
+                    label="Dealership location"
+                    value={seller.dealership_location}
+                  />
+                </dl>
+              ) : (
+                <p className="mt-3 text-sm text-surface-muted">No seller linked.</p>
+              )}
+            </section>
+
+            {c.ai_analyzed ? (
+              <section className="rounded-xl border border-surface-border bg-surface-card p-6">
+                <h3 className="text-lg font-medium">AI analysis</h3>
+                <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <Spec label="Detected brand" value={c.ai_detected_brand} />
+                  <Spec label="Detected model" value={c.ai_detected_model} />
+                  <Spec label="Detected color" value={c.ai_detected_color} />
+                  <Spec
+                    label="Detected body type"
+                    value={c.ai_detected_body_type}
+                  />
+                  <Spec
+                    label="Detected condition"
+                    value={c.ai_detected_condition}
+                  />
+                  <Spec
+                    label="Confidence"
+                    value={
+                      c.ai_confidence_score != null
+                        ? `${Math.round(c.ai_confidence_score * 100)}%`
+                        : null
+                    }
+                  />
+                  <Spec
+                    label="Analyzed at"
+                    value={formatDate(c.ai_analysis_timestamp)}
+                  />
+                </dl>
+              </section>
+            ) : null}
 
             {a ? (
               <section className="grid gap-4 sm:grid-cols-5">
@@ -309,6 +551,8 @@ export default function ListingDetailPage() {
                 <thead>
                   <tr>
                     <Th>Reason</Th>
+                    <Th>Details</Th>
+                    <Th>Reporter</Th>
                     <Th>Status</Th>
                     <Th>Created</Th>
                   </tr>
@@ -317,6 +561,21 @@ export default function ListingDetailPage() {
                   {detail.reports.map((r) => (
                     <tr key={r.id}>
                       <Td>{r.reason || "—"}</Td>
+                      <Td className="max-w-xs whitespace-pre-wrap text-sm">
+                        {r.details || r.admin_notes || "—"}
+                      </Td>
+                      <Td>
+                        {r.reporter?.id ? (
+                          <Link
+                            href={`/users/${r.reporter.id}`}
+                            className="text-brand-300 hover:underline"
+                          >
+                            {r.reporter.username || r.reporter.id}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </Td>
                       <Td>{r.status}</Td>
                       <Td>{formatDate(r.created_at)}</Td>
                     </tr>
