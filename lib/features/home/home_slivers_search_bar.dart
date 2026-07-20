@@ -2,20 +2,35 @@ part of 'home_flow.dart';
 
 mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
   Widget _buildHomeSearchCityBarSliver(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final barBg = isLight
+        ? Colors.white
+        : Color.alphaBlend(
+            Colors.white.withValues(alpha: 0.06),
+            AppThemes.darkHomeShellBackground,
+          );
+    final cityLabelColor =
+        isLight ? const Color(0xFF0A0A0A) : Colors.white;
+    final menuBg = isLight
+        ? Colors.white
+        : Colors.grey[900]?.withValues(alpha: 0.98);
+    final menuItemColor =
+        isLight ? const Color(0xFF0A0A0A) : Colors.white;
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: Card(
-          elevation: 12,
+          elevation: isLight ? 6 : 12,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
+            side: isLight
+                ? const BorderSide(color: Color(0xFFCACACA), width: 1)
+                : BorderSide.none,
           ),
-          color: Color.alphaBlend(
-            Colors.white.withValues(alpha: 0.06),
-            AppThemes.darkHomeShellBackground,
-          ),
+          color: barBg,
           surfaceTintColor: Colors.transparent,
-          shadowColor: Colors.black54,
+          shadowColor: isLight ? Colors.black38 : Colors.black54,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Builder(
@@ -51,7 +66,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                           overflow: TextOverflow.visible,
                           style: GoogleFonts.orbitron(
                             fontSize: 14,
-                            color: Colors.white,
+                            color: cityLabelColor,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -108,8 +123,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                 tooltip: '',
                                 position: PopupMenuPosition.under,
                                 offset: const Offset(0, 6),
-                                color:
-                                    Colors.grey[900]?.withValues(alpha: 0.98),
+                                color: menuBg,
                                 splashRadius: 18,
                                 onSelected: (value) {
                                   setState(() {
@@ -125,7 +139,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                       loc.allCities,
                                       style: GoogleFonts.orbitron(
                                         fontSize: 14,
-                                        color: Colors.white,
+                                        color: menuItemColor,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -143,7 +157,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                                 city,
                                             style: GoogleFonts.orbitron(
                                               fontSize: 14,
-                                              color: Colors.white,
+                                              color: menuItemColor,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),

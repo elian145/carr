@@ -3,11 +3,41 @@ part of 'home_flow.dart';
 mixin _HomePageBuild on _HomePageSlivers {
   @override
   Widget build(BuildContext context) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final appBarFg = isLight ? const Color(0xFF0A0A0A) : Colors.white;
+    final searchPillBg = isLight
+        ? const Color(0xFFFF6B00).withValues(alpha: 0.10)
+        : Colors.white.withValues(alpha: 0.18);
+    final searchPillBorder = isLight
+        ? const Color(0xFFFF6B00).withValues(alpha: 0.45)
+        : Colors.white.withValues(alpha: 0.35);
+    final searchPillFg =
+        isLight ? const Color(0xFFFF6B00) : Colors.white;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          AppLocalizations.of(context)!.appTitle,
-          style: TextStyle(fontSize: 18),
+        backgroundColor: isLight ? Colors.white : null,
+        foregroundColor: appBarFg,
+        surfaceTintColor: Colors.transparent,
+        elevation: isLight ? 0 : null,
+        scrolledUnderElevation: isLight ? 0 : null,
+        systemOverlayStyle: isLight
+            ? const services.SystemUiOverlayStyle(
+                statusBarColor: Colors.white,
+                statusBarIconBrightness: Brightness.dark,
+                statusBarBrightness: Brightness.light,
+              )
+            : null,
+        title: Image.asset(
+          isLight
+              ? 'assets/icon/splash_logo_light.png'
+              : 'assets/icon/splash_logo.png',
+          height: 32,
+          width: 74,
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          filterQuality: FilterQuality.medium,
+          semanticLabel: AppLocalizations.of(context)!.appTitle,
         ),
         titleSpacing: NavigationToolbar.kMiddleSpacing,
         actions: [
@@ -16,7 +46,7 @@ mixin _HomePageBuild on _HomePageSlivers {
               end: NavigationToolbar.kMiddleSpacing,
             ),
             child: Material(
-              color: Colors.white.withValues(alpha: 0.18),
+              color: searchPillBg,
               borderRadius: BorderRadius.circular(20),
               child: InkWell(
                 onTap: () => _openHomeSearchFiltersPage(
@@ -24,8 +54,8 @@ mixin _HomePageBuild on _HomePageSlivers {
                   focusSearchField: false,
                 ),
                 borderRadius: BorderRadius.circular(20),
-                splashColor: Colors.white.withValues(alpha: 0.2),
-                highlightColor: Colors.white.withValues(alpha: 0.12),
+                splashColor: searchPillFg.withValues(alpha: 0.2),
+                highlightColor: searchPillFg.withValues(alpha: 0.12),
                 child: Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: AppResponsive.narrowAppBar(context) ? 10 : 14,
@@ -33,16 +63,14 @@ mixin _HomePageBuild on _HomePageSlivers {
                   ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.35),
-                    ),
+                    border: Border.all(color: searchPillBorder),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.search_rounded,
-                        color: Colors.white,
+                        color: searchPillFg,
                         size: AppResponsive.narrowAppBar(context) ? 17 : 18,
                       ),
                       SizedBox(
@@ -51,7 +79,7 @@ mixin _HomePageBuild on _HomePageSlivers {
                       Text(
                         AppLocalizations.of(context)!.homeSearchHeading,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: searchPillFg,
                           fontSize:
                               AppResponsive.narrowAppBar(context) ? 12 : 13.5,
                           fontWeight: FontWeight.w600,

@@ -127,7 +127,22 @@ flutter:
     - assets/transmission_types/
     - assets/drive_types/
     - assets/fuel_types/
-    - assets/listing_spec_icons/
+    # Explicit PNGs only — avoid bundling scripts / _preview helpers in this folder.
+    - assets/listing_spec_icons/body.png
+    - assets/listing_spec_icons/color.png
+    - assets/listing_spec_icons/condition.png
+    - assets/listing_spec_icons/cylinders.png
+    - assets/listing_spec_icons/drive.png
+    - assets/listing_spec_icons/engine.png
+    - assets/listing_spec_icons/fuel.png
+    - assets/listing_spec_icons/mileage.png
+    - assets/listing_spec_icons/plate.png
+    - assets/listing_spec_icons/region.png
+    - assets/listing_spec_icons/seating.png
+    - assets/listing_spec_icons/title_status.png
+    - assets/listing_spec_icons/transmission.png
+    - assets/listing_spec_icons/trim.png
+    - assets/icon/
     - assets/car_spec_dataset.json
     - assets/car_catalog.json
 

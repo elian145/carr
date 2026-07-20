@@ -254,16 +254,6 @@ Widget _buildGlobalCarCard(
                                 allowOwnerManagementOnOpen:
                                     allowOwnerManagementOnOpen,
                               ),
-                              Positioned(
-                                top: 8,
-                                left: 8,
-                                child: _globalListingCardPhotoCountBadge(
-                                  ListingCardMedia.collectFromCar(
-                                    car,
-                                    resolveNetworkUrl: buildLegacyFullImageUrl,
-                                  ).length,
-                                ),
-                              ),
                               if (showVideoCountBadge)
                                 Positioned(
                                   top: 8,

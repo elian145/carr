@@ -72,6 +72,50 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
+                        final loc = AppLocalizations.of(context);
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(
+                              _trLegacyText(
+                                context,
+                                'Discard draft?',
+                                ar: 'حذف المسودة؟',
+                                ku: 'ڕەشنووس بسڕێتەوە؟',
+                              ),
+                            ),
+                            content: Text(
+                              _trLegacyText(
+                                context,
+                                'This will permanently delete this draft listing. This cannot be undone.',
+                                ar: 'سيتم حذف مسودة الإعلان نهائياً. لا يمكن التراجع عن هذا الإجراء.',
+                                ku: 'ئەمە ڕەشنووسی ڕێکلامەکە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.',
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: Text(loc?.cancelAction ?? 'Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(
+                                  _trLegacyText(
+                                    context,
+                                    'Discard',
+                                    ar: 'حذف',
+                                    ku: 'بسڕەوە',
+                                  ),
+                                  style: TextStyle(
+                                    color: Theme.of(ctx).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirmed != true || !mounted) return;
+
                         await _clearAllSellDrafts();
                         if (!mounted) return;
                         setState(() {

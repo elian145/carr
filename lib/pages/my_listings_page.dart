@@ -214,6 +214,41 @@ class _MyListingsPageState extends State<MyListingsPage> {
   }
 
   Future<void> _discardDraft(Map<String, dynamic> draft) async {
+    final loc = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          _text(
+            'Discard draft?',
+            ar: 'حذف المسودة؟',
+            ku: 'ڕەشنووس بسڕێتەوە؟',
+          ),
+        ),
+        content: Text(
+          _text(
+            'This will permanently delete this draft listing. This cannot be undone.',
+            ar: 'سيتم حذف مسودة الإعلان نهائياً. لا يمكن التراجع عن هذا الإجراء.',
+            ku: 'ئەمە ڕەشنووسی ڕێکلامەکە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc?.cancelAction ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              _text('Discard', ar: 'حذف', ku: 'بسڕەوە'),
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     final draftId = (draft['draftId'] ?? '').toString();
     if (draft['isModern'] == true) {
       await SellListingDraftPrefs.clear(_buildDraftOwnerKey());

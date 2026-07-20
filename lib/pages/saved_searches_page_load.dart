@@ -36,7 +36,45 @@ mixin _SavedSearchesPageLoad on _SavedSearchesPageFields {
     await SavedSearchService.persistLocal(_items);
   }
 
-  void _delete(int index) async {
+  Future<void> _delete(int index) async {
+    final loc = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          trLegacyText(
+            context,
+            'Delete saved search?',
+            ar: 'حذف البحث المحفوظ؟',
+            ku: 'گەڕانی پاشەکەوتکراو بسڕێتەوە؟',
+          ),
+        ),
+        content: Text(
+          trLegacyText(
+            context,
+            'This will permanently remove this saved search. This cannot be undone.',
+            ar: 'سيتم حذف هذا البحث المحفوظ نهائياً. لا يمكن التراجع عن هذا الإجراء.',
+            ku: 'ئەمە ئەم گەڕانە پاشەکەوتکراوە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc?.cancelAction ?? 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              loc?.deleteAction ?? 'Delete',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    if (index < 0 || index >= _items.length) return;
+
     final id = (_items[index]['id'] ?? '').toString();
     setState(() {
       _items.removeAt(index);
