@@ -63,12 +63,20 @@ def _check_critical(host: str, timeout: float, require_production_ready: bool = 
         elif require_production_ready and isinstance(data, dict):
             if not data.get("redis_configured"):
                 errors.append("/health redis_configured=false (set REDIS_URL on Render)")
+            else:
+                print("OK: redis_configured=true")
             upload = data.get("upload_persistence")
             if upload not in ("r2", "disk"):
                 errors.append(
                     f"/health upload_persistence={upload!r} "
                     "(set R2_* including R2_PUBLIC_URL, or absolute UPLOAD_FOLDER)"
                 )
+            else:
+                print(f"OK: upload_persistence={upload}")
+            if data.get("app_links_android") is True:
+                print("OK: /health app_links_android=true")
+            if data.get("app_links_ios") is True:
+                print("OK: /health app_links_ios=true")
 
     code, body, _ = _fetch(f"{base}/api/cars", timeout)
     if code != 200:

@@ -446,25 +446,27 @@ def secure_headers():
 
 def validate_csrf_token():
     """
-    Validate CSRF token for state-changing operations
+    Intentionally unavailable.
+
+    The API uses Bearer JWTs (mobile + admin cookie). A decorator that only
+    checked for a header *presence* without verifying it would be worse than
+    no CSRF check. Prefer JWT auth; do not wire this stub onto routes.
     """
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Skip CSRF for GET requests
-            if request.method == 'GET':
-                return f(*args, **kwargs)
-            
-            # Check for CSRF token in headers
-            csrf_token = request.headers.get('X-CSRF-Token')
-            if not csrf_token:
-                return jsonify({'message': 'CSRF token required'}), 403
-            
-            # In a real implementation, you would validate the CSRF token
-            # against a stored token or session
-            
-            return f(*args, **kwargs)
+            return (
+                jsonify(
+                    {
+                        "message": "CSRF middleware is not enabled for this API",
+                        "code": "csrf_not_configured",
+                    }
+                ),
+                501,
+            )
+
         return decorated_function
+
     return decorator
 
 def audit_log(action_type, target_type=None, target_id=None, metadata=None):

@@ -23,13 +23,27 @@ from .security import validate_input_sanitization
 from .time_utils import utcnow
 
 
+def _allow_socket_query_token() -> bool:
+    """Query-string JWTs are for local/test clients only (S-06)."""
+    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+    if env in ("development", "testing", "test"):
+        return True
+    return (os.environ.get("ALLOW_SOCKET_QUERY_TOKEN") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
 def _socket_current_user(*, optional: bool = False) -> User | None:
     """
     Resolve the current user for Socket.IO events.
 
     Supports:
-    - Authorization header (preferred)
-    - `?token=<access_jwt>` query param (dev/test only; Flutter has a dev flag)
+    - Authorization: Bearer <access_jwt> header (preferred; used by Flutter)
+    - `?token=<access_jwt>` query param only in development/testing, or when
+      ALLOW_SOCKET_QUERY_TOKEN=1 is explicitly set (never implied in production)
     """
     identity = None
     try:
@@ -39,18 +53,21 @@ def _socket_current_user(*, optional: bool = False) -> User | None:
         identity = None
 
     if not identity:
-        env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
-        if env not in ("development", "testing", "test"):
-            return None
         raw = (request.args.get("token") or "").strip()
         if raw:
-            try:
-                decoded = decode_token(raw)
-                # Accept only access tokens here.
-                if decoded.get("type") in (None, "access"):
-                    identity = decoded.get("sub")
-            except Exception:
-                identity = None
+            if not _allow_socket_query_token():
+                logger.warning(
+                    "Rejected Socket.IO connect with query-string JWT "
+                    "(use Authorization header; set ALLOW_SOCKET_QUERY_TOKEN=1 only for controlled tests)"
+                )
+            else:
+                try:
+                    decoded = decode_token(raw)
+                    # Accept only access tokens here.
+                    if decoded.get("type") in (None, "access"):
+                        identity = decoded.get("sub")
+                except Exception:
+                    identity = None
 
     if not identity:
         return None

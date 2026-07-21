@@ -1454,6 +1454,48 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(allowed_join[-1]["args"][0].get("ok"), True)
         client.disconnect()
 
+    def test_socket_query_token_rejected_in_production_env(self):
+        """S-06: query-string JWTs must not authenticate outside dev/test."""
+        previous = os.environ.get("APP_ENV")
+        allow = os.environ.pop("ALLOW_SOCKET_QUERY_TOKEN", None)
+        try:
+            os.environ["APP_ENV"] = "production"
+            client = self.socketio.test_client(
+                self.app,
+                flask_test_client=self.client,
+                query_string=f"token={self.viewer_token}",
+            )
+            self.assertTrue(client.is_connected())
+            received = client.get_received()
+            connected = [evt for evt in received if evt.get("name") == "connected"]
+            self.assertTrue(connected, received)
+            payload = connected[-1]["args"][0]
+            self.assertFalse(payload.get("authenticated"), payload)
+            self.assertIsNone(payload.get("user_id"))
+            client.disconnect()
+        finally:
+            if previous is None:
+                os.environ.pop("APP_ENV", None)
+            else:
+                os.environ["APP_ENV"] = previous
+            if allow is not None:
+                os.environ["ALLOW_SOCKET_QUERY_TOKEN"] = allow
+
+    def test_sanitize_input_strips_script_and_controls(self):
+        """S-11: sanitize_input must do more than strip whitespace."""
+        from kk.auth import sanitize_input
+
+        cleaned = sanitize_input(
+            {
+                "title": "Nice car<script>alert(1)</script>",
+                "note": "ok\x00bad",
+                "password": "  KeepMe!  ",
+            }
+        )
+        self.assertEqual(cleaned["title"], "Nice car")
+        self.assertEqual(cleaned["note"], "okbad")
+        self.assertEqual(cleaned["password"], "KeepMe!")
+
     def test_update_and_delete_car_as_owner(self):
         create = self.client.post(
             "/api/cars",

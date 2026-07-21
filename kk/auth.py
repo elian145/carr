@@ -258,16 +258,14 @@ def validate_user_input(data, required_fields=None):
     return errors
 
 def sanitize_input(data):
-    """Sanitize user input to prevent XSS"""
-    if isinstance(data, dict):
-        return {key: sanitize_input(value) for key, value in data.items()}
-    elif isinstance(data, list):
-        return [sanitize_input(item) for item in data]
-    elif isinstance(data, str):
-        # Remove potentially dangerous characters
-        return data.strip()
-    else:
-        return data
+    """Sanitize user input to reduce XSS / control-character injection (S-11).
+
+    Delegates to [validate_input_sanitization], which strips script blocks and
+    non-printing controls while preserving normal multilingual text and secrets.
+    """
+    from .security import validate_input_sanitization
+
+    return validate_input_sanitization(data)
 
 def rate_limit_check(user_id, action, limit=10, window_minutes=60):
     """Check if user has exceeded rate limit for an action"""
