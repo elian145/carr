@@ -10,8 +10,12 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { fetchMe, login as apiLogin } from "@/lib/api";
-import { ApiRequestError, clearToken, getToken, setToken } from "@/lib/auth";
+import { fetchMe } from "@/lib/api";
+import {
+  ApiRequestError,
+  clearSession,
+  establishSession,
+} from "@/lib/auth";
 import type { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -33,21 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const refresh = useCallback(async () => {
-    const token = getToken();
-    if (!token) {
-      setUser(null);
-      return;
-    }
     try {
       const me = await fetchMe();
       if (!me.is_admin) {
-        clearToken();
+        await clearSession();
         setUser(null);
         throw new Error("Admin privileges required");
       }
       setUser(me);
     } catch {
-      clearToken();
+      await clearSession();
       setUser(null);
     }
   }, []);
@@ -76,11 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string) => {
-      const token = await apiLogin(username, password);
-      setToken(token);
-      const me = await fetchMe();
-      if (!me.is_admin) {
-        clearToken();
+      const me = (await establishSession(username, password)) as User;
+      if (!me?.is_admin) {
+        await clearSession();
         setUser(null);
         throw new Error("This account does not have admin access");
       }
@@ -91,9 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    clearToken();
-    setUser(null);
-    router.replace("/login");
+    void (async () => {
+      await clearSession();
+      setUser(null);
+      router.replace("/login");
+    })();
   }, [router]);
 
   const value = useMemo(

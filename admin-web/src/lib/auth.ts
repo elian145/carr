@@ -1,9 +1,12 @@
-const TOKEN_KEY = "carzo_admin_token";
-const AUTH_COOKIE = "carzo_admin_auth";
+import {
+  LEGACY_AUTH_FLAG_COOKIE,
+  LEGACY_TOKEN_STORAGE_KEY,
+} from "./admin-session-constants";
 
 /**
  * Browser calls go through the Next.js `/backend-api` rewrite (same-origin),
  * which proxies to the Flask API and avoids CORS failures.
+ * Auth is an httpOnly cookie; middleware attaches Authorization for the proxy.
  * Server-side / tooling can still use NEXT_PUBLIC_API_BASE directly.
  */
 export function getApiBase(): string {
@@ -20,33 +23,53 @@ export function getPublicApiBase(): string {
   return base.replace(/\/+$/, "");
 }
 
-function setAuthCookie(present: boolean): void {
-  if (typeof document === "undefined") return;
-  if (present) {
-    // Flag cookie for Next middleware route protection (JWT stays in localStorage for API Bearer).
-    const secure =
-      typeof window !== "undefined" && window.location.protocol === "https:"
-        ? "; Secure"
-        : "";
-    document.cookie = `${AUTH_COOKIE}=1; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 14}${secure}`;
-  } else {
-    document.cookie = `${AUTH_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+function scrubLegacyClientAuth(): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+  try {
+    document.cookie = `${LEGACY_AUTH_FLAG_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+  } catch {
+    // ignore
   }
 }
 
-export function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+/** Create httpOnly admin session via Next route (JWT never stored in JS). */
+export async function establishSession(
+  username: string,
+  password: string,
+): Promise<unknown> {
+  scrubLegacyClientAuth();
+  const res = await fetch("/api/admin-session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ username, password }),
+  });
+  const body = (await res.json().catch(() => ({}))) as {
+    message?: string;
+    user?: unknown;
+  };
+  if (!res.ok) {
+    throw new ApiRequestError(body.message || `Login failed (${res.status})`, res.status);
+  }
+  return body.user;
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
-  setAuthCookie(true);
-}
-
-export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  setAuthCookie(false);
+/** Clear httpOnly admin session cookie. */
+export async function clearSession(): Promise<void> {
+  scrubLegacyClientAuth();
+  try {
+    await fetch("/api/admin-session", {
+      method: "DELETE",
+      credentials: "same-origin",
+    });
+  } catch {
+    // Still clear local leftovers even if the route is unreachable.
+  }
 }
 
 export class ApiRequestError extends Error {
@@ -63,20 +86,20 @@ export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
   };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
 
   const url = `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
 
   let res: Response;
   try {
-    res = await fetch(url, { ...options, headers });
+    res = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "same-origin",
+    });
   } catch {
     throw new ApiRequestError(
       `Cannot reach API via ${url}. Is the Flask server running, and is NEXT_PUBLIC_API_BASE / API_PROXY_TARGET correct?`,
@@ -105,11 +128,9 @@ export async function apiRequest<T>(
 }
 
 export async function apiBlobRequest(path: string): Promise<Blob> {
-  const token = getToken();
   const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
   const url = `${getApiBase()}${path.startsWith("/") ? path : `/${path}`}`;
-  const res = await fetch(url, { headers });
+  const res = await fetch(url, { headers, credentials: "same-origin" });
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
     try {

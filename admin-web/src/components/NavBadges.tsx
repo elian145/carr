@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { fetchNavBadges, type NavBadges } from "@/lib/api";
-import { getToken } from "@/lib/auth";
 import { formatNumber } from "@/lib/format";
 
 const EMPTY_BADGES: NavBadges = {
@@ -34,7 +33,7 @@ export function useNavBadges() {
   const [tick, setTick] = useState(0);
 
   const load = useCallback(() => {
-    if (!user || !getToken()) {
+    if (!user) {
       setBadges(EMPTY_BADGES);
       return () => {};
     }

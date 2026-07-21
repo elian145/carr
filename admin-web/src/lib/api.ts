@@ -25,6 +25,7 @@ interface LoginResponse {
   message?: string;
 }
 
+/** @deprecated Prefer AuthContext.login → /api/admin-session (httpOnly cookie). */
 export async function login(username: string, password: string): Promise<string> {
   const data = await apiRequest<LoginResponse>("/api/auth/login", {
     method: "POST",

@@ -80,6 +80,15 @@ If chat works in-app but no phone banner: check Render logs for `no firebase_tok
 | `TERMS_URL` | Terms of service |
 | `CORS_ORIGINS` | Your web/admin origins only |
 
+## Admin web (`admin-web`)
+
+| Variable | Notes |
+|----------|-------|
+| `NEXT_PUBLIC_API_BASE` / `API_PROXY_TARGET` | Flask API origin for the server-side proxy |
+| `JWT_SECRET_KEY` | **Same value as Flask.** Required in production so middleware can verify the httpOnly `carzo_admin_jwt` session cookie |
+
+Admin login uses `POST /api/admin-session` (JWT never stored in `localStorage`).
+
 ## Mobile build (Codemagic / local)
 
 - `API_BASE=https://<your-host>` (no `/api` suffix)
