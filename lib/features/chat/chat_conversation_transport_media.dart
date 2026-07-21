@@ -16,14 +16,14 @@ mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
     }
   }
 
-  List<_ChatMediaEntry> _chatMediaEntries() {
+  List<ChatMediaEntry> _chatMediaEntries() {
     final authService = Provider.of<AuthService>(context, listen: false);
     final myId = authService.userId ?? '';
     final myName = authService.userName.trim().isNotEmpty
         ? authService.userName.trim()
         : 'You';
 
-    final entries = <_ChatMediaEntry>[];
+    final entries = <ChatMediaEntry>[];
     for (final message in _messages) {
       if (message.attachments.isEmpty) continue;
       final senderName = message.senderId == myId
@@ -33,7 +33,7 @@ mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
                 : (AppLocalizations.of(context)?.unknownSender ?? 'Unknown'));
       for (final attachment in message.attachments) {
         entries.add(
-          _ChatMediaEntry(attachment: attachment, senderName: senderName),
+          ChatMediaEntry(attachment: attachment, senderName: senderName),
         );
       }
     }
@@ -54,7 +54,7 @@ mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
           0,
           item.attachments.isEmpty ? 0 : item.attachments.length - 1,
         );
-        _showChatMediaDialog(
+        showChatMediaDialog(
           context,
           entries,
           initialIndex: offset + safeIndex,
@@ -64,6 +64,6 @@ mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
       offset += item.attachments.length;
     }
 
-    _showChatMediaDialog(context, entries, initialIndex: 0);
+    showChatMediaDialog(context, entries, initialIndex: 0);
   }
 }

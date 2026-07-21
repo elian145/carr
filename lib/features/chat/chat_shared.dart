@@ -1,42 +1,24 @@
 part of 'chat_pages.dart';
 
-const Color _kComposerOutlineOrange = Color(0xFFFF7A00);
+// Theme / copy helpers live in chat_theme.dart + chat_strings.dart (M-15).
+// Private aliases keep existing part call sites stable.
+const Color _kComposerOutlineOrange = kComposerOutlineOrange;
+const Color _kChatListingCardAccentOrange = kChatListingCardAccentOrange;
+const Color _kChatListRowInkLight = kChatListRowInkLight;
+const Color _kChatListRowInkDarkPrimary = kChatListRowInkDarkPrimary;
+const Color _kChatListRowInkDarkMuted = kChatListRowInkDarkMuted;
 
-/// Brand orange (matches home [buildGlobalCarCard]); explicit color avoids
-/// [Theme.primaryColor] matching surfaces inside chat bubbles in dark mode.
-const Color _kChatListingCardAccentOrange = Color(0xFFFF6B00);
+Color _homeListingCardBackgroundFill(BuildContext context) =>
+    homeListingCardBackgroundFill(context);
 
-/// Peer bubble / preview fill: same look as dark mode (frosted on dark shell; solid blend on light shell).
-Color _homeListingCardBackgroundFill(BuildContext context) {
-  if (Theme.of(context).brightness == Brightness.dark) {
-    return Colors.white.withValues(alpha: 0.10);
-  }
-  return AppThemes.listingCardFillGridOnLightShell();
-}
+Color _peerBubbleTextStrong(BuildContext context) =>
+    peerBubbleTextStrong(context);
 
-Color _peerBubbleTextStrong(BuildContext context) {
-  final theme = Theme.of(context);
-  if (theme.brightness == Brightness.light) {
-    return theme.colorScheme.onSurface;
-  }
-  return Colors.white;
-}
+Color _peerBubbleTextMuted(BuildContext context) =>
+    peerBubbleTextMuted(context);
 
-Color _peerBubbleTextMuted(BuildContext context) {
-  final theme = Theme.of(context);
-  if (theme.brightness == Brightness.light) {
-    return theme.colorScheme.onSurfaceVariant;
-  }
-  return Colors.white70;
-}
-
-Color _peerBubbleBorderColor(BuildContext context) {
-  final theme = Theme.of(context);
-  if (theme.brightness == Brightness.light) {
-    return theme.colorScheme.outline.withValues(alpha: 0.28);
-  }
-  return Colors.white.withValues(alpha: 0.12);
-}
+Color _peerBubbleBorderColor(BuildContext context) =>
+    peerBubbleBorderColor(context);
 
 String _digitsLocalized(BuildContext context, String input) {
   final code = Localizations.localeOf(context).languageCode;
@@ -161,12 +143,8 @@ String _noMessagesText(BuildContext context) {
   return AppLocalizations.of(context)!.noMessagesYet;
 }
 
-String _chatText(BuildContext context, String en, {String? ar, String? ku}) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return ar ?? en;
-  if (code == 'ku' || code == 'ckb') return ku ?? en;
-  return en;
-}
+String _chatText(BuildContext context, String en, {String? ar, String? ku}) =>
+    chatText(context, en, ar: ar, ku: ku);
 
 String _chatEditedLabel(BuildContext context) =>
     _chatText(context, 'Edited', ar: 'معدّل', ku: 'دەستکاری کراو');
@@ -267,12 +245,14 @@ String _chatLastMessagePreview(
   return content;
 }
 
-String _formatVoiceDuration(Duration duration) {
-  final totalSeconds = duration.inSeconds;
-  final minutes = totalSeconds ~/ 60;
-  final seconds = totalSeconds % 60;
-  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-}
+String _formatVoiceDuration(Duration duration) => formatVoiceDuration(duration);
+
+bool _isIgnorableSocketError(String err) => isIgnorableSocketError(err);
+
+String _formatSocketErrorForUser(String err) => formatSocketErrorForUser(err);
+
+String _resolveAttachmentUrl(ChatAttachment attachment) =>
+    resolveChatAttachmentUrl(attachment);
 
 const double _kOutgoingMetaMinGap = 14;
 const double _kBubbleHorizontalPadding = 32;

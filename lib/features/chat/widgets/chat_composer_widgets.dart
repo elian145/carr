@@ -1,4 +1,14 @@
-part of 'chat_pages.dart';
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../app/widgets/listing_network_image.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../../services/websocket_service.dart';
+import '../../../shared/media/media_url.dart';
+import '../chat_strings.dart';
+import '../chat_theme.dart';
 
 Widget buildChatReplyPreviewCard(
   BuildContext context,
@@ -11,18 +21,15 @@ Widget buildChatReplyPreviewCard(
   final isLight = theme.brightness == Brightness.light;
   final baseColor = isMe
       ? Colors.white.withValues(alpha: 0.14)
-      : _homeListingCardBackgroundFill(context);
+      : homeListingCardBackgroundFill(context);
   final borderColor = isMe
       ? Colors.white.withValues(alpha: 0.5)
       : isLight
       ? theme.colorScheme.outline.withValues(alpha: 0.35)
       : Colors.white.withValues(alpha: 0.12);
-  final titleColor = isMe
-      ? Colors.white
-      : _peerBubbleTextStrong(context);
-  final bodyColor = isMe
-      ? Colors.white70
-      : _peerBubbleTextMuted(context);
+  final titleColor =
+      isMe ? Colors.white : peerBubbleTextStrong(context);
+  final bodyColor = isMe ? Colors.white70 : peerBubbleTextMuted(context);
   final inner = Container(
     width: double.infinity,
     margin: EdgeInsets.only(bottom: dense ? 6 : 8),
@@ -92,13 +99,13 @@ Widget buildChatComposerActionBanner(
             children: [
               Text(
                 isEditMode
-                    ? _chatText(
+                    ? chatText(
                         context,
                         'Editing message',
                         ar: 'تعديل الرسالة',
                         ku: 'دەستکاریکردنی پەیام',
                       )
-                    : _chatText(
+                    : chatText(
                         context,
                         'Replying to message',
                         ar: 'الرد على الرسالة',

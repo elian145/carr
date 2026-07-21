@@ -1,36 +1,53 @@
-part of 'chat_pages.dart';
+import 'dart:io';
 
-class _ChatMediaEntry {
+import 'package:flutter/material.dart';
+
+import '../../../app/widgets/listing_network_image.dart';
+import '../../../navigation/app_page_route.dart';
+import '../../../services/websocket_service.dart';
+import '../../../shared/media/media_url.dart';
+import '../../../widgets/in_app_video_screen.dart';
+
+class ChatMediaEntry {
   final ChatAttachment attachment;
   final String senderName;
 
-  const _ChatMediaEntry({required this.attachment, required this.senderName});
+  const ChatMediaEntry({required this.attachment, required this.senderName});
 }
 
-void _showChatMediaDialog(
+String resolveChatAttachmentUrl(ChatAttachment attachment) {
+  if (attachment.isLocal) return attachment.url;
+  return buildMediaUrl(attachment.url);
+}
+
+void showChatMediaDialog(
   BuildContext context,
-  List<_ChatMediaEntry> entries, {
+  List<ChatMediaEntry> entries, {
   int initialIndex = 0,
 }) {
   Navigator.of(context).push(
     AppPageRoute<void>(
       builder: (_) =>
-          _ChatMediaGroupViewer(entries: entries, initialIndex: initialIndex),
+          ChatMediaGroupViewer(entries: entries, initialIndex: initialIndex),
     ),
   );
 }
 
-class _ChatMediaGroupViewer extends StatefulWidget {
-  final List<_ChatMediaEntry> entries;
+class ChatMediaGroupViewer extends StatefulWidget {
+  final List<ChatMediaEntry> entries;
   final int initialIndex;
 
-  const _ChatMediaGroupViewer({required this.entries, this.initialIndex = 0});
+  const ChatMediaGroupViewer({
+    super.key,
+    required this.entries,
+    this.initialIndex = 0,
+  });
 
   @override
-  State<_ChatMediaGroupViewer> createState() => _ChatMediaGroupViewerState();
+  State<ChatMediaGroupViewer> createState() => _ChatMediaGroupViewerState();
 }
 
-class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
+class _ChatMediaGroupViewerState extends State<ChatMediaGroupViewer> {
   late final PageController _pageController;
   late int _currentIndex;
 
@@ -64,7 +81,7 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
                   final attachment = entry.attachment;
                   if (attachment.type == 'video') {
                     return GalleryEmbeddedVideoPlayer(
-                      videoUrl: _resolveAttachmentUrl(attachment),
+                      videoUrl: resolveChatAttachmentUrl(attachment),
                       isActive: index == _currentIndex,
                     );
                   }
@@ -76,7 +93,7 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
                               fit: BoxFit.contain,
                             )
                           : listingNetworkImage(
-                              _resolveAttachmentUrl(attachment),
+                              resolveChatAttachmentUrl(attachment),
                               fit: BoxFit.contain,
                               errorWidget: const Icon(
                                 Icons.broken_image,

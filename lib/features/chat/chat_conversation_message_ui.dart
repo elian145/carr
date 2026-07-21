@@ -206,7 +206,7 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
   }) {
     return Stack(
       children: [
-        _ChatVoiceBubble(
+        ChatVoiceBubble(
           message: message,
           iconColor: iconColor,
           textColor: textColor,

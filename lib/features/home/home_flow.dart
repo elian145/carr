@@ -1,3 +1,22 @@
+/// Home feature library (part / mixin map — M-15).
+///
+/// Entry: [HomePage] via this library (`home_flow.dart`).
+///
+/// Mixin chain (`_HomePageState with …`), roughly:
+/// Fields → FetchCore → Fetch → FilterCatalog → FilterPersist → FilterLogic →
+/// FilterBarBrand → FilterBar → MoreFilters* (vehicle…specs) → MoreFiltersDialog →
+/// SearchFilters* (cards…page UI) → Slivers* → Build
+///
+/// Edit guide:
+/// - feed fetch / cache → home_fetch*.dart
+/// - filter chips / bar → home_filter_bar*.dart, home_filter_logic.dart
+/// - more-filters dialog sections → home_more_filters_*.dart
+/// - full-page search filters → home_search_filters_*.dart
+/// - slivers / scaffold → home_slivers*.dart, home_build.dart
+///
+/// State stays Provider-based; Riverpod migration is deferred.
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

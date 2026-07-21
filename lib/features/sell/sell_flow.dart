@@ -1,3 +1,21 @@
+/// Sell feature library (part / mixin map — M-15).
+///
+/// Entry: [SellCarPage] and step pages via this library (`sell_flow.dart`).
+///
+/// Shell: `_SellCarPageState` = Fields → DraftPersist → PlateBlur → DraftBanner.
+/// Steps are separate State classes with their own mixin chains, e.g.:
+/// - Step1: Fields → Catalog → PickersTrim → Pickers → Build
+/// - Step2: Fields → CatalogOptions → CatalogHydrate → Pickers → Build*
+/// - Step3–5 / blur: see `sell_stepN.dart` `with` clauses
+///
+/// Edit guide:
+/// - draft save/restore → sell_car_page_draft_*.dart
+/// - step N fields/UI → sell_stepN_*.dart
+/// - listing payload → sell_listing_payload.dart (standalone helper)
+///
+/// State stays Provider-based; Riverpod migration is deferred.
+library;
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';

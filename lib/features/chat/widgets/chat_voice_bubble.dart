@@ -1,12 +1,20 @@
-part of 'chat_pages.dart';
+import 'dart:async';
 
-class _ChatVoiceBubble extends StatefulWidget {
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
+
+import '../../../services/websocket_service.dart';
+import '../../../shared/media/media_url.dart';
+import '../chat_strings.dart';
+
+class ChatVoiceBubble extends StatefulWidget {
   final ChatMessage message;
   final Color iconColor;
   final Color textColor;
   final Color progressColor;
 
-  const _ChatVoiceBubble({
+  const ChatVoiceBubble({
+    super.key,
     required this.message,
     required this.iconColor,
     required this.textColor,
@@ -14,10 +22,10 @@ class _ChatVoiceBubble extends StatefulWidget {
   });
 
   @override
-  State<_ChatVoiceBubble> createState() => _ChatVoiceBubbleState();
+  State<ChatVoiceBubble> createState() => _ChatVoiceBubbleState();
 }
 
-class _ChatVoiceBubbleState extends State<_ChatVoiceBubble> {
+class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
   final AudioPlayer _player = AudioPlayer();
   bool _playing = false;
   Duration _position = Duration.zero;
@@ -124,13 +132,13 @@ class _ChatVoiceBubbleState extends State<_ChatVoiceBubble> {
                 const SizedBox(height: 4),
                 Text(
                   widget.message.isPending
-                      ? _chatText(
+                      ? chatText(
                           context,
                           'Sending...',
                           ar: 'جارٍ الإرسال...',
                           ku: 'لە ناردندایە...',
                         )
-                      : _formatVoiceDuration(
+                      : formatVoiceDuration(
                           _playing || _position.inMilliseconds > 0
                               ? _position
                               : displayDuration,
@@ -144,31 +152,4 @@ class _ChatVoiceBubbleState extends State<_ChatVoiceBubble> {
       ),
     );
   }
-}
-
-/// Chat list row inks when chat UI is light ([ChatUiThemeController]).
-const Color _kChatListRowInkLight = Color(0xFF000000);
-const Color _kChatListRowInkDarkPrimary = Color(0xFFF5F5F5);
-const Color _kChatListRowInkDarkMuted = Color(0xFFCFCFCF);
-
-bool _isIgnorableSocketError(String err) {
-  final text = err.toLowerCase();
-  return text.contains('was not upgraded to websocket') ||
-      text.contains('transport=websocket');
-}
-
-String _formatSocketErrorForUser(String err) {
-  final text = err.toLowerCase();
-  if (text.contains('failed host lookup') ||
-      text.contains('no address associated with hostname') ||
-      text.contains('network is unreachable')) {
-    return 'Cannot reach CarNet server. Check Wi‑Fi or mobile data, then open '
-        'https://carr-5hrm.onrender.com in Safari.';
-  }
-  return err;
-}
-
-String _resolveAttachmentUrl(ChatAttachment attachment) {
-  if (attachment.isLocal) return attachment.url;
-  return buildMediaUrl(attachment.url);
 }
