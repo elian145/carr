@@ -34,12 +34,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Production entry uses `MyApp` from `lib/app/production_app.dart` with screens as `part of carzo_shared.dart`; `CarzoApp` remains for simplified-route smoke tests.
 - `SellDraftList` delegates shared logic to `SellDraftArchive`.
 - Split `sell_page.dart` into extension parts under `lib/pages/sell/` (~809-line shell + 6 modules).
-- Split `chat_pages.dart` into extension parts under `lib/pages/chat/` (~1,072-line shell + 9 modules); `tools/split_chat_pages.py` for regeneration from monolith.
+- Split `chat_pages.dart` into extension parts under `lib/pages/chat/` (~1,072-line shell + 9 modules).
 - Unified sell draft prefs: merged `SellListingDraftPrefs` into `SellDraftPrefs` (`loadListingDraft` / `saveListingDraft` / `clearListingDraft`); SharedPreferences key strings unchanged.
 - Widget tests: car detail cached-listing UI check; `AuthService.adoptTestSession` / `resetTestSession` for test auth; `AuthService` registered with `ChangeNotifierProvider.value` so the singleton is not disposed between tests.
 - `ApiService.testHttpClient` + in-memory `FakeApiServer` mock client (replaces loopback `HttpServer` in tests); chat list empty-state widget test; sell flow still covered by route smoke.
 - Sell page widget test with `CarSpecIndex.debugLoadWithResult` test hook; `CarSpecIndex.loadWithResult` caches in-flight load.
-- Extracted [ApiException] to `lib/services/api_exception.dart`; added `tools/split_api_service.py` scaffold for the next ApiService module split.
+- Extracted [ApiException] to `lib/services/api_exception.dart`; ApiService module split continued under `lib/services/api/`.
 - Login widget tests and mock-API auth login test; skip Socket.IO when [ApiService.testHttpClient] is bound.
 - `.gitignore` patterns for common accidental CLI artifacts and scratch listings.
 - Backend CI runs `scripts/smoke_tests/test_backend_factory_smoke.py`.
