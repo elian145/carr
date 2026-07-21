@@ -2,6 +2,10 @@
 ///
 /// Entry: import this file for chat list / conversation pages.
 ///
+/// Live transport (P-10): Socket.IO is primary while connected; REST history
+/// polling runs only as a fallback when the socket is down — see
+/// `chat_live_transport.dart`.
+///
 /// Leaf widgets (real libraries under widgets/, not parts):
 /// - chat_theme.dart / chat_strings.dart — colors + copy helpers
 /// - widgets/chat_voice_bubble.dart — ChatVoiceBubble
@@ -51,6 +55,7 @@ import '../../widgets/theme_toggle_widget.dart';
 import '../../shared/debug/app_log.dart';
 import '../../app/widgets/listing_network_image.dart';
 import '../../shared/ui/listing_feed_skeleton.dart';
+import 'chat_live_transport.dart';
 import 'chat_strings.dart';
 import 'chat_theme.dart';
 import 'widgets/chat_composer_widgets.dart';

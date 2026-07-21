@@ -14,6 +14,7 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
   StreamSubscription<String>? _errorSub;
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   StreamSubscription<OutgoingChatSendEvent>? _outgoingSendSub;
+  StreamSubscription<bool>? _socketConnectionSub;
   bool _isSending = false;
   bool _loadingHistory = false;
   bool _loadingOlderMessages = false;

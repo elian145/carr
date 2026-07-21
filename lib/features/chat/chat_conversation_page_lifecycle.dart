@@ -48,7 +48,13 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
-      _pollNewMessages();
+      // One-shot HTTP sync only when the socket is down; otherwise realtime owns updates.
+      if (shouldHttpPollChatMessages(
+        socketConnected: WebSocketService.isConnected,
+      )) {
+        unawaited(_pollNewMessages());
+      }
+      _syncHttpFallbackPolling(socketConnected: WebSocketService.isConnected);
     }
   }
 
@@ -56,6 +62,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
+    _socketConnectionSub?.cancel();
     _typingDebounce?.cancel();
     _scrollRetryTimer?.cancel();
     _highlightTimer?.cancel();

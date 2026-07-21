@@ -54,13 +54,41 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
   }
 
   void _startPolling() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 7), (_) {
-      if (mounted) _pollNewMessages();
+    _socketConnectionSub?.cancel();
+    _socketConnectionSub = WebSocketService.connectionState.listen((connected) {
+      if (!mounted) return;
+      _syncHttpFallbackPolling(socketConnected: connected);
+    });
+    _syncHttpFallbackPolling(socketConnected: WebSocketService.isConnected);
+  }
+
+  /// REST poll only while Socket.IO is down (P-10 single-transport strategy).
+  void _syncHttpFallbackPolling({required bool socketConnected}) {
+    if (!shouldHttpPollChatMessages(socketConnected: socketConnected)) {
+      _pollTimer?.cancel();
+      _pollTimer = null;
+      return;
+    }
+    if (_pollTimer?.isActive == true) return;
+    _pollTimer = Timer.periodic(kChatHttpFallbackPollInterval, (_) {
+      if (!mounted) return;
+      if (!shouldHttpPollChatMessages(
+        socketConnected: WebSocketService.isConnected,
+      )) {
+        _pollTimer?.cancel();
+        _pollTimer = null;
+        return;
+      }
+      unawaited(_pollNewMessages());
     });
   }
 
   Future<void> _pollNewMessages() async {
+    if (!shouldHttpPollChatMessages(
+      socketConnected: WebSocketService.isConnected,
+    )) {
+      return;
+    }
     try {
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
