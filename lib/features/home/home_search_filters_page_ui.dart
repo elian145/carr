@@ -1,211 +1,336 @@
 part of 'home_flow.dart';
 
 mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
-  Widget _searchAllFilterSections(
+  bool _searchFilterValueActive(String? value) {
+    if (value == null) return false;
+    final trimmed = value.trim();
+    return trimmed.isNotEmpty && trimmed.toLowerCase() != 'any';
+  }
+
+  bool _searchHasAdvancedFiltersActive() {
+    return _homeSelectedDriveTypes.isNotEmpty ||
+        _searchFilterValueActive(selectedColor) ||
+        _searchFilterValueActive(selectedTitleStatus) ||
+        _searchFilterValueActive(selectedDamagedParts) ||
+        _searchFilterValueActive(selectedRegionSpecs) ||
+        _searchFilterValueActive(selectedPlateType) ||
+        _searchFilterValueActive(selectedPlateCity) ||
+        _searchFilterValueActive(selectedCylinderCount) ||
+        _searchFilterValueActive(selectedSeating) ||
+        _searchFilterValueActive(selectedEngineSize);
+  }
+
+  int _searchAdvancedFiltersActiveCount() {
+    var count = 0;
+    if (_homeSelectedDriveTypes.isNotEmpty) count++;
+    if (_searchFilterValueActive(selectedColor)) count++;
+    if (_searchFilterValueActive(selectedTitleStatus)) count++;
+    if (_searchFilterValueActive(selectedDamagedParts)) count++;
+    if (_searchFilterValueActive(selectedRegionSpecs)) count++;
+    if (_searchFilterValueActive(selectedPlateType)) count++;
+    if (_searchFilterValueActive(selectedPlateCity)) count++;
+    if (_searchFilterValueActive(selectedCylinderCount)) count++;
+    if (_searchFilterValueActive(selectedSeating)) count++;
+    if (_searchFilterValueActive(selectedEngineSize)) count++;
+    return count;
+  }
+
+  Widget _searchAdvancedFiltersToggle(
+    BuildContext context, {
+    required bool expanded,
+    required VoidCallback onToggle,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final titleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
+    final muted = isLight ? const Color(0xFF8E8E93) : Colors.white70;
+    final activeCount = _searchAdvancedFiltersActiveCount();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(16),
+          child: Ink(
+            decoration: _searchCardDecoration(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      expanded ? loc.less : loc.moreFilters,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: titleColor,
+                      ),
+                    ),
+                  ),
+                  if (activeCount > 0 && !expanded)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(
+                        localizeDigits(context, '$activeCount'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: muted,
+                        ),
+                      ),
+                    ),
+                  Icon(
+                    expanded
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: _searchAccent,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _searchEssentialFilterSections(
     BuildContext context,
     StateSetter setStateDialog,
     MoreFiltersDialogStyle style,
   ) {
     final loc = AppLocalizations.of(context)!;
 
+    return [
+      _searchNumericRangeCard(
+        context: context,
+        children: _moreFiltersPriceWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
+      ),
+      _searchNumericRangeCard(
+        context: context,
+        children: _moreFiltersYearWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
+      ),
+      _searchNumericRangeCard(
+        context: context,
+        children: _moreFiltersMileageRangeWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
+      ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.conditionLabel,
+        options: const ['New', 'Used'],
+        selected: selectedCondition,
+        onSelected: (v) => selectedCondition = v ?? 'Any',
+        labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+        textOnly: true,
+      ),
+      _searchMultiIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.fuelTypeLabel,
+        options: fuelTypes,
+        selectedValues: _homeSelectedFuelTypes,
+        onToggle: _homeToggleFuelType,
+        onClear: () => _homeSetSelectedFuelTypes([]),
+        iconForOption: _searchFuelTypeIcon,
+        imageAssetForOption: fuelTypeImageAsset,
+        labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+        scrollHorizontally: true,
+        tileWidth: 100,
+        tileImageWidth: 44,
+        tileImageHeight: 44,
+        tileImageBorderRadius: 8,
+      ),
+      _searchMultiIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.bodyTypeLabel,
+        options: bodyTypes,
+        selectedValues: _homeSelectedBodyTypes,
+        onToggle: _homeToggleBodyType,
+        onClear: () => _homeSetSelectedBodyTypes([]),
+        imageAssetForOption: body_type_assets.bodyTypeImageAsset,
+        labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+        scrollHorizontally: true,
+        tileWidth: 100,
+        tileImageWidth: 52,
+        tileImageHeight: 40,
+        tileImageBorderRadius: 8,
+      ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.transmissionLabel,
+        options: transmissions,
+        selected: selectedTransmission,
+        onSelected: (v) => selectedTransmission = v ?? 'Any',
+        iconForOption: _searchTransmissionIcon,
+        imageAssetForOption: transmissionTypeImageAsset,
+        labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+        scrollHorizontally: true,
+        tileWidth: 88,
+        tileImageWidth: 48,
+        tileImageHeight: 48,
+        tileImageFit: BoxFit.contain,
+        tileImageBorderRadius: 8,
+      ),
+    ];
+  }
+
+  List<Widget> _searchAdvancedFilterSections(
+    BuildContext context,
+    StateSetter setStateDialog,
+    MoreFiltersDialogStyle style,
+  ) {
+    final loc = AppLocalizations.of(context)!;
+
+    return [
+      _searchMultiIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.driveType,
+        options: driveTypes,
+        selectedValues: _homeSelectedDriveTypes,
+        onToggle: _homeToggleDriveType,
+        onClear: () => _homeSetSelectedDriveTypes([]),
+        iconForOption: _searchDriveTypeIcon,
+        imageAssetForOption: driveTypeImageAsset,
+        labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
+        scrollHorizontally: true,
+        tileWidth: 88,
+        tileImageWidth: 48,
+        tileImageHeight: 48,
+        tileImageBorderRadius: 8,
+      ),
+      _searchNumericRangeCard(
+        context: context,
+        children: _moreFiltersColorWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
+      ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.titleStatus,
+        options: const ['clean', 'damaged'],
+        selected: selectedTitleStatus,
+        onSelected: (v) {
+          selectedTitleStatus = v;
+          if (v != 'damaged') {
+            selectedDamagedParts = null;
+          }
+        },
+        labelForOption: _searchTitleStatusLabel,
+        textOnly: true,
+      ),
+      if (selectedTitleStatus == 'damaged')
+        _searchNumericRangeCard(
+          context: context,
+          children: [
+            _searchDamagedPartsField(context, setStateDialog, style),
+          ],
+        ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.regionSpecsLabel,
+        options: kCarRegionSpecCodes,
+        selected: selectedRegionSpecs,
+        onSelected: (v) => selectedRegionSpecs = v,
+        iconForOption: _searchRegionSpecIcon,
+        imageAssetForOption: regionSpecFlagAsset,
+        labelForOption: (ctx, o) =>
+            carRegionSpecDisplayLabelLocalized(ctx, o),
+        scrollHorizontally: true,
+        tileWidth: 80,
+        tileImageWidth: 40,
+        tileImageHeight: 28,
+        tileImageFit: BoxFit.cover,
+        tileImageBorderRadius: 4,
+      ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: AppLocalizations.of(context)!.labelPlateType,
+        options: const [
+          'private',
+          'temporary',
+          'commercial',
+          'taxi',
+        ],
+        selected: selectedPlateType,
+        onSelected: (v) => selectedPlateType = v,
+        iconForOption: _searchPlateTypeIcon,
+        imageAssetForOption: plateTypeImageAsset,
+        labelForOption: (ctx, o) => _translatePlateTypeLegacy(ctx, o),
+        scrollHorizontally: true,
+        tileWidth: 148,
+        tileImageWidth: 132,
+        tileImageHeight: 40,
+        compactImageTile: true,
+      ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: AppLocalizations.of(context)!.labelPlateCity,
+        options: kPlateCityFilterOptions,
+        selected: selectedPlateCity,
+        onSelected: (v) => selectedPlateCity = v,
+        iconForOption: _searchPlateCityIcon,
+        imageAssetForOption: plateCityImageAsset,
+        labelForOption: _searchPlateCityLabel,
+        scrollHorizontally: true,
+        tileWidth: 148,
+        tileImageWidth: 132,
+        tileImageHeight: 40,
+        compactImageTile: true,
+      ),
+      _searchNumericRangeCard(
+        context: context,
+        children: _moreFiltersSpecsDropdownWidgets(
+          context,
+          setStateDialog,
+          style,
+        ),
+      ),
+    ];
+  }
+
+  Widget _searchAllFilterSections(
+    BuildContext context,
+    StateSetter setStateDialog,
+    MoreFiltersDialogStyle style, {
+    required bool advancedExpanded,
+    required VoidCallback onToggleAdvancedExpanded,
+  }) {
     return KeyedSubtree(
       key: ValueKey<int>(_moreFiltersDialogFieldGeneration),
       child: Column(
         children: [
-          _searchNumericRangeCard(
-            context: context,
-            children: _moreFiltersPriceWidgets(
-              context,
-              setStateDialog,
-              style,
-            ),
-          ),
-          _searchNumericRangeCard(
-            context: context,
-            children: _moreFiltersYearWidgets(
-              context,
-              setStateDialog,
-              style,
-            ),
-          ),
-          _searchNumericRangeCard(
-            context: context,
-            children: _moreFiltersMileageRangeWidgets(
-              context,
-              setStateDialog,
-              style,
-            ),
-          ),
-          _searchMultiIconCardSection(
+          ..._searchEssentialFilterSections(context, setStateDialog, style),
+          _searchAdvancedFiltersToggle(
             context,
-            setStateDialog,
-            title: loc.fuelTypeLabel,
-            options: fuelTypes,
-            selectedValues: _homeSelectedFuelTypes,
-            onToggle: _homeToggleFuelType,
-            onClear: () => _homeSetSelectedFuelTypes([]),
-            iconForOption: _searchFuelTypeIcon,
-            imageAssetForOption: fuelTypeImageAsset,
-            labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
-            scrollHorizontally: true,
-            tileWidth: 100,
-            tileImageWidth: 44,
-            tileImageHeight: 44,
-            tileImageBorderRadius: 8,
+            expanded: advancedExpanded,
+            onToggle: onToggleAdvancedExpanded,
           ),
-          _searchMultiIconCardSection(
-            context,
-            setStateDialog,
-            title: loc.bodyTypeLabel,
-            options: bodyTypes,
-            selectedValues: _homeSelectedBodyTypes,
-            onToggle: _homeToggleBodyType,
-            onClear: () => _homeSetSelectedBodyTypes([]),
-            imageAssetForOption: body_type_assets.bodyTypeImageAsset,
-            labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
-            scrollHorizontally: true,
-            tileWidth: 100,
-            tileImageWidth: 52,
-            tileImageHeight: 40,
-            tileImageBorderRadius: 8,
-          ),
-          _searchMultiIconCardSection(
-            context,
-            setStateDialog,
-            title: loc.driveType,
-            options: driveTypes,
-            selectedValues: _homeSelectedDriveTypes,
-            onToggle: _homeToggleDriveType,
-            onClear: () => _homeSetSelectedDriveTypes([]),
-            iconForOption: _searchDriveTypeIcon,
-            imageAssetForOption: driveTypeImageAsset,
-            labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
-            scrollHorizontally: true,
-            tileWidth: 88,
-            tileImageWidth: 48,
-            tileImageHeight: 48,
-            tileImageBorderRadius: 8,
-          ),
-          _searchIconCardSection(
-            context,
-            setStateDialog,
-            title: loc.transmissionLabel,
-            options: transmissions,
-            selected: selectedTransmission,
-            onSelected: (v) => selectedTransmission = v ?? 'Any',
-            iconForOption: _searchTransmissionIcon,
-            imageAssetForOption: transmissionTypeImageAsset,
-            labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
-            scrollHorizontally: true,
-            tileWidth: 88,
-            tileImageWidth: 48,
-            tileImageHeight: 48,
-            tileImageFit: BoxFit.contain,
-            tileImageBorderRadius: 8,
-          ),
-          _searchNumericRangeCard(
-            context: context,
-            children: _moreFiltersColorWidgets(
-              context,
-              setStateDialog,
-              style,
-            ),
-          ),
-          _searchIconCardSection(
-            context,
-            setStateDialog,
-            title: loc.titleStatus,
-            options: const ['clean', 'damaged'],
-            selected: selectedTitleStatus,
-            onSelected: (v) {
-              selectedTitleStatus = v;
-              if (v != 'damaged') {
-                selectedDamagedParts = null;
-              }
-            },
-            labelForOption: _searchTitleStatusLabel,
-            textOnly: true,
-          ),
-          if (selectedTitleStatus == 'damaged')
-            _searchNumericRangeCard(
-              context: context,
-              children: [
-                _searchDamagedPartsField(context, setStateDialog, style),
-              ],
-            ),
-          _searchIconCardSection(
-            context,
-            setStateDialog,
-            title: loc.conditionLabel,
-            options: const ['New', 'Used'],
-            selected: selectedCondition,
-            onSelected: (v) => selectedCondition = v ?? 'Any',
-            labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
-            textOnly: true,
-          ),
-          _searchIconCardSection(
-            context,
-            setStateDialog,
-            title: loc.regionSpecsLabel,
-            options: kCarRegionSpecCodes,
-            selected: selectedRegionSpecs,
-            onSelected: (v) => selectedRegionSpecs = v,
-            iconForOption: _searchRegionSpecIcon,
-            imageAssetForOption: regionSpecFlagAsset,
-            labelForOption: (ctx, o) =>
-                carRegionSpecDisplayLabelLocalized(ctx, o),
-            scrollHorizontally: true,
-            tileWidth: 80,
-            tileImageWidth: 40,
-            tileImageHeight: 28,
-            tileImageFit: BoxFit.cover,
-            tileImageBorderRadius: 4,
-          ),
-          _searchIconCardSection(
-            context,
-            setStateDialog,
-            title: AppLocalizations.of(context)!.labelPlateType,
-            options: const [
-              'private',
-              'temporary',
-              'commercial',
-              'taxi',
-            ],
-            selected: selectedPlateType,
-            onSelected: (v) => selectedPlateType = v,
-            iconForOption: _searchPlateTypeIcon,
-            imageAssetForOption: plateTypeImageAsset,
-            labelForOption: (ctx, o) => _translatePlateTypeLegacy(ctx, o),
-            scrollHorizontally: true,
-            tileWidth: 148,
-            tileImageWidth: 132,
-            tileImageHeight: 40,
-            compactImageTile: true,
-          ),
-          _searchIconCardSection(
-            context,
-            setStateDialog,
-            title: AppLocalizations.of(context)!.labelPlateCity,
-            options: kPlateCityFilterOptions,
-            selected: selectedPlateCity,
-            onSelected: (v) => selectedPlateCity = v,
-            iconForOption: _searchPlateCityIcon,
-            imageAssetForOption: plateCityImageAsset,
-            labelForOption: _searchPlateCityLabel,
-            scrollHorizontally: true,
-            tileWidth: 148,
-            tileImageWidth: 132,
-            tileImageHeight: 40,
-            compactImageTile: true,
-          ),
-          _searchNumericRangeCard(
-            context: context,
-            children: _moreFiltersSpecsDropdownWidgets(
-              context,
-              setStateDialog,
-              style,
-            ),
-          ),
+          if (advancedExpanded)
+            ..._searchAdvancedFilterSections(context, setStateDialog, style),
         ],
       ),
     );
@@ -216,6 +341,8 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     StateSetter setStateDialog, {
     required bool brandsExpanded,
     required VoidCallback onToggleBrandsExpanded,
+    required bool advancedExpanded,
+    required VoidCallback onToggleAdvancedExpanded,
   }) {
     final style = _searchMoreFiltersStyle(context);
 
@@ -226,7 +353,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         brandsExpanded: brandsExpanded,
         onToggleBrandsExpanded: onToggleBrandsExpanded,
       ),
-      _searchAllFilterSections(context, setStateDialog, style),
+      _searchAllFilterSections(
+        context,
+        setStateDialog,
+        style,
+        advancedExpanded: advancedExpanded,
+        onToggleAdvancedExpanded: onToggleAdvancedExpanded,
+      ),
     ];
   }
 
@@ -246,6 +379,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         builder: (pageContext) {
           var didRequestSearchFocus = false;
           var searchBrandsExpanded = false;
+          var searchAdvancedExpanded = _searchHasAdvancedFiltersActive();
           return StatefulBuilder(
             builder: (context, setStateDialog) {
               void toggleSearchBrandsExpanded() {
@@ -253,6 +387,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                   searchBrandsExpanded = !searchBrandsExpanded;
                 });
               }
+
+              void toggleSearchAdvancedExpanded() {
+                setStateDialog(() {
+                  searchAdvancedExpanded = !searchAdvancedExpanded;
+                });
+              }
+
               if (focusSearchField && !didRequestSearchFocus) {
                 didRequestSearchFocus = true;
                 _focusSearchFiltersKeywordField();
@@ -341,6 +482,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                 brandsExpanded: searchBrandsExpanded,
                                 onToggleBrandsExpanded:
                                     toggleSearchBrandsExpanded,
+                                advancedExpanded: searchAdvancedExpanded,
+                                onToggleAdvancedExpanded:
+                                    toggleSearchAdvancedExpanded,
                               ),
                             ),
                           ),

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Search filters progressive disclosure (UX-06): essentials (price/year/mileage/condition/fuel/body/transmission) stay visible; drive/color/title/region/plates/specs behind More filters (auto-expands when advanced values are set).
 - Clearer pending-listing UX (UX-05): status-aware submit copy, navigate to My Listings (Pending when held), “Under review” badge, pending-tab explainer.
 - First-run onboarding tour for buyers/sellers (UX-04): browse, favorites, sell — once via `FirstRunOnboardingGate` (dealer onboarding unchanged).
 - Favorites discoverability (UX-03): home AppBar heart shortcut + profile quick-access card (label uses Favorites, not ambiguous “Saved”).
