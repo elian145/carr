@@ -12,7 +12,7 @@ The **current production API** (`kk/` blueprints) does **not** process in-app pa
 Older HTML templates (`payment_gateway.html`, FIB integration notes) and the
 retired `kk/legacy` monolith supported experimental listing-fee flows. Those
 routes are **not** registered on the production app factory and must not be
-enabled in production.
+enabled in production. The obsolete `payment_history.html` template was removed.
 
 ## Store privacy forms
 

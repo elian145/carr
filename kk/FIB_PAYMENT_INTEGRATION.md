@@ -83,7 +83,7 @@ The FIB payment integration allows users to purchase cars through secure bank tr
 - `payment_gateway.html`: FIB payment gateway simulation
 - `payment_success.html`: Payment success confirmation
 - `payment_cancelled.html`: Payment cancellation page
-- `payment_history.html`: Payment history with filtering
+- ~~`payment_history.html`~~: Removed (legacy; not used by production — see `docs/PAYMENTS.md`)
 
 ### 5. Configuration
 
