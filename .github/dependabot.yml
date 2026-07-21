@@ -1,12 +1,39 @@
+# Dependabot: daily checks so security patches surface faster than weekly-only.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates
 version: 2
 updates:
   - package-ecosystem: pub
     directory: "/"
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - flutter
+
   - package-ecosystem: pip
     directory: "/kk"
     schedule:
-      interval: weekly
+      interval: daily
     open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+
+  - package-ecosystem: npm
+    directory: "/admin-web"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - admin-web
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
