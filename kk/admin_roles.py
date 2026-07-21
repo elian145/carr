@@ -20,13 +20,15 @@ VALID_ROLES = (
     ROLE_MARKETING,
 )
 
-# permission -> roles allowed (super_admin always implied)
+# permission -> roles allowed (super_admin always implied via user_has_permission)
+# PII-heavy reads (users, messages, search, saved searches) are limited to
+# super_admin + moderator — support/marketing must not browse phone/email/chat.
 _PERMISSIONS: dict[str, frozenset[str]] = {
     "dashboard": frozenset(VALID_ROLES),
-    "search": frozenset(VALID_ROLES),
+    "search": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "insights": frozenset(VALID_ROLES),
     "analytics": frozenset(VALID_ROLES),
-    "users.read": frozenset(VALID_ROLES),
+    "users.read": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "users.write": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR, ROLE_SUPPORT}),
     "users.role": frozenset({ROLE_SUPER_ADMIN}),
     "listings.read": frozenset(VALID_ROLES),
@@ -34,10 +36,10 @@ _PERMISSIONS: dict[str, frozenset[str]] = {
     "listings.delete": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "reports": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR, ROLE_SUPPORT}),
     "dealers": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
-    "messages": frozenset(VALID_ROLES),
+    "messages": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "notifications.read": frozenset(VALID_ROLES),
     "notifications.broadcast": frozenset({ROLE_SUPER_ADMIN, ROLE_MARKETING}),
-    "saved_searches": frozenset(VALID_ROLES),
+    "saved_searches": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "audit": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "system": frozenset({ROLE_SUPER_ADMIN}),
     "settings": frozenset({ROLE_SUPER_ADMIN}),

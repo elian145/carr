@@ -14,6 +14,7 @@ from ..admin_roles import (
     VALID_ROLES,
     assert_permission,
     normalize_admin_role,
+    user_has_permission,
 )
 from ..models import (
     Car,
@@ -94,6 +95,13 @@ def _action_to_admin_dict(action: UserAction) -> dict:
 def dashboard():
     """Admin dashboard stats (JSON)."""
     try:
+        denied = _deny("dashboard")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        can_read_users = user_has_permission(admin_user, "users.read")
+        can_read_messages = user_has_permission(admin_user, "messages")
+
         total_users = User.query.count()
         active_users = User.query.filter_by(is_active=True).count()
         total_cars = Car.query.count()
@@ -119,9 +127,17 @@ def dashboard():
             func.coalesce(func.sum(ListingAnalytics.favorites), 0),
         ).one()
 
-        recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
+        recent_users = (
+            User.query.order_by(User.created_at.desc()).limit(10).all()
+            if can_read_users
+            else []
+        )
         recent_cars = Car.query.order_by(Car.created_at.desc()).limit(10).all()
-        recent_messages = Message.query.order_by(Message.created_at.desc()).limit(10).all()
+        recent_messages = (
+            Message.query.order_by(Message.created_at.desc()).limit(10).all()
+            if can_read_messages
+            else []
+        )
 
         user_actions = (
             db.session.query(UserAction.action_type, db.func.count(UserAction.id).label("count"))
@@ -175,6 +191,9 @@ def dashboard():
 def meta_badges():
     """Lightweight counts for sidebar badges (avoids full dashboard payload)."""
     try:
+        denied = _deny("dashboard")
+        if denied:
+            return denied
         pending_user_reports = UserReport.query.filter_by(status="pending").count()
         pending_listing_reports = ListingReport.query.filter_by(status="pending").count()
         return (
@@ -207,6 +226,9 @@ def meta_badges():
 def users():
     """List users with pagination and optional search."""
     try:
+        denied = _deny("users.read")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
         search = (request.args.get("search") or "").strip()
@@ -255,6 +277,9 @@ def users():
 def user_detail(user_id: str):
     """Get one user detail + their cars + recent actions."""
     try:
+        denied = _deny("users.read")
+        if denied:
+            return denied
         user = User.query.filter_by(public_id=user_id).first()
         if not user:
             return jsonify({"message": "User not found"}), 404
@@ -283,6 +308,9 @@ def user_detail(user_id: str):
 def cars():
     """List cars with pagination and optional filters."""
     try:
+        denied = _deny("listings.read")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
         search = (request.args.get("search") or "").strip()
@@ -347,6 +375,9 @@ def cars():
 def messages():
     """List recent messages."""
     try:
+        denied = _deny("messages")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 50, type=int), 1), 100)
         search = (request.args.get("search") or "").strip()
@@ -427,6 +458,9 @@ def message_thread():
 def notifications():
     """List recent notifications."""
     try:
+        denied = _deny("notifications.read")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 50, type=int), 1), 100)
         notification_type = (request.args.get("type") or "").strip()
@@ -1018,6 +1052,9 @@ def update_listing_report(report_id: int):
 def global_search():
     """Search users and listings from a single query."""
     try:
+        denied = _deny("search")
+        if denied:
+            return denied
         q = (request.args.get("q") or "").strip()
         limit = min(max(request.args.get("limit", 10, type=int), 1), 50)
         if not q:
@@ -1066,6 +1103,9 @@ def global_search():
 def car_detail(car_id: str):
     """Listing detail with seller and engagement analytics."""
     try:
+        denied = _deny("listings.read")
+        if denied:
+            return denied
         car = _find_car(car_id)
         if not car:
             return jsonify({"message": "Listing not found"}), 404
@@ -1519,6 +1559,9 @@ def dealers_list():
 def analytics_overview():
     """Platform-wide listing engagement and top performers."""
     try:
+        denied = _deny("analytics")
+        if denied:
+            return denied
         totals = db.session.query(
             func.coalesce(func.sum(ListingAnalytics.views), 0),
             func.coalesce(func.sum(ListingAnalytics.messages), 0),
@@ -1559,6 +1602,9 @@ def analytics_overview():
 def insights():
     """Trends: signups, listings, messages by day; popular brands."""
     try:
+        denied = _deny("insights")
+        if denied:
+            return denied
         days = min(max(request.args.get("days", 14, type=int), 1), 90)
 
         signup_rows = (
@@ -1625,6 +1671,9 @@ def insights():
 def saved_searches():
     """List saved searches across users."""
     try:
+        denied = _deny("saved_searches")
+        if denied:
+            return denied
         page = request.args.get("page", 1, type=int)
         per_page = min(max(request.args.get("per_page", 30, type=int), 1), 100)
         search = (request.args.get("search") or "").strip()
@@ -2000,6 +2049,9 @@ def update_settings():
 def meta_filters():
     """Distinct values for admin filter dropdowns."""
     try:
+        denied = _deny("dashboard")
+        if denied:
+            return denied
         brands = [r[0] for r in db.session.query(Car.brand).distinct().order_by(Car.brand).limit(200).all() if r[0]]
         statuses = [r[0] for r in db.session.query(Car.status).distinct().order_by(Car.status).all() if r[0]]
         action_types = [
