@@ -175,7 +175,8 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
   Future<void> _saveDraft() async {
     try {
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      final parentState =
+          _parentState ?? context.findAncestorStateOfType<_SellCarPageState>();
       final draftId = parentState?._currentDraftId ?? 'default';
       final images = await SellDraftMediaPersistence.persistDynamicMediaList(
         _selectedImages,

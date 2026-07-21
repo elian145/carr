@@ -16,6 +16,9 @@ class FakeApiServer {
   static MockClient? _client;
   static String? _expectedBearer;
 
+  /// When true, GET/sync saved-searches return an empty list (empty-state tests).
+  static bool emptySavedSearches = false;
+
   /// When set, protected routes reject requests whose Authorization header
   /// is not `Bearer <token>`.
   static void expectBearer(String? token) {
@@ -49,6 +52,7 @@ class FakeApiServer {
     ApiService.testHttpClient = null;
     _client = null;
     _expectedBearer = null;
+    emptySavedSearches = false;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -372,6 +376,9 @@ class FakeApiServer {
           },
         });
       case '/api/saved-searches/sync':
+        if (emptySavedSearches) {
+          return _json(200, {'saved_searches': <dynamic>[]});
+        }
         return _json(200, {
           'saved_searches': [
             {
@@ -393,6 +400,9 @@ class FakeApiServer {
               'notify': true,
             },
           });
+        }
+        if (emptySavedSearches) {
+          return _json(200, {'saved_searches': <dynamic>[]});
         }
         return _json(200, {
           'saved_searches': [

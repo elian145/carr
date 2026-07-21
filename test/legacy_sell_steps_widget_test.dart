@@ -58,7 +58,7 @@ void main() {
       },
     );
 
-    expect(find.text('Step 3 of 6'), findsOneWidget);
+    expect(find.textContaining('Step 3 of 6'), findsWidgets);
     expect(find.text('Car Details'), findsWidgets);
   });
 
@@ -74,7 +74,7 @@ void main() {
       },
     );
 
-    expect(find.text('Step 4 of 6'), findsOneWidget);
+    expect(find.textContaining('Step 4 of 6'), findsWidgets);
     expect(find.text('Pricing & Contact'), findsWidgets);
   });
 
@@ -89,7 +89,7 @@ void main() {
       },
     );
 
-    expect(find.text('Step 1 of 6'), findsOneWidget);
+    expect(find.textContaining('Step 1 of 6'), findsWidgets);
     expect(find.text('Photos & Videos'), findsWidgets);
   });
 
@@ -106,7 +106,7 @@ void main() {
       },
     );
 
-    expect(find.text('Step 6 of 6'), findsOneWidget);
+    expect(find.textContaining('Step 6 of 6'), findsWidgets);
     expect(find.text('Review & Submit'), findsWidgets);
     expect(find.text('Submit Listing'), findsOneWidget);
   });

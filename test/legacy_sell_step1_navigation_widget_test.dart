@@ -65,7 +65,7 @@ void main() {
     var ready = false;
     for (var i = 0; i < 120; i++) {
       await tester.pump(const Duration(milliseconds: 50));
-      if (find.text('Step 3 of 6').evaluate().isNotEmpty) {
+      if (find.textContaining('Step 3 of 6').evaluate().isNotEmpty) {
         ready = true;
         break;
       }

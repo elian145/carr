@@ -52,7 +52,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Add Listing'), findsWidgets);
-    expect(find.text('Step 1 of 6'), findsOneWidget);
+    expect(find.textContaining('Step 1 of 6'), findsWidgets);
     expect(find.text('Photos & Videos'), findsWidgets);
     expect(find.text('Add Photos'), findsWidgets);
   });

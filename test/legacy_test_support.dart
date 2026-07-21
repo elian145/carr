@@ -135,7 +135,8 @@ Future<void> openSellDraftStep(
   final stepLabel = 'Step ${step + 1} of 6';
   for (var i = 0; i < 60; i++) {
     await tester.pump(const Duration(milliseconds: 50));
-    if (find.text(stepLabel).evaluate().isNotEmpty) {
+    // UX-01 appends " · N%" to the step indicator text.
+    if (find.textContaining(stepLabel).evaluate().isNotEmpty) {
       ready = true;
       break;
     }
@@ -154,7 +155,7 @@ Future<void> openSellStep1Fresh(WidgetTester tester) async {
   var ready = false;
   for (var i = 0; i < 80; i++) {
     await tester.pump(const Duration(milliseconds: 50));
-    if (find.text('Step 1 of 6').evaluate().isNotEmpty) {
+    if (find.textContaining('Step 1 of 6').evaluate().isNotEmpty) {
       ready = true;
       break;
     }

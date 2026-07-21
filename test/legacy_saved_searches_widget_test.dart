@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/app/production_app.dart' as legacy;
+import 'package:car_listing_app/services/api_service.dart';
+import 'package:car_listing_app/services/auth_service.dart';
 
 import 'fake_api_server.dart';
 
@@ -12,11 +14,29 @@ void main() {
     await FakeApiServer.ensureStarted();
   });
 
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({
       'push_enabled': false,
       'app_locale': 'en',
+      'saved_searches_v1': '[]',
     });
+    FakeApiServer.emptySavedSearches = true;
+    await ApiService.clearTokens();
+    await AuthService().adoptTestSession(
+      user: {
+        'id': 1,
+        'username': 'buyer',
+        'is_admin': false,
+        'is_verified': true,
+        'account_type': 'individual',
+      },
+    );
+  });
+
+  tearDown(() async {
+    FakeApiServer.emptySavedSearches = false;
+    await ApiService.clearTokens();
+    AuthService().resetTestSession();
   });
 
   tearDownAll(() async {
