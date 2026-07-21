@@ -107,6 +107,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     try {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) return;
+      unawaited(AppHaptics.light());
       // Use API service so endpoint + auth stays consistent.
       final res = await ApiService.toggleFavorite(carId);
       final bool favorited =

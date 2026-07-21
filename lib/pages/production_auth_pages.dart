@@ -19,6 +19,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/ui/app_haptics.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
 

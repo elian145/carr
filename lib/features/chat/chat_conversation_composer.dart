@@ -78,6 +78,7 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
       return;
     }
     if (!await ensurePhoneVerifiedForAction(context)) return;
+    unawaited(AppHaptics.light());
     setState(() => _isSending = true);
     _messageController.clear();
 

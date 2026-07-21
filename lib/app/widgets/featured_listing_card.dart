@@ -15,6 +15,7 @@ import '../../shared/listings/listing_card_media.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/ui/responsive.dart';
+import '../../shared/ui/app_haptics.dart';
 import '../../theme_provider.dart';
 import 'listing_network_image.dart';
 
@@ -154,6 +155,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     setState(() => _favoriteBusy = true);
     final previous = _isFavorite;
     setState(() => _isFavorite = !previous);
+    unawaited(AppHaptics.light());
     try {
       final res = await ApiService.toggleFavorite(id);
       final favorited =

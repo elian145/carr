@@ -834,6 +834,7 @@ class _ListingCardFavoriteButtonState
       _busy = true;
       _isFavorite = !previous;
     });
+    unawaited(AppHaptics.light());
     try {
       final res = await ApiService.toggleFavorite(id);
       final favorited =

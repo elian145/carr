@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/listings/listing_identity.dart';
+import '../../../shared/ui/app_haptics.dart';
 import '../state/car_comparison_store.dart';
 
 /// Reusable comparison toggle for listing detail and compact toolbars.
@@ -50,6 +53,7 @@ class ComparisonButton extends StatelessWidget {
       normalized['public_id'] = publicId;
     }
     store.addCarToComparison(normalized);
+    unawaited(AppHaptics.selection());
     Navigator.pushNamed(context, '/comparison');
   }
 

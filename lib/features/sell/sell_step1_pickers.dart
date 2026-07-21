@@ -6,7 +6,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
     List<String> options, {
     String? contextBrand,
   }) async {
-    services.HapticFeedback.selectionClick();
+    unawaited(AppHaptics.selection());
     String query = '';
     return await showDialog<String>(
       context: context,

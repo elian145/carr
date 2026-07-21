@@ -55,6 +55,7 @@ import 'chat_theme.dart';
 import 'widgets/chat_composer_widgets.dart';
 import 'widgets/chat_media_viewer.dart';
 import 'widgets/chat_voice_bubble.dart';
+import '../../shared/ui/app_haptics.dart';
 
 part 'chat_shared.dart';
 part 'chat_list_page.dart';

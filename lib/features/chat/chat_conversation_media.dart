@@ -237,6 +237,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
   Future<void> _sendVoiceMessage(XFile file) async {
     if (_isSending) return;
     if (!await ensurePhoneVerifiedForAction(context)) return;
+    unawaited(AppHaptics.light());
     setState(() => _isSending = true);
     final replyToMessageId = _replyingToMessage?.id;
     final startedAt = DateTime.now();
@@ -263,6 +264,7 @@ mixin _ChatConversationMedia on _ChatConversationTransport {
         .toList();
     if (validFiles.isEmpty) return false;
 
+    unawaited(AppHaptics.light());
     final listingPreviewForMessage = _pendingInitialListingContext
         ? _listingPreview
         : null;

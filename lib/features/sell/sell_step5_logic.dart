@@ -154,6 +154,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
 
       if (carId.isNotEmpty) {
         // Success - listing created or updated
+        unawaited(AppHaptics.success());
         // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
         try {
           final draftId = parentState?._currentDraftId.isNotEmpty == true

@@ -101,6 +101,7 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
       // Backend expects: POST /api/cars/<car_id>/favorite and returns { is_favorited: bool }
       final targetId = (car?['public_id'] ?? car?['id'] ?? widget.carId)
           .toString();
+      unawaited(AppHaptics.light());
       final res = await ApiService.toggleFavorite(targetId);
       final bool favorited =
           (res['is_favorited'] == true) || (res['favorited'] == true);
