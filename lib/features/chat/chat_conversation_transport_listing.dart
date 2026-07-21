@@ -129,7 +129,7 @@ mixin _ChatConversationTransportListing on _ChatConversationTransportSync {
           )
           .toList(),
       listingPreview: listingPreview,
-      isRead: true,
+      isRead: false,
       createdAt: at,
       isPending: true,
     );
@@ -171,7 +171,7 @@ mixin _ChatConversationTransportListing on _ChatConversationTransportSync {
       attachments: [
         ChatAttachment(type: 'audio', url: file.path, isLocal: true),
       ],
-      isRead: true,
+      isRead: false,
       createdAt: at,
       isPending: true,
     );

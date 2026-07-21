@@ -12,6 +12,7 @@ from flask_socketio import emit, join_room, leave_room
 from .auth import phone_verification_error_payload
 from .chat_realtime import (
     emit_message_to_participants,
+    mark_messages_read_for_viewer,
     resolve_car_for_chat,
     room_for_car_public_id,
     user_can_access_chat_room,
@@ -141,6 +142,12 @@ def register_socketio_handlers(socketio) -> None:
                 "room": room,
             },
         )
+        # Opening the conversation marks inbound messages read for the peer.
+        try:
+            mark_messages_read_for_viewer(car, me)
+        except Exception:
+            db.session.rollback()
+            logger.exception("join_chat mark-read failed for car %s", car.public_id)
 
     @socketio.on("leave_chat")
     def _leave_chat(payload):  # type: ignore[no-redef]

@@ -15,6 +15,8 @@ class WebSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   static final StreamController<Map<String, dynamic>> _messageDeletesController =
       StreamController<Map<String, dynamic>>.broadcast();
+  static final StreamController<Map<String, dynamic>> _messageReadsController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   static Stream<Map<String, dynamic>> get messages => _messagesController.stream;
   static Stream<Map<String, dynamic>> get notifications =>
@@ -26,6 +28,8 @@ class WebSocketService {
       _messageUpdatesController.stream;
   static Stream<Map<String, dynamic>> get messageDeletes =>
       _messageDeletesController.stream;
+  static Stream<Map<String, dynamic>> get messageReads =>
+      _messageReadsController.stream;
 
   static String get baseHttpUrl => effectiveSocketIoBase();
 
@@ -181,6 +185,12 @@ class WebSocketService {
       _socket!.on('message_deleted', (payload) {
         if (payload is Map) {
           _messageDeletesController.add(Map<String, dynamic>.from(payload));
+        }
+      });
+
+      _socket!.on('messages_read', (payload) {
+        if (payload is Map) {
+          _messageReadsController.add(Map<String, dynamic>.from(payload));
         }
       });
 

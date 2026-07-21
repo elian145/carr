@@ -11,7 +11,7 @@ from sqlalchemy import func, or_
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
-from ..chat_realtime import emit_message_to_participants
+from ..chat_realtime import emit_message_to_participants, mark_messages_read_for_viewer
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, validate_input_sanitization
@@ -375,14 +375,9 @@ def get_messages(conversation_id: str):
             .all()
         )
 
-        # Mark messages to me as read (best-effort).
+        # Mark messages to me as read and notify senders (read receipts).
         try:
-            Message.query.filter(
-                Message.car_id == car.id,
-                Message.receiver_id == me.id,
-                Message.is_read == False,  # noqa: E712
-            ).update({"is_read": True})
-            db.session.commit()
+            mark_messages_read_for_viewer(car, me)
         except Exception:
             db.session.rollback()
 

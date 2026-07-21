@@ -70,6 +70,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
     _messageSub?.cancel();
     _messageUpdateSub?.cancel();
     _messageDeleteSub?.cancel();
+    _messageReadSub?.cancel();
     _errorSub?.cancel();
     _typingSub?.cancel();
     _outgoingSendSub?.cancel();

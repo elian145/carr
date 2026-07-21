@@ -10,6 +10,7 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
   StreamSubscription<Map<String, dynamic>>? _messageSub;
   StreamSubscription<Map<String, dynamic>>? _messageUpdateSub;
   StreamSubscription<Map<String, dynamic>>? _messageDeleteSub;
+  StreamSubscription<Map<String, dynamic>>? _messageReadSub;
   StreamSubscription<String>? _errorSub;
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   StreamSubscription<OutgoingChatSendEvent>? _outgoingSendSub;

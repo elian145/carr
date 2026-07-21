@@ -111,3 +111,48 @@ def emit_message_to_participants(
                 User, message.receiver_id
             )
     emit_to_user_rooms(event_name, payload, resolved_sender, resolved_receiver)
+
+
+def mark_messages_read_for_viewer(car: Car, viewer: User) -> dict:
+    """
+    Mark unread inbound messages as read and notify counterparties (M-14).
+
+    Returns a small summary dict for logging / responses.
+    """
+    if car is None or viewer is None:
+        return {"marked": 0, "message_ids": []}
+
+    unread = (
+        Message.query.filter(
+            Message.car_id == car.id,
+            Message.receiver_id == viewer.id,
+            Message.is_read.is_(False),
+            Message.is_deleted.is_(False),
+        )
+        .order_by(Message.created_at.asc())
+        .all()
+    )
+    if not unread:
+        return {"marked": 0, "message_ids": []}
+
+    message_ids = [
+        (m.public_id or str(m.id)) for m in unread if (m.public_id or m.id)
+    ]
+    sender_ids = {m.sender_id for m in unread if m.sender_id}
+    senders = (
+        User.query.filter(User.id.in_(sender_ids)).all() if sender_ids else []
+    )
+
+    Message.query.filter(Message.id.in_([m.id for m in unread])).update(
+        {"is_read": True},
+        synchronize_session=False,
+    )
+    db.session.commit()
+
+    payload = {
+        "car_id": car.public_id,
+        "reader_id": viewer.public_id,
+        "message_ids": message_ids,
+    }
+    emit_to_user_rooms("messages_read", payload, *senders)
+    return {"marked": len(message_ids), "message_ids": message_ids}

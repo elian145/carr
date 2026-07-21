@@ -5,6 +5,7 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
     _messageSub?.cancel();
     _messageUpdateSub?.cancel();
     _messageDeleteSub?.cancel();
+    _messageReadSub?.cancel();
     _errorSub?.cancel();
     _messageSub = WebSocketService.messages.listen((message) {
       // Optional: filter by carId when payload includes it
@@ -50,6 +51,34 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
         _addMessageIfMissing(updated);
         if (_replyingToMessage?.id == updated.id) {
           _replyingToMessage = updated;
+        }
+      });
+    });
+    _messageReadSub = WebSocketService.messageReads.listen((event) {
+      final payloadCarId = event['car_id']?.toString();
+      if (payloadCarId != null &&
+          payloadCarId.isNotEmpty &&
+          payloadCarId != widget.carId) {
+        return;
+      }
+      if (!mounted) return;
+      final rawIds = event['message_ids'];
+      final idSet = <String>{};
+      if (rawIds is List) {
+        for (final id in rawIds) {
+          final s = id?.toString() ?? '';
+          if (s.isNotEmpty) idSet.add(s);
+        }
+      }
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final myId = auth.userId;
+      setState(() {
+        for (var i = 0; i < _messages.length; i++) {
+          final m = _messages[i];
+          if (m.senderId != myId || m.isRead || m.isPending) continue;
+          if (idSet.isEmpty || idSet.contains(m.id)) {
+            _messages[i] = m.copyWith(isRead: true);
+          }
         }
       });
     });
