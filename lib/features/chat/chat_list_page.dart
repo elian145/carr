@@ -18,13 +18,41 @@ class _ChatListPageState extends State<ChatListPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    unawaited(_bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    final flags = await FeatureFlags.load();
+    if (!flags.chatEnabled) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Chat unavailable'),
+          content: const Text(
+            'Messaging is temporarily disabled. Please try again later.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+      return;
+    }
     _loadChats();
     _setupWebSocketListeners();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && FeatureFlags.current.chatEnabled) {
       _loadChats();
     }
   }

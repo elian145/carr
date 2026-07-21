@@ -34,12 +34,22 @@ type FormState = {
   soft_update_message: string;
   android_store_url: string;
   ios_store_url: string;
+  feature_flags: Record<string, boolean>;
 };
+
+const DEFAULT_FLAG_KEYS = [
+  "sell",
+  "chat",
+  "dealers",
+  "comparison",
+  "saved_searches",
+] as const;
 
 function toForm(payload: PlatformSettingsPayload): FormState {
   const e = payload.effective || {};
   const o = payload.overrides || {};
   const pick = (key: keyof FormState) => {
+    if (key === "feature_flags") return "";
     const override = o[key];
     if (override !== undefined && override !== null && String(override) !== "") {
       return String(override);
@@ -47,6 +57,19 @@ function toForm(payload: PlatformSettingsPayload): FormState {
     const eff = e[key];
     return eff === null || eff === undefined ? "" : String(eff);
   };
+  const known =
+    payload.known_feature_flags && payload.known_feature_flags.length > 0
+      ? payload.known_feature_flags
+      : [...DEFAULT_FLAG_KEYS];
+  const effectiveFlags =
+    (payload.feature_flags as Record<string, boolean> | undefined) ||
+    (e.feature_flags as Record<string, boolean> | undefined) ||
+    {};
+  const feature_flags: Record<string, boolean> = {};
+  for (const key of known) {
+    feature_flags[key] =
+      typeof effectiveFlags[key] === "boolean" ? effectiveFlags[key] : true;
+  }
   return {
     app_name: pick("app_name"),
     support_email: pick("support_email"),
@@ -70,8 +93,10 @@ function toForm(payload: PlatformSettingsPayload): FormState {
     soft_update_message: pick("soft_update_message"),
     android_store_url: pick("android_store_url"),
     ios_store_url: pick("ios_store_url"),
+    feature_flags,
   };
 }
+
 
 function Field({
   label,
@@ -149,6 +174,7 @@ export default function SettingsPage() {
         soft_update_message: form.soft_update_message,
         android_store_url: form.android_store_url,
         ios_store_url: form.ios_store_url,
+        feature_flags: form.feature_flags,
       });
       setForm(toForm(payload));
       toast.success("Settings saved");
@@ -193,6 +219,7 @@ export default function SettingsPage() {
         soft_update_message: "",
         android_store_url: "",
         ios_store_url: "",
+        feature_flags: null,
       });
       setForm(toForm(payload));
       toast.success("Overrides cleared");
@@ -207,7 +234,7 @@ export default function SettingsPage() {
   return (
     <AsyncPageBody
       title="Settings"
-      description="Contact info, legal URLs, and feature pricing"
+      description="Contact info, legal URLs, feature flags, and pricing"
       data={data}
       error={error}
       loading={loading}
@@ -314,6 +341,39 @@ export default function SettingsPage() {
                     placeholder="July 13, 2026"
                   />
                 </Field>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-surface-border bg-surface-card p-5">
+              <h2 className="text-lg font-medium">Feature flags</h2>
+              <p className="mt-1 text-xs text-surface-muted">
+                Remote kill-switches for the mobile app (fail-open when the API
+                is unreachable). Exposed at{" "}
+                <code className="text-[11px]">/api/config/app</code> →{" "}
+                <code className="text-[11px]">feature_flags</code>.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {Object.keys(form.feature_flags).map((key) => (
+                  <label
+                    key={key}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-surface-border px-3 py-2 text-sm text-white"
+                  >
+                    <span className="capitalize">{key.replaceAll("_", " ")}</span>
+                    <input
+                      type="checkbox"
+                      checked={form.feature_flags[key] !== false}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          feature_flags: {
+                            ...form.feature_flags,
+                            [key]: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                ))}
               </div>
             </section>
 

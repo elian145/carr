@@ -39,6 +39,7 @@ import '../../services/websocket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/api_service.dart';
 import '../../services/outgoing_chat_send_service.dart';
+import '../../services/feature_flags.dart';
 import '../../shared/errors/user_error_text.dart';
 import '../../shared/ui/responsive.dart';
 import '../../shared/auth/phone_verification_gate.dart';

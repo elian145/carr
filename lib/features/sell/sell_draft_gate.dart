@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/feature_flags.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_step.dart';
@@ -592,7 +593,33 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadDrafts());
+    unawaited(_bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    final flags = await FeatureFlags.load();
+    if (!flags.sellEnabled) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Selling unavailable'),
+          content: const Text(
+            'Creating new listings is temporarily disabled. Please try again later.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      if (mounted) _goBack();
+      return;
+    }
+    await _loadDrafts();
   }
 
   @override

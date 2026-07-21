@@ -844,6 +844,11 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("android_store_url", app_body)
         self.assertIn("listing_require_approval", app_body)
         self.assertFalse(app_body.get("listing_require_approval"))
+        flags = app_body.get("feature_flags") or {}
+        self.assertIsInstance(flags, dict)
+        for key in ("sell", "chat", "dealers", "comparison", "saved_searches"):
+            self.assertIn(key, flags)
+            self.assertTrue(flags[key])
 
         terms = self.client.get("/terms")
         self.assertEqual(terms.status_code, 200, terms.data)

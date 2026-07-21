@@ -87,6 +87,19 @@ def _app_config_payload() -> dict:
     # Keep in sync with kk.listing_moderation.listing_require_approval
     require_approval = listing_require_approval()
 
+    try:
+        from ..app_settings import get_feature_flags
+
+        flags = get_feature_flags()
+    except Exception:
+        flags = {
+            "sell": True,
+            "chat": True,
+            "dealers": True,
+            "comparison": True,
+            "saved_searches": True,
+        }
+
     return {
         "min_app_version": _s("min_app_version"),
         "min_android_build": _i("min_android_build"),
@@ -108,6 +121,7 @@ def _app_config_payload() -> dict:
         ),
         "ios_store_url": _s("ios_store_url"),
         "listing_require_approval": require_approval,
+        "feature_flags": flags,
     }
 
 

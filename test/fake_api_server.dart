@@ -434,6 +434,13 @@ class FakeApiServer {
               'https://play.google.com/store/apps/details?id=com.carzo.app',
           'ios_store_url': '',
           'listing_require_approval': false,
+          'feature_flags': {
+            'sell': true,
+            'chat': true,
+            'dealers': true,
+            'comparison': true,
+            'saved_searches': true,
+          },
         });
       case '/api/push/preferences':
         return _json(200, {'push_enabled': true});

@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import 'api_service.dart';
 import 'config.dart';
+import 'feature_flags.dart';
 import '../shared/debug/app_log.dart';
 
 /// Server-driven minimum (hard) and recommended (soft) client version gates.
@@ -39,9 +40,9 @@ class AppVersionGate {
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
         if (decoded is Map) {
-          fromApi = AppVersionRequirement.fromJson(
-            Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
-          );
+          final map = Map<String, dynamic>.from(decoded.cast<String, dynamic>());
+          fromApi = AppVersionRequirement.fromJson(map);
+          FeatureFlags.applyFromAppConfigJson(map);
         }
       }
     } catch (e, st) {

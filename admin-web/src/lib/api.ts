@@ -247,9 +247,14 @@ export async function fetchSystemHealth(): Promise<SystemHealth> {
 }
 
 export interface PlatformSettingsPayload {
-  defaults: Record<string, string | number | null>;
-  overrides: Record<string, string | number | null | undefined>;
-  effective: Record<string, string | number | null>;
+  defaults: Record<string, string | number | null | Record<string, boolean>>;
+  overrides: Record<
+    string,
+    string | number | null | undefined | Record<string, boolean>
+  >;
+  effective: Record<string, string | number | null | Record<string, boolean>>;
+  feature_flags?: Record<string, boolean>;
+  known_feature_flags?: string[];
   updated_at?: string | null;
 }
 
@@ -258,7 +263,10 @@ export async function fetchSettings(): Promise<PlatformSettingsPayload> {
 }
 
 export async function updateSettings(
-  patch: Record<string, string | number | null | undefined>,
+  patch: Record<
+    string,
+    string | number | boolean | null | undefined | Record<string, boolean>
+  >,
 ): Promise<PlatformSettingsPayload> {
   return apiRequest<PlatformSettingsPayload>("/api/admin/settings", {
     method: "PUT",

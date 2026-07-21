@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Remote feature flags on `/api/config/app` (`feature_flags`), admin Settings toggles, Flutter `FeatureFlags` client (sell/chat gates); see `docs/FEATURE_FLAGS.md`.
 - `docs/SUPPORTED_PLATFORMS.md`: Android/iOS are official targets; desktop runners are untested scaffold (linked from README, ARCHITECTURE, CONTRIBUTING, publish checklist).
 - Root `CONTRIBUTING.md` (local setup, PR expectations, CI mirror commands); README Contributing section links to it.
 - Flutter tests boot production `ProductionApp` with shared `test/fake_api_server.dart`.
