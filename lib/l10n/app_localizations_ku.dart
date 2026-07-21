@@ -1620,6 +1620,9 @@ class AppLocalizationsKu extends AppLocalizations {
       'ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.';
 
   @override
+  String get offlineBannerMessage => 'ئۆفلاینیت. هەندێک تایبەتمەندی کار ناکەن.';
+
+  @override
   String get myListingsPendingFilter => 'چاوەڕوان';
 
   @override

@@ -527,6 +527,7 @@
   "listingSubmittedPending": "تم إرسال الإعلان للمراجعة. تابعه في إعلاناتي ← قيد المراجعة.",
   "listingSubmittedSuccess": "تم إرسال الإعلان! قد يظهر بعد مراجعة المشرف.",
   "homeOfflineCachedBanner": "أنت غير متصل. يتم عرض الإعلانات المخزنة.",
+  "offlineBannerMessage": "أنت غير متصل. قد لا تعمل بعض الميزات.",
   "myListingsPendingFilter": "قيد المراجعة",
   "myListingsNoPendingTitle": "لا توجد إعلانات قيد المراجعة",
   "myListingsNoPendingHint": "الإعلانات بانتظار موافقة المشرف ستظهر هنا.",

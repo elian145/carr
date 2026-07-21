@@ -527,6 +527,7 @@
   "listingSubmittedPending": "ڕیکلام بۆ پێداچوونەوە نێردرا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.",
   "listingSubmittedSuccess": "ڕیکلام نێردرا! لەوانەیە دوای پێداچوونەوەی بەڕێوەبەر دەربکەوێت.",
   "homeOfflineCachedBanner": "ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.",
+  "offlineBannerMessage": "ئۆفلاینیت. هەندێک تایبەتمەندی کار ناکەن.",
   "myListingsPendingFilter": "چاوەڕوان",
   "myListingsNoPendingTitle": "هیچ ڕێکلامێکی چاوەڕوان نییە",
   "myListingsNoPendingHint": "ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون.",

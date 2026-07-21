@@ -1611,6 +1611,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'أنت غير متصل. يتم عرض الإعلانات المخزنة.';
 
   @override
+  String get offlineBannerMessage => 'أنت غير متصل. قد لا تعمل بعض الميزات.';
+
+  @override
   String get myListingsPendingFilter => 'قيد المراجعة';
 
   @override

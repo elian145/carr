@@ -1621,6 +1621,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You are offline. Showing cached listings.';
 
   @override
+  String get offlineBannerMessage =>
+      'You\'re offline. Some features may not work.';
+
+  @override
   String get myListingsPendingFilter => 'Pending';
 
   @override

@@ -3166,6 +3166,12 @@ abstract class AppLocalizations {
   /// **'You are offline. Showing cached listings.'**
   String get homeOfflineCachedBanner;
 
+  /// No description provided for @offlineBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Some features may not work.'**
+  String get offlineBannerMessage;
+
   /// No description provided for @myListingsPendingFilter.
   ///
   /// In en, this message translates to:
