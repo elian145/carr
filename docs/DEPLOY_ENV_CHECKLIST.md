@@ -11,6 +11,7 @@ Use this when configuring the **carr** web service before store submission.
 | `JWT_SECRET_KEY` | `openssl rand -hex 32` |
 | `DATABASE_URL` | Render Postgres connection string (not SQLite) |
 | `REDIS_URL` | Render Key Value / Redis URL — **required** for shared rate limits across Gunicorn workers |
+| `JWT_ACCESS_TOKEN_MINUTES` | Optional; default **30** (clamped 15–60). Short access JWT; clients use refresh rotation |
 
 Without `REDIS_URL`, the API refuses to start (unless emergency `ALLOW_INMEMORY_RATE_LIMITS=1`).
 Confirm `/health` shows `"redis_configured": true`.

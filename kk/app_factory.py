@@ -142,6 +142,11 @@ def create_app():
             "Use one of: development, production, testing."
         )
     app.config.from_object(selected_config)
+    # Re-read JWT TTLs from env at boot (Config class attrs are import-time).
+    from .config import _access_token_expires, _refresh_token_expires
+
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = _access_token_expires()
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = _refresh_token_expires()
     validate_required_secrets(env_name)
 
     configure_logging(app)

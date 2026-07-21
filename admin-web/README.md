@@ -82,8 +82,8 @@ Then add the deployed admin URL to `CORS_ORIGINS` on the API service.
 ## Auth
 
 - Login: `POST /api/admin-session` (Next route → Flask login; JWT never exposed to JS)
-- Session: httpOnly cookie `carzo_admin_jwt` (8h); middleware verifies JWT (set `JWT_SECRET_KEY` same as Flask)
-- API calls: `/backend-api/*` proxy attaches `Authorization: Bearer …` from the cookie
+- Session: httpOnly cookies `carzo_admin_jwt` (access) + `carzo_admin_refresh` (refresh); middleware/proxy rotate short-lived access tokens
+- API calls: `/backend-api/*` proxy attaches `Authorization: Bearer …` from the access cookie (refreshing when expired)
 - Client also checks `GET /api/auth/me` for `is_admin: true`
 - Non-admin accounts are rejected at login
 

@@ -1138,6 +1138,44 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(me.status_code, 200, me.data)
 
+    def test_access_token_ttl_is_short(self):
+        """H-03: access JWTs expire in 15–60 minutes (default 30)."""
+        import base64
+        import json
+        from datetime import timedelta
+
+        from kk.config import _access_token_expires
+
+        # Default / clamped helper.
+        self.assertEqual(_access_token_expires(), timedelta(minutes=30))
+        previous = os.environ.get("JWT_ACCESS_TOKEN_MINUTES")
+        try:
+            os.environ["JWT_ACCESS_TOKEN_MINUTES"] = "15"
+            self.assertEqual(_access_token_expires(), timedelta(minutes=15))
+            os.environ["JWT_ACCESS_TOKEN_MINUTES"] = "120"
+            self.assertEqual(_access_token_expires(), timedelta(minutes=60))
+            os.environ["JWT_ACCESS_TOKEN_MINUTES"] = "5"
+            self.assertEqual(_access_token_expires(), timedelta(minutes=15))
+        finally:
+            if previous is None:
+                os.environ.pop("JWT_ACCESS_TOKEN_MINUTES", None)
+            else:
+                os.environ["JWT_ACCESS_TOKEN_MINUTES"] = previous
+
+        login = self.client.post(
+            "/api/auth/login",
+            json={"username": "viewer", "password": "Aa123456"},
+        )
+        self.assertEqual(login.status_code, 200, login.data)
+        access = (login.get_json() or {}).get("access_token") or ""
+        self.assertTrue(access)
+        payload_b64 = access.split(".")[1]
+        pad = "=" * ((4 - len(payload_b64) % 4) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64 + pad))
+        lifetime = int(payload["exp"]) - int(payload["iat"])
+        self.assertGreaterEqual(lifetime, 15 * 60)
+        self.assertLessEqual(lifetime, 60 * 60)
+
     def test_auth_logout(self):
         logout = self.client.post(
             "/api/auth/logout",

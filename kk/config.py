@@ -167,6 +167,31 @@ def validate_redis_required(env: str | None = None) -> None:
         ) from exc
 
 
+def _access_token_expires() -> timedelta:
+    """
+    Access JWT lifetime. Default 30 minutes (audit H-03: 15–60).
+
+    Override with JWT_ACCESS_TOKEN_MINUTES (clamped to 15–60).
+    """
+    raw = (os.environ.get("JWT_ACCESS_TOKEN_MINUTES") or "30").strip()
+    try:
+        minutes = int(raw)
+    except ValueError:
+        minutes = 30
+    minutes = max(15, min(60, minutes))
+    return timedelta(minutes=minutes)
+
+
+def _refresh_token_expires() -> timedelta:
+    raw = (os.environ.get("JWT_REFRESH_TOKEN_DAYS") or "30").strip()
+    try:
+        days = int(raw)
+    except ValueError:
+        days = 30
+    days = max(1, min(90, days))
+    return timedelta(days=days)
+
+
 class Config:
     # Basic Flask Configuration
     # In production, secrets are REQUIRED (validated via validate_required_secrets()).
@@ -189,8 +214,9 @@ class Config:
     
     # JWT Configuration
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY") or _DEV_JWT_SECRET_FALLBACK
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    # Short-lived access tokens (15–60 min); mobile/admin refresh rotate long-lived refresh tokens.
+    JWT_ACCESS_TOKEN_EXPIRES = _access_token_expires()
+    JWT_REFRESH_TOKEN_EXPIRES = _refresh_token_expires()
     JWT_BLACKLIST_ENABLED = True
     JWT_BLACKLIST_TOKEN_CHECKS = ['access', 'refresh']
     

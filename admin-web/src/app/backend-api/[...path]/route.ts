@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
-import { ADMIN_JWT_COOKIE } from "@/lib/admin-session-constants";
-import { verifyAdminAccessJwt } from "@/lib/verify-admin-jwt";
+import { NextResponse } from "next/server";
+import {
+  cookieSecureFromRequest,
+  resolveAdminAccessToken,
+  setAdminSessionCookies,
+} from "@/lib/admin-session-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,19 +18,6 @@ function apiBase(): string {
 }
 
 type Ctx = { params: Promise<{ path: string[] }> };
-
-async function resolveBearer(): Promise<string | null> {
-  const jar = await cookies();
-  const raw = jar.get(ADMIN_JWT_COOKIE)?.value || "";
-  if (!raw) return null;
-  const secret = (process.env.JWT_SECRET_KEY || "").trim();
-  const isProd =
-    (process.env.NODE_ENV || "").trim() === "production" ||
-    (process.env.APP_ENV || "").trim().toLowerCase() === "production";
-  if (isProd && !secret) return null;
-  const check = await verifyAdminAccessJwt(raw, secret);
-  return check.ok ? raw : null;
-}
 
 async function proxy(request: Request, context: Ctx): Promise<Response> {
   const { path } = await context.params;
@@ -47,7 +38,13 @@ async function proxy(request: Request, context: Ctx): Promise<Response> {
     if (v) headers.set(name, v);
   }
 
-  const token = await resolveBearer();
+  const jar = await cookies();
+  let rotatedAccess: string | null = null;
+  let rotatedRefresh: string | null = null;
+  const token = await resolveAdminAccessToken(jar, (access, refresh) => {
+    rotatedAccess = access;
+    rotatedRefresh = refresh;
+  });
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const init: RequestInit = {
@@ -57,7 +54,6 @@ async function proxy(request: Request, context: Ctx): Promise<Response> {
   };
   if (request.method !== "GET" && request.method !== "HEAD") {
     init.body = request.body;
-    // Required by Node fetch when streaming a request body.
     (init as { duplex?: string }).duplex = "half";
   }
 
@@ -78,11 +74,21 @@ async function proxy(request: Request, context: Ctx): Promise<Response> {
     if (v) outHeaders.set(name, v);
   }
 
-  return new Response(upstream.body, {
+  // Prefer NextResponse so we can rotate httpOnly cookies after refresh.
+  const res = new NextResponse(upstream.body, {
     status: upstream.status,
     statusText: upstream.statusText,
     headers: outHeaders,
   });
+  if (rotatedAccess && rotatedRefresh) {
+    setAdminSessionCookies(
+      res,
+      rotatedAccess,
+      rotatedRefresh,
+      cookieSecureFromRequest(request),
+    );
+  }
+  return res;
 }
 
 export const GET = proxy;
