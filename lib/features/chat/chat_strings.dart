@@ -29,5 +29,6 @@ String formatSocketErrorForUser(String err) {
     return 'Cannot reach CarNet server. Check Wi‑Fi or mobile data, then open '
         'https://carr-5hrm.onrender.com in Safari.';
   }
-  return err;
+  // Never surface raw socket/transport internals to end users.
+  return 'Connection error. Check your network and try again.';
 }

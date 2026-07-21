@@ -278,11 +278,19 @@ mixin _SellStep5Logic on _SellStep5Fields {
                   'Video upload returned success but 0 videos: $payload',
                 );
                 if (mounted) {
+                  final rawMsg = (payload['message'] ?? '').toString().trim();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        (payload['message'] ?? 'No valid videos were uploaded.')
-                            .toString(),
+                        userErrorText(
+                          context,
+                          rawMsg.isNotEmpty
+                              ? ApiException(statusCode: 400, message: rawMsg)
+                              : Exception('no videos uploaded'),
+                          fallback:
+                              AppLocalizations.of(context)?.errorTitle ??
+                              'Error',
+                        ),
                       ),
                       backgroundColor: Colors.orange,
                     ),
@@ -295,7 +303,12 @@ mixin _SellStep5Logic on _SellStep5Fields {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Video upload failed (${e.statusCode}). ${e.message.isNotEmpty ? e.message : ''}',
+                      userErrorText(
+                        context,
+                        e,
+                        fallback:
+                            AppLocalizations.of(context)?.errorTitle ?? 'Error',
+                      ),
                     ),
                     backgroundColor: Colors.orange,
                   ),

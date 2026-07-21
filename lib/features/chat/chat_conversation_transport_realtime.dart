@@ -88,7 +88,13 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       if (_isIgnorableSocketError(err)) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_formatSocketErrorForUser(err)),
+          content: Text(
+            userErrorText(
+              context,
+              Exception(err),
+              fallback: _formatSocketErrorForUser(err),
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );

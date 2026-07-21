@@ -39,6 +39,7 @@ class OutgoingChatSendEvent {
     this.tempMessageId,
     this.messageJson,
     this.error,
+    this.errorCause,
     this.restoreFiles,
     this.restoreCaption,
     this.restoredPlainText,
@@ -50,6 +51,8 @@ class OutgoingChatSendEvent {
   final String? tempMessageId;
   final Map<String, dynamic>? messageJson;
   final String? error;
+  /// Original failure cause when available (prefer for [userErrorText]).
+  final Object? errorCause;
   final List<XFile>? restoreFiles;
   final String? restoreCaption;
   final String? restoredPlainText;
@@ -170,7 +173,7 @@ class OutgoingChatSendService {
         conversationId: conversationId,
         success: false,
         tempMessageId: tempMessageId,
-        error: e.toString(),
+        errorCause: e,
         restoreFiles: restoreFiles,
         restoreCaption: restoreCaption,
       ));
@@ -250,7 +253,7 @@ class OutgoingChatSendService {
         conversationId: conversationId,
         success: false,
         tempMessageId: tempMessageId,
-        error: e.toString(),
+        errorCause: e,
         restoreFiles: [restoreFile],
       ));
     }
@@ -310,7 +313,7 @@ class OutgoingChatSendService {
         conversationId: conversationId,
         success: false,
         restoredPlainText: content,
-        error: e.toString(),
+        errorCause: e,
       ));
     }
   }

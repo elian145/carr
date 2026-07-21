@@ -1,3 +1,4 @@
+import 'package:car_listing_app/features/chat/chat_strings.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/shared/errors/user_error_text.dart';
 import 'package:flutter/material.dart';
@@ -40,6 +41,17 @@ void main() {
           },
         ),
       ),
+    );
+  });
+
+  test('formatSocketErrorForUser never returns raw internals', () {
+    expect(
+      formatSocketErrorForUser('SocketException: Connection reset by peer'),
+      isNot(contains('SocketException')),
+    );
+    expect(
+      formatSocketErrorForUser('failed host lookup: example.com'),
+      contains('Cannot reach CarNet'),
     );
   });
 }

@@ -75,7 +75,13 @@ class _ChatListPageState extends State<ChatListPage>
       if (_isIgnorableSocketError(err)) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_formatSocketErrorForUser(err)),
+          content: Text(
+            userErrorText(
+              context,
+              Exception(err),
+              fallback: _formatSocketErrorForUser(err),
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );

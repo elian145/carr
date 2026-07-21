@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/errors/user_error_text.dart';
 import '../widgets/theme_toggle_widget.dart';
 
 /// Change password for the authenticated user (current + new password).
@@ -58,8 +59,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       developer.log('Change password failed', name: 'ChangePasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to change password. Please check your current password and try again.'),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback:
+                  'Unable to change password. Please check your current password and try again.',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -67,8 +75,15 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       developer.log('Change password failed', name: 'ChangePasswordPage', error: e);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to change password. Please try again later.'),
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback:
+                  'Unable to change password. Please try again later.',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );

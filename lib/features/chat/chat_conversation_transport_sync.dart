@@ -71,7 +71,18 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.error ?? 'Send failed'),
+              content: Text(
+                userErrorText(
+                  context,
+                  e.errorCause ?? Exception(e.error ?? 'Send failed'),
+                  fallback: chatText(
+                    context,
+                    'Send failed',
+                    ar: 'فشل الإرسال',
+                    ku: 'ناردن سەرکەوتوو نەبوو',
+                  ),
+                ),
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -99,7 +110,18 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.error ?? 'Send failed'),
+              content: Text(
+                userErrorText(
+                  context,
+                  e.errorCause ?? Exception(e.error ?? 'Send failed'),
+                  fallback: chatText(
+                    context,
+                    'Send failed',
+                    ar: 'فشل الإرسال',
+                    ku: 'ناردن سەرکەوتوو نەبوو',
+                  ),
+                ),
+              ),
               backgroundColor: Colors.red,
             ),
           );
@@ -127,7 +149,18 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
           });
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(e.error ?? 'Send failed'),
+              content: Text(
+                userErrorText(
+                  context,
+                  e.errorCause ?? Exception(e.error ?? 'Send failed'),
+                  fallback: chatText(
+                    context,
+                    'Send failed',
+                    ar: 'فشل الإرسال',
+                    ku: 'ناردن سەرکەوتوو نەبوو',
+                  ),
+                ),
+              ),
               backgroundColor: Colors.red,
             ),
           );

@@ -434,7 +434,13 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                   );
                 }
                 if (snapshot.hasError) {
-                  return Text(snapshot.error.toString());
+                  return Text(
+                    userErrorText(
+                      context,
+                      snapshot.error!,
+                      fallback: loc?.errorTitle ?? 'Error',
+                    ),
+                  );
                 }
                 final a = snapshot.data;
                 if (a == null) return const Text('No analytics available.');

@@ -5,6 +5,7 @@ import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/errors/user_error_text.dart';
 
 /// If [input] looks like a confirmation link (carzo:// or https with token=), returns the token; otherwise returns [input] trimmed.
 String _tokenFromPastedInput(String input) {
@@ -90,7 +91,13 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.message),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.verificationFailedMessage,
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -98,7 +105,13 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.verificationFailedMessage),
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.verificationFailedMessage,
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );

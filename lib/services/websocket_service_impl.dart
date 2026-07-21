@@ -230,7 +230,7 @@ class WebSocketService {
       _isConnecting = false;
       _cleanupSocket();
       _emitConnected(false);
-      _emitError('Connection failed: $e');
+      _emitError('Connection failed');
     }
   }
 
@@ -259,7 +259,7 @@ class WebSocketService {
       }
       _socket!.emit(event, data);
     } catch (e) {
-      _emitError('Send message error: $e');
+      _emitError('Send message error');
     }
   }
 

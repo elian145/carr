@@ -128,7 +128,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _showApiErrorDialog(ApiException e) async {
-    String msg = e.message;
+    if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    var msg = userErrorText(context, e, fallback: loc.errorTitle);
     if (e.statusCode == 429) {
       final retryAfter = e.body?['retry_after'];
       final seconds = retryAfter is int
@@ -136,19 +138,19 @@ class _LoginPageState extends State<LoginPage> {
           : (retryAfter is num ? retryAfter.toInt() : null);
       if (seconds != null && seconds > 0) {
         final minutes = (seconds / 60).ceil();
-        msg = '$msg Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
+        msg =
+            '$msg Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
       }
     }
-    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.errorTitle),
+        title: Text(loc.errorTitle),
         content: Text(msg),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.okAction),
+            child: Text(loc.okAction),
           ),
         ],
       ),
