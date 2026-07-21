@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Extract brands, models, and trims from kk/legacy/app.py and from JSON listing data,
+Extract brands, models, and trims from tools/data catalog seeds + listing JSON,
 then print Dart CarCatalog code. Run from repo root: python tools/extract_car_catalog.py
+
+Primary seed: tools/data/legacy_catalog_seed.json (exported from the retired
+kk/legacy monolith). Also merges recovered_* and listing JSON files.
 """
 import ast
 import json
@@ -11,7 +14,7 @@ from pathlib import Path
 from collections import defaultdict
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-APP_PY = REPO_ROOT / "kk" / "legacy" / "app.py"
+CATALOG_SEED = REPO_ROOT / "tools" / "data" / "legacy_catalog_seed.json"
 # JSON files that contain car listings with brand, model, trim (merged into catalog)
 JSON_DATA_PATHS = [
     REPO_ROOT / "tools" / "data" / "cars.json",
@@ -857,7 +860,7 @@ def emit_dart(car_models: dict, trim_levels: dict) -> str:
 
     lines = []
     lines.append("/// Single source of truth for car brands, models, and trims.")
-    lines.append("/// Generated from kk/legacy/app.py, tools/data/*.json, and recovered_*.json - run: python tools/extract_car_catalog.py")
+    lines.append("/// Generated from tools/data/legacy_catalog_seed.json, tools/data/*.json, and recovered_*.json - run: python tools/extract_car_catalog.py")
     lines.append("class CarCatalog {")
     lines.append("  CarCatalog._();")
     lines.append("")
@@ -920,19 +923,25 @@ def emit_dart(car_models: dict, trim_levels: dict) -> str:
     return "\n".join(lines)
 
 
+def load_catalog_seed() -> tuple[dict, dict]:
+    """Load brands/models/trims seed exported from the retired legacy backend."""
+    if not CATALOG_SEED.is_file():
+        print(f"Not found: {CATALOG_SEED}", file=sys.stderr)
+        sys.exit(1)
+    data = json.loads(CATALOG_SEED.read_text(encoding="utf-8"))
+    car_models = data.get("car_models") or {}
+    trim_levels = data.get("trim_levels") or {}
+    if not isinstance(car_models, dict) or not car_models:
+        print("legacy_catalog_seed.json missing car_models", file=sys.stderr)
+        sys.exit(1)
+    if not isinstance(trim_levels, dict) or not trim_levels:
+        print("legacy_catalog_seed.json missing trim_levels", file=sys.stderr)
+        sys.exit(1)
+    return car_models, trim_levels
+
+
 def main():
-    if not APP_PY.exists():
-        print(f"Not found: {APP_PY}", file=sys.stderr)
-        sys.exit(1)
-    source = APP_PY.read_text(encoding="utf-8")
-    car_models = extract_car_models(source)
-    trim_levels = extract_trim_levels(source)
-    if not car_models:
-        print("Could not extract car_models", file=sys.stderr)
-        sys.exit(1)
-    if not trim_levels:
-        print("Could not extract trim_levels", file=sys.stderr)
-        sys.exit(1)
+    car_models, trim_levels = load_catalog_seed()
     json_models, json_trims = load_json_catalog()
     car_models, trim_levels = merge_json_into_catalog(
         car_models, trim_levels, json_models, json_trims

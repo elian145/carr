@@ -9,7 +9,7 @@ CARZO (CarNet) is a Flutter client + Flask backend monorepo for a car marketplac
 | Layer | Entry | Notes |
 |-------|-------|-------|
 | Flutter | `lib/main.dart` → `MyApp` | Production UI as `part of` library in `lib/app/carzo_shared.dart` + `lib/pages/` |
-| Backend (prod) | `kk.wsgi:app` / `create_app()` in `kk/app_factory.py` | Do not use `kk/legacy/app.py` in production |
+| Backend (prod) | `kk.wsgi:app` / `create_app()` in `kk/app_factory.py` | Canonical; never use retired `kk.app` / `kk/legacy` |
 | Local dev API | `python -m kk.app_new` on **5000**, proxy `backend/server.py` on **5003** | App default `API_BASE` targets the proxy |
 
 ## Flutter layout
@@ -45,7 +45,7 @@ kk/
 ├── models.py              # SQLAlchemy models
 ├── security.py            # Rate limits, sanitization
 ├── socketio_handlers.py   # Real-time chat
-└── legacy/                # Old monolith; guarded, not for production
+└── legacy/                # Monolith removed (H-11); README points at kk.wsgi
 ```
 
 ## Configuration

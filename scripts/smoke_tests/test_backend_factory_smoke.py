@@ -1837,6 +1837,18 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(r.status_code, 200, r.data)
         self.assertIn("cars", r.get_json() or {})
 
+    def test_legacy_monolith_entrypoints_are_retired(self):
+        """H-11: kk.app / kk.api / kk.app_legacy must not load; use kk.wsgi."""
+        for mod in ("kk.app", "kk.api", "kk.app_legacy"):
+            with self.assertRaises(RuntimeError) as ctx:
+                __import__(mod)
+            self.assertIn("retired", str(ctx.exception).lower())
+            sys.modules.pop(mod, None)
+
+        self.assertTrue((_REPO_ROOT / "kk" / "wsgi.py").is_file())
+        self.assertFalse((_REPO_ROOT / "kk" / "legacy" / "app.py").is_file())
+        self.assertFalse((_REPO_ROOT / "kk" / "admin_routes.py").is_file())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -9,7 +9,10 @@ The **current production API** (`kk/` blueprints) does **not** process in-app pa
 
 ## Legacy / HTML (not used by the Flutter app)
 
-Older modules under `kk/legacy/` and HTML templates (`payment_gateway.html`, FIB integration notes) supported experimental listing-fee flows. Those routes are **not** registered on the production app factory and must not be enabled in production.
+Older HTML templates (`payment_gateway.html`, FIB integration notes) and the
+retired `kk/legacy` monolith supported experimental listing-fee flows. Those
+routes are **not** registered on the production app factory and must not be
+enabled in production.
 
 ## Store privacy forms
 
