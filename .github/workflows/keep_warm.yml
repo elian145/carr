@@ -1,0 +1,36 @@
+# Keep Render free-tier API warm (M-12).
+#
+# Free web services sleep after ~15 minutes idle; a cold wake can take 30–60s.
+# This workflow pings GET /health about every 10 minutes.
+#
+# Override host via repo variable API_BASE_URL if the production URL changes.
+# For a lasting fix, move the web service off free tier (always-on).
+
+name: Keep warm production API
+
+on:
+  schedule:
+    # Every 10 minutes (GitHub may delay schedules slightly under load).
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      host:
+        description: "API origin (no /api suffix)"
+        required: false
+        default: "https://carr-5hrm.onrender.com"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ping /health
+        env:
+          HOST: ${{ github.event.inputs.host || vars.API_BASE_URL || 'https://carr-5hrm.onrender.com' }}
+        run: python scripts/keep_warm.py --host "$HOST" --timeout 90
