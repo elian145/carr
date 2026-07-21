@@ -30,6 +30,10 @@ SETTING_KEYS = (
     "min_android_build",
     "min_ios_build",
     "force_update_message",
+    "recommended_app_version",
+    "recommended_android_build",
+    "recommended_ios_build",
+    "soft_update_message",
     "android_store_url",
     "ios_store_url",
 )
@@ -62,6 +66,13 @@ def default_platform_settings() -> dict[str, Any]:
         "force_update_message": _env(
             "FORCE_UPDATE_MESSAGE",
             "Please update CarNet to continue.",
+        ),
+        "recommended_app_version": _env("RECOMMENDED_APP_VERSION", ""),
+        "recommended_android_build": _env("RECOMMENDED_ANDROID_BUILD", ""),
+        "recommended_ios_build": _env("RECOMMENDED_IOS_BUILD", ""),
+        "soft_update_message": _env(
+            "SOFT_UPDATE_MESSAGE",
+            "A newer version of CarNet is available.",
         ),
         "android_store_url": _env(
             "ANDROID_STORE_URL",

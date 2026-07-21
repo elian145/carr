@@ -95,6 +95,13 @@ def _app_config_payload() -> dict:
             "force_update_message",
             "Please update CarNet to continue.",
         ),
+        "recommended_app_version": _s("recommended_app_version"),
+        "recommended_android_build": _i("recommended_android_build"),
+        "recommended_ios_build": _i("recommended_ios_build"),
+        "soft_update_message": _s(
+            "soft_update_message",
+            "A newer version of CarNet is available.",
+        ),
         "android_store_url": _s(
             "android_store_url",
             "https://play.google.com/store/apps/details?id=com.carzo.app",
@@ -112,7 +119,7 @@ def trust_config():
 
 @bp.route("/api/config/app", methods=["GET"])
 def app_config():
-    """Minimum client version gates + store URLs for force-update."""
+    """Minimum + recommended client version gates and store URLs."""
     return jsonify(_app_config_payload()), 200
 
 

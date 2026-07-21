@@ -426,6 +426,10 @@ class FakeApiServer {
           'min_android_build': null,
           'min_ios_build': null,
           'force_update_message': 'Please update CarNet to continue.',
+          'recommended_app_version': '',
+          'recommended_android_build': null,
+          'recommended_ios_build': null,
+          'soft_update_message': 'A newer version of CarNet is available.',
           'android_store_url':
               'https://play.google.com/store/apps/details?id=com.carzo.app',
           'ios_store_url': '',

@@ -28,6 +28,10 @@ type FormState = {
   min_android_build: string;
   min_ios_build: string;
   force_update_message: string;
+  recommended_app_version: string;
+  recommended_android_build: string;
+  recommended_ios_build: string;
+  soft_update_message: string;
   android_store_url: string;
   ios_store_url: string;
 };
@@ -60,6 +64,10 @@ function toForm(payload: PlatformSettingsPayload): FormState {
     min_android_build: pick("min_android_build"),
     min_ios_build: pick("min_ios_build"),
     force_update_message: pick("force_update_message"),
+    recommended_app_version: pick("recommended_app_version"),
+    recommended_android_build: pick("recommended_android_build"),
+    recommended_ios_build: pick("recommended_ios_build"),
+    soft_update_message: pick("soft_update_message"),
     android_store_url: pick("android_store_url"),
     ios_store_url: pick("ios_store_url"),
   };
@@ -135,6 +143,10 @@ export default function SettingsPage() {
         min_android_build: form.min_android_build,
         min_ios_build: form.min_ios_build,
         force_update_message: form.force_update_message,
+        recommended_app_version: form.recommended_app_version,
+        recommended_android_build: form.recommended_android_build,
+        recommended_ios_build: form.recommended_ios_build,
+        soft_update_message: form.soft_update_message,
         android_store_url: form.android_store_url,
         ios_store_url: form.ios_store_url,
       });
@@ -175,6 +187,10 @@ export default function SettingsPage() {
         min_android_build: "",
         min_ios_build: "",
         force_update_message: "",
+        recommended_app_version: "",
+        recommended_android_build: "",
+        recommended_ios_build: "",
+        soft_update_message: "",
         android_store_url: "",
         ios_store_url: "",
       });
@@ -302,14 +318,14 @@ export default function SettingsPage() {
             </section>
 
             <section className="rounded-xl border border-surface-border bg-surface-card p-5">
-              <h2 className="text-lg font-medium">Force update</h2>
+              <h2 className="text-lg font-medium">App update gates</h2>
               <p className="mt-1 text-xs text-surface-muted">
-                Block older mobile builds. Leave version/build fields empty to
-                allow all installed versions. Exposed at{" "}
+                Hard min version/build blocks the app. Recommended version shows
+                a dismissible prompt. Leave fields empty to skip. Exposed at{" "}
                 <code className="text-[11px]">/api/config/app</code>.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <Field label="Min app version" hint="Semver, e.g. 1.0.1">
+                <Field label="Min app version (force)" hint="Semver, e.g. 1.0.1">
                   <input
                     className={inputClass}
                     value={form.min_app_version}
@@ -342,6 +358,46 @@ export default function SettingsPage() {
                     value={form.min_ios_build}
                     onChange={(e) => setField("min_ios_build", e.target.value)}
                     placeholder="4"
+                  />
+                </Field>
+                <Field
+                  label="Recommended app version (soft)"
+                  hint="Prompt only; user can dismiss"
+                >
+                  <input
+                    className={inputClass}
+                    value={form.recommended_app_version}
+                    onChange={(e) =>
+                      setField("recommended_app_version", e.target.value)
+                    }
+                    placeholder="1.1.0"
+                  />
+                </Field>
+                <Field label="Soft update message">
+                  <input
+                    className={inputClass}
+                    value={form.soft_update_message}
+                    onChange={(e) =>
+                      setField("soft_update_message", e.target.value)
+                    }
+                  />
+                </Field>
+                <Field label="Recommended Android build">
+                  <input
+                    className={inputClass}
+                    value={form.recommended_android_build}
+                    onChange={(e) =>
+                      setField("recommended_android_build", e.target.value)
+                    }
+                  />
+                </Field>
+                <Field label="Recommended iOS build">
+                  <input
+                    className={inputClass}
+                    value={form.recommended_ios_build}
+                    onChange={(e) =>
+                      setField("recommended_ios_build", e.target.value)
+                    }
                   />
                 </Field>
                 <Field label="Android store URL">
