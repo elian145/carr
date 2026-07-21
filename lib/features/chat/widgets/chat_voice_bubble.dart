@@ -108,6 +108,19 @@ class _ChatVoiceBubbleState extends State<ChatVoiceBubble> {
         children: [
           IconButton(
             onPressed: widget.message.isPending ? null : _togglePlay,
+            tooltip: _playing
+                ? chatText(
+                    context,
+                    'Pause',
+                    ar: 'إيقاف مؤقت',
+                    ku: 'وەستان',
+                  )
+                : chatText(
+                    context,
+                    'Play',
+                    ar: 'تشغيل',
+                    ku: 'لێدان',
+                  ),
             icon: Icon(
               _playing ? Icons.pause_circle_filled : Icons.play_circle_filled,
             ),

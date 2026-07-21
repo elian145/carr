@@ -154,15 +154,19 @@ Widget _buildChatComposerAttachmentTile({
       Positioned(
         top: 4,
         right: 4,
-        child: InkWell(
-          onTap: onRemove,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(10),
+        child: Semantics(
+          button: true,
+          label: AppLocalizations.of(context)?.removeAction ?? 'Remove',
+          child: InkWell(
+            onTap: onRemove,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
             ),
-            padding: const EdgeInsets.all(4),
-            child: const Icon(Icons.close, size: 14, color: Colors.white),
           ),
         ),
       ),

@@ -17,6 +17,7 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
         title: loc.yearRange,
         style: style,
         toggle: _moreFiltersRangeModeToggle(
+          context: context,
           style: style,
           isDropdown: isYearDropdown,
           onPressed: () => setStateDialog(() {

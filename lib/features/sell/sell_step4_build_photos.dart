@@ -158,19 +158,23 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                             Positioned(
                               left: 6,
                               bottom: 6,
-                              child: InkWell(
-                                onTap: () => _setPrimaryImage(index),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  padding: const EdgeInsets.all(6),
-                                  child: const Icon(
-                                    Icons.star_border,
-                                    size: 18,
-                                    color: Colors.white,
+                              child: Semantics(
+                                button: true,
+                                label: AppLocalizations.of(context)!.coverImage,
+                                child: InkWell(
+                                  onTap: () => _setPrimaryImage(index),
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    padding: const EdgeInsets.all(6),
+                                    child: const Icon(
+                                      Icons.star_border,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -178,7 +182,10 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                           Positioned(
                             right: 6,
                             top: 6,
-                            child: InkWell(
+                            child: Semantics(
+                              button: true,
+                              label: AppLocalizations.of(context)!.removeAction,
+                              child: InkWell(
                         onTap: () {
                           final parentState = context
                               .findAncestorStateOfType<_SellCarPageState>();
@@ -215,6 +222,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                   color: Colors.white,
                                 ),
                               ),
+                            ),
                             ),
                           ),
                         ],

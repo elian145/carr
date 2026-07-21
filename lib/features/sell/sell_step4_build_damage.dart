@@ -95,7 +95,10 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                           Positioned(
                             right: 6,
                             top: 6,
-                            child: InkWell(
+                            child: Semantics(
+                              button: true,
+                              label: AppLocalizations.of(context)!.removeAction,
+                              child: InkWell(
                               onTap: () {
                                 final parentState = context
                                     .findAncestorStateOfType<_SellCarPageState>();
@@ -126,6 +129,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                                   color: Colors.white,
                                 ),
                               ),
+                            ),
                             ),
                           ),
                         ],

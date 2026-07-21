@@ -421,6 +421,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                           child: Row(
                             children: [
                               IconButton(
+                                tooltip: AppLocalizations.of(context)!.close,
                                 icon: const Icon(Icons.close),
                                 color: titleColor,
                                 onPressed: () => Navigator.pop(context),

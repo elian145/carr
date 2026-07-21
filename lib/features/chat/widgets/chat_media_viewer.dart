@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../../app/widgets/listing_network_image.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../navigation/app_page_route.dart';
 import '../../../services/websocket_service.dart';
 import '../../../shared/media/media_url.dart';
@@ -157,6 +158,7 @@ class _ChatMediaGroupViewerState extends State<ChatMediaGroupViewer> {
               top: 8,
               right: 8,
               child: IconButton(
+                tooltip: AppLocalizations.of(context)?.close ?? 'Close',
                 icon: const Icon(Icons.close, color: Colors.white, size: 30),
                 onPressed: () => Navigator.of(context).pop(),
               ),

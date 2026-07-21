@@ -17,6 +17,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
         title: loc.priceRange,
         style: style,
         toggle: _moreFiltersRangeModeToggle(
+          context: context,
           style: style,
           isDropdown: isPriceDropdown,
           onPressed: () => setStateDialog(() {

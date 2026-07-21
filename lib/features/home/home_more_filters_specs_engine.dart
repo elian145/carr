@@ -139,6 +139,9 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
           ),
           const SizedBox(width: 8),
           IconButton(
+            tooltip: isEngineSizeDropdown
+                ? AppLocalizations.of(context)!.typeManually
+                : AppLocalizations.of(context)!.selectFromList,
             onPressed: () => setStateDialog(() {
               if (isEngineSizeDropdown) {
                 _engineSizeController.text = selectedEngineSize ?? '';

@@ -28,6 +28,7 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
         title: loc.mileageRangeLabel,
         style: style,
         toggle: _moreFiltersRangeModeToggle(
+          context: context,
           style: style,
           isDropdown: isMileageDropdown,
           onPressed: () => setStateDialog(() {

@@ -19,11 +19,14 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       filterDropdownFieldDecoration(style, label);
 
   Widget _moreFiltersRangeModeToggle({
+    required BuildContext context,
     required MoreFiltersDialogStyle style,
     required bool isDropdown,
     required VoidCallback onPressed,
   }) {
+    final loc = AppLocalizations.of(context)!;
     return IconButton(
+      tooltip: isDropdown ? loc.typeManually : loc.selectFromList,
       onPressed: onPressed,
       icon: Icon(
         isDropdown ? Icons.edit : Icons.list,

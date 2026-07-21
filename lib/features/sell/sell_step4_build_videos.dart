@@ -96,24 +96,28 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                       Positioned(
                         right: 6,
                         top: 6,
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedVideos.removeAt(index);
-                            });
-                            unawaited(_syncMediaDraftToParent());
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            padding: const EdgeInsets.all(6),
-                            child: const Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Colors.white,
+                        child: Semantics(
+                          button: true,
+                          label: AppLocalizations.of(context)!.removeAction,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedVideos.removeAt(index);
+                              });
+                              unawaited(_syncMediaDraftToParent());
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(6),
+                              child: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
