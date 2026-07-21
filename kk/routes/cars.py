@@ -17,6 +17,13 @@ from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
 from ..models import Car, ListingReport, User, db, user_favorites, user_viewed_listings
+from ..response_cache import (
+    FACETS_TTL_S,
+    cache_get,
+    cache_set,
+    filter_facets_cache_key,
+    invalidate_filter_facets_cache,
+)
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url
@@ -54,6 +61,36 @@ def _public_listings_filter(query):
         Car.is_active.is_(True),
         or_(Car.status.is_(None), Car.status.in_(tuple(_PUBLIC_LISTING_STATUSES))),
     )
+
+
+def _bump_filter_facets_cache() -> None:
+    try:
+        invalidate_filter_facets_cache()
+    except Exception:
+        current_app.logger.exception("filter facets cache invalidate failed")
+
+
+def _distinct_public_values(column, *, limit: int = 200) -> list[str]:
+    rows = (
+        _public_listings_filter(db.session.query(column))
+        .filter(column.isnot(None), column != "")
+        .distinct()
+        .order_by(column.asc())
+        .limit(limit)
+        .all()
+    )
+    out: list[str] = []
+    seen: set[str] = set()
+    for (raw,) in rows:
+        val = str(raw).strip()
+        if not val:
+            continue
+        key = val.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(val)
+    return out
 
 
 def _listing_visible_to_viewer(car, viewer) -> bool:
@@ -429,6 +466,48 @@ def _leading_float(val):
             return float(m.group(1))
         except Exception:
             return None
+
+
+@bp.route("/api/filters/facets", methods=["GET"])
+def filter_facets():
+    """Cached distinct values for home/search filter dropdowns."""
+    try:
+        cache_key = filter_facets_cache_key()
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return jsonify(cached), 200
+
+        year_bounds = (
+            _public_listings_filter(
+                db.session.query(func.min(Car.year), func.max(Car.year))
+            ).one()
+        )
+        price_bounds = (
+            _public_listings_filter(
+                db.session.query(func.min(Car.price), func.max(Car.price))
+            ).one()
+        )
+        payload = {
+            "brands": _distinct_public_values(Car.brand),
+            "models": _distinct_public_values(Car.model, limit=500),
+            "locations": _distinct_public_values(Car.location),
+            "body_types": _distinct_public_values(Car.body_type),
+            "conditions": _distinct_public_values(Car.condition),
+            "transmissions": _distinct_public_values(Car.transmission),
+            "drive_types": _distinct_public_values(Car.drive_type),
+            "fuel_types": _distinct_public_values(Car.fuel_type),
+            "colors": _distinct_public_values(Car.color),
+            "title_statuses": _distinct_public_values(Car.title_status),
+            "year_min": int(year_bounds[0]) if year_bounds[0] is not None else None,
+            "year_max": int(year_bounds[1]) if year_bounds[1] is not None else None,
+            "price_min": float(price_bounds[0]) if price_bounds[0] is not None else None,
+            "price_max": float(price_bounds[1]) if price_bounds[1] is not None else None,
+        }
+        cache_set(cache_key, payload, FACETS_TTL_S)
+        return jsonify(payload), 200
+    except Exception as e:
+        current_app.logger.exception("filter_facets failed: %s", e)
+        return jsonify({"message": "Failed to load filter facets"}), 500
 
 
 @bp.route("/api/cars", methods=["GET"])
@@ -876,6 +955,7 @@ def create_car():
 
         db.session.add(car)
         db.session.commit()
+        _bump_filter_facets_cache()
         log_user_action(current_user, "create_listing", "car", car.public_id)
         if car.is_active and (car.status or "active") == "active":
             try:
@@ -1075,6 +1155,7 @@ def update_car(car_id: str):
 
         car.updated_at = utcnow()
         db.session.commit()
+        _bump_filter_facets_cache()
         log_user_action(current_user, "update_listing", "car", car.public_id)
         if "price" in data:
             new_price = float(car.price or 0)
@@ -1122,6 +1203,7 @@ def delete_car(car_id: str):
         car.is_active = False
         car.updated_at = utcnow()
         db.session.commit()
+        _bump_filter_facets_cache()
         log_user_action(current_user, "delete_listing", "car", car.public_id)
         return jsonify({"message": "Car listing deleted successfully"}), 200
     except Exception:
@@ -1146,6 +1228,7 @@ def mark_car_sold(car_id: str):
         car.status = "sold"
         car.updated_at = utcnow()
         db.session.commit()
+        _bump_filter_facets_cache()
         log_user_action(current_user, "mark_listing_sold", "car", car.public_id)
         return jsonify({"message": "Listing marked as sold", "car": car.to_dict()}), 200
     except Exception:
@@ -1184,6 +1267,7 @@ def mark_car_active(car_id: str):
         car.status = "active"
         car.updated_at = utcnow()
         db.session.commit()
+        _bump_filter_facets_cache()
         log_user_action(current_user, "mark_listing_active", "car", car.public_id)
         return jsonify({"message": "Listing marked as available", "car": car.to_dict()}), 200
     except Exception:

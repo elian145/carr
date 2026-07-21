@@ -32,6 +32,7 @@ from ..models import (
     UserReport,
     db,
 )
+from ..response_cache import invalidate_filter_facets_cache
 from ..time_utils import utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -1147,6 +1148,7 @@ def update_car_status(car_id: str):
             car.is_featured = bool(data["is_featured"])
         car.updated_at = utcnow()
         db.session.commit()
+        invalidate_filter_facets_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -1208,6 +1210,7 @@ def bulk_update_car_status():
             return jsonify({"message": "No matching listings found", "missing": missing}), 404
 
         db.session.commit()
+        invalidate_filter_facets_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -1728,6 +1731,7 @@ def delete_car(car_id: str):
             car.status = "hidden"
         car.updated_at = utcnow()
         db.session.commit()
+        invalidate_filter_facets_cache()
 
         if admin_user:
             log_user_action(
@@ -1821,6 +1825,7 @@ def purge_car(car_id: str):
         Message.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
         db.session.delete(car)
         db.session.commit()
+        invalidate_filter_facets_cache()
 
         if admin_user:
             log_user_action(

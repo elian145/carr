@@ -10,6 +10,13 @@ from ..auth import admin_required, get_current_user, log_user_action
 from ..admin_roles import assert_permission
 from ..catalog_service import seed_catalog
 from ..models import CatalogBodyType, CatalogBrand, CatalogTrim, CatalogVehicleModel, db
+from ..response_cache import (
+    CATALOG_TTL_S,
+    cache_get,
+    cache_set,
+    catalog_cache_key,
+    invalidate_catalog_cache,
+)
 from ..time_utils import utcnow
 
 bp = Blueprint("vehicle_catalog", __name__)
@@ -40,12 +47,18 @@ def _bool(val, default=None):
 @bp.route("/api/catalog/brands", methods=["GET"])
 def public_brands():
     try:
+        cache_key = catalog_cache_key("brands")
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return jsonify(cached), 200
         rows = (
             CatalogBrand.query.filter_by(is_active=True)
             .order_by(CatalogBrand.sort_order.asc(), CatalogBrand.name.asc())
             .all()
         )
-        return jsonify({"brands": [b.to_dict() for b in rows]}), 200
+        payload = {"brands": [b.to_dict() for b in rows]}
+        cache_set(cache_key, payload, CATALOG_TTL_S)
+        return jsonify(payload), 200
     except Exception as e:
         logger.error("public catalog brands error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load brands"}), 500
@@ -56,16 +69,28 @@ def public_models():
     try:
         brand_name = (request.args.get("brand") or "").strip()
         brand_id = request.args.get("brand_id", type=int)
+        cache_key = catalog_cache_key(
+            "models",
+            f"id:{brand_id}" if brand_id else f"name:{brand_name or 'all'}",
+        )
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return jsonify(cached), 200
+
         q = CatalogVehicleModel.query.filter_by(is_active=True)
         if brand_id:
             q = q.filter_by(brand_id=brand_id)
         elif brand_name:
             brand = CatalogBrand.query.filter_by(name=brand_name, is_active=True).first()
             if not brand:
-                return jsonify({"models": []}), 200
+                payload = {"models": []}
+                cache_set(cache_key, payload, CATALOG_TTL_S)
+                return jsonify(payload), 200
             q = q.filter_by(brand_id=brand.id)
         rows = q.order_by(CatalogVehicleModel.sort_order.asc(), CatalogVehicleModel.name.asc()).all()
-        return jsonify({"models": [m.to_dict() for m in rows]}), 200
+        payload = {"models": [m.to_dict() for m in rows]}
+        cache_set(cache_key, payload, CATALOG_TTL_S)
+        return jsonify(payload), 200
     except Exception as e:
         logger.error("public catalog models error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load models"}), 500
@@ -74,12 +99,18 @@ def public_models():
 @bp.route("/api/catalog/body-types", methods=["GET"])
 def public_body_types():
     try:
+        cache_key = catalog_cache_key("body-types")
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return jsonify(cached), 200
         rows = (
             CatalogBodyType.query.filter_by(is_active=True)
             .order_by(CatalogBodyType.sort_order.asc(), CatalogBodyType.name.asc())
             .all()
         )
-        return jsonify({"body_types": [b.to_dict() for b in rows]}), 200
+        payload = {"body_types": [b.to_dict() for b in rows]}
+        cache_set(cache_key, payload, CATALOG_TTL_S)
+        return jsonify(payload), 200
     except Exception as e:
         logger.error("public catalog body types error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load body types"}), 500
@@ -93,20 +124,30 @@ def public_trims():
         model_name = (request.args.get("model") or "").strip()
         if not brand_name or not model_name:
             return jsonify({"message": "brand and model are required"}), 400
+        cache_key = catalog_cache_key("trims", brand_name, model_name)
+        cached = cache_get(cache_key)
+        if cached is not None:
+            return jsonify(cached), 200
         brand = CatalogBrand.query.filter_by(name=brand_name, is_active=True).first()
         if not brand:
-            return jsonify({"trims": []}), 200
+            payload = {"trims": []}
+            cache_set(cache_key, payload, CATALOG_TTL_S)
+            return jsonify(payload), 200
         model = CatalogVehicleModel.query.filter_by(
             brand_id=brand.id, name=model_name, is_active=True
         ).first()
         if not model:
-            return jsonify({"trims": []}), 200
+            payload = {"trims": []}
+            cache_set(cache_key, payload, CATALOG_TTL_S)
+            return jsonify(payload), 200
         rows = (
             CatalogTrim.query.filter_by(model_id=model.id, is_active=True)
             .order_by(CatalogTrim.sort_order.asc(), CatalogTrim.name.asc())
             .all()
         )
-        return jsonify({"trims": [t.to_dict() for t in rows]}), 200
+        payload = {"trims": [t.to_dict() for t in rows]}
+        cache_set(cache_key, payload, CATALOG_TTL_S)
+        return jsonify(payload), 200
     except Exception as e:
         logger.error("public catalog trims error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load trims"}), 500
@@ -153,6 +194,7 @@ def admin_catalog_seed():
         data = request.get_json(silent=True) or {}
         force = bool(data.get("force"))
         result = seed_catalog(force=force)
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -214,6 +256,7 @@ def admin_create_brand():
         )
         db.session.add(brand)
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -257,6 +300,7 @@ def admin_update_brand(brand_id: int):
             brand.sort_order = int(data["sort_order"] or 0)
         brand.updated_at = utcnow()
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -329,6 +373,7 @@ def admin_create_model():
         )
         db.session.add(row)
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -374,6 +419,7 @@ def admin_update_model(model_id: int):
             row.sort_order = int(data["sort_order"] or 0)
         row.updated_at = utcnow()
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -430,6 +476,7 @@ def admin_create_body_type():
         )
         db.session.add(row)
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -473,6 +520,7 @@ def admin_update_body_type(body_type_id: int):
             row.sort_order = int(data["sort_order"] or 0)
         row.updated_at = utcnow()
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -537,6 +585,7 @@ def admin_create_trim():
         )
         db.session.add(row)
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
@@ -582,6 +631,7 @@ def admin_update_trim(trim_id: int):
             row.sort_order = int(data["sort_order"] or 0)
         row.updated_at = utcnow()
         db.session.commit()
+        invalidate_catalog_cache()
         if admin_user:
             log_user_action(
                 admin_user,
