@@ -64,6 +64,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                           ),
                         ),
                         IconButton(
+                          tooltip: AppLocalizations.of(context)!.close,
                           icon: Icon(Icons.close, color: Colors.white),
                           onPressed: () => Navigator.pop(context),
                         ),
@@ -280,6 +281,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                           ),
                         ),
                         IconButton(
+                          tooltip: AppLocalizations.of(context)!.close,
                           icon: Icon(Icons.close, color: Colors.white),
                           onPressed: () => Navigator.pop(context),
                         ),

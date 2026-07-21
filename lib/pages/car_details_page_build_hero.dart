@@ -336,6 +336,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     button: true,
                     label: AppLocalizations.of(context)!.backAction,
                     child: IconButton(
+                      tooltip: AppLocalizations.of(context)!.backAction,
                       icon: Icon(Icons.arrow_back),
                       onPressed: () => Navigator.of(context).maybePop(),
                     ),

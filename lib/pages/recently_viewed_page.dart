@@ -367,6 +367,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
+          tooltip: loc.backAction,
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
               navigateMainShellTab(context, loggedIn ? '/profile' : '/login'),

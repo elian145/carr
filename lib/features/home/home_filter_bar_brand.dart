@@ -41,6 +41,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                           ),
                         ),
                         IconButton(
+                          tooltip: AppLocalizations.of(dialogContext)!.close,
                           icon: const Icon(Icons.close, color: Colors.white),
                           onPressed: () => Navigator.pop(dialogContext),
                         ),
@@ -175,6 +176,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                       ),
                     ),
                     IconButton(
+                      tooltip: AppLocalizations.of(dialogContext)!.close,
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.pop(dialogContext),
                     ),

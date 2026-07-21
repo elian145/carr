@@ -131,6 +131,7 @@ class _ColorPickerDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
+                    tooltip: AppLocalizations.of(context)!.close,
                     icon: Icon(Icons.close, color: onPicker),
                     onPressed: () => Navigator.pop(context),
                   ),

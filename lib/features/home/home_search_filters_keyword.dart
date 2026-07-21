@@ -18,6 +18,7 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
       suffixIcon: _searchFiltersKeywordController.text.trim().isEmpty
           ? null
           : IconButton(
+              tooltip: AppLocalizations.of(context)!.close,
               icon: const Icon(Icons.clear, size: 20),
               color: _searchAccent,
               onPressed: () {

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Accessibility tooltips on remaining close/back IconButtons (A-02): sell pickers/draft/back, filter dialogs, search clears, listing hero/TikTok/recently-viewed backs.
 - Accessibility labels on icon-only controls (A-01): sell media remove/cover, chat attachment remove + voice play/pause, filter close + range/engine toggles, chat media viewer close.
 - Confirm before clearing comparison (UX-08): clear-all on comparison page requires dialog; other destructive flows (delete listing/account, logout, drafts, saved searches, chat delete/block) already confirmed.
 - Consistent user-facing errors (UX-07): route SnackBars/dialogs through `userErrorText`; stop leaking raw `$e` / socket / API internals (sell video, verify email, login, chat send, analytics popup).

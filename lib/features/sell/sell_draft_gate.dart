@@ -632,6 +632,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         foregroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
+          tooltip: AppLocalizations.of(context)!.backAction,
           icon: const Icon(Icons.arrow_back),
           onPressed: _goBack,
         ),

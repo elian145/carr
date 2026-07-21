@@ -142,6 +142,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                   ),
                 ),
                 IconButton(
+                  tooltip: AppLocalizations.of(context)!.close,
                   icon: Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),

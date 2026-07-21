@@ -34,6 +34,7 @@ mixin _SellStep2Pickers on _SellStep2CatalogHydrate {
                       ),
                     ),
                     IconButton(
+                      tooltip: AppLocalizations.of(context)!.close,
                       icon: Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),

@@ -167,6 +167,10 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                 ),
                                               ),
                                               IconButton(
+                                                tooltip: AppLocalizations.of(
+                                                  dlgContext,
+                                                )!
+                                                    .close,
                                                 icon: Icon(
                                                   Icons.close,
                                                   color: onPicker,

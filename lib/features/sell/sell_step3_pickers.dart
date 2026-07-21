@@ -31,6 +31,7 @@ mixin _SellStep3Pickers on _SellStep3Catalog {
                       ),
                     ),
                     IconButton(
+                      tooltip: AppLocalizations.of(context)!.close,
                       icon: Icon(Icons.close, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),

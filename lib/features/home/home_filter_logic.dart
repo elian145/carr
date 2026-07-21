@@ -166,6 +166,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                           child: Text(AppLocalizations.of(context)!.any),
                         ),
                         IconButton(
+                          tooltip: AppLocalizations.of(dialogContext)!.close,
                           icon: const Icon(Icons.close, color: Colors.white),
                           onPressed: () => Navigator.pop(dialogContext),
                         ),

@@ -109,6 +109,7 @@ class _MakeModelKeywordSearchState extends State<MakeModelKeywordSearch> {
       suffixIcon: _controller.text.trim().isEmpty
           ? null
           : IconButton(
+              tooltip: AppLocalizations.of(context)!.close,
               icon: const Icon(Icons.clear, size: 20),
               color: kFilterAccentColor,
               onPressed: () {

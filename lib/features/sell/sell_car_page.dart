@@ -83,6 +83,7 @@ class _SellCarPageState extends _SellCarPageFields
           foregroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
+            tooltip: AppLocalizations.of(context)!.backAction,
             icon: Icon(Icons.arrow_back),
             onPressed: _goToPreviousStep,
           ),

@@ -181,6 +181,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
             top: MediaQuery.of(context).padding.top + 8,
             left: 8,
             child: IconButton(
+              tooltip: AppLocalizations.of(context)!.backAction,
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
               onPressed: () => Navigator.pop(context),
             ),

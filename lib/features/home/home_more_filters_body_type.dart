@@ -67,6 +67,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                           child: Text(AppLocalizations.of(context)!.any),
                         ),
                         IconButton(
+                          tooltip: AppLocalizations.of(dialogContext)!.close,
                           icon: Icon(Icons.close, color: onPicker),
                           onPressed: () => Navigator.pop(dialogContext),
                         ),
