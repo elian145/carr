@@ -1813,6 +1813,30 @@ class BackendFactorySmokeTest(unittest.TestCase):
         finally:
             _restore()
 
+    def test_car_listing_filter_composite_indexes_exist(self):
+        """H-04: composite indexes for common /api/cars filter shapes."""
+        from sqlalchemy import inspect
+
+        expected = {
+            "ix_car_active_status_created_at",
+            "ix_car_active_brand_price",
+            "ix_car_active_location_created_at",
+            "ix_car_active_year_price",
+            "ix_car_active_featured_created_at",
+            "ix_car_seller_active_created_at",
+        }
+        with self.app.app_context():
+            names = {ix["name"] for ix in inspect(self._db.engine).get_indexes("car")}
+        missing = expected - names
+        self.assertFalse(missing, f"missing car indexes: {sorted(missing)}")
+
+        # Smoke: filtered browse still returns 200 with composites present.
+        r = self.client.get(
+            f"/api/cars?brand=Toyota&min_price=1000&max_price=999999&sort_by=newest"
+        )
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertIn("cars", r.get_json() or {})
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

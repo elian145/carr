@@ -420,6 +420,15 @@ class DealerDecision(db.Model):
 
 class Car(db.Model):
     __tablename__ = 'car'
+    __table_args__ = (
+        # Composite indexes for public browse / filter / seller inventory (H-04).
+        db.Index("ix_car_active_status_created_at", "is_active", "status", "created_at"),
+        db.Index("ix_car_active_brand_price", "is_active", "brand", "price"),
+        db.Index("ix_car_active_location_created_at", "is_active", "location", "created_at"),
+        db.Index("ix_car_active_year_price", "is_active", "year", "price"),
+        db.Index("ix_car_active_featured_created_at", "is_active", "is_featured", "created_at"),
+        db.Index("ix_car_seller_active_created_at", "seller_id", "is_active", "created_at"),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
@@ -440,7 +449,7 @@ class Car(db.Model):
     drive_type = db.Column(db.String(20), nullable=False)  # FWD, RWD, AWD, 4WD
     condition = db.Column(db.String(20), nullable=False)  # New, Used, Certified
     body_type = db.Column(db.String(30), nullable=False)  # Sedan, SUV, Hatchback, etc.
-    status = db.Column(db.String(20), nullable=False, default='active')
+    status = db.Column(db.String(20), nullable=False, default='active', index=True)
     
     # Pricing and location
     price = db.Column(db.Float, nullable=False, index=True)
