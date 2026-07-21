@@ -1035,7 +1035,8 @@ class ListingReport(db.Model):
     def to_admin_dict(self) -> dict:
         reporter = self.reporter
         car = self.car
-        seller = User.query.get(car.seller_id) if car and car.seller_id else None
+        # Prefer relationship (eager-loadable); avoid per-row User.query.get N+1.
+        seller = getattr(car, "seller", None) if car is not None else None
         listing_id = None
         if car:
             listing_id = car.public_id if getattr(car, 'public_id', None) else str(car.id)

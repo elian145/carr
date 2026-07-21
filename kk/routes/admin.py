@@ -959,7 +959,7 @@ def list_reports():
             listing_reports = (
                 listing_q.options(
                     joinedload(ListingReport.reporter),
-                    joinedload(ListingReport.car),
+                    joinedload(ListingReport.car).joinedload(Car.seller),
                 )
                 .order_by(ListingReport.created_at.desc())
                 .limit(200)
@@ -1031,7 +1031,14 @@ def update_listing_report(report_id: int):
         denied = _deny("reports")
         if denied:
             return denied
-        report = ListingReport.query.get(report_id)
+        report = (
+            ListingReport.query.options(
+                joinedload(ListingReport.reporter),
+                joinedload(ListingReport.car).joinedload(Car.seller),
+            )
+            .filter_by(id=report_id)
+            .first()
+        )
         if not report:
             return jsonify({"message": "Report not found"}), 404
         data = request.get_json(silent=True) or {}
@@ -1111,7 +1118,16 @@ def car_detail(car_id: str):
         if not car:
             return jsonify({"message": "Listing not found"}), 404
         analytics = ListingAnalytics.query.filter_by(car_id=car.id).first()
-        reports = ListingReport.query.filter_by(car_id=car.id).order_by(ListingReport.created_at.desc()).limit(20).all()
+        reports = (
+            ListingReport.query.filter_by(car_id=car.id)
+            .options(
+                joinedload(ListingReport.reporter),
+                joinedload(ListingReport.car).joinedload(Car.seller),
+            )
+            .order_by(ListingReport.created_at.desc())
+            .limit(20)
+            .all()
+        )
         return (
             jsonify(
                 {
