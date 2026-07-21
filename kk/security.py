@@ -13,10 +13,15 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename as _secure_filename
 
 def _client_ip() -> str:
-    # Respect proxy headers (best-effort). In production, ensure your reverse proxy
-    # overwrites/sets X-Forwarded-For correctly.
-    xff = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
-    return xff or (request.remote_addr or "unknown")
+    """
+    Client IP for rate limiting.
+
+    Use Werkzeug/ProxyFix-adjusted ``request.remote_addr`` only.
+    Never trust client-supplied ``X-Forwarded-For`` (attackers can rotate it
+    to bypass OTP/login limits). Production enables ProxyFix with ``x_for=1``
+    so remote_addr is the real client behind one trusted hop.
+    """
+    return (request.remote_addr or "unknown").strip() or "unknown"
 
 
 def _redis_client():

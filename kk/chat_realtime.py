@@ -15,10 +15,10 @@ from __future__ import annotations
 
 import logging
 
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 
 from .extensions import socketio
-from .models import Car, Message, User, db
+from .models import BlockedUser, Car, Message, User, db
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +44,78 @@ def resolve_car_for_chat(car_id_raw: str) -> Car | None:
         except Exception:
             return None
     return None
+
+
+def chat_users_blocked(user_a_id: int, user_b_id: int) -> bool:
+    return (
+        BlockedUser.query.filter(
+            or_(
+                and_(
+                    BlockedUser.blocker_id == user_a_id,
+                    BlockedUser.blocked_id == user_b_id,
+                ),
+                and_(
+                    BlockedUser.blocker_id == user_b_id,
+                    BlockedUser.blocked_id == user_a_id,
+                ),
+            )
+        ).first()
+        is not None
+    )
+
+
+def chat_receiver_allowed(me: User, car: Car, receiver: User) -> bool:
+    """Buyer may message seller; otherwise an existing thread on this listing is required."""
+    if receiver.id == car.seller_id and me.id != car.seller_id:
+        return True
+    prior = (
+        Message.query.filter(
+            Message.car_id == car.id,
+            or_(
+                and_(Message.sender_id == me.id, Message.receiver_id == receiver.id),
+                and_(Message.sender_id == receiver.id, Message.receiver_id == me.id),
+            ),
+        )
+        .limit(1)
+        .first()
+    )
+    return prior is not None
+
+
+def resolve_allowed_chat_receiver(
+    me: User, car: Car, receiver_public: str | None
+) -> User | None:
+    """
+    Resolve a chat peer for this listing.
+
+    Rejects arbitrary ``receiver_id`` targets and either-direction blocks.
+    """
+    receiver = None
+    raw = (receiver_public or "").strip()
+    if raw:
+        receiver = User.query.filter_by(public_id=raw).first()
+    if receiver is None:
+        if car.seller_id != me.id:
+            receiver = db.session.get(User, car.seller_id)
+        else:
+            last = (
+                Message.query.filter(
+                    Message.car_id == car.id,
+                    or_(Message.sender_id == me.id, Message.receiver_id == me.id),
+                )
+                .order_by(Message.created_at.desc())
+                .first()
+            )
+            if last:
+                other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
+                receiver = db.session.get(User, other_id)
+    if receiver is None or receiver.id == me.id:
+        return None
+    if not chat_receiver_allowed(me, car, receiver):
+        return None
+    if chat_users_blocked(me.id, receiver.id):
+        return None
+    return receiver
 
 
 def user_can_access_chat_room(user: User, car: Car) -> bool:

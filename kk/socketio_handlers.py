@@ -13,6 +13,7 @@ from .auth import phone_verification_error_payload
 from .chat_realtime import (
     emit_message_to_participants,
     mark_messages_read_for_viewer,
+    resolve_allowed_chat_receiver,
     resolve_car_for_chat,
     room_for_car_public_id,
     user_can_access_chat_room,
@@ -259,20 +260,9 @@ def register_socketio_handlers(socketio) -> None:
             emit("error", {"message": "Listing not found"})
             return
 
-        receiver = None
-        if receiver_public:
-            receiver = User.query.filter_by(public_id=receiver_public).first()
-
-        # Infer receiver
+        receiver = resolve_allowed_chat_receiver(me, car, receiver_public)
         if receiver is None:
-            if car.seller_id != me.id:
-                receiver = db.session.get(User, car.seller_id)
-            else:
-                emit("error", {"message": "receiver_id required"})
-                return
-
-        if receiver is None or receiver.id == me.id:
-            emit("error", {"message": "Invalid receiver"})
+            emit("error", {"message": "receiver_id required or not allowed"})
             return
 
         reply_to = None

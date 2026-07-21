@@ -94,13 +94,23 @@ def phone_verification_required_response(user):
     return jsonify(payload), 403
 
 
+def user_phone_verified(user) -> bool:
+    """True when the user completed phone OTP (not email-only verification)."""
+    if not user:
+        return False
+    if hasattr(user, "phone_verified"):
+        return bool(getattr(user, "phone_verified", False))
+    # Pre-migration fallback: legacy is_verified was conflated with phone.
+    return bool(getattr(user, "is_verified", False))
+
+
 def phone_verification_error_payload(user) -> dict | None:
     """Return an error payload dict, or None when the user may proceed."""
     if not user:
         return {"message": "User not found", "code": None}
     if getattr(user, "is_admin", False):
         return None
-    if not getattr(user, "is_verified", False):
+    if not user_phone_verified(user):
         return {
             "message": "Verify your phone number before continuing.",
             "code": "phone_verification_required",
@@ -108,39 +118,42 @@ def phone_verification_error_payload(user) -> dict | None:
     return None
 
 
-def create_password_reset_token(user):
+def create_password_reset_token(user, *, channel: str = "sms"):
     """Create password reset token.
 
-    Use numeric-only tokens so SMS providers (e.g. OTPIQ verification flow)
-    can deliver reset codes without alphanumeric restrictions.
+    SMS: 12-digit numeric (harder online guessing than 8-digit).
+    Email / other: high-entropy URL-safe opaque token.
     """
     # Delete any existing tokens for this user
     PasswordReset.query.filter_by(user_id=user.id, is_used=False).delete()
 
-    # Create new token (8-digit numeric, retry to avoid uniqueness collisions).
+    channel_l = (channel or "sms").strip().lower()
     token = None
-    for _ in range(10):
-        candidate = f"{secrets.randbelow(100_000_000):08d}"
-        exists = PasswordReset.query.filter_by(token=candidate, is_used=False).first()
-        if not exists:
-            token = candidate
-            break
-    if token is None:
-        # Fallback with more entropy (still numeric-only).
-        token = "".join(str(secrets.randbelow(10)) for _ in range(12))
+    if channel_l == "email":
+        token = secrets.token_urlsafe(32)
+    else:
+        # 12-digit numeric for SMS providers; retry on rare uniqueness collisions.
+        for _ in range(10):
+            candidate = f"{secrets.randbelow(1_000_000_000_000):012d}"
+            exists = PasswordReset.query.filter_by(token=candidate, is_used=False).first()
+            if not exists:
+                token = candidate
+                break
+        if token is None:
+            token = "".join(str(secrets.randbelow(10)) for _ in range(12))
     from .time_utils import utcnow
 
     expires_at = utcnow() + timedelta(hours=1)
-    
+
     reset_token = PasswordReset(
         user_id=user.id,
         token=token,
         expires_at=expires_at
     )
-    
+
     db.session.add(reset_token)
     db.session.commit()
-    
+
     return token
 
 def create_email_verification_token(user):

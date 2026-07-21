@@ -20,8 +20,8 @@ def get_favorites():
         if not current_user:
             return jsonify({"message": "User not found"}), 404
 
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 20, type=int)
+        page = max(request.args.get("page", 1, type=int) or 1, 1)
+        per_page = min(max(request.args.get("per_page", 20, type=int) or 20, 1), 50)
 
         # Order by "favorited at" so newest favorites appear first.
         q = (

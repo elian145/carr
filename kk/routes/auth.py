@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 import requests
 from flask import Blueprint, current_app, jsonify, request, Response
 from flask_mail import Message
+from html import escape as html_escape
+from urllib.parse import quote as url_quote
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -74,20 +76,22 @@ def confirm_signup_redirect():
             status=400,
             mimetype="text/html",
         )
-    app_link = f"carzo://auth/confirm-signup?token={token}"
-    # Redirect so that when opened on mobile the app can intercept carzo://
+    # Only allow URL-safe token characters into the deep link / HTML.
+    safe_token = url_quote(token, safe="")
+    app_link = f"carzo://auth/confirm-signup?token={safe_token}"
+    app_link_html = html_escape(app_link, quote=True)
     html = f"""<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Confirm signup - CarNet</title>
-  <meta http-equiv="refresh" content="0;url={app_link}">
+  <meta http-equiv="refresh" content="0;url={app_link_html}">
   <style>body {{ font-family: system-ui; max-width: 480px; margin: 2rem auto; padding: 1rem; }}</style>
 </head>
 <body>
   <p>Redirecting to the CarNet app&hellip;</p>
-  <p>If nothing opens, <a href="{app_link}">tap here to open in the app</a>, or open the CarNet app and paste this link in the &quot;Verify email&quot; screen:</p>
-  <p style="word-break: break-all;"><code>{app_link}</code></p>
+  <p>If nothing opens, <a href="{app_link_html}">tap here to open in the app</a>, or open the CarNet app and paste this link in the &quot;Verify email&quot; screen:</p>
+  <p style="word-break: break-all;"><code>{app_link_html}</code></p>
 </body>
 </html>"""
     return Response(html, mimetype="text/html")
@@ -680,7 +684,8 @@ def register_confirm():
             last_name=pending.last_name,
             phone_number=phone_number,
             is_active=True,
-            is_verified=True,
+            is_verified=True,  # email confirmed via pending signup
+            phone_verified=False,  # must complete phone OTP for gated actions
             public_id=secrets.token_hex(8),
             account_type="user",
             dealer_status="none",
@@ -1096,6 +1101,10 @@ def delete_account():
             current_user.last_name = "User"
             current_user.is_active = False
             current_user.is_verified = False
+            try:
+                current_user.phone_verified = False
+            except Exception:
+                pass
             current_user.firebase_token = None
             current_user.set_password(secrets.token_urlsafe(24))
             current_user.updated_at = utcnow()
@@ -1314,10 +1323,13 @@ def forgot_password():
             )
             return jsonify({"message": "If the account exists, a reset code has been sent"}), 200
 
-        token = create_password_reset_token(user)
-
         # Prefer SMS if we have a phone number on record.
         dest_phone = phone_digits or (getattr(user, "phone_number", None) or "")
+        token = create_password_reset_token(
+            user,
+            channel="sms" if dest_phone else "email",
+        )
+
         sms_sent = False
         if dest_phone:
             from ..sms_service import send_password_reset_sms
@@ -1374,6 +1386,29 @@ def reset_password():
         user, error = verify_password_reset_token(token)
         if not user:
             return jsonify({"message": error}), 400
+
+        # Per-account limit (in addition to IP decorator) to slow SMS code guessing.
+        try:
+            from ..security import _redis_client
+
+            r = _redis_client()
+            if r is not None:
+                ukey = f"rl:reset_password:user:{user.id}:900"
+                n = int(r.incr(ukey) or 0)
+                if n == 1:
+                    r.expire(ukey, 900)
+                if n > 5:
+                    return (
+                        jsonify(
+                            {
+                                "message": "Too many reset attempts. Try again later.",
+                                "retry_after": max(0, int(r.ttl(ukey) or 0)),
+                            }
+                        ),
+                        429,
+                    )
+        except Exception:
+            pass
 
         user.set_password(new_password)
 
@@ -1437,6 +1472,7 @@ def verify_email():
 
 
 @bp.route("/api/auth/verify-phone", methods=["POST"])
+@rate_limit(max_requests=20, window_minutes=15)
 def verify_phone():
     """Phone verification endpoint"""
     try:
@@ -1453,7 +1489,7 @@ def verify_phone():
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        if user.is_verified:
+        if bool(getattr(user, "phone_verified", False)):
             return jsonify({"message": "Phone number verified successfully"}), 200
 
         if len(verification_code) != 6 or not verification_code.isdigit():
@@ -1489,6 +1525,7 @@ def verify_phone():
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
         user.is_verified = True
+        user.phone_verified = True
         user.phone_verification_code_hash = None
         user.phone_verification_expires_at = None
         user.phone_verification_attempts = 0
@@ -1799,6 +1836,7 @@ def phone_verify():
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
         user.is_verified = True
+        user.phone_verified = True
         user.phone_verification_code_hash = None
         user.phone_verification_expires_at = None
         user.phone_verification_attempts = 0
@@ -1894,6 +1932,7 @@ def compat_signup():
             user.last_name = last_name or user.last_name or ""
             user.set_password(password)
             user.is_verified = True
+            user.phone_verified = True
             _apply_dealer_profile(
                 user,
                 is_dealer_requested=is_dealer_requested,

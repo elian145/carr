@@ -11,7 +11,11 @@ from sqlalchemy import func, or_
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
-from ..chat_realtime import emit_message_to_participants, mark_messages_read_for_viewer
+from ..chat_realtime import (
+    emit_message_to_participants,
+    mark_messages_read_for_viewer,
+    resolve_allowed_chat_receiver,
+)
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, validate_input_sanitization
@@ -23,6 +27,10 @@ _CHAT_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 _CHAT_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 _CHAT_AUDIO_EXTENSIONS = {".m4a", ".aac", ".mp3", ".wav", ".ogg", ".webm", ".amr", ".3gp"}
 _CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
+
+
+def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
+    return resolve_allowed_chat_receiver(me, car, receiver_public)
 
 
 def _count_buyer_message_metric(car: Car, sender: User) -> None:
@@ -52,31 +60,6 @@ def _first_car_image_rel_path(car: Car | None) -> str | None:
     if norm.startswith("car_photos/"):
         return f"uploads/{norm}"
     return norm
-
-
-def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
-    receiver = None
-    raw = (receiver_public or "").strip()
-    if raw:
-        receiver = User.query.filter_by(public_id=raw).first()
-    if receiver is None:
-        if car.seller_id != me.id:
-            receiver = db.session.get(User, car.seller_id)
-        else:
-            last = (
-                Message.query.filter(
-                    Message.car_id == car.id,
-                    or_(Message.sender_id == me.id, Message.receiver_id == me.id),
-                )
-                .order_by(Message.created_at.desc())
-                .first()
-            )
-            if last:
-                other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
-                receiver = db.session.get(User, other_id)
-    if receiver is None or receiver.id == me.id:
-        return None
-    return receiver
 
 
 def _upload_chat_attachment(file_storage, *, allowed_extensions: set[str], subdir: str, content_types: dict[str, str]) -> str:
@@ -417,32 +400,10 @@ def send_message(conversation_id: str):
             return jsonify({"message": "Listing not found"}), 404
 
         receiver_public = (data.get("receiver_id") or data.get("receiverId") or "").strip()
-        receiver = None
-        if receiver_public:
-            receiver = User.query.filter_by(public_id=receiver_public).first()
-
-        # Infer receiver when not provided.
-        if receiver is None:
-            if car.seller_id != me.id:
-                receiver = db.session.get(User, car.seller_id)
-            else:
-                # Seller sending message: infer receiver from latest message in this car thread.
-                last = (
-                    Message.query.filter(
-                        Message.car_id == car.id,
-                        or_(Message.sender_id == me.id, Message.receiver_id == me.id),
-                    )
-                    .order_by(Message.created_at.desc())
-                    .first()
-                )
-                if last:
-                    other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
-                    receiver = db.session.get(User, other_id)
+        receiver = _resolve_chat_receiver(me, car, receiver_public)
 
         if receiver is None:
-            return jsonify({"message": "receiver_id required"}), 400
-        if receiver.id == me.id:
-            return jsonify({"message": "Invalid receiver"}), 400
+            return jsonify({"message": "receiver_id required or not allowed"}), 400
 
         reply_to = _resolve_reply_target(me, car, reply_to_public)
         if reply_to_public and reply_to is None:
@@ -493,8 +454,9 @@ def send_image_message(conversation_id: str):
     """Send an image message. The image file is uploaded to R2 (or stored locally)."""
     try:
         me = get_current_user()
-        if not me:
-            return jsonify({"message": "Unauthorized"}), 401
+        verify_err = phone_verification_required_response(me)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -518,7 +480,7 @@ def send_image_message(conversation_id: str):
         ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
-            return jsonify({"message": "receiver_id required"}), 400
+            return jsonify({"message": "receiver_id required or not allowed"}), 400
 
         reply_to = _resolve_reply_target(me, car, reply_to_public)
         if reply_to_public and reply_to is None:
@@ -570,8 +532,9 @@ def send_video_message(conversation_id: str):
     """Send a video message. The video file is uploaded to R2 (or stored locally)."""
     try:
         me = get_current_user()
-        if not me:
-            return jsonify({"message": "Unauthorized"}), 401
+        verify_err = phone_verification_required_response(me)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -595,7 +558,7 @@ def send_video_message(conversation_id: str):
         ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
-            return jsonify({"message": "receiver_id required"}), 400
+            return jsonify({"message": "receiver_id required or not allowed"}), 400
 
         reply_to = _resolve_reply_target(me, car, reply_to_public)
         if reply_to_public and reply_to is None:
@@ -647,8 +610,9 @@ def send_audio_message(conversation_id: str):
     """Send a voice message. The audio file is uploaded to R2 (or stored locally)."""
     try:
         me = get_current_user()
-        if not me:
-            return jsonify({"message": "Unauthorized"}), 401
+        verify_err = phone_verification_required_response(me)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -672,7 +636,7 @@ def send_audio_message(conversation_id: str):
         ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
-            return jsonify({"message": "receiver_id required"}), 400
+            return jsonify({"message": "receiver_id required or not allowed"}), 400
 
         reply_to = _resolve_reply_target(me, car, reply_to_public)
         if reply_to_public and reply_to is None:
@@ -742,8 +706,9 @@ def send_media_group_message(conversation_id: str):
     """Send multiple images/videos/audio as one grouped chat message."""
     try:
         me = get_current_user()
-        if not me:
-            return jsonify({"message": "Unauthorized"}), 401
+        verify_err = phone_verification_required_response(me)
+        if verify_err:
+            return verify_err
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -770,7 +735,7 @@ def send_media_group_message(conversation_id: str):
         ).strip()
         receiver = _resolve_chat_receiver(me, car, receiver_public)
         if receiver is None:
-            return jsonify({"message": "receiver_id required"}), 400
+            return jsonify({"message": "receiver_id required or not allowed"}), 400
 
         reply_to = _resolve_reply_target(me, car, reply_to_public)
         if reply_to_public and reply_to is None:

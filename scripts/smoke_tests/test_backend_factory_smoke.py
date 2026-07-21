@@ -53,6 +53,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email=None,
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 public_id="ps",
             )
             seller.set_password("Aa123456")
@@ -65,6 +66,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email=None,
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 public_id="pv",
             )
             viewer.set_password("Aa123456")
@@ -78,6 +80,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 is_active=True,
                 is_admin=True,
                 is_verified=True,
+                phone_verified=True,
                 public_id="pa",
             )
             admin.set_password("Aa123456")
@@ -90,6 +93,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email="dealer@test.example",
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 account_type="dealer",
                 dealer_status="approved",
                 dealership_name="Dealer Test",
@@ -497,6 +501,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email="pending_ok@test.example",
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 account_type="user",
                 dealer_status="pending",
                 dealership_name="Approve Motors",
@@ -514,6 +519,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email="pending_no@test.example",
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 account_type="user",
                 dealer_status="pending",
                 dealership_name="Reject Motors",
@@ -622,10 +628,12 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 phone_number="07000000088",
                 first_name="D",
                 last_name="1",
-                email="dealer@test.example",
+                email="dealer1_smoke@test.example",
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 account_type="dealer",
+                dealer_status="approved",
                 dealership_name="Smoke Test Dealer",
                 dealership_location="Erbil",
                 public_id="pd_smoke_dealer",
@@ -717,6 +725,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 email=None,
                 is_active=True,
                 is_verified=True,
+                phone_verified=True,
                 public_id="ph",
             )
             temp.set_password("Aa123456!")
@@ -1240,7 +1249,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual((body.get("car") or {}).get("status"), "active")
 
     def test_listing_moderation_default_auto_publish_and_heuristics(self):
-        """H-12: default active; opt-in approval + spam heuristics → pending."""
+        """H-12: non-prod unset → active; prod unset → pending; heuristics → pending."""
         from kk.listing_moderation import (
             initial_listing_status,
             listing_needs_manual_review,
@@ -1248,8 +1257,10 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
 
         prev = os.environ.get("LISTING_REQUIRE_APPROVAL")
+        prev_env = os.environ.get("APP_ENV")
         try:
             os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
+            os.environ["APP_ENV"] = "development"
             self.assertFalse(listing_require_approval())
             self.assertEqual(
                 initial_listing_status(
@@ -1257,6 +1268,15 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 ),
                 "active",
             )
+            os.environ["APP_ENV"] = "production"
+            self.assertTrue(listing_require_approval())
+            self.assertEqual(
+                initial_listing_status(
+                    description="Clean Toyota Camry", price=12000, brand="toyota"
+                ),
+                "pending",
+            )
+            os.environ["APP_ENV"] = "development"
             self.assertTrue(
                 listing_needs_manual_review(
                     description="Guaranteed profit via t.me/scam", price=12000
@@ -1304,6 +1324,10 @@ class BackendFactorySmokeTest(unittest.TestCase):
                 os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
             else:
                 os.environ["LISTING_REQUIRE_APPROVAL"] = prev
+            if prev_env is None:
+                os.environ.pop("APP_ENV", None)
+            else:
+                os.environ["APP_ENV"] = prev_env
 
     def test_mark_listing_sold_and_active(self):
         sold = self.client.post(

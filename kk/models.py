@@ -39,6 +39,9 @@ class User(db.Model):
     last_name = db.Column(db.String(50), nullable=False)
     profile_picture = db.Column(db.String(200), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
+    # Phone OTP completed. Gated actions (listings, media, chat) require this —
+    # email verification alone must not unlock them (see phone_verification_error_payload).
+    phone_verified = db.Column(db.Boolean, default=False, nullable=False)
     # Phone verification (OTP) - stored as hash, never plaintext
     phone_verification_code_hash = db.Column(db.Text, nullable=True)
     phone_verification_expires_at = db.Column(db.DateTime, nullable=True)
@@ -153,7 +156,9 @@ class User(db.Model):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'profile_picture': self.profile_picture,
-            'is_verified': self.is_verified,
+            'is_verified': bool(getattr(self, "phone_verified", False)),
+            'phone_verified': bool(getattr(self, "phone_verified", False)),
+            'email_verified': bool(self.is_verified),
             'is_active': self.is_active,
             'account_type': self.account_type or "user",
             'dealer_status': self.dealer_status or "none",

@@ -487,7 +487,60 @@ def update_profile():
         if "last_name" in data:
             current_user.last_name = data["last_name"]
         if "phone_number" in data:
-            current_user.phone_number = data["phone_number"]
+            new_digits = _normalize_dealer_phone(data.get("phone_number"))
+            old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
+            if new_digits and new_digits != old_digits:
+                if len(new_digits) < 7:
+                    return jsonify({"message": "Enter a valid phone number"}), 400
+                existing_phone = User.query.filter_by(phone_number=new_digits).first()
+                if existing_phone and existing_phone.id != current_user.id:
+                    return jsonify({"message": "Phone number already exists"}), 400
+                code = str(
+                    data.get("verification_code")
+                    or data.get("phone_verification_code")
+                    or ""
+                ).strip()
+                if not code or len(code) != 6 or not code.isdigit():
+                    return (
+                        jsonify(
+                            {
+                                "message": "Verify the new phone number with an SMS code before changing it.",
+                                "code": "phone_change_verification_required",
+                            }
+                        ),
+                        400,
+                    )
+                now = utcnow()
+                locked_until = getattr(current_user, "phone_verification_locked_until", None)
+                if locked_until and locked_until > now:
+                    return jsonify({"message": "Too many attempts. Please try again later."}), 429
+                expires_at = getattr(current_user, "phone_verification_expires_at", None)
+                code_hash = getattr(current_user, "phone_verification_code_hash", None)
+                if not expires_at or not code_hash or expires_at <= now:
+                    return jsonify({"message": "Invalid or expired verification code"}), 400
+                key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+                expected = hmac.new(
+                    key,
+                    msg=f"{new_digits}:{code}".encode("utf-8"),
+                    digestmod=hashlib.sha256,
+                ).hexdigest()
+                if not hmac.compare_digest(code_hash, expected):
+                    attempts = int(getattr(current_user, "phone_verification_attempts", 0) or 0) + 1
+                    current_user.phone_verification_attempts = attempts
+                    if attempts >= 5:
+                        current_user.phone_verification_locked_until = now + timedelta(minutes=15)
+                        current_user.phone_verification_code_hash = None
+                        current_user.phone_verification_expires_at = None
+                        current_user.phone_verification_attempts = 0
+                    db.session.commit()
+                    return jsonify({"message": "Invalid or expired verification code"}), 400
+                current_user.phone_number = new_digits
+                current_user.phone_verified = True
+                current_user.is_verified = True
+                current_user.phone_verification_code_hash = None
+                current_user.phone_verification_expires_at = None
+                current_user.phone_verification_attempts = 0
+                current_user.phone_verification_locked_until = None
         if "username" in data and data["username"] != current_user.username:
             new_username = (data["username"] or "").strip()
             if not new_username:

@@ -68,6 +68,57 @@ def _video_content_type_for_ext(ext: str) -> str:
     }.get(ext, "application/octet-stream")
 
 
+_ALLOWED_IMAGE_CONTENT_TYPES = frozenset(
+    {
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/heic",
+        "image/heif",
+    }
+)
+_ALLOWED_VIDEO_CONTENT_TYPES = frozenset(
+    {
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+        "video/x-matroska",
+        "video/x-msvideo",
+    }
+)
+_R2_IMAGE_MAX_BYTES = 25 * 1024 * 1024
+_R2_VIDEO_MAX_BYTES = 200 * 1024 * 1024
+
+
+def _normalize_signed_content_type(raw: str, *, asset: str, default_ct: str) -> str | None:
+    ct = (raw or default_ct).strip().lower().split(";")[0].strip()
+    allowed = (
+        _ALLOWED_VIDEO_CONTENT_TYPES if asset == "video" else _ALLOWED_IMAGE_CONTENT_TYPES
+    )
+    if ct not in allowed:
+        return None
+    if ct == "image/jpg":
+        return "image/jpeg"
+    return ct
+
+
+def _allowed_attach_media_url(url: str) -> bool:
+    """Only allow HTTPS objects under our R2 public base + known key prefixes."""
+    u = (url or "").strip()
+    if not u.lower().startswith("https://"):
+        return False
+    public_base = _r2_public_base()
+    if not public_base:
+        return False
+    prefix = public_base.rstrip("/") + "/"
+    if not u.startswith(prefix):
+        return False
+    key = u[len(prefix) :]
+    return key.startswith("car_photos/") or key.startswith("car_videos/")
+
+
 def _upload_video_file_to_r2(file_storage) -> str:
     """
     Read validated multipart file, put to R2, return public HTTPS URL for DB storage.
@@ -342,19 +393,48 @@ def r2_sign_upload():
                 ext = ".mp4"
             key = f"car_videos/{secrets.token_hex(8)}{ext}"
             default_ct = _video_content_type_for_ext(ext)
-            content_type = (data.get("content_type") or default_ct).strip() or default_ct
+            max_bytes = _R2_VIDEO_MAX_BYTES
         else:
             if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}:
                 ext = ".jpg"
             key = f"car_photos/{secrets.token_hex(8)}{ext}"
-            content_type = (data.get("content_type") or "image/jpeg").strip() or "image/jpeg"
+            default_ct = "image/jpeg"
+            max_bytes = _R2_IMAGE_MAX_BYTES
+
+        content_type = _normalize_signed_content_type(
+            data.get("content_type") or "",
+            asset=asset,
+            default_ct=default_ct,
+        )
+        if not content_type:
+            return jsonify({"message": "Unsupported content_type for this asset"}), 400
 
         client = _r2_client()
         bucket = current_app.config["R2_BUCKET_NAME"]
+        put_params = {
+            "Bucket": bucket,
+            "Key": key,
+            "ContentType": content_type,
+        }
+        raw_len = data.get("content_length")
+        if raw_len is None:
+            raw_len = data.get("size")
+        if raw_len is not None:
+            try:
+                claimed = int(raw_len)
+            except (TypeError, ValueError):
+                return jsonify({"message": "Invalid content_length"}), 400
+            if claimed < 1 or claimed > max_bytes:
+                return jsonify(
+                    {
+                        "message": f"content_length must be between 1 and {max_bytes} bytes",
+                    }
+                ), 400
+            put_params["ContentLength"] = claimed
 
         presigned_url = client.generate_presigned_url(
             "put_object",
-            Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
+            Params=put_params,
             ExpiresIn=900,
         )
 
@@ -486,6 +566,8 @@ def attach_car_images(car_id: str):
                 rel_str = str(rel or "").strip().lstrip("/").replace("\\", "/")
                 # Full URL (e.g. R2 public URL): store as-is
                 if rel_str.lower().startswith("http://") or rel_str.lower().startswith("https://"):
+                    if not _allowed_attach_media_url(rel_str):
+                        continue
                     listing_n = _count_listing_images(car)
                     is_primary = attach_kind == "listing" and listing_n == 0
                     ci = CarImage(

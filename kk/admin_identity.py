@@ -41,6 +41,7 @@ def ensure_detached_admin_account(source_user: User) -> AdminAccount:
         last_name=source_user.last_name or "Admin",
         is_active=True,
         is_verified=True,
+        phone_verified=True,
         is_admin=True,
         admin_role=source_user.admin_role or "super_admin",
         account_type="user",

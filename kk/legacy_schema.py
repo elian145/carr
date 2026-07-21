@@ -128,6 +128,7 @@ def ensure_minimal_schema_compat(app, db) -> None:
                     ("is_featured_dealer", "BOOLEAN DEFAULT 0"),
                     ("is_active", "BOOLEAN DEFAULT 1"),
                     ("is_verified", "BOOLEAN DEFAULT 0"),
+                    ("phone_verified", "BOOLEAN DEFAULT 0"),
                     ("phone_verification_code_hash", "TEXT"),
                     ("phone_verification_expires_at", "DATETIME"),
                     ("phone_verification_attempts", "INTEGER DEFAULT 0"),

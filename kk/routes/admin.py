@@ -1445,6 +1445,11 @@ def update_user_status(user_id: str):
             return jsonify({"message": "User not found"}), 404
         data = request.get_json(silent=True) or {}
         if "is_active" in data:
+            if user.is_admin and admin_user and user.id != admin_user.id:
+                return (
+                    jsonify({"message": "Cannot change status of another admin account"}),
+                    403,
+                )
             user.is_active = bool(data["is_active"])
         user.updated_at = utcnow()
         db.session.commit()
