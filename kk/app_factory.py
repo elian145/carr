@@ -149,18 +149,22 @@ def create_app():
     install_api_error_handlers(app)
     init_monitoring(app)
 
-    # Production hygiene warnings (do not block startup).
+    # Production hygiene notes (blocking checks live in validate_required_secrets).
     if env_name == "production":
-        if not (os.environ.get("REDIS_URL") or "").strip():
-            app.logger.warning(
-                "REDIS_URL is not set. For best production reliability (rate limits, "
-                "token revocation coordination, Socket.IO multi-worker broadcasts, Celery), "
-                "configure Redis and set REDIS_URL."
-            )
         if not (os.environ.get("CORS_ORIGINS") or "").strip():
             app.logger.info(
                 "CORS_ORIGINS is not set. This is fine for mobile-only clients, "
                 "but browser clients will be blocked by CORS unless you set an allowlist."
+            )
+        if (os.environ.get("ALLOW_INMEMORY_RATE_LIMITS") or "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        ):
+            app.logger.warning(
+                "ALLOW_INMEMORY_RATE_LIMITS is enabled — rate limits are per-process "
+                "and can be bypassed across workers. Remove this flag once REDIS_URL works."
             )
         has_resend = bool((os.environ.get("RESEND_API_KEY") or "").strip())
         has_sendgrid = bool((os.environ.get("SENDGRID_API_KEY") or "").strip())

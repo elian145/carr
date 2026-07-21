@@ -1742,6 +1742,39 @@ class BackendFactorySmokeTest(unittest.TestCase):
         finally:
             _restore()
 
+    def test_redis_required_in_production_validation(self):
+        """H-02: production requires reachable REDIS_URL (or escape hatch)."""
+        from kk import config as cfg
+
+        keys = ("REDIS_URL", "ALLOW_INMEMORY_RATE_LIMITS", "APP_ENV")
+        previous = {k: os.environ.get(k) for k in keys}
+
+        def _restore():
+            for k, v in previous.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+            os.environ["APP_ENV"] = "testing"
+
+        try:
+            for k in keys:
+                os.environ.pop(k, None)
+            os.environ["APP_ENV"] = "production"
+            with self.assertRaises(RuntimeError):
+                cfg.validate_redis_required("production")
+
+            os.environ["ALLOW_INMEMORY_RATE_LIMITS"] = "1"
+            cfg.validate_redis_required("production")
+            del os.environ["ALLOW_INMEMORY_RATE_LIMITS"]
+
+            # Unreachable port → fail (URL alone is not enough).
+            os.environ["REDIS_URL"] = "redis://127.0.0.1:1/0"
+            with self.assertRaises(RuntimeError):
+                cfg.validate_redis_required("production")
+        finally:
+            _restore()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

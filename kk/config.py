@@ -42,6 +42,7 @@ def validate_required_secrets(env: str | None = None) -> None:
     if (os.environ.get("JWT_SECRET_KEY") or "").strip() == _DEV_JWT_SECRET_FALLBACK:
         raise RuntimeError("JWT_SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
     validate_upload_persistence(env_name)
+    validate_redis_required(env_name)
 
 
 def _env_flag(name: str) -> bool:
@@ -124,6 +125,47 @@ def validate_upload_persistence(env: str | None = None) -> None:
         "persistent path (e.g. /data/uploads). "
         "See kk/docs/UPLOAD_PERSISTENCE.md."
     )
+
+
+def validate_redis_required(env: str | None = None) -> None:
+    """
+    Fail fast in production when Redis is missing or unreachable.
+
+    Shared Redis is required for correct rate limits (and useful for JWT
+    blocklist / Socket.IO / Celery) across Gunicorn workers. Without it,
+    each process keeps an in-memory limiter that attackers can bypass.
+
+    Escape hatch: ALLOW_INMEMORY_RATE_LIMITS=1 (emergency only).
+    """
+    env_name = (env or get_app_env()).strip().lower()
+    if env_name in ("development", "testing", "test"):
+        return
+    if _env_flag("ALLOW_INMEMORY_RATE_LIMITS"):
+        return
+    url = (os.environ.get("REDIS_URL") or "").strip()
+    if not url:
+        raise RuntimeError(
+            "REDIS_URL is required in production for shared rate limiting across "
+            "workers. Provision Redis (e.g. Render Key Value) and set REDIS_URL, "
+            "or set ALLOW_INMEMORY_RATE_LIMITS=1 for an emergency-only escape hatch."
+        )
+    try:
+        import redis  # type: ignore
+
+        client = redis.Redis.from_url(
+            url,
+            socket_connect_timeout=3,
+            socket_timeout=3,
+            decode_responses=True,
+        )
+        if not client.ping():
+            raise RuntimeError("PING returned falsy")
+    except Exception as exc:
+        raise RuntimeError(
+            "REDIS_URL is set but Redis is unreachable (needed for production "
+            f"rate limits). Check the URL / network / Redis service. Detail: {exc}"
+        ) from exc
+
 
 class Config:
     # Basic Flask Configuration

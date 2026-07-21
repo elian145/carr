@@ -52,7 +52,7 @@ kk/
 
 - **Flutter API URL:** `lib/services/config.dart` — override with `--dart-define=API_BASE=...` or in-app Settings → API.
 - **Backend secrets:** `APP_ENV`, `SECRET_KEY`, `JWT_SECRET_KEY`, `DATABASE_URL` (required in production). See `docs/DEPLOY_ENV_CHECKLIST.md`.
-- **Rate limiting:** Set `REDIS_URL` in production when running multiple Gunicorn workers.
+- **Rate limiting:** `REDIS_URL` is **required** in production (shared across Gunicorn workers). Emergency escape: `ALLOW_INMEMORY_RATE_LIMITS=1`.
 
 ## CI
 

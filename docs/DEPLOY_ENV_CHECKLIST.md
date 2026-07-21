@@ -10,6 +10,10 @@ Use this when configuring the **carr** web service before store submission.
 | `SECRET_KEY` | `openssl rand -hex 32` |
 | `JWT_SECRET_KEY` | `openssl rand -hex 32` |
 | `DATABASE_URL` | Render Postgres connection string (not SQLite) |
+| `REDIS_URL` | Render Key Value / Redis URL — **required** for shared rate limits across Gunicorn workers |
+
+Without `REDIS_URL`, the API refuses to start (unless emergency `ALLOW_INMEMORY_RATE_LIMITS=1`).
+Confirm `/health` shows `"redis_configured": true`.
 
 ## Uploads (pick one)
 

@@ -66,16 +66,41 @@ def _rate_limit_response(max_requests: int, window_minutes: int, retry_after: in
     )
 
 
+def _allow_inmemory_rate_limits() -> bool:
+    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+    if env in ("development", "testing", "test"):
+        return True
+    return (os.environ.get("ALLOW_INMEMORY_RATE_LIMITS") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+def _rate_limit_unavailable_response():
+    return (
+        jsonify(
+            {
+                "message": "Rate limiter temporarily unavailable. Please try again shortly.",
+                "code": "rate_limiter_unavailable",
+            }
+        ),
+        503,
+    )
+
+
 def check_rate_limit(max_requests=10, window_minutes=60, per_ip=True):
     """
     Return a Flask (response, status) tuple when rate-limited, else None.
-  """
+    """
     env = (os.environ.get("APP_ENV") or "").strip().lower()
     if env == "testing" or bool(current_app.config.get("TESTING")):
         return None
 
     window_s = int(window_minutes * 60)
     key = _rate_limit_key(per_ip=per_ip, window_s=window_s)
+    allow_memory = _allow_inmemory_rate_limits()
 
     r = _redis_client()
     if r is not None:
@@ -89,7 +114,12 @@ def check_rate_limit(max_requests=10, window_minutes=60, per_ip=True):
                 return _rate_limit_response(max_requests, window_minutes, retry_after)
             return None
         except Exception:
-            pass
+            # Production without escape hatch: do not silently weaken limits via memory.
+            if not allow_memory:
+                return _rate_limit_unavailable_response()
+
+    elif not allow_memory:
+        return _rate_limit_unavailable_response()
 
     now = time.time()
     window_start = now - window_s
