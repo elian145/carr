@@ -33,6 +33,7 @@ from ..models import (
     db,
 )
 from ..response_cache import invalidate_filter_facets_cache
+from ..listing_search import apply_listing_text_search
 from ..time_utils import utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -1080,18 +1081,22 @@ def global_search():
             .limit(limit)
             .all()
         )
-        cars = (
-            Car.query.filter(
-                (Car.title.ilike(like))
-                | (Car.brand.ilike(like))
-                | (Car.model.ilike(like))
-                | (Car.location.ilike(like))
-                | (Car.public_id.ilike(like))
-            )
+        cars_q, _rank = apply_listing_text_search(Car.query, q)
+        cars = cars_q.order_by(Car.created_at.desc()).limit(limit).all()
+        # Merge public_id hits that FTS may miss (UUID fragments).
+        by_id = {c.id: c for c in cars}
+        for c in (
+            Car.query.filter(Car.public_id.ilike(like))
             .order_by(Car.created_at.desc())
             .limit(limit)
             .all()
-        )
+        ):
+            by_id.setdefault(c.id, c)
+        cars = sorted(
+            by_id.values(),
+            key=lambda c: c.created_at or utcnow(),
+            reverse=True,
+        )[:limit]
         return (
             jsonify(
                 {

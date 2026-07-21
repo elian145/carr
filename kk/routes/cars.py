@@ -16,6 +16,7 @@ from ..auth import get_current_user, log_user_action, phone_verification_require
 from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
+from ..listing_search import apply_listing_text_search
 from ..models import Car, ListingReport, User, db, user_favorites, user_viewed_listings
 from ..response_cache import (
     FACETS_TTL_S,
@@ -213,8 +214,10 @@ def _apply_interest_ordering(
     )
 
 
-def _order_cars_query(query, sort_by: str):
+def _order_cars_query(query, sort_by: str, *, rank_expr=None):
     """Apply list ordering for GET /api/cars."""
+    if sort_by in ("relevance", "rank") and rank_expr is not None:
+        return query.order_by(rank_expr.desc(), Car.is_featured.desc(), Car.created_at.desc())
     if sort_by == "newest":
         return query.order_by(Car.is_featured.desc(), Car.created_at.desc())
     if sort_by == "price_asc":
@@ -547,6 +550,7 @@ def get_cars():
         plate_type_raw = (request.args.get("plate_type") or request.args.get("plateType") or "").strip().lower()
         plate_type = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
         plate_city = (request.args.get("plate_city") or request.args.get("plateCity") or "").strip() or None
+        text_q = (request.args.get("q") or request.args.get("search") or "").strip()
 
         query = _public_listings_filter(
             Car.query.options(
@@ -555,6 +559,8 @@ def get_cars():
                 joinedload(Car.seller),
             )
         )
+
+        query, search_rank = apply_listing_text_search(query, text_q)
 
         brands = _split_multi_filter(brand)
         if brands:
@@ -619,7 +625,9 @@ def get_cars():
             query = query.filter(Car.plate_city.ilike(f"%{plate_city}%"))
 
         sort_by = (request.args.get("sort_by") or "").strip().lower()
-        query = _order_cars_query(query, sort_by)
+        if search_rank is not None and sort_by in ("", "relevance", "rank"):
+            sort_by = "relevance"
+        query = _order_cars_query(query, sort_by, rank_expr=search_rank)
 
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         cars = [_with_media_compat(c) for c in pagination.items]

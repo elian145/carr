@@ -1902,6 +1902,14 @@ class BackendFactorySmokeTest(unittest.TestCase):
             f"/api/cars?brand=Toyota&min_price=1000&max_price=999999&sort_by=newest"
         )
         self.assertEqual(r.status_code, 200, r.data)
+
+    def test_list_cars_free_text_q_param(self):
+        """M-13: /api/cars?q= uses FTS (Postgres) or ILIKE fallback."""
+        r = self.client.get("/api/cars?q=Toyota&page=1&per_page=10")
+        self.assertEqual(r.status_code, 200, r.data)
+        payload = r.get_json() or {}
+        self.assertIn("cars", payload)
+        self.assertIn("pagination", payload)
         self.assertIn("cars", r.get_json() or {})
 
     def test_legacy_monolith_entrypoints_are_retired(self):
