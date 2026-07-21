@@ -1493,6 +1493,24 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(bad.status_code, 404, bad.data)
 
+    def test_signup_rate_limit_aligned_with_register(self):
+        """C-05: mobile signup must not use the old 1000/hr unlimited-style cap."""
+        from kk.routes import auth as auth_routes
+
+        self.assertEqual(auth_routes._SIGNUP_MAX_REQUESTS, 5)
+        self.assertEqual(auth_routes._SIGNUP_WINDOW_MINUTES, 60)
+        previous = os.environ.get("RATE_LIMIT_SIGNUP")
+        try:
+            os.environ["RATE_LIMIT_SIGNUP"] = "12"
+            self.assertEqual(auth_routes._signup_max_requests(), 12)
+            os.environ["RATE_LIMIT_SIGNUP"] = "not-a-number"
+            self.assertEqual(auth_routes._signup_max_requests(), 5)
+        finally:
+            if previous is None:
+                os.environ.pop("RATE_LIMIT_SIGNUP", None)
+            else:
+                os.environ["RATE_LIMIT_SIGNUP"] = previous
+
     def test_analyze_car_image_unavailable_by_default(self):
         """C-02: never return fake Camry specs when analysis is gated off."""
         jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"

@@ -105,8 +105,27 @@ def _send_otp_max_requests() -> int:
     return 3 if get_app_env() == "production" else 30
 
 
+def _signup_max_requests() -> int:
+    """
+    Per-IP limit for POST /api/auth/signup.
+
+    Must stay aligned with /api/auth/register (5/hour). The previous 1000/hour
+    value effectively disabled abuse protection on the primary mobile signup path.
+    Override with RATE_LIMIT_SIGNUP only for controlled load tests.
+    """
+    explicit = (os.environ.get("RATE_LIMIT_SIGNUP") or "").strip()
+    if explicit:
+        try:
+            return max(1, int(explicit))
+        except ValueError:
+            pass
+    return 5
+
+
 _SEND_OTP_MAX_REQUESTS = _send_otp_max_requests()
 _SEND_OTP_WINDOW_MINUTES = 10
+_SIGNUP_MAX_REQUESTS = _signup_max_requests()
+_SIGNUP_WINDOW_MINUTES = 60
 
 
 def _normalize_phone(raw_phone: str) -> str:
@@ -1797,7 +1816,7 @@ def phone_verify():
 
 
 @bp.route("/api/auth/signup", methods=["POST"])
-@rate_limit(max_requests=1000, window_minutes=60)  # relaxed limit for mobile signup route
+@rate_limit(max_requests=_SIGNUP_MAX_REQUESTS, window_minutes=_SIGNUP_WINDOW_MINUTES)
 def compat_signup():
     """
     Compatibility signup endpoint for mobile client.
