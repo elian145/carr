@@ -78,7 +78,7 @@ A comprehensive car listing application with real-time chat, notifications, user
 - **API**: RESTful API with comprehensive endpoints
 
 ### Frontend Features (Flutter)
-- **Cross-platform**: Works on Android and iOS
+- **Mobile (Android & iOS)**: Official product targets — see [docs/SUPPORTED_PLATFORMS.md](docs/SUPPORTED_PLATFORMS.md)
 - **Dark/Light Mode**: Theme switching with persistence
 - **Real-time Updates**: Live chat and notifications
 - **Image/Video Support**: Upload and display car media
@@ -423,6 +423,7 @@ See `test/README.md` and `docs/ARCHITECTURE.md`.
 
 3. **Web**
    ```bash
+   # Not a supported product surface — see docs/SUPPORTED_PLATFORMS.md
    flutter build web --release
    ```
 

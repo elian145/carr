@@ -18,6 +18,8 @@ Thanks for helping improve CARZO / CarNet. This guide covers local setup, expect
    - Manual: `python -m kk.app_new` on port **5000**, then `python backend/server.py` on **5003**
 4. Run the app with a flavor: `flutter run --flavor dev` (pass `--dart-define=API_BASE=...` if needed)
 
+Official targets are **Android and iOS**. Desktop folders (`macos/`, `windows/`, `linux/`) are untested scaffold — see [docs/SUPPORTED_PLATFORMS.md](docs/SUPPORTED_PLATFORMS.md).
+
 Production API entry is `kk.wsgi:app` / `create_app()` — never the retired `kk.app` monolith. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Workflow

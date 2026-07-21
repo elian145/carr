@@ -2,6 +2,8 @@
 
 This checklist is the final gate before uploading Android AAB/APK or iOS builds.
 
+Desktop (`macos` / `windows` / `linux`) and web are **not** store targets — see [`SUPPORTED_PLATFORMS.md`](SUPPORTED_PLATFORMS.md).
+
 ## 1) Required identifiers
 
 - Android `applicationId` and `namespace` are `com.carzo.app` (prod flavor).

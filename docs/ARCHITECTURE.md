@@ -69,3 +69,7 @@ kk/
 - Optional manual scripts: `kk/test_*.py` (require a running server unless noted)
 
 All production legacy HTTP goes through `ApiService` (token refresh, shared errors, test mock client).
+
+## Supported platforms
+
+Official product targets are **Android and iOS** only. The `macos/`, `windows/`, and `linux/` folders are untested Flutter scaffold — see [SUPPORTED_PLATFORMS.md](SUPPORTED_PLATFORMS.md).
