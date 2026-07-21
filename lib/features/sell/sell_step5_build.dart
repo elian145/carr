@@ -39,7 +39,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                                 }
                               },
                         style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Color(0xFFFF6B00)),
+                          side: BorderSide(color: AppColors.brandOrange),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -49,7 +49,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                           ),
                         ),
                       ),
@@ -322,7 +322,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                                 }
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFF6B00),
+                          backgroundColor: AppColors.brandOrange,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

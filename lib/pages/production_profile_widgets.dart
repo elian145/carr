@@ -8,10 +8,10 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
         Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Color(0xFFFF6B00).withValues(alpha: 0.1),
+            color: AppColors.brandOrange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 20, color: Color(0xFFFF6B00)),
+          child: Icon(icon, size: 20, color: AppColors.brandOrange),
         ),
         SizedBox(width: 12),
         Expanded(
@@ -51,7 +51,7 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
     Color? color,
     int badgeCount = 0,
   }) {
-    final accent = color ?? Color(0xFFFF6B00);
+    final accent = color ?? AppColors.brandOrange;
     final light = _profileLightShell(context);
     return InkWell(
       onTap: onTap,

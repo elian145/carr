@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
 
@@ -22,7 +23,7 @@ class _FirstRunOnboardingGateState extends State<FirstRunOnboardingGate> {
   int _page = 0;
   final _controller = PageController();
 
-  static const _accent = Color(0xFFFF6B00);
+  static const _accent = AppColors.brandOrange;
 
   @override
   void initState() {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import '../../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +24,7 @@ class SellDraftGatePage extends StatefulWidget {
 class _SellDraftGatePageState extends State<SellDraftGatePage> {
   static const String _draftSnapshotKey = 'legacy_sell_draft_snapshot_v1';
   static const String _draftCurrentStepKey = 'legacy_sell_draft_current_step_v1';
-  static const Color _accent = Color(0xFFFF6B00);
+  static const Color _accent = AppColors.brandOrange;
 
   bool _loading = true;
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];

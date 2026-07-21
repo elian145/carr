@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../theme/app_colors.dart';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,7 @@ import '../../shared/ui/app_haptics.dart';
 import '../../theme_provider.dart';
 import 'listing_network_image.dart';
 
-const Color _kFeaturedAccent = Color(0xFFFF6B00);
+const Color _kFeaturedAccent = AppColors.brandOrange;
 const Color _kFeaturedCardBgDark = Color(0xFF121212);
 const Color _kFeaturedMutedDark = Color(0xFF9A9A9A);
 const double _kFeaturedRadius = 16;

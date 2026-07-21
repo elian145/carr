@@ -246,13 +246,13 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Color(0xFFFF6B00).withValues(alpha: 0.1),
+        color: AppColors.brandOrange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.3)),
       ),
       child: Text(
         '$label: $value',
-        style: TextStyle(fontSize: 11, color: Color(0xFFFF6B00)),
+        style: TextStyle(fontSize: 11, color: AppColors.brandOrange),
       ),
     );
   }

@@ -150,7 +150,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
             }),
             icon: Icon(
               isEngineSizeDropdown ? Icons.edit : Icons.list,
-              color: const Color(0xFFFF6B00),
+              color: AppColors.brandOrange,
             ),
             style: IconButton.styleFrom(
               backgroundColor: style.fieldFill,

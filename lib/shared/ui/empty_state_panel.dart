@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_colors.dart';
+
 /// Shared empty-state panel: icon, title, optional hint, optional CTA.
 class EmptyStatePanel extends StatelessWidget {
   const EmptyStatePanel({
@@ -19,7 +21,7 @@ class EmptyStatePanel extends StatelessWidget {
   final VoidCallback? onAction;
   final IconData? actionIcon;
 
-  static const Color _accent = Color(0xFFFF6B00);
+  static const Color _accent = AppColors.brandOrange;
 
   @override
   Widget build(BuildContext context) {

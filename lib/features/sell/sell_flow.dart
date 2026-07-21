@@ -21,6 +21,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+import '../../theme/app_colors.dart';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -387,7 +388,7 @@ Widget buildSellWizardNavRow(
     child: OutlinedButton(
       onPressed: onPrevious,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFFF6B00)),
+        side: const BorderSide(color: AppColors.brandOrange),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: FittedBox(
@@ -398,7 +399,7 @@ Widget buildSellWizardNavRow(
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFF6B00),
+            color: AppColors.brandOrange,
           ),
         ),
       ),
@@ -413,7 +414,7 @@ Widget buildSellWizardNavRow(
       child: ElevatedButton(
         onPressed: onNext,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFF6B00),
+          backgroundColor: AppColors.brandOrange,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

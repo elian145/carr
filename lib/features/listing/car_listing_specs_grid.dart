@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../theme/app_colors.dart';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';

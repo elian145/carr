@@ -9,7 +9,7 @@ mixin _EditProfilePageCore on _EditProfilePageWidgets {
       backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc.editProfileTitle),
-        backgroundColor: Color(0xFFFF6B00),
+        backgroundColor: AppColors.brandOrange,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -253,7 +253,7 @@ mixin _EditProfilePageCore on _EditProfilePageWidgets {
                         child: ElevatedButton(
                           onPressed: _isSaving ? null : _saveProfile,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFFF6B00),
+                            backgroundColor: AppColors.brandOrange,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),

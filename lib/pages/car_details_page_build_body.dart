@@ -47,8 +47,8 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
                             height: 46,
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Color(0xFFFF6B00),
-                                side: BorderSide(color: Color(0xFFFF6B00)),
+                                foregroundColor: AppColors.brandOrange,
+                                side: BorderSide(color: AppColors.brandOrange),
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 10,
                                   vertical: 8,

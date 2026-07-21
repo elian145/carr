@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../theme/app_colors.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../services/api_service.dart';
@@ -124,7 +125,7 @@ Future<bool> confirmMarkListingSold(BuildContext context) async {
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(
             _soldDialogText(context, 'Mark sold', 'مباع', 'فرۆشراو'),
-            style: const TextStyle(color: Color(0xFFFF6B00)),
+            style: const TextStyle(color: AppColors.brandOrange),
           ),
         ),
       ],

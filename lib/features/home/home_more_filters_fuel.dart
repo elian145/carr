@@ -44,7 +44,7 @@ mixin _HomePageMoreFiltersFuel on _HomePageMoreFiltersMileage {
                               ),
                               suffixIcon: const Icon(
                                 Icons.local_gas_station,
-                                color: Color(0xFFFF6B00),
+                                color: AppColors.brandOrange,
                               ),
                             ),
                             onTap: () async {

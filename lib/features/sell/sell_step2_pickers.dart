@@ -28,7 +28,7 @@ mixin _SellStep2Pickers on _SellStep2CatalogHydrate {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Color(0xFFFF6B00),
+                        color: AppColors.brandOrange,
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                       ),

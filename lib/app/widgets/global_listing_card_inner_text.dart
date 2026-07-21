@@ -866,7 +866,7 @@ class _ListingCardFavoriteButtonState
         icon: Icon(
           _isFavorite ? Icons.favorite : Icons.favorite_border,
           size: 20,
-          color: _isFavorite ? const Color(0xFFFF6B00) : widget.idleColor,
+          color: _isFavorite ? AppColors.brandOrange : widget.idleColor,
         ),
       ),
     );

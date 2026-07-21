@@ -55,7 +55,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                           child: Text(
                             AppLocalizations.of(context)!.selectBodyType,
                             style: GoogleFonts.orbitron(
-                              color: const Color(0xFFFF6B00),
+                              color: AppColors.brandOrange,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -112,14 +112,14 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
-                                      ? const Color(0xFFFF6B00)
+                                      ? AppColors.brandOrange
                                       : borderSubtle,
                                   width: isSelected ? 2 : 1,
                                 ),
                                 boxShadow: isSelected
                                     ? [
                                         BoxShadow(
-                                          color: const Color(0xFFFF6B00)
+                                          color: AppColors.brandOrange
                                               .withValues(alpha: 0.35),
                                           blurRadius: 14,
                                           spreadRadius: 1,
@@ -147,7 +147,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                                       color: Colors.white,
                                       border: Border.all(
                                         color: isSelected
-                                            ? const Color(0xFFFF6B00)
+                                            ? AppColors.brandOrange
                                             : borderSubtle,
                                         width: isSelected ? 2 : 1,
                                       ),
@@ -170,7 +170,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                                     style: GoogleFonts.orbitron(
                                       fontSize: 12,
                                       color: isSelected
-                                          ? const Color(0xFFFF6B00)
+                                          ? AppColors.brandOrange
                                           : onPickerMuted,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -194,7 +194,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                           selected.toList(),
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B00),
+                          backgroundColor: AppColors.brandOrange,
                         ),
                         child: Text(
                           AppLocalizations.of(context)!.apply,
@@ -265,9 +265,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                                   color:
                                       Colors.white,
                                   border: Border.all(
-                                    color: Color(
-                                      0xFFFF6B00,
-                                    ),
+                                    color: AppColors.brandOrange,
                                     width: 2,
                                   ),
                                 ),

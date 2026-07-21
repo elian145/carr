@@ -62,7 +62,7 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
       decoration: BoxDecoration(
         color: hasDealerCover
             ? Colors.white.withValues(alpha: 0.88)
-            : const Color(0xFFFF6B00).withValues(alpha: 0.1),
+            : AppColors.brandOrange.withValues(alpha: 0.1),
         shape: BoxShape.circle,
         border: hasDealerCover
             ? Border.all(color: Colors.white.withValues(alpha: 0.9), width: 3)
@@ -75,9 +75,9 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
               height: 88,
               fit: BoxFit.cover,
               errorWidget:
-                  const Icon(Icons.person, size: 48, color: Color(0xFFFF6B00)),
+                  const Icon(Icons.person, size: 48, color: AppColors.brandOrange),
             )
-          : const Icon(Icons.person, size: 48, color: Color(0xFFFF6B00)),
+          : const Icon(Icons.person, size: 48, color: AppColors.brandOrange),
     );
     final name = Text(
       displayName,

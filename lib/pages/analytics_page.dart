@@ -11,6 +11,7 @@ import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/ui/responsive.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
+import '../theme/app_colors.dart';
 part 'analytics_page_fields.dart';
 part 'analytics_page_load.dart';
 part 'analytics_page_listing_selection.dart';

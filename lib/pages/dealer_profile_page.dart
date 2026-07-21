@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -270,11 +271,9 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               const SizedBox(height: 14),
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: const Color(0xFFFF6B00),
+                                  foregroundColor: AppColors.brandOrange,
                                   side: BorderSide(
-                                    color: const Color(
-                                      0xFFFF6B00,
-                                    ).withValues(alpha: 0.45),
+                                    color: AppColors.brandOrange.withValues(alpha: 0.45),
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
@@ -333,9 +332,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                   Icon(
                                     Icons.directions_car_outlined,
                                     size: 36,
-                                    color: const Color(
-                                      0xFFFF6B00,
-                                    ).withValues(alpha: 0.7),
+                                    color: AppColors.brandOrange.withValues(alpha: 0.7),
                                   ),
                                   const SizedBox(height: 10),
                                   Text(

@@ -79,7 +79,7 @@ class _SellCarPageState extends _SellCarPageFields
                 ? AppLocalizations.of(context)!.editListingTitle
                 : AppLocalizations.of(context)!.addListingTitle,
           ),
-          backgroundColor: Color(0xFFFF6B00),
+          backgroundColor: AppColors.brandOrange,
           foregroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
@@ -110,7 +110,7 @@ class _SellCarPageState extends _SellCarPageFields
                           value: SellWizardSteps.progressFraction(currentStep),
                           minHeight: 4,
                           backgroundColor: Colors.grey[300],
-                          color: const Color(0xFFFF6B00),
+                          color: AppColors.brandOrange,
                         ),
                       ),
                     ),
@@ -133,9 +133,9 @@ class _SellCarPageState extends _SellCarPageFields
                                 color: isCompleted
                                     ? Colors.green
                                     : isCurrent
-                                        ? const Color(0xFFFF6B00)
+                                        ? AppColors.brandOrange
                                         : isAccessible
-                                            ? const Color(0xFFFF6B00)
+                                            ? AppColors.brandOrange
                                                 .withValues(alpha: 0.5)
                                             : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(2),
@@ -166,7 +166,7 @@ class _SellCarPageState extends _SellCarPageFields
                       _getStepTitle(context, currentStep),
                       style: TextStyle(
                         fontSize: 16,
-                        color: Color(0xFFFF6B00),
+                        color: AppColors.brandOrange,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

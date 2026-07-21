@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_colors.dart';
 import '../../theme_provider.dart';
 
 /// Brand orange (matches home listing cards); explicit color avoids
 /// [Theme.primaryColor] matching surfaces inside chat bubbles in dark mode.
-const Color kChatListingCardAccentOrange = Color(0xFFFF6B00);
+const Color kChatListingCardAccentOrange = AppColors.brandOrange;
 
 const Color kComposerOutlineOrange = Color(0xFFFF7A00);
 

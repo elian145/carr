@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import '../../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
 
@@ -56,7 +57,7 @@ Widget buildFloatingBottomNav(
       type: BottomNavigationBarType.fixed,
       backgroundColor: solidBackground ? solidFill : Colors.transparent,
       elevation: 0,
-      selectedItemColor: const Color(0xFFFF6B00),
+      selectedItemColor: AppColors.brandOrange,
       unselectedItemColor: unselectedItemColor,
       selectedFontSize: compact ? 10 : 12,
       unselectedFontSize: compact ? 10 : 11,

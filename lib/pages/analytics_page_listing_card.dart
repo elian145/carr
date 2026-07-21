@@ -52,7 +52,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
       cardWidget = Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFFF6B00), width: 2),
+          border: Border.all(color: AppColors.brandOrange, width: 2),
         ),
         child: cardWidget,
       );
@@ -109,7 +109,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Color(0xFFFF6B00), Color(0xFFFF8A50)],
+                        colors: [AppColors.brandOrange, Color(0xFFFF8A50)],
                       ),
                     ),
                     child: Row(
@@ -190,9 +190,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Color(
-                                    0xFFFF6B00,
-                                  ).withValues(alpha: 0.2),
+                                  color: AppColors.brandOrange.withValues(alpha: 0.2),
                                   blurRadius: 20,
                                   offset: Offset(0, 8),
                                 ),
@@ -281,7 +279,7 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
                                       colors: [
-                                        Color(0xFFFF6B00),
+                                        AppColors.brandOrange,
                                         Color(0xFFFF8A50),
                                       ],
                                     ),

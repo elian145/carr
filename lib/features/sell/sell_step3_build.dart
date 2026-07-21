@@ -9,16 +9,16 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFF6B00).withValues(alpha: 0.1), Colors.white],
+                  colors: [AppColors.brandOrange.withValues(alpha: 0.1), Colors.white],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Color(0xFFFF6B00).withValues(alpha: 0.2)),
+                border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
-                  Icon(Icons.attach_money, size: 48, color: Color(0xFFFF6B00)),
+                  Icon(Icons.attach_money, size: 48, color: AppColors.brandOrange),
                   SizedBox(height: 12),
                   Text(
                     AppLocalizations.of(context)!.pricingContactTitle,

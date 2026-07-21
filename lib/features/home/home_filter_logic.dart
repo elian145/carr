@@ -154,7 +154,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                           child: Text(
                             title,
                             style: GoogleFonts.orbitron(
-                              color: const Color(0xFFFF6B00),
+                              color: AppColors.brandOrange,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -208,7 +208,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
-                                      ? const Color(0xFFFF6B00)
+                                      ? AppColors.brandOrange
                                       : Colors.white24,
                                   width: isSelected ? 2 : 1,
                                 ),
@@ -218,7 +218,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                                 style: GoogleFonts.orbitron(
                                   fontSize: 14,
                                   color: isSelected
-                                      ? const Color(0xFFFF6B00)
+                                      ? AppColors.brandOrange
                                       : Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -237,7 +237,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                           selected.toList(),
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF6B00),
+                          backgroundColor: AppColors.brandOrange,
                         ),
                         child: Text(
                           AppLocalizations.of(context)!.apply,

@@ -98,7 +98,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }
 
   Widget _buildSpecCard(_SpecItem item) {
-    const brandOrange = Color(0xFFFF6B00);
+    const brandOrange = AppColors.brandOrange;
     const labelGrey = Color(0xFF8E8E93);
     final isLight = Theme.of(context).brightness == Brightness.light;
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
@@ -218,7 +218,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     final isLight = Theme.of(context).brightness == Brightness.light;
-    const brandOrange = Color(0xFFFF6B00);
+    const brandOrange = AppColors.brandOrange;
     const labelGrey = Color(0xFF8E8E93);
     final cardBg = isLight ? Colors.white : const Color(0xFF1E1E1E);
     final iconCircleFill = isLight

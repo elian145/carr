@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../theme/app_colors.dart';
 
 Future<XFile?> pickCoverImage(
   BuildContext context, {
@@ -26,7 +27,7 @@ Future<XFile?> pickCoverImage(
         toolbarTitle: title,
         toolbarColor: const Color(0xFF111111),
         toolbarWidgetColor: Colors.white,
-        activeControlsWidgetColor: const Color(0xFFFF6B00),
+        activeControlsWidgetColor: AppColors.brandOrange,
         cropStyle: CropStyle.rectangle,
         initAspectRatio: CropAspectRatioPreset.ratio16x9,
         aspectRatioPresets: const [CropAspectRatioPreset.ratio16x9],

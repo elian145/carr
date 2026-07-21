@@ -76,7 +76,7 @@ extension _CarComparisonPageHelpers on CarComparisonPage {
           Text(
             formatCurrency(context, car['price']?.toString() ?? '0'),
             style: const TextStyle(
-              color: Color(0xFFFF6B00),
+              color: AppColors.brandOrange,
               fontWeight: FontWeight.w800,
               fontSize: 16,
             ),
@@ -119,7 +119,7 @@ extension _CarComparisonPageHelpers on CarComparisonPage {
           width: constraints.maxWidth.isFinite ? constraints.maxWidth : null,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF6B00),
+            color: AppColors.brandOrange,
             borderRadius: BorderRadius.circular(999),
           ),
           child: AutoSizeText(
@@ -156,7 +156,7 @@ extension _CarComparisonPageHelpers on CarComparisonPage {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF6B00),
+            color: AppColors.brandOrange,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: compact ? 16 : 18, color: Colors.black),

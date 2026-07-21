@@ -16,7 +16,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
     return MoreFiltersDialogStyle(
       onSurface: isLightMoreFilters ? const Color(0xFF1A1A1A) : Colors.white,
       muted: isLightMoreFilters ? const Color(0xFF757575) : Colors.white70,
-      anyOrange: const Color(0xFFFF6B00),
+      anyOrange: AppColors.brandOrange,
       fieldFill: isLightMoreFilters
           ? Colors.grey.shade200
           : Colors.black.withValues(alpha: 0.2),
@@ -125,7 +125,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
             ),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B00),
+                backgroundColor: AppColors.brandOrange,
                 foregroundColor: Colors.white,
               ),
               onPressed: () {
@@ -179,7 +179,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
               title: Text(
                 AppLocalizations.of(context)!.moreFilters,
                 style: GoogleFonts.orbitron(
-                  color: const Color(0xFFFF6B00),
+                  color: AppColors.brandOrange,
                   fontWeight: FontWeight.bold,
                 ),
               ),

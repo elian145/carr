@@ -387,7 +387,7 @@ class _LoginPageState extends State<LoginPage> {
       labelStyle: TextStyle(color: muted, fontWeight: FontWeight.w500),
       hintStyle: TextStyle(color: muted),
       prefixStyle: const TextStyle(
-        color: Color(0xFFFF6B00),
+        color: AppColors.brandOrange,
         fontWeight: FontWeight.w700,
         fontSize: 16,
       ),
@@ -403,7 +403,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Color(0xFFFF6B00), width: 2),
+        borderSide: const BorderSide(color: AppColors.brandOrange, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -428,13 +428,13 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final border = selected
-        ? const Color(0xFFFF6B00)
+        ? AppColors.brandOrange
         : (isLight ? const Color(0xFFE0E0E0) : Colors.white24);
     final fill = selected
-        ? const Color(0xFFFF6B00).withValues(alpha: isLight ? 0.10 : 0.18)
+        ? AppColors.brandOrange.withValues(alpha: isLight ? 0.10 : 0.18)
         : (isLight ? Colors.white : Colors.white.withValues(alpha: 0.06));
     final ink = selected
-        ? const Color(0xFFFF6B00)
+        ? AppColors.brandOrange
         : (isLight ? const Color(0xFF424242) : Colors.white70);
 
     return Material(
@@ -491,7 +491,7 @@ class _LoginPageState extends State<LoginPage> {
       appBar: AppBar(
         title: Text(loc.loginTitle),
         elevation: 0,
-        backgroundColor: const Color(0xFFFF6B00),
+        backgroundColor: AppColors.brandOrange,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -529,13 +529,13 @@ class _LoginPageState extends State<LoginPage> {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFF6B00)
+                            color: AppColors.brandOrange
                                 .withValues(alpha: 0.12),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.phone_iphone_rounded,
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                             size: 30,
                           ),
                         ),
@@ -612,7 +612,7 @@ class _LoginPageState extends State<LoginPage> {
                           prefixText: '+964 ',
                           prefixIcon: const Icon(
                             Icons.phone_outlined,
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                           ),
                         ),
                         inputFormatters: [
@@ -645,7 +645,7 @@ class _LoginPageState extends State<LoginPage> {
                                 labelText: loc.sixDigitCodeLabel,
                                 prefixIcon: const Icon(
                                   Icons.lock_outline_rounded,
-                                  color: Color(0xFFFF6B00),
+                                  color: AppColors.brandOrange,
                                 ),
                               ),
                               inputFormatters: [
@@ -666,9 +666,9 @@ class _LoginPageState extends State<LoginPage> {
                               onPressed:
                                   (_loading || _sendingOtp) ? null : _sendOtp,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF6B00),
+                                backgroundColor: AppColors.brandOrange,
                                 foregroundColor: Colors.white,
-                                disabledBackgroundColor: const Color(0xFFFF6B00)
+                                disabledBackgroundColor: AppColors.brandOrange
                                     .withValues(alpha: 0.45),
                                 elevation: 0,
                                 padding: const EdgeInsets.symmetric(
@@ -706,9 +706,9 @@ class _LoginPageState extends State<LoginPage> {
                           child: ElevatedButton(
                             onPressed: _loading ? null : _loginWithPhone,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFF6B00),
+                              backgroundColor: AppColors.brandOrange,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: const Color(0xFFFF6B00)
+                              disabledBackgroundColor: AppColors.brandOrange
                                   .withValues(alpha: 0.45),
                               elevation: 0,
                               shape: RoundedRectangleBorder(

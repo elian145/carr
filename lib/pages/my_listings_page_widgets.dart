@@ -29,7 +29,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
             label: Text(label),
             selected: _filter == filter,
             onSelected: (_) => _selectFilter(filter),
-            selectedColor: const Color(0xFFFF6B00),
+            selectedColor: AppColors.brandOrange,
             labelStyle: TextStyle(
               color: _filter == filter ? Colors.white : null,
               fontWeight: FontWeight.w700,
@@ -281,7 +281,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
             top: 14,
             left: 14,
             child: Material(
-              color: const Color(0xFFFF6B00),
+              color: AppColors.brandOrange,
               borderRadius: BorderRadius.circular(6),
               child: InkWell(
                 borderRadius: BorderRadius.circular(6),
@@ -406,7 +406,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
                       children: [
-                        Icon(icon, size: 18, color: const Color(0xFFFF6B00)),
+                        Icon(icon, size: 18, color: AppColors.brandOrange),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(

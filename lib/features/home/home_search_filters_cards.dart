@@ -1,6 +1,6 @@
 part of 'home_flow.dart';
 
-const Color _searchAccent = Color(0xFFFF6B00);
+const Color _searchAccent = AppColors.brandOrange;
 
 mixin _HomePageSearchFiltersCards on _HomePageMoreFiltersDialog {
 

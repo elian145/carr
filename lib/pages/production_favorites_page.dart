@@ -258,7 +258,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                                   padding: EdgeInsets.all(6),
                                   child: Icon(
                                     Icons.favorite,
-                                    color: Color(0xFFFF6B00),
+                                    color: AppColors.brandOrange,
                                     size: 22,
                                   ),
                                 ),

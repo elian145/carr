@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 
 import '../../features/home/more_filters_dialog_style.dart';
 import '../../l10n/app_localizations.dart';
+import '../../theme/app_colors.dart';
 import 'filter_icon_image.dart';
 import 'filter_option_icons.dart';
 import 'responsive.dart';
 
-const Color kFilterAccentColor = Color(0xFFFF6B00);
+/// Brand accent for filter / sell tiles (alias of [AppColors.brandOrange]).
+const Color kFilterAccentColor = AppColors.brandOrange;
 
 BoxDecoration filterCardDecoration(BuildContext context, {bool isError = false}) {
   final isLight = Theme.of(context).brightness == Brightness.light;

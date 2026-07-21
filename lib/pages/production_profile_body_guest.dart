@@ -12,12 +12,12 @@ mixin _ProfilePageBodyGuest on _ProfilePageWidgets {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Color(0xFFFF6B00).withValues(alpha: 0.1),
+                color: AppColors.brandOrange.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.person_outline,
-                color: Color(0xFFFF6B00),
+                color: AppColors.brandOrange,
                 size: 26,
               ),
             ),
@@ -50,7 +50,7 @@ mixin _ProfilePageBodyGuest on _ProfilePageWidgets {
               onPressed: () =>
                   Navigator.pushReplacementNamed(context, '/login'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFFFF6B00),
+                backgroundColor: AppColors.brandOrange,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

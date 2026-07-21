@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'theme/app_colors.dart';
+
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'theme_mode';
 
@@ -46,8 +48,8 @@ class ThemeProvider extends ChangeNotifier {
 
 /// Brand accent; [ColorScheme.fromSeed] builds surfaces; we override ink colors for stronger contrast.
 class AppThemes {
-  static const Color _brandOrange = Color(0xFFFF6B00);
-  static const Color _brandSecondary = Color(0xFFFF8C42);
+  static const Color _brandOrange = AppColors.brandOrange;
+  static const Color _brandSecondary = AppColors.brandOrangeSoft;
 
   /// Light mode: full-bleed scaffold / home body (pure white).
   static const Color lightAppBackground = Color(0xFFFFFFFF);

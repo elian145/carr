@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../theme/app_colors.dart';
 
 import '../../data/car_name_translations.dart';
 import '../../shared/ui/brand_logo_image.dart';
@@ -33,7 +34,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
 
   ButtonStyle _searchModeButtonStyle({required bool selected}) {
     final backgroundColor = selected
-        ? const Color(0xFFFF6B00)
+        ? AppColors.brandOrange
         : Colors.white.withValues(alpha: 0.12);
     final foregroundColor = selected ? Colors.white : Colors.white70;
     return ElevatedButton.styleFrom(
@@ -136,7 +137,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                 Text(
                   AppLocalizations.of(context)!.searchCars,
                   style: GoogleFonts.orbitron(
-                    color: Color(0xFFFF6B00),
+                    color: AppColors.brandOrange,
                     fontWeight: FontWeight.bold,
                     fontSize: 24,
                   ),
@@ -187,7 +188,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                     ? AppLocalizations.of(context)!.searchBrands
                     : AppLocalizations.of(context)!.searchModels,
                 hintStyle: TextStyle(color: Colors.grey[400]),
-                prefixIcon: Icon(Icons.search, color: Color(0xFFFF6B00)),
+                prefixIcon: Icon(Icons.search, color: AppColors.brandOrange),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey[600]!),
@@ -198,7 +199,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Color(0xFFFF6B00), width: 2),
+                  borderSide: BorderSide(color: AppColors.brandOrange, width: 2),
                 ),
                 filled: true,
                 fillColor: Colors.grey[800],

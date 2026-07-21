@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 import '../../l10n/app_localizations.dart';
 
@@ -31,7 +32,7 @@ Widget buildCurrencyIcon(String currency) {
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: const Color(0xFFFF6B00),
+        color: AppColors.brandOrange,
         borderRadius: BorderRadius.circular(6),
       ),
       child: const Center(
@@ -46,7 +47,7 @@ Widget buildCurrencyIcon(String currency) {
       ),
     );
   }
-  return const Icon(Icons.attach_money, size: 24, color: Color(0xFFFF6B00));
+  return const Icon(Icons.attach_money, size: 24, color: AppColors.brandOrange);
 }
 
 Widget buildFancySelector(
@@ -59,7 +60,7 @@ Widget buildFancySelector(
   String? currency,
 }) {
   final bool isDark = Theme.of(context).brightness == Brightness.dark;
-  const Color accent = Color(0xFFFF6B00);
+  const Color accent = AppColors.brandOrange;
   final List<Color> bg = isDark
       ? [Colors.white.withValues(alpha: 0.06), Colors.white.withValues(alpha: 0.03)]
       : [kSellLightShellFieldFill, kSellLightShellFieldFill];

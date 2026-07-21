@@ -60,7 +60,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
             children: [
               Row(
                 children: [
-                  Icon(Icons.filter_list, color: Color(0xFFFF6B00), size: 20),
+                  Icon(Icons.filter_list, color: AppColors.brandOrange, size: 20),
                   SizedBox(width: 8),
                   Text(
                     AppLocalizations.of(context)!.appliedFilters,
@@ -91,7 +91,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
               _applySearch(filters);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF6B00),
+              backgroundColor: AppColors.brandOrange,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

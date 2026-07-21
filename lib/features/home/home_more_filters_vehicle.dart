@@ -30,7 +30,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       onPressed: onPressed,
       icon: Icon(
         isDropdown ? Icons.edit : Icons.list,
-        color: const Color(0xFFFF6B00),
+        color: AppColors.brandOrange,
       ),
       style: IconButton.styleFrom(
         backgroundColor: style.fieldFill,

@@ -1,6 +1,6 @@
 part of 'edit_dealer_page.dart';
 
-const Color _editDealerAccent = Color(0xFFFF6B00);
+const Color _editDealerAccent = AppColors.brandOrange;
 const int _editDealerMaxPhones = 5;
 
 String normalizeDealerPhoneForVerification(String value) {

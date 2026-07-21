@@ -25,7 +25,7 @@ mixin _SellStep3Pickers on _SellStep3Catalog {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Color(0xFFFF6B00),
+                        color: AppColors.brandOrange,
                         fontWeight: FontWeight.bold,
                         fontSize: 20,
                       ),

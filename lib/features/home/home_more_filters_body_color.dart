@@ -159,9 +159,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                   context,
                                                 )!.selectColor,
                                                 style: GoogleFonts.orbitron(
-                                                  color: Color(
-                                                    0xFFFF6B00,
-                                                  ),
+                                                  color: AppColors.brandOrange,
                                                   fontWeight: FontWeight.bold,
                                                   fontSize: 20,
                                                 ),

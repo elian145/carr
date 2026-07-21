@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 import '../../shared/i18n/region_spec_labels.dart';
 import 'home_filter_chip_style.dart';
@@ -271,7 +272,7 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
   required HomeFilterChipLabels labels,
   required HomeFilterChipFormatters formatters,
 }) {
-  const brandOrange = Color(0xFFFF6B00);
+  const brandOrange = AppColors.brandOrange;
   final chips = <HomeFilterChipDescriptor>[];
 
   void add(

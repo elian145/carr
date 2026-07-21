@@ -56,7 +56,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                         const Icon(
                           Icons.location_city,
                           size: 16,
-                          color: Color(0xFFFF6B00),
+                          color: AppColors.brandOrange,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -92,7 +92,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                 children: [
                                   const Icon(
                                     Icons.search,
-                                    color: Color(0xFFFF6B00),
+                                    color: AppColors.brandOrange,
                                   ),
                                   const SizedBox(width: 8),
                                   Flexible(
@@ -101,7 +101,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.orbitron(
-                                        color: const Color(0xFFFF6B00),
+                                        color: AppColors.brandOrange,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 20,
                                       ),

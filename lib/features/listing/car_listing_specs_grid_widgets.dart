@@ -12,7 +12,7 @@ Widget carListingSpecsDetailRow(
       return const SizedBox.shrink();
     }
     final isLight = Theme.of(context).brightness == Brightness.light;
-    const brandOrange = Color(0xFFFF6B00);
+    const brandOrange = AppColors.brandOrange;
     const iconCircleFillLight = Color(0xFFFFF0E6);
     const iconCircleFillDark = Color(0xFFFFE8D6);
     const labelGrey = Color(0xFF8E8E93);
@@ -142,7 +142,7 @@ Widget carListingSpecsDetailRow(
   }
 
 Widget carListingSpecsCard(ListingSpecItem item) {
-  const brandOrange = Color(0xFFFF6B00);
+  const brandOrange = AppColors.brandOrange;
   const labelGrey = Color(0xFF8E8E93);
 
   return Semantics(

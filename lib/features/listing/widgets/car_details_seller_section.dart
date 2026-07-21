@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/app_colors.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../../../app/widgets/listing_network_image.dart';
@@ -119,7 +120,7 @@ class CarDetailsSellerSection extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 16, color: const Color(0xFFFF6B00)),
+            Icon(icon, size: 16, color: AppColors.brandOrange),
             const SizedBox(width: 8),
             Expanded(
               child: RichText(
@@ -181,14 +182,14 @@ class CarDetailsSellerSection extends StatelessWidget {
                     child: !isDealerSeller
                         ? const Icon(
                             Icons.person,
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                             size: 26,
                           )
                         : avatarUrl.isEmpty
                         ? Text(
                             initials,
                             style: const TextStyle(
-                              color: Color(0xFFFF6B00),
+                              color: AppColors.brandOrange,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),

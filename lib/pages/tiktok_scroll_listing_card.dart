@@ -137,7 +137,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+                            AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
                       ),
                     ),
                   ),
@@ -259,7 +259,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                 Text(
                   price,
                   style: const TextStyle(
-                    color: Color(0xFFFF6B00),
+                    color: AppColors.brandOrange,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -307,7 +307,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B00).withValues(alpha: 0.9),
+                      color: AppColors.brandOrange.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(

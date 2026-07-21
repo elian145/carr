@@ -25,7 +25,7 @@ mixin _AnalyticsPageWidgets on _AnalyticsPageListingSelection {
           ElevatedButton(
             onPressed: _loadAnalytics,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF6B00),
+              backgroundColor: AppColors.brandOrange,
               foregroundColor: Colors.white,
             ),
             child: Text(loc.retryAction),
@@ -78,7 +78,7 @@ mixin _AnalyticsPageWidgets on _AnalyticsPageListingSelection {
           ElevatedButton(
             onPressed: () => Navigator.pushNamed(context, '/sell'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Color(0xFFFF6B00),
+              backgroundColor: AppColors.brandOrange,
               foregroundColor: Colors.white,
             ),
             child: Text(loc.createListingButtonShort),
@@ -95,14 +95,14 @@ mixin _AnalyticsPageWidgets on _AnalyticsPageListingSelection {
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFFF6B00), Color(0xFFFF8C42)],
+          colors: [AppColors.brandOrange, Color(0xFFFF8C42)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Color(0xFFFF6B00).withValues(alpha: 0.3),
+            color: AppColors.brandOrange.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: Offset(0, 5),
           ),

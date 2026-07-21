@@ -95,10 +95,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
+                  color: AppColors.brandOrange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: const Color(0xFFFF6B00), size: 22),
+                child: Icon(icon, color: AppColors.brandOrange, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -232,7 +232,7 @@ class _SettingsPageState extends State<SettingsPage> {
             title: loc.settingsEnablePush,
             trailing: Switch.adaptive(
               value: _pushEnabled,
-              activeThumbColor: const Color(0xFFFF6B00),
+              activeThumbColor: AppColors.brandOrange,
               onChanged: _togglePush,
             ),
             onTap: () => _togglePush(!_pushEnabled),
@@ -245,7 +245,7 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: isLightShell ? Colors.white : null,
       appBar: AppBar(
         title: Text(loc.settingsTitle),
-        backgroundColor: const Color(0xFFFF6B00),
+        backgroundColor: AppColors.brandOrange,
         foregroundColor: Colors.white,
         elevation: 0,
       ),

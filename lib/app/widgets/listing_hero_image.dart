@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:ui' as ui;
+import '../../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
 
@@ -169,7 +170,7 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.brandOrange),
           ),
         ),
       ),

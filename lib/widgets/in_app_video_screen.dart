@@ -2,6 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
+import '../theme/app_colors.dart';
 
 import 'network_video_thumbnail.dart';
 import '../shared/i18n/legacy_inline_text.dart';
@@ -194,7 +195,7 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
                       overlayShape: const RoundSliderOverlayShape(
                         overlayRadius: 24,
                       ),
-                      activeTrackColor: const Color(0xFFFF6B00),
+                      activeTrackColor: AppColors.brandOrange,
                       inactiveTrackColor: Colors.white24,
                       thumbColor: Colors.white,
                       overlayColor: const Color(0x66FF6B00),

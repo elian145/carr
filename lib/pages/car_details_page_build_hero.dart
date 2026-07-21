@@ -196,7 +196,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFFFF6B00),
+                        color: AppColors.brandOrange,
                         height: 1.15,
                       ),
                     ),
@@ -297,7 +297,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFFF6B00),
+                color: AppColors.brandOrange,
               ),
             ),
           ],

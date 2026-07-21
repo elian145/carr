@@ -60,7 +60,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                     Icon(
                       Icons.directions_car,
                       size: 20,
-                      color: Color(0xFFFF6B00),
+                      color: AppColors.brandOrange,
                     ),
                   SizedBox(width: fieldGap),
                   Expanded(

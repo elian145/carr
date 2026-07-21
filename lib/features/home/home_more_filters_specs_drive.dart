@@ -41,7 +41,7 @@ mixin _HomePageMoreFiltersSpecsDrive on _HomePageMoreFiltersMid {
                               ),
                               suffixIcon: const Icon(
                                 Icons.settings,
-                                color: Color(0xFFFF6B00),
+                                color: AppColors.brandOrange,
                               ),
                             ),
                             onTap: () async {

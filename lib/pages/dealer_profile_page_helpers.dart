@@ -84,7 +84,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     return '';
   }
 
-  static const Color _brandOrange = Color(0xFFFF6B00);
+  static const Color _brandOrange = AppColors.brandOrange;
   static const Color _iconCircleFillLight = Color(0xFFFFF0E6);
   static const Color _iconCircleFillDark = Color(0xFFFFE8D6);
 

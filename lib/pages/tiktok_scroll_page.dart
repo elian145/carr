@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../theme/app_colors.dart';
 
 import '../shared/media/media_url.dart';
 import '../shared/listings/listing_identity.dart';

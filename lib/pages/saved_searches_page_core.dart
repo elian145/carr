@@ -56,7 +56,7 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                       _localizedSearchTitle(context, item),
                       filters,
                     ),
-                    leading: Icon(Icons.bookmark, color: Color(0xFFFF6B00)),
+                    leading: Icon(Icons.bookmark, color: AppColors.brandOrange),
                     title: Text(
                       _localizedSearchTitle(context, item),
                       style: TextStyle(fontWeight: FontWeight.bold),
@@ -87,7 +87,7 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                             (item['notify'] == true)
                                 ? Icons.notifications_active
                                 : Icons.notifications_none,
-                            color: const Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                           ),
                           onPressed: () => _toggleNotify(
                             index,

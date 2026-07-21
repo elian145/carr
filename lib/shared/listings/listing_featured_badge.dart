@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 import '../../l10n/app_localizations.dart';
 
-const Color kFeaturedListingAccent = Color(0xFFFF6B00);
+const Color kFeaturedListingAccent = AppColors.brandOrange;
 
 String listingFeaturedLabel(BuildContext context) {
   return AppLocalizations.of(context)!.featured;

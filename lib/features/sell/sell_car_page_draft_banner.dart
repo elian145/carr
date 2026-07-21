@@ -30,7 +30,7 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.drafts_outlined, color: Color(0xFFFF6B00)),
+                  const Icon(Icons.drafts_outlined, color: AppColors.brandOrange),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(

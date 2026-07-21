@@ -10,6 +10,7 @@ import '../shared/media/pick_circular_image.dart';
 import '../app/widgets/listing_network_image.dart';
 import '../theme_provider.dart';
 import 'package:provider/provider.dart';
+import '../theme/app_colors.dart';
 
 part 'edit_profile_page_fields.dart';
 part 'edit_profile_page_style.dart';

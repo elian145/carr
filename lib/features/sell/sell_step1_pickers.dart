@@ -58,7 +58,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                         Text(
                           title,
                           style: TextStyle(
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                           ),
@@ -94,7 +94,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                              color: Color(0xFFFF6B00),
+                              color: AppColors.brandOrange,
                             ),
                           ),
                         ),
@@ -275,7 +275,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                         Text(
                           AppLocalizations.of(context)!.selectBrand,
                           style: TextStyle(
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                           ),
@@ -310,7 +310,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                            color: Color(0xFFFF6B00),
+                            color: AppColors.brandOrange,
                           ),
                         ),
                       ),

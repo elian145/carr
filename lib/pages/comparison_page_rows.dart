@@ -145,7 +145,7 @@ extension _CarComparisonPageRows on CarComparisonPage {
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFF6B00),
+              color: AppColors.brandOrange,
             ),
           ),
         ),

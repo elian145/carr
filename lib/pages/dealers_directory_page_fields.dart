@@ -1,7 +1,7 @@
 part of 'dealers_directory_page.dart';
 
 abstract class _DealersDirectoryPageFields extends State<DealersDirectoryPage> {
-  static const Color _brandOrange = Color(0xFFFF6B00);
+  static const Color _brandOrange = AppColors.brandOrange;
 
   final TextEditingController _query = TextEditingController();
   final FocusNode _searchFocus = FocusNode();

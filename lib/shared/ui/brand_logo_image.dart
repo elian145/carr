@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 import '../../app/app_api_base.dart' show getApiBase;
 import '../../data/brand_logo_filenames.dart';
@@ -25,7 +26,7 @@ class BrandLogoImage extends StatelessWidget {
     this.fit = BoxFit.contain,
     this.placeholderSize = 20,
     this.errorIconSize = 22,
-    this.errorIconColor = const Color(0xFFFF6B00),
+    this.errorIconColor = AppColors.brandOrange,
   });
 
   final String brand;
