@@ -94,32 +94,57 @@ class _SellCarPageState extends _SellCarPageFields
           child: Column(
             children: [
               if (!_isEditMode) _buildDraftBanner(),
-              // Progress indicator
-              Container(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: List.generate(_SellCarPageFields._kSellStepCount, (index) {
-                    bool isCompleted = completedSteps.contains(index);
-                    bool isCurrent = index == currentStep;
-                    bool isAccessible = index <= currentStep || isCompleted;
-
-                    return Expanded(
-                      child: Container(
-                        margin: EdgeInsets.symmetric(horizontal: 4),
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: isCompleted
-                              ? Colors.green
-                              : isCurrent
-                              ? Color(0xFFFF6B00)
-                              : isAccessible
-                              ? Color(0xFFFF6B00).withValues(alpha: 0.5)
-                              : Colors.grey[300],
-                          borderRadius: BorderRadius.circular(2),
+              // Progress indicator (segments + percent — UX-01)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Semantics(
+                      label:
+                          '${AppLocalizations.of(context)!.stepXOf5(currentStep + 1)}, ${SellWizardSteps.progressPercent(currentStep)}%',
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: SellWizardSteps.progressFraction(currentStep),
+                          minHeight: 4,
+                          backgroundColor: Colors.grey[300],
+                          color: const Color(0xFFFF6B00),
                         ),
                       ),
-                    );
-                  }),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: List.generate(
+                        _SellCarPageFields._kSellStepCount,
+                        (index) {
+                          bool isCompleted = completedSteps.contains(index);
+                          bool isCurrent = index == currentStep;
+                          bool isAccessible =
+                              index <= currentStep || isCompleted;
+
+                          return Expanded(
+                            child: Container(
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: isCompleted
+                                    ? Colors.green
+                                    : isCurrent
+                                        ? const Color(0xFFFF6B00)
+                                        : isAccessible
+                                            ? const Color(0xFFFF6B00)
+                                                .withValues(alpha: 0.5)
+                                            : Colors.grey[300],
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Step indicator
@@ -129,7 +154,7 @@ class _SellCarPageState extends _SellCarPageFields
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      AppLocalizations.of(context)!.stepXOf5(currentStep + 1),
+                      '${AppLocalizations.of(context)!.stepXOf5(currentStep + 1)} · ${SellWizardSteps.progressPercent(currentStep)}%',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],

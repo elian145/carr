@@ -12,6 +12,14 @@ void main() {
     expect(SellWizardSteps.clampIndex(99), SellWizardSteps.lastIndex);
   });
 
+  test('SellWizardSteps progress percent spans 17%…100% (UX-01)', () {
+    expect(SellWizardSteps.progressPercent(0), 17);
+    expect(SellWizardSteps.progressPercent(2), 50);
+    expect(SellWizardSteps.progressPercent(SellWizardSteps.lastIndex), 100);
+    expect(SellWizardSteps.progressFraction(0), closeTo(1 / 6, 1e-9));
+    expect(SellWizardSteps.progressFraction(99), 1.0);
+  });
+
   test('draft step helpers default to SellWizardSteps.lastIndex', () {
     expect(readSellDraftStepDynamic(99), SellWizardSteps.lastIndex);
     expect(mergeSellDraftStep(jsonStep: 2, prefsStep: 4), 4);
