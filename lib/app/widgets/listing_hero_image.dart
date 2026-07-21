@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
   bool _shown = false;
   int _attempt = 0;
   bool _retryScheduled = false;
+  Timer? _retryTimer;
   static const int _maxRetries = 5;
 
   ListingHeroCarBBox? get _bbox =>
@@ -70,7 +72,8 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
     if (_attempt >= _maxRetries || _retryScheduled) return;
     _retryScheduled = true;
     final delayMs = 700 * (1 << _attempt).clamp(1, 8);
-    Future.delayed(Duration(milliseconds: delayMs), () {
+    _retryTimer?.cancel();
+    _retryTimer = Timer(Duration(milliseconds: delayMs), () {
       if (!mounted) return;
       setState(() {
         _attempt += 1;
@@ -151,6 +154,7 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
 
   @override
   void dispose() {
+    _retryTimer?.cancel();
     _clearStream();
     super.dispose();
   }

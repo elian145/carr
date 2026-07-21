@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../shared/debug/app_log.dart';
@@ -51,8 +53,15 @@ class _RetryingListingNetworkImageState
     extends State<_RetryingListingNetworkImage> {
   int _attempt = 0;
   bool _retryScheduled = false;
+  Timer? _retryTimer;
   // Connection drops can happen when serving many large images; retry a bit more with backoff.
   static const int _maxRetries = 5;
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
+  }
 
   String _fallbackUrl(String url) {
     try {
@@ -88,7 +97,8 @@ class _RetryingListingNetworkImageState
     _retryScheduled = true;
     final delayMs =
         700 * (1 << _attempt).clamp(1, 8); // 700ms, 1.4s, 2.8s... capped
-    Future.delayed(Duration(milliseconds: delayMs), () {
+    _retryTimer?.cancel();
+    _retryTimer = Timer(Duration(milliseconds: delayMs), () {
       if (!mounted) return;
       setState(() {
         _attempt += 1;
