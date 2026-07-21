@@ -10,6 +10,7 @@ import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart';
+import 'sell_wizard_steps.dart';
 
 class SellDraftGatePage extends StatefulWidget {
   const SellDraftGatePage({super.key});
@@ -265,13 +266,15 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
   }
 
   Widget _buildStepProgress(int currentStep) {
-    final step = currentStep.clamp(0, 5);
+    final step = SellWizardSteps.clampIndex(currentStep);
     return Row(
-      children: List.generate(6, (index) {
+      children: List.generate(SellWizardSteps.count, (index) {
         final filled = index <= step;
         return Expanded(
           child: Container(
-            margin: EdgeInsets.only(right: index < 5 ? 4 : 0),
+            margin: EdgeInsets.only(
+              right: index < SellWizardSteps.lastIndex ? 4 : 0,
+            ),
             height: 4,
             decoration: BoxDecoration(
               color: filled
@@ -377,7 +380,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         ? Map<String, dynamic>.from((draft['carData'] as Map).cast<String, dynamic>())
         : <String, dynamic>{};
     final currentStep = readSellDraftStepDynamic(draft['currentStep']);
-    final stepIndex = currentStep.clamp(0, 5).toInt();
+    final stepIndex = SellWizardSteps.clampIndex(currentStep);
     final labels = <String>[
       AppLocalizations.of(context)!.sellStep1Photos,
       AppLocalizations.of(context)!.sellStep2BasicInfo,

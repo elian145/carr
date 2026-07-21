@@ -13,7 +13,8 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
       'Step 5: Plates',
       'Step 6: Review',
     ];
-    final stepLabel = labels[_draftPreviewStep.clamp(0, 5).toInt()];
+    final stepLabel =
+        labels[SellWizardSteps.clampIndex(_draftPreviewStep)];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Container(

@@ -39,14 +39,20 @@ void applySellPlateBlurChoice(Map<String, dynamic> carData, bool useBlurred) {
 
 /// Migrates a persisted wizard step from the old 5-step order to the new 6-step order.
 int migrateSellWizardStep(int step, Map<String, dynamic> carData) {
-  final maxIdx = _SellCarPageFields._kSellStepCount - 1;
+  final maxIdx = SellWizardSteps.lastIndex;
   if (carData['sell_wizard_v2'] == true) {
-    return step.clamp(0, maxIdx);
+    return SellWizardSteps.clampIndex(step);
   }
 
   // Old: 0 Basic, 1 Details, 2 Pricing, 3 Photos, 4 Review
-  // New: 0 Photos, 1 Basic, 2 Details, 3 Pricing, 4 Blur choice, 5 Review
-  const mapped = <int, int>{0: 1, 1: 2, 2: 3, 3: 0, 4: 5};
+  // New: photos, basicInfo, carDetails, pricingContact, plateBlur, reviewSubmit
+  const mapped = <int, int>{
+    0: SellWizardSteps.basicInfo,
+    1: SellWizardSteps.carDetails,
+    2: SellWizardSteps.pricingContact,
+    3: SellWizardSteps.photos,
+    4: SellWizardSteps.reviewSubmit,
+  };
   final next = mapped[step] ?? step;
 
   // Best-effort dual media for older blurred drafts.

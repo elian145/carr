@@ -1,7 +1,12 @@
 import 'dart:math' as math;
 
+import '../../features/sell/sell_wizard_steps.dart';
+
 /// Robust step index from JSON / route maps (`int`, `double`, `1.0` strings).
-int readSellDraftStepDynamic(dynamic raw, {int maxIdx = 5}) {
+int readSellDraftStepDynamic(
+  dynamic raw, {
+  int maxIdx = SellWizardSteps.lastIndex,
+}) {
   if (raw == null) return 0;
   if (raw is int) return raw.clamp(0, maxIdx);
   if (raw is double) {
@@ -18,14 +23,23 @@ int readSellDraftStepDynamic(dynamic raw, {int maxIdx = 5}) {
 }
 
 /// Prefer the higher of JSON snapshot step and prefs step when they disagree.
-int mergeSellDraftStep({int? jsonStep, int? prefsStep, int maxIdx = 5}) {
+int mergeSellDraftStep({
+  int? jsonStep,
+  int? prefsStep,
+  int maxIdx = SellWizardSteps.lastIndex,
+}) {
   final j = (jsonStep ?? 0).clamp(0, maxIdx);
   if (prefsStep == null) return j;
   final p = prefsStep.clamp(0, maxIdx);
   return j > p ? j : p;
 }
 
-int maxSellDraftStep(int a, int b, [int c = 0, int maxIdx = 5]) {
+int maxSellDraftStep(
+  int a,
+  int b, [
+  int c = 0,
+  int maxIdx = SellWizardSteps.lastIndex,
+]) {
   return math.max(
     math.max(a.clamp(0, maxIdx), b.clamp(0, maxIdx)),
     c.clamp(0, maxIdx),

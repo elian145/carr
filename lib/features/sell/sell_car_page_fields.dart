@@ -24,22 +24,23 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
   // Track completed steps
   Set<int> completedSteps = {};
 
-  static const int _kSellStepCount = 6;
+  /// Prefer [SellWizardSteps.count]; kept as alias for call sites in this library.
+  static const int _kSellStepCount = SellWizardSteps.count;
 
   /// Step 2 key bumps when catalog specs are applied so Car Details reloads from [carData].
   Widget _sellStepChild(int index) {
-    if (index == 5) {
+    if (index == SellWizardSteps.reviewSubmit) {
       return SellStep5Page(key: ValueKey(_step5ImagesKey));
     }
     switch (index) {
-      case 0:
+      case SellWizardSteps.photos:
         return const SellStep4Page();
-      case 1:
+      case SellWizardSteps.basicInfo:
         return SellStep1Page(
           resumeDraftToken: _draftResumeToken,
           key: ValueKey('s1_$_draftResumeToken'),
         );
-      case 2:
+      case SellWizardSteps.carDetails:
         return SellStep2Page(
           key: ValueKey(
             's2_${carData['_catalog_specs_applied'] ?? 0}_${carData['_online_specs_applied'] ?? 0}_${carData['brand']}_${carData['model']}_${carData['trim']}_${carData['year']}',
@@ -47,9 +48,9 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
           specsHydrateToken:
               '${carData['_catalog_specs_applied'] ?? 0}_${carData['_online_specs_applied'] ?? 0}',
         );
-      case 3:
+      case SellWizardSteps.pricingContact:
         return const SellStep3Page();
-      case 4:
+      case SellWizardSteps.plateBlur:
         return const SellStepBlurChoicePage();
       default:
         return const SizedBox.shrink();

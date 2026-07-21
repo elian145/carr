@@ -44,10 +44,10 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         _sellPersistFieldNonEmpty(d['plate_type']) ||
         _sellPersistFieldNonEmpty(d['plate_city']) ||
         _sellPersistFieldNonEmpty(d['description'])) {
-      maxIdx = math.max(maxIdx, 3);
+      maxIdx = math.max(maxIdx, SellWizardSteps.pricingContact);
     }
     if (d['use_blurred_plates'] is bool) {
-      maxIdx = math.max(maxIdx, 4);
+      maxIdx = math.max(maxIdx, SellWizardSteps.plateBlur);
     }
     return maxIdx.clamp(0, _SellCarPageFields._kSellStepCount - 1);
   }

@@ -172,17 +172,17 @@ class _SellCarPageState extends _SellCarPageFields
   String _getStepTitle(BuildContext context, int step) {
     final l = AppLocalizations.of(context)!;
     switch (step) {
-      case 0:
+      case SellWizardSteps.photos:
         return l.photosVideosTitle;
-      case 1:
+      case SellWizardSteps.basicInfo:
         return l.basicInformationTitle;
-      case 2:
+      case SellWizardSteps.carDetails:
         return l.carDetailsTitle;
-      case 3:
+      case SellWizardSteps.pricingContact:
         return l.pricingContactTitle;
-      case 4:
+      case SellWizardSteps.plateBlur:
         return AppLocalizations.of(context)!.licensePlates;
-      case 5:
+      case SellWizardSteps.reviewSubmit:
         return l.reviewSubmitTitle;
       default:
         return '';
@@ -192,10 +192,10 @@ class _SellCarPageState extends _SellCarPageFields
   // Method to validate if a step is completed
   bool _isStepCompleted(int step) {
     switch (step) {
-      case 0: // Photos & Videos
+      case SellWizardSteps.photos: // Photos & Videos
         return carData['images'] != null &&
             (carData['images'] as List).isNotEmpty;
-      case 1: // Basic Information
+      case SellWizardSteps.basicInfo: // Basic Information
         return carData['brand'] != null &&
             carData['brand'].toString().isNotEmpty &&
             carData['model'] != null &&
@@ -204,7 +204,7 @@ class _SellCarPageState extends _SellCarPageFields
             carData['trim'].toString().isNotEmpty &&
             carData['year'] != null &&
             carData['year'].toString().isNotEmpty;
-      case 2: // Car Details
+      case SellWizardSteps.carDetails: // Car Details
         return carData['mileage'] != null &&
             carData['mileage'].toString().isNotEmpty &&
             carData['condition'] != null &&
@@ -228,14 +228,14 @@ class _SellCarPageState extends _SellCarPageFields
             ) &&
             carData['title_status'] != null &&
             carData['title_status'].toString().isNotEmpty;
-      case 3: // Pricing & Contact
+      case SellWizardSteps.pricingContact: // Pricing & Contact
         return carData['city'] != null &&
             carData['city'].toString().isNotEmpty &&
             carData['contact_phone'] != null &&
             carData['contact_phone'].toString().isNotEmpty;
-      case 4: // Plate blur choice
+      case SellWizardSteps.plateBlur: // Plate blur choice
         return carData['use_blurred_plates'] is bool;
-      case 5: // Review & Submit
+      case SellWizardSteps.reviewSubmit: // Review & Submit
         return true;
       default:
         return false;

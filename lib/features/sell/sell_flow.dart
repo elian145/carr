@@ -89,6 +89,7 @@ import '../../shared/ui/app_haptics.dart';
 import '../../shared/ui/thousands_separator_input_formatter.dart';
 import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
+import 'sell_wizard_steps.dart';
 import 'sell_listing_payload.dart';
 import 'sell_brand_slug.dart';
 import '../../shared/ui/brand_logo_image.dart';
@@ -271,10 +272,17 @@ List<Map<String, dynamic>> _decodeSellDraftArchive(String? raw) =>
 String _encodeSellDraftArchive(List<Map<String, dynamic>> drafts) =>
     sell_draft_helpers.encodeSellDraftArchive(drafts);
 
-int _readSellDraftStepDynamic(dynamic raw, {int maxIdx = 5}) =>
+int _readSellDraftStepDynamic(
+  dynamic raw, {
+  int maxIdx = SellWizardSteps.lastIndex,
+}) =>
     readSellDraftStepDynamic(raw, maxIdx: maxIdx);
 
-int _mergeSellDraftStep({int? jsonStep, int? prefsStep, int maxIdx = 5}) =>
+int _mergeSellDraftStep({
+  int? jsonStep,
+  int? prefsStep,
+  int maxIdx = SellWizardSteps.lastIndex,
+}) =>
     mergeSellDraftStep(jsonStep: jsonStep, prefsStep: prefsStep, maxIdx: maxIdx);
 
 void _dismissAnyKeyboard([BuildContext? context]) =>
