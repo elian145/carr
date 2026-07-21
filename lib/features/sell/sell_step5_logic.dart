@@ -141,7 +141,11 @@ mixin _SellStep5Logic on _SellStep5Fields {
         }
       } else {
         try {
-          final created = await ApiService.createCar(payload);
+          final created = await ApiService.createCar(
+            payload,
+            idempotencyKey:
+                '${DateTime.now().microsecondsSinceEpoch}-${math.Random().nextInt(1 << 32)}',
+          );
           final carObj = unwrapCarApiPayload(created);
           carId = listingPrimaryId(carObj);
           pendingReview = isListingPendingReview(carObj);

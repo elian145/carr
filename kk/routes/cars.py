@@ -14,6 +14,7 @@ from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..favorites_cleanup import remove_listing_from_all_favorites
+from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
 from ..listing_search import apply_listing_text_search
@@ -830,6 +831,21 @@ def create_car():
         if verify_err:
             return verify_err
 
+        idem_key = (
+            request.headers.get("Idempotency-Key")
+            or request.headers.get("X-Idempotency-Key")
+            or ""
+        ).strip()
+        if idem_key:
+            replayed = replay_response(
+                scope="create_car",
+                actor_id=str(current_user.public_id),
+                idem_key=idem_key,
+            )
+            if replayed is not None:
+                status, body = replayed
+                return jsonify(body), status
+
         raw = request.get_json(silent=True) or {}
 
         def _s(val, default=""):
@@ -971,7 +987,19 @@ def create_car():
                 dispatch_saved_search_alerts(car.id)
             except Exception:
                 pass
-        return jsonify({"message": "Car listing created successfully", "car": car.to_dict()}), 201
+        payload = {
+            "message": "Car listing created successfully",
+            "car": car.to_dict(),
+        }
+        if idem_key:
+            remember_response(
+                scope="create_car",
+                actor_id=str(current_user.public_id),
+                idem_key=idem_key,
+                status=201,
+                body=payload,
+            )
+        return jsonify(payload), 201
     except Exception as e:
         return _listing_db_error_response(e, action="create car listing")
 

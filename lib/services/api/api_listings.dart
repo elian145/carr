@@ -110,12 +110,17 @@ abstract final class _ApiServiceListings {
   }
 
   static Future<Map<String, dynamic>> createCar(
-    Map<String, dynamic> carData,
-  ) async {
+    Map<String, dynamic> carData, {
+    String? idempotencyKey,
+  }) async {
+    final key = idempotencyKey?.trim();
     return await ApiService._makeAuthenticatedRequest(
       'POST',
       '/cars',
       body: carData,
+      headers: (key == null || key.isEmpty)
+          ? null
+          : {'Idempotency-Key': key},
     );
   }
 

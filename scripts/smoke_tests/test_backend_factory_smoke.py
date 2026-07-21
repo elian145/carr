@@ -1496,6 +1496,43 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(cleaned["note"], "okbad")
         self.assertEqual(cleaned["password"], "KeepMe!")
 
+    def test_create_car_idempotency_key_replays_same_listing(self):
+        """Duplicate POST /api/cars with the same Idempotency-Key must not create twice."""
+        with self.app.app_context():
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            before = self._Car.query.filter_by(seller_id=seller.id).count()
+
+        headers = {
+            **self._auth(self.seller_token),
+            "Idempotency-Key": "smoke-create-car-1",
+        }
+        body = {
+            "brand": "honda",
+            "model": "civic",
+            "year": 2019,
+            "mileage": 1000,
+            "price": 12000,
+            "location": "Baghdad",
+        }
+        first = self.client.post("/api/cars", headers=headers, json=body)
+        self.assertEqual(first.status_code, 201, first.data)
+        first_json = first.get_json() or {}
+        first_car = first_json.get("car") or {}
+        first_id = first_car.get("public_id") or first_car.get("id")
+        self.assertTrue(first_id)
+
+        second = self.client.post("/api/cars", headers=headers, json=body)
+        self.assertEqual(second.status_code, 201, second.data)
+        second_json = second.get_json() or {}
+        second_car = second_json.get("car") or {}
+        second_id = second_car.get("public_id") or second_car.get("id")
+        self.assertEqual(second_id, first_id)
+
+        with self.app.app_context():
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            after = self._Car.query.filter_by(seller_id=seller.id).count()
+            self.assertEqual(after, before + 1)
+
     def test_update_and_delete_car_as_owner(self):
         create = self.client.post(
             "/api/cars",
