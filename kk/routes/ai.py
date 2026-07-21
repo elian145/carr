@@ -189,6 +189,8 @@ def process_car_images():
         if (request.args.get("async") or "").strip().lower() in ("1", "true", "yes", "on"):
             from uuid import uuid4
 
+            from ..job_ownership import register_job_owner
+
             job_ids = []
             for fs in files:
                 if not fs or not fs.filename:
@@ -199,7 +201,14 @@ def process_car_images():
                 temp_abs = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_rel)
                 os.makedirs(os.path.dirname(temp_abs), exist_ok=True)
                 fs.save(temp_abs)
-                res = process_car_image_file.delay(temp_abs, fs.filename, want_b64, False)
+                res = process_car_image_file.delay(
+                    temp_abs,
+                    fs.filename,
+                    want_b64,
+                    False,
+                    owner_public_id=current_user.public_id,
+                )
+                register_job_owner(res.id, current_user.public_id)
                 job_ids.append(res.id)
             if not job_ids:
                 return jsonify({"error": "No image files provided"}), 400

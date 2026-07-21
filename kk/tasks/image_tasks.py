@@ -101,11 +101,28 @@ def _process_image_path(
 
 
 @shared_task(bind=True, name="kk.process_car_image_file")
-def process_car_image_file(self, temp_abs: str, original_filename: str, inline_base64: bool = False, skip_blur: bool = False):
+def process_car_image_file(
+    self,
+    temp_abs: str,
+    original_filename: str,
+    inline_base64: bool = False,
+    skip_blur: bool = False,
+    owner_public_id: str | None = None,
+):
     """
     Celery task wrapper that creates a Flask app context to access config/root paths.
+
+    ``owner_public_id`` is embedded in task meta/result so job polling can authorize
+    even if the enqueue-time ownership registry is unavailable.
     """
     from kk.app_factory import create_app
+
+    owner = (owner_public_id or "").strip() or None
+    if owner:
+        try:
+            self.update_state(state="STARTED", meta={"owner_public_id": owner})
+        except Exception:
+            pass
 
     app, *_ = create_app()
     with app.app_context():
@@ -116,7 +133,10 @@ def process_car_image_file(self, temp_abs: str, original_filename: str, inline_b
                 inline_base64=bool(inline_base64),
                 skip_blur=bool(skip_blur),
             )
-            return {"ok": True, **res}
+            out = {"ok": True, **res}
+            if owner:
+                out["owner_public_id"] = owner
+            return out
         finally:
             try:
                 if temp_abs and os.path.isfile(temp_abs):

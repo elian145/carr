@@ -1454,6 +1454,45 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(delete.status_code, 200, delete.data)
 
+    def test_job_status_requires_owner(self):
+        """C-04: strangers cannot poll another user's Celery job."""
+        from kk.job_ownership import clear_job_owners_for_tests, register_job_owner
+
+        clear_job_owners_for_tests()
+        task_id = "c04test-job-aaaaaaaa-bbbb-cccc-dddd"
+
+        # Unregistered / foreign jobs look like 404 (no existence leak).
+        missing = self.client.get(
+            f"/api/jobs/{task_id}",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(missing.status_code, 404, missing.data)
+
+        register_job_owner(task_id, self.viewer_public)
+
+        denied = self.client.get(
+            f"/api/jobs/{task_id}",
+            headers=self._auth(self.seller_token),
+        )
+        self.assertEqual(denied.status_code, 404, denied.data)
+
+        allowed = self.client.get(
+            f"/api/jobs/{task_id}",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertIn(allowed.status_code, (200, 503), allowed.data)
+        body = allowed.get_json() or {}
+        self.assertEqual(body.get("task_id"), task_id)
+        self.assertIn("state", body)
+        clear_job_owners_for_tests()
+
+    def test_job_status_rejects_invalid_task_id(self):
+        bad = self.client.get(
+            "/api/jobs/../etc/passwd",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(bad.status_code, 404, bad.data)
+
     def test_analyze_car_image_unavailable_by_default(self):
         """C-02: never return fake Camry specs when analysis is gated off."""
         jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
