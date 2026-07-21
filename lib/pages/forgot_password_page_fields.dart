@@ -4,6 +4,8 @@ abstract class _ForgotPasswordPageFields extends State<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _phoneFocus = FocusNode();
   bool _isLoading = false;
   bool _emailSent = false;
 
@@ -14,6 +16,8 @@ abstract class _ForgotPasswordPageFields extends State<ForgotPasswordPage> {
   void dispose() {
     _emailController.dispose();
     _phoneController.dispose();
+    _emailFocus.dispose();
+    _phoneFocus.dispose();
     super.dispose();
   }
 }

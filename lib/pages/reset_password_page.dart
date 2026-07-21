@@ -20,6 +20,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _codeController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _codeFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+  final _confirmFocus = FocusNode();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -50,6 +53,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     _codeController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _codeFocus.dispose();
+    _passwordFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
@@ -118,6 +124,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _codeController,
+                focusNode: _codeFocus,
+                autofocus: true,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
                 decoration: InputDecoration(
                   labelText: loc.resetCodeLabel,
                   hintText: loc.resetCodeHint,
@@ -133,7 +143,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
+                focusNode: _passwordFocus,
                 obscureText: _obscurePassword,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
                 decoration: InputDecoration(
                   labelText: loc.newPasswordLabel,
                   border: const OutlineInputBorder(),
@@ -170,7 +183,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _confirmController,
+                focusNode: _confirmFocus,
                 obscureText: _obscureConfirm,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
                   labelText: loc.confirmNewPasswordLabel,
                   border: const OutlineInputBorder(),

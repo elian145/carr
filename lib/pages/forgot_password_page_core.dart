@@ -66,6 +66,9 @@ mixin _ForgotPasswordPageCore on _ForgotPasswordPageActions {
                   onChanged: (v) {
                     if (v == null) return;
                     setState(() => _recoveryMethod = v);
+                    requestFocusAfterFrame(
+                      v == 'phone' ? _phoneFocus : _emailFocus,
+                    );
                   },
                   child: compact
                       ? Column(
@@ -109,6 +112,12 @@ mixin _ForgotPasswordPageCore on _ForgotPasswordPageActions {
                 if (_recoveryMethod == 'email')
                   TextFormField(
                     controller: _emailController,
+                    focusNode: _emailFocus,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) {
+                      if (!_isLoading) _sendReset();
+                    },
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context)!.emailLabel,
                       prefixIcon: const Icon(Icons.email),
@@ -130,6 +139,12 @@ mixin _ForgotPasswordPageCore on _ForgotPasswordPageActions {
                 else
                   TextFormField(
                     controller: _phoneController,
+                    focusNode: _phoneFocus,
+                    autofocus: true,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) {
+                      if (!_isLoading) _sendReset();
+                    },
                     decoration: InputDecoration(
                       labelText: AppLocalizations.of(context)!.phoneLabel,
                       hintText: AppLocalizations.of(

@@ -21,6 +21,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _currentFocus = FocusNode();
+  final _newFocus = FocusNode();
+  final _confirmFocus = FocusNode();
 
   bool _obscureCurrent = true;
   bool _obscureNew = true;
@@ -32,6 +35,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     _currentController.dispose();
     _newController.dispose();
     _confirmController.dispose();
+    _currentFocus.dispose();
+    _newFocus.dispose();
+    _confirmFocus.dispose();
     super.dispose();
   }
 
@@ -111,7 +117,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               const SizedBox(height: 24),
               TextFormField(
                 controller: _currentController,
+                focusNode: _currentFocus,
+                autofocus: true,
                 obscureText: _obscureCurrent,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _newFocus.requestFocus(),
                 decoration: InputDecoration(
                   labelText: 'Current password',
                   border: const OutlineInputBorder(),
@@ -133,7 +143,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _newController,
+                focusNode: _newFocus,
                 obscureText: _obscureNew,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _confirmFocus.requestFocus(),
                 decoration: InputDecoration(
                   labelText: 'New password',
                   border: const OutlineInputBorder(),
@@ -170,7 +183,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _confirmController,
+                focusNode: _confirmFocus,
                 obscureText: _obscureConfirm,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
                 decoration: InputDecoration(
                   labelText: 'Confirm new password',
                   border: const OutlineInputBorder(),

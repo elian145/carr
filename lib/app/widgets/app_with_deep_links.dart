@@ -7,6 +7,7 @@ import '../../services/auth_service.dart';
 import '../../services/deep_link_service.dart';
 import '../../services/push_notification_service.dart';
 import '../../shared/debug/app_log.dart';
+import '../../shared/ui/keyboard.dart';
 import '../../l10n/app_localizations.dart';
 
 final AppRouteTracker appRouteTracker = AppRouteTracker();
@@ -14,19 +15,33 @@ final AppRouteTracker appRouteTracker = AppRouteTracker();
 class AppRouteTracker extends NavigatorObserver {
   String? currentRouteName;
 
+  void _onRouteChanged() {
+    // Drop keyboard focus when leaving a screen so the next route starts clean (A-05).
+    dismissAnyKeyboard();
+  }
+
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     currentRouteName = route.settings.name;
+    _onRouteChanged();
   }
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     currentRouteName = previousRoute?.settings.name;
+    _onRouteChanged();
   }
 
   @override
   void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     currentRouteName = newRoute?.settings.name;
+    _onRouteChanged();
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    currentRouteName = previousRoute?.settings.name;
+    _onRouteChanged();
   }
 }
 

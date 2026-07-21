@@ -13,6 +13,8 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
+  final _phoneFocus = FocusNode();
+  final _otpFocus = FocusNode();
   bool _loading = false;
   bool _sendingOtp = false;
   bool _otpSent = false;
@@ -30,6 +32,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _phoneController.dispose();
     _otpController.dispose();
+    _phoneFocus.dispose();
+    _otpFocus.dispose();
     super.dispose();
   }
 
@@ -225,6 +229,7 @@ class _LoginPageState extends State<LoginPage> {
         _devOtp = (resp['dev_code'] ?? '').toString();
         if (_devOtp != null && _devOtp!.isEmpty) _devOtp = null;
       });
+      requestFocusAfterFrame(_otpFocus);
       if (_devOtp != null && kDebugMode) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -605,7 +610,17 @@ class _LoginPageState extends State<LoginPage> {
                       const SizedBox(height: 20),
                       TextFormField(
                         controller: _phoneController,
+                        focusNode: _phoneFocus,
+                        autofocus: true,
                         keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.next,
+                        onFieldSubmitted: (_) {
+                          if (_otpSent) {
+                            _otpFocus.requestFocus();
+                          } else {
+                            _sendOtp();
+                          }
+                        },
                         style: TextStyle(
                           color: primaryInk,
                           fontWeight: FontWeight.w600,
@@ -639,7 +654,14 @@ class _LoginPageState extends State<LoginPage> {
                           Expanded(
                             child: TextFormField(
                               controller: _otpController,
+                              focusNode: _otpFocus,
                               keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) {
+                                if (_otpSent && !_loading) {
+                                  _loginWithPhone();
+                                }
+                              },
                               style: TextStyle(
                                 color: primaryInk,
                                 fontWeight: FontWeight.w600,
