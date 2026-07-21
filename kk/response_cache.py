@@ -138,3 +138,33 @@ def filter_facets_cache_key() -> str:
 def debug_reset_memory_cache() -> None:
     """Test helper: clear in-process fallback store."""
     _memory.clear()
+
+
+def public_cached_json(payload: Any, *, max_age: int):
+    """
+    Return a Flask JSON response with Cache-Control + ETag (P-05).
+
+    Honors ``If-None-Match`` with HTTP 304 when the payload hash matches.
+    """
+    import hashlib
+
+    from flask import Response, jsonify, request
+
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:32]
+    etag = f'W/"{digest}"'
+    max_age = max(30, int(max_age))
+    cache_control = f"public, max-age={max_age}"
+
+    if_none = (request.headers.get("If-None-Match") or "").strip()
+    if if_none and (etag in if_none or digest in if_none):
+        resp = Response(status=304)
+        resp.headers["ETag"] = etag
+        resp.headers["Cache-Control"] = cache_control
+        return resp
+
+    resp = jsonify(payload)
+    resp.status_code = 200
+    resp.headers["ETag"] = etag
+    resp.headers["Cache-Control"] = cache_control
+    return resp

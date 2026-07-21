@@ -850,6 +850,22 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self.assertIn(key, flags)
             self.assertTrue(flags[key])
 
+        brands = self.client.get("/api/catalog/brands")
+        self.assertEqual(brands.status_code, 200, brands.data)
+        self.assertIn("public", (brands.headers.get("Cache-Control") or "").lower())
+        etag = brands.headers.get("ETag")
+        self.assertTrue((etag or "").strip())
+        again = self.client.get(
+            "/api/catalog/brands",
+            headers={"If-None-Match": etag},
+        )
+        self.assertEqual(again.status_code, 304, again.data)
+
+        facets = self.client.get("/api/filters/facets")
+        self.assertEqual(facets.status_code, 200, facets.data)
+        self.assertIn("public", (facets.headers.get("Cache-Control") or "").lower())
+        self.assertTrue((facets.headers.get("ETag") or "").strip())
+
         terms = self.client.get("/terms")
         self.assertEqual(terms.status_code, 200, terms.data)
         self.assertIn(b"CarNet", terms.data)

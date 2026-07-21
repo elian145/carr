@@ -24,6 +24,7 @@ from ..response_cache import (
     cache_set,
     filter_facets_cache_key,
     invalidate_filter_facets_cache,
+    public_cached_json,
 )
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
@@ -478,7 +479,7 @@ def filter_facets():
         cache_key = filter_facets_cache_key()
         cached = cache_get(cache_key)
         if cached is not None:
-            return jsonify(cached), 200
+            return public_cached_json(cached, max_age=FACETS_TTL_S)
 
         year_bounds = (
             _public_listings_filter(
@@ -507,7 +508,7 @@ def filter_facets():
             "price_max": float(price_bounds[1]) if price_bounds[1] is not None else None,
         }
         cache_set(cache_key, payload, FACETS_TTL_S)
-        return jsonify(payload), 200
+        return public_cached_json(payload, max_age=FACETS_TTL_S)
     except Exception as e:
         current_app.logger.exception("filter_facets failed: %s", e)
         return jsonify({"message": "Failed to load filter facets"}), 500

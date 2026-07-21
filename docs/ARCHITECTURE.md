@@ -75,3 +75,5 @@ All production legacy HTTP goes through `ApiService` (token refresh, shared erro
 Official product targets are **Android and iOS** only. The `macos/`, `windows/`, and `linux/` folders are untested Flutter scaffold — see [SUPPORTED_PLATFORMS.md](SUPPORTED_PLATFORMS.md).
 
 Remote kill-switches live under `feature_flags` on `GET /api/config/app` — see [FEATURE_FLAGS.md](FEATURE_FLAGS.md).
+
+Public catalog and filter facets responses send `Cache-Control` + `ETag` (`kk/response_cache.public_cached_json`) in addition to Redis/in-process JSON caching.

@@ -16,6 +16,7 @@ from ..response_cache import (
     cache_set,
     catalog_cache_key,
     invalidate_catalog_cache,
+    public_cached_json,
 )
 from ..time_utils import utcnow
 
@@ -50,7 +51,7 @@ def public_brands():
         cache_key = catalog_cache_key("brands")
         cached = cache_get(cache_key)
         if cached is not None:
-            return jsonify(cached), 200
+            return public_cached_json(cached, max_age=CATALOG_TTL_S)
         rows = (
             CatalogBrand.query.filter_by(is_active=True)
             .order_by(CatalogBrand.sort_order.asc(), CatalogBrand.name.asc())
@@ -58,7 +59,7 @@ def public_brands():
         )
         payload = {"brands": [b.to_dict() for b in rows]}
         cache_set(cache_key, payload, CATALOG_TTL_S)
-        return jsonify(payload), 200
+        return public_cached_json(payload, max_age=CATALOG_TTL_S)
     except Exception as e:
         logger.error("public catalog brands error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load brands"}), 500
@@ -75,7 +76,7 @@ def public_models():
         )
         cached = cache_get(cache_key)
         if cached is not None:
-            return jsonify(cached), 200
+            return public_cached_json(cached, max_age=CATALOG_TTL_S)
 
         q = CatalogVehicleModel.query.filter_by(is_active=True)
         if brand_id:
@@ -85,12 +86,12 @@ def public_models():
             if not brand:
                 payload = {"models": []}
                 cache_set(cache_key, payload, CATALOG_TTL_S)
-                return jsonify(payload), 200
+                return public_cached_json(payload, max_age=CATALOG_TTL_S)
             q = q.filter_by(brand_id=brand.id)
         rows = q.order_by(CatalogVehicleModel.sort_order.asc(), CatalogVehicleModel.name.asc()).all()
         payload = {"models": [m.to_dict() for m in rows]}
         cache_set(cache_key, payload, CATALOG_TTL_S)
-        return jsonify(payload), 200
+        return public_cached_json(payload, max_age=CATALOG_TTL_S)
     except Exception as e:
         logger.error("public catalog models error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load models"}), 500
@@ -102,7 +103,7 @@ def public_body_types():
         cache_key = catalog_cache_key("body-types")
         cached = cache_get(cache_key)
         if cached is not None:
-            return jsonify(cached), 200
+            return public_cached_json(cached, max_age=CATALOG_TTL_S)
         rows = (
             CatalogBodyType.query.filter_by(is_active=True)
             .order_by(CatalogBodyType.sort_order.asc(), CatalogBodyType.name.asc())
@@ -110,7 +111,7 @@ def public_body_types():
         )
         payload = {"body_types": [b.to_dict() for b in rows]}
         cache_set(cache_key, payload, CATALOG_TTL_S)
-        return jsonify(payload), 200
+        return public_cached_json(payload, max_age=CATALOG_TTL_S)
     except Exception as e:
         logger.error("public catalog body types error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load body types"}), 500
@@ -127,19 +128,19 @@ def public_trims():
         cache_key = catalog_cache_key("trims", brand_name, model_name)
         cached = cache_get(cache_key)
         if cached is not None:
-            return jsonify(cached), 200
+            return public_cached_json(cached, max_age=CATALOG_TTL_S)
         brand = CatalogBrand.query.filter_by(name=brand_name, is_active=True).first()
         if not brand:
             payload = {"trims": []}
             cache_set(cache_key, payload, CATALOG_TTL_S)
-            return jsonify(payload), 200
+            return public_cached_json(payload, max_age=CATALOG_TTL_S)
         model = CatalogVehicleModel.query.filter_by(
             brand_id=brand.id, name=model_name, is_active=True
         ).first()
         if not model:
             payload = {"trims": []}
             cache_set(cache_key, payload, CATALOG_TTL_S)
-            return jsonify(payload), 200
+            return public_cached_json(payload, max_age=CATALOG_TTL_S)
         rows = (
             CatalogTrim.query.filter_by(model_id=model.id, is_active=True)
             .order_by(CatalogTrim.sort_order.asc(), CatalogTrim.name.asc())
@@ -147,7 +148,7 @@ def public_trims():
         )
         payload = {"trims": [t.to_dict() for t in rows]}
         cache_set(cache_key, payload, CATALOG_TTL_S)
-        return jsonify(payload), 200
+        return public_cached_json(payload, max_age=CATALOG_TTL_S)
     except Exception as e:
         logger.error("public catalog trims error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to load trims"}), 500
