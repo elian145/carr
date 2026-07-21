@@ -1,6 +1,73 @@
 part of 'production_account_pages.dart';
 
 mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
+  /// Prominent favorites entry (UX-03) — above the long account-actions list.
+  Widget _buildFavoritesQuickAccess(BuildContext context, bool isLoggedIn) {
+    final accent = const Color(0xFFFF6B00);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          if (!isLoggedIn) {
+            _showAuthRequiredDialog(context);
+            return;
+          }
+          Navigator.pushNamed(context, '/favorites');
+        },
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: _profileCardDecoration(context).copyWith(
+            border: Border.all(color: accent.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.favorite_rounded, color: accent, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AppLocalizations.of(context)!.favoritesTitle,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: _profilePrimaryInk(context),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      AppLocalizations.of(context)!.navSaved,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: _profilePrimaryInk(context).withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: _profilePrimaryInk(context).withValues(alpha: 0.45),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _buildProfileActionsSection(
     BuildContext context,
     Map<String, dynamic>? profile,
@@ -24,19 +91,6 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
               ),
             ),
             SizedBox(height: 20),
-            _buildActionButton(
-              Icons.favorite_outline,
-              AppLocalizations.of(context)!.navSaved,
-              () {
-                if (ApiService.accessToken == null ||
-                    ApiService.accessToken!.isEmpty) {
-                  _showAuthRequiredDialog(context);
-                  return;
-                }
-                Navigator.pushNamed(context, '/favorites');
-              },
-            ),
-            SizedBox(height: 12),
             _buildActionButton(
               Icons.directions_car_outlined,
               AppLocalizations.of(context)!.myListingsTitle,

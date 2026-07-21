@@ -41,6 +41,17 @@ mixin _HomePageBuild on _HomePageSlivers {
         ),
         titleSpacing: NavigationToolbar.kMiddleSpacing,
         actions: [
+          IconButton(
+            tooltip: AppLocalizations.of(context)!.favoritesTitle,
+            icon: Icon(
+              Icons.favorite_border_rounded,
+              color: appBarFg,
+              size: AppResponsive.narrowAppBar(context) ? 22 : 24,
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/favorites');
+            },
+          ),
           Padding(
             padding: const EdgeInsetsDirectional.only(
               end: NavigationToolbar.kMiddleSpacing,

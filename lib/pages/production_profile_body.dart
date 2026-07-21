@@ -16,6 +16,8 @@ mixin _ProfilePageBody on _ProfilePageBodyActions {
               if (!isLoggedIn) ..._buildProfileGuestSection(context),
               if (isLoggedIn)
                 ..._buildProfileAccountSection(context, profile, isLightShell),
+              _buildFavoritesQuickAccess(context, isLoggedIn),
+              const SizedBox(height: 16),
               ..._buildProfileActionsSection(context, profile, isLoggedIn),
             ],
           ),

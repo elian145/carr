@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Favorites discoverability (UX-03): home AppBar heart shortcut + profile quick-access card (label uses Favorites, not ambiguous “Saved”).
 - Sell wizard progress percent (UX-01): continuous bar + `Step N of 6 · P%` on sell page and draft cards.
 - Chat live transport strategy (P-10): Socket.IO primary; REST message poll only while disconnected (`chat_live_transport.dart`).
 - Celery `FlaskContextTask` + process-local Flask app so workers stop calling `create_app()` per task (P-06).
