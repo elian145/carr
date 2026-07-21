@@ -19,6 +19,7 @@
 | `legacy_signup_widget_test.dart` | Signup form fields and terms gate on create account |
 | `legacy_recently_viewed_guest_widget_test.dart` | Recently viewed guest AuthGuard redirect to login |
 | `legacy_recently_viewed_empty_widget_test.dart` | Authenticated recently viewed route smoke |
+| `legacy_analytics_guest_widget_test.dart` | Analytics guest AuthGuard redirect to login |
 | `legacy_analytics_empty_widget_test.dart` | Analytics empty seller state from mock `/analytics/listings` |
 | `legacy_settings_widget_test.dart` | Settings page theme controls |
 | `legacy_comparison_empty_widget_test.dart` | Comparison empty state |

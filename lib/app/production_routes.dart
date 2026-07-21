@@ -150,7 +150,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
     '/comparison': (context) => CarComparisonPage(),
     '/recently-viewed': (context) =>
         AuthGuard(child: const RecentlyViewedPage()),
-    '/analytics': (context) => AnalyticsPage(),
+    '/analytics': (context) => AuthGuard(child: AnalyticsPage()),
     '/reset-password': (context) => ResetPasswordPage(),
     '/verify-email': (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
