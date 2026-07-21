@@ -5,7 +5,11 @@ import os
 from flask import Blueprint, Response, abort, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 
-from ..ai_service import car_analysis_service, suggest_car_specs_from_ymm
+from ..ai_service import (
+    car_analysis_service,
+    car_image_analysis_enabled,
+    suggest_car_specs_from_ymm,
+)
 from ..auth import get_current_user, phone_verification_required_response
 from ..media_processing import blur_image_bytes, heic_to_jpeg, process_and_store_image
 from ..security import generate_secure_filename
@@ -54,10 +58,26 @@ def suggest_car_specs():
 @bp.route("/api/analyze-car-image", methods=["POST"])
 @jwt_required()
 def analyze_car_image():
+    """
+    Vision-based car recognition.
+
+    Disabled until a real model is integrated. Never returns the former
+    hardcoded Toyota Camry placeholder in production.
+    """
     try:
         current_user = get_current_user()
         if not current_user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"error": "User not found"}), 401
+
+        if not car_image_analysis_enabled():
+            return jsonify(
+                {
+                    "success": False,
+                    "error": "Car image analysis is not available yet.",
+                    "code": "car_image_analysis_unavailable",
+                    "available": False,
+                }
+            ), 501
 
         if "image" not in request.files:
             return jsonify({"error": "No image file provided"}), 400
@@ -81,7 +101,16 @@ def analyze_car_image():
                 pass
 
         if isinstance(analysis_result, dict) and analysis_result.get("error"):
-            return jsonify({"error": analysis_result["error"]}), 500
+            code = analysis_result.get("code") or "analysis_failed"
+            status = 501 if code == "car_image_analysis_unavailable" else 500
+            return jsonify(
+                {
+                    "success": False,
+                    "error": analysis_result["error"],
+                    "code": code,
+                    "available": False,
+                }
+            ), status
 
         return jsonify({"success": True, "analysis": analysis_result}), 200
     except Exception:

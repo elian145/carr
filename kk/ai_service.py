@@ -13,11 +13,66 @@ def _env() -> str:
     return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip().lower()
 
 
+def car_image_analysis_enabled() -> bool:
+    """
+    Whether /api/analyze-car-image may return analysis results.
+
+    Real vision-based car recognition is not implemented yet. The previous
+    implementation returned a hardcoded Toyota Camry payload, which is unsafe
+    in production. Placeholder responses are therefore:
+
+    - Always disabled outside development/testing
+    - Available in development/testing only when ALLOW_PLACEHOLDER_CAR_ANALYSIS=1
+    """
+    env = _env()
+    if env not in ("development", "testing", "test"):
+        return False
+    flag = (os.environ.get("ALLOW_PLACEHOLDER_CAR_ANALYSIS") or "").strip().lower()
+    return flag in ("1", "true", "yes", "on")
+
+
+def _unavailable_analysis_payload() -> Dict[str, Any]:
+    return {
+        "error": "Car image analysis is not available yet.",
+        "code": "car_image_analysis_unavailable",
+        "available": False,
+    }
+
+
+def _placeholder_analysis_payload(image_path: str) -> Dict[str, Any]:
+    """Deterministic contract-test payload. Never use in production."""
+    return {
+        "processed_image_path": image_path,
+        "car_info": {
+            "color": "white",
+            "body_type": "sedan",
+            "condition": "good",
+            "doors": 4,
+        },
+        "brand_model": {
+            "brand": "toyota",
+            "model": "camry",
+            "year_range": "2020-2023",
+            "confidence": 0.75,
+        },
+        "confidence_scores": {
+            "color": 0.8,
+            "body_type": 0.6,
+            "condition": 0.7,
+            "brand_model": 0.75,
+        },
+        "analysis_timestamp": str(datetime.now()),
+        "source": "placeholder",
+        "available": True,
+    }
+
+
 class CarAnalysisService:
     """
-	Placeholder car analysis service.
+    Car image analysis facade.
 
-	All license-plate blurring functionality has been removed.
+    Production: unavailable until a real vision model is integrated.
+    Dev/test: optional placeholder via ALLOW_PLACEHOLDER_CAR_ANALYSIS=1.
     """
 
     def __init__(self):
@@ -25,50 +80,45 @@ class CarAnalysisService:
         self._initialize_models()
 
     def _initialize_models(self) -> None:
-        """
-        Initialize AI components.
-        """
+        """Initialize AI components (placeholder until a real model ships)."""
         try:
             self.initialized = True
-            logger.info("AI service initialized.")
+            if car_image_analysis_enabled():
+                logger.warning(
+                    "Car image analysis placeholder ENABLED "
+                    "(ALLOW_PLACEHOLDER_CAR_ANALYSIS). Do not use in production."
+                )
+            else:
+                logger.info(
+                    "Car image analysis disabled (no real model; placeholder gated)."
+                )
         except Exception as e:
             self.initialized = False
-            logger.error(f"Failed to initialize AI service: {e}")
+            logger.error("Failed to initialize AI service: %s", e)
 
     def analyze_car_image(self, image_path: str) -> Dict:
         """
         Analyze a car image and extract vehicle information.
 
-        This project currently returns a stable placeholder payload; callers rely on its shape.
+        Returns an unavailable error payload unless placeholder mode is
+        explicitly enabled in a non-production environment.
         """
         try:
-            return {
-                "processed_image_path": image_path,
-                "car_info": {
-                    "color": "white",
-                    "body_type": "sedan",
-                    "condition": "good",
-                    "doors": 4,
-                },
-                "brand_model": {
-                    "brand": "toyota",
-                    "model": "camry",
-                    "year_range": "2020-2023",
-                    "confidence": 0.75,
-                },
-                "confidence_scores": {
-                    "color": 0.8,
-                    "body_type": 0.6,
-                    "condition": 0.7,
-                    "brand_model": 0.75,
-                },
-                "analysis_timestamp": str(datetime.now()),
-            }
+            if not car_image_analysis_enabled():
+                return _unavailable_analysis_payload()
+            logger.warning(
+                "Returning placeholder car image analysis for %s", image_path
+            )
+            return _placeholder_analysis_payload(image_path)
         except Exception as e:
             logger.exception("Error analyzing car image")
-            if _env() in ("development", "testing"):
-                return {"error": str(e)}
-            return {"error": "analysis_failed"}
+            if _env() in ("development", "testing", "test"):
+                return {"error": str(e), "code": "analysis_failed", "available": False}
+            return {
+                "error": "analysis_failed",
+                "code": "analysis_failed",
+                "available": False,
+            }
 
 
 # Singleton used across kk scripts and apps

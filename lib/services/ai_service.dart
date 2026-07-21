@@ -32,7 +32,7 @@ class AiService {
         return json.decode(responseBody.body);
       } else {
         appLog(
-          'AI analysis failed: ${response.statusCode} - ${responseBody.body}',
+          'AI analysis unavailable or failed: ${response.statusCode} - ${responseBody.body}',
         );
         return null;
       }

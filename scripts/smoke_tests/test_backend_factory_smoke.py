@@ -1452,6 +1452,82 @@ class BackendFactorySmokeTest(unittest.TestCase):
         )
         self.assertEqual(delete.status_code, 200, delete.data)
 
+    def test_analyze_car_image_unavailable_by_default(self):
+        """C-02: never return fake Camry specs when analysis is gated off."""
+        jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
+        previous = os.environ.pop("ALLOW_PLACEHOLDER_CAR_ANALYSIS", None)
+        try:
+            r = self.client.post(
+                "/api/analyze-car-image",
+                headers=self._auth(self.viewer_token),
+                data={"image": (io.BytesIO(jpeg), "car.jpg")},
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(r.status_code, 501, r.data)
+            body = r.get_json() or {}
+            self.assertEqual(body.get("code"), "car_image_analysis_unavailable")
+            self.assertFalse(body.get("available", True))
+            self.assertNotIn("analysis", body)
+        finally:
+            if previous is None:
+                os.environ.pop("ALLOW_PLACEHOLDER_CAR_ANALYSIS", None)
+            else:
+                os.environ["ALLOW_PLACEHOLDER_CAR_ANALYSIS"] = previous
+
+    def test_analyze_car_image_placeholder_opt_in_dev_only(self):
+        """C-02: placeholder only when explicitly enabled in non-production."""
+        from kk.ai_service import car_image_analysis_enabled
+
+        jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
+        previous = os.environ.get("ALLOW_PLACEHOLDER_CAR_ANALYSIS")
+        os.environ["ALLOW_PLACEHOLDER_CAR_ANALYSIS"] = "1"
+        try:
+            self.assertTrue(car_image_analysis_enabled())
+            r = self.client.post(
+                "/api/analyze-car-image",
+                headers=self._auth(self.viewer_token),
+                data={"image": (io.BytesIO(jpeg), "car.jpg")},
+                content_type="multipart/form-data",
+            )
+            self.assertEqual(r.status_code, 200, r.data)
+            body = r.get_json() or {}
+            self.assertTrue(body.get("success"))
+            analysis = body.get("analysis") or {}
+            self.assertEqual(analysis.get("source"), "placeholder")
+            brand_model = analysis.get("brand_model") or {}
+            self.assertEqual(brand_model.get("brand"), "toyota")
+        finally:
+            if previous is None:
+                os.environ.pop("ALLOW_PLACEHOLDER_CAR_ANALYSIS", None)
+            else:
+                os.environ["ALLOW_PLACEHOLDER_CAR_ANALYSIS"] = previous
+
+    def test_car_image_analysis_disabled_in_production_env(self):
+        """C-02: production never enables placeholder even if flag is set."""
+        from kk import ai_service
+
+        previous_env = os.environ.get("APP_ENV")
+        previous_flag = os.environ.get("ALLOW_PLACEHOLDER_CAR_ANALYSIS")
+        os.environ["APP_ENV"] = "production"
+        os.environ["ALLOW_PLACEHOLDER_CAR_ANALYSIS"] = "1"
+        try:
+            self.assertFalse(ai_service.car_image_analysis_enabled())
+            result = ai_service.car_analysis_service.analyze_car_image("/tmp/x.jpg")
+            self.assertEqual(result.get("code"), "car_image_analysis_unavailable")
+            self.assertNotIn("brand_model", result)
+        finally:
+            if previous_env is None:
+                os.environ.pop("APP_ENV", None)
+            else:
+                os.environ["APP_ENV"] = previous_env
+            if previous_flag is None:
+                os.environ.pop("ALLOW_PLACEHOLDER_CAR_ANALYSIS", None)
+            else:
+                os.environ["ALLOW_PLACEHOLDER_CAR_ANALYSIS"] = previous_flag
+            # Restore testing env used by this suite.
+            os.environ["APP_ENV"] = "testing"
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 
