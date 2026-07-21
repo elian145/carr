@@ -1985,6 +1985,36 @@ class AppLocalizationsKu extends AppLocalizations {
   String get welcomeBack => 'بەخێربێیتەوە';
 
   @override
+  String get onboardingBrowseTitle => 'گەڕان بە لیستەکاندا';
+
+  @override
+  String get onboardingBrowseBody =>
+      'گەڕان و فلتەرکردنی ئۆتۆمبێلەکان. هەر لیستێک بکەرەوە بۆ وێنە، وردەکاری و چات.';
+
+  @override
+  String get onboardingFavoritesTitle => 'دڵخوازەکان پاشەکەوت بکە';
+
+  @override
+  String get onboardingFavoritesBody =>
+      'دڵ لەسەر لیستەکە لێبدە — دواتر لە سەرەتا یان پرۆفایل بدۆزەرەوە.';
+
+  @override
+  String get onboardingSellTitle => 'ئۆتۆمبێلەکەت بفرۆشە';
+
+  @override
+  String get onboardingSellBody =>
+      'فرۆشتن لە نوێگەکەی خوارەوە بەکاربهێنە بۆ لیستکردن بە چەند هەنگاوێک.';
+
+  @override
+  String get onboardingSkip => 'تێپەڕاندن';
+
+  @override
+  String get onboardingNext => 'دواتر';
+
+  @override
+  String get onboardingGetStarted => 'دەستپێبکە';
+
+  @override
   String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
       'ژمارەی تەلەفۆنەکەت بنووسە بۆ چوونەژوورەوە یان دروستکردنی هەژمار.';
 

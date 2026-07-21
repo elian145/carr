@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- First-run onboarding tour for buyers/sellers (UX-04): browse, favorites, sell — once via `FirstRunOnboardingGate` (dealer onboarding unchanged).
 - Favorites discoverability (UX-03): home AppBar heart shortcut + profile quick-access card (label uses Favorites, not ambiguous “Saved”).
 - Sell wizard progress percent (UX-01): continuous bar + `Step N of 6 · P%` on sell page and draft cards.
 - Chat live transport strategy (P-10): Socket.IO primary; REST message poll only while disconnected (`chat_live_transport.dart`).

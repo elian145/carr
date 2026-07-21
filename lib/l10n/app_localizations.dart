@@ -3817,6 +3817,60 @@ abstract class AppLocalizations {
   /// **'Welcome back'**
   String get welcomeBack;
 
+  /// No description provided for @onboardingBrowseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse listings'**
+  String get onboardingBrowseTitle;
+
+  /// No description provided for @onboardingBrowseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Search and filter cars near you. Open any listing for photos, specs, and seller chat.'**
+  String get onboardingBrowseBody;
+
+  /// No description provided for @onboardingFavoritesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save favorites'**
+  String get onboardingFavoritesTitle;
+
+  /// No description provided for @onboardingFavoritesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a listing — find everything again from Home or Profile.'**
+  String get onboardingFavoritesBody;
+
+  /// No description provided for @onboardingSellTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell your car'**
+  String get onboardingSellTitle;
+
+  /// No description provided for @onboardingSellBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Sell in the bottom bar to list a car in a few guided steps.'**
+  String get onboardingSellBody;
+
+  /// No description provided for @onboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get onboardingSkip;
+
+  /// No description provided for @onboardingNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get onboardingNext;
+
+  /// No description provided for @onboardingGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started'**
+  String get onboardingGetStarted;
+
   /// No description provided for @enterYourPhoneNumberToLogInOrCreateAnAccount.
   ///
   /// In en, this message translates to:

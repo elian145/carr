@@ -1971,6 +1971,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcomeBack => 'مرحبًا بعودتك';
 
   @override
+  String get onboardingBrowseTitle => 'تصفح الإعلانات';
+
+  @override
+  String get onboardingBrowseBody =>
+      'ابحث وفلتر السيارات بالقرب منك. افتح أي إعلان للصور والمواصفات ومحادثة البائع.';
+
+  @override
+  String get onboardingFavoritesTitle => 'احفظ المفضلة';
+
+  @override
+  String get onboardingFavoritesBody =>
+      'اضغط على القلب في الإعلان — ستجدها لاحقًا من الرئيسية أو الملف الشخصي.';
+
+  @override
+  String get onboardingSellTitle => 'بع سيارتك';
+
+  @override
+  String get onboardingSellBody =>
+      'استخدم بيع في الشريط السفلي لنشر سيارتك بخطوات بسيطة.';
+
+  @override
+  String get onboardingSkip => 'تخطّي';
+
+  @override
+  String get onboardingNext => 'التالي';
+
+  @override
+  String get onboardingGetStarted => 'ابدأ';
+
+  @override
   String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
       'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.';
 

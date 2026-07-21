@@ -1984,6 +1984,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcomeBack => 'Welcome back';
 
   @override
+  String get onboardingBrowseTitle => 'Browse listings';
+
+  @override
+  String get onboardingBrowseBody =>
+      'Search and filter cars near you. Open any listing for photos, specs, and seller chat.';
+
+  @override
+  String get onboardingFavoritesTitle => 'Save favorites';
+
+  @override
+  String get onboardingFavoritesBody =>
+      'Tap the heart on a listing — find everything again from Home or Profile.';
+
+  @override
+  String get onboardingSellTitle => 'Sell your car';
+
+  @override
+  String get onboardingSellBody =>
+      'Use Sell in the bottom bar to list a car in a few guided steps.';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingNext => 'Next';
+
+  @override
+  String get onboardingGetStarted => 'Get started';
+
+  @override
   String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
       'Enter your phone number to log in or create an account.';
 
