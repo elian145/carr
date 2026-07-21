@@ -15,6 +15,9 @@ abstract class _HomePageFields extends State<HomePage> {
   static bool _homeDeleteHandlerRegistered = false;
   /// Last default feed mode used for the in-memory cache (`random` / `recommended`).
   static String? _homeFeedCacheDefaultSort;
+  /// When the in-memory feed snapshot was last refreshed from the network.
+  static DateTime? _homeFeedCacheFetchedAt;
+  static const Duration _homeFeedCacheTtl = Duration(minutes: 5);
 
   List<Map<String, dynamic>> cars = [];
   List<Map<String, dynamic>> featuredCars = [];
@@ -426,6 +429,7 @@ class _HomePageState extends _HomePageFields
       if (pendingSavedSearch || oneTimeFilters != null) {
         _HomePageFields._homeFeedCache.clear();
         _HomePageFields._homeFeedCacheDefaultSort = null;
+        _HomePageFields._homeFeedCacheFetchedAt = null;
         if (mounted) {
           setState(() {
             cars = [];
@@ -441,8 +445,17 @@ class _HomePageState extends _HomePageFields
         // saved offset. User can pull-to-refresh or change filters to refetch.
         fetchCars();
       } else {
-        // After the user browses listings, switch from random explore → interest feed.
-        unawaited(_maybeRefreshFeedForInterestChange());
+        final fetchedAt = _HomePageFields._homeFeedCacheFetchedAt;
+        final stale = fetchedAt == null ||
+            DateTime.now().difference(fetchedAt) >
+                _HomePageFields._homeFeedCacheTtl;
+        // Near the top, refresh stale memory cache. Deep scroll keeps the snapshot
+        // until the user pull-to-refreshes (avoids wiping paginated rows).
+        if (stale && _lastHomeScrollPixels < 240) {
+          unawaited(fetchCars(bypassCache: true));
+        } else {
+          unawaited(_maybeRefreshFeedForInterestChange());
+        }
       }
       unawaited(fetchFeaturedCars());
       // Kick restoration once the first frame is mounted, instead of waiting

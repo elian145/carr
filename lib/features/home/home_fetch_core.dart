@@ -21,6 +21,70 @@ mixin _HomePageFetchCore on _HomePageFields {
     if (y > 0) _pendingHomeScrollRestore = y;
   }
 
+  String _homeDiskCacheKey(String query) => 'cache_home_${query.hashCode}';
+
+  String _homeDiskCacheTsKey(String cacheKey) => '${cacheKey}_ts';
+
+  Future<String?> _readHomeDiskCache(
+    SharedPreferences sp,
+    String cacheKey,
+  ) async {
+    final raw = sp.getString(cacheKey);
+    if (raw == null || raw.isEmpty) return null;
+    final ts = sp.getInt(_homeDiskCacheTsKey(cacheKey));
+    if (ts == null) {
+      // Legacy entries without a timestamp — treat as expired.
+      await _invalidateHomeDiskCache(sp, cacheKey);
+      return null;
+    }
+    final age = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(ts),
+    );
+    if (age > _HomePageFields._homeFeedCacheTtl) {
+      _debugLog('[home-feed] Disk cache expired for $cacheKey (age=$age)');
+      await _invalidateHomeDiskCache(sp, cacheKey);
+      return null;
+    }
+    return raw;
+  }
+
+  Future<void> _writeHomeDiskCache(
+    SharedPreferences sp,
+    String cacheKey,
+    String body,
+  ) async {
+    await sp.setString(cacheKey, body);
+    await sp.setInt(
+      _homeDiskCacheTsKey(cacheKey),
+      DateTime.now().millisecondsSinceEpoch,
+    );
+  }
+
+  Future<void> _invalidateHomeDiskCache(
+    SharedPreferences sp,
+    String cacheKey,
+  ) async {
+    await sp.remove(cacheKey);
+    await sp.remove(_homeDiskCacheTsKey(cacheKey));
+  }
+
+  /// Pull-to-refresh: drop disk + memory snapshots, then fetch fresh.
+  Future<void> refreshHomeFeed() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final query = Uri(queryParameters: _buildFilters()).query;
+      await _invalidateHomeDiskCache(sp, _homeDiskCacheKey(query));
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+    _HomePageFields._homeFeedCache.clear();
+    _HomePageFields._homeFeedCacheFetchedAt = null;
+    await fetchCars(bypassCache: true);
+    if (mounted) {
+      unawaited(fetchFeaturedCars());
+    }
+  }
+
   Future<void> _nextLayoutFrame() async {
     final c = Completer<void>();
     // Force a frame so awaiting this helper never depends on user input.
@@ -219,14 +283,13 @@ mixin _HomePageFetchCore on _HomePageFields {
 
     // Offline-first cache (skip cache if bypassCache is true)
     final sp = await SharedPreferences.getInstance();
-    final cacheKey = 'cache_home_${query.hashCode}';
+    final cacheKey = _homeDiskCacheKey(query);
     String? cached;
     // Random explore should feel fresh; don't serve a sticky shuffled page from cache.
     final skipCacheRead =
         bypassCache || filters['sort_by'] == 'random';
     if (!skipCacheRead) {
-      // Use cached data to improve reliability and reduce API dependency
-      cached = sp.getString(cacheKey);
+      cached = await _readHomeDiskCache(sp, cacheKey);
       if (cached != null && cached.isNotEmpty) {
         _debugLog('[home-feed] Using cached data for key: $cacheKey');
         try {
@@ -239,7 +302,8 @@ mixin _HomePageFetchCore on _HomePageFields {
               isLoading = false;
               hasLoadedOnce = true;
               loadErrorMessage = null;
-              servingCachedFeed = false;
+              // Disk hit is only a temporary stand-in until network returns.
+              servingCachedFeed = true;
               if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
             });
             _scheduleHomeScrollRestoreAfterListReady();
@@ -299,12 +363,13 @@ mixin _HomePageFetchCore on _HomePageFields {
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
           _HomePageFields._homeFeedCachePage = _page;
           _HomePageFields._homeFeedCacheHasNext = _hasNext;
+          _HomePageFields._homeFeedCacheFetchedAt = DateTime.now();
           if (selectedSortBy == null || selectedSortBy!.isEmpty) {
             _HomePageFields._homeFeedCacheDefaultSort = _defaultFeedSortBy;
           }
         }
-        // Save fresh cache
-        unawaited(sp.setString(cacheKey, response.body));
+        // Save fresh cache with TTL timestamp
+        unawaited(_writeHomeDiskCache(sp, cacheKey, response.body));
         _debugLog('[home-feed] Found ${parsed.length} cars with applied filters');
         _page = 2; // next page to request
         // Reset retry count on success
@@ -641,6 +706,7 @@ mixin _HomePageFetchCore on _HomePageFields {
       _defaultFeedSortBy = next;
       _HomePageFields._homeFeedCache.clear();
       _HomePageFields._homeFeedCacheDefaultSort = null;
+      _HomePageFields._homeFeedCacheFetchedAt = null;
       await fetchCars(bypassCache: true);
     } else {
       _homeInterestProfile = profile;

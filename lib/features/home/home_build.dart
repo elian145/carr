@@ -132,14 +132,19 @@ mixin _HomePageBuild on _HomePageSlivers {
             ),
             Padding(
               padding: const EdgeInsets.only(top: 0.0),
-              child: CustomScrollView(
-                controller: _homeScrollController,
-                slivers: [
-                  _buildHomeSearchCityBarSliver(context),
-                  _buildHomeActiveFiltersSliver(context),
-                  _buildFeaturedListingsSliver(context),
-                  ..._buildHomeFeedSlivers(context),
-                ],
+              child: RefreshIndicator(
+                color: const Color(0xFFFF6B00),
+                onRefresh: refreshHomeFeed,
+                child: CustomScrollView(
+                  controller: _homeScrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    _buildHomeSearchCityBarSliver(context),
+                    _buildHomeActiveFiltersSliver(context),
+                    _buildFeaturedListingsSliver(context),
+                    ..._buildHomeFeedSlivers(context),
+                  ],
+                ),
               ),
             ),
             // Intentionally avoid full-screen obscuring overlay while scroll restores.

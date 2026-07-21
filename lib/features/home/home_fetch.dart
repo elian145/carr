@@ -28,9 +28,8 @@ mixin _HomePageFetch on _HomePageFetchCore {
       final sp = await SharedPreferences.getInstance();
       final currentFilters = _buildFilters();
       final query = Uri(queryParameters: currentFilters).query;
-      final cacheKey = 'cache_home_${query.hashCode}';
-      await sp.remove(cacheKey);
-      _debugLog('[home-feed] Cleared cache for current filters: $cacheKey');
+      await _invalidateHomeDiskCache(sp, _homeDiskCacheKey(query));
+      _debugLog('[home-feed] Cleared cache for current filters');
     } catch (e) {
       _debugLog('[home-feed] Error clearing cache: $e');
     }
@@ -127,8 +126,9 @@ mixin _HomePageFetch on _HomePageFetchCore {
           // Save to cache
           final sp = await SharedPreferences.getInstance();
           final query = Uri(queryParameters: filters).query;
-          final cacheKey = 'cache_home_${query.hashCode}';
-          unawaited(sp.setString(cacheKey, response.body));
+          final cacheKey = _homeDiskCacheKey(query);
+          unawaited(_writeHomeDiskCache(sp, cacheKey, response.body));
+          _HomePageFields._homeFeedCacheFetchedAt = DateTime.now();
 
           unawaited(_autoSaveSearch());
           _debugLog('[home-feed] Direct sort successful on attempt $attempt');
