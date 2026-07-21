@@ -47,6 +47,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   bool _loadingDraft = true;
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
   _MyListingsFilter _filter = _MyListingsFilter.all;
+  bool _routeFilterApplied = false;
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
 
@@ -72,6 +73,26 @@ class _MyListingsPageState extends State<MyListingsPage> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch(refresh: true));
     ListingEvents.deletedListingId.addListener(_onListingDeletedElsewhere);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_routeFilterApplied) return;
+    _routeFilterApplied = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is! Map) return;
+    final raw = (args['filter'] ?? '').toString().trim().toLowerCase();
+    final next = switch (raw) {
+      'pending' => _MyListingsFilter.pending,
+      'active' => _MyListingsFilter.active,
+      'sold' => _MyListingsFilter.sold,
+      'draft' => _MyListingsFilter.draft,
+      _ => null,
+    };
+    if (next != null) {
+      _filter = next;
+    }
   }
 
   @override
@@ -343,6 +364,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final authenticatedBody = Column(
       children: [
         _buildListingFilters(),
+        if (_filter == _MyListingsFilter.pending) _buildPendingExplainer(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {

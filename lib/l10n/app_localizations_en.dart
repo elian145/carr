@@ -1610,11 +1610,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listingSubmittedPending =>
-      'Listing submitted for review. Track it under My Listings → Pending.';
+      'Your listing is under review and hidden from buyers for now. Track it in My Listings → Pending.';
 
   @override
   String get listingSubmittedSuccess =>
-      'Listing submitted! It may appear after admin review.';
+      'Your listing is live. Find it in My Listings → Active.';
+
+  @override
+  String get listingPendingBadge => 'Under review';
 
   @override
   String get homeOfflineCachedBanner =>
@@ -1628,11 +1631,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myListingsPendingFilter => 'Pending';
 
   @override
+  String get myListingsPendingExplainer =>
+      'These listings are not visible to buyers yet. We review new posts for quality and safety — most are approved quickly.';
+
+  @override
   String get myListingsNoPendingTitle => 'No pending listings';
 
   @override
   String get myListingsNoPendingHint =>
-      'Listings waiting for admin approval will appear here.';
+      'Listings waiting for review will appear here.';
 
   @override
   String get joinAnd => ' and ';

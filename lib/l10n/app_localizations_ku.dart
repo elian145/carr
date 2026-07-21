@@ -1609,11 +1609,14 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get listingSubmittedPending =>
-      'ڕیکلام بۆ پێداچوونەوە نێردرا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.';
+      'ڕێکلامەکەت لە ژێر پێداچوونەوەدایە و کڕیاران نابینن ئێستا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.';
 
   @override
   String get listingSubmittedSuccess =>
-      'ڕیکلام نێردرا! لەوانەیە دوای پێداچوونەوەی بەڕێوەبەر دەربکەوێت.';
+      'ڕێکلامەکەت زیندووە. لە ڕێکلامەکانم ← چالاک بدۆزەرەوە.';
+
+  @override
+  String get listingPendingBadge => 'لە ژێر پێداچوونەوە';
 
   @override
   String get homeOfflineCachedBanner =>
@@ -1626,11 +1629,15 @@ class AppLocalizationsKu extends AppLocalizations {
   String get myListingsPendingFilter => 'چاوەڕوان';
 
   @override
+  String get myListingsPendingExplainer =>
+      'ئەم ڕێکلامانە هێشتا بۆ کڕیاران دیار نین. پۆستە نوێیەکان بۆ کوالێتی و سەلامەتی پێداچوونەوەیان بۆ دەکرێت — زۆربەیان خێرا پەسەند دەکرێن.';
+
+  @override
   String get myListingsNoPendingTitle => 'هیچ ڕێکلامێکی چاوەڕوان نییە';
 
   @override
   String get myListingsNoPendingHint =>
-      'ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون.';
+      'ڕێکلامە چاوەڕوانی پێداچوونەوە لێرە دەردەکەون.';
 
   @override
   String get joinAnd => ' و';

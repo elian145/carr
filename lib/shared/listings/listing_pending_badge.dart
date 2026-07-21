@@ -1,39 +1,46 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 String listingPendingLabel(BuildContext context) {
+  final loc = AppLocalizations.of(context);
+  if (loc != null) return loc.listingPendingBadge;
   final code = Localizations.localeOf(context).languageCode;
   if (code == 'ar') return 'قيد المراجعة';
-  if (code == 'ku' || code == 'ckb') return 'چاوەڕوانی پێداچوونەوە';
-  return 'PENDING';
+  if (code == 'ku' || code == 'ckb') return 'لە ژێر پێداچوونەوە';
+  return 'Under review';
 }
 
 /// Amber badge for listings awaiting admin approval.
 Widget buildListingPendingBadge(BuildContext context, {bool large = false}) {
   final label = listingPendingLabel(context);
-  return Container(
-    padding: EdgeInsets.symmetric(
-      horizontal: large ? 14 : 10,
-      vertical: large ? 6 : 4,
-    ),
-    decoration: BoxDecoration(
-      color: const Color(0xE6F57C00),
-      borderRadius: BorderRadius.circular(large ? 8 : 6),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.35),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+  return Semantics(
+    label: label,
+    child: Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: large ? 14 : 10,
+        vertical: large ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xE6F57C00),
+        borderRadius: BorderRadius.circular(large ? 8 : 6),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.35),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: large ? 13 : 11,
+          letterSpacing: 0.2,
         ),
-      ],
-    ),
-    child: Text(
-      label,
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w800,
-        fontSize: large ? 14 : 11,
-        letterSpacing: 0.8,
       ),
     ),
   );

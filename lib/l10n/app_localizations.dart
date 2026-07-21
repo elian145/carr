@@ -3151,14 +3151,20 @@ abstract class AppLocalizations {
   /// No description provided for @listingSubmittedPending.
   ///
   /// In en, this message translates to:
-  /// **'Listing submitted for review. Track it under My Listings → Pending.'**
+  /// **'Your listing is under review and hidden from buyers for now. Track it in My Listings → Pending.'**
   String get listingSubmittedPending;
 
   /// No description provided for @listingSubmittedSuccess.
   ///
   /// In en, this message translates to:
-  /// **'Listing submitted! It may appear after admin review.'**
+  /// **'Your listing is live. Find it in My Listings → Active.'**
   String get listingSubmittedSuccess;
+
+  /// No description provided for @listingPendingBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Under review'**
+  String get listingPendingBadge;
 
   /// No description provided for @homeOfflineCachedBanner.
   ///
@@ -3178,6 +3184,12 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get myListingsPendingFilter;
 
+  /// No description provided for @myListingsPendingExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'These listings are not visible to buyers yet. We review new posts for quality and safety — most are approved quickly.'**
+  String get myListingsPendingExplainer;
+
   /// No description provided for @myListingsNoPendingTitle.
   ///
   /// In en, this message translates to:
@@ -3187,7 +3199,7 @@ abstract class AppLocalizations {
   /// No description provided for @myListingsNoPendingHint.
   ///
   /// In en, this message translates to:
-  /// **'Listings waiting for admin approval will appear here.'**
+  /// **'Listings waiting for review will appear here.'**
   String get myListingsNoPendingHint;
 
   /// No description provided for @joinAnd.

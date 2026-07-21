@@ -91,7 +91,9 @@ import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_wizard_steps.dart';
 import 'sell_listing_payload.dart';
+import 'sell_listing_submit_result.dart';
 import 'sell_brand_slug.dart';
+import '../../shared/listings/listing_status.dart';
 import '../../shared/ui/brand_logo_image.dart';
 import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
@@ -452,5 +454,10 @@ String _videosOptionalTitleGlobal(BuildContext context) =>
 String _pleaseSelectPhotoTextGlobal(BuildContext context) =>
     pleaseSelectPhotoText(context);
 
-String _listingSubmittedSuccessTextGlobal(BuildContext context) =>
-    listingSubmittedPendingText(context);
+String _listingSubmittedSuccessTextGlobal(
+  BuildContext context, {
+  required bool pendingReview,
+}) =>
+    pendingReview
+        ? listingSubmittedPendingText(context)
+        : listingSubmittedSuccessText(context);

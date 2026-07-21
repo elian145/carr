@@ -95,8 +95,8 @@ mixin _SellStep5Logic on _SellStep5Fields {
     }
   }
 
-  /// Returns the created car id on success so caller can navigate to listing page; null otherwise.
-  Future<String?> _submitListing(
+  /// Returns submit result on success so caller can navigate and show the right copy.
+  Future<SellListingSubmitResult?> _submitListing(
     Map<String, dynamic> carData, {
     _SellCarPageState? parentState,
   }) async {
@@ -117,6 +117,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
           '';
 
       String carId = '';
+      var pendingReview = false;
       if (editId.isNotEmpty) {
         try {
           await ApiService.updateCar(
@@ -124,6 +125,17 @@ mixin _SellStep5Logic on _SellStep5Fields {
             buildSellCarUpdatePayload(carData),
           );
           carId = editId;
+          try {
+            final fresh = await ApiService.getCar(editId);
+            final inner = fresh['car'];
+            if (inner is Map) {
+              pendingReview = isListingPendingReview(
+                Map<String, dynamic>.from(inner.cast<String, dynamic>()),
+              );
+            }
+          } catch (e, st) {
+            logNonFatal(e, st);
+          }
         } on ApiException catch (e) {
           throw Exception(e.message);
         }
@@ -132,6 +144,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
           final created = await ApiService.createCar(payload);
           final carObj = unwrapCarApiPayload(created);
           carId = listingPrimaryId(carObj);
+          pendingReview = isListingPendingReview(carObj);
         } on ApiException catch (e) {
           if (e.statusCode == 401) {
             _debugLog('Submission failed: Authentication failed');
@@ -404,7 +417,12 @@ mixin _SellStep5Logic on _SellStep5Fields {
             }
           }
         } catch (e) {
-          if (!mounted) return carId;
+          if (!mounted) {
+            return SellListingSubmitResult(
+              id: carId,
+              pendingReview: pendingReview,
+            );
+          }
           try {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -424,7 +442,10 @@ mixin _SellStep5Logic on _SellStep5Fields {
               ? 'Listing updated successfully'
               : 'Listing created successfully',
         );
-        return carId;
+        return SellListingSubmitResult(
+          id: carId,
+          pendingReview: pendingReview,
+        );
       }
 
       throw Exception('Failed to create listing');

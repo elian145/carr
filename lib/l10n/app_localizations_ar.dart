@@ -1600,11 +1600,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listingSubmittedPending =>
-      'تم إرسال الإعلان للمراجعة. تابعه في إعلاناتي ← قيد المراجعة.';
+      'إعلانك قيد المراجعة وغير ظاهر للمشترين حالياً. تابعه في إعلاناتي ← قيد المراجعة.';
 
   @override
   String get listingSubmittedSuccess =>
-      'تم إرسال الإعلان! قد يظهر بعد مراجعة المشرف.';
+      'إعلانك منشور الآن. تجده في إعلاناتي ← نشط.';
+
+  @override
+  String get listingPendingBadge => 'قيد المراجعة';
 
   @override
   String get homeOfflineCachedBanner =>
@@ -1617,11 +1620,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get myListingsPendingFilter => 'قيد المراجعة';
 
   @override
+  String get myListingsPendingExplainer =>
+      'هذه الإعلانات غير ظاهرة للمشترين بعد. نراجع المنشورات الجديدة للجودة والسلامة — معظمها يُعتمد بسرعة.';
+
+  @override
   String get myListingsNoPendingTitle => 'لا توجد إعلانات قيد المراجعة';
 
   @override
-  String get myListingsNoPendingHint =>
-      'الإعلانات بانتظار موافقة المشرف ستظهر هنا.';
+  String get myListingsNoPendingHint => 'الإعلانات بانتظار المراجعة ستظهر هنا.';
 
   @override
   String get joinAnd => ' و';

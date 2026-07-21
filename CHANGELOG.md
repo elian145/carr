@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Clearer pending-listing UX (UX-05): status-aware submit copy, navigate to My Listings (Pending when held), “Under review” badge, pending-tab explainer.
 - First-run onboarding tour for buyers/sellers (UX-04): browse, favorites, sell — once via `FirstRunOnboardingGate` (dealer onboarding unchanged).
 - Favorites discoverability (UX-03): home AppBar heart shortcut + profile quick-access card (label uses Favorites, not ambiguous “Saved”).
 - Sell wizard progress percent (UX-01): continuous bar + `Step N of 6 · P%` on sell page and draft cards.

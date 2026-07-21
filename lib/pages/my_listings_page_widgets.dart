@@ -42,6 +42,52 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     );
   }
 
+  Widget _buildPendingExplainer() {
+    final text = AppLocalizations.of(context)?.myListingsPendingExplainer ??
+        _text(
+          'These listings are not visible to buyers yet. We review new posts for quality and safety — most are approved quickly.',
+          ar: 'هذه الإعلانات غير ظاهرة للمشترين بعد. نراجع المنشورات الجديدة للجودة والسلامة — معظمها يُعتمد بسرعة.',
+          ku: 'ئەم ڕێکلامانە هێشتا بۆ کڕیاران دیار نین. پۆستە نوێیەکان بۆ کوالێتی و سەلامەتی پێداچوونەوەیان بۆ دەکرێت — زۆربەیان خێرا پەسەند دەکرێن.',
+        );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF57C00).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFF57C00).withValues(alpha: 0.35),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                color: Color(0xFFF57C00),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildDraftCard(
     Map<String, dynamic> snapshot, {
     required bool listLayout,

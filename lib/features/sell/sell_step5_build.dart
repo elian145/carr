@@ -173,11 +173,12 @@ mixin _SellStep5Build on _SellStep5Logic {
                                     return;
                                   }
                                   // Submit the listing
-                                  final submittedId = await _submitListing(
+                                  final submitResult = await _submitListing(
                                     carData,
                                     parentState: parentState,
                                   );
                                   if (!mounted) return;
+                                  final submittedId = submitResult?.id;
 
                                   if (parentState?._isEditMode == true) {
                                     Map<String, dynamic> updatedCar =
@@ -256,35 +257,46 @@ mixin _SellStep5Build on _SellStep5Logic {
                                     }
                                   }
 
-                                  // Show success message
+                                  // Show success message (live vs under review — UX-05)
                                   if (!context.mounted) return;
+                                  final pending =
+                                      submitResult?.pendingReview ?? false;
                                   try {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
                                           _listingSubmittedSuccessTextGlobal(
                                             context,
+                                            pendingReview: pending,
                                           ),
                                         ),
-                                        backgroundColor: Colors.green,
+                                        backgroundColor:
+                                            pending ? const Color(0xFFF57C00) : Colors.green,
+                                        duration: const Duration(seconds: 4),
                                       ),
                                     );
                                   } catch (e, st) { logNonFatal(e, st); }
 
-                                  // Navigate back to home
+                                  // Send sellers to My Listings (Pending tab when under review)
                                   try {
                                     Navigator.of(
                                       context,
                                       rootNavigator: true,
                                     ).pushNamedAndRemoveUntil(
-                                      '/',
+                                      '/my_listings',
                                       (route) => false,
+                                      arguments: <String, dynamic>{
+                                        if (pending) 'filter': 'pending',
+                                      },
                                     );
                                   } catch (e, st) { logNonFatal(e, st); 
                                     // Fallback
                                     Navigator.pushReplacementNamed(
                                       context,
-                                      '/',
+                                      '/my_listings',
+                                      arguments: <String, dynamic>{
+                                        if (pending) 'filter': 'pending',
+                                      },
                                     );
                                   }
                                 } catch (e) {
