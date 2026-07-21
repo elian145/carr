@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,16 +13,24 @@ import '../shared/debug/app_log.dart';
 /// active brands/models from `GET /api/catalog/*` when [apiBase] is set.
 ///
 /// Regenerate asset with: `dart run bin/export_car_catalog.dart`
+///
+/// Call [ensureLoaded] from the sell flow (not app bootstrap) so cold start
+/// is not blocked by asset decode or remote catalog fetches.
 class CarCatalogLoader {
   CarCatalogLoader._();
 
-  static bool _attempted = false;
+  static Future<void>? _loading;
   static bool assetAvailable = false;
   static bool remoteApplied = false;
+  static bool remoteOverlayStarted = false;
 
-  static Future<void> ensureLoaded() async {
-    if (_attempted) return;
-    _attempted = true;
+  /// Loads the local asset catalog (idempotent). Remote API overlay runs in
+  /// the background and does not delay this future.
+  static Future<void> ensureLoaded() {
+    return _loading ??= _loadAssetCatalog();
+  }
+
+  static Future<void> _loadAssetCatalog() async {
     try {
       final raw = await rootBundle.loadString('assets/car_catalog.json');
       final data = json.decode(raw) as Map<String, dynamic>;
@@ -44,7 +54,11 @@ class CarCatalogLoader {
       appLog('CarCatalogLoader: using embedded CarCatalog');
     }
 
-    await _overlayFromApi();
+    // Never await remote overlay on the critical path (cold Render / N+1 models).
+    if (!remoteOverlayStarted) {
+      remoteOverlayStarted = true;
+      unawaited(_overlayFromApi());
+    }
   }
 
   static Future<void> _overlayFromApi() async {
@@ -135,5 +149,13 @@ class CarCatalogLoader {
       logNonFatal(e, st, 'CarCatalogLoader.remote');
       appLog('CarCatalogLoader: remote overlay skipped');
     }
+  }
+
+  @visibleForTesting
+  static void debugResetForTest() {
+    _loading = null;
+    assetAvailable = false;
+    remoteApplied = false;
+    remoteOverlayStarted = false;
   }
 }

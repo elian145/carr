@@ -19,6 +19,7 @@ import '../../app/app_api_base.dart' show getApiBase;
 import '../../app/widgets/listing_galleries.dart';
 import '../../app/widgets/listing_network_image.dart';
 import '../../data/car_catalog.dart';
+import '../../data/car_catalog_loader.dart';
 import '../../data/car_name_translations.dart';
 import '../../features/listing/car_listing_specs_grid.dart'
     as car_listing_specs_grid;

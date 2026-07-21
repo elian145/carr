@@ -14,7 +14,6 @@ import '../services/connectivity_service.dart';
 import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
-import '../data/car_catalog_loader.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../shared/debug/app_log.dart';
 
@@ -69,10 +68,8 @@ void _runZonedApp(Widget app) {
         await SavedSearchHomeBridge.clearOrphanedStartupKeys();
       } catch (e, st) { logNonFatal(e, st); }
 
-      // Catalog must load before sell/home filters use brand-model data.
-      try {
-        await CarCatalogLoader.ensureLoaded();
-      } catch (e, st) { logNonFatal(e, st); }
+      // Brand/model catalog loads lazily on sell (see CarCatalogLoader.ensureLoaded).
+      // Embedded CarCatalog covers home filters until then — do not block cold start.
 
       runApp(app);
 

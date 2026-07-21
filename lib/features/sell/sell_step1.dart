@@ -21,6 +21,13 @@ class _SellStep1PageState extends _SellStep1Fields
     _yearController.addListener(_onYearTextForCatalog);
     _resetSellFilters();
     _hydrateFromParentCarData();
+    // Lazy catalog load (asset + background API overlay) — not in bootstrap.
+    unawaited(
+      CarCatalogLoader.ensureLoaded().then((_) {
+        if (!mounted) return;
+        setState(() {});
+      }),
+    );
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {

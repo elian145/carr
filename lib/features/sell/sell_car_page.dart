@@ -22,6 +22,8 @@ class _SellCarPageState extends _SellCarPageFields
   @override
   void initState() {
     super.initState();
+    // Warm brand/model catalog when sell opens (not during app bootstrap).
+    unawaited(CarCatalogLoader.ensureLoaded());
     int controllerInitialPage = 0;
     final initialDraft = widget.initialDraftSnapshot;
     if (initialDraft != null) {
