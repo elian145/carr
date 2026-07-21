@@ -274,14 +274,30 @@ abstract final class AppResponsive {
     );
   }
 
+  /// Min/max system text scale applied app-wide via [wrapApp] (A-03).
+  /// Dense cards may still pin [TextScaler.linear] locally where overflow is critical.
+  static const double minAppTextScale = 0.85;
+  static const double maxAppTextScaleCompact = 1.35;
+  static const double maxAppTextScale = 1.5;
+
+  /// Clamp a raw system text scale factor for CarNet layouts.
+  static double clampAppTextScaleFactor(
+    double scaleFactor, {
+    required bool compactPhone,
+  }) {
+    final maxScale = compactPhone ? maxAppTextScaleCompact : maxAppTextScale;
+    return scaleFactor.clamp(minAppTextScale, maxScale).toDouble();
+  }
+
   /// Allow accessibility text scaling, but cap it to keep dense mobile layouts stable.
   static Widget wrapApp(BuildContext context, Widget child) {
     final mq = MediaQuery.of(context);
     const baseFontSize = 14.0;
-    final maxScale = isCompactPhone(context) ? 1.1 : 1.2;
-    final scaleFactor = (mq.textScaler.scale(baseFontSize) / baseFontSize)
-        .clamp(1.0, maxScale)
-        .toDouble();
+    final rawScale = mq.textScaler.scale(baseFontSize) / baseFontSize;
+    final scaleFactor = clampAppTextScaleFactor(
+      rawScale,
+      compactPhone: isCompactPhone(context),
+    );
     return MediaQuery(
       data: mq.copyWith(textScaler: TextScaler.linear(scaleFactor)),
       child: KeyboardDismissOnTap(child: child),
