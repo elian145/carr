@@ -148,6 +148,8 @@ flutter:
     - assets/brand_logos/
     - assets/car_spec_dataset.json
     - assets/car_catalog.json
+    - assets/i18n/car_names_ar.json
+    - assets/i18n/car_names_ku.json
 
   generate: true
 
