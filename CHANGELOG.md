@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Celery `FlaskContextTask` + process-local Flask app so workers stop calling `create_app()` per task (P-06).
 - HTTP `Cache-Control` + `ETag` (304) on `/api/catalog/*` and `/api/filters/facets` via `public_cached_json` (P-05; Redis body cache from M-10 unchanged).
 - Remote feature flags on `/api/config/app` (`feature_flags`), admin Settings toggles, Flutter `FeatureFlags` client (sell/chat gates); see `docs/FEATURE_FLAGS.md`.
 - `docs/SUPPORTED_PLATFORMS.md`: Android/iOS are official targets; desktop runners are untested scaffold (linked from README, ARCHITECTURE, CONTRIBUTING, publish checklist).

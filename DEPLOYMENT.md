@@ -122,6 +122,8 @@ If you enable async image jobs (e.g. `?async=1`), run a worker:
 - Procfile entry:
   - `worker: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info`
 
+Workers reuse one Flask app per process (`FlaskContextTask` / `get_celery_flask_app`) so tasks do not call `create_app()` on every job.
+
 Minimum env:
 - `REDIS_URL=redis://...` (recommended; memory broker is dev-only)
 

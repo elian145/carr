@@ -1,8 +1,39 @@
 from __future__ import annotations
 
 import os
+from typing import Any
 
-from celery import Celery
+from celery import Celery, Task
+
+# Process-local Flask app for Celery workers (P-06). Created once per process.
+_flask_app: Any | None = None
+
+
+def get_celery_flask_app():
+    """Return a shared Flask app for this worker/process (lazy singleton)."""
+    global _flask_app
+    if _flask_app is None:
+        from kk.app_factory import create_app
+
+        _flask_app, *_ = create_app()
+    return _flask_app
+
+
+def reset_celery_flask_app_for_tests() -> None:
+    """Test helper: drop the cached app so the next call rebuilds."""
+    global _flask_app
+    _flask_app = None
+
+
+class FlaskContextTask(Task):
+    """Run every task inside one shared Flask app context (no per-task create_app)."""
+
+    abstract = True
+
+    def __call__(self, *args, **kwargs):
+        app = get_celery_flask_app()
+        with app.app_context():
+            return self.run(*args, **kwargs)
 
 
 def make_celery() -> Celery:
@@ -30,6 +61,7 @@ def make_celery() -> Celery:
             "kk.tasks.notification_tasks",
         ],
     )
+    c.Task = FlaskContextTask
     c.conf.update(
         task_serializer="json",
         accept_content=["json"],
@@ -49,4 +81,3 @@ def make_celery() -> Celery:
 
 
 celery_app = make_celery()
-

@@ -3,9 +3,9 @@ from __future__ import annotations
 import base64
 import os
 
-from celery import shared_task
-
 from ..time_utils import utcnow
+from .celery_app import celery_app
+
 
 def _process_image_path(
     *,
@@ -18,8 +18,6 @@ def _process_image_path(
     Process an image already saved to disk at temp_abs.
     Returns {rel_path, base64?}.
     """
-    from flask import current_app
-
     from kk.media_processing import blur_image_bytes, persist_jpeg_bytes
     from kk.security import generate_secure_filename
 
@@ -81,7 +79,7 @@ def _process_image_path(
     return {"rel_path": final_rel, "base64": b64}
 
 
-@shared_task(bind=True, name="kk.process_car_image_file")
+@celery_app.task(bind=True, name="kk.process_car_image_file")
 def process_car_image_file(
     self,
     temp_abs: str,
@@ -91,13 +89,11 @@ def process_car_image_file(
     owner_public_id: str | None = None,
 ):
     """
-    Celery task wrapper that creates a Flask app context to access config/root paths.
+    Process a car image under the shared Celery Flask app context (P-06).
 
     ``owner_public_id`` is embedded in task meta/result so job polling can authorize
     even if the enqueue-time ownership registry is unavailable.
     """
-    from kk.app_factory import create_app
-
     owner = (owner_public_id or "").strip() or None
     if owner:
         try:
@@ -105,23 +101,20 @@ def process_car_image_file(
         except Exception:
             pass
 
-    app, *_ = create_app()
-    with app.app_context():
+    try:
+        res = _process_image_path(
+            temp_abs=temp_abs,
+            original_filename=original_filename,
+            inline_base64=bool(inline_base64),
+            skip_blur=bool(skip_blur),
+        )
+        out = {"ok": True, **res}
+        if owner:
+            out["owner_public_id"] = owner
+        return out
+    finally:
         try:
-            res = _process_image_path(
-                temp_abs=temp_abs,
-                original_filename=original_filename,
-                inline_base64=bool(inline_base64),
-                skip_blur=bool(skip_blur),
-            )
-            out = {"ok": True, **res}
-            if owner:
-                out["owner_public_id"] = owner
-            return out
-        finally:
-            try:
-                if temp_abs and os.path.isfile(temp_abs):
-                    os.remove(temp_abs)
-            except Exception:
-                pass
-
+            if temp_abs and os.path.isfile(temp_abs):
+                os.remove(temp_abs)
+        except Exception:
+            pass
