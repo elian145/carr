@@ -395,16 +395,20 @@ See `test/README.md` and `docs/ARCHITECTURE.md`.
    export DATABASE_URL=postgresql://user:pass@host:port/db
    ```
 
-2. **Using Gunicorn**
+2. **Using Gunicorn** (canonical production entrypoint)
    ```bash
-   gunicorn -w 4 -b 0.0.0.0:5000 app_new:app
+   gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"
    ```
+   See [DEPLOYMENT.md](DEPLOYMENT.md) for env vars, Socket.IO/Redis, and worker notes.
 
 3. **Using Docker**
    ```bash
    docker build -t car-listings-backend .
-   docker run -p 5000:5000 car-listings-backend
+   docker run --env-file path/to/prod.env -p 5000:5000 car-listings-backend
    ```
+   The image runs `gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"` and listens on
+   `PORT` (default `5000`). Pass the same production secrets as a non-Docker
+   deploy (`APP_ENV`, `SECRET_KEY`, `JWT_SECRET_KEY`, `DATABASE_URL`, …).
 
 ### Frontend Deployment
 
