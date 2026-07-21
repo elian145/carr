@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Confirm before clearing comparison (UX-08): clear-all on comparison page requires dialog; other destructive flows (delete listing/account, logout, drafts, saved searches, chat delete/block) already confirmed.
 - Consistent user-facing errors (UX-07): route SnackBars/dialogs through `userErrorText`; stop leaking raw `$e` / socket / API internals (sell video, verify email, login, chat send, analytics popup).
 - Search filters progressive disclosure (UX-06): essentials (price/year/mileage/condition/fuel/body/transmission) stay visible; drive/color/title/region/plates/specs behind More filters (auto-expands when advanced values are set).
 - Clearer pending-listing UX (UX-05): status-aware submit copy, navigate to My Listings (Pending when held), “Under review” badge, pending-tab explainer.

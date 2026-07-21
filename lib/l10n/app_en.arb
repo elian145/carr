@@ -446,6 +446,8 @@
   "pleaseSelectCylinderCount": "Please select cylinder count",
   "contactForPrice": "Contact for price",
   "comparisonCleared": "Comparison cleared",
+  "clearComparisonTitle": "Clear comparison?",
+  "clearComparisonBody": "This removes all cars from your comparison list.",
   "photosRequired": "Photos (Required)",
   "videosOptional": "Videos (Optional)",
   "status": "Status",

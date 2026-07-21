@@ -2686,6 +2686,18 @@ abstract class AppLocalizations {
   /// **'Comparison cleared'**
   String get comparisonCleared;
 
+  /// No description provided for @clearComparisonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear comparison?'**
+  String get clearComparisonTitle;
+
+  /// No description provided for @clearComparisonBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes all cars from your comparison list.'**
+  String get clearComparisonBody;
+
   /// No description provided for @photosRequired.
   ///
   /// In en, this message translates to:

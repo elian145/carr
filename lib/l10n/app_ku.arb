@@ -447,6 +447,8 @@
   "pleaseSelectCylinderCount": "تکایە ژمارەی سیلندەر هەڵبژێرە",
   "contactForPrice": "پەیوەندی بۆ نرخ",
   "comparisonCleared": "بەراورد پاککرایەوە",
+  "clearComparisonTitle": "بەراورد پاک بکەیتەوە؟",
+  "clearComparisonBody": "ئەمە هەموو ئۆتۆمبێلەکان لە لیستی بەراورد لادەبات.",
   "photosRequired": "وێنەکان (پێویست)",
   "videosOptional": "ڤیدیۆکان (ئارەزوومەندانە)",
   "status": "دۆخ",

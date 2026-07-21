@@ -109,10 +109,36 @@ class CarComparisonPage extends StatelessWidget {
     }
   }
 
-  void _clearComparison(BuildContext context, CarComparisonStore comparisonStore) {
+  Future<void> _clearComparison(
+    BuildContext context,
+    CarComparisonStore comparisonStore,
+  ) async {
+    final loc = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.clearComparisonTitle),
+        content: Text(loc.clearComparisonBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(loc.cancelAction),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              loc.clearAll,
+              style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+
     comparisonStore.clearComparison();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.comparisonCleared)),
+      SnackBar(content: Text(loc.comparisonCleared)),
     );
   }
 }

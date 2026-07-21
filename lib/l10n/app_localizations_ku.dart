@@ -1363,6 +1363,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get comparisonCleared => 'بەراورد پاککرایەوە';
 
   @override
+  String get clearComparisonTitle => 'بەراورد پاک بکەیتەوە؟';
+
+  @override
+  String get clearComparisonBody =>
+      'ئەمە هەموو ئۆتۆمبێلەکان لە لیستی بەراورد لادەبات.';
+
+  @override
   String get photosRequired => 'وێنەکان (پێویست)';
 
   @override

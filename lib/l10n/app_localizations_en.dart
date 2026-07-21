@@ -1363,6 +1363,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get comparisonCleared => 'Comparison cleared';
 
   @override
+  String get clearComparisonTitle => 'Clear comparison?';
+
+  @override
+  String get clearComparisonBody =>
+      'This removes all cars from your comparison list.';
+
+  @override
   String get photosRequired => 'Photos (Required)';
 
   @override

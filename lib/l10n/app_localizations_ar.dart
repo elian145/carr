@@ -1355,6 +1355,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get comparisonCleared => 'تم مسح المقارنة';
 
   @override
+  String get clearComparisonTitle => 'مسح المقارنة؟';
+
+  @override
+  String get clearComparisonBody =>
+      'سيؤدي هذا إلى إزالة جميع السيارات من قائمة المقارنة.';
+
+  @override
   String get photosRequired => 'الصور (مطلوبة)';
 
   @override

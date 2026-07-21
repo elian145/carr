@@ -447,6 +447,8 @@
   "pleaseSelectCylinderCount": "يرجى اختيار عدد الأسطوانات",
   "contactForPrice": "اتصل للسعر",
   "comparisonCleared": "تم مسح المقارنة",
+  "clearComparisonTitle": "مسح المقارنة؟",
+  "clearComparisonBody": "سيؤدي هذا إلى إزالة جميع السيارات من قائمة المقارنة.",
   "photosRequired": "الصور (مطلوبة)",
   "videosOptional": "الفيديوهات (اختياري)",
   "status": "الحالة",
