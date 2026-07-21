@@ -143,7 +143,7 @@ class _ChatListPageState extends State<ChatListPage>
       body: RefreshIndicator(
         onRefresh: _loadChats,
         child: _loading && _chats.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const ChatListSkeleton()
             : _chats.isEmpty
             ? ListView(
                 children: [

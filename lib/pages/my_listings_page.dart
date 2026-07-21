@@ -19,6 +19,7 @@ import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/ui/listing_feed_skeleton.dart';
 import '../features/listing/listing_mappers.dart';
 import '../app/listing_shell.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
@@ -348,7 +349,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
               await Future.wait([_fetch(refresh: true), _loadDrafts()]);
             },
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? ListingFeedSkeleton(
+                    columns: ListingLayoutPrefs.columns.value == 1 ? 1 : 2,
+                  )
                 : (_error != null)
                 ? ListView(
                     children: [

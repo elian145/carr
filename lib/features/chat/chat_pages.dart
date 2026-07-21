@@ -28,6 +28,7 @@ import '../../navigation/app_page_route.dart';
 import '../../widgets/in_app_video_screen.dart';
 import '../../shared/debug/app_log.dart';
 import '../../app/widgets/listing_network_image.dart';
+import '../../shared/ui/listing_feed_skeleton.dart';
 
 part 'chat_shared.dart';
 part 'chat_widgets_voice.dart';

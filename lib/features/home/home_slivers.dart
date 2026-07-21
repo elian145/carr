@@ -9,25 +9,9 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
     );
     return [
       if (isLoading)
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  selectedSortBy != null
-                      ? homeFeedSortingListingsText(context)
-                      : homeFeedLoadingListingsText(context),
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              ],
-            ),
-          ),
+        ListingFeedSkeletonSliver(
+          columns: feedColumns,
+          itemCount: feedColumns == 1 ? 4 : 6,
         )
       else if (loadErrorMessage != null && cars.isEmpty)
         SliverFillRemaining(
