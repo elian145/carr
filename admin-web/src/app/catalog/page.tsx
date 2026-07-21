@@ -349,7 +349,7 @@ export default function CatalogPage() {
           {(result) => (
             <DataTable
               empty={!result.brands.length}
-              emptyMessage="No brands yet — seed from JSON or add one"
+              emptyTitle="No brands yet — seed from JSON or add one"
             >
               <thead>
                 <tr>
@@ -516,7 +516,7 @@ export default function CatalogPage() {
           {(result) => (
             <DataTable
               empty={!result.body_types.length}
-              emptyMessage="No body types — seed or add one"
+              emptyTitle="No body types — seed or add one"
             >
               <thead>
                 <tr>

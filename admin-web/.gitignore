@@ -3,3 +3,6 @@
 .env*.local
 out/
 tsconfig.tsbuildinfo
+playwright-report/
+test-results/
+blob-report/
