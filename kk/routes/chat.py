@@ -25,6 +25,15 @@ _CHAT_AUDIO_EXTENSIONS = {".m4a", ".aac", ".mp3", ".wav", ".ogg", ".webm", ".amr
 _CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
 
 
+def _count_buyer_message_metric(car: Car, sender: User) -> None:
+    try:
+        from ..listing_metrics import record_buyer_message
+
+        record_buyer_message(car, sender)
+    except Exception:
+        pass
+
+
 def _first_car_image_rel_path(car: Car | None) -> str | None:
     """Primary listing photo path/URL for chat list avatars (same rules as car list API)."""
     if not car:
@@ -459,6 +468,8 @@ def send_message(conversation_id: str):
         db.session.commit()
         db.session.refresh(msg)
 
+        _count_buyer_message_metric(car, me)
+
         # Best-effort FCM push to receiver's device.
         try:
             db.session.refresh(receiver)
@@ -550,6 +561,7 @@ def send_image_message(conversation_id: str):
         db.session.add(msg)
         db.session.commit()
         db.session.refresh(msg)
+        _count_buyer_message_metric(car, me)
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
@@ -626,6 +638,7 @@ def send_video_message(conversation_id: str):
         db.session.add(msg)
         db.session.commit()
         db.session.refresh(msg)
+        _count_buyer_message_metric(car, me)
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
@@ -705,6 +718,7 @@ def send_audio_message(conversation_id: str):
         db.session.add(msg)
         db.session.commit()
         db.session.refresh(msg)
+        _count_buyer_message_metric(car, me)
 
         try:
             db.session.refresh(receiver)
@@ -812,6 +826,7 @@ def send_media_group_message(conversation_id: str):
         db.session.add(msg)
         db.session.commit()
         db.session.refresh(msg)
+        _count_buyer_message_metric(car, me)
 
         try:
             db.session.refresh(receiver)

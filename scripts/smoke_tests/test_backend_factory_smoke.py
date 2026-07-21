@@ -263,16 +263,103 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("expired", response.get_json()["message"].lower())
 
     def test_analytics_track_and_list(self):
+        from kk.listing_metrics import clear_engagement_claims_for_tests
+        from kk.models import ListingAnalytics
+
+        clear_engagement_claims_for_tests()
+
         r = self.client.post(
             "/api/analytics/track/view",
             json={"listing_id": self.car_public},
             headers=self._auth(self.viewer_token),
         )
         self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        self.assertTrue(body.get("success"))
+        self.assertTrue(body.get("counted"), body)
+
+        # Second view by same user must not increment again.
+        r_dup = self.client.post(
+            "/api/analytics/track/view",
+            json={"listing_id": self.car_public},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(r_dup.status_code, 200, r_dup.data)
+        self.assertFalse((r_dup.get_json() or {}).get("counted"))
+
+        # Client track/message is a no-op (counted on real chat send).
+        r_msg = self.client.post(
+            "/api/analytics/track/message",
+            json={"listing_id": self.car_public},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(r_msg.status_code, 200, r_msg.data)
+        self.assertFalse((r_msg.get_json() or {}).get("counted"))
+
+        with self.app.app_context():
+            a = ListingAnalytics.query.filter_by(car_id=self.car_id).first()
+            self.assertIsNotNone(a)
+            self.assertEqual(int(a.views or 0), 1)
+            self.assertEqual(int(a.messages or 0), 0)
+
+        # Real chat send bumps messages.
+        send = self.client.post(
+            f"/api/chat/{self.car_id}/send",
+            json={"content": "analytics inquiry"},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(send.status_code, 201, send.data)
+
+        with self.app.app_context():
+            a = ListingAnalytics.query.filter_by(car_id=self.car_id).first()
+            self.assertEqual(int(a.messages or 0), 1)
+
+        # Call dedupe: first counts, second same day does not.
+        c1 = self.client.post(
+            "/api/analytics/track/call",
+            json={"listing_id": self.car_public},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(c1.status_code, 200, c1.data)
+        self.assertTrue((c1.get_json() or {}).get("counted"))
+        c2 = self.client.post(
+            "/api/analytics/track/call",
+            json={"listing_id": self.car_public},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(c2.status_code, 200, c2.data)
+        self.assertFalse((c2.get_json() or {}).get("counted"))
 
         r2 = self.client.get("/api/analytics/listings", headers=self._auth(self.seller_token))
         self.assertEqual(r2.status_code, 200, r2.data)
         self.assertIsInstance(r2.get_json(), list)
+
+    def test_analytics_favorite_bound_to_toggle(self):
+        from kk.models import ListingAnalytics
+
+        hint = self.client.post(
+            "/api/analytics/track/favorite",
+            json={"listing_id": self.car_public},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(hint.status_code, 200, hint.data)
+        self.assertFalse((hint.get_json() or {}).get("counted"))
+
+        with self.app.app_context():
+            before = ListingAnalytics.query.filter_by(car_id=self.car_id).first()
+            fav_before = int(before.favorites or 0) if before else 0
+
+        fav = self.client.post(
+            f"/api/cars/{self.car_public}/favorite",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(fav.status_code, 200, fav.data)
+        self.assertTrue((fav.get_json() or {}).get("is_favorited"))
+
+        with self.app.app_context():
+            a = ListingAnalytics.query.filter_by(car_id=self.car_id).first()
+            self.assertIsNotNone(a)
+            self.assertEqual(int(a.favorites or 0), fav_before + 1)
 
     def test_chat_send_and_unread(self):
         r = self.client.post(

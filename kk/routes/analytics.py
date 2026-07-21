@@ -1,32 +1,22 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from sqlalchemy import update
 
 from ..auth import get_current_user
-from ..models import Car, ListingAnalytics, db, user_viewed_listings
+from ..listing_metrics import (
+    get_car_for_analytics,
+    record_call_or_share,
+    record_trusted_view,
+)
+from ..models import Car, ListingAnalytics, db
 from ..security import rate_limit, validate_input_sanitization
-from ..time_utils import utcnow
 
 bp = Blueprint("analytics", __name__)
 
 
 def _get_car_by_listing_id(listing_id: str):
-    lid = (listing_id or "").strip()
-    if not lid:
-        return None
-    car = Car.query.filter_by(public_id=lid).first()
-    if car:
-        return car
-    if lid.isdigit():
-        try:
-            return Car.query.filter_by(id=int(lid)).first()
-        except Exception:
-            return None
-    return None
+    return get_car_for_analytics(listing_id)
 
 
 def _get_or_create_analytics(car: Car) -> ListingAnalytics:
@@ -37,6 +27,11 @@ def _get_or_create_analytics(car: Car) -> ListingAnalytics:
     db.session.add(a)
     db.session.commit()
     return a
+
+
+def _listing_id_from_body() -> str:
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    return str(data.get("listing_id") or data.get("listingId") or "").strip()
 
 
 @bp.route("/api/analytics/listings", methods=["GET"])
@@ -89,111 +84,127 @@ def get_listing_analytics(listing_id: str):
         return jsonify({"message": "Failed to get analytics"}), 500
 
 
-def _track_increment(listing_id: str, field: str, *, dedupe_view: bool = False):
-    """
-    Increment an analytics field for a listing.
-
-    This is used by the mobile client to record events like views/messages/calls/shares/favorites.
-    """
-    current_user = get_current_user()
-    if not current_user:
-        return jsonify({"message": "Unauthorized"}), 401
-
-    car = _get_car_by_listing_id(listing_id)
-    if not car or not car.is_active:
-        return jsonify({"message": "Listing not found"}), 404
-
-    # Recently viewed: commit separately so analytics failures still persist history.
-    if dedupe_view:
-        from ..view_history import record_user_listing_view
-
-        record_user_listing_view(current_user, listing_id)
-
-    a = ListingAnalytics.query.filter_by(car_id=car.id).first()
-    if not a:
-        a = ListingAnalytics(car_id=car.id)
-        db.session.add(a)
-        db.session.flush()
-
-    col = getattr(ListingAnalytics, field, None)
-    if col is None:
-        return jsonify({"message": "Unsupported metric"}), 400
-
-    db.session.execute(
-        update(ListingAnalytics)
-        .where(ListingAnalytics.car_id == car.id)
-        .values(**{field: col + 1})
-    )
-    db.session.commit()
-    return jsonify({"success": True}), 200
-
-
 @bp.route("/api/analytics/track/view", methods=["POST"])
 @jwt_required()
-@rate_limit(max_requests=120, window_minutes=10, per_ip=False)
+@rate_limit(max_requests=60, window_minutes=10, per_ip=False)
 def track_view():
-    data = validate_input_sanitization(request.get_json(silent=True) or {})
-    listing_id = str(data.get("listing_id") or data.get("listingId") or "").strip()
+    """
+    Record a listing view.
+
+    Analytics ``views`` increments at most once per authenticated user per listing
+    (seller self-views are excluded). Recently-viewed history is still updated.
+    """
+    listing_id = _listing_id_from_body()
     if not listing_id:
         return jsonify({"message": "listing_id required"}), 400
     try:
-        return _track_increment(listing_id, "views", dedupe_view=True)
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        result = record_trusted_view(current_user, listing_id)
+        if not result.get("ok") and result.get("code") == "listing_not_found":
+            return jsonify({"message": "Listing not found"}), 404
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "counted": bool(result.get("counted")),
+                    "code": result.get("code"),
+                }
+            ),
+            200,
+        )
     except Exception:
         return jsonify({"message": "Failed to track view"}), 500
 
 
 @bp.route("/api/analytics/track/message", methods=["POST"])
 @jwt_required()
-@rate_limit(max_requests=300, window_minutes=10, per_ip=False)
+@rate_limit(max_requests=60, window_minutes=10, per_ip=False)
 def track_message():
-    data = validate_input_sanitization(request.get_json(silent=True) or {})
-    listing_id = str(data.get("listing_id") or data.get("listingId") or "").strip()
+    """
+    Client hint only — message metrics are counted on real chat sends.
+
+    Kept for mobile compatibility; does not increment counters.
+    """
+    listing_id = _listing_id_from_body()
     if not listing_id:
         return jsonify({"message": "listing_id required"}), 400
-    try:
-        return _track_increment(listing_id, "messages")
-    except Exception:
-        return jsonify({"message": "Failed to track message"}), 500
+    car = _get_car_by_listing_id(listing_id)
+    if not car or not car.is_active:
+        return jsonify({"message": "Listing not found"}), 404
+    return jsonify({"success": True, "counted": False, "code": "server_bound"}), 200
 
 
 @bp.route("/api/analytics/track/call", methods=["POST"])
 @jwt_required()
-@rate_limit(max_requests=300, window_minutes=10, per_ip=False)
+@rate_limit(max_requests=30, window_minutes=10, per_ip=False)
 def track_call():
-    data = validate_input_sanitization(request.get_json(silent=True) or {})
-    listing_id = str(data.get("listing_id") or data.get("listingId") or "").strip()
+    listing_id = _listing_id_from_body()
     if not listing_id:
         return jsonify({"message": "listing_id required"}), 400
     try:
-        return _track_increment(listing_id, "calls")
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        result = record_call_or_share(current_user, listing_id, "calls")
+        if not result.get("ok") and result.get("code") == "listing_not_found":
+            return jsonify({"message": "Listing not found"}), 404
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "counted": bool(result.get("counted")),
+                    "code": result.get("code"),
+                }
+            ),
+            200,
+        )
     except Exception:
         return jsonify({"message": "Failed to track call"}), 500
 
 
 @bp.route("/api/analytics/track/share", methods=["POST"])
 @jwt_required()
-@rate_limit(max_requests=300, window_minutes=10, per_ip=False)
+@rate_limit(max_requests=30, window_minutes=10, per_ip=False)
 def track_share():
-    data = validate_input_sanitization(request.get_json(silent=True) or {})
-    listing_id = str(data.get("listing_id") or data.get("listingId") or "").strip()
+    listing_id = _listing_id_from_body()
     if not listing_id:
         return jsonify({"message": "listing_id required"}), 400
     try:
-        return _track_increment(listing_id, "shares")
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        result = record_call_or_share(current_user, listing_id, "shares")
+        if not result.get("ok") and result.get("code") == "listing_not_found":
+            return jsonify({"message": "Listing not found"}), 404
+        return (
+            jsonify(
+                {
+                    "success": True,
+                    "counted": bool(result.get("counted")),
+                    "code": result.get("code"),
+                }
+            ),
+            200,
+        )
     except Exception:
         return jsonify({"message": "Failed to track share"}), 500
 
 
 @bp.route("/api/analytics/track/favorite", methods=["POST"])
 @jwt_required()
-@rate_limit(max_requests=300, window_minutes=10, per_ip=False)
+@rate_limit(max_requests=60, window_minutes=10, per_ip=False)
 def track_favorite():
-    data = validate_input_sanitization(request.get_json(silent=True) or {})
-    listing_id = str(data.get("listing_id") or data.get("listingId") or "").strip()
+    """
+    Client hint only — favorite metrics are counted on real favorite adds.
+
+    Kept for mobile compatibility; does not increment counters.
+    """
+    listing_id = _listing_id_from_body()
     if not listing_id:
         return jsonify({"message": "listing_id required"}), 400
-    try:
-        return _track_increment(listing_id, "favorites")
-    except Exception:
-        return jsonify({"message": "Failed to track favorite"}), 500
-
+    car = _get_car_by_listing_id(listing_id)
+    if not car or not car.is_active:
+        return jsonify({"message": "Listing not found"}), 404
+    return jsonify({"success": True, "counted": False, "code": "server_bound"}), 200

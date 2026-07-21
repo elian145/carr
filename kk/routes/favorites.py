@@ -107,6 +107,11 @@ def toggle_favorite(car_id):
         db.session.commit()
         log_user_action(current_user, f"favorite_{action}", "car", car.public_id)
 
+        if action == "added":
+            from ..listing_metrics import record_favorite_add
+
+            record_favorite_add(car, current_user)
+
         return jsonify({"message": f"Car {action} from favorites", "is_favorited": action == "added"}), 200
 
     except Exception:
