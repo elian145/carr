@@ -351,23 +351,13 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
         SnackBar(
           content: Text(
             forceNotify
-                ? _trLegacyText(
-                    snackContext,
-                    "You'll be notified when a matching car is listed",
-                    ar: 'سيتم إشعارك عند توفر سيارة مطابقة',
-                    ku: 'کاتێک ئۆتۆمبێلێکی هاوتا دابنرێت ئاگادارت دەکەینەوە',
-                  )
+                ? AppLocalizations.of(snackContext)!.youLlBeNotifiedWhenAMatchingCarIsListed
                 : AppLocalizations.of(snackContext)!.saved,
           ),
           action: openSavedSearches
               ? null
               : SnackBarAction(
-                  label: _trLegacyText(
-                    snackContext,
-                    'View',
-                    ar: 'عرض',
-                    ku: 'بینین',
-                  ),
+                  label: AppLocalizations.of(snackContext)!.view,
                   onPressed: () {
                     Navigator.push(
                       snackContext,
@@ -394,12 +384,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
         SnackBar(
           content: Text(AppLocalizations.of(pageContext)!.loginRequired),
           action: SnackBarAction(
-            label: _trLegacyText(
-              pageContext,
-              'Log in',
-              ar: 'تسجيل الدخول',
-              ku: 'چوونەژوورەوە',
-            ),
+            label: AppLocalizations.of(pageContext)!.logIn,
             onPressed: () => Navigator.pushNamed(pageContext, '/login'),
           ),
         ),

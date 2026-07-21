@@ -40,12 +40,7 @@ mixin _SellStep4BuildIntro on _SellStep4Logic {
             ),
             const SizedBox(height: 8),
             Text(
-              _trLegacyText(
-                context,
-                'Add photos first — plates are prepared automatically',
-                ar: 'أضف الصور أولاً — يتم تجهيز اللوحات تلقائياً',
-                ku: 'سەرەتا وێنە زیاد بکە — تابلۆ خۆکارانە ئامادە دەکرێت',
-              ),
+              AppLocalizations.of(context)!.addPhotosFirstPlatesArePreparedAutomatically,
               style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),

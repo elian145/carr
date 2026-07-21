@@ -3,18 +3,8 @@ part of 'sell_flow.dart';
 mixin _SellStep3BuildPrice on _SellStep3Pickers {
   List<Widget> _sellStep3BuildPriceSection() {
     final style = filterDialogStyle(context);
-    final priceLabel = _trLegacyText(
-      context,
-      'Price ($selectedCurrency) (optional)',
-      ar: 'السعر ($selectedCurrency) (اختياري)',
-      ku: 'نرخ ($selectedCurrency) (ئیختیاری)',
-    );
-    final enterPriceHint = _trLegacyText(
-      context,
-      'Enter price',
-      ar: 'أدخل السعر',
-      ku: 'نرخ بنووسە',
-    );
+    final priceLabel = AppLocalizations.of(context)!.priceSelectedCurrencyOptional(selectedCurrency);
+    final enterPriceHint = AppLocalizations.of(context)!.enterPrice;
 
     return [
       FilterCard(
@@ -76,20 +66,10 @@ mixin _SellStep3BuildPrice on _SellStep3Pickers {
                         ),
                       );
                       if (price == null) {
-                        return _trLegacyText(
-                          context,
-                          'Invalid price',
-                          ar: 'سعر غير صالح',
-                          ku: 'نرخی نادروست',
-                        );
+                        return AppLocalizations.of(context)!.invalidPrice;
                       }
                       if (price < 0) {
-                        return _trLegacyText(
-                          context,
-                          'Price cannot be negative',
-                          ar: 'لا يمكن أن يكون السعر سالبا',
-                          ku: 'نرخ ناتوانێت سالب بێت',
-                        );
+                        return AppLocalizations.of(context)!.priceCannotBeNegative;
                       }
                       return null;
                     },
@@ -136,12 +116,9 @@ mixin _SellStep3BuildPrice on _SellStep3Pickers {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  tooltip: _trLegacyText(
-                    context,
-                    'Switch to ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
-                    ar: 'التبديل إلى ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
-                    ku: 'گۆڕین بۆ ${selectedCurrency == 'USD' ? 'IQD' : 'USD'}',
-                  ),
+                  tooltip: selectedCurrency == 'USD'
+                      ? AppLocalizations.of(context)!.switchToIQD
+                      : AppLocalizations.of(context)!.switchToUSD,
                 ),
               ],
             ),

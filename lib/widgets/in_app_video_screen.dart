@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 
-import '../shared/i18n/legacy_inline_text.dart';
 import 'network_video_thumbnail.dart';
+import '../shared/i18n/legacy_inline_text.dart';
 
 String _formatVideoTime(Duration d) {
   if (d.inMilliseconds < 0) return '0:00';

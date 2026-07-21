@@ -66,10 +66,10 @@ mixin _SellStep2Pickers on _SellStep2CatalogHydrate {
                         displayText = _localizeDigitsGlobal(context, value);
                       } else if (lowerTitle.contains('seating') && isNumeric) {
                         displayText =
-                            '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'seats', ar: 'مقاعد', ku: 'دانیشتن')}';
+                            '${_localizeDigitsGlobal(context, value)} ${AppLocalizations.of(context)!.seats}';
                       } else if (lowerTitle.contains('cylinder') && isNumeric) {
                         displayText =
-                            '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}';
+                            '${_localizeDigitsGlobal(context, value)} ${AppLocalizations.of(context)!.labelCylinders}';
                       } else if (lowerTitle.contains('region') &&
                           isValidCarRegionSpecCode(value)) {
                         displayText = carRegionSpecDisplayLabelLocalized(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../shared/i18n/legacy_inline_text.dart';
 import '../../../shared/listings/listing_identity.dart';
 import '../state/car_comparison_store.dart';
 
@@ -25,12 +24,7 @@ class ComparisonButton extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            trLegacyText(
-              context,
-              'Cannot add to comparison',
-              ar: 'تعذر الإضافة إلى المقارنة',
-              ku: 'نەتوانرا زیاد بکرێت بۆ بەراوردن',
-            ),
+            AppLocalizations.of(context)!.cannotAddToComparison,
           ),
         ),
       );

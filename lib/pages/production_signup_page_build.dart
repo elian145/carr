@@ -303,12 +303,7 @@ mixin _SignupPageBuild on _SignupPageActions {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      trLegacyText(
-                        context,
-                        'I agree to the ',
-                        ar: 'أوافق على ',
-                        ku: 'ڕازیم بە ',
-                      ),
+                      AppLocalizations.of(context)!.iAgreeToThe,
                     ),
                     GestureDetector(
                       onTap: () => Navigator.push(
@@ -320,12 +315,7 @@ mixin _SignupPageBuild on _SignupPageActions {
                         ),
                       ),
                       child: Text(
-                        trLegacyText(
-                          context,
-                          'Terms',
-                          ar: 'الشروط',
-                          ku: 'مەرجەکان',
-                        ),
+                        AppLocalizations.of(context)!.terms,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           decoration: TextDecoration.underline,
@@ -333,7 +323,7 @@ mixin _SignupPageBuild on _SignupPageActions {
                       ),
                     ),
                     Text(
-                      trLegacyText(context, ' and ', ar: ' و', ku: ' و'),
+                      AppLocalizations.of(context)!.joinAnd,
                     ),
                     GestureDetector(
                       onTap: () => Navigator.push(
@@ -345,12 +335,7 @@ mixin _SignupPageBuild on _SignupPageActions {
                         ),
                       ),
                       child: Text(
-                        trLegacyText(
-                          context,
-                          'Privacy Policy',
-                          ar: 'سياسة الخصوصية',
-                          ku: 'تایبەتمەندی',
-                        ),
+                        AppLocalizations.of(context)!.privacyPolicy,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                           decoration: TextDecoration.underline,

@@ -9,7 +9,6 @@ import '../../services/analytics_service.dart';
 import '../../services/api_service.dart';
 import '../../services/recently_viewed_service.dart';
 import '../../shared/i18n/digits.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/listings/listing_card_media.dart';
@@ -247,12 +246,7 @@ class _FeaturedListingCardState extends State<FeaturedListingCard> {
     final transmission = _label(context, widget.car['transmission']);
     final fuel = _label(context, widget.car['fuel_type']);
     final city = _city(context);
-    final featuredLabel = trLegacyText(
-      context,
-      'FEATURED',
-      ar: 'مميز',
-      ku: 'تایبەت',
-    );
+    final featuredLabel = AppLocalizations.of(context)!.featured;
 
     return Material(
       color: Colors.transparent,

@@ -131,12 +131,7 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
           bg = Colors.orange.withValues(alpha: 0.15);
           fg = isLightShell ? Colors.orange.shade800 : Colors.orange.shade200;
         } else if (needsChanges) {
-          label = trLegacyText(
-            context,
-            'Dealer application needs changes',
-            ar: 'طلب الوكالة يحتاج إلى تعديلات',
-            ku: 'داواکاری فرۆشیار پێویستی بە گۆڕانکاری هەیە',
-          );
+          label = AppLocalizations.of(context)!.dealerApplicationNeedsChanges;
           bg = Colors.amber.withValues(alpha: 0.15);
           fg = isLightShell ? Colors.amber.shade900 : Colors.amber.shade200;
         } else if (isRejected) {

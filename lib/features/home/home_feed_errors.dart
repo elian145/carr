@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
-
 import '../../shared/i18n/legacy_inline_text.dart';
+
 
 /// Internal home-feed error keys (not shown directly to users).
 abstract final class HomeFeedErrors {

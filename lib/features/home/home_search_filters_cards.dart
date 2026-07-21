@@ -56,12 +56,7 @@ mixin _HomePageSearchFiltersCards on _HomePageMoreFiltersDialog {
   }
 
   String _searchShowCarsLabel(BuildContext context) {
-    return _trLegacyText(
-      context,
-      'Show Cars',
-      ar: 'عرض السيارات',
-      ku: 'نیشاندانی ئۆتۆمبێلەکان',
-    );
+    return AppLocalizations.of(context)!.showCars;
   }
   BoxDecoration _searchCardDecoration(BuildContext context) {
     final isLight = Theme.of(context).brightness == Brightness.light;

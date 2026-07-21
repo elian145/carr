@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../data/car_name_translations.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/ui/brand_logo_image.dart';
 import '../../shared/ui/responsive.dart';
+import '../../l10n/app_localizations.dart';
 
 // Search Dialog Widget
 class HomeSearchDialog extends StatefulWidget {
@@ -134,12 +134,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  trLegacyText(
-                    context,
-                    'Search Cars',
-                    ar: 'البحث عن السيارات',
-                    ku: 'گەڕان بە دوای ئۆتۆمبێل',
-                  ),
+                  AppLocalizations.of(context)!.searchCars,
                   style: GoogleFonts.orbitron(
                     color: Color(0xFFFF6B00),
                     fontWeight: FontWeight.bold,
@@ -162,12 +157,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                     onPressed: _isSearchingBrands ? null : _toggleSearchMode,
                     style: _searchModeButtonStyle(selected: _isSearchingBrands),
                     child: Text(
-                      trLegacyText(
-                        context,
-                        'Search by Brand',
-                        ar: 'بحث حسب العلامة',
-                        ku: 'گەڕان بە براند',
-                      ),
+                      AppLocalizations.of(context)!.searchByBrand,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -178,12 +168,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
                     onPressed: _isSearchingBrands ? _toggleSearchMode : null,
                     style: _searchModeButtonStyle(selected: !_isSearchingBrands),
                     child: Text(
-                      trLegacyText(
-                        context,
-                        'Search by Model',
-                        ar: 'بحث حسب الموديل',
-                        ku: 'گەڕان بە مۆدێل',
-                      ),
+                      AppLocalizations.of(context)!.searchByModel,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -198,18 +183,8 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: _isSearchingBrands
-                    ? trLegacyText(
-                        context,
-                        'Search brands...',
-                        ar: 'ابحث عن العلامات...',
-                        ku: 'گەڕان بە براندەکان...',
-                      )
-                    : trLegacyText(
-                        context,
-                        'Search models...',
-                        ar: 'ابحث عن الموديلات...',
-                        ku: 'گەڕان بە مۆدێلەکان...',
-                      ),
+                    ? AppLocalizations.of(context)!.searchBrands
+                    : AppLocalizations.of(context)!.searchModels,
                 hintStyle: TextStyle(color: Colors.grey[400]),
                 prefixIcon: Icon(Icons.search, color: Color(0xFFFF6B00)),
                 border: OutlineInputBorder(

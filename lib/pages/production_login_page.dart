@@ -67,12 +67,7 @@ class _LoginPageState extends State<LoginPage> {
       builder: (_) => AlertDialog(
         title: Text(loc.errorTitle),
         content: Text(
-          trLegacyText(
-            context,
-            'This phone number is registered to a personal account. Please use personal login instead.',
-            ar: 'رقم الهاتف هذا مسجل لحساب شخصي. يرجى استخدام تسجيل الدخول الشخصي.',
-            ku: 'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی کەسی تۆمارکراوە. تکایە چوونەژوورەوەی کەسی بەکاربهێنە.',
-          ),
+          AppLocalizations.of(context)!.thisPhoneNumberIsRegisteredToAPersonalAccountPleaseUsePersonalLoginInste,
         ),
         actions: [
           TextButton(
@@ -98,12 +93,7 @@ class _LoginPageState extends State<LoginPage> {
       builder: (_) => AlertDialog(
         title: Text(loc.errorTitle),
         content: Text(
-          trLegacyText(
-            context,
-            'This phone number is registered to a dealer account. Please use dealer login instead.',
-            ar: 'رقم الهاتف هذا مسجل لحساب وكيل. يرجى استخدام تسجيل دخول الوكيل.',
-            ku: 'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی وەکیل تۆمارکراوە. تکایە چوونەژوورەوەی وەکیل بەکاربهێنە.',
-          ),
+          AppLocalizations.of(context)!.thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead,
         ),
         actions: [
           TextButton(
@@ -550,12 +540,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        trLegacyText(
-                          context,
-                          'Welcome back',
-                          ar: 'مرحبًا بعودتك',
-                          ku: 'بەخێربێیتەوە',
-                        ),
+                        AppLocalizations.of(context)!.welcomeBack,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 22,
@@ -566,12 +551,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        trLegacyText(
-                          context,
-                          'Enter your phone number to log in or create an account.',
-                          ar: 'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.',
-                          ku: 'ژمارەی تەلەفۆنەکەت بنووسە بۆ چوونەژوورەوە یان دروستکردنی هەژمار.',
-                        ),
+                        AppLocalizations.of(context)!.enterYourPhoneNumberToLogInOrCreateAnAccount,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
@@ -582,12 +562,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 22),
                       Text(
-                        trLegacyText(
-                          context,
-                          'Account type',
-                          ar: 'نوع الحساب',
-                          ku: 'جۆری هەژمار',
-                        ),
+                        AppLocalizations.of(context)!.accountType,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,

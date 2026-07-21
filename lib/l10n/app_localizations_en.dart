@@ -1629,4 +1629,788 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get myListingsNoPendingHint =>
       'Listings waiting for admin approval will appear here.';
+
+  @override
+  String get joinAnd => ' and ';
+
+  @override
+  String get labelPlateType => 'Plate type';
+
+  @override
+  String get labelPlateCity => 'Plate city';
+
+  @override
+  String get plateTypePrivate => 'Private';
+
+  @override
+  String get plateTypeCommercial => 'Commercial';
+
+  @override
+  String get plateTypeTaxi => 'Taxi';
+
+  @override
+  String get plateTypeGovernment => 'Government';
+
+  @override
+  String get plateTypeTemporary => 'Temporary';
+
+  @override
+  String get plateTypeDiplomatic => 'Diplomatic';
+
+  @override
+  String get plateTypePolice => 'Police';
+
+  @override
+  String get regionSpecGcc => 'GCC';
+
+  @override
+  String get regionSpecUs => 'US';
+
+  @override
+  String get regionSpecIraq => 'Iraq';
+
+  @override
+  String get regionSpecCanada => 'Canada';
+
+  @override
+  String get regionSpecEu => 'EU';
+
+  @override
+  String get regionSpecCn => 'CN';
+
+  @override
+  String get regionSpecKorea => 'Korea';
+
+  @override
+  String get regionSpecRu => 'RU';
+
+  @override
+  String get regionSpecIran => 'Iran';
+
+  @override
+  String get vinCopied => 'VIN copied';
+
+  @override
+  String get sellStep1Photos => 'Step 1: Photos';
+
+  @override
+  String get sellStep2BasicInfo => 'Step 2: Basic info';
+
+  @override
+  String get sellStep3Details => 'Step 3: Details';
+
+  @override
+  String get sellStep4Pricing => 'Step 4: Pricing';
+
+  @override
+  String get sellStep5Plates => 'Step 5: Plates';
+
+  @override
+  String get sellStep6Review => 'Step 6: Review';
+
+  @override
+  String get seats => 'seats';
+
+  @override
+  String get labelCylinders => 'cylinders';
+
+  @override
+  String get labelDealership => 'Dealership';
+
+  @override
+  String get labelPhone => 'Phone';
+
+  @override
+  String get labelLocation => 'Location';
+
+  @override
+  String get pleaseSelectAtLeastOnePhoto => 'Please select at least one photo';
+
+  @override
+  String get couldNotLoadListings => 'Could not load listings';
+
+  @override
+  String get homeFeedLoadingListings => 'Loading listings...';
+
+  @override
+  String get homeFeedSortingListings => 'Sorting listings...';
+
+  @override
+  String get homeFeedCachedResultsBanner => 'Showing cached results';
+
+  @override
+  String get homeFeedSortedLocally => 'Sorted locally (server unavailable)';
+
+  @override
+  String get commonRefresh => 'Refresh';
+
+  @override
+  String get homeFeedSortDisabled =>
+      'Sorting temporarily disabled due to server issue';
+
+  @override
+  String get homeFeedNetworkError =>
+      'Could not reach the server. Check your connection and try again.';
+
+  @override
+  String homeFeedServerError(String statusCode) {
+    return 'Server error ($statusCode). Please try again later.';
+  }
+
+  @override
+  String get acceptTermsRequired =>
+      'Please accept the Terms and Privacy Policy';
+
+  @override
+  String get videoPlaybackFailed => 'Could not play this video.';
+
+  @override
+  String get photosUploaded => 'Photos uploaded';
+
+  @override
+  String get commonYes => 'Yes';
+
+  @override
+  String get commonNo => 'No';
+
+  @override
+  String get missingDealerId => 'Missing dealer id';
+
+  @override
+  String get markAsAvailable => 'Mark as available';
+
+  @override
+  String get markAsSold => 'Mark as sold';
+
+  @override
+  String get reportListing => 'Report listing';
+
+  @override
+  String get reportSeller => 'Report seller';
+
+  @override
+  String get unableToSelectThatPhoto => 'Unable to select that photo.';
+
+  @override
+  String get pleaseUploadAClearPhotoOfYourBusiness =>
+      'Please upload a clear photo of your business.';
+
+  @override
+  String get dealershipDetailsSubmittedYourApplicationIsPendingReview =>
+      'Dealership details submitted. Your application is pending review.';
+
+  @override
+  String get addAPhotoThatHelpsUsVerifyThisDealership =>
+      'Add a photo that helps us verify this dealership';
+
+  @override
+  String get privateDealershipPhotoUploaded =>
+      'Private dealership photo uploaded';
+
+  @override
+  String get createDealershipAccount => 'Create dealership account';
+
+  @override
+  String get finalSetupStep => 'Final setup step';
+
+  @override
+  String get buildYourDealershipPresence => 'Build your dealership presence';
+
+  @override
+  String
+  get addAccurateBusinessDetailsSoBuyersCanTrustAndContactYourDealership =>
+      'Add accurate business details so buyers can trust and contact your dealership.';
+
+  @override
+  String get reviewUsuallyTakes12BusinessDays =>
+      'Review usually takes 1–2 business days';
+
+  @override
+  String get changesRequested => 'Changes requested';
+
+  @override
+  String get businessInformation => 'Business information';
+
+  @override
+  String get theseDetailsWillAppearOnYourPublicDealershipProfile =>
+      'These details will appear on your public dealership profile.';
+
+  @override
+  String get dealershipName => 'Dealership name';
+
+  @override
+  String get yourRegisteredOrTradingName => 'Your registered or trading name';
+
+  @override
+  String get businessPhone => 'Business phone';
+
+  @override
+  String get aNumberBuyersCanReach => 'A number buyers can reach';
+
+  @override
+  String get dealershipLocation => 'Dealership location';
+
+  @override
+  String get cityDistrictAndStreet => 'City, district, and street';
+
+  @override
+  String get aboutYourDealershipOptional => 'About your dealership (optional)';
+
+  @override
+  String get describeYourInventoryExperienceAndCustomerService =>
+      'Describe your inventory, experience, and customer service';
+
+  @override
+  String get dealershipVerificationPhoto => 'Dealership verification photo';
+
+  @override
+  String
+  get requiredUsedPrivatelyByOurReviewTeamAndNeverShownOnYourPublicProfile =>
+      'Required · Used privately by our review team and never shown on your public profile.';
+
+  @override
+  String get chooseVerificationPhoto => 'Choose verification photo';
+
+  @override
+  String get replacePhoto => 'Replace photo';
+
+  @override
+  String
+  get uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO =>
+      'Upload one clear, recent photo of the dealership storefront, cars for sale, showroom, or office—anything that helps our team confirm the business is genuine.';
+
+  @override
+  String get submitting => 'Submitting…';
+
+  @override
+  String get submitForReview => 'Submit for review';
+
+  @override
+  String get yourBusinessInformationIsHandledSecurely =>
+      'Your business information is handled securely.';
+
+  @override
+  String get forgotPassword => 'Forgot Password';
+
+  @override
+  String get resetPassword => 'Reset Password';
+
+  @override
+  String get checkYourEmail => 'Check Your Email';
+
+  @override
+  String get checkYourMessages => 'Check your messages';
+
+  @override
+  String get enterTheEmailAddressForYourAccountWeWillSendAResetCode =>
+      'Enter the email address for your account. We will send a reset code.';
+
+  @override
+  String get enterThePhoneNumberForYourAccountWeWillSendAResetCodeBySMS =>
+      'Enter the phone number for your account. We will send a reset code by SMS.';
+
+  @override
+  String
+  weVeSentAPasswordResetLinkToEmailPleaseCheckYourEmailAndFollowTheInstruc(
+    String email,
+  ) {
+    return 'We\'ve sent a password reset link to $email. Please check your email and follow the instructions.';
+  }
+
+  @override
+  String ifAnAccountExistsForPhoneWeSentAPasswordResetCodeBySMS(String phone) {
+    return 'If an account exists for $phone, we sent a password reset code by SMS.';
+  }
+
+  @override
+  String
+  get ifYouDonTSeeItCheckYourSpamOrJunkFolderTheLinkIsOnlySentIfAnAccountExist =>
+      'If you don\'t see it, check your spam or junk folder. The link is only sent if an account exists for this email.';
+
+  @override
+  String
+  get smsMayTakeAMinuteOrTwoACodeIsOnlySentIfAnAccountExistsForThisNumber =>
+      'SMS may take a minute or two. A code is only sent if an account exists for this number.';
+
+  @override
+  String get pleaseEnterAValidEmail => 'Please enter a valid email';
+
+  @override
+  String get pleaseEnterAValidPhoneNumberAtLeast8Digits =>
+      'Please enter a valid phone number (at least 8 digits)';
+
+  @override
+  String get sendResetLink => 'Send Reset Link';
+
+  @override
+  String get sendResetCodeSMS => 'Send reset code (SMS)';
+
+  @override
+  String get iHaveTheCodeSetNewPassword => 'I have the code – set new password';
+
+  @override
+  String get backToLogin => 'Back to Login';
+
+  @override
+  String get commonBack => 'Back';
+
+  @override
+  String get tooManyResetAttemptsPleaseWaitALittleAndTryAgain =>
+      'Too many reset attempts. Please wait a little and try again.';
+
+  @override
+  String get failedToSendResetLinkCheckYourEmailAndTryAgainLater =>
+      'Failed to send reset link. Check your email and try again later.';
+
+  @override
+  String get failedToSendSMSCheckTheNumberAndTryAgainLater =>
+      'Failed to send SMS. Check the number and try again later.';
+
+  @override
+  String
+  get thisPhoneNumberIsRegisteredToAPersonalAccountPleaseUsePersonalLoginInste =>
+      'This phone number is registered to a personal account. Please use personal login instead.';
+
+  @override
+  String
+  get thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead =>
+      'This phone number is registered to a dealer account. Please use dealer login instead.';
+
+  @override
+  String get welcomeBack => 'Welcome back';
+
+  @override
+  String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
+      'Enter your phone number to log in or create an account.';
+
+  @override
+  String get accountType => 'Account type';
+
+  @override
+  String get dealerApplicationNeedsChanges =>
+      'Dealer application needs changes';
+
+  @override
+  String get recentlyViewed => 'Recently viewed';
+
+  @override
+  String get editDealerPage => 'Edit dealer page';
+
+  @override
+  String get guest => 'Guest';
+
+  @override
+  String get signInToAccessYourProfileFeatures =>
+      'Sign in to access your profile features.';
+
+  @override
+  String get iAgreeToThe => 'I agree to the ';
+
+  @override
+  String get terms => 'Terms';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get searchAppliedSuccessfully => 'Search applied successfully!';
+
+  @override
+  String get appliedFilters => 'Applied Filters:';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get alerts => 'Alerts';
+
+  @override
+  String get owners => 'Owners';
+
+  @override
+  String get accidentHistory => 'Accident History';
+
+  @override
+  String get deleteSavedSearch => 'Delete saved search?';
+
+  @override
+  String get thisWillPermanentlyRemoveThisSavedSearchThisCannotBeUndone =>
+      'This will permanently remove this saved search. This cannot be undone.';
+
+  @override
+  String get featured => 'FEATURED';
+
+  @override
+  String get less => 'Less';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get selectFromList => 'Select from list';
+
+  @override
+  String get searchMakeOrModel => 'Search make or model';
+
+  @override
+  String get noMakesOrModelsMatchYourSearch =>
+      'No makes or models match your search.';
+
+  @override
+  String get make => 'Make';
+
+  @override
+  String get sendMessage => 'Send message';
+
+  @override
+  String filterSelectedCount(String count) {
+    return '$count selected';
+  }
+
+  @override
+  String get apply => 'Apply';
+
+  @override
+  String get youLlBeNotifiedWhenAMatchingCarIsListed =>
+      'You\'ll be notified when a matching car is listed';
+
+  @override
+  String get view => 'View';
+
+  @override
+  String get logIn => 'Log in';
+
+  @override
+  String get searchBrandsModels => 'Search brands & models';
+
+  @override
+  String get showCars => 'Show Cars';
+
+  @override
+  String get searchCars => 'Search Cars';
+
+  @override
+  String get saveSearch => 'Save search';
+
+  @override
+  String get notifyMe => 'Notify me';
+
+  @override
+  String get featuredListings => 'Featured Listings';
+
+  @override
+  String get plate => 'Plate';
+
+  @override
+  String get viewDescription => 'View description';
+
+  @override
+  String get licensePlates => 'License plates';
+
+  @override
+  String get draftInProgress => 'Draft in progress';
+
+  @override
+  String get discardDraft => 'Discard draft?';
+
+  @override
+  String get thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone =>
+      'This will permanently delete this draft listing. This cannot be undone.';
+
+  @override
+  String get discard => 'Discard';
+
+  @override
+  String get failedToBlurPlatesPleaseTryAgain =>
+      'Failed to blur plates. Please try again.';
+
+  @override
+  String get platesBlurredSuccessfully => 'Plates blurred successfully.';
+
+  @override
+  String get inProgress => 'In progress';
+
+  @override
+  String get draftsInProgress => 'Drafts in progress';
+
+  @override
+  String
+  get continueAnyDraftDiscardOneOrStartANewListingWhileKeepingTheOthers =>
+      'Continue any draft, discard one, or start a new listing while keeping the others.';
+
+  @override
+  String get startNewListing => 'Start new listing';
+
+  @override
+  String get startANewListing => 'Start a new listing';
+
+  @override
+  String get noDraftsYetCreateYourFirstCarListingToGetStarted =>
+      'No drafts yet. Create your first car listing to get started.';
+
+  @override
+  String get specsAppliedYearSetStep2FieldsPreFilled =>
+      'Specs applied — year set; step 2 fields pre-filled.';
+
+  @override
+  String get search => 'Search...';
+
+  @override
+  String get loadingVehicleSpecs => 'Loading vehicle specs…';
+
+  @override
+  String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
+      'Spec database unavailable. Restart the app after flutter pub get.';
+
+  @override
+  String get catalogAutoFill => 'Catalog auto-fill';
+
+  @override
+  String get selectAModelYearToLoadMatchingSpecs =>
+      'Select a model year to load matching specs.';
+
+  @override
+  String get modelYear => 'Model year';
+
+  @override
+  String get youCanChangeTheseInStep2 => 'You can change these in step 2.';
+
+  @override
+  String get specsAvailableForThisYear => 'Specs available for this year.';
+
+  @override
+  String get applySpecs => 'Apply specs';
+
+  @override
+  String get specifications => 'Specifications';
+
+  @override
+  String get vinOptional => 'VIN (optional)';
+
+  @override
+  String get vinMustBe17Characters => 'VIN must be 17 characters';
+
+  @override
+  String get setYourPriceAndContactInformation =>
+      'Set your price and contact information';
+
+  @override
+  String get whatsappPhoneNumber => 'WhatsApp/Phone Number';
+
+  @override
+  String get whatsappPhoneNumber2 => 'WhatsApp/Phone Number *';
+
+  @override
+  String get pleaseEnterPhoneNumber => 'Please enter phone number';
+
+  @override
+  String get pleaseEnterAValidPhoneNumber =>
+      'Please enter a valid phone number';
+
+  @override
+  String get addDetailsAboutTheCarConditionFeaturesOrNotes =>
+      'Add details about the car, condition, features, or notes';
+
+  @override
+  String priceSelectedCurrencyOptional(String selectedCurrency) {
+    return 'Price ($selectedCurrency) (optional)';
+  }
+
+  @override
+  String get enterPrice => 'Enter price';
+
+  @override
+  String get invalidPrice => 'Invalid price';
+
+  @override
+  String get priceCannotBeNegative => 'Price cannot be negative';
+
+  @override
+  String get damageCrashPhotos => 'Damage / crash photos';
+
+  @override
+  String
+  get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery =>
+      'Shown next to title status on your listing. Not mixed into the main photo gallery.';
+
+  @override
+  String get addPhotosFirstPlatesArePreparedAutomatically =>
+      'Add photos first — plates are prepared automatically';
+
+  @override
+  String get photos => 'Photos';
+
+  @override
+  String get tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing =>
+      'Tap the star on a photo to set it as the cover image shown first in your listing.';
+
+  @override
+  String get cover => 'Cover';
+
+  @override
+  String get blurringLicensePlatesInTheBackground =>
+      'Blurring license plates in the background…';
+
+  @override
+  String get plateBlurReadyYouCanChooseLater =>
+      'Plate blur ready — you can choose later';
+
+  @override
+  String get videos => 'Videos';
+
+  @override
+  String get addMoreVideos => 'Add More Videos';
+
+  @override
+  String get addVideos => 'Add Videos';
+
+  @override
+  String get stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady =>
+      'Still blurring plates in the background. Photos will appear here when ready.';
+
+  @override
+  String get blurredPhotos => 'Blurred photos';
+
+  @override
+  String get blurredDamagePhotos => 'Blurred damage photos';
+
+  @override
+  String get noPhotosAvailable => 'No photos available.';
+
+  @override
+  String get blurredPhotosAreNotReadyYet => 'Blurred photos are not ready yet.';
+
+  @override
+  String get blurPlatesNow => 'Blur plates now';
+
+  @override
+  String get originalPhotos => 'Original photos';
+
+  @override
+  String get originalDamagePhotos => 'Original damage photos';
+
+  @override
+  String get chooseWhetherToPublishPhotosWithBlurredPlates =>
+      'Choose whether to publish photos with blurred plates';
+
+  @override
+  String get blurPlates => 'Blur plates?';
+
+  @override
+  String get yesBlurPlates => 'Yes, blur plates';
+
+  @override
+  String get noKeepOriginal => 'No, keep original';
+
+  @override
+  String get yesUseBlurredPhotos => 'Yes, use blurred photos';
+
+  @override
+  String get hideLicensePlatesOnYourListing =>
+      'Hide license plates on your listing';
+
+  @override
+  String get noKeepOriginalPhotos => 'No, keep original photos';
+
+  @override
+  String get publishThePhotosExactlyAsYouUploadedThem =>
+      'Publish the photos exactly as you uploaded them';
+
+  @override
+  String get pleaseChooseWhetherToBlurPlates =>
+      'Please choose whether to blur plates';
+
+  @override
+  String get pleaseWaitForPlateBlurringToFinish =>
+      'Please wait for plate blurring to finish';
+
+  @override
+  String get blurPlatesFirstOrChooseToKeepOriginals =>
+      'Blur plates first, or choose to keep originals';
+
+  @override
+  String get callSeller => 'Call Seller';
+
+  @override
+  String get privateSeller => 'Private seller';
+
+  @override
+  String get dealer => 'Dealer';
+
+  @override
+  String get verified => 'Verified';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get tapToOpenDealershipPage => 'Tap to open dealership page';
+
+  @override
+  String get cannotAddToComparison => 'Cannot add to comparison';
+
+  @override
+  String get dealershipLogo => 'Dealership logo';
+
+  @override
+  String get coverImage => 'Cover image';
+
+  @override
+  String get openingHours => 'Opening hours';
+
+  @override
+  String get youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin =>
+      'You can also review your contact details, location, description, and map pin.';
+
+  @override
+  String get gotIt => 'Got it';
+
+  @override
+  String get later => 'Later';
+
+  @override
+  String get completeProfile => 'Complete profile';
+
+  @override
+  String get searchByBrand => 'Search by Brand';
+
+  @override
+  String get searchByModel => 'Search by Model';
+
+  @override
+  String get searchBrands => 'Search brands...';
+
+  @override
+  String get searchModels => 'Search models...';
+
+  @override
+  String get listingMarkedAsSold => 'Listing marked as sold';
+
+  @override
+  String get listingIsAvailableAgain => 'Listing is available again';
+
+  @override
+  String get setUpYourDealerPage => 'Set up your dealer page';
+
+  @override
+  String get yourDealershipIsApproved => 'Your dealership is approved!';
+
+  @override
+  String
+  get yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT =>
+      'Your dealership is approved. Fill in the information on this page to finish setting up the dealer page buyers will see.';
+
+  @override
+  String
+  get completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT =>
+      'Complete your public dealer page so buyers can recognize your business and know when to contact you.';
+
+  @override
+  String get switchToUSD => 'Switch to USD';
+
+  @override
+  String get switchToIQD => 'Switch to IQD';
+
+  @override
+  String get continueAction => 'Continue';
 }

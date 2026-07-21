@@ -11,12 +11,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilterSectionHeader(
-              title: _trLegacyText(
-                context,
-                'Specifications',
-                ar: 'المواصفات',
-                ku: 'سپێسەکان',
-              ),
+              title: AppLocalizations.of(context)!.specifications,
               valueSummary: '',
             ),
             const SizedBox(height: 12),
@@ -37,7 +32,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
                     (c) => DropdownMenuItem(
                       value: c,
                       child: Text(
-                        '${_localizeDigitsGlobal(context, c)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}',
+                        '${_localizeDigitsGlobal(context, c)} ${AppLocalizations.of(context)!.labelCylinders}',
                       ),
                     ),
                   )
@@ -75,7 +70,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
                     (s) => DropdownMenuItem(
                       value: s,
                       child: Text(
-                        '${_localizeDigitsGlobal(context, s)} ${_trLegacyText(context, 'seats', ar: 'مقاعد', ku: 'دانیشتن')}',
+                        '${_localizeDigitsGlobal(context, s)} ${AppLocalizations.of(context)!.seats}',
                       ),
                     ),
                   )
@@ -342,12 +337,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
           style: TextStyle(color: filterDialogStyle(context).onSurface),
           decoration: filterFieldDecoration(
             style,
-            _trLegacyText(
-              context,
-              'VIN (optional)',
-              ar: 'رقم الهيكل (اختياري)',
-              ku: 'ژمارەی شاسی (ئارەزوومەندانە)',
-            ),
+            AppLocalizations.of(context)!.vinOptional,
           ).copyWith(
             hintText: 'e.g. 1HGBH41JXMN109186',
           ),
@@ -359,12 +349,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
             final trimmed = (v ?? '').trim();
             if (trimmed.isEmpty) return null;
             if (trimmed.length != 17) {
-              return _trLegacyText(
-                context,
-                'VIN must be 17 characters',
-                ar: 'رقم الهيكل يجب أن يكون 17 حرفاً',
-                ku: 'ژمارەی شاسی دەبێت ١٧ پیت بێت',
-              );
+              return AppLocalizations.of(context)!.vinMustBe17Characters;
             }
             return null;
           },

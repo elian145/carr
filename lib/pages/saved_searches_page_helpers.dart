@@ -68,7 +68,7 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
       chips.add(
         _buildFilterChip(
           context,
-          trLegacyText(context, 'Plate type', ar: 'نوع اللوحة', ku: 'جۆری پڵەیت'),
+          AppLocalizations.of(context)!.labelPlateType,
           translatePlateTypeLabel(context, filters['plate_type'].toString()),
         ),
       );
@@ -77,7 +77,7 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
       chips.add(
         _buildFilterChip(
           context,
-          trLegacyText(context, 'Plate city', ar: 'مدينة اللوحة', ku: 'شاری پڵەیت'),
+          AppLocalizations.of(context)!.labelPlateCity,
           tr(filters['plate_city'].toString()),
         ),
       );

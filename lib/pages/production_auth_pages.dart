@@ -21,9 +21,9 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../theme_provider.dart';
+import '../shared/i18n/legacy_inline_text.dart';
 
 part 'production_favorites_page.dart';
 part 'production_chat_list_page.dart';

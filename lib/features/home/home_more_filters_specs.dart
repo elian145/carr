@@ -14,12 +14,7 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
       _moreFiltersDropdownField(
         context: context,
         style: style,
-        label: _trLegacyText(
-          context,
-          'Plate city',
-          ar: 'مدينة اللوحة',
-          ku: 'شاری پڵەیت',
-        ),
+        label: AppLocalizations.of(context)!.labelPlateCity,
         value: selectedPlateCity ?? '',
         narrowMenu: narrowMenu,
         items: [
@@ -54,12 +49,7 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
                           _moreFiltersDropdownField(
                             context: context,
                             style: style,
-                            label: _trLegacyText(
-                              context,
-                              'Plate type',
-                              ar: 'نوع اللوحة',
-                              ku: 'جۆری پڵەیت',
-                            ),
+                            label: AppLocalizations.of(context)!.labelPlateType,
                             value: selectedPlateType ?? '',
                             narrowMenu: true,
                             items: [

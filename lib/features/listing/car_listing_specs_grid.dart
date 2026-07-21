@@ -14,7 +14,6 @@ import '../../l10n/app_localizations.dart';
 import '../../models/online_spec_variant.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/i18n/digits.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/i18n/listing_field_labels.dart';
 import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';

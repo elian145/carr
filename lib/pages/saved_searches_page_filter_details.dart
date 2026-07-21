@@ -172,12 +172,7 @@ mixin _SavedSearchesPageFilterDetails on _SavedSearchesPageHelpers {
     if (filters['damaged_parts'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          trLegacyText(
-            context,
-            'Damaged Parts',
-            ar: 'الأجزاء التالفة',
-            ku: 'پارچە زیان‌لێکەوتووەکان',
-          ),
+          AppLocalizations.of(context)!.damagedParts,
           filters['damaged_parts'].toString(),
         ),
       );
@@ -193,12 +188,7 @@ mixin _SavedSearchesPageFilterDetails on _SavedSearchesPageHelpers {
     if (filters['owners'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          trLegacyText(
-            context,
-            'Owners',
-            ar: 'المالكون',
-            ku: 'خاوەنەکان',
-          ),
+          AppLocalizations.of(context)!.owners,
           filters['owners'].toString(),
         ),
       );
@@ -211,12 +201,7 @@ mixin _SavedSearchesPageFilterDetails on _SavedSearchesPageHelpers {
     if (filters['accident_history'] != null) {
       filterItems.add(
         _buildFilterDetailItem(
-          trLegacyText(
-            context,
-            'Accident History',
-            ar: 'سجل الحوادث',
-            ku: 'مێژووی ڕووداو',
-          ),
+          AppLocalizations.of(context)!.accidentHistory,
           tr(filters['accident_history'].toString()),
         ),
       );

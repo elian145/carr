@@ -39,7 +39,6 @@ import '../../shared/auth/phone_verification_gate.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/errors/user_error_text.dart';
 import '../../shared/i18n/digits.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/i18n/listing_field_labels.dart';
 import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
@@ -76,6 +75,7 @@ import '../../shared/ui/brand_logo_image.dart';
 import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
+import '../../shared/i18n/legacy_inline_text.dart';
 
 part 'sell_car_page_fields.dart';
 part 'sell_car_page_draft_persist.dart';
@@ -261,13 +261,6 @@ void _dismissAnyKeyboard([BuildContext? context]) =>
     dismissAnyKeyboard(context);
 
 void _debugLog(String message) => appLog(message);
-
-String _trLegacyText(
-  BuildContext context,
-  String en, {
-  String? ar,
-  String? ku,
-}) => trLegacyText(context, en, ar: ar, ku: ku);
 
 String _buildFullImageUrl(String rel) => buildLegacyFullImageUrl(rel);
 

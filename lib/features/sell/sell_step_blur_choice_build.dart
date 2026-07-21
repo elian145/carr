@@ -198,12 +198,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      _trLegacyText(
-                        context,
-                        'Still blurring plates in the background. Photos will appear here when ready.',
-                        ar: 'ما زال تمويه اللوحات يعمل في الخلفية. ستظهر الصور هنا عند الجاهزية.',
-                        ku: 'هێشتا شاردنەوەی تابلۆ لە پاشبنەمادا بەردەوامە. کاتێک ئامادە بوو وێنەکان لێرە دەردەکەون.',
-                      ),
+                      AppLocalizations.of(context)!.stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady,
                       style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                     ),
                   ),
@@ -212,41 +207,21 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
             )
           else if (blurReady) ...[
             labeledGrid(
-              _trLegacyText(
-                context,
-                'Blurred photos',
-                ar: 'الصور المموهة',
-                ku: 'وێنەی شاردراو',
-              ),
+              AppLocalizations.of(context)!.blurredPhotos,
               blurred,
             ),
             labeledGrid(
-              _trLegacyText(
-                context,
-                'Blurred damage photos',
-                ar: 'صور الضرر المموهة',
-                ku: 'وێنەی زیانی شاردراو',
-              ),
+              AppLocalizations.of(context)!.blurredDamagePhotos,
               damageBlurred,
             ),
             if (!showMainBlurred && !showDamageBlurred)
               Text(
-                _trLegacyText(
-                  context,
-                  'No photos available.',
-                  ar: 'لا توجد صور.',
-                  ku: 'هیچ وێنەیەک بەردەست نییە.',
-                ),
+                AppLocalizations.of(context)!.noPhotosAvailable,
                 style: TextStyle(color: Colors.grey[700], fontSize: 13),
               ),
           ] else ...[
             Text(
-              _trLegacyText(
-                context,
-                'Blurred photos are not ready yet.',
-                ar: 'الصور المموهة غير جاهزة بعد.',
-                ku: 'وێنەی شاردراو هێشتا ئامادە نییە.',
-              ),
+              AppLocalizations.of(context)!.blurredPhotosAreNotReadyYet,
               style: TextStyle(color: Colors.grey[700], fontSize: 13),
             ),
             const SizedBox(height: 10),
@@ -256,12 +231,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 onPressed: _retryBackgroundBlur,
                 icon: const Icon(Icons.refresh),
                 label: Text(
-                  _trLegacyText(
-                    context,
-                    'Blur plates now',
-                    ar: 'موّه اللوحات الآن',
-                    ku: 'ئێستا تابلۆ بشارەوە',
-                  ),
+                  AppLocalizations.of(context)!.blurPlatesNow,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kFilterAccentColor,
@@ -284,31 +254,16 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
       children: [
         const SizedBox(height: 16),
         labeledGrid(
-          _trLegacyText(
-            context,
-            'Original photos',
-            ar: 'الصور الأصلية',
-            ku: 'وێنەی ڕەسەن',
-          ),
+          AppLocalizations.of(context)!.originalPhotos,
           originals,
         ),
         labeledGrid(
-          _trLegacyText(
-            context,
-            'Original damage photos',
-            ar: 'صور الضرر الأصلية',
-            ku: 'وێنەی زیانی ڕەسەن',
-          ),
+          AppLocalizations.of(context)!.originalDamagePhotos,
           damageOriginals,
         ),
         if (!showMainOriginals && !showDamageOriginals)
           Text(
-            _trLegacyText(
-              context,
-              'No photos available.',
-              ar: 'لا توجد صور.',
-              ku: 'هیچ وێنەیەک بەردەست نییە.',
-            ),
+            AppLocalizations.of(context)!.noPhotosAvailable,
             style: TextStyle(color: Colors.grey[700], fontSize: 13),
           ),
       ],
@@ -357,12 +312,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _trLegacyText(
-                    context,
-                    'License plates',
-                    ar: 'لوحات المركبات',
-                    ku: 'تابلۆی ئۆتۆمبێل',
-                  ),
+                  AppLocalizations.of(context)!.licensePlates,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -371,12 +321,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _trLegacyText(
-                    context,
-                    'Choose whether to publish photos with blurred plates',
-                    ar: 'اختر ما إذا كنت تريد نشر الصور مع لوحات مموهة',
-                    ku: 'هەڵبژێرە ئایا وێنەکان بە تابلۆی شاردراو بڵاوبکرێنەوە',
-                  ),
+                  AppLocalizations.of(context)!.chooseWhetherToPublishPhotosWithBlurredPlates,
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   textAlign: TextAlign.center,
                 ),
@@ -389,64 +334,29 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 FilterSectionHeader(
-                  title: _trLegacyText(
-                    context,
-                    'Blur plates?',
-                    ar: 'تمويه اللوحات؟',
-                    ku: 'تابلۆ بشاردرێتەوە؟',
-                  ),
+                  title: AppLocalizations.of(context)!.blurPlates,
                   requiredField: true,
                   valueSummary: _useBlurredPlates == null
                       ? AppLocalizations.of(context)!.tapToSelect
                       : (_useBlurredPlates!
-                          ? _trLegacyText(
-                              context,
-                              'Yes, blur plates',
-                              ar: 'نعم، موّه اللوحات',
-                              ku: 'بەڵێ، تابلۆ بشارەوە',
-                            )
-                          : _trLegacyText(
-                              context,
-                              'No, keep original',
-                              ar: 'لا، أبقِ الأصلية',
-                              ku: 'نەخێر، ڕەسەن بهێڵەوە',
-                            )),
+                          ? AppLocalizations.of(context)!.yesBlurPlates
+                          : AppLocalizations.of(context)!.noKeepOriginal),
                 ),
                 const SizedBox(height: 12),
                 _choiceTile(
                   value: true,
                   selected: _useBlurredPlates == true,
                   icon: Icons.blur_on,
-                  title: _trLegacyText(
-                    context,
-                    'Yes, use blurred photos',
-                    ar: 'نعم، استخدم الصور المموهة',
-                    ku: 'بەڵێ، وێنەی شاردراو بەکاربهێنە',
-                  ),
-                  subtitle: _trLegacyText(
-                    context,
-                    'Hide license plates on your listing',
-                    ar: 'إخفاء لوحات المركبات في إعلانك',
-                    ku: 'تابلۆ لە ڕیکلامەکەتدا بشارەوە',
-                  ),
+                  title: AppLocalizations.of(context)!.yesUseBlurredPhotos,
+                  subtitle: AppLocalizations.of(context)!.hideLicensePlatesOnYourListing,
                 ),
                 const SizedBox(height: 10),
                 _choiceTile(
                   value: false,
                   selected: _useBlurredPlates == false,
                   icon: Icons.photo_outlined,
-                  title: _trLegacyText(
-                    context,
-                    'No, keep original photos',
-                    ar: 'لا، أبقِ الصور الأصلية',
-                    ku: 'نەخێر، وێنەی ڕەسەن بهێڵەوە',
-                  ),
-                  subtitle: _trLegacyText(
-                    context,
-                    'Publish the photos exactly as you uploaded them',
-                    ar: 'انشر الصور كما رفعتها تماماً',
-                    ku: 'وێنەکان وەک خۆیان بڵاوبکەرەوە',
-                  ),
+                  title: AppLocalizations.of(context)!.noKeepOriginalPhotos,
+                  subtitle: AppLocalizations.of(context)!.publishThePhotosExactlyAsYouUploadedThem,
                 ),
                 _previewSection(
                   parent: parent,
@@ -471,12 +381,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      _trLegacyText(
-                        context,
-                        'Please choose whether to blur plates',
-                        ar: 'يرجى اختيار ما إذا كنت تريد تمويه اللوحات',
-                        ku: 'تکایە هەڵبژێرە ئایا تابلۆ بشاردرێتەوە',
-                      ),
+                      AppLocalizations.of(context)!.pleaseChooseWhetherToBlurPlates,
                     ),
                     backgroundColor: Colors.red,
                   ),
@@ -487,12 +392,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      _trLegacyText(
-                        context,
-                        'Please wait for plate blurring to finish',
-                        ar: 'يرجى انتظار انتهاء تمويه اللوحات',
-                        ku: 'تکایە چاوەڕوانی تەواوبوونی شاردنەوەی تابلۆ بە',
-                      ),
+                      AppLocalizations.of(context)!.pleaseWaitForPlateBlurringToFinish,
                     ),
                     backgroundColor: Colors.orange,
                   ),
@@ -503,12 +403,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      _trLegacyText(
-                        context,
-                        'Blur plates first, or choose to keep originals',
-                        ar: 'موّه اللوحات أولاً، أو اختر الإبقاء على الأصلية',
-                        ku: 'سەرەتا تابلۆ بشارەوە، یان ڕەسەن بهێڵەوە',
-                      ),
+                      AppLocalizations.of(context)!.blurPlatesFirstOrChooseToKeepOriginals,
                     ),
                     backgroundColor: Colors.red,
                   ),

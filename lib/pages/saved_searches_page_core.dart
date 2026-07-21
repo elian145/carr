@@ -93,12 +93,7 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                             index,
                             item['notify'] != true,
                           ),
-                          tooltip: trLegacyText(
-                            context,
-                            'Alerts',
-                            ar: 'التنبيهات',
-                            ku: 'ئاگادارکردنەوە',
-                          ),
+                          tooltip: AppLocalizations.of(context)!.alerts,
                         ),
                         IconButton(
                           icon: Icon(Icons.search, color: Colors.green),

@@ -7,7 +7,7 @@ import '../../services/auth_service.dart';
 import '../../services/deep_link_service.dart';
 import '../../services/push_notification_service.dart';
 import '../../shared/debug/app_log.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
+import '../../l10n/app_localizations.dart';
 
 final AppRouteTracker appRouteTracker = AppRouteTracker();
 
@@ -117,32 +117,17 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
     final missing = <String>[];
     if ((user['profile_picture'] ?? '').toString().trim().isEmpty) {
       missing.add(
-        trLegacyText(
-          context,
-          'Dealership logo',
-          ar: 'شعار الوكالة',
-          ku: 'لۆگۆی ناوەندی فرۆشتن',
-        ),
+        AppLocalizations.of(context)!.dealershipLogo,
       );
     }
     if ((user['dealership_cover_picture'] ?? '').toString().trim().isEmpty) {
       missing.add(
-        trLegacyText(
-          context,
-          'Cover image',
-          ar: 'صورة الغلاف',
-          ku: 'وێنەی کاڤەر',
-        ),
+        AppLocalizations.of(context)!.coverImage,
       );
     }
     if (!_hasOpeningHours(user['dealership_opening_hours'])) {
       missing.add(
-        trLegacyText(
-          context,
-          'Opening hours',
-          ar: 'ساعات العمل',
-          ku: 'کاتەکانی کردنەوە',
-        ),
+        AppLocalizations.of(context)!.openingHours,
       );
     }
     return missing;
@@ -232,18 +217,9 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
               ),
             ),
             title: Text(
-              trLegacyText(
-                dialogContext,
-                alreadyEditing
-                    ? 'Set up your dealer page'
-                    : 'Your dealership is approved!',
-                ar: alreadyEditing
-                    ? 'أكمل إعداد صفحة وكالتك'
-                    : 'تمت الموافقة على وكالتك!',
-                ku: alreadyEditing
-                    ? 'پەڕەی ناوەندی فرۆشتنەکەت ئامادە بکە'
-                    : 'ناوەندی فرۆشتنەکەت پەسەند کرا!',
-              ),
+              alreadyEditing
+                  ? AppLocalizations.of(dialogContext)!.setUpYourDealerPage
+                  : AppLocalizations.of(dialogContext)!.yourDealershipIsApproved,
               textAlign: TextAlign.center,
             ),
             content: Column(
@@ -251,18 +227,11 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  trLegacyText(
-                    dialogContext,
-                    alreadyEditing
-                        ? 'Your dealership is approved. Fill in the information on this page to finish setting up the dealer page buyers will see.'
-                        : 'Complete your public dealer page so buyers can recognize your business and know when to contact you.',
-                    ar: alreadyEditing
-                        ? 'تمت الموافقة على وكالتك. املأ المعلومات في هذه الصفحة لإكمال إعداد صفحة الوكالة التي سيراها المشترون.'
-                        : 'أكمل صفحة وكالتك العامة ليتمكن المشترون من التعرف على نشاطك ومعرفة أوقات التواصل.',
-                    ku: alreadyEditing
-                        ? 'ناوەندی فرۆشتنەکەت پەسەند کرا. زانیارییەکانی ئەم پەڕەیە پڕ بکەرەوە بۆ تەواوکردنی پەڕەی ناوەندەکەت کە کڕیاران دەیبینن.'
-                        : 'پەڕەی گشتی ناوەندی فرۆشتنەکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.',
-                  ),
+                  alreadyEditing
+                      ? AppLocalizations.of(dialogContext)!
+                          .yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT
+                      : AppLocalizations.of(dialogContext)!
+                          .completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT,
                   style: TextStyle(color: colors.onSurfaceVariant, height: 1.4),
                 ),
                 const SizedBox(height: 16),
@@ -289,12 +258,7 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  trLegacyText(
-                    dialogContext,
-                    'You can also review your contact details, location, description, and map pin.',
-                    ar: 'يمكنك أيضاً مراجعة بيانات التواصل والموقع والوصف ونقطة الخريطة.',
-                    ku: 'هەروەها دەتوانیت زانیاری پەیوەندی، شوێن، وەسف و خاڵی نەخشەکەت پێداچوونەوە بکەیت.',
-                  ),
+                  AppLocalizations.of(dialogContext)!.youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin,
                   style: TextStyle(
                     color: colors.onSurfaceVariant,
                     fontSize: 12,
@@ -309,36 +273,21 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
                   onPressed: () => Navigator.pop(dialogContext, false),
                   icon: const Icon(Icons.check_rounded, size: 18),
                   label: Text(
-                    trLegacyText(
-                      dialogContext,
-                      'Got it',
-                      ar: 'حسناً',
-                      ku: 'باشە',
-                    ),
+                    AppLocalizations.of(dialogContext)!.gotIt,
                   ),
                 )
               else ...[
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
                   child: Text(
-                    trLegacyText(
-                      dialogContext,
-                      'Later',
-                      ar: 'لاحقاً',
-                      ku: 'دواتر',
-                    ),
+                    AppLocalizations.of(dialogContext)!.later,
                   ),
                 ),
                 FilledButton.icon(
                   onPressed: () => Navigator.pop(dialogContext, true),
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: Text(
-                    trLegacyText(
-                      dialogContext,
-                      'Complete profile',
-                      ar: 'إكمال الملف',
-                      ku: 'تەواوکردنی پڕۆفایل',
-                    ),
+                    AppLocalizations.of(dialogContext)!.completeProfile,
                   ),
                 ),
               ],

@@ -216,12 +216,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                             labelColor: labelColor,
                             isLight: isLight,
                             icon: Icons.expand_less,
-                            label: _trLegacyText(
-                              context,
-                              'Less',
-                              ar: 'أقل',
-                              ku: 'کەمتر',
-                            ),
+                            label: AppLocalizations.of(context)!.less,
                             onTap: onToggleBrandsExpanded,
                           );
                         }
@@ -260,12 +255,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                         labelColor: labelColor,
                         isLight: isLight,
                         icon: Icons.more_horiz,
-                        label: _trLegacyText(
-                          context,
-                          'More',
-                          ar: 'المزيد',
-                          ku: 'زیاتر',
-                        ),
+                        label: AppLocalizations.of(context)!.more,
                         onTap: onToggleBrandsExpanded,
                       );
                     }

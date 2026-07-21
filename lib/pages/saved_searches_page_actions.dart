@@ -7,12 +7,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    final successText = trLegacyText(
-      context,
-      'Search applied successfully!',
-      ar: 'تم تطبيق البحث بنجاح!',
-      ku: 'گەڕان بە سەرکەوتوویی جێبەجێ کرا!',
-    );
+    final successText = AppLocalizations.of(context)!.searchAppliedSuccessfully;
 
     final parent = widget.parentState;
     if (parent != null && parent.mounted) {
@@ -68,12 +63,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
                   Icon(Icons.filter_list, color: Color(0xFFFF6B00), size: 20),
                   SizedBox(width: 8),
                   Text(
-                    trLegacyText(
-                      context,
-                      'Applied Filters:',
-                      ar: 'الفلاتر المطبقة:',
-                      ku: 'فلتەرە جێبەجێکراوەکان:',
-                    ),
+                    AppLocalizations.of(context)!.appliedFilters,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -92,12 +82,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
             onPressed: () => Navigator.pop(context),
             style: TextButton.styleFrom(foregroundColor: Colors.grey[400]),
             child: Text(
-              trLegacyText(
-                context,
-                'Close',
-                ar: 'إغلاق',
-                ku: 'داخستن',
-              ),
+              AppLocalizations.of(context)!.close,
             ),
           ),
           ElevatedButton(
@@ -113,12 +98,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
               ),
             ),
             child: Text(
-              trLegacyText(
-                context,
-                'Apply Search',
-                ar: 'تطبيق البحث',
-                ku: 'جێبەجێکردنی گەڕان',
-              ),
+              AppLocalizations.of(context)!.applySearch,
             ),
           ),
         ],

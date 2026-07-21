@@ -30,12 +30,7 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    _trLegacyText(
-                      context,
-                      'Set your price and contact information',
-                      ar: 'حدد السعر ومعلومات التواصل',
-                      ku: 'نرخ و زانیاری پەیوەندی دابنێ',
-                    ),
+                    AppLocalizations.of(context)!.setYourPriceAndContactInformation,
                     style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     textAlign: TextAlign.center,
                   ),
@@ -70,12 +65,7 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
   void _onSellStep3NextPressed() {
     _dismissKeyboard();
     final l = AppLocalizations.of(context)!;
-    final phoneLabel = _trLegacyText(
-      context,
-      'WhatsApp/Phone Number',
-      ar: 'رقم واتساب/الهاتف',
-      ku: 'ژمارەی واتساپ/مۆبایل',
-    );
+    final phoneLabel = AppLocalizations.of(context)!.whatsappPhoneNumber;
     final List<String> missing = [];
 
     if (selectedCity == null || selectedCity!.trim().isEmpty) {

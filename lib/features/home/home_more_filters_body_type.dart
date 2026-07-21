@@ -76,12 +76,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          _trLegacyText(
-                            context,
-                            '${selected.length} selected',
-                            ar: '${selected.length} محدد',
-                            ku: '${selected.length} هەڵبژێردراو',
-                          ),
+                          AppLocalizations.of(context)!.filterSelectedCount((selected.length).toString()),
                           style: TextStyle(color: onPickerMuted, fontSize: 13),
                         ),
                       ),
@@ -201,12 +196,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                           backgroundColor: const Color(0xFFFF6B00),
                         ),
                         child: Text(
-                          _trLegacyText(
-                            context,
-                            'Apply',
-                            ar: 'تطبيق',
-                            ku: 'جێبەجێکردن',
-                          ),
+                          AppLocalizations.of(context)!.apply,
                         ),
                       ),
                     ),

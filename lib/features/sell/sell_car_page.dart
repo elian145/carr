@@ -179,12 +179,7 @@ class _SellCarPageState extends _SellCarPageFields
       case 3:
         return l.pricingContactTitle;
       case 4:
-        return _trLegacyText(
-          context,
-          'License plates',
-          ar: 'لوحات المركبات',
-          ku: 'تابلۆی ئۆتۆمبێل',
-        );
+        return AppLocalizations.of(context)!.licensePlates;
       case 5:
         return l.reviewSubmitTitle;
       default:

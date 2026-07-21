@@ -8,7 +8,6 @@ import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/i18n/legacy_inline_text.dart';
 
 class DealerOnboardingPage extends StatefulWidget {
   const DealerOnboardingPage({super.key});
@@ -89,12 +88,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
             userErrorText(
               context,
               e,
-              fallback: trLegacyText(
-                context,
-                'Unable to select that photo.',
-                ar: 'تعذر اختيار هذه الصورة.',
-                ku: 'نەتوانرا ئەم وێنەیە هەڵبژێردرێت.',
-              ),
+              fallback: AppLocalizations.of(context)!.unableToSelectThatPhoto,
             ),
           ),
         ),
@@ -108,12 +102,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            trLegacyText(
-              context,
-              'Please upload a clear photo of your business.',
-              ar: 'يرجى رفع صورة واضحة لنشاطك التجاري.',
-              ku: 'تکایە وێنەیەکی ڕوونی شوێنی بازرگانییەکەت باربکە.',
-            ),
+            AppLocalizations.of(context)!.pleaseUploadAClearPhotoOfYourBusiness,
           ),
         ),
       );
@@ -144,12 +133,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            trLegacyText(
-              context,
-              'Dealership details submitted. Your application is pending review.',
-              ar: 'تم إرسال تفاصيل الوكالة. طلبك قيد المراجعة.',
-              ku: 'وردەکاری ناوەندی فرۆشتن نێردرا. داواکارییەکەت لە چاوەڕوانی پێداچوونەوەیە.',
-            ),
+            AppLocalizations.of(context)!.dealershipDetailsSubmittedYourApplicationIsPendingReview,
           ),
         ),
       );
@@ -295,12 +279,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
             Icon(Icons.storefront_outlined, size: 46, color: colors.primary),
             const SizedBox(height: 10),
             Text(
-              trLegacyText(
-                context,
-                'Add a photo that helps us verify this dealership',
-                ar: 'أضف صورة تساعدنا في التحقق من هذه الوكالة',
-                ku: 'وێنەیەک زیاد بکە کە یارمەتیمان بدات ئەم ناوەندی فرۆشتنە پشتڕاست بکەینەوە',
-              ),
+              AppLocalizations.of(context)!.addAPhotoThatHelpsUsVerifyThisDealership,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: colors.onSurface,
@@ -321,12 +300,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
           Icon(Icons.verified_rounded, size: 48, color: colors.primary),
           const SizedBox(height: 10),
           Text(
-            trLegacyText(
-              context,
-              'Private dealership photo uploaded',
-              ar: 'تم رفع صورة الوكالة الخاصة',
-              ku: 'وێنەی نهێنی ناوەندی فرۆشتن بارکرا',
-            ),
+            AppLocalizations.of(context)!.privateDealershipPhotoUploaded,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: colors.onSurface,
@@ -356,12 +330,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
           automaticallyImplyLeading: false,
           elevation: 0,
           title: Text(
-            trLegacyText(
-              context,
-              'Create dealership account',
-              ar: 'إنشاء حساب وكالة',
-              ku: 'دروستکردنی هەژماری ناوەندی فرۆشتن',
-            ),
+            AppLocalizations.of(context)!.createDealershipAccount,
           ),
         ),
         body: Container(
@@ -417,12 +386,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  trLegacyText(
-                                    context,
-                                    'Final setup step',
-                                    ar: 'الخطوة الأخيرة للإعداد',
-                                    ku: 'کۆتا هەنگاوی ڕێکخستن',
-                                  ),
+                                  AppLocalizations.of(context)!.finalSetupStep,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -434,12 +398,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            trLegacyText(
-                              context,
-                              'Build your dealership presence',
-                              ar: 'أنشئ حضور وكالتك',
-                              ku: 'ناسنامەی ناوەندی فرۆشتنەکەت دروست بکە',
-                            ),
+                            AppLocalizations.of(context)!.buildYourDealershipPresence,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w900,
@@ -448,12 +407,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            trLegacyText(
-                              context,
-                              'Add accurate business details so buyers can trust and contact your dealership.',
-                              ar: 'أضف معلومات دقيقة عن نشاطك ليتمكن المشترون من الوثوق بوكالتك والتواصل معها.',
-                              ku: 'زانیاری وردی بازرگانی زیاد بکە بۆ ئەوەی کڕیاران متمانەت پێ بکەن و پەیوەندیت پێوە بکەن.',
-                            ),
+                            AppLocalizations.of(context)!.addAccurateBusinessDetailsSoBuyersCanTrustAndContactYourDealership,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.88),
                               height: 1.45,
@@ -470,12 +424,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  trLegacyText(
-                                    context,
-                                    'Review usually takes 1–2 business days',
-                                    ar: 'تستغرق المراجعة عادةً من يوم إلى يومي عمل',
-                                    ku: 'پێداچوونەوە زۆرجار ١–٢ ڕۆژی کار دەخایەنێت',
-                                  ),
+                                  AppLocalizations.of(context)!.reviewUsuallyTakes12BusinessDays,
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 13,
@@ -512,12 +461,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    trLegacyText(
-                                      context,
-                                      'Changes requested',
-                                      ar: 'التغييرات المطلوبة',
-                                      ku: 'گۆڕانکارییە داواکراوەکان',
-                                    ),
+                                    AppLocalizations.of(context)!.changesRequested,
                                     style: TextStyle(
                                       color: colors.onErrorContainer,
                                       fontWeight: FontWeight.w800,
@@ -542,36 +486,16 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                     _sectionCard(
                       context,
                       icon: Icons.storefront_rounded,
-                      title: trLegacyText(
-                        context,
-                        'Business information',
-                        ar: 'معلومات النشاط',
-                        ku: 'زانیاری بازرگانی',
-                      ),
-                      subtitle: trLegacyText(
-                        context,
-                        'These details will appear on your public dealership profile.',
-                        ar: 'ستظهر هذه المعلومات في الملف العام لوكالتك.',
-                        ku: 'ئەم زانیارییانە لە پڕۆفایلی گشتی ناوەندەکەت دەردەکەون.',
-                      ),
+                      title: AppLocalizations.of(context)!.businessInformation,
+                      subtitle: AppLocalizations.of(context)!.theseDetailsWillAppearOnYourPublicDealershipProfile,
                       children: [
                         TextFormField(
                           controller: _dealershipNameController,
                           textCapitalization: TextCapitalization.words,
                           decoration: _fieldDecoration(
                             context,
-                            label: trLegacyText(
-                              context,
-                              'Dealership name',
-                              ar: 'اسم الوكالة',
-                              ku: 'ناوی ناوەندی فرۆشتن',
-                            ),
-                            hint: trLegacyText(
-                              context,
-                              'Your registered or trading name',
-                              ar: 'الاسم المسجل أو التجاري',
-                              ku: 'ناوی تۆمارکراو یان بازرگانی',
-                            ),
+                            label: AppLocalizations.of(context)!.dealershipName,
+                            hint: AppLocalizations.of(context)!.yourRegisteredOrTradingName,
                             icon: Icons.badge_outlined,
                             required: true,
                           ),
@@ -585,18 +509,8 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                           keyboardType: TextInputType.phone,
                           decoration: _fieldDecoration(
                             context,
-                            label: trLegacyText(
-                              context,
-                              'Business phone',
-                              ar: 'هاتف النشاط',
-                              ku: 'تەلەفۆنی بازرگانی',
-                            ),
-                            hint: trLegacyText(
-                              context,
-                              'A number buyers can reach',
-                              ar: 'رقم يمكن للمشترين التواصل معه',
-                              ku: 'ژمارەیەک کە کڕیاران بتوانن پەیوەندی پێوە بکەن',
-                            ),
+                            label: AppLocalizations.of(context)!.businessPhone,
+                            hint: AppLocalizations.of(context)!.aNumberBuyersCanReach,
                             icon: Icons.phone_outlined,
                             required: true,
                           ),
@@ -610,18 +524,8 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                           textCapitalization: TextCapitalization.words,
                           decoration: _fieldDecoration(
                             context,
-                            label: trLegacyText(
-                              context,
-                              'Dealership location',
-                              ar: 'موقع الوكالة',
-                              ku: 'شوێنی ناوەندی فرۆشتن',
-                            ),
-                            hint: trLegacyText(
-                              context,
-                              'City, district, and street',
-                              ar: 'المدينة والمنطقة والشارع',
-                              ku: 'شار، گەڕەک و شەقام',
-                            ),
+                            label: AppLocalizations.of(context)!.dealershipLocation,
+                            hint: AppLocalizations.of(context)!.cityDistrictAndStreet,
                             icon: Icons.location_on_outlined,
                             required: true,
                           ),
@@ -637,18 +541,8 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                           textCapitalization: TextCapitalization.sentences,
                           decoration: _fieldDecoration(
                             context,
-                            label: trLegacyText(
-                              context,
-                              'About your dealership (optional)',
-                              ar: 'عن وكالتك (اختياري)',
-                              ku: 'دەربارەی ناوەندی فرۆشتنەکەت (ئارەزوومەندانە)',
-                            ),
-                            hint: trLegacyText(
-                              context,
-                              'Describe your inventory, experience, and customer service',
-                              ar: 'صف مخزونك وخبرتك وخدمة العملاء',
-                              ku: 'ئۆتۆمبێلەکان، ئەزموون و خزمەتگوزارییەکانت باس بکە',
-                            ),
+                            label: AppLocalizations.of(context)!.aboutYourDealershipOptional,
+                            hint: AppLocalizations.of(context)!.describeYourInventoryExperienceAndCustomerService,
                             icon: Icons.notes_rounded,
                           ),
                         ),
@@ -658,18 +552,8 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                     _sectionCard(
                       context,
                       icon: Icons.add_a_photo_outlined,
-                      title: trLegacyText(
-                        context,
-                        'Dealership verification photo',
-                        ar: 'صورة التحقق من الوكالة',
-                        ku: 'وێنەی پشتڕاستکردنەوەی ناوەندی فرۆشتن',
-                      ),
-                      subtitle: trLegacyText(
-                        context,
-                        'Required · Used privately by our review team and never shown on your public profile.',
-                        ar: 'مطلوب · يستخدمها فريق المراجعة بشكل خاص ولن تظهر أبداً في ملفك العام.',
-                        ku: 'پێویستە · تەنها تیمی پێداچوونەوە بە نهێنی بەکاری دەهێنێت و لە پڕۆفایلی گشتی نیشان نادرێت.',
-                      ),
+                      title: AppLocalizations.of(context)!.dealershipVerificationPhoto,
+                      subtitle: AppLocalizations.of(context)!.requiredUsedPrivatelyByOurReviewTeamAndNeverShownOnYourPublicProfile,
                       children: [
                         Container(
                           height: 190,
@@ -705,18 +589,8 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                             label: Text(
                               _businessPhotoBytes == null &&
                                       !_hasExistingVerificationPhoto
-                                  ? trLegacyText(
-                                      context,
-                                      'Choose verification photo',
-                                      ar: 'اختر صورة التحقق',
-                                      ku: 'وێنەی پشتڕاستکردنەوە هەڵبژێرە',
-                                    )
-                                  : trLegacyText(
-                                      context,
-                                      'Replace photo',
-                                      ar: 'استبدال الصورة',
-                                      ku: 'گۆڕینی وێنە',
-                                    ),
+                                  ? AppLocalizations.of(context)!.chooseVerificationPhoto
+                                  : AppLocalizations.of(context)!.replacePhoto,
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colors.primary,
@@ -734,12 +608,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          trLegacyText(
-                            context,
-                            'Upload one clear, recent photo of the dealership storefront, cars for sale, showroom, or office—anything that helps our team confirm the business is genuine.',
-                            ar: 'ارفع صورة حديثة وواضحة لواجهة الوكالة أو السيارات المعروضة أو صالة العرض أو المكتب—أي صورة تساعد فريقنا على التأكد من أن النشاط حقيقي.',
-                            ku: 'یەک وێنەی ڕوون و نوێی پێشەوەی ناوەندی فرۆشتن، ئۆتۆمبێلەکانی فرۆشتن، ناوەوە یان ئۆفیس باربکە—هەر شتێک کە یارمەتی تیمەکەمان بدات ڕاستیی بازرگانییەکە پشتڕاست بکاتەوە.',
-                          ),
+                          AppLocalizations.of(context)!.uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colors.onSurfaceVariant,
                             height: 1.4,
@@ -764,18 +633,8 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                             : const Icon(Icons.send_rounded),
                         label: Text(
                           _loading
-                              ? trLegacyText(
-                                  context,
-                                  'Submitting…',
-                                  ar: 'جارٍ الإرسال…',
-                                  ku: 'دەنێردرێت…',
-                                )
-                              : trLegacyText(
-                                  context,
-                                  'Submit for review',
-                                  ar: 'إرسال للمراجعة',
-                                  ku: 'ناردن بۆ پێداچوونەوە',
-                                ),
+                              ? AppLocalizations.of(context)!.submitting
+                              : AppLocalizations.of(context)!.submitForReview,
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: colors.primary,
@@ -807,12 +666,7 @@ class _DealerOnboardingPageState extends State<DealerOnboardingPage> {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            trLegacyText(
-                              context,
-                              'Your business information is handled securely.',
-                              ar: 'يتم التعامل مع معلومات نشاطك بأمان.',
-                              ku: 'زانیاری بازرگانییەکانت بە پارێزراوی بەڕێوەدەبرێن.',
-                            ),
+                            AppLocalizations.of(context)!.yourBusinessInformationIsHandledSecurely,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colors.onSurfaceVariant,

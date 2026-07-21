@@ -78,12 +78,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                         },
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: _trLegacyText(
-                            context,
-                            'Search...',
-                            ar: 'بحث...',
-                            ku: 'گەڕان...',
-                          ),
+                          hintText: AppLocalizations.of(context)!.search,
                           hintStyle: const TextStyle(color: Colors.white60),
                           prefixIcon: const Icon(
                             Icons.search,
@@ -138,11 +133,11 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                           } else if (lowerTitle.contains('seating') &&
                               isNumeric) {
                             displayText =
-                                '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'seats', ar: 'مقاعد', ku: 'دانیشتن')}';
+                                '${_localizeDigitsGlobal(context, value)} ${AppLocalizations.of(context)!.seats}';
                           } else if (lowerTitle.contains('cylinder') &&
                               isNumeric) {
                             displayText =
-                                '${_localizeDigitsGlobal(context, value)} ${_trLegacyText(context, 'cylinders', ar: 'أسطوانات', ku: 'سیلەندەر')}';
+                                '${_localizeDigitsGlobal(context, value)} ${AppLocalizations.of(context)!.labelCylinders}';
                           } else if (lowerTitle.contains('region') &&
                               isValidCarRegionSpecCode(value)) {
                             displayText = carRegionSpecDisplayLabelLocalized(
@@ -298,12 +293,7 @@ mixin _SellStep1Pickers on _SellStep1PickersTrim {
                       },
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: _trLegacyText(
-                          context,
-                          'Search...',
-                          ar: 'بحث...',
-                          ku: 'گەڕان...',
-                        ),
+                        hintText: AppLocalizations.of(context)!.search,
                         hintStyle: const TextStyle(color: Colors.white60),
                         prefixIcon: const Icon(
                           Icons.search,

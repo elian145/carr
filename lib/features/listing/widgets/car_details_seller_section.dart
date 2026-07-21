@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../shared/i18n/legacy_inline_text.dart';
 import '../../../shared/media/media_url.dart';
 import '../../../theme_provider.dart';
 import '../car_details_listing_fields.dart';
@@ -77,13 +76,8 @@ class CarDetailsSellerSection extends StatelessWidget {
         accountType == 'dealer' && dealerStatus == 'approved';
     final bool isDealerSeller = accountType == 'dealer';
     final String sellerTypeLabel = isDealerSeller
-        ? trLegacyText(context, 'Dealership', ar: 'معرض', ku: 'نمایشگا')
-        : trLegacyText(
-            context,
-            'Private seller',
-            ar: 'بائع فردي',
-            ku: 'فرۆشیاری تاک',
-          );
+        ? AppLocalizations.of(context)!.labelDealership
+        : AppLocalizations.of(context)!.privateSeller;
     final String dealerPublicId =
         (seller['id'] ?? seller['user_id'] ?? '').toString().trim();
     final bool canOpenDealerPage =
@@ -96,12 +90,7 @@ class CarDetailsSellerSection extends StatelessWidget {
                     ? name
                     : (fullName.isNotEmpty
                           ? fullName
-                          : trLegacyText(
-                              context,
-                              'Dealer',
-                              ar: 'وكيل',
-                              ku: 'وەکیل',
-                            ))))
+                          : AppLocalizations.of(context)!.dealer)))
         : sellerTypeLabel;
 
     final String locationShown =
@@ -258,12 +247,7 @@ class CarDetailsSellerSection extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            trLegacyText(
-                              context,
-                              'Verified',
-                              ar: 'موثّق',
-                              ku: 'پشتڕاستکراوە',
-                            ),
+                            AppLocalizations.of(context)!.verified,
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF4CAF50),
@@ -278,24 +262,19 @@ class CarDetailsSellerSection extends StatelessWidget {
               if (isDealerSeller) ...[
                 detailRow(
                   Icons.phone_outlined,
-                  trLegacyText(context, 'Phone', ar: 'الهاتف', ku: 'تەلەفۆن'),
+                  AppLocalizations.of(context)!.labelPhone,
                   phone,
                 ),
                 detailRow(
                   Icons.email_outlined,
-                  trLegacyText(
-                    context,
-                    'Email',
-                    ar: 'البريد الإلكتروني',
-                    ku: 'ئیمەیل',
-                  ),
+                  AppLocalizations.of(context)!.email,
                   email,
                 ),
               ],
               if (isDealerSeller)
                 detailRow(
                   Icons.location_on_outlined,
-                  trLegacyText(context, 'Location', ar: 'الموقع', ku: 'شوێن'),
+                  AppLocalizations.of(context)!.labelLocation,
                   locationShown,
                 ),
               if (isDealerSeller)
@@ -308,12 +287,7 @@ class CarDetailsSellerSection extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
-                    trLegacyText(
-                      context,
-                      'Tap to open dealership page',
-                      ar: 'اضغط لفتح صفحة المعرض',
-                      ku: 'کرتە بکە بۆ کردنەوەی پەڕەی نمایشگا',
-                    ),
+                    AppLocalizations.of(context)!.tapToOpenDealershipPage,
                     style: TextStyle(
                       fontSize: 12,
                       color: isLight ? Colors.black54 : Colors.white60,

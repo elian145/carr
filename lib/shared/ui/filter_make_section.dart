@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import 'brand_logo_image.dart';
 import 'filter_card_sections.dart';
 
@@ -185,12 +184,7 @@ class FilterMakeSection extends StatelessWidget {
                           labelColor: labelColor,
                           isLight: isLight,
                           icon: Icons.expand_less,
-                          label: trLegacyText(
-                            context,
-                            'Less',
-                            ar: 'أقل',
-                            ku: 'کەمتر',
-                          ),
+                          label: AppLocalizations.of(context)!.less,
                           onTap: onToggleBrandsExpanded,
                         );
                       }
@@ -221,12 +215,7 @@ class FilterMakeSection extends StatelessWidget {
                       labelColor: labelColor,
                       isLight: isLight,
                       icon: Icons.more_horiz,
-                      label: trLegacyText(
-                        context,
-                        'More',
-                        ar: 'المزيد',
-                        ku: 'زیاتر',
-                      ),
+                      label: AppLocalizations.of(context)!.more,
                       onTap: onToggleBrandsExpanded,
                     );
                   }
@@ -301,12 +290,7 @@ class FilterMakeSection extends StatelessWidget {
                       ),
                     ),
                     tooltip: modelManual
-                        ? trLegacyText(
-                            context,
-                            'Select from list',
-                            ar: 'اختر من القائمة',
-                            ku: 'لە لیستەکە هەڵبژێرە',
-                          )
+                        ? AppLocalizations.of(context)!.selectFromList
                         : loc.typeManually,
                   ),
                 ],
@@ -370,12 +354,7 @@ class FilterMakeSection extends StatelessWidget {
                       ),
                     ),
                     tooltip: trimManual
-                        ? trLegacyText(
-                            context,
-                            'Select from list',
-                            ar: 'اختر من القائمة',
-                            ku: 'لە لیستەکە هەڵبژێرە',
-                          )
+                        ? AppLocalizations.of(context)!.selectFromList
                         : loc.typeManually,
                   ),
                 ],

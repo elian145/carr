@@ -64,12 +64,9 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          trLegacyText(
-            context,
-            nowSold ? 'Listing marked as sold' : 'Listing is available again',
-            ar: nowSold ? 'تم تحديد الإعلان كمباع' : 'الإعلان متاح مجدداً',
-            ku: nowSold ? 'ڕیکلام وەک فرۆشراو نیشانکرا' : 'ڕیکلام دووبارە بەردەستە',
-          ),
+          nowSold
+              ? AppLocalizations.of(context)!.listingMarkedAsSold
+              : AppLocalizations.of(context)!.listingIsAvailableAgain,
         ),
       ),
     );

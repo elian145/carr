@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
-import '../../../shared/i18n/legacy_inline_text.dart';
 
 /// WhatsApp + call actions on the listing detail page.
 class CarDetailsContactBar extends StatelessWidget {
@@ -55,12 +54,7 @@ class CarDetailsContactBar extends StatelessWidget {
             height: 46,
             child: Semantics(
               button: true,
-              label: trLegacyText(
-                context,
-                'Call Seller',
-                ar: 'اتصل بالبائع',
-                ku: 'پەیوەندی بە فرۆشیار',
-              ),
+              label: AppLocalizations.of(context)!.callSeller,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF007AFF),
@@ -76,12 +70,7 @@ class CarDetailsContactBar extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.phone, size: 19),
                 label: Text(
-                  trLegacyText(
-                    context,
-                    'Call Seller',
-                    ar: 'اتصل بالبائع',
-                    ku: 'پەیوەندی بە فرۆشیار',
-                  ),
+                  AppLocalizations.of(context)!.callSeller,
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

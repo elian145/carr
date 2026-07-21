@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../shared/debug/app_log.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import '../../theme_provider.dart';
@@ -170,20 +169,10 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          trLegacyText(
-            context,
-            'Discard draft?',
-            ar: 'حذف المسودة؟',
-            ku: 'ڕەشنووس بسڕێتەوە؟',
-          ),
+          AppLocalizations.of(context)!.discardDraft,
         ),
         content: Text(
-          trLegacyText(
-            context,
-            'This will permanently delete this draft listing. This cannot be undone.',
-            ar: 'سيتم حذف مسودة الإعلان نهائياً. لا يمكن التراجع عن هذا الإجراء.',
-            ku: 'ئەمە ڕەشنووسی ڕێکلامەکە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.',
-          ),
+          AppLocalizations.of(context)!.thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone,
         ),
         actions: [
           TextButton(
@@ -193,12 +182,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              trLegacyText(
-                context,
-                'Discard',
-                ar: 'حذف',
-                ku: 'بسڕەوە',
-              ),
+              AppLocalizations.of(context)!.discard,
               style: TextStyle(color: Theme.of(ctx).colorScheme.error),
             ),
           ),
@@ -303,18 +287,8 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
 
   Widget _buildStatusBadge({required bool isActive}) {
     final label = isActive
-        ? trLegacyText(
-            context,
-            'In progress',
-            ar: 'قيد التقدم',
-            ku: 'لە پێشکەوتن',
-          )
-        : trLegacyText(
-            context,
-            'Saved',
-            ar: 'محفوظة',
-            ku: 'پارێزراو',
-          );
+        ? AppLocalizations.of(context)!.inProgress
+        : AppLocalizations.of(context)!.saved;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -372,12 +346,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  trLegacyText(
-                    context,
-                    'Drafts in progress',
-                    ar: 'مسودات قيد التقدم',
-                    ku: 'ڕەشنووسەکان لە پێشکەوتندان',
-                  ),
+                  AppLocalizations.of(context)!.draftsInProgress,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -387,12 +356,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  trLegacyText(
-                    context,
-                    'Continue any draft, discard one, or start a new listing while keeping the others.',
-                    ar: 'تابع أي مسودة أو احذف واحدة أو ابدأ إعلانا جديدا مع الاحتفاظ بالباقي.',
-                    ku: 'هەر ڕەشنووسێک بەردەوام پێبدە یان یەکێک بسڕەوە یان ڕیکلامێکی نوێ دەستپێبکە لەگەڵ پاراستنی ئەوانی تر.',
-                  ),
+                  AppLocalizations.of(context)!.continueAnyDraftDiscardOneOrStartANewListingWhileKeepingTheOthers,
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.4,
@@ -415,12 +379,12 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     final currentStep = readSellDraftStepDynamic(draft['currentStep']);
     final stepIndex = currentStep.clamp(0, 5).toInt();
     final labels = <String>[
-      trLegacyText(context, 'Step 1: Photos', ar: 'الخطوة 1: الصور', ku: 'هەنگاو 1: وێنەکان'),
-      trLegacyText(context, 'Step 2: Basic info', ar: 'الخطوة 2: المعلومات الأساسية', ku: 'هەنگاو 2: زانیاری سەرەکی'),
-      trLegacyText(context, 'Step 3: Details', ar: 'الخطوة 3: التفاصيل', ku: 'هەنگاو 3: وردەکاری'),
-      trLegacyText(context, 'Step 4: Pricing', ar: 'الخطوة 4: السعر', ku: 'هەنگاو 4: نرخ'),
-      trLegacyText(context, 'Step 5: Plates', ar: 'الخطوة 5: اللوحات', ku: 'هەنگاو 5: تابلۆ'),
-      trLegacyText(context, 'Step 6: Review', ar: 'الخطوة 6: المراجعة', ku: 'هەنگاو 6: پێداچوونەوە'),
+      AppLocalizations.of(context)!.sellStep1Photos,
+      AppLocalizations.of(context)!.sellStep2BasicInfo,
+      AppLocalizations.of(context)!.sellStep3Details,
+      AppLocalizations.of(context)!.sellStep4Pricing,
+      AppLocalizations.of(context)!.sellStep5Plates,
+      AppLocalizations.of(context)!.sellStep6Review,
     ];
     final label = labels[stepIndex];
     final title = _draftTitle(carData);
@@ -506,12 +470,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                       ),
                       icon: const Icon(Icons.play_arrow_rounded, size: 22),
                       label: Text(
-                        trLegacyText(
-                          context,
-                          'Continue',
-                          ar: 'متابعة',
-                          ku: 'بەردەوام بە',
-                        ),
+                        AppLocalizations.of(context)!.continueAction,
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ),
@@ -536,12 +495,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
                         Icon(Icons.delete_outline_rounded, size: 18, color: _secondaryInk),
                         const SizedBox(width: 6),
                         Text(
-                          trLegacyText(
-                            context,
-                            'Discard',
-                            ar: 'حذف',
-                            ku: 'بسڕەوە',
-                          ),
+                          AppLocalizations.of(context)!.discard,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: _secondaryInk,
@@ -575,12 +529,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         ),
         icon: const Icon(Icons.add_rounded),
         label: Text(
-          trLegacyText(
-            context,
-            'Start new listing',
-            ar: 'ابدأ إعلانا جديدا',
-            ku: 'ڕیکلامێکی نوێ دەستپێبکە',
-          ),
+          AppLocalizations.of(context)!.startNewListing,
           style: const TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 15,
@@ -611,12 +560,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             ),
             const SizedBox(height: 24),
             Text(
-              trLegacyText(
-                context,
-                'Start a new listing',
-                ar: 'ابدأ إعلانا جديدا',
-                ku: 'ڕیکلامێکی نوێ دەستپێبکە',
-              ),
+              AppLocalizations.of(context)!.startANewListing,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
@@ -626,12 +570,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             ),
             const SizedBox(height: 8),
             Text(
-              trLegacyText(
-                context,
-                'No drafts yet. Create your first car listing to get started.',
-                ar: 'لا توجد مسودات بعد. أنشئ أول إعلان سيارة للبدء.',
-                ku: 'هێشتا ڕەشنووس نییە. یەکەم ڕیکلامی ئۆتۆمبێل دروست بکە.',
-              ),
+              AppLocalizations.of(context)!.noDraftsYetCreateYourFirstCarListingToGetStarted,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

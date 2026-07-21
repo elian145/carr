@@ -182,12 +182,7 @@ mixin _SellCarPagePlateBlur on _SellCarPageDraftPersist {
           ScaffoldMessenger.of(ctx).showSnackBar(
             SnackBar(
               content: Text(
-                _trLegacyText(
-                  ctx,
-                  'Failed to blur plates. Please try again.',
-                  ar: 'فشل تمويه اللوحات. حاول مرة أخرى.',
-                  ku: 'شاردنەوەی تابلۆ سەرنەکەوت. دووبارە هەوڵ بدە.',
-                ),
+                AppLocalizations.of(ctx)!.failedToBlurPlatesPleaseTryAgain,
               ),
               backgroundColor: Colors.red,
             ),
@@ -238,12 +233,7 @@ mixin _SellCarPagePlateBlur on _SellCarPageDraftPersist {
         ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(
             content: Text(
-              _trLegacyText(
-                ctx,
-                'Plates blurred successfully.',
-                ar: 'تم تمويه اللوحات بنجاح.',
-                ku: 'تابلۆ بە سەرکەوتوویی شاردرایەوە.',
-              ),
+              AppLocalizations.of(ctx)!.platesBlurredSuccessfully,
             ),
           ),
         );
@@ -268,12 +258,7 @@ mixin _SellCarPagePlateBlur on _SellCarPageDraftPersist {
               userErrorText(
                 ctx,
                 e,
-                fallback: _trLegacyText(
-                  ctx,
-                  'Failed to blur plates. Please try again.',
-                  ar: 'فشل تمويه اللوحات. حاول مرة أخرى.',
-                  ku: 'شاردنەوەی تابلۆ سەرنەکەوت. دووبارە هەوڵ بدە.',
-                ),
+                fallback: AppLocalizations.of(ctx)!.failedToBlurPlatesPleaseTryAgain,
               ),
             ),
             backgroundColor: Colors.red,

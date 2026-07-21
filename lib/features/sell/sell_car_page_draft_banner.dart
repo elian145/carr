@@ -36,12 +36,7 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _trLegacyText(
-                            context,
-                            'Draft in progress',
-                            ar: 'مسودة قيد التقدم',
-                            ku: 'ڕەشنووسی لە پێشکەوتن',
-                          ),
+                          AppLocalizations.of(context)!.draftInProgress,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -78,20 +73,10 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
                           context: context,
                           builder: (ctx) => AlertDialog(
                             title: Text(
-                              _trLegacyText(
-                                context,
-                                'Discard draft?',
-                                ar: 'حذف المسودة؟',
-                                ku: 'ڕەشنووس بسڕێتەوە؟',
-                              ),
+                              AppLocalizations.of(context)!.discardDraft,
                             ),
                             content: Text(
-                              _trLegacyText(
-                                context,
-                                'This will permanently delete this draft listing. This cannot be undone.',
-                                ar: 'سيتم حذف مسودة الإعلان نهائياً. لا يمكن التراجع عن هذا الإجراء.',
-                                ku: 'ئەمە ڕەشنووسی ڕێکلامەکە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.',
-                              ),
+                              AppLocalizations.of(context)!.thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone,
                             ),
                             actions: [
                               TextButton(
@@ -101,12 +86,7 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx, true),
                                 child: Text(
-                                  _trLegacyText(
-                                    context,
-                                    'Discard',
-                                    ar: 'حذف',
-                                    ku: 'بسڕەوە',
-                                  ),
+                                  AppLocalizations.of(context)!.discard,
                                   style: TextStyle(
                                     color: Theme.of(ctx).colorScheme.error,
                                   ),

@@ -16,9 +16,9 @@ import '../pages/recently_viewed_page.dart';
 import '../pages/reset_password_page.dart';
 import '../pages/tiktok_scroll_page.dart';
 import '../pages/verify_email_page.dart';
-import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/navigation/route_args.dart';
 import 'carzo_shared.dart';
+import '../l10n/app_localizations.dart';
 
 Map<String, WidgetBuilder> buildProductionRoutes() {
   return {
@@ -171,12 +171,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
           appBar: AppBar(title: const Text('Navigation error')),
           body: Center(
             child: Text(
-              trLegacyText(
-                context,
-                'Missing dealer id',
-                ar: 'معرّف الوكيل مفقود',
-                ku: 'ناسنامەی وەکیل ونە',
-              ),
+              AppLocalizations.of(context)!.missingDealerId,
             ),
           ),
         );

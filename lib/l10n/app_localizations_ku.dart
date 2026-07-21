@@ -1628,4 +1628,789 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String get myListingsNoPendingHint =>
       'ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون.';
+
+  @override
+  String get joinAnd => ' و';
+
+  @override
+  String get labelPlateType => 'جۆری پڵەیت';
+
+  @override
+  String get labelPlateCity => 'شاری پڵەیت';
+
+  @override
+  String get plateTypePrivate => 'تایبەت';
+
+  @override
+  String get plateTypeCommercial => 'بازرگانی';
+
+  @override
+  String get plateTypeTaxi => 'تەکسی';
+
+  @override
+  String get plateTypeGovernment => 'حکومی';
+
+  @override
+  String get plateTypeTemporary => 'کاتی';
+
+  @override
+  String get plateTypeDiplomatic => 'دیبلۆماسی';
+
+  @override
+  String get plateTypePolice => 'پۆلیس';
+
+  @override
+  String get regionSpecGcc => 'کەنداو';
+
+  @override
+  String get regionSpecUs => 'ئەمەریکی';
+
+  @override
+  String get regionSpecIraq => 'عێراقی';
+
+  @override
+  String get regionSpecCanada => 'کەنەدی';
+
+  @override
+  String get regionSpecEu => 'ئەوروپی';
+
+  @override
+  String get regionSpecCn => 'چینی';
+
+  @override
+  String get regionSpecKorea => 'کۆری';
+
+  @override
+  String get regionSpecRu => 'ڕووسی';
+
+  @override
+  String get regionSpecIran => 'ئێرانی';
+
+  @override
+  String get vinCopied => 'ژمارەی شاسی کۆپی کرا';
+
+  @override
+  String get sellStep1Photos => 'هەنگاو 1: وێنەکان';
+
+  @override
+  String get sellStep2BasicInfo => 'هەنگاو 2: زانیاری سەرەکی';
+
+  @override
+  String get sellStep3Details => 'هەنگاو 3: وردەکاری';
+
+  @override
+  String get sellStep4Pricing => 'هەنگاو 4: نرخ';
+
+  @override
+  String get sellStep5Plates => 'هەنگاو 5: تابلۆ';
+
+  @override
+  String get sellStep6Review => 'هەنگاو 6: پێداچوونەوە';
+
+  @override
+  String get seats => 'دانیشتن';
+
+  @override
+  String get labelCylinders => 'سیلەندەر';
+
+  @override
+  String get labelDealership => 'نمایشگا';
+
+  @override
+  String get labelPhone => 'تەلەفۆن';
+
+  @override
+  String get labelLocation => 'شوێن';
+
+  @override
+  String get pleaseSelectAtLeastOnePhoto => 'تکایە لانیکەم یەک وێنە هەڵبژێرە';
+
+  @override
+  String get couldNotLoadListings => 'نەتوانرا ڕیکلامەکان باربکرێن';
+
+  @override
+  String get homeFeedLoadingListings => 'بارکردنی ڕیکلامەکان...';
+
+  @override
+  String get homeFeedSortingListings => 'ڕیزکردنی ڕیکلامەکان...';
+
+  @override
+  String get homeFeedCachedResultsBanner => 'پیشاندانی ئەنجامە کاشکراوەکان';
+
+  @override
+  String get homeFeedSortedLocally => 'لە ناوخۆدا ڕیزکرا (سێرڤەر بەردەست نییە)';
+
+  @override
+  String get commonRefresh => 'نوێکردنەوە';
+
+  @override
+  String get homeFeedSortDisabled =>
+      'ڕیزکردن بە کاتییەوە ناچالاک کرا بەهۆی کێشەی سێرڤەر';
+
+  @override
+  String get homeFeedNetworkError =>
+      'نەتوانرا پەیوەندی بە سێرڤەر بکرێت. پەیوەندییەکەت بپشکنە و دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String homeFeedServerError(String statusCode) {
+    return 'هەڵەی سێرڤەر ($statusCode). تکایە دواتر دووبارە هەوڵ بدەرەوە.';
+  }
+
+  @override
+  String get acceptTermsRequired => 'تکایە مەرج و سیاسەتی تایبەتمەندی قبوڵ بکە';
+
+  @override
+  String get videoPlaybackFailed => 'نەتوانرا ئەم ڤیدیۆیە لێ بدرێت.';
+
+  @override
+  String get photosUploaded => 'وێنەکان بارکران';
+
+  @override
+  String get commonYes => 'بەڵێ';
+
+  @override
+  String get commonNo => 'نەخێر';
+
+  @override
+  String get missingDealerId => 'ناسنامەی وەکیل ونە';
+
+  @override
+  String get markAsAvailable => 'بەردەست بکەرەوە';
+
+  @override
+  String get markAsSold => 'وەک فرۆشراو';
+
+  @override
+  String get reportListing => 'ڕاپۆرتکردنی ڕیکلام';
+
+  @override
+  String get reportSeller => 'ڕاپۆرتکردنی فرۆشیار';
+
+  @override
+  String get unableToSelectThatPhoto => 'نەتوانرا ئەم وێنەیە هەڵبژێردرێت.';
+
+  @override
+  String get pleaseUploadAClearPhotoOfYourBusiness =>
+      'تکایە وێنەیەکی ڕوونی شوێنی بازرگانییەکەت باربکە.';
+
+  @override
+  String get dealershipDetailsSubmittedYourApplicationIsPendingReview =>
+      'وردەکاری ناوەندی فرۆشتن نێردرا. داواکارییەکەت لە چاوەڕوانی پێداچوونەوەیە.';
+
+  @override
+  String get addAPhotoThatHelpsUsVerifyThisDealership =>
+      'وێنەیەک زیاد بکە کە یارمەتیمان بدات ئەم ناوەندی فرۆشتنە پشتڕاست بکەینەوە';
+
+  @override
+  String get privateDealershipPhotoUploaded =>
+      'وێنەی نهێنی ناوەندی فرۆشتن بارکرا';
+
+  @override
+  String get createDealershipAccount => 'دروستکردنی هەژماری ناوەندی فرۆشتن';
+
+  @override
+  String get finalSetupStep => 'کۆتا هەنگاوی ڕێکخستن';
+
+  @override
+  String get buildYourDealershipPresence =>
+      'ناسنامەی ناوەندی فرۆشتنەکەت دروست بکە';
+
+  @override
+  String
+  get addAccurateBusinessDetailsSoBuyersCanTrustAndContactYourDealership =>
+      'زانیاری وردی بازرگانی زیاد بکە بۆ ئەوەی کڕیاران متمانەت پێ بکەن و پەیوەندیت پێوە بکەن.';
+
+  @override
+  String get reviewUsuallyTakes12BusinessDays =>
+      'پێداچوونەوە زۆرجار ١–٢ ڕۆژی کار دەخایەنێت';
+
+  @override
+  String get changesRequested => 'گۆڕانکارییە داواکراوەکان';
+
+  @override
+  String get businessInformation => 'زانیاری بازرگانی';
+
+  @override
+  String get theseDetailsWillAppearOnYourPublicDealershipProfile =>
+      'ئەم زانیارییانە لە پڕۆفایلی گشتی ناوەندەکەت دەردەکەون.';
+
+  @override
+  String get dealershipName => 'ناوی ناوەندی فرۆشتن';
+
+  @override
+  String get yourRegisteredOrTradingName => 'ناوی تۆمارکراو یان بازرگانی';
+
+  @override
+  String get businessPhone => 'تەلەفۆنی بازرگانی';
+
+  @override
+  String get aNumberBuyersCanReach =>
+      'ژمارەیەک کە کڕیاران بتوانن پەیوەندی پێوە بکەن';
+
+  @override
+  String get dealershipLocation => 'شوێنی ناوەندی فرۆشتن';
+
+  @override
+  String get cityDistrictAndStreet => 'شار، گەڕەک و شەقام';
+
+  @override
+  String get aboutYourDealershipOptional =>
+      'دەربارەی ناوەندی فرۆشتنەکەت (ئارەزوومەندانە)';
+
+  @override
+  String get describeYourInventoryExperienceAndCustomerService =>
+      'ئۆتۆمبێلەکان، ئەزموون و خزمەتگوزارییەکانت باس بکە';
+
+  @override
+  String get dealershipVerificationPhoto =>
+      'وێنەی پشتڕاستکردنەوەی ناوەندی فرۆشتن';
+
+  @override
+  String
+  get requiredUsedPrivatelyByOurReviewTeamAndNeverShownOnYourPublicProfile =>
+      'پێویستە · تەنها تیمی پێداچوونەوە بە نهێنی بەکاری دەهێنێت و لە پڕۆفایلی گشتی نیشان نادرێت.';
+
+  @override
+  String get chooseVerificationPhoto => 'وێنەی پشتڕاستکردنەوە هەڵبژێرە';
+
+  @override
+  String get replacePhoto => 'گۆڕینی وێنە';
+
+  @override
+  String
+  get uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO =>
+      'یەک وێنەی ڕوون و نوێی پێشەوەی ناوەندی فرۆشتن، ئۆتۆمبێلەکانی فرۆشتن، ناوەوە یان ئۆفیس باربکە—هەر شتێک کە یارمەتی تیمەکەمان بدات ڕاستیی بازرگانییەکە پشتڕاست بکاتەوە.';
+
+  @override
+  String get submitting => 'دەنێردرێت…';
+
+  @override
+  String get submitForReview => 'ناردن بۆ پێداچوونەوە';
+
+  @override
+  String get yourBusinessInformationIsHandledSecurely =>
+      'زانیاری بازرگانییەکانت بە پارێزراوی بەڕێوەدەبرێن.';
+
+  @override
+  String get forgotPassword => 'وشەی نهێنیم لەبیر چووە';
+
+  @override
+  String get resetPassword => 'ڕێکخستنی وشەی نهێنی';
+
+  @override
+  String get checkYourEmail => 'پشکنینی ئیمەیڵەکەت بکە';
+
+  @override
+  String get checkYourMessages => 'پەیامەکانی SMS بپشکنە';
+
+  @override
+  String get enterTheEmailAddressForYourAccountWeWillSendAResetCode =>
+      'ئیمەیڵی هەژمارەکەت بنووسە. کۆدی ڕێکخستنەوە دەنێردرێت.';
+
+  @override
+  String get enterThePhoneNumberForYourAccountWeWillSendAResetCodeBySMS =>
+      'ژمارەی تەلەفۆنەکەت بنووسە. کۆدەکە بە SMS دەنێردرێت.';
+
+  @override
+  String
+  weVeSentAPasswordResetLinkToEmailPleaseCheckYourEmailAndFollowTheInstruc(
+    String email,
+  ) {
+    return 'بەستەری ڕێکخستنەوە نێردرا بۆ $email . تکایە ئیمەیلەکەت بپشکنە.';
+  }
+
+  @override
+  String ifAnAccountExistsForPhoneWeSentAPasswordResetCodeBySMS(String phone) {
+    return 'ئەگەر هەژمارێک هەبێت بۆ $phone، کۆدی ڕێکخستنەوە بە SMS نێردرا.';
+  }
+
+  @override
+  String
+  get ifYouDonTSeeItCheckYourSpamOrJunkFolderTheLinkIsOnlySentIfAnAccountExist =>
+      'ئەگەر نەت بینی، پشکنینی سپام بکە. بەستەرەکە تەنها ئەگەر هەژمارێک بۆ ئەم ئیمەیڵە هەبێت نێردرێت.';
+
+  @override
+  String
+  get smsMayTakeAMinuteOrTwoACodeIsOnlySentIfAnAccountExistsForThisNumber =>
+      'ڕەنگە SMS کەمێک دوابکەوێت. کۆدەکە تەنها ئەگەر هەژمارێک بۆ ئەم ژمارەیە هەبێت دەنێردرێت.';
+
+  @override
+  String get pleaseEnterAValidEmail => 'تکایە ئیمەیلێکی دروست بنووسە';
+
+  @override
+  String get pleaseEnterAValidPhoneNumberAtLeast8Digits =>
+      'تکایە ژمارەی تەلەفۆنێکی دروست بنووسە (کەمترین ٨ ژمارە)';
+
+  @override
+  String get sendResetLink => 'ناردنی بەستەری ڕێکخستنەوە';
+
+  @override
+  String get sendResetCodeSMS => 'ناردنی کۆدی ڕێکخستنەوە';
+
+  @override
+  String get iHaveTheCodeSetNewPassword => 'کۆدی ڕێکخستنەوە بنووسە';
+
+  @override
+  String get backToLogin => 'گەڕانەوە بۆ چوونەژوورەوە';
+
+  @override
+  String get commonBack => 'گەڕانەوە';
+
+  @override
+  String get tooManyResetAttemptsPleaseWaitALittleAndTryAgain =>
+      'زۆر داواکاری نێردراوە. تکایە چەند خولەکێک چاوەڕێ بکە و دووبارە هەوڵبدە.';
+
+  @override
+  String get failedToSendResetLinkCheckYourEmailAndTryAgainLater =>
+      'نەتوانرا ئیمەییلی ڕێکخستنەوە بنێردرێت. دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String get failedToSendSMSCheckTheNumberAndTryAgainLater =>
+      'نەتوانرا SMS بنێردرێت. ژمارەکە بپشکنە و دووبارە هەوڵ بدەرەوە.';
+
+  @override
+  String
+  get thisPhoneNumberIsRegisteredToAPersonalAccountPleaseUsePersonalLoginInste =>
+      'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی کەسی تۆمارکراوە. تکایە چوونەژوورەوەی کەسی بەکاربهێنە.';
+
+  @override
+  String
+  get thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead =>
+      'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی وەکیل تۆمارکراوە. تکایە چوونەژوورەوەی وەکیل بەکاربهێنە.';
+
+  @override
+  String get welcomeBack => 'بەخێربێیتەوە';
+
+  @override
+  String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
+      'ژمارەی تەلەفۆنەکەت بنووسە بۆ چوونەژوورەوە یان دروستکردنی هەژمار.';
+
+  @override
+  String get accountType => 'جۆری هەژمار';
+
+  @override
+  String get dealerApplicationNeedsChanges =>
+      'داواکاری فرۆشیار پێویستی بە گۆڕانکاری هەیە';
+
+  @override
+  String get recentlyViewed => 'دواتر بینراو';
+
+  @override
+  String get editDealerPage => 'دەستکاری پەڕەی وەکیل';
+
+  @override
+  String get guest => 'میوان';
+
+  @override
+  String get signInToAccessYourProfileFeatures =>
+      'بچۆ ژوورەوە بۆ دەستگەیشتن بە تایبەتمەندییەکانی پرۆفایلەکەت.';
+
+  @override
+  String get iAgreeToThe => 'ڕازیم بە ';
+
+  @override
+  String get terms => 'مەرجەکان';
+
+  @override
+  String get privacyPolicy => 'تایبەتمەندی';
+
+  @override
+  String get searchAppliedSuccessfully => 'گەڕان بە سەرکەوتوویی جێبەجێ کرا!';
+
+  @override
+  String get appliedFilters => 'فلتەرە جێبەجێکراوەکان:';
+
+  @override
+  String get close => 'داخستن';
+
+  @override
+  String get alerts => 'ئاگادارکردنەوە';
+
+  @override
+  String get owners => 'خاوەنەکان';
+
+  @override
+  String get accidentHistory => 'مێژووی ڕووداو';
+
+  @override
+  String get deleteSavedSearch => 'گەڕانی پاشەکەوتکراو بسڕێتەوە؟';
+
+  @override
+  String get thisWillPermanentlyRemoveThisSavedSearchThisCannotBeUndone =>
+      'ئەمە ئەم گەڕانە پاشەکەوتکراوە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.';
+
+  @override
+  String get featured => 'تایبەت';
+
+  @override
+  String get less => 'کەمتر';
+
+  @override
+  String get more => 'زیاتر';
+
+  @override
+  String get selectFromList => 'لە لیستەکە هەڵبژێرە';
+
+  @override
+  String get searchMakeOrModel => 'براند یان مۆدێل بگەڕێ';
+
+  @override
+  String get noMakesOrModelsMatchYourSearch =>
+      'هیچ براند یان مۆدێلێک نەدۆزرایەوە.';
+
+  @override
+  String get make => 'براند';
+
+  @override
+  String get sendMessage => 'ناردنی پەیام';
+
+  @override
+  String filterSelectedCount(String count) {
+    return '$count هەڵبژێردراو';
+  }
+
+  @override
+  String get apply => 'جێبەجێکردن';
+
+  @override
+  String get youLlBeNotifiedWhenAMatchingCarIsListed =>
+      'کاتێک ئۆتۆمبێلێکی هاوتا دابنرێت ئاگادارت دەکەینەوە';
+
+  @override
+  String get view => 'بینین';
+
+  @override
+  String get logIn => 'چوونەژوورەوە';
+
+  @override
+  String get searchBrandsModels => 'گەڕان بەدوای براند و مۆدێل';
+
+  @override
+  String get showCars => 'نیشاندانی ئۆتۆمبێلەکان';
+
+  @override
+  String get searchCars => 'گەڕانی ئۆتۆمبێل';
+
+  @override
+  String get saveSearch => 'پاشەکەوتکردنی گەڕان';
+
+  @override
+  String get notifyMe => 'ئاگادارم بکە';
+
+  @override
+  String get featuredListings => 'ڕیکلامە تایبەتەکان';
+
+  @override
+  String get plate => 'پڵەیت';
+
+  @override
+  String get viewDescription => 'پیشاندانی وەسف';
+
+  @override
+  String get licensePlates => 'تابلۆی ئۆتۆمبێل';
+
+  @override
+  String get draftInProgress => 'ڕەشنووسی لە پێشکەوتن';
+
+  @override
+  String get discardDraft => 'ڕەشنووس بسڕێتەوە؟';
+
+  @override
+  String get thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone =>
+      'ئەمە ڕەشنووسی ڕێکلامەکە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.';
+
+  @override
+  String get discard => 'بسڕەوە';
+
+  @override
+  String get failedToBlurPlatesPleaseTryAgain =>
+      'شاردنەوەی تابلۆ سەرنەکەوت. دووبارە هەوڵ بدە.';
+
+  @override
+  String get platesBlurredSuccessfully => 'تابلۆ بە سەرکەوتوویی شاردرایەوە.';
+
+  @override
+  String get inProgress => 'لە پێشکەوتن';
+
+  @override
+  String get draftsInProgress => 'ڕەشنووسەکان لە پێشکەوتندان';
+
+  @override
+  String
+  get continueAnyDraftDiscardOneOrStartANewListingWhileKeepingTheOthers =>
+      'هەر ڕەشنووسێک بەردەوام پێبدە یان یەکێک بسڕەوە یان ڕیکلامێکی نوێ دەستپێبکە لەگەڵ پاراستنی ئەوانی تر.';
+
+  @override
+  String get startNewListing => 'ڕیکلامێکی نوێ دەستپێبکە';
+
+  @override
+  String get startANewListing => 'ڕیکلامێکی نوێ دەستپێبکە';
+
+  @override
+  String get noDraftsYetCreateYourFirstCarListingToGetStarted =>
+      'هێشتا ڕەشنووس نییە. یەکەم ڕیکلامی ئۆتۆمبێل دروست بکە.';
+
+  @override
+  String get specsAppliedYearSetStep2FieldsPreFilled =>
+      'سپێسەکان جێبەجێ کران — ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.';
+
+  @override
+  String get search => 'گەڕان...';
+
+  @override
+  String get loadingVehicleSpecs => 'سپێسی ئۆتۆمبێل بار دەکرێت…';
+
+  @override
+  String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
+      'بنکەی زانیاری سپێس بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.';
+
+  @override
+  String get catalogAutoFill => 'پڕکردنەوەی خۆکاری کاتالۆگ';
+
+  @override
+  String get selectAModelYearToLoadMatchingSpecs =>
+      'ساڵی مۆدێل هەڵبژێرە بۆ بارکردنی سپێسی گونجاو.';
+
+  @override
+  String get modelYear => 'ساڵی مۆدێل';
+
+  @override
+  String get youCanChangeTheseInStep2 => 'دەتوانیت لە هەنگاوی 2 بیانگۆڕیت.';
+
+  @override
+  String get specsAvailableForThisYear => 'سپێس بۆ ئەم ساڵە بەردەستە.';
+
+  @override
+  String get applySpecs => 'جێبەجێکردنی سپێس';
+
+  @override
+  String get specifications => 'سپێسەکان';
+
+  @override
+  String get vinOptional => 'ژمارەی شاسی (ئارەزوومەندانە)';
+
+  @override
+  String get vinMustBe17Characters => 'ژمارەی شاسی دەبێت ١٧ پیت بێت';
+
+  @override
+  String get setYourPriceAndContactInformation =>
+      'نرخ و زانیاری پەیوەندی دابنێ';
+
+  @override
+  String get whatsappPhoneNumber => 'ژمارەی واتساپ/مۆبایل';
+
+  @override
+  String get whatsappPhoneNumber2 => 'ژمارەی واتساپ/مۆبایل *';
+
+  @override
+  String get pleaseEnterPhoneNumber => 'تکایە ژمارەی مۆبایل بنووسە';
+
+  @override
+  String get pleaseEnterAValidPhoneNumber => 'تکایە ژمارەی دروست بنووسە';
+
+  @override
+  String get addDetailsAboutTheCarConditionFeaturesOrNotes =>
+      'وردەکاری دەربارەی ئۆتۆمبێلەکە، دۆخ، تایبەتمەندیەکان یان تێبینی زیاد بکە';
+
+  @override
+  String priceSelectedCurrencyOptional(String selectedCurrency) {
+    return 'نرخ ($selectedCurrency) (ئیختیاری)';
+  }
+
+  @override
+  String get enterPrice => 'نرخ بنووسە';
+
+  @override
+  String get invalidPrice => 'نرخی نادروست';
+
+  @override
+  String get priceCannotBeNegative => 'نرخ ناتوانێت سالب بێت';
+
+  @override
+  String get damageCrashPhotos => 'وێنەی زیان / ڕووداو';
+
+  @override
+  String
+  get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery =>
+      'لەگەڵ دۆکی تایتڵ دەردەکەوێت، ناچێتە ناو گەلەری وێنەی سەرەکی.';
+
+  @override
+  String get addPhotosFirstPlatesArePreparedAutomatically =>
+      'سەرەتا وێنە زیاد بکە — تابلۆ خۆکارانە ئامادە دەکرێت';
+
+  @override
+  String get photos => 'وێنەکان';
+
+  @override
+  String get tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing =>
+      'کرتە بکە لە ئەستێرەکە لەسەر وێنەکە بۆ ئەوەی وەک وێنەی سەرەکی یەکەم لە ڕیکلامەکەتدا دەربکەوێت.';
+
+  @override
+  String get cover => 'سەرەکی';
+
+  @override
+  String get blurringLicensePlatesInTheBackground =>
+      'تابلۆ لە پاشبنەمادا دەشاردرێتەوە…';
+
+  @override
+  String get plateBlurReadyYouCanChooseLater =>
+      'شاردنەوەی تابلۆ ئامادەیە — دواتر هەڵدەبژێردرێت';
+
+  @override
+  String get videos => 'ڤیدیۆکان';
+
+  @override
+  String get addMoreVideos => 'ڤیدیۆی زیاتر زیاد بکە';
+
+  @override
+  String get addVideos => 'ڤیدیۆ زیاد بکە';
+
+  @override
+  String get stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady =>
+      'هێشتا شاردنەوەی تابلۆ لە پاشبنەمادا بەردەوامە. کاتێک ئامادە بوو وێنەکان لێرە دەردەکەون.';
+
+  @override
+  String get blurredPhotos => 'وێنەی شاردراو';
+
+  @override
+  String get blurredDamagePhotos => 'وێنەی زیانی شاردراو';
+
+  @override
+  String get noPhotosAvailable => 'هیچ وێنەیەک بەردەست نییە.';
+
+  @override
+  String get blurredPhotosAreNotReadyYet => 'وێنەی شاردراو هێشتا ئامادە نییە.';
+
+  @override
+  String get blurPlatesNow => 'ئێستا تابلۆ بشارەوە';
+
+  @override
+  String get originalPhotos => 'وێنەی ڕەسەن';
+
+  @override
+  String get originalDamagePhotos => 'وێنەی زیانی ڕەسەن';
+
+  @override
+  String get chooseWhetherToPublishPhotosWithBlurredPlates =>
+      'هەڵبژێرە ئایا وێنەکان بە تابلۆی شاردراو بڵاوبکرێنەوە';
+
+  @override
+  String get blurPlates => 'تابلۆ بشاردرێتەوە؟';
+
+  @override
+  String get yesBlurPlates => 'بەڵێ، تابلۆ بشارەوە';
+
+  @override
+  String get noKeepOriginal => 'نەخێر، ڕەسەن بهێڵەوە';
+
+  @override
+  String get yesUseBlurredPhotos => 'بەڵێ، وێنەی شاردراو بەکاربهێنە';
+
+  @override
+  String get hideLicensePlatesOnYourListing => 'تابلۆ لە ڕیکلامەکەتدا بشارەوە';
+
+  @override
+  String get noKeepOriginalPhotos => 'نەخێر، وێنەی ڕەسەن بهێڵەوە';
+
+  @override
+  String get publishThePhotosExactlyAsYouUploadedThem =>
+      'وێنەکان وەک خۆیان بڵاوبکەرەوە';
+
+  @override
+  String get pleaseChooseWhetherToBlurPlates =>
+      'تکایە هەڵبژێرە ئایا تابلۆ بشاردرێتەوە';
+
+  @override
+  String get pleaseWaitForPlateBlurringToFinish =>
+      'تکایە چاوەڕوانی تەواوبوونی شاردنەوەی تابلۆ بە';
+
+  @override
+  String get blurPlatesFirstOrChooseToKeepOriginals =>
+      'سەرەتا تابلۆ بشارەوە، یان ڕەسەن بهێڵەوە';
+
+  @override
+  String get callSeller => 'پەیوەندی بە فرۆشیار';
+
+  @override
+  String get privateSeller => 'فرۆشیاری تاک';
+
+  @override
+  String get dealer => 'وەکیل';
+
+  @override
+  String get verified => 'پشتڕاستکراوە';
+
+  @override
+  String get email => 'ئیمەیل';
+
+  @override
+  String get tapToOpenDealershipPage => 'کرتە بکە بۆ کردنەوەی پەڕەی نمایشگا';
+
+  @override
+  String get cannotAddToComparison => 'نەتوانرا زیاد بکرێت بۆ بەراوردن';
+
+  @override
+  String get dealershipLogo => 'لۆگۆی ناوەندی فرۆشتن';
+
+  @override
+  String get coverImage => 'وێنەی کاڤەر';
+
+  @override
+  String get openingHours => 'کاتەکانی کردنەوە';
+
+  @override
+  String get youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin =>
+      'هەروەها دەتوانیت زانیاری پەیوەندی، شوێن، وەسف و خاڵی نەخشەکەت پێداچوونەوە بکەیت.';
+
+  @override
+  String get gotIt => 'باشە';
+
+  @override
+  String get later => 'دواتر';
+
+  @override
+  String get completeProfile => 'تەواوکردنی پڕۆفایل';
+
+  @override
+  String get searchByBrand => 'گەڕان بە براند';
+
+  @override
+  String get searchByModel => 'گەڕان بە مۆدێل';
+
+  @override
+  String get searchBrands => 'گەڕان بە براندەکان...';
+
+  @override
+  String get searchModels => 'گەڕان بە مۆدێلەکان...';
+
+  @override
+  String get listingMarkedAsSold => 'ڕیکلام وەک فرۆشراو نیشانکرا';
+
+  @override
+  String get listingIsAvailableAgain => 'ڕیکلام دووبارە بەردەستە';
+
+  @override
+  String get setUpYourDealerPage => 'پەڕەی ناوەندی فرۆشتنەکەت ئامادە بکە';
+
+  @override
+  String get yourDealershipIsApproved => 'ناوەندی فرۆشتنەکەت پەسەند کرا!';
+
+  @override
+  String
+  get yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT =>
+      'ناوەندی فرۆشتنەکەت پەسەند کرا. زانیارییەکانی ئەم پەڕەیە پڕ بکەرەوە بۆ تەواوکردنی پەڕەی ناوەندەکەت کە کڕیاران دەیبینن.';
+
+  @override
+  String
+  get completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT =>
+      'پەڕەی گشتی ناوەندی فرۆشتنەکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.';
+
+  @override
+  String get switchToUSD => 'بگۆڕە بۆ USD';
+
+  @override
+  String get switchToIQD => 'بگۆڕە بۆ IQD';
+
+  @override
+  String get continueAction => 'بەردەوام بە';
 }

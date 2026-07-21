@@ -164,12 +164,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           _searchIconCardSection(
             context,
             setStateDialog,
-            title: _trLegacyText(
-              context,
-              'Plate type',
-              ar: 'نوع اللوحة',
-              ku: 'جۆری پڵەیت',
-            ),
+            title: AppLocalizations.of(context)!.labelPlateType,
             options: const [
               'private',
               'temporary',
@@ -190,12 +185,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           _searchIconCardSection(
             context,
             setStateDialog,
-            title: _trLegacyText(
-              context,
-              'Plate city',
-              ar: 'مدينة اللوحة',
-              ku: 'شاری پڵەیت',
-            ),
+            title: AppLocalizations.of(context)!.labelPlateCity,
             options: kPlateCityFilterOptions,
             selected: selectedPlateCity,
             onSelected: (v) => selectedPlateCity = v,
@@ -296,12 +286,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                               ),
                               Expanded(
                                 child: Text(
-                                  _trLegacyText(
-                                    context,
-                                    'Search Cars',
-                                    ar: 'بحث السيارات',
-                                    ku: 'گەڕانی ئۆتۆمبێل',
-                                  ),
+                                  AppLocalizations.of(context)!.searchCars,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 18,
@@ -311,12 +296,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                 ),
                               ),
                               IconButton(
-                                tooltip: _trLegacyText(
-                                  context,
-                                  'Save search',
-                                  ar: 'حفظ البحث',
-                                  ku: 'پاشەکەوتکردنی گەڕان',
-                                ),
+                                tooltip: AppLocalizations.of(context)!.saveSearch,
                                 icon: const Icon(Icons.bookmark_add_outlined),
                                 color: _searchAccent,
                                 onPressed: () => unawaited(
@@ -324,12 +304,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                 ),
                               ),
                               IconButton(
-                                tooltip: _trLegacyText(
-                                  context,
-                                  'Notify me',
-                                  ar: 'أعلمني',
-                                  ku: 'ئاگادارم بکە',
-                                ),
+                                tooltip: AppLocalizations.of(context)!.notifyMe,
                                 icon: const Icon(
                                   Icons.notifications_active_outlined,
                                 ),

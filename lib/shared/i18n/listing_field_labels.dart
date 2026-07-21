@@ -2,26 +2,25 @@ import 'package:flutter/widgets.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../text/pretty_title_case.dart';
-import 'legacy_inline_text.dart';
 
 String translatePlateTypeLabel(BuildContext context, String raw) {
   final v = raw.trim().toLowerCase().replaceAll('-', ' ').replaceAll('_', ' ');
   switch (v) {
     case 'private':
-      return trLegacyText(context, 'Private', ar: 'خصوصي', ku: 'تایبەت');
+      return AppLocalizations.of(context)!.plateTypePrivate;
     case 'commercial':
     case 'comercial':
-      return trLegacyText(context, 'Commercial', ar: 'تجاري', ku: 'بازرگانی');
+      return AppLocalizations.of(context)!.plateTypeCommercial;
     case 'taxi':
-      return trLegacyText(context, 'Taxi', ar: 'تاكسي', ku: 'تەکسی');
+      return AppLocalizations.of(context)!.plateTypeTaxi;
     case 'government':
-      return trLegacyText(context, 'Government', ar: 'حكومي', ku: 'حکومی');
+      return AppLocalizations.of(context)!.plateTypeGovernment;
     case 'temporary':
-      return trLegacyText(context, 'Temporary', ar: 'مؤقت', ku: 'کاتی');
+      return AppLocalizations.of(context)!.plateTypeTemporary;
     case 'diplomatic':
-      return trLegacyText(context, 'Diplomatic', ar: 'دبلوماسي', ku: 'دیبلۆماسی');
+      return AppLocalizations.of(context)!.plateTypeDiplomatic;
     case 'police':
-      return trLegacyText(context, 'Police', ar: 'شرطة', ku: 'پۆلیس');
+      return AppLocalizations.of(context)!.plateTypePolice;
     default:
       return prettyTitleCase(raw);
   }

@@ -18,24 +18,14 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilterSectionHeader(
-              title: _trLegacyText(
-                context,
-                'Photos',
-                ar: 'الصور',
-                ku: 'وێنەکان',
-              ),
+              title: AppLocalizations.of(context)!.photos,
               requiredField: true,
               valueSummary: countLabel,
             ),
             if (_selectedImages.length > 1) ...[
               const SizedBox(height: 8),
               Text(
-                _trLegacyText(
-                  context,
-                  'Tap the star on a photo to set it as the cover image shown first in your listing.',
-                  ar: 'اضغط على النجمة على الصورة لتعيينها كصورة الغلاف التي تظهر أولاً في إعلانك.',
-                  ku: 'کرتە بکە لە ئەستێرەکە لەسەر وێنەکە بۆ ئەوەی وەک وێنەی سەرەکی یەکەم لە ڕیکلامەکەتدا دەربکەوێت.',
-                ),
+                AppLocalizations.of(context)!.tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing,
                 style: TextStyle(color: Colors.grey[600], fontSize: 13),
               ),
             ],
@@ -153,12 +143,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      _trLegacyText(
-                                        context,
-                                        'Cover',
-                                        ar: 'الغلاف',
-                                        ku: 'سەرەکی',
-                                      ),
+                                      AppLocalizations.of(context)!.cover,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
@@ -252,12 +237,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        _trLegacyText(
-                          context,
-                          'Blurring license plates in the background…',
-                          ar: 'جارٍ تمويه لوحات المركبات في الخلفية…',
-                          ku: 'تابلۆ لە پاشبنەمادا دەشاردرێتەوە…',
-                        ),
+                        AppLocalizations.of(context)!.blurringLicensePlatesInTheBackground,
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey[700],
@@ -277,12 +257,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        _trLegacyText(
-                          context,
-                          'Plate blur ready — you can choose later',
-                          ar: 'تمويه اللوحات جاهز — يمكنك الاختيار لاحقاً',
-                          ku: 'شاردنەوەی تابلۆ ئامادەیە — دواتر هەڵدەبژێردرێت',
-                        ),
+                        AppLocalizations.of(context)!.plateBlurReadyYouCanChooseLater,
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.green.shade700,

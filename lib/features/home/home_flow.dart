@@ -45,7 +45,6 @@ import '../../services/home_interest_service.dart';
 import '../../services/saved_search_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/i18n/digits.dart';
-import '../../shared/i18n/legacy_inline_text.dart';
 import '../../shared/i18n/listing_field_labels.dart';
 import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
@@ -69,6 +68,7 @@ import '../../shared/ui/filter_card_sections.dart';
 import '../../shared/ui/filter_icon_image.dart';
 import '../../shared/ui/responsive.dart';
 import '../../theme_provider.dart';
+import '../../shared/i18n/legacy_inline_text.dart';
 
 part 'home_page.dart';
 part 'home_filter_catalog.dart';
@@ -118,14 +118,6 @@ String _getBodyTypeAsset(String bodyType) =>
 
 Widget _buildBodyTypeImage(String assetPath) =>
     body_type_image.buildBodyTypeImage(assetPath);
-
-String _trLegacyText(
-  BuildContext context,
-  String en, {
-  String? ar,
-  String? ku,
-}) =>
-    trLegacyText(context, en, ar: ar, ku: ku);
 
 String _translatePlateTypeLegacy(BuildContext context, String raw) =>
     translatePlateTypeLabel(context, raw);

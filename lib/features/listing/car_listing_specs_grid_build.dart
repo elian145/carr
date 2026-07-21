@@ -194,7 +194,7 @@ Widget buildCarListingSpecsGrid(
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                trLegacyText(context, 'VIN copied', ar: 'تم نسخ رقم الهيكل', ku: 'ژمارەی شاسی کۆپی کرا'),
+                AppLocalizations.of(context)!.vinCopied,
               ),
             ),
           );
@@ -246,12 +246,7 @@ Widget buildCarListingSpecsGrid(
     ),
     carListingSpecsDetailRow(context, 
       icon: Icons.confirmation_number_outlined,
-      label: trLegacyText(
-        context,
-        'Plate',
-        ar: 'اللوحة',
-        ku: 'پڵەیت',
-      ),
+      label: AppLocalizations.of(context)!.plate,
       value: orDash(() {
         final rawCity = pickNE(car, ['plate_city', 'plateCity'])?.trim();
         final rawType = pickNE(car, ['plate_type', 'plateType'])?.trim();
@@ -275,12 +270,7 @@ Widget buildCarListingSpecsGrid(
       carListingSpecsDetailRow(context, 
         icon: Icons.description_outlined,
         label: AppLocalizations.of(context)?.descriptionTitle ?? 'Description',
-        value: trLegacyText(
-          context,
-          'View description',
-          ar: 'عرض الوصف',
-          ku: 'پیشاندانی وەسف',
-        ),
+        value: AppLocalizations.of(context)!.viewDescription,
         onTap: () {
           showDialog<void>(
             context: context,
@@ -293,12 +283,7 @@ Widget buildCarListingSpecsGrid(
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
                   child: Text(
-                    trLegacyText(
-                      context,
-                      'Close',
-                      ar: 'إغلاق',
-                      ku: 'داخستن',
-                    ),
+                    AppLocalizations.of(context)!.close,
                   ),
                 ),
               ],

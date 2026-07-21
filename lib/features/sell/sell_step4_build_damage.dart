@@ -14,22 +14,12 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilterSectionHeader(
-              title: _trLegacyText(
-                context,
-                'Damage / crash photos',
-                ar: 'صور الضرر / الحادث',
-                ku: 'وێنەی زیان / ڕووداو',
-              ),
+              title: AppLocalizations.of(context)!.damageCrashPhotos,
               valueSummary: countLabel,
             ),
             const SizedBox(height: 8),
             Text(
-              _trLegacyText(
-                context,
-                'Shown next to title status on your listing. Not mixed into the main photo gallery.',
-                ar: 'تظهر بجانب حالة الملكية في إعلانك. لا تُدمج مع معرض الصور الرئيسي.',
-                ku: 'لەگەڵ دۆکی تایتڵ دەردەکەوێت، ناچێتە ناو گەلەری وێنەی سەرەکی.',
-              ),
+              AppLocalizations.of(context)!.shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery,
               style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
             const SizedBox(height: 12),

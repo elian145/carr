@@ -7,7 +7,6 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/ui/responsive.dart';
 import '../widgets/theme_toggle_widget.dart';
 

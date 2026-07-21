@@ -13,12 +13,7 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
       ),
     );
     return InputDecoration(
-      hintText: _trLegacyText(
-        context,
-        'Search make or model',
-        ar: 'ابحث عن الماركة أو الموديل',
-        ku: 'براند یان مۆدێل بگەڕێ',
-      ),
+      hintText: AppLocalizations.of(context)!.searchMakeOrModel,
       prefixIcon: const Icon(Icons.search, color: _searchAccent),
       suffixIcon: _searchFiltersKeywordController.text.trim().isEmpty
           ? null
@@ -59,12 +54,7 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          _trLegacyText(
-            context,
-            'No makes or models match your search.',
-            ar: 'لا توجد ماركات أو موديلات مطابقة.',
-            ku: 'هیچ براند یان مۆدێلێک نەدۆزرایەوە.',
-          ),
+          AppLocalizations.of(context)!.noMakesOrModelsMatchYourSearch,
           style: TextStyle(color: mutedColor, fontSize: 14),
         ),
       );
@@ -91,12 +81,7 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
                 ),
               ),
               subtitle: Text(
-                _trLegacyText(
-                  context,
-                  'Make',
-                  ar: 'الماركة',
-                  ku: 'براند',
-                ),
+                AppLocalizations.of(context)!.make,
                 style: TextStyle(color: mutedColor, fontSize: 12),
               ),
               onTap: () {

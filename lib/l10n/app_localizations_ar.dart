@@ -1619,4 +1619,782 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get myListingsNoPendingHint =>
       'الإعلانات بانتظار موافقة المشرف ستظهر هنا.';
+
+  @override
+  String get joinAnd => ' و';
+
+  @override
+  String get labelPlateType => 'نوع اللوحة';
+
+  @override
+  String get labelPlateCity => 'مدينة اللوحة';
+
+  @override
+  String get plateTypePrivate => 'خصوصي';
+
+  @override
+  String get plateTypeCommercial => 'تجاري';
+
+  @override
+  String get plateTypeTaxi => 'تاكسي';
+
+  @override
+  String get plateTypeGovernment => 'حكومي';
+
+  @override
+  String get plateTypeTemporary => 'مؤقت';
+
+  @override
+  String get plateTypeDiplomatic => 'دبلوماسي';
+
+  @override
+  String get plateTypePolice => 'شرطة';
+
+  @override
+  String get regionSpecGcc => 'خليجي';
+
+  @override
+  String get regionSpecUs => 'أمريكي';
+
+  @override
+  String get regionSpecIraq => 'عراقي';
+
+  @override
+  String get regionSpecCanada => 'كندي';
+
+  @override
+  String get regionSpecEu => 'أوروبي';
+
+  @override
+  String get regionSpecCn => 'صيني';
+
+  @override
+  String get regionSpecKorea => 'كوري';
+
+  @override
+  String get regionSpecRu => 'روسي';
+
+  @override
+  String get regionSpecIran => 'إيراني';
+
+  @override
+  String get vinCopied => 'تم نسخ رقم الهيكل';
+
+  @override
+  String get sellStep1Photos => 'الخطوة 1: الصور';
+
+  @override
+  String get sellStep2BasicInfo => 'الخطوة 2: المعلومات الأساسية';
+
+  @override
+  String get sellStep3Details => 'الخطوة 3: التفاصيل';
+
+  @override
+  String get sellStep4Pricing => 'الخطوة 4: السعر';
+
+  @override
+  String get sellStep5Plates => 'الخطوة 5: اللوحات';
+
+  @override
+  String get sellStep6Review => 'الخطوة 6: المراجعة';
+
+  @override
+  String get seats => 'مقاعد';
+
+  @override
+  String get labelCylinders => 'أسطوانات';
+
+  @override
+  String get labelDealership => 'معرض';
+
+  @override
+  String get labelPhone => 'الهاتف';
+
+  @override
+  String get labelLocation => 'الموقع';
+
+  @override
+  String get pleaseSelectAtLeastOnePhoto => 'يرجى اختيار صورة واحدة على الأقل';
+
+  @override
+  String get couldNotLoadListings => 'تعذر تحميل الإعلانات';
+
+  @override
+  String get homeFeedLoadingListings => 'جاري تحميل الإعلانات...';
+
+  @override
+  String get homeFeedSortingListings => 'جاري ترتيب الإعلانات...';
+
+  @override
+  String get homeFeedCachedResultsBanner => 'عرض النتائج المخزنة مؤقتاً';
+
+  @override
+  String get homeFeedSortedLocally => 'تم الترتيب محلياً (الخادم غير متاح)';
+
+  @override
+  String get commonRefresh => 'تحديث';
+
+  @override
+  String get homeFeedSortDisabled =>
+      'تم تعطيل الترتيب مؤقتاً بسبب مشكلة في الخادم';
+
+  @override
+  String get homeFeedNetworkError =>
+      'تعذر الوصول إلى الخادم. تحقق من الاتصال وحاول مرة أخرى.';
+
+  @override
+  String homeFeedServerError(String statusCode) {
+    return 'خطأ في الخادم ($statusCode). يرجى المحاولة لاحقاً.';
+  }
+
+  @override
+  String get acceptTermsRequired => 'يرجى الموافقة على الشروط وسياسة الخصوصية';
+
+  @override
+  String get videoPlaybackFailed => 'تعذر تشغيل هذا الفيديو.';
+
+  @override
+  String get photosUploaded => 'تم تحميل الصور';
+
+  @override
+  String get commonYes => 'نعم';
+
+  @override
+  String get commonNo => 'لا';
+
+  @override
+  String get missingDealerId => 'معرّف الوكيل مفقود';
+
+  @override
+  String get markAsAvailable => 'متاح مجدداً';
+
+  @override
+  String get markAsSold => 'تحديد كمباع';
+
+  @override
+  String get reportListing => 'الإبلاغ عن الإعلان';
+
+  @override
+  String get reportSeller => 'الإبلاغ عن البائع';
+
+  @override
+  String get unableToSelectThatPhoto => 'تعذر اختيار هذه الصورة.';
+
+  @override
+  String get pleaseUploadAClearPhotoOfYourBusiness =>
+      'يرجى رفع صورة واضحة لنشاطك التجاري.';
+
+  @override
+  String get dealershipDetailsSubmittedYourApplicationIsPendingReview =>
+      'تم إرسال تفاصيل الوكالة. طلبك قيد المراجعة.';
+
+  @override
+  String get addAPhotoThatHelpsUsVerifyThisDealership =>
+      'أضف صورة تساعدنا في التحقق من هذه الوكالة';
+
+  @override
+  String get privateDealershipPhotoUploaded => 'تم رفع صورة الوكالة الخاصة';
+
+  @override
+  String get createDealershipAccount => 'إنشاء حساب وكالة';
+
+  @override
+  String get finalSetupStep => 'الخطوة الأخيرة للإعداد';
+
+  @override
+  String get buildYourDealershipPresence => 'أنشئ حضور وكالتك';
+
+  @override
+  String
+  get addAccurateBusinessDetailsSoBuyersCanTrustAndContactYourDealership =>
+      'أضف معلومات دقيقة عن نشاطك ليتمكن المشترون من الوثوق بوكالتك والتواصل معها.';
+
+  @override
+  String get reviewUsuallyTakes12BusinessDays =>
+      'تستغرق المراجعة عادةً من يوم إلى يومي عمل';
+
+  @override
+  String get changesRequested => 'التغييرات المطلوبة';
+
+  @override
+  String get businessInformation => 'معلومات النشاط';
+
+  @override
+  String get theseDetailsWillAppearOnYourPublicDealershipProfile =>
+      'ستظهر هذه المعلومات في الملف العام لوكالتك.';
+
+  @override
+  String get dealershipName => 'اسم الوكالة';
+
+  @override
+  String get yourRegisteredOrTradingName => 'الاسم المسجل أو التجاري';
+
+  @override
+  String get businessPhone => 'هاتف النشاط';
+
+  @override
+  String get aNumberBuyersCanReach => 'رقم يمكن للمشترين التواصل معه';
+
+  @override
+  String get dealershipLocation => 'موقع الوكالة';
+
+  @override
+  String get cityDistrictAndStreet => 'المدينة والمنطقة والشارع';
+
+  @override
+  String get aboutYourDealershipOptional => 'عن وكالتك (اختياري)';
+
+  @override
+  String get describeYourInventoryExperienceAndCustomerService =>
+      'صف مخزونك وخبرتك وخدمة العملاء';
+
+  @override
+  String get dealershipVerificationPhoto => 'صورة التحقق من الوكالة';
+
+  @override
+  String
+  get requiredUsedPrivatelyByOurReviewTeamAndNeverShownOnYourPublicProfile =>
+      'مطلوب · يستخدمها فريق المراجعة بشكل خاص ولن تظهر أبداً في ملفك العام.';
+
+  @override
+  String get chooseVerificationPhoto => 'اختر صورة التحقق';
+
+  @override
+  String get replacePhoto => 'استبدال الصورة';
+
+  @override
+  String
+  get uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO =>
+      'ارفع صورة حديثة وواضحة لواجهة الوكالة أو السيارات المعروضة أو صالة العرض أو المكتب—أي صورة تساعد فريقنا على التأكد من أن النشاط حقيقي.';
+
+  @override
+  String get submitting => 'جارٍ الإرسال…';
+
+  @override
+  String get submitForReview => 'إرسال للمراجعة';
+
+  @override
+  String get yourBusinessInformationIsHandledSecurely =>
+      'يتم التعامل مع معلومات نشاطك بأمان.';
+
+  @override
+  String get forgotPassword => 'نسيت كلمة المرور';
+
+  @override
+  String get resetPassword => 'إعادة تعيين كلمة المرور';
+
+  @override
+  String get checkYourEmail => 'تحقق من بريدك الإلكتروني';
+
+  @override
+  String get checkYourMessages => 'تحقق من رسائلك النصية';
+
+  @override
+  String get enterTheEmailAddressForYourAccountWeWillSendAResetCode =>
+      'أدخل البريد الإلكتروني المرتبط بحسابك. سنرسل رمز إعادة التعيين.';
+
+  @override
+  String get enterThePhoneNumberForYourAccountWeWillSendAResetCodeBySMS =>
+      'أدخل رقم الهاتف المرتبط بحسابك. سنرسل رمز إعادة التعيين عبر رسالة نصية.';
+
+  @override
+  String
+  weVeSentAPasswordResetLinkToEmailPleaseCheckYourEmailAndFollowTheInstruc(
+    String email,
+  ) {
+    return 'أرسلنا رابط إعادة تعيين إلى $email. يرجى التحقق من بريدك.';
+  }
+
+  @override
+  String ifAnAccountExistsForPhoneWeSentAPasswordResetCodeBySMS(String phone) {
+    return 'إذا وُجد حساب لـ $phone، فقد أرسلنا رمز إعادة التعيين عبر رسالة نصية.';
+  }
+
+  @override
+  String
+  get ifYouDonTSeeItCheckYourSpamOrJunkFolderTheLinkIsOnlySentIfAnAccountExist =>
+      'إن لم تجد الرسالة، تحقق من مجلد البريد العشوائي. يُرسل الرابط فقط إذا وُجد حساب لهذا البريد.';
+
+  @override
+  String
+  get smsMayTakeAMinuteOrTwoACodeIsOnlySentIfAnAccountExistsForThisNumber =>
+      'قد يستغرق وصول الرسالة دقيقة أو دقيقتين. يُرسل الرمز فقط إذا وُجد حساب لهذا الرقم.';
+
+  @override
+  String get pleaseEnterAValidEmail => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get pleaseEnterAValidPhoneNumberAtLeast8Digits =>
+      'يرجى إدخال رقم هاتف صالح (8 أرقام على الأقل)';
+
+  @override
+  String get sendResetLink => 'إرسال رابط إعادة التعيين';
+
+  @override
+  String get sendResetCodeSMS => 'إرسال رمز إعادة التعيين';
+
+  @override
+  String get iHaveTheCodeSetNewPassword => 'أدخل رمز إعادة التعيين';
+
+  @override
+  String get backToLogin => 'العودة إلى تسجيل الدخول';
+
+  @override
+  String get commonBack => 'رجوع';
+
+  @override
+  String get tooManyResetAttemptsPleaseWaitALittleAndTryAgain =>
+      'تم إرسال طلبات كثيرة جدًا. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.';
+
+  @override
+  String get failedToSendResetLinkCheckYourEmailAndTryAgainLater =>
+      'فشل إرسال رابط إعادة التعيين. تحقق من البريد وحاول لاحقاً.';
+
+  @override
+  String get failedToSendSMSCheckTheNumberAndTryAgainLater =>
+      'تعذر إرسال الرسالة النصية. تحقق من الرقم وحاول لاحقاً.';
+
+  @override
+  String
+  get thisPhoneNumberIsRegisteredToAPersonalAccountPleaseUsePersonalLoginInste =>
+      'رقم الهاتف هذا مسجل لحساب شخصي. يرجى استخدام تسجيل الدخول الشخصي.';
+
+  @override
+  String
+  get thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead =>
+      'رقم الهاتف هذا مسجل لحساب وكيل. يرجى استخدام تسجيل دخول الوكيل.';
+
+  @override
+  String get welcomeBack => 'مرحبًا بعودتك';
+
+  @override
+  String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
+      'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.';
+
+  @override
+  String get accountType => 'نوع الحساب';
+
+  @override
+  String get dealerApplicationNeedsChanges => 'طلب الوكالة يحتاج إلى تعديلات';
+
+  @override
+  String get recentlyViewed => 'شوهد مؤخراً';
+
+  @override
+  String get editDealerPage => 'تعديل صفحة الوكيل';
+
+  @override
+  String get guest => 'زائر';
+
+  @override
+  String get signInToAccessYourProfileFeatures =>
+      'سجّل الدخول للوصول إلى ميزات ملفك الشخصي.';
+
+  @override
+  String get iAgreeToThe => 'أوافق على ';
+
+  @override
+  String get terms => 'الشروط';
+
+  @override
+  String get privacyPolicy => 'سياسة الخصوصية';
+
+  @override
+  String get searchAppliedSuccessfully => 'تم تطبيق البحث بنجاح!';
+
+  @override
+  String get appliedFilters => 'الفلاتر المطبقة:';
+
+  @override
+  String get close => 'إغلاق';
+
+  @override
+  String get alerts => 'التنبيهات';
+
+  @override
+  String get owners => 'المالكون';
+
+  @override
+  String get accidentHistory => 'سجل الحوادث';
+
+  @override
+  String get deleteSavedSearch => 'حذف البحث المحفوظ؟';
+
+  @override
+  String get thisWillPermanentlyRemoveThisSavedSearchThisCannotBeUndone =>
+      'سيتم حذف هذا البحث المحفوظ نهائياً. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get featured => 'مميز';
+
+  @override
+  String get less => 'أقل';
+
+  @override
+  String get more => 'المزيد';
+
+  @override
+  String get selectFromList => 'اختر من القائمة';
+
+  @override
+  String get searchMakeOrModel => 'ابحث عن الماركة أو الموديل';
+
+  @override
+  String get noMakesOrModelsMatchYourSearch =>
+      'لا توجد ماركات أو موديلات مطابقة.';
+
+  @override
+  String get make => 'الماركة';
+
+  @override
+  String get sendMessage => 'إرسال رسالة';
+
+  @override
+  String filterSelectedCount(String count) {
+    return '$count محدد';
+  }
+
+  @override
+  String get apply => 'تطبيق';
+
+  @override
+  String get youLlBeNotifiedWhenAMatchingCarIsListed =>
+      'سيتم إشعارك عند توفر سيارة مطابقة';
+
+  @override
+  String get view => 'عرض';
+
+  @override
+  String get logIn => 'تسجيل الدخول';
+
+  @override
+  String get searchBrandsModels => 'بحث عن الماركات والموديلات';
+
+  @override
+  String get showCars => 'عرض السيارات';
+
+  @override
+  String get searchCars => 'بحث السيارات';
+
+  @override
+  String get saveSearch => 'حفظ البحث';
+
+  @override
+  String get notifyMe => 'أعلمني';
+
+  @override
+  String get featuredListings => 'إعلانات مميزة';
+
+  @override
+  String get plate => 'اللوحة';
+
+  @override
+  String get viewDescription => 'عرض الوصف';
+
+  @override
+  String get licensePlates => 'لوحات المركبات';
+
+  @override
+  String get draftInProgress => 'مسودة قيد التقدم';
+
+  @override
+  String get discardDraft => 'حذف المسودة؟';
+
+  @override
+  String get thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone =>
+      'سيتم حذف مسودة الإعلان نهائياً. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get discard => 'حذف';
+
+  @override
+  String get failedToBlurPlatesPleaseTryAgain =>
+      'فشل تمويه اللوحات. حاول مرة أخرى.';
+
+  @override
+  String get platesBlurredSuccessfully => 'تم تمويه اللوحات بنجاح.';
+
+  @override
+  String get inProgress => 'قيد التقدم';
+
+  @override
+  String get draftsInProgress => 'مسودات قيد التقدم';
+
+  @override
+  String
+  get continueAnyDraftDiscardOneOrStartANewListingWhileKeepingTheOthers =>
+      'تابع أي مسودة أو احذف واحدة أو ابدأ إعلانا جديدا مع الاحتفاظ بالباقي.';
+
+  @override
+  String get startNewListing => 'ابدأ إعلانا جديدا';
+
+  @override
+  String get startANewListing => 'ابدأ إعلانا جديدا';
+
+  @override
+  String get noDraftsYetCreateYourFirstCarListingToGetStarted =>
+      'لا توجد مسودات بعد. أنشئ أول إعلان سيارة للبدء.';
+
+  @override
+  String get specsAppliedYearSetStep2FieldsPreFilled =>
+      'تم تطبيق المواصفات — تم ضبط السنة وملء حقول الخطوة 2 مسبقا.';
+
+  @override
+  String get search => 'بحث...';
+
+  @override
+  String get loadingVehicleSpecs => 'جاري تحميل مواصفات السيارة…';
+
+  @override
+  String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
+      'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بعد flutter pub get.';
+
+  @override
+  String get catalogAutoFill => 'تعبئة تلقائية من الكتالوج';
+
+  @override
+  String get selectAModelYearToLoadMatchingSpecs =>
+      'اختر سنة الموديل لتحميل المواصفات المطابقة.';
+
+  @override
+  String get modelYear => 'سنة الموديل';
+
+  @override
+  String get youCanChangeTheseInStep2 => 'يمكنك تغييرها في الخطوة 2.';
+
+  @override
+  String get specsAvailableForThisYear => 'المواصفات متاحة لهذه السنة.';
+
+  @override
+  String get applySpecs => 'تطبيق المواصفات';
+
+  @override
+  String get specifications => 'المواصفات';
+
+  @override
+  String get vinOptional => 'رقم الهيكل (اختياري)';
+
+  @override
+  String get vinMustBe17Characters => 'رقم الهيكل يجب أن يكون 17 حرفاً';
+
+  @override
+  String get setYourPriceAndContactInformation => 'حدد السعر ومعلومات التواصل';
+
+  @override
+  String get whatsappPhoneNumber => 'رقم واتساب/الهاتف';
+
+  @override
+  String get whatsappPhoneNumber2 => 'رقم واتساب/الهاتف *';
+
+  @override
+  String get pleaseEnterPhoneNumber => 'يرجى إدخال رقم الهاتف';
+
+  @override
+  String get pleaseEnterAValidPhoneNumber => 'يرجى إدخال رقم هاتف صحيح';
+
+  @override
+  String get addDetailsAboutTheCarConditionFeaturesOrNotes =>
+      'أضف تفاصيل عن السيارة والحالة والمزايا أو ملاحظات';
+
+  @override
+  String priceSelectedCurrencyOptional(String selectedCurrency) {
+    return 'السعر ($selectedCurrency) (اختياري)';
+  }
+
+  @override
+  String get enterPrice => 'أدخل السعر';
+
+  @override
+  String get invalidPrice => 'سعر غير صالح';
+
+  @override
+  String get priceCannotBeNegative => 'لا يمكن أن يكون السعر سالبا';
+
+  @override
+  String get damageCrashPhotos => 'صور الضرر / الحادث';
+
+  @override
+  String
+  get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery =>
+      'تظهر بجانب حالة الملكية في إعلانك. لا تُدمج مع معرض الصور الرئيسي.';
+
+  @override
+  String get addPhotosFirstPlatesArePreparedAutomatically =>
+      'أضف الصور أولاً — يتم تجهيز اللوحات تلقائياً';
+
+  @override
+  String get photos => 'الصور';
+
+  @override
+  String get tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing =>
+      'اضغط على النجمة على الصورة لتعيينها كصورة الغلاف التي تظهر أولاً في إعلانك.';
+
+  @override
+  String get cover => 'الغلاف';
+
+  @override
+  String get blurringLicensePlatesInTheBackground =>
+      'جارٍ تمويه لوحات المركبات في الخلفية…';
+
+  @override
+  String get plateBlurReadyYouCanChooseLater =>
+      'تمويه اللوحات جاهز — يمكنك الاختيار لاحقاً';
+
+  @override
+  String get videos => 'الفيديوهات';
+
+  @override
+  String get addMoreVideos => 'إضافة المزيد من الفيديوهات';
+
+  @override
+  String get addVideos => 'إضافة فيديوهات';
+
+  @override
+  String get stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady =>
+      'ما زال تمويه اللوحات يعمل في الخلفية. ستظهر الصور هنا عند الجاهزية.';
+
+  @override
+  String get blurredPhotos => 'الصور المموهة';
+
+  @override
+  String get blurredDamagePhotos => 'صور الضرر المموهة';
+
+  @override
+  String get noPhotosAvailable => 'لا توجد صور.';
+
+  @override
+  String get blurredPhotosAreNotReadyYet => 'الصور المموهة غير جاهزة بعد.';
+
+  @override
+  String get blurPlatesNow => 'موّه اللوحات الآن';
+
+  @override
+  String get originalPhotos => 'الصور الأصلية';
+
+  @override
+  String get originalDamagePhotos => 'صور الضرر الأصلية';
+
+  @override
+  String get chooseWhetherToPublishPhotosWithBlurredPlates =>
+      'اختر ما إذا كنت تريد نشر الصور مع لوحات مموهة';
+
+  @override
+  String get blurPlates => 'تمويه اللوحات؟';
+
+  @override
+  String get yesBlurPlates => 'نعم، موّه اللوحات';
+
+  @override
+  String get noKeepOriginal => 'لا، أبقِ الأصلية';
+
+  @override
+  String get yesUseBlurredPhotos => 'نعم، استخدم الصور المموهة';
+
+  @override
+  String get hideLicensePlatesOnYourListing => 'إخفاء لوحات المركبات في إعلانك';
+
+  @override
+  String get noKeepOriginalPhotos => 'لا، أبقِ الصور الأصلية';
+
+  @override
+  String get publishThePhotosExactlyAsYouUploadedThem =>
+      'انشر الصور كما رفعتها تماماً';
+
+  @override
+  String get pleaseChooseWhetherToBlurPlates =>
+      'يرجى اختيار ما إذا كنت تريد تمويه اللوحات';
+
+  @override
+  String get pleaseWaitForPlateBlurringToFinish =>
+      'يرجى انتظار انتهاء تمويه اللوحات';
+
+  @override
+  String get blurPlatesFirstOrChooseToKeepOriginals =>
+      'موّه اللوحات أولاً، أو اختر الإبقاء على الأصلية';
+
+  @override
+  String get callSeller => 'اتصل بالبائع';
+
+  @override
+  String get privateSeller => 'بائع فردي';
+
+  @override
+  String get dealer => 'وكيل';
+
+  @override
+  String get verified => 'موثّق';
+
+  @override
+  String get email => 'البريد الإلكتروني';
+
+  @override
+  String get tapToOpenDealershipPage => 'اضغط لفتح صفحة المعرض';
+
+  @override
+  String get cannotAddToComparison => 'تعذر الإضافة إلى المقارنة';
+
+  @override
+  String get dealershipLogo => 'شعار الوكالة';
+
+  @override
+  String get coverImage => 'صورة الغلاف';
+
+  @override
+  String get openingHours => 'ساعات العمل';
+
+  @override
+  String get youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin =>
+      'يمكنك أيضاً مراجعة بيانات التواصل والموقع والوصف ونقطة الخريطة.';
+
+  @override
+  String get gotIt => 'حسناً';
+
+  @override
+  String get later => 'لاحقاً';
+
+  @override
+  String get completeProfile => 'إكمال الملف';
+
+  @override
+  String get searchByBrand => 'بحث حسب العلامة';
+
+  @override
+  String get searchByModel => 'بحث حسب الموديل';
+
+  @override
+  String get searchBrands => 'ابحث عن العلامات...';
+
+  @override
+  String get searchModels => 'ابحث عن الموديلات...';
+
+  @override
+  String get listingMarkedAsSold => 'تم تحديد الإعلان كمباع';
+
+  @override
+  String get listingIsAvailableAgain => 'الإعلان متاح مجدداً';
+
+  @override
+  String get setUpYourDealerPage => 'أكمل إعداد صفحة وكالتك';
+
+  @override
+  String get yourDealershipIsApproved => 'تمت الموافقة على وكالتك!';
+
+  @override
+  String
+  get yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT =>
+      'تمت الموافقة على وكالتك. املأ المعلومات في هذه الصفحة لإكمال إعداد صفحة الوكالة التي سيراها المشترون.';
+
+  @override
+  String
+  get completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT =>
+      'أكمل صفحة وكالتك العامة ليتمكن المشترون من التعرف على نشاطك ومعرفة أوقات التواصل.';
+
+  @override
+  String get switchToUSD => 'التبديل إلى USD';
+
+  @override
+  String get switchToIQD => 'التبديل إلى IQD';
+
+  @override
+  String get continueAction => 'متابعة';
 }

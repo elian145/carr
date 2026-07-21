@@ -284,12 +284,7 @@ mixin _SellStep1Catalog on _SellStep1Fields {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _trLegacyText(
-            context,
-            'Specs applied — year set; step 2 fields pre-filled.',
-            ar: 'تم تطبيق المواصفات — تم ضبط السنة وملء حقول الخطوة 2 مسبقا.',
-            ku: 'سپێسەکان جێبەجێ کران — ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.',
-          ),
+          AppLocalizations.of(context)!.specsAppliedYearSetStep2FieldsPreFilled,
         ),
         backgroundColor: Colors.green[700],
       ),

@@ -26,12 +26,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
             : null,
       ),
       FilterIconCardSection(
-        title: _trLegacyText(
-          context,
-          'Plate type',
-          ar: 'نوع اللوحة',
-          ku: 'جۆری پڵەیت',
-        ),
+        title: AppLocalizations.of(context)!.labelPlateType,
         options: _plateTypeOptions,
         selected: selectedPlateType,
         scrollHorizontally: true,
@@ -53,12 +48,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
             : null,
       ),
       FilterIconCardSection(
-        title: _trLegacyText(
-          context,
-          'Plate city',
-          ar: 'مدينة اللوحة',
-          ku: 'شاری پڵەیت',
-        ),
+        title: AppLocalizations.of(context)!.labelPlateCity,
         options: _plateCities,
         selected: selectedPlateCity,
         scrollHorizontally: true,
@@ -84,12 +74,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
       TextFormField(
         controller: _phoneController,
         decoration: InputDecoration(
-          labelText: _trLegacyText(
-            context,
-            'WhatsApp/Phone Number *',
-            ar: 'رقم واتساب/الهاتف *',
-            ku: 'ژمارەی واتساپ/مۆبایل *',
-          ),
+          labelText: AppLocalizations.of(context)!.whatsappPhoneNumber2,
           hintText: '7XX XXX XXXX',
           filled: true,
           fillColor: _sellFlowManualFieldFill(context),
@@ -118,20 +103,10 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
         },
         validator: (value) {
           if (value == null || value.trim().isEmpty) {
-            return _trLegacyText(
-              context,
-              'Please enter phone number',
-              ar: 'يرجى إدخال رقم الهاتف',
-              ku: 'تکایە ژمارەی مۆبایل بنووسە',
-            );
+            return AppLocalizations.of(context)!.pleaseEnterPhoneNumber;
           }
           if (value.trim().length < 10) {
-            return _trLegacyText(
-              context,
-              'Please enter a valid phone number',
-              ar: 'يرجى إدخال رقم هاتف صحيح',
-              ku: 'تکایە ژمارەی دروست بنووسە',
-            );
+            return AppLocalizations.of(context)!.pleaseEnterAValidPhoneNumber;
           }
           return null;
         },
@@ -145,12 +120,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
           labelText:
               AppLocalizations.of(context)?.descriptionOptionalLabel ??
               'Description (optional)',
-          hintText: _trLegacyText(
-            context,
-            'Add details about the car, condition, features, or notes',
-            ar: 'أضف تفاصيل عن السيارة والحالة والمزايا أو ملاحظات',
-            ku: 'وردەکاری دەربارەی ئۆتۆمبێلەکە، دۆخ، تایبەتمەندیەکان یان تێبینی زیاد بکە',
-          ),
+          hintText: AppLocalizations.of(context)!.addDetailsAboutTheCarConditionFeaturesOrNotes,
           filled: true,
           fillColor: _sellFlowManualFieldFill(context),
           labelStyle: _sellFlowManualFieldLabelStyle(context),

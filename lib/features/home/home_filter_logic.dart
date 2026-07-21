@@ -175,12 +175,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
-                          _trLegacyText(
-                            context,
-                            '${selected.length} selected',
-                            ar: '${selected.length} محدد',
-                            ku: '${selected.length} هەڵبژێردراو',
-                          ),
+                          AppLocalizations.of(context)!.filterSelectedCount((selected.length).toString()),
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 13,
@@ -244,12 +239,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                           backgroundColor: const Color(0xFFFF6B00),
                         ),
                         child: Text(
-                          _trLegacyText(
-                            context,
-                            'Apply',
-                            ar: 'تطبيق',
-                            ku: 'جێبەجێکردن',
-                          ),
+                          AppLocalizations.of(context)!.apply,
                         ),
                       ),
                     ),
@@ -311,18 +301,8 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
         seating: l10n.seating,
         engineSize: l10n.engineSizeL,
         city: l10n.cityLabel,
-        plateType: _trLegacyText(
-          context,
-          'Plate type',
-          ar: 'نوع اللوحة',
-          ku: 'جۆری پڵەیت',
-        ),
-        plateCity: _trLegacyText(
-          context,
-          'Plate city',
-          ar: 'مدينة اللوحة',
-          ku: 'شاری پڵەیت',
-        ),
+        plateType: AppLocalizations.of(context)!.labelPlateType,
+        plateCity: AppLocalizations.of(context)!.labelPlateCity,
         sortBy: l10n.sortBy,
         minPrice: l10n.minPrice,
         maxPrice: l10n.maxPrice,

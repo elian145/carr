@@ -345,32 +345,12 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                       Semantics(
                         button: true,
                         label: _isListingSold
-                            ? trLegacyText(
-                                context,
-                                'Mark as available',
-                                ar: 'متاح مجدداً',
-                                ku: 'بەردەست بکەرەوە',
-                              )
-                            : trLegacyText(
-                                context,
-                                'Mark as sold',
-                                ar: 'تحديد كمباع',
-                                ku: 'وەک فرۆشراو',
-                              ),
+                            ? AppLocalizations.of(context)!.markAsAvailable
+                            : AppLocalizations.of(context)!.markAsSold,
                         child: IconButton(
                           tooltip: _isListingSold
-                              ? trLegacyText(
-                                  context,
-                                  'Mark as available',
-                                  ar: 'متاح مجدداً',
-                                  ku: 'بەردەست بکەرەوە',
-                                )
-                              : trLegacyText(
-                                  context,
-                                  'Mark as sold',
-                                  ar: 'تحديد كمباع',
-                                  ku: 'وەک فرۆشراو',
-                                ),
+                              ? AppLocalizations.of(context)!.markAsAvailable
+                              : AppLocalizations.of(context)!.markAsSold,
                           onPressed: _toggleListingSoldStatus,
                           icon: Icon(
                             _isListingSold
@@ -430,12 +410,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                           PopupMenuItem(
                             value: 'report_listing',
                             child: Text(
-                              trLegacyText(
-                                ctx,
-                                'Report listing',
-                                ar: 'الإبلاغ عن الإعلان',
-                                ku: 'ڕاپۆرتکردنی ڕیکلام',
-                              ),
+                              AppLocalizations.of(ctx)!.reportListing,
                             ),
                           ),
                           if ((sellerMapFromListing(car)?['id'] ??
@@ -447,12 +422,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                             PopupMenuItem(
                               value: 'report_user',
                               child: Text(
-                                trLegacyText(
-                                  ctx,
-                                  'Report seller',
-                                  ar: 'الإبلاغ عن البائع',
-                                  ku: 'ڕاپۆرتکردنی فرۆشیار',
-                                ),
+                                AppLocalizations.of(ctx)!.reportSeller,
                               ),
                             ),
                         ],

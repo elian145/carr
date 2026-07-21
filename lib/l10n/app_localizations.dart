@@ -3183,6 +3183,1427 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listings waiting for admin approval will appear here.'**
   String get myListingsNoPendingHint;
+
+  /// No description provided for @joinAnd.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get joinAnd;
+
+  /// No description provided for @labelPlateType.
+  ///
+  /// In en, this message translates to:
+  /// **'Plate type'**
+  String get labelPlateType;
+
+  /// No description provided for @labelPlateCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Plate city'**
+  String get labelPlateCity;
+
+  /// No description provided for @plateTypePrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get plateTypePrivate;
+
+  /// No description provided for @plateTypeCommercial.
+  ///
+  /// In en, this message translates to:
+  /// **'Commercial'**
+  String get plateTypeCommercial;
+
+  /// No description provided for @plateTypeTaxi.
+  ///
+  /// In en, this message translates to:
+  /// **'Taxi'**
+  String get plateTypeTaxi;
+
+  /// No description provided for @plateTypeGovernment.
+  ///
+  /// In en, this message translates to:
+  /// **'Government'**
+  String get plateTypeGovernment;
+
+  /// No description provided for @plateTypeTemporary.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporary'**
+  String get plateTypeTemporary;
+
+  /// No description provided for @plateTypeDiplomatic.
+  ///
+  /// In en, this message translates to:
+  /// **'Diplomatic'**
+  String get plateTypeDiplomatic;
+
+  /// No description provided for @plateTypePolice.
+  ///
+  /// In en, this message translates to:
+  /// **'Police'**
+  String get plateTypePolice;
+
+  /// No description provided for @regionSpecGcc.
+  ///
+  /// In en, this message translates to:
+  /// **'GCC'**
+  String get regionSpecGcc;
+
+  /// No description provided for @regionSpecUs.
+  ///
+  /// In en, this message translates to:
+  /// **'US'**
+  String get regionSpecUs;
+
+  /// No description provided for @regionSpecIraq.
+  ///
+  /// In en, this message translates to:
+  /// **'Iraq'**
+  String get regionSpecIraq;
+
+  /// No description provided for @regionSpecCanada.
+  ///
+  /// In en, this message translates to:
+  /// **'Canada'**
+  String get regionSpecCanada;
+
+  /// No description provided for @regionSpecEu.
+  ///
+  /// In en, this message translates to:
+  /// **'EU'**
+  String get regionSpecEu;
+
+  /// No description provided for @regionSpecCn.
+  ///
+  /// In en, this message translates to:
+  /// **'CN'**
+  String get regionSpecCn;
+
+  /// No description provided for @regionSpecKorea.
+  ///
+  /// In en, this message translates to:
+  /// **'Korea'**
+  String get regionSpecKorea;
+
+  /// No description provided for @regionSpecRu.
+  ///
+  /// In en, this message translates to:
+  /// **'RU'**
+  String get regionSpecRu;
+
+  /// No description provided for @regionSpecIran.
+  ///
+  /// In en, this message translates to:
+  /// **'Iran'**
+  String get regionSpecIran;
+
+  /// No description provided for @vinCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'VIN copied'**
+  String get vinCopied;
+
+  /// No description provided for @sellStep1Photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1: Photos'**
+  String get sellStep1Photos;
+
+  /// No description provided for @sellStep2BasicInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2: Basic info'**
+  String get sellStep2BasicInfo;
+
+  /// No description provided for @sellStep3Details.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 3: Details'**
+  String get sellStep3Details;
+
+  /// No description provided for @sellStep4Pricing.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 4: Pricing'**
+  String get sellStep4Pricing;
+
+  /// No description provided for @sellStep5Plates.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 5: Plates'**
+  String get sellStep5Plates;
+
+  /// No description provided for @sellStep6Review.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 6: Review'**
+  String get sellStep6Review;
+
+  /// No description provided for @seats.
+  ///
+  /// In en, this message translates to:
+  /// **'seats'**
+  String get seats;
+
+  /// No description provided for @labelCylinders.
+  ///
+  /// In en, this message translates to:
+  /// **'cylinders'**
+  String get labelCylinders;
+
+  /// No description provided for @labelDealership.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership'**
+  String get labelDealership;
+
+  /// No description provided for @labelPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get labelPhone;
+
+  /// No description provided for @labelLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get labelLocation;
+
+  /// No description provided for @pleaseSelectAtLeastOnePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least one photo'**
+  String get pleaseSelectAtLeastOnePhoto;
+
+  /// No description provided for @couldNotLoadListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load listings'**
+  String get couldNotLoadListings;
+
+  /// No description provided for @homeFeedLoadingListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading listings...'**
+  String get homeFeedLoadingListings;
+
+  /// No description provided for @homeFeedSortingListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorting listings...'**
+  String get homeFeedSortingListings;
+
+  /// No description provided for @homeFeedCachedResultsBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing cached results'**
+  String get homeFeedCachedResultsBanner;
+
+  /// No description provided for @homeFeedSortedLocally.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorted locally (server unavailable)'**
+  String get homeFeedSortedLocally;
+
+  /// No description provided for @commonRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get commonRefresh;
+
+  /// No description provided for @homeFeedSortDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sorting temporarily disabled due to server issue'**
+  String get homeFeedSortDisabled;
+
+  /// No description provided for @homeFeedNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not reach the server. Check your connection and try again.'**
+  String get homeFeedNetworkError;
+
+  /// Parameterized home feed server error
+  ///
+  /// In en, this message translates to:
+  /// **'Server error ({statusCode}). Please try again later.'**
+  String homeFeedServerError(String statusCode);
+
+  /// No description provided for @acceptTermsRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please accept the Terms and Privacy Policy'**
+  String get acceptTermsRequired;
+
+  /// No description provided for @videoPlaybackFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not play this video.'**
+  String get videoPlaybackFailed;
+
+  /// No description provided for @photosUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos uploaded'**
+  String get photosUploaded;
+
+  /// No description provided for @commonYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get commonYes;
+
+  /// No description provided for @commonNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get commonNo;
+
+  /// No description provided for @missingDealerId.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing dealer id'**
+  String get missingDealerId;
+
+  /// No description provided for @markAsAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as available'**
+  String get markAsAvailable;
+
+  /// No description provided for @markAsSold.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as sold'**
+  String get markAsSold;
+
+  /// No description provided for @reportListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Report listing'**
+  String get reportListing;
+
+  /// No description provided for @reportSeller.
+  ///
+  /// In en, this message translates to:
+  /// **'Report seller'**
+  String get reportSeller;
+
+  /// No description provided for @unableToSelectThatPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to select that photo.'**
+  String get unableToSelectThatPhoto;
+
+  /// No description provided for @pleaseUploadAClearPhotoOfYourBusiness.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload a clear photo of your business.'**
+  String get pleaseUploadAClearPhotoOfYourBusiness;
+
+  /// No description provided for @dealershipDetailsSubmittedYourApplicationIsPendingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership details submitted. Your application is pending review.'**
+  String get dealershipDetailsSubmittedYourApplicationIsPendingReview;
+
+  /// No description provided for @addAPhotoThatHelpsUsVerifyThisDealership.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a photo that helps us verify this dealership'**
+  String get addAPhotoThatHelpsUsVerifyThisDealership;
+
+  /// No description provided for @privateDealershipPhotoUploaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Private dealership photo uploaded'**
+  String get privateDealershipPhotoUploaded;
+
+  /// No description provided for @createDealershipAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create dealership account'**
+  String get createDealershipAccount;
+
+  /// No description provided for @finalSetupStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Final setup step'**
+  String get finalSetupStep;
+
+  /// No description provided for @buildYourDealershipPresence.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your dealership presence'**
+  String get buildYourDealershipPresence;
+
+  /// No description provided for @addAccurateBusinessDetailsSoBuyersCanTrustAndContactYourDealership.
+  ///
+  /// In en, this message translates to:
+  /// **'Add accurate business details so buyers can trust and contact your dealership.'**
+  String get addAccurateBusinessDetailsSoBuyersCanTrustAndContactYourDealership;
+
+  /// No description provided for @reviewUsuallyTakes12BusinessDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Review usually takes 1–2 business days'**
+  String get reviewUsuallyTakes12BusinessDays;
+
+  /// No description provided for @changesRequested.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes requested'**
+  String get changesRequested;
+
+  /// No description provided for @businessInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Business information'**
+  String get businessInformation;
+
+  /// No description provided for @theseDetailsWillAppearOnYourPublicDealershipProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'These details will appear on your public dealership profile.'**
+  String get theseDetailsWillAppearOnYourPublicDealershipProfile;
+
+  /// No description provided for @dealershipName.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership name'**
+  String get dealershipName;
+
+  /// No description provided for @yourRegisteredOrTradingName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your registered or trading name'**
+  String get yourRegisteredOrTradingName;
+
+  /// No description provided for @businessPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Business phone'**
+  String get businessPhone;
+
+  /// No description provided for @aNumberBuyersCanReach.
+  ///
+  /// In en, this message translates to:
+  /// **'A number buyers can reach'**
+  String get aNumberBuyersCanReach;
+
+  /// No description provided for @dealershipLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership location'**
+  String get dealershipLocation;
+
+  /// No description provided for @cityDistrictAndStreet.
+  ///
+  /// In en, this message translates to:
+  /// **'City, district, and street'**
+  String get cityDistrictAndStreet;
+
+  /// No description provided for @aboutYourDealershipOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'About your dealership (optional)'**
+  String get aboutYourDealershipOptional;
+
+  /// No description provided for @describeYourInventoryExperienceAndCustomerService.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe your inventory, experience, and customer service'**
+  String get describeYourInventoryExperienceAndCustomerService;
+
+  /// No description provided for @dealershipVerificationPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership verification photo'**
+  String get dealershipVerificationPhoto;
+
+  /// No description provided for @requiredUsedPrivatelyByOurReviewTeamAndNeverShownOnYourPublicProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Required · Used privately by our review team and never shown on your public profile.'**
+  String
+  get requiredUsedPrivatelyByOurReviewTeamAndNeverShownOnYourPublicProfile;
+
+  /// No description provided for @chooseVerificationPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose verification photo'**
+  String get chooseVerificationPhoto;
+
+  /// No description provided for @replacePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace photo'**
+  String get replacePhoto;
+
+  /// No description provided for @uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload one clear, recent photo of the dealership storefront, cars for sale, showroom, or office—anything that helps our team confirm the business is genuine.'**
+  String
+  get uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO;
+
+  /// No description provided for @submitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting…'**
+  String get submitting;
+
+  /// No description provided for @submitForReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit for review'**
+  String get submitForReview;
+
+  /// No description provided for @yourBusinessInformationIsHandledSecurely.
+  ///
+  /// In en, this message translates to:
+  /// **'Your business information is handled securely.'**
+  String get yourBusinessInformationIsHandledSecurely;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot Password'**
+  String get forgotPassword;
+
+  /// No description provided for @resetPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset Password'**
+  String get resetPassword;
+
+  /// No description provided for @checkYourEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Check Your Email'**
+  String get checkYourEmail;
+
+  /// No description provided for @checkYourMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your messages'**
+  String get checkYourMessages;
+
+  /// No description provided for @enterTheEmailAddressForYourAccountWeWillSendAResetCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the email address for your account. We will send a reset code.'**
+  String get enterTheEmailAddressForYourAccountWeWillSendAResetCode;
+
+  /// No description provided for @enterThePhoneNumberForYourAccountWeWillSendAResetCodeBySMS.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the phone number for your account. We will send a reset code by SMS.'**
+  String get enterThePhoneNumberForYourAccountWeWillSendAResetCodeBySMS;
+
+  /// Migrated legacy string (weVeSentAPasswordResetLinkToEmailPleaseCheckYourEmailAndFollowTheInstruc)
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ve sent a password reset link to {email}. Please check your email and follow the instructions.'**
+  String
+  weVeSentAPasswordResetLinkToEmailPleaseCheckYourEmailAndFollowTheInstruc(
+    String email,
+  );
+
+  /// Migrated legacy string (ifAnAccountExistsForPhoneWeSentAPasswordResetCodeBySMS)
+  ///
+  /// In en, this message translates to:
+  /// **'If an account exists for {phone}, we sent a password reset code by SMS.'**
+  String ifAnAccountExistsForPhoneWeSentAPasswordResetCodeBySMS(String phone);
+
+  /// No description provided for @ifYouDonTSeeItCheckYourSpamOrJunkFolderTheLinkIsOnlySentIfAnAccountExist.
+  ///
+  /// In en, this message translates to:
+  /// **'If you don\'t see it, check your spam or junk folder. The link is only sent if an account exists for this email.'**
+  String
+  get ifYouDonTSeeItCheckYourSpamOrJunkFolderTheLinkIsOnlySentIfAnAccountExist;
+
+  /// No description provided for @smsMayTakeAMinuteOrTwoACodeIsOnlySentIfAnAccountExistsForThisNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS may take a minute or two. A code is only sent if an account exists for this number.'**
+  String
+  get smsMayTakeAMinuteOrTwoACodeIsOnlySentIfAnAccountExistsForThisNumber;
+
+  /// No description provided for @pleaseEnterAValidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email'**
+  String get pleaseEnterAValidEmail;
+
+  /// No description provided for @pleaseEnterAValidPhoneNumberAtLeast8Digits.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number (at least 8 digits)'**
+  String get pleaseEnterAValidPhoneNumberAtLeast8Digits;
+
+  /// No description provided for @sendResetLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reset Link'**
+  String get sendResetLink;
+
+  /// No description provided for @sendResetCodeSMS.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reset code (SMS)'**
+  String get sendResetCodeSMS;
+
+  /// No description provided for @iHaveTheCodeSetNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'I have the code – set new password'**
+  String get iHaveTheCodeSetNewPassword;
+
+  /// No description provided for @backToLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to Login'**
+  String get backToLogin;
+
+  /// No description provided for @commonBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get commonBack;
+
+  /// No description provided for @tooManyResetAttemptsPleaseWaitALittleAndTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many reset attempts. Please wait a little and try again.'**
+  String get tooManyResetAttemptsPleaseWaitALittleAndTryAgain;
+
+  /// No description provided for @failedToSendResetLinkCheckYourEmailAndTryAgainLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send reset link. Check your email and try again later.'**
+  String get failedToSendResetLinkCheckYourEmailAndTryAgainLater;
+
+  /// No description provided for @failedToSendSMSCheckTheNumberAndTryAgainLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send SMS. Check the number and try again later.'**
+  String get failedToSendSMSCheckTheNumberAndTryAgainLater;
+
+  /// No description provided for @thisPhoneNumberIsRegisteredToAPersonalAccountPleaseUsePersonalLoginInste.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone number is registered to a personal account. Please use personal login instead.'**
+  String
+  get thisPhoneNumberIsRegisteredToAPersonalAccountPleaseUsePersonalLoginInste;
+
+  /// No description provided for @thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone number is registered to a dealer account. Please use dealer login instead.'**
+  String
+  get thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get welcomeBack;
+
+  /// No description provided for @enterYourPhoneNumberToLogInOrCreateAnAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number to log in or create an account.'**
+  String get enterYourPhoneNumberToLogInOrCreateAnAccount;
+
+  /// No description provided for @accountType.
+  ///
+  /// In en, this message translates to:
+  /// **'Account type'**
+  String get accountType;
+
+  /// No description provided for @dealerApplicationNeedsChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer application needs changes'**
+  String get dealerApplicationNeedsChanges;
+
+  /// No description provided for @recentlyViewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently viewed'**
+  String get recentlyViewed;
+
+  /// No description provided for @editDealerPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit dealer page'**
+  String get editDealerPage;
+
+  /// No description provided for @guest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest'**
+  String get guest;
+
+  /// No description provided for @signInToAccessYourProfileFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to access your profile features.'**
+  String get signInToAccessYourProfileFeatures;
+
+  /// No description provided for @iAgreeToThe.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the '**
+  String get iAgreeToThe;
+
+  /// No description provided for @terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms'**
+  String get terms;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @searchAppliedSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Search applied successfully!'**
+  String get searchAppliedSuccessfully;
+
+  /// No description provided for @appliedFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied Filters:'**
+  String get appliedFilters;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @alerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get alerts;
+
+  /// No description provided for @owners.
+  ///
+  /// In en, this message translates to:
+  /// **'Owners'**
+  String get owners;
+
+  /// No description provided for @accidentHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Accident History'**
+  String get accidentHistory;
+
+  /// No description provided for @deleteSavedSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete saved search?'**
+  String get deleteSavedSearch;
+
+  /// No description provided for @thisWillPermanentlyRemoveThisSavedSearchThisCannotBeUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently remove this saved search. This cannot be undone.'**
+  String get thisWillPermanentlyRemoveThisSavedSearchThisCannotBeUndone;
+
+  /// No description provided for @featured.
+  ///
+  /// In en, this message translates to:
+  /// **'FEATURED'**
+  String get featured;
+
+  /// No description provided for @less.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get less;
+
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @selectFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Select from list'**
+  String get selectFromList;
+
+  /// No description provided for @searchMakeOrModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search make or model'**
+  String get searchMakeOrModel;
+
+  /// No description provided for @noMakesOrModelsMatchYourSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No makes or models match your search.'**
+  String get noMakesOrModelsMatchYourSearch;
+
+  /// No description provided for @make.
+  ///
+  /// In en, this message translates to:
+  /// **'Make'**
+  String get make;
+
+  /// No description provided for @sendMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get sendMessage;
+
+  /// Migrated legacy string (filterSelectedCount)
+  ///
+  /// In en, this message translates to:
+  /// **'{count} selected'**
+  String filterSelectedCount(String count);
+
+  /// No description provided for @apply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get apply;
+
+  /// No description provided for @youLlBeNotifiedWhenAMatchingCarIsListed.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll be notified when a matching car is listed'**
+  String get youLlBeNotifiedWhenAMatchingCarIsListed;
+
+  /// No description provided for @view.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get view;
+
+  /// No description provided for @logIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get logIn;
+
+  /// No description provided for @searchBrandsModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search brands & models'**
+  String get searchBrandsModels;
+
+  /// No description provided for @showCars.
+  ///
+  /// In en, this message translates to:
+  /// **'Show Cars'**
+  String get showCars;
+
+  /// No description provided for @searchCars.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Cars'**
+  String get searchCars;
+
+  /// No description provided for @saveSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Save search'**
+  String get saveSearch;
+
+  /// No description provided for @notifyMe.
+  ///
+  /// In en, this message translates to:
+  /// **'Notify me'**
+  String get notifyMe;
+
+  /// No description provided for @featuredListings.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured Listings'**
+  String get featuredListings;
+
+  /// No description provided for @plate.
+  ///
+  /// In en, this message translates to:
+  /// **'Plate'**
+  String get plate;
+
+  /// No description provided for @viewDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'View description'**
+  String get viewDescription;
+
+  /// No description provided for @licensePlates.
+  ///
+  /// In en, this message translates to:
+  /// **'License plates'**
+  String get licensePlates;
+
+  /// No description provided for @draftInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft in progress'**
+  String get draftInProgress;
+
+  /// No description provided for @discardDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard draft?'**
+  String get discardDraft;
+
+  /// No description provided for @thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete this draft listing. This cannot be undone.'**
+  String get thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone;
+
+  /// No description provided for @discard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get discard;
+
+  /// No description provided for @failedToBlurPlatesPleaseTryAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to blur plates. Please try again.'**
+  String get failedToBlurPlatesPleaseTryAgain;
+
+  /// No description provided for @platesBlurredSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Plates blurred successfully.'**
+  String get platesBlurredSuccessfully;
+
+  /// No description provided for @inProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get inProgress;
+
+  /// No description provided for @draftsInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Drafts in progress'**
+  String get draftsInProgress;
+
+  /// No description provided for @continueAnyDraftDiscardOneOrStartANewListingWhileKeepingTheOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue any draft, discard one, or start a new listing while keeping the others.'**
+  String get continueAnyDraftDiscardOneOrStartANewListingWhileKeepingTheOthers;
+
+  /// No description provided for @startNewListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start new listing'**
+  String get startNewListing;
+
+  /// No description provided for @startANewListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Start a new listing'**
+  String get startANewListing;
+
+  /// No description provided for @noDraftsYetCreateYourFirstCarListingToGetStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'No drafts yet. Create your first car listing to get started.'**
+  String get noDraftsYetCreateYourFirstCarListingToGetStarted;
+
+  /// No description provided for @specsAppliedYearSetStep2FieldsPreFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Specs applied — year set; step 2 fields pre-filled.'**
+  String get specsAppliedYearSetStep2FieldsPreFilled;
+
+  /// No description provided for @search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search...'**
+  String get search;
+
+  /// No description provided for @loadingVehicleSpecs.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading vehicle specs…'**
+  String get loadingVehicleSpecs;
+
+  /// No description provided for @specDatabaseUnavailableRestartTheAppAfterFlutterPubGet.
+  ///
+  /// In en, this message translates to:
+  /// **'Spec database unavailable. Restart the app after flutter pub get.'**
+  String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet;
+
+  /// No description provided for @catalogAutoFill.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog auto-fill'**
+  String get catalogAutoFill;
+
+  /// No description provided for @selectAModelYearToLoadMatchingSpecs.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a model year to load matching specs.'**
+  String get selectAModelYearToLoadMatchingSpecs;
+
+  /// No description provided for @modelYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Model year'**
+  String get modelYear;
+
+  /// No description provided for @youCanChangeTheseInStep2.
+  ///
+  /// In en, this message translates to:
+  /// **'You can change these in step 2.'**
+  String get youCanChangeTheseInStep2;
+
+  /// No description provided for @specsAvailableForThisYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Specs available for this year.'**
+  String get specsAvailableForThisYear;
+
+  /// No description provided for @applySpecs.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply specs'**
+  String get applySpecs;
+
+  /// No description provided for @specifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Specifications'**
+  String get specifications;
+
+  /// No description provided for @vinOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'VIN (optional)'**
+  String get vinOptional;
+
+  /// No description provided for @vinMustBe17Characters.
+  ///
+  /// In en, this message translates to:
+  /// **'VIN must be 17 characters'**
+  String get vinMustBe17Characters;
+
+  /// No description provided for @setYourPriceAndContactInformation.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your price and contact information'**
+  String get setYourPriceAndContactInformation;
+
+  /// No description provided for @whatsappPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp/Phone Number'**
+  String get whatsappPhoneNumber;
+
+  /// No description provided for @whatsappPhoneNumber2.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp/Phone Number *'**
+  String get whatsappPhoneNumber2;
+
+  /// No description provided for @pleaseEnterPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter phone number'**
+  String get pleaseEnterPhoneNumber;
+
+  /// No description provided for @pleaseEnterAValidPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid phone number'**
+  String get pleaseEnterAValidPhoneNumber;
+
+  /// No description provided for @addDetailsAboutTheCarConditionFeaturesOrNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Add details about the car, condition, features, or notes'**
+  String get addDetailsAboutTheCarConditionFeaturesOrNotes;
+
+  /// Migrated legacy string (priceSelectedCurrencyOptional)
+  ///
+  /// In en, this message translates to:
+  /// **'Price ({selectedCurrency}) (optional)'**
+  String priceSelectedCurrencyOptional(String selectedCurrency);
+
+  /// No description provided for @enterPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter price'**
+  String get enterPrice;
+
+  /// No description provided for @invalidPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid price'**
+  String get invalidPrice;
+
+  /// No description provided for @priceCannotBeNegative.
+  ///
+  /// In en, this message translates to:
+  /// **'Price cannot be negative'**
+  String get priceCannotBeNegative;
+
+  /// No description provided for @damageCrashPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Damage / crash photos'**
+  String get damageCrashPhotos;
+
+  /// No description provided for @shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown next to title status on your listing. Not mixed into the main photo gallery.'**
+  String get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery;
+
+  /// No description provided for @addPhotosFirstPlatesArePreparedAutomatically.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos first — plates are prepared automatically'**
+  String get addPhotosFirstPlatesArePreparedAutomatically;
+
+  /// No description provided for @photos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get photos;
+
+  /// No description provided for @tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the star on a photo to set it as the cover image shown first in your listing.'**
+  String get tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing;
+
+  /// No description provided for @cover.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover'**
+  String get cover;
+
+  /// No description provided for @blurringLicensePlatesInTheBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Blurring license plates in the background…'**
+  String get blurringLicensePlatesInTheBackground;
+
+  /// No description provided for @plateBlurReadyYouCanChooseLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Plate blur ready — you can choose later'**
+  String get plateBlurReadyYouCanChooseLater;
+
+  /// No description provided for @videos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get videos;
+
+  /// No description provided for @addMoreVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add More Videos'**
+  String get addMoreVideos;
+
+  /// No description provided for @addVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Videos'**
+  String get addVideos;
+
+  /// No description provided for @stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Still blurring plates in the background. Photos will appear here when ready.'**
+  String get stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady;
+
+  /// No description provided for @blurredPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Blurred photos'**
+  String get blurredPhotos;
+
+  /// No description provided for @blurredDamagePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Blurred damage photos'**
+  String get blurredDamagePhotos;
+
+  /// No description provided for @noPhotosAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos available.'**
+  String get noPhotosAvailable;
+
+  /// No description provided for @blurredPhotosAreNotReadyYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Blurred photos are not ready yet.'**
+  String get blurredPhotosAreNotReadyYet;
+
+  /// No description provided for @blurPlatesNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur plates now'**
+  String get blurPlatesNow;
+
+  /// No description provided for @originalPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Original photos'**
+  String get originalPhotos;
+
+  /// No description provided for @originalDamagePhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Original damage photos'**
+  String get originalDamagePhotos;
+
+  /// No description provided for @chooseWhetherToPublishPhotosWithBlurredPlates.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose whether to publish photos with blurred plates'**
+  String get chooseWhetherToPublishPhotosWithBlurredPlates;
+
+  /// No description provided for @blurPlates.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur plates?'**
+  String get blurPlates;
+
+  /// No description provided for @yesBlurPlates.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, blur plates'**
+  String get yesBlurPlates;
+
+  /// No description provided for @noKeepOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'No, keep original'**
+  String get noKeepOriginal;
+
+  /// No description provided for @yesUseBlurredPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, use blurred photos'**
+  String get yesUseBlurredPhotos;
+
+  /// No description provided for @hideLicensePlatesOnYourListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide license plates on your listing'**
+  String get hideLicensePlatesOnYourListing;
+
+  /// No description provided for @noKeepOriginalPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'No, keep original photos'**
+  String get noKeepOriginalPhotos;
+
+  /// No description provided for @publishThePhotosExactlyAsYouUploadedThem.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish the photos exactly as you uploaded them'**
+  String get publishThePhotosExactlyAsYouUploadedThem;
+
+  /// No description provided for @pleaseChooseWhetherToBlurPlates.
+  ///
+  /// In en, this message translates to:
+  /// **'Please choose whether to blur plates'**
+  String get pleaseChooseWhetherToBlurPlates;
+
+  /// No description provided for @pleaseWaitForPlateBlurringToFinish.
+  ///
+  /// In en, this message translates to:
+  /// **'Please wait for plate blurring to finish'**
+  String get pleaseWaitForPlateBlurringToFinish;
+
+  /// No description provided for @blurPlatesFirstOrChooseToKeepOriginals.
+  ///
+  /// In en, this message translates to:
+  /// **'Blur plates first, or choose to keep originals'**
+  String get blurPlatesFirstOrChooseToKeepOriginals;
+
+  /// No description provided for @callSeller.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Seller'**
+  String get callSeller;
+
+  /// No description provided for @privateSeller.
+  ///
+  /// In en, this message translates to:
+  /// **'Private seller'**
+  String get privateSeller;
+
+  /// No description provided for @dealer.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer'**
+  String get dealer;
+
+  /// No description provided for @verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get verified;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @tapToOpenDealershipPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to open dealership page'**
+  String get tapToOpenDealershipPage;
+
+  /// No description provided for @cannotAddToComparison.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot add to comparison'**
+  String get cannotAddToComparison;
+
+  /// No description provided for @dealershipLogo.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealership logo'**
+  String get dealershipLogo;
+
+  /// No description provided for @coverImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Cover image'**
+  String get coverImage;
+
+  /// No description provided for @openingHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening hours'**
+  String get openingHours;
+
+  /// No description provided for @youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin.
+  ///
+  /// In en, this message translates to:
+  /// **'You can also review your contact details, location, description, and map pin.'**
+  String get youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin;
+
+  /// No description provided for @gotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get gotIt;
+
+  /// No description provided for @later.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get later;
+
+  /// No description provided for @completeProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete profile'**
+  String get completeProfile;
+
+  /// No description provided for @searchByBrand.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by Brand'**
+  String get searchByBrand;
+
+  /// No description provided for @searchByModel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by Model'**
+  String get searchByModel;
+
+  /// No description provided for @searchBrands.
+  ///
+  /// In en, this message translates to:
+  /// **'Search brands...'**
+  String get searchBrands;
+
+  /// No description provided for @searchModels.
+  ///
+  /// In en, this message translates to:
+  /// **'Search models...'**
+  String get searchModels;
+
+  /// No description provided for @listingMarkedAsSold.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing marked as sold'**
+  String get listingMarkedAsSold;
+
+  /// No description provided for @listingIsAvailableAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing is available again'**
+  String get listingIsAvailableAgain;
+
+  /// No description provided for @setUpYourDealerPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your dealer page'**
+  String get setUpYourDealerPage;
+
+  /// No description provided for @yourDealershipIsApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Your dealership is approved!'**
+  String get yourDealershipIsApproved;
+
+  /// No description provided for @yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT.
+  ///
+  /// In en, this message translates to:
+  /// **'Your dealership is approved. Fill in the information on this page to finish setting up the dealer page buyers will see.'**
+  String
+  get yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT;
+
+  /// No description provided for @completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your public dealer page so buyers can recognize your business and know when to contact you.'**
+  String
+  get completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT;
+
+  /// No description provided for @switchToUSD.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to USD'**
+  String get switchToUSD;
+
+  /// No description provided for @switchToIQD.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to IQD'**
+  String get switchToIQD;
+
+  /// No description provided for @continueAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueAction;
 }
 
 class _AppLocalizationsDelegate

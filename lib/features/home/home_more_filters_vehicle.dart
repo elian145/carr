@@ -165,12 +165,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
           ),
           icon: const Icon(Icons.search, size: 20),
           label: Text(
-            _trLegacyText(
-              context,
-              'Search brands & models',
-              ar: 'بحث عن الماركات والموديلات',
-              ku: 'گەڕان بەدوای براند و مۆدێل',
-            ),
+            AppLocalizations.of(context)!.searchBrandsModels,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),

@@ -30,12 +30,7 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
                 vertical: 4,
               ),
               child: Text(
-                _trLegacyText(
-                  context,
-                  'Featured Listings',
-                  ar: 'إعلانات مميزة',
-                  ku: 'ڕیکلامە تایبەتەکان',
-                ),
+                AppLocalizations.of(context)!.featuredListings,
                 style: GoogleFonts.orbitron(
                   color: const Color(0xFFFF6B00),
                   fontWeight: FontWeight.bold,

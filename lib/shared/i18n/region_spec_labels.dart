@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import 'legacy_inline_text.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Canonical codes for listing / filter "region specs" (lowercase API / DB values).
 const List<String> kCarRegionSpecCodes = [
@@ -43,23 +43,23 @@ String carRegionSpecDisplayLabel(String code) {
 String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) {
   switch (code.trim().toLowerCase()) {
     case 'gcc':
-      return trLegacyText(context, 'GCC', ar: 'خليجي', ku: 'کەنداو');
+      return AppLocalizations.of(context)!.regionSpecGcc;
     case 'us':
-      return trLegacyText(context, 'US', ar: 'أمريكي', ku: 'ئەمەریکی');
+      return AppLocalizations.of(context)!.regionSpecUs;
     case 'iraq':
-      return trLegacyText(context, 'Iraq', ar: 'عراقي', ku: 'عێراقی');
+      return AppLocalizations.of(context)!.regionSpecIraq;
     case 'canada':
-      return trLegacyText(context, 'Canada', ar: 'كندي', ku: 'کەنەدی');
+      return AppLocalizations.of(context)!.regionSpecCanada;
     case 'eu':
-      return trLegacyText(context, 'EU', ar: 'أوروبي', ku: 'ئەوروپی');
+      return AppLocalizations.of(context)!.regionSpecEu;
     case 'cn':
-      return trLegacyText(context, 'CN', ar: 'صيني', ku: 'چینی');
+      return AppLocalizations.of(context)!.regionSpecCn;
     case 'korea':
-      return trLegacyText(context, 'Korea', ar: 'كوري', ku: 'کۆری');
+      return AppLocalizations.of(context)!.regionSpecKorea;
     case 'ru':
-      return trLegacyText(context, 'RU', ar: 'روسي', ku: 'ڕووسی');
+      return AppLocalizations.of(context)!.regionSpecRu;
     case 'iran':
-      return trLegacyText(context, 'Iran', ar: 'إيراني', ku: 'ئێرانی');
+      return AppLocalizations.of(context)!.regionSpecIran;
     default:
       return carRegionSpecDisplayLabel(code);
   }

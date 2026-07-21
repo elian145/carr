@@ -52,12 +52,7 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
             SizedBox(height: 12),
             _buildActionButton(
               Icons.history,
-              trLegacyText(
-                context,
-                'Recently viewed',
-                ar: 'شوهد مؤخراً',
-                ku: 'دواتر بینراو',
-              ),
+              AppLocalizations.of(context)!.recentlyViewed,
               () {
                 if (ApiService.accessToken == null ||
                     ApiService.accessToken!.isEmpty) {
@@ -119,12 +114,7 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
               SizedBox(height: 12),
               _buildActionButton(
                 Icons.storefront_outlined,
-                trLegacyText(
-                  context,
-                  'Edit dealer page',
-                  ar: 'تعديل صفحة الوكيل',
-                  ku: 'دەستکاری پەڕەی وەکیل',
-                ),
+                AppLocalizations.of(context)!.editDealerPage,
                 () async {
                   if (ApiService.accessToken == null ||
                       ApiService.accessToken!.isEmpty) {

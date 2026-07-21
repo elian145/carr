@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../i18n/legacy_inline_text.dart';
+import '../../l10n/app_localizations.dart';
 
 const Color kFeaturedListingAccent = Color(0xFFFF6B00);
 
 String listingFeaturedLabel(BuildContext context) {
-  return trLegacyText(
-    context,
-    'FEATURED',
-    ar: 'مميز',
-    ku: 'تایبەت',
-  );
+  return AppLocalizations.of(context)!.featured;
 }
 
 bool listingIsFeatured(Map car) {

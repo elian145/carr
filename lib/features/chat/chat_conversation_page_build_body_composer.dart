@@ -205,12 +205,7 @@ mixin _ChatConversationPageBuildBodyComposer
                 const SizedBox(width: 8),
                 Semantics(
                   button: true,
-                  label: trLegacyText(
-                    context,
-                    'Send message',
-                    ar: 'إرسال رسالة',
-                    ku: 'ناردنی پەیام',
-                  ),
+                  label: AppLocalizations.of(context)!.sendMessage,
                   child: IconButton(
                     onPressed: (_isSending || _isRecordingVoice)
                         ? null

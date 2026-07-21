@@ -8,7 +8,6 @@ import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../l10n/app_localizations.dart';
 import '../services/saved_search_service.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/i18n/legacy_inline_text.dart';
 import '../shared/i18n/listing_field_labels.dart';
 import '../shared/i18n/listing_value_labels.dart';
 import '../shared/i18n/region_spec_labels.dart';

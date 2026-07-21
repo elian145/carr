@@ -22,12 +22,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _trLegacyText(
-                    context,
-                    'Loading vehicle specs…',
-                    ar: 'جاري تحميل مواصفات السيارة…',
-                    ku: 'سپێسی ئۆتۆمبێل بار دەکرێت…',
-                  ),
+                  AppLocalizations.of(context)!.loadingVehicleSpecs,
                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
               ),
@@ -41,12 +36,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
         isError: true,
         child: Text(
           _specLoadErr ??
-              _trLegacyText(
-                context,
-                'Spec database unavailable. Restart the app after flutter pub get.',
-                ar: 'قاعدة بيانات المواصفات غير متاحة. أعد تشغيل التطبيق بعد flutter pub get.',
-                ku: 'بنکەی زانیاری سپێس بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.',
-              ),
+              AppLocalizations.of(context)!.specDatabaseUnavailableRestartTheAppAfterFlutterPubGet,
           style: TextStyle(fontSize: 13, color: Colors.grey[700]),
         ),
       );
@@ -104,12 +94,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            _trLegacyText(
-              context,
-              'Catalog auto-fill',
-              ar: 'تعبئة تلقائية من الكتالوج',
-              ku: 'پڕکردنەوەی خۆکاری کاتالۆگ',
-            ),
+            AppLocalizations.of(context)!.catalogAutoFill,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 15,
@@ -118,12 +103,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
           ),
           const SizedBox(height: 4),
           Text(
-            _trLegacyText(
-              context,
-              'Select a model year to load matching specs.',
-              ar: 'اختر سنة الموديل لتحميل المواصفات المطابقة.',
-              ku: 'ساڵی مۆدێل هەڵبژێرە بۆ بارکردنی سپێسی گونجاو.',
-            ),
+            AppLocalizations.of(context)!.selectAModelYearToLoadMatchingSpecs,
             style: TextStyle(
               fontSize: 12,
               height: 1.35,
@@ -145,12 +125,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                   : years.first,
               decoration: filterDropdownFieldDecoration(
                 style,
-                _trLegacyText(
-                  context,
-                  'Model year',
-                  ar: 'سنة الموديل',
-                  ku: 'ساڵی مۆدێل',
-                ),
+                AppLocalizations.of(context)!.modelYear,
               ),
               items: years
                   .map(
@@ -180,23 +155,13 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
             ),
             const SizedBox(height: 2),
             Text(
-              _trLegacyText(
-                context,
-                'You can change these in step 2.',
-                ar: 'يمكنك تغييرها في الخطوة 2.',
-                ku: 'دەتوانیت لە هەنگاوی 2 بیانگۆڕیت.',
-              ),
+              AppLocalizations.of(context)!.youCanChangeTheseInStep2,
               style: TextStyle(fontSize: 11, color: Colors.grey[500]),
             ),
           ] else if (canApply) ...[
             const SizedBox(height: 12),
             Text(
-              _trLegacyText(
-                context,
-                'Specs available for this year.',
-                ar: 'المواصفات متاحة لهذه السنة.',
-                ku: 'سپێس بۆ ئەم ساڵە بەردەستە.',
-              ),
+              AppLocalizations.of(context)!.specsAvailableForThisYear,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -221,12 +186,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
                 ),
               ),
               child: Text(
-                _trLegacyText(
-                  context,
-                  'Apply specs',
-                  ar: 'تطبيق المواصفات',
-                  ku: 'جێبەجێکردنی سپێس',
-                ),
+                AppLocalizations.of(context)!.applySpecs,
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,

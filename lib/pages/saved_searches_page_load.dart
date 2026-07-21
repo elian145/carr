@@ -42,20 +42,10 @@ mixin _SavedSearchesPageLoad on _SavedSearchesPageFields {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          trLegacyText(
-            context,
-            'Delete saved search?',
-            ar: 'حذف البحث المحفوظ؟',
-            ku: 'گەڕانی پاشەکەوتکراو بسڕێتەوە؟',
-          ),
+          AppLocalizations.of(context)!.deleteSavedSearch,
         ),
         content: Text(
-          trLegacyText(
-            context,
-            'This will permanently remove this saved search. This cannot be undone.',
-            ar: 'سيتم حذف هذا البحث المحفوظ نهائياً. لا يمكن التراجع عن هذا الإجراء.',
-            ku: 'ئەمە ئەم گەڕانە پاشەکەوتکراوە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.',
-          ),
+          AppLocalizations.of(context)!.thisWillPermanentlyRemoveThisSavedSearchThisCannotBeUndone,
         ),
         actions: [
           TextButton(

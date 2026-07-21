@@ -2,176 +2,56 @@ import 'package:flutter/widgets.dart';
 
 import '../../l10n/app_localizations.dart';
 
-/// Lightweight helpers for translating UI snippets not covered by [AppLocalizations].
-String trLegacyText(
-  BuildContext context,
-  String en, {
-  String? ar,
-  String? ku,
-}) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return ar ?? en;
-  if (code == 'ku' || code == 'ckb') return ku ?? en;
-  return en;
-}
+/// Localized UI helpers formerly backed by inline ar/ku maps.
+/// Prefer [AppLocalizations] getters directly at call sites when practical.
+String yesText(BuildContext context) => AppLocalizations.of(context)!.commonYes;
 
-String yesText(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'نعم';
-  if (code == 'ku') return 'بەڵێ';
-  return 'Yes';
-}
+String noText(BuildContext context) => AppLocalizations.of(context)!.commonNo;
 
-String noText(BuildContext context) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar') return 'لا';
-  if (code == 'ku') return 'نەخێر';
-  return 'No';
-}
+String pleaseSelectPhotoText(BuildContext context) =>
+    AppLocalizations.of(context)!.pleaseSelectAtLeastOnePhoto;
 
-String pleaseSelectPhotoText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Please select at least one photo',
-    ar: 'يرجى اختيار صورة واحدة على الأقل',
-    ku: 'تکایە لانیکەم یەک وێنە هەڵبژێرە',
-  );
-}
+String listingSubmittedSuccessText(BuildContext context) =>
+    AppLocalizations.of(context)!.listingSubmittedSuccess;
 
-String listingSubmittedSuccessText(BuildContext context) {
-  return AppLocalizations.of(context)?.listingSubmittedSuccess ??
-      trLegacyText(
-        context,
-        'Listing submitted! It may appear after admin review.',
-        ar: 'تم إرسال الإعلان! قد يظهر بعد مراجعة المشرف.',
-        ku: 'ڕیکلام نێردرا! لەوانەیە دوای پێداچوونەوەی بەڕێوەبەر دەربکەوێت.',
-      );
-}
+String listingSubmittedPendingText(BuildContext context) =>
+    AppLocalizations.of(context)!.listingSubmittedPending;
 
-String listingSubmittedPendingText(BuildContext context) {
-  return AppLocalizations.of(context)?.listingSubmittedPending ??
-      trLegacyText(
-        context,
-        'Listing submitted for review. You can track it under My Listings → Pending.',
-        ar: 'تم إرسال الإعلان للمراجعة. يمكنك متابعته في إعلاناتي ← قيد المراجعة.',
-        ku: 'ڕیکلام بۆ پێداچوونەوە نێردرا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.',
-      );
-}
+String couldNotLoadListingsText(BuildContext context) =>
+    AppLocalizations.of(context)!.couldNotLoadListings;
 
-String couldNotLoadListingsText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Could not load listings',
-    ar: 'تعذر تحميل الإعلانات',
-    ku: 'نەتوانرا ڕیکلامەکان باربکرێن',
-  );
-}
+String homeFeedLoadingListingsText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeFeedLoadingListings;
 
-String homeFeedLoadingListingsText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Loading listings...',
-    ar: 'جاري تحميل الإعلانات...',
-    ku: 'بارکردنی ڕیکلامەکان...',
-  );
-}
+String homeFeedSortingListingsText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeFeedSortingListings;
 
-String homeFeedSortingListingsText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Sorting listings...',
-    ar: 'جاري ترتيب الإعلانات...',
-    ku: 'ڕیزکردنی ڕیکلامەکان...',
-  );
-}
+String homeFeedCachedResultsBannerText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeFeedCachedResultsBanner;
 
-String homeFeedCachedResultsBannerText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Showing cached results',
-    ar: 'عرض النتائج المخزنة مؤقتاً',
-    ku: 'پیشاندانی ئەنجامە کاشکراوەکان',
-  );
-}
+String homeFeedOfflineBannerText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeOfflineCachedBanner;
 
-String homeFeedOfflineBannerText(BuildContext context) {
-  return AppLocalizations.of(context)?.homeOfflineCachedBanner ??
-      trLegacyText(
-        context,
-        'You are offline. Showing cached listings.',
-        ar: 'أنت غير متصل. يتم عرض الإعلانات المخزنة.',
-        ku: 'ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.',
-      );
-}
+String homeFeedSortedLocallyText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeFeedSortedLocally;
 
-String homeFeedSortedLocallyText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Sorted locally (server unavailable)',
-    ar: 'تم الترتيب محلياً (الخادم غير متاح)',
-    ku: 'لە ناوخۆدا ڕیزکرا (سێرڤەر بەردەست نییە)',
-  );
-}
+String homeFeedRefreshText(BuildContext context) =>
+    AppLocalizations.of(context)!.commonRefresh;
 
-String homeFeedRefreshText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Refresh',
-    ar: 'تحديث',
-    ku: 'نوێکردنەوە',
-  );
-}
+String homeFeedSortDisabledText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeFeedSortDisabled;
 
-String homeFeedSortDisabledText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Sorting temporarily disabled due to server issue',
-    ar: 'تم تعطيل الترتيب مؤقتاً بسبب مشكلة في الخادم',
-    ku: 'ڕیزکردن بە کاتییەوە ناچالاک کرا بەهۆی کێشەی سێرڤەر',
-  );
-}
+String homeFeedNetworkErrorText(BuildContext context) =>
+    AppLocalizations.of(context)!.homeFeedNetworkError;
 
-String homeFeedNetworkErrorText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Could not reach the server. Check your connection and try again.',
-    ar: 'تعذر الوصول إلى الخادم. تحقق من الاتصال وحاول مرة أخرى.',
-    ku: 'نەتوانرا پەیوەندی بە سێرڤەر بکرێت. پەیوەندییەکەت بپشکنە و دووبارە هەوڵ بدەرەوە.',
-  );
-}
+String homeFeedServerErrorText(BuildContext context, String statusCode) =>
+    AppLocalizations.of(context)!.homeFeedServerError(statusCode);
 
-String homeFeedServerErrorText(BuildContext context, String statusCode) {
-  return trLegacyText(
-    context,
-    'Server error ($statusCode). Please try again later.',
-    ar: 'خطأ في الخادم ($statusCode). يرجى المحاولة لاحقاً.',
-    ku: 'هەڵەی سێرڤەر ($statusCode). تکایە دواتر دووبارە هەوڵ بدەرەوە.',
-  );
-}
+String acceptTermsRequiredText(BuildContext context) =>
+    AppLocalizations.of(context)!.acceptTermsRequired;
 
-String acceptTermsRequiredText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Please accept the Terms and Privacy Policy',
-    ar: 'يرجى الموافقة على الشروط وسياسة الخصوصية',
-    ku: 'تکایە مەرج و سیاسەتی تایبەتمەندی قبوڵ بکە',
-  );
-}
+String videoPlaybackFailedText(BuildContext context) =>
+    AppLocalizations.of(context)!.videoPlaybackFailed;
 
-String videoPlaybackFailedText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Could not play this video.',
-    ar: 'تعذر تشغيل هذا الفيديو.',
-    ku: 'نەتوانرا ئەم ڤیدیۆیە لێ بدرێت.',
-  );
-}
-
-String photosUploadedText(BuildContext context) {
-  return trLegacyText(
-    context,
-    'Photos uploaded',
-    ar: 'تم تحميل الصور',
-    ku: 'وێنەکان بارکران',
-  );
-}
+String photosUploadedText(BuildContext context) =>
+    AppLocalizations.of(context)!.photosUploaded;

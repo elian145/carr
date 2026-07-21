@@ -14,12 +14,7 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilterSectionHeader(
-              title: _trLegacyText(
-                context,
-                'Videos',
-                ar: 'الفيديوهات',
-                ku: 'ڤیدیۆکان',
-              ),
+              title: AppLocalizations.of(context)!.videos,
               valueSummary: countLabel,
             ),
             const SizedBox(height: 12),
@@ -135,18 +130,8 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                 icon: const Icon(Icons.videocam),
                 label: Text(
                   hasVideos
-                      ? _trLegacyText(
-                          context,
-                          'Add More Videos',
-                          ar: 'إضافة المزيد من الفيديوهات',
-                          ku: 'ڤیدیۆی زیاتر زیاد بکە',
-                        )
-                      : _trLegacyText(
-                          context,
-                          'Add Videos',
-                          ar: 'إضافة فيديوهات',
-                          ku: 'ڤیدیۆ زیاد بکە',
-                        ),
+                      ? AppLocalizations.of(context)!.addMoreVideos
+                      : AppLocalizations.of(context)!.addVideos,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
