@@ -9,6 +9,7 @@ from flask import Blueprint, Response, abort, current_app, jsonify, redirect, re
 
 from ..legal_pages import default_privacy_url, default_terms_url, privacy_response, terms_response
 from ..config import upload_persistence_mode
+from ..listing_moderation import listing_require_approval
 from urllib.parse import quote
 from html import escape
 from werkzeug.utils import safe_join
@@ -83,17 +84,8 @@ def _app_config_payload() -> dict:
         except (TypeError, ValueError):
             return None
 
-    # Keep in sync with kk.routes.cars._listing_require_approval
-    raw_approval = (os.environ.get("LISTING_REQUIRE_APPROVAL") or "").strip().lower()
-    if raw_approval in ("1", "true", "yes", "on"):
-        require_approval = True
-    elif raw_approval in ("0", "false", "no", "off"):
-        require_approval = False
-    else:
-        env = (
-            os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production"
-        ).strip().lower()
-        require_approval = env == "production"
+    # Keep in sync with kk.listing_moderation.listing_require_approval
+    require_approval = listing_require_approval()
 
     return {
         "min_app_version": _s("min_app_version"),

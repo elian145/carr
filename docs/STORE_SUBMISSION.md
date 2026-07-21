@@ -61,5 +61,5 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 - Privacy policy URL and support contact must be real and reachable.
 - Final screenshots and app icon/splash assets must be approved.
 - Account deletion requires password; iOS Privacy Manifest filled; background `fetch` removed.
-- Production listings default to `pending` until admin approval (override with `LISTING_REQUIRE_APPROVAL=0`).
+- New listings auto-publish as `active` by default (override with `LISTING_REQUIRE_APPROVAL=1` for a full moderation queue).
 - Force-update gates available via admin Settings / `/api/config/app`.

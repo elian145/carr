@@ -81,6 +81,6 @@ Runs static preflight, `flutter analyze`, `flutter test`, and backend factory sm
 - App screenshots, icon, and release notes are finalized.
 - See `docs/STORE_SUBMISSION.md` for permission justifications and data safety/privacy label inputs.
 - Account delete requires password; force-update gates live at `/api/config/app` (admin Settings).
-- Production listings start as `pending` unless `LISTING_REQUIRE_APPROVAL=0`.
+- New listings **auto-publish** as `active` by default. Set `LISTING_REQUIRE_APPROVAL=1` for a full pending queue; spam heuristics may still hold suspicious posts. User/listing reports remain the post-publish trust path.
 - App Links setup: [`ANDROID_APP_LINKS_SETUP.md`](ANDROID_APP_LINKS_SETUP.md).
 - Store creatives are in `store_assets/` (icon + feature graphic + listing copy + phone screenshots for en/ar/ku at 6.7" and 5.5"). Recapture with `python scripts/capture_store_screenshots.py`.

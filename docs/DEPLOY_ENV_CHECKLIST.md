@@ -53,7 +53,7 @@ Do **not** set `ALLOW_EPHEMERAL_UPLOADS=1` for store launches (escape hatch only
 |----------|-------|
 | `APPLE_TEAM_ID` | 10-character Apple Team ID |
 | `ANDROID_SHA256_CERT_FINGERPRINTS` | Release keystore SHA-256 (comma-separated). Generate locally: `python scripts/print_android_app_link_sha.py` |
-| `LISTING_REQUIRE_APPROVAL` | `1`/`true` to force new listings into `pending` until admin activates (default **on** when `APP_ENV=production`) |
+| `LISTING_REQUIRE_APPROVAL` | Optional. `1`/`true` forces new listings into `pending` until admin activates. **Default off** (auto-publish); spam heuristics may still hold a listing for review. |
 | `MIN_APP_VERSION` / `MIN_ANDROID_BUILD` / `MIN_IOS_BUILD` | Optional force-update gates (also editable in admin Settings) |
 
 Verify:

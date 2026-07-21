@@ -15,6 +15,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..view_history import remove_listing_from_all_view_history
+from ..listing_moderation import initial_listing_status
 from ..models import Car, ListingReport, User, db, user_favorites, user_viewed_listings
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
@@ -34,19 +35,6 @@ _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
 _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
 _PUBLIC_LISTING_STATUSES = frozenset({"active", "sold"})
 _MODERATION_LISTING_STATUSES = frozenset({"pending", "hidden", "draft"})
-
-
-def _listing_require_approval() -> bool:
-    """When true, new listings start as pending until an admin activates them."""
-    raw = (os.environ.get("LISTING_REQUIRE_APPROVAL") or "").strip().lower()
-    if raw in ("1", "true", "yes", "on"):
-        return True
-    if raw in ("0", "false", "no", "off"):
-        return False
-    env = (
-        os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production"
-    ).strip().lower()
-    return env == "production"
 
 
 def _normalize_vin(val) -> str | None:
@@ -819,7 +807,11 @@ def create_car():
         trim = _s(raw.get("trim"), "base")
         seating = _i(raw.get("seating"), 5)
         # Clients cannot self-publish past moderation; status is server-controlled.
-        status = "pending" if _listing_require_approval() else "active"
+        status = initial_listing_status(
+            description=description,
+            price=price,
+            brand=brand,
+        )
         title_status_raw = _s(raw.get("title_status"), "clean").lower()
         # Persist title status submitted by sell flows; default to clean for unknown values.
         title_status = title_status_raw if title_status_raw in {"clean", "damaged"} else "clean"

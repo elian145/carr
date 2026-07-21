@@ -26,7 +26,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory(prefix="carlist_backend_smoke_")
         os.environ["APP_ENV"] = "testing"
         os.environ["SMS_PROVIDER"] = "console"
-        os.environ["LISTING_REQUIRE_APPROVAL"] = "0"
+        os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
         os.environ["DB_PATH"] = os.path.join(self._tmp.name, "t.db")
 
         from kk.app_factory import create_app
@@ -1216,6 +1216,73 @@ class BackendFactorySmokeTest(unittest.TestCase):
         body = r.get_json() or {}
         self.assertIn("car", body)
         self.assertEqual((body.get("car") or {}).get("brand"), "honda")
+        self.assertEqual((body.get("car") or {}).get("status"), "active")
+
+    def test_listing_moderation_default_auto_publish_and_heuristics(self):
+        """H-12: default active; opt-in approval + spam heuristics → pending."""
+        from kk.listing_moderation import (
+            initial_listing_status,
+            listing_needs_manual_review,
+            listing_require_approval,
+        )
+
+        prev = os.environ.get("LISTING_REQUIRE_APPROVAL")
+        try:
+            os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
+            self.assertFalse(listing_require_approval())
+            self.assertEqual(
+                initial_listing_status(
+                    description="Clean Toyota Camry", price=12000, brand="toyota"
+                ),
+                "active",
+            )
+            self.assertTrue(
+                listing_needs_manual_review(
+                    description="Guaranteed profit via t.me/scam", price=12000
+                )
+            )
+            self.assertEqual(
+                initial_listing_status(
+                    description="Guaranteed profit via t.me/scam",
+                    price=12000,
+                    brand="toyota",
+                ),
+                "pending",
+            )
+            self.assertEqual(
+                initial_listing_status(description="ok", price=25, brand="toyota"),
+                "pending",
+            )
+
+            os.environ["LISTING_REQUIRE_APPROVAL"] = "1"
+            self.assertTrue(listing_require_approval())
+            self.assertEqual(
+                initial_listing_status(description="ok", price=12000, brand="toyota"),
+                "pending",
+            )
+
+            # API: spam description held pending even with approval off.
+            os.environ["LISTING_REQUIRE_APPROVAL"] = "0"
+            held = self.client.post(
+                "/api/cars",
+                headers=self._auth(self.seller_token),
+                json={
+                    "brand": "toyota",
+                    "model": "corolla",
+                    "year": 2018,
+                    "mileage": 40000,
+                    "price": 9000,
+                    "location": "Erbil",
+                    "description": "Guaranteed profit click here now",
+                },
+            )
+            self.assertEqual(held.status_code, 201, held.data)
+            self.assertEqual((held.get_json() or {}).get("car", {}).get("status"), "pending")
+        finally:
+            if prev is None:
+                os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
+            else:
+                os.environ["LISTING_REQUIRE_APPROVAL"] = prev
 
     def test_mark_listing_sold_and_active(self):
         sold = self.client.post(
