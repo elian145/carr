@@ -1,8 +1,24 @@
+import 'package:car_listing_app/l10n/app_localizations.dart';
 import 'package:car_listing_app/shared/i18n/listing_field_labels.dart';
 import 'package:car_listing_app/shared/listings/transmission_filter.dart';
 import 'package:car_listing_app/shared/navigation/route_args.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+Widget _localizedApp(Widget child) {
+  return MaterialApp(
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocalizations.supportedLocales,
+    locale: const Locale('en'),
+    home: child,
+  );
+}
 
 void main() {
   group('readRouteArgs', () {
@@ -52,8 +68,8 @@ void main() {
   group('translatePlateTypeLabel', () {
     testWidgets('translates known plate types', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        _localizedApp(
+          Builder(
             builder: (context) {
               expect(translatePlateTypeLabel(context, 'private'), 'Private');
               expect(translatePlateTypeLabel(context, 'TAXI'), 'Taxi');
