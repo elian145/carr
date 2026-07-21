@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-from flask import current_app, request
+from flask import request
 from flask_jwt_extended import decode_token, get_jwt_identity, verify_jwt_in_request
 from flask_socketio import emit, join_room, leave_room
 
 from .auth import phone_verification_error_payload
-from .models import Car, Message, Notification, User, db
+from .chat_realtime import (
+    emit_message_to_participants,
+    resolve_car_for_chat,
+    room_for_car_public_id,
+    user_can_access_chat_room,
+)
+from .models import Message, Notification, User, db
 from .push import send_push
 from .security import validate_input_sanitization
 from .time_utils import utcnow
-
-
-def _room_for_car_public_id(car_public_id: str) -> str:
-    return f"chat:{car_public_id}"
 
 
 def _socket_current_user(*, optional: bool = False) -> User | None:
@@ -105,20 +106,41 @@ def register_socketio_handlers(socketio) -> None:
             emit("error", {"message": "car_id required"})
             return
 
-        car = Car.query.filter_by(public_id=car_id_raw).first()
-        if not car and car_id_raw.isdigit():
-            try:
-                car = Car.query.filter_by(id=int(car_id_raw)).first()
-            except Exception:
-                car = None
-
+        car = resolve_car_for_chat(car_id_raw)
         if not car or not car.is_active:
             emit("error", {"message": "Listing not found"})
             return
 
-        room = _room_for_car_public_id(car.public_id)
+        if not user_can_access_chat_room(me, car):
+            # Soft denial: avoid noisy client snackbars for first-time buyers who
+            # open a conversation before their first message. They still receive
+            # realtime replies via their personal user room after sending.
+            logger.info(
+                "join_chat denied for user %s on car %s (not a participant)",
+                me.public_id,
+                car.public_id,
+            )
+            emit(
+                "joined_chat",
+                {
+                    "ok": False,
+                    "code": "chat_access_denied",
+                    "car_id": car.public_id,
+                    "room": None,
+                },
+            )
+            return
+
+        room = room_for_car_public_id(car.public_id)
         join_room(room)
-        emit("joined_chat", {"car_id": car.public_id, "room": room})
+        emit(
+            "joined_chat",
+            {
+                "ok": True,
+                "car_id": car.public_id,
+                "room": room,
+            },
+        )
 
     @socketio.on("leave_chat")
     def _leave_chat(payload):  # type: ignore[no-redef]
@@ -138,15 +160,10 @@ def register_socketio_handlers(socketio) -> None:
         car_id_raw = str(data.get("car_id") or "").strip()
         if not car_id_raw:
             return
-        car = Car.query.filter_by(public_id=car_id_raw).first()
-        if not car and car_id_raw.isdigit():
-            try:
-                car = Car.query.filter_by(id=int(car_id_raw)).first()
-            except Exception:
-                car = None
-        if not car:
+        car = resolve_car_for_chat(car_id_raw)
+        if not car or not user_can_access_chat_room(me, car):
             return
-        room = _room_for_car_public_id(car.public_id)
+        room = room_for_car_public_id(car.public_id)
         emit(
             "typing",
             {
@@ -168,15 +185,10 @@ def register_socketio_handlers(socketio) -> None:
         car_id_raw = str(data.get("car_id") or "").strip()
         if not car_id_raw:
             return
-        car = Car.query.filter_by(public_id=car_id_raw).first()
-        if not car and car_id_raw.isdigit():
-            try:
-                car = Car.query.filter_by(id=int(car_id_raw)).first()
-            except Exception:
-                car = None
-        if not car:
+        car = resolve_car_for_chat(car_id_raw)
+        if not car or not user_can_access_chat_room(me, car):
             return
-        room = _room_for_car_public_id(car.public_id)
+        room = room_for_car_public_id(car.public_id)
         emit(
             "typing",
             {
@@ -218,12 +230,7 @@ def register_socketio_handlers(socketio) -> None:
             emit("error", {"message": "content too long"})
             return
 
-        car = Car.query.filter_by(public_id=car_id_raw).first()
-        if not car and car_id_raw.isdigit():
-            try:
-                car = Car.query.filter_by(id=int(car_id_raw)).first()
-            except Exception:
-                car = None
+        car = resolve_car_for_chat(car_id_raw)
         if not car or not car.is_active:
             emit("error", {"message": "Listing not found"})
             return
@@ -266,6 +273,7 @@ def register_socketio_handlers(socketio) -> None:
         db.session.add(msg)
 
         # Lightweight notification for the receiver (best-effort).
+        notif = None
         try:
             notif = Notification(
                 user_id=receiver.id,
@@ -277,7 +285,7 @@ def register_socketio_handlers(socketio) -> None:
             )
             db.session.add(notif)
         except Exception:
-            pass
+            notif = None
 
         try:
             db.session.commit()
@@ -288,14 +296,38 @@ def register_socketio_handlers(socketio) -> None:
             return
 
         payload_out = msg.to_dict()
-        room = _room_for_car_public_id(car.public_id)
 
-        emit("new_message", payload_out, room=room)
+        # After the first successful message the sender becomes a participant and
+        # may join the listing typing room.
+        room = room_for_car_public_id(car.public_id)
+        join_room(room)
+        emit(
+            "joined_chat",
+            {
+                "ok": True,
+                "car_id": car.public_id,
+                "room": room,
+            },
+        )
 
-        try:
-            emit("new_notification", notif.to_dict(), room=f"user:{receiver.public_id}")
-        except Exception:
-            pass
+        # Deliver message content only to the two participants (not the shared car room).
+        emit_message_to_participants(
+            "new_message",
+            payload_out,
+            message=msg,
+            sender=me,
+            receiver=receiver,
+        )
+
+        if notif is not None:
+            try:
+                emit(
+                    "new_notification",
+                    notif.to_dict(),
+                    room=f"user:{receiver.public_id}",
+                )
+            except Exception:
+                pass
 
         # FCM push notification (best-effort).
         try:
@@ -323,4 +355,3 @@ def register_socketio_handlers(socketio) -> None:
             pass
 
         emit("message_sent", {"success": True, "message": payload_out})
-

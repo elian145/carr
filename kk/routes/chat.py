@@ -11,7 +11,7 @@ from sqlalchemy import func, or_
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
-from ..extensions import socketio
+from ..chat_realtime import emit_message_to_participants
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, validate_input_sanitization
@@ -197,10 +197,6 @@ def _max_upload_mb() -> int:
     return max(1, raw // (1024 * 1024))
 
 
-def _room_for_car_public_id(car_public_id: str) -> str:
-    return f"chat:{car_public_id}"
-
-
 def _resolve_reply_target(me: User, car: Car, reply_public_id: str | None) -> Message | None:
     raw = (reply_public_id or "").strip()
     if not raw:
@@ -225,9 +221,10 @@ def _message_for_user(message_public_id: str, me: User) -> Message | None:
     return msg
 
 
-def _emit_message_update(car: Car, event_name: str, payload: dict) -> None:
+def _emit_message_update(msg: Message, event_name: str, payload: dict) -> None:
+    """Emit edit/delete events only to the two conversation participants."""
     try:
-        socketio.emit(event_name, payload, room=_room_for_car_public_id(car.public_id))
+        emit_message_to_participants(event_name, payload, message=msg)
     except Exception:
         pass
 
@@ -921,10 +918,8 @@ def edit_chat_message(message_id: str):
         msg.edited_at = datetime.utcnow()
         db.session.commit()
 
-        car = db.session.get(Car, msg.car_id) if msg.car_id else None
         payload = msg.to_dict()
-        if car:
-            _emit_message_update(car, "message_updated", payload)
+        _emit_message_update(msg, "message_updated", payload)
         return jsonify({"success": True, "message": payload}), 200
     except Exception:
         db.session.rollback()
@@ -955,10 +950,8 @@ def delete_chat_message(message_id: str):
         msg.edited_at = datetime.utcnow()
         db.session.commit()
 
-        car = db.session.get(Car, msg.car_id) if msg.car_id else None
         payload = msg.to_dict()
-        if car:
-            _emit_message_update(car, "message_deleted", payload)
+        _emit_message_update(msg, "message_deleted", payload)
         return jsonify({"success": True, "message": payload}), 200
     except Exception:
         db.session.rollback()

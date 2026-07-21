@@ -1168,6 +1168,76 @@ class BackendFactorySmokeTest(unittest.TestCase):
             if evt.get("name") in ("new_message", "message_sent")
         ]
         self.assertTrue(success_events, received)
+        joined = [evt for evt in received if evt.get("name") == "joined_chat"]
+        self.assertTrue(joined, received)
+        self.assertEqual(joined[-1]["args"][0].get("ok"), True)
+        client.disconnect()
+
+    def test_join_chat_denied_for_non_participant(self):
+        """Strangers must not join listing chat rooms (C-01)."""
+        client = self.socketio.test_client(
+            self.app,
+            flask_test_client=self.client,
+            query_string=f"token={self.dealer_token}",
+        )
+        self.assertTrue(client.is_connected(), client.get_received())
+        client.get_received()
+        client.emit("join_chat", {"car_id": self.car_public})
+        received = client.get_received()
+        joined = [evt for evt in received if evt.get("name") == "joined_chat"]
+        self.assertTrue(joined, received)
+        payload = joined[-1]["args"][0]
+        self.assertEqual(payload.get("ok"), False)
+        self.assertEqual(payload.get("code"), "chat_access_denied")
+        self.assertIsNone(payload.get("room"))
+        client.disconnect()
+
+    def test_join_chat_allowed_for_seller(self):
+        client = self.socketio.test_client(
+            self.app,
+            flask_test_client=self.client,
+            query_string=f"token={self.seller_token}",
+        )
+        self.assertTrue(client.is_connected(), client.get_received())
+        client.get_received()
+        client.emit("join_chat", {"car_id": self.car_public})
+        received = client.get_received()
+        joined = [evt for evt in received if evt.get("name") == "joined_chat"]
+        self.assertTrue(joined, received)
+        payload = joined[-1]["args"][0]
+        self.assertEqual(payload.get("ok"), True)
+        self.assertEqual(payload.get("car_id"), self.car_public)
+        self.assertEqual(payload.get("room"), f"chat:{self.car_public}")
+        client.disconnect()
+
+    def test_join_chat_allowed_after_becoming_participant(self):
+        client = self.socketio.test_client(
+            self.app,
+            flask_test_client=self.client,
+            query_string=f"token={self.viewer_token}",
+        )
+        self.assertTrue(client.is_connected(), client.get_received())
+        client.get_received()
+
+        client.emit("join_chat", {"car_id": self.car_public})
+        denied = client.get_received()
+        denied_join = [evt for evt in denied if evt.get("name") == "joined_chat"]
+        self.assertTrue(denied_join, denied)
+        self.assertEqual(denied_join[-1]["args"][0].get("ok"), False)
+
+        send = self.client.post(
+            f"/api/chat/{self.car_public}/send",
+            headers=self._auth(self.viewer_token),
+            json={"content": "hi seller", "receiver_id": self.seller_public},
+        )
+        self.assertEqual(send.status_code, 201, send.data)
+
+        client.emit("join_chat", {"car_id": self.car_public})
+        allowed = client.get_received()
+        allowed_join = [evt for evt in allowed if evt.get("name") == "joined_chat"]
+        self.assertTrue(allowed_join, allowed)
+        self.assertEqual(allowed_join[-1]["args"][0].get("ok"), True)
+        client.disconnect()
 
     def test_update_and_delete_car_as_owner(self):
         create = self.client.post(

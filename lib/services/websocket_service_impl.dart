@@ -201,8 +201,15 @@ class WebSocketService {
 
       _socket!.on('joined_chat', (payload) {
         try {
-          if (payload is Map && payload['car_id'] != null) {
-            _currentRoom = payload['car_id'].toString();
+          if (payload is Map) {
+            final map = Map<String, dynamic>.from(payload);
+            // Server may soft-deny first-time buyers until they send a message.
+            if (map['ok'] == false) {
+              return;
+            }
+            if (map['car_id'] != null) {
+              _currentRoom = map['car_id'].toString();
+            }
           }
         } catch (e, st) { logNonFatal(e, st); }
       });
