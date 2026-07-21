@@ -50,10 +50,13 @@ class _HomeEmptyListMessageState extends State<HomeEmptyListMessage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Text(
         AppLocalizations.of(context)!.noCarsFound,
-        style: const TextStyle(color: Colors.white70),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -75,18 +78,20 @@ class HomeFeedErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final muted = theme.colorScheme.onSurfaceVariant;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.cloud_off, size: 48, color: Colors.grey[500]),
+            Icon(Icons.cloud_off, size: 48, color: muted),
             const SizedBox(height: 16),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70),
+              style: theme.textTheme.bodyLarge?.copyWith(color: muted),
             ),
             const SizedBox(height: 20),
             FilledButton(onPressed: onRetry, child: Text(l10n.retryAction)),
