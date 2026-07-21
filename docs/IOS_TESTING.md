@@ -97,6 +97,14 @@ Sideloadly is for quick UI/API testing only, **not push**.
 
 **Android (Windows PC):** You can test push on a real Android phone with `flutter run --flavor prod --dart-define=API_BASE=https://carr-5hrm.onrender.com` and a Google Play system image emulator or physical device.
 
+## 8. Login session persistence (Sideloadly)
+
+Auth tokens are stored in the iOS **Keychain** via `flutter_secure_storage` (accessibility: first unlock, this device only). The Sideloadly IPA must **not** include `keychain-access-groups` — Codemagic strips that entitlement before packaging because free-account Sideloadly signing often rejects it.
+
+If Keychain write/read fails on a sideloaded build, `TokenStore` mirrors tokens into `SharedPreferences` so you stay signed in after force-quit/relaunch. That prefs mirror is weaker than Keychain and is cleared when Keychain works again. Uninstalling the app still clears the session.
+
+TestFlight / App Store builds should use Keychain normally; no prefs fallback is needed when Keychain succeeds.
+
 ---
 
 **Note:** The repo also has `ios/ExportOptions.plist` (method: ad-hoc) for **signed** IPA builds (e.g. with Codemagic’s App Store Connect integration). For Sideloadly you use the **unsigned** IPA from the **iOS (IPA for Sideloadly)** workflow; Sideloadly re-signs the app with your Apple ID. If you later set up Ad Hoc distribution, replace `YOUR_TEAM_ID` in `ExportOptions.plist` with your Apple Developer Team ID.
