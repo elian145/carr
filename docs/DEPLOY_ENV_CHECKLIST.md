@@ -99,13 +99,18 @@ python scripts/print_android_app_link_sha.py
 # Paste output into Render → ANDROID_SHA256_CERT_FINGERPRINTS → redeploy
 ```
 
-## Known production gap (check before Play upload)
+## Production App Links status (re-check before Play upload)
 
-As of last automated check against `https://carr-5hrm.onrender.com`:
+As of 2026-07-21 against `https://carr-5hrm.onrender.com`:
 
-- iOS Universal Links (AASA): configured (`APPLE_TEAM_ID` set)
-- Android App Links (`assetlinks.json`): returns **404** until `ANDROID_SHA256_CERT_FINGERPRINTS` is set on Render
+- iOS Universal Links (AASA): configured (`APPLE_TEAM_ID` set) → 200
+- Android App Links (`assetlinks.json`): configured (`ANDROID_SHA256_CERT_FINGERPRINTS` set) → 200
 
-Run `python scripts/verify_production_host.py --host https://<your-host>` to re-check.
+Re-verify anytime:
+
+```bash
+python scripts/print_android_app_link_sha.py --verify-host https://carr-5hrm.onrender.com
+python scripts/verify_production_host.py --host https://carr-5hrm.onrender.com --require-app-links
+```
 
 Run [`REAL_DEVICE_QA.md`](REAL_DEVICE_QA.md) on a **prod** Android build and TestFlight iOS build after env changes.

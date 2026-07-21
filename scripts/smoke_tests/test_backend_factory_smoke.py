@@ -723,8 +723,10 @@ class BackendFactorySmokeTest(unittest.TestCase):
     def test_assetlinks_served_when_sha_env_set(self):
         """Render ANDROID_SHA256_CERT_FINGERPRINTS enables assetlinks.json."""
         fp = "9E:7A:AC:CF:0B:CE:7E:A3:0E:B9:9D:AF:DF:37:8E:1D:3E:6C:F6:C5:E8:C8:22:41:1E:53:F5:A5:72:40:97:E8"
+        # Lowercase + spaces should normalize to uppercase colon form.
+        messy = " 9e:7a:ac:cf:0b:ce:7e:a3:0e:b9:9d:af:df:37:8e:1d:3e:6c:f6:c5:e8:c8:22:41:1e:53:f5:a5:72:40:97:e8 "
         prev = os.environ.get("ANDROID_SHA256_CERT_FINGERPRINTS")
-        os.environ["ANDROID_SHA256_CERT_FINGERPRINTS"] = fp
+        os.environ["ANDROID_SHA256_CERT_FINGERPRINTS"] = messy
         try:
             r = self.client.get("/.well-known/assetlinks.json")
             self.assertEqual(r.status_code, 200, r.data)

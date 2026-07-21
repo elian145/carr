@@ -29,3 +29,8 @@ services:
     buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
     startCommand: bash start_render.sh
     healthCheckPath: /health
+    envVars:
+      # Non-secret; sync:false so dashboard can append Play App Signing SHA later.
+      - key: ANDROID_SHA256_CERT_FINGERPRINTS
+        value: "9E:7A:AC:CF:0B:CE:7E:A3:0E:B9:9D:AF:DF:37:8E:1D:3E:6C:F6:C5:E8:C8:22:41:1E:53:F5:A5:72:40:97:E8"
+        sync: false

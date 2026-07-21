@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -110,6 +111,7 @@ def _note(required: bool, errors: list[str], msg: str, ok: str | None = None) ->
 def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
     errors: list[str] = []
     base = host.rstrip("/")
+    sha256_re = re.compile(r"^[0-9A-F]{2}(:[0-9A-F]{2}){31}$")
 
     code, body, _ = _fetch(f"{base}/.well-known/assetlinks.json", timeout)
     if code != 200:
@@ -125,14 +127,29 @@ def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
         else:
             target = (data[0].get("target") or {}) if isinstance(data[0], dict) else {}
             pkg = target.get("package_name")
+            fps = target.get("sha256_cert_fingerprints") or []
             if pkg != "com.carzo.app":
                 _note(
                     required,
                     errors,
                     f"assetlinks package_name={pkg!r}, expected com.carzo.app",
                 )
-            elif not required:
-                print("OK: assetlinks.json")
+            elif not isinstance(fps, list) or not fps:
+                _note(required, errors, "assetlinks.json missing sha256_cert_fingerprints")
+            else:
+                bad = [
+                    fp
+                    for fp in fps
+                    if not isinstance(fp, str) or not sha256_re.match(fp.strip().upper())
+                ]
+                if bad:
+                    _note(
+                        required,
+                        errors,
+                        f"assetlinks.json has invalid SHA-256 fingerprint(s): {bad[:2]!r}",
+                    )
+                else:
+                    print(f"OK: assetlinks.json ({len(fps)} fingerprint(s))")
 
     code, body, _ = _fetch(f"{base}/.well-known/apple-app-site-association", timeout)
     if code != 200:
@@ -154,7 +171,7 @@ def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
             app_id = (details[0] or {}).get("appID", "")
             if not str(app_id).endswith(".com.carzo.app"):
                 _note(required, errors, f"AASA appID={app_id!r}")
-            elif not required:
+            else:
                 print(f"OK: AASA appID={app_id}")
 
     return errors

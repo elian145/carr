@@ -491,7 +491,13 @@ def android_assetlinks():
     raw = (os.environ.get("ANDROID_SHA256_CERT_FINGERPRINTS") or "").strip()
     if not raw:
         abort(404)
-    fps = [x.strip() for x in raw.split(",") if x.strip()]
+    # Normalize: trim, uppercase hex, drop empties. Accept space-separated typos by
+    # also splitting on whitespace after commas.
+    fps: list[str] = []
+    for part in raw.replace(";", ",").split(","):
+        fp = " ".join(part.split()).upper()
+        if fp:
+            fps.append(fp)
     if not fps:
         abort(404)
     body = [
