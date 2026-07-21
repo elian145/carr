@@ -143,10 +143,20 @@ class _FavoritesPageState extends State<FavoritesPage> {
             ),
           ),
           if (_loading)
-            Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
-              ),
+            ValueListenableBuilder<int>(
+              valueListenable: ListingLayoutPrefs.columns,
+              builder: (context, cols, _) {
+                final screenWidth = MediaQuery.sizeOf(context).width;
+                final listingColumns =
+                    ListingLayoutPrefs.effectiveColumnsForWidth(
+                      cols == 1 ? 1 : 2,
+                      screenWidth,
+                    );
+                return ListingFeedSkeleton(
+                  columns: listingColumns,
+                  itemCount: listingColumns == 1 ? 4 : 6,
+                );
+              },
             )
           else if (_loginRequired)
             Center(

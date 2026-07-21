@@ -14,6 +14,7 @@ import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/ui/listing_feed_skeleton.dart';
 
 class RecentlyViewedPage extends StatefulWidget {
   const RecentlyViewedPage({super.key});
@@ -340,7 +341,20 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
 
     Widget body;
     if (_loading) {
-      body = const Center(child: CircularProgressIndicator());
+      body = ValueListenableBuilder<int>(
+        valueListenable: ListingLayoutPrefs.columns,
+        builder: (context, cols, _) {
+          final screenWidth = MediaQuery.sizeOf(context).width;
+          final listingColumns = ListingLayoutPrefs.effectiveColumnsForWidth(
+            cols == 1 ? 1 : 2,
+            screenWidth,
+          );
+          return ListingFeedSkeleton(
+            columns: listingColumns,
+            itemCount: listingColumns == 1 ? 4 : 6,
+          );
+        },
+      );
     } else if (_error != null) {
       body = Center(
         child: Padding(
