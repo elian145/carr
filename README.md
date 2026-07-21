@@ -448,6 +448,7 @@ car_listing_app/
 │   └── services/          # API, auth, WebSocket, config
 ├── test/                  # Flutter tests + fake API server
 ├── scripts/               # CI helpers, smoke tests, dev servers
+├── CHANGELOG.md           # Keep a Changelog release history
 └── docs/ARCHITECTURE.md   # Entry points, ports, migration status
 ```
 
@@ -461,7 +462,7 @@ car_listing_app/
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
@@ -472,15 +473,7 @@ For support and questions:
 
 ## 🔄 Updates
 
-### Version 1.0.0
-- Initial release with complete backend and frontend
-- User authentication and management
-- Car listing system
-- Real-time chat
-- Push notifications
-- Admin dashboard
-- Dark/light mode support
-- Multi-language support
+Release notes live in **[CHANGELOG.md](CHANGELOG.md)** ([Keep a Changelog](https://keepachangelog.com/en/1.1.0/)). Start with the `[Unreleased]` section for work in progress.
 
 ---
 

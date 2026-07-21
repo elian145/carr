@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- README **Updates** section points at this file instead of a duplicated Version 1.0.0 blurb; `CHANGELOG.md` listed in the repo tree.
 - Extract production part library into `lib/pages/` (`home_page.dart`, `sell_flow_page.dart`, etc.) with shared code in `lib/app/carzo_shared.dart`; removed `lib/pages/production/`.
 - README release steps reference verify scripts and `--dart-define=API_BASE`.
 - Renamed sell draft prefs modules to `sell_draft_prefs.dart` / `sell_draft_list.dart` (`SellDraftPrefs`, `SellDraftList`); SharedPreferences key strings unchanged.
