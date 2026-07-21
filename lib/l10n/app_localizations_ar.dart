@@ -2458,4 +2458,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get continueAction => 'متابعة';
+
+  @override
+  String get showPassword => 'إظهار كلمة المرور';
+
+  @override
+  String get hidePassword => 'إخفاء كلمة المرور';
+
+  @override
+  String get changeProfilePhoto => 'تغيير صورة الملف الشخصي';
+
+  @override
+  String get playVideo => 'تشغيل الفيديو';
+
+  @override
+  String get pauseVideo => 'إيقاف الفيديو مؤقتاً';
 }

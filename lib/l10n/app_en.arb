@@ -822,5 +822,10 @@
   "completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT": "Complete your public dealer page so buyers can recognize your business and know when to contact you.",
   "switchToUSD": "Switch to USD",
   "switchToIQD": "Switch to IQD",
-  "continueAction": "Continue"
+  "continueAction": "Continue",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "changeProfilePhoto": "Change profile photo",
+  "playVideo": "Play video",
+  "pauseVideo": "Pause video"
 }

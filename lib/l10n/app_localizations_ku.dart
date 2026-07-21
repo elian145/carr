@@ -2478,4 +2478,19 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get continueAction => 'بەردەوام بە';
+
+  @override
+  String get showPassword => 'پیشاندانی وشەی نهێنی';
+
+  @override
+  String get hidePassword => 'شاردنەوەی وشەی نهێنی';
+
+  @override
+  String get changeProfilePhoto => 'گۆڕینی وێنەی پرۆفایل';
+
+  @override
+  String get playVideo => 'لێدانی ڤیدیۆ';
+
+  @override
+  String get pauseVideo => 'وەستاندنی ڤیدیۆ';
 }

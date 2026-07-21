@@ -57,6 +57,7 @@ mixin _EditProfilePageWidgets on _EditProfilePageLoad {
                     ),
                   ),
                   child: IconButton(
+                    tooltip: loc.changeProfilePhoto,
                     icon: Icon(Icons.camera_alt, color: Colors.white, size: 20),
                     onPressed: _pickImage,
                   ),

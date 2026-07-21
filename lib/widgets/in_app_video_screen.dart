@@ -2,6 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
+import '../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 
 import 'network_video_thumbnail.dart';
@@ -315,16 +316,26 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
         // Center play/pause only when chrome (seek bar) is visible — option 2 UX.
         if (_seekBarVisible)
           Center(
-            child: GestureDetector(
-              onTap: _togglePlay,
-              child: Tooltip(
-                message: c.value.isPlaying ? 'Pause' : 'Play',
-                child: Icon(
-                  c.value.isPlaying
-                      ? Icons.pause_circle_filled
-                      : Icons.play_circle_filled,
-                  color: Colors.white54,
-                  size: 64,
+            child: Semantics(
+              button: true,
+              label: c.value.isPlaying
+                  ? (AppLocalizations.of(context)?.pauseVideo ?? 'Pause video')
+                  : (AppLocalizations.of(context)?.playVideo ?? 'Play video'),
+              child: GestureDetector(
+                onTap: _togglePlay,
+                child: Tooltip(
+                  message: c.value.isPlaying
+                      ? (AppLocalizations.of(context)?.pauseVideo ??
+                          'Pause video')
+                      : (AppLocalizations.of(context)?.playVideo ??
+                          'Play video'),
+                  child: Icon(
+                    c.value.isPlaying
+                        ? Icons.pause_circle_filled
+                        : Icons.play_circle_filled,
+                    color: Colors.white54,
+                    size: 64,
+                  ),
                 ),
               ),
             ),

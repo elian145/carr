@@ -5,6 +5,7 @@ import 'dart:developer' as developer;
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/errors/user_error_text.dart';
+import '../l10n/app_localizations.dart';
 import '../widgets/theme_toggle_widget.dart';
 
 /// Change password for the authenticated user (current + new password).
@@ -94,6 +95,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Change password'),
@@ -114,6 +116,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   labelText: 'Current password',
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
+                    tooltip: _obscureCurrent
+                        ? loc.showPassword
+                        : loc.hidePassword,
                     icon: Icon(_obscureCurrent ? Icons.visibility_off : Icons.visibility),
                     onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
                   ),
@@ -133,6 +138,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   labelText: 'New password',
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
+                    tooltip: _obscureNew
+                        ? loc.showPassword
+                        : loc.hidePassword,
                     icon: Icon(_obscureNew ? Icons.visibility_off : Icons.visibility),
                     onPressed: () => setState(() => _obscureNew = !_obscureNew),
                   ),
@@ -167,6 +175,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   labelText: 'Confirm new password',
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
+                    tooltip: _obscureConfirm
+                        ? loc.showPassword
+                        : loc.hidePassword,
                     icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
                     onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                   ),

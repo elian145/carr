@@ -138,6 +138,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   labelText: loc.newPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
+                    tooltip: _obscurePassword
+                        ? loc.showPassword
+                        : loc.hidePassword,
                     icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                   ),
@@ -172,6 +175,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   labelText: loc.confirmNewPasswordLabel,
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
+                    tooltip: _obscureConfirm
+                        ? loc.showPassword
+                        : loc.hidePassword,
                     icon: Icon(_obscureConfirm ? Icons.visibility_off : Icons.visibility),
                     onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                   ),

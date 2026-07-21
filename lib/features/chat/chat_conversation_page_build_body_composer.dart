@@ -207,6 +207,7 @@ mixin _ChatConversationPageBuildBodyComposer
                   button: true,
                   label: AppLocalizations.of(context)!.sendMessage,
                   child: IconButton(
+                    tooltip: AppLocalizations.of(context)!.sendMessage,
                     onPressed: (_isSending || _isRecordingVoice)
                         ? null
                         : _sendMessage,

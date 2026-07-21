@@ -783,5 +783,10 @@
   "completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT": "پەڕەی گشتی ناوەندی فرۆشتنەکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.",
   "switchToUSD": "بگۆڕە بۆ USD",
   "switchToIQD": "بگۆڕە بۆ IQD",
-  "continueAction": "بەردەوام بە"
+  "continueAction": "بەردەوام بە",
+  "showPassword": "پیشاندانی وشەی نهێنی",
+  "hidePassword": "شاردنەوەی وشەی نهێنی",
+  "changeProfilePhoto": "گۆڕینی وێنەی پرۆفایل",
+  "playVideo": "لێدانی ڤیدیۆ",
+  "pauseVideo": "وەستاندنی ڤیدیۆ"
 }

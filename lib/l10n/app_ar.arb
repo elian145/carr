@@ -783,5 +783,10 @@
   "completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT": "أكمل صفحة وكالتك العامة ليتمكن المشترون من التعرف على نشاطك ومعرفة أوقات التواصل.",
   "switchToUSD": "التبديل إلى USD",
   "switchToIQD": "التبديل إلى IQD",
-  "continueAction": "متابعة"
+  "continueAction": "متابعة",
+  "showPassword": "إظهار كلمة المرور",
+  "hidePassword": "إخفاء كلمة المرور",
+  "changeProfilePhoto": "تغيير صورة الملف الشخصي",
+  "playVideo": "تشغيل الفيديو",
+  "pauseVideo": "إيقاف الفيديو مؤقتاً"
 }
