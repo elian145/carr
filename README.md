@@ -449,16 +449,13 @@ car_listing_app/
 ├── test/                  # Flutter tests + fake API server
 ├── scripts/               # CI helpers, smoke tests, dev servers
 ├── CHANGELOG.md           # Keep a Changelog release history
+├── CONTRIBUTING.md        # Setup, PR expectations, local CI
 └── docs/ARCHITECTURE.md   # Entry points, ports, migration status
 ```
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup, branch/PR expectations, and local CI checks.
 
 ## 📄 License
 

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Root `CONTRIBUTING.md` (local setup, PR expectations, CI mirror commands); README Contributing section links to it.
 - Flutter tests boot production `ProductionApp` with shared `test/fake_api_server.dart`.
 - `scripts/verify_publish_ready.py` static store preflight (CI on Flutter + backend).
 - Backend smoke coverage for `/api/config/trust`, `/terms`, and `/privacy`.
