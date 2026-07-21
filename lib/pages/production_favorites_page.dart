@@ -154,7 +154,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                     );
                 return ListingFeedSkeleton(
                   columns: listingColumns,
-                  itemCount: listingColumns == 1 ? 4 : 6,
+                  itemCount: listingColumns == 1 ? 4 : listingColumns * 3,
                 );
               },
             )

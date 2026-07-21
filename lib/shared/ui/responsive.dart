@@ -11,6 +11,13 @@ abstract final class AppResponsive {
   static const double compactPhoneWidth = 360;
   static const double narrowPhoneWidth = 380;
   static const double phoneWidth = 600;
+  /// Shortest edge where listing grids go to 3 columns (tablet / landscape phone).
+  static const double tabletWidth = 720;
+  /// Wide tablet / desktop — 4-column listing grids.
+  static const double largeTabletWidth = 1000;
+  /// Max width for auth / settings form columns on large screens (UI-04).
+  static const double formContentMaxWidth = 480;
+  static const double settingsContentMaxWidth = 640;
 
   static Size screenSize(BuildContext context) => MediaQuery.sizeOf(context);
 
@@ -26,6 +33,28 @@ abstract final class AppResponsive {
     return screenSize(context).width < phoneWidth;
   }
 
+  static bool isTablet(BuildContext context) {
+    return screenSize(context).width >= tabletWidth;
+  }
+
+  static bool isLargeTablet(BuildContext context) {
+    return screenSize(context).width >= largeTabletWidth;
+  }
+
+  /// Centers [child] and caps width so forms do not stretch edge-to-edge on tablets.
+  static Widget constrainContent(
+    Widget child, {
+    double maxWidth = formContentMaxWidth,
+  }) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    );
+  }
+
   static double availableWidth(
     BuildContext context, {
     double horizontalInset = 0,
@@ -39,8 +68,20 @@ abstract final class AppResponsive {
     BuildContext context, {
     double compact = 12,
     double regular = 16,
+    double tablet = 24,
+    double largeTablet = 32,
   }) {
-    final horizontal = isCompactPhone(context) ? compact : regular;
+    final w = screenSize(context).width;
+    final double horizontal;
+    if (w < compactPhoneWidth) {
+      horizontal = compact;
+    } else if (w < tabletWidth) {
+      horizontal = regular;
+    } else if (w < largeTabletWidth) {
+      horizontal = tablet;
+    } else {
+      horizontal = largeTablet;
+    }
     return EdgeInsets.symmetric(horizontal: horizontal);
   }
 
@@ -135,19 +176,20 @@ abstract final class AppResponsive {
     return (sw - featuredSectionHorizontalInset * 2).clamp(280.0, sw);
   }
 
-  /// Matches a single cell in the home 2-column listing grid.
+  /// Matches a single cell in the home listing grid (2–4 columns by width).
   static double homeGridListingCardWidth(BuildContext context) {
     final w = screenSize(context).width;
-    return ((w - 24) / 2).clamp(160, 210);
+    final cols = ListingLayoutPrefs.effectiveColumnsForWidth(2, w);
+    final gutter = 8.0 * (cols + 1);
+    return ((w - gutter) / cols).clamp(140.0, 320.0);
   }
 
   static double homeGridListingCardHeight(BuildContext context) {
+    final w = screenSize(context).width;
+    final cols = ListingLayoutPrefs.effectiveColumnsForWidth(2, w);
     final width = homeGridListingCardWidth(context);
     return width /
-        ListingLayoutPrefs.gridChildAspectRatioForWidth(
-          2,
-          screenSize(context).width,
-        );
+        ListingLayoutPrefs.gridChildAspectRatioForWidth(cols, w);
   }
 
   static double listingGridImageHeight(

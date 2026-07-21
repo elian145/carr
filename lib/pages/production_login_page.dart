@@ -499,8 +499,14 @@ class _LoginPageState extends State<LoginPage> {
           Theme.of(context).brightness,
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-          child: Form(
+          padding: EdgeInsets.fromLTRB(
+            AppResponsive.pagePadding(context).left,
+            20,
+            AppResponsive.pagePadding(context).right,
+            120,
+          ),
+          child: AppResponsive.constrainContent(
+            Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -740,6 +746,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

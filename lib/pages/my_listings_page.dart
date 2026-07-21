@@ -373,8 +373,19 @@ class _MyListingsPageState extends State<MyListingsPage> {
               await Future.wait([_fetch(refresh: true), _loadDrafts()]);
             },
             child: _loading
-                ? ListingFeedSkeleton(
-                    columns: ListingLayoutPrefs.columns.value == 1 ? 1 : 2,
+                ? Builder(
+                    builder: (context) {
+                      final w = MediaQuery.sizeOf(context).width;
+                      final cols =
+                          ListingLayoutPrefs.effectiveColumnsForWidth(
+                            ListingLayoutPrefs.columns.value == 1 ? 1 : 2,
+                            w,
+                          );
+                      return ListingFeedSkeleton(
+                        columns: cols,
+                        itemCount: cols == 1 ? 4 : cols * 3,
+                      );
+                    },
                   )
                 : (_error != null)
                 ? ListView(

@@ -336,7 +336,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
           );
           return ListingFeedSkeleton(
             columns: listingColumns,
-            itemCount: listingColumns == 1 ? 4 : 6,
+            itemCount: listingColumns == 1 ? 4 : listingColumns * 3,
           );
         },
       );

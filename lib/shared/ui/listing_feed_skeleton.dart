@@ -17,7 +17,7 @@ class ListingFeedSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cols = columns.clamp(1, 2);
+    final cols = columns.clamp(1, 4);
     return Shimmer(
       child: GridView.builder(
         padding: padding,
@@ -28,7 +28,7 @@ class ListingFeedSkeleton extends StatelessWidget {
           crossAxisCount: cols,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: cols == 1 ? 1.35 : 0.72,
+          childAspectRatio: cols == 1 ? 1.35 : (cols >= 3 ? 0.70 : 0.72),
         ),
         itemBuilder: (context, _) => const _ListingCardSkeleton(),
       ),
@@ -48,7 +48,7 @@ class ListingFeedSkeletonSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cols = columns.clamp(1, 2);
+    final cols = columns.clamp(1, 4);
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
       sliver: SliverToBoxAdapter(
@@ -61,7 +61,7 @@ class ListingFeedSkeletonSliver extends StatelessWidget {
               crossAxisCount: cols,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: cols == 1 ? 1.35 : 0.72,
+              childAspectRatio: cols == 1 ? 1.35 : (cols >= 3 ? 0.70 : 0.72),
             ),
             itemBuilder: (context, _) => const _ListingCardSkeleton(),
           ),

@@ -11,7 +11,7 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
       if (isLoading)
         ListingFeedSkeletonSliver(
           columns: feedColumns,
-          itemCount: feedColumns == 1 ? 4 : 6,
+          itemCount: feedColumns == 1 ? 4 : feedColumns * 3,
         )
       else if (loadErrorMessage != null && cars.isEmpty)
         SliverFillRemaining(

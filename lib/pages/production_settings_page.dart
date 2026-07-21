@@ -251,16 +251,30 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: isLightShell
           ? Padding(
-              padding: const EdgeInsets.only(bottom: 110),
-              child: bodyChild,
+              padding: EdgeInsets.only(
+                bottom: 110,
+                left: AppResponsive.pagePadding(context).left,
+                right: AppResponsive.pagePadding(context).right,
+              ),
+              child: AppResponsive.constrainContent(
+                bodyChild,
+                maxWidth: AppResponsive.settingsContentMaxWidth,
+              ),
             )
           : Container(
               decoration: AppThemes.shellBackgroundDecoration(
                 Theme.of(context).brightness,
               ),
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 110),
-                child: bodyChild,
+                padding: EdgeInsets.only(
+                  bottom: 110,
+                  left: AppResponsive.pagePadding(context).left,
+                  right: AppResponsive.pagePadding(context).right,
+                ),
+                child: AppResponsive.constrainContent(
+                  bodyChild,
+                  maxWidth: AppResponsive.settingsContentMaxWidth,
+                ),
               ),
             ),
     );

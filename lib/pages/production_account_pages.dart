@@ -19,6 +19,7 @@ import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
 import '../app/widgets/listing_network_image.dart';
 import '../state/locale_controller.dart';
+import '../shared/ui/responsive.dart';
 import '../theme_provider.dart';
 part 'production_profile_fields.dart';
 part 'production_profile_style.dart';
