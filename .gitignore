@@ -82,6 +82,9 @@ tools/out/
 kk/_*.py
 kk/check_*.py
 
+# Store screenshot capture scratch (uiautomator dumps, prefs, raw caps)
+store_assets/screenshots/_raw/
+
 # Firebase service account exports (never commit)
 firebase-service-account*.txt
 firebase-service-account*.json

@@ -117,6 +117,47 @@ def _check_car_catalog_asset() -> None:
     _ok(f"car catalog asset ({len(brands)} brands, {len(models)} model groups)")
 
 
+def _check_store_screenshots() -> None:
+    screens = (
+        "01_home",
+        "02_listing_detail",
+        "03_dealers",
+        "04_sell",
+        "05_profile",
+    )
+    sizes = {
+        "phone_6_7": (1290, 2796),
+        "phone_5_5": (1242, 2208),
+    }
+    missing: list[str] = []
+    wrong: list[str] = []
+    try:
+        from PIL import Image
+    except ImportError:
+        Image = None  # type: ignore[assignment,misc]
+    for locale in ("en", "ar", "ku"):
+        for size_label, dims in sizes.items():
+            for name in screens:
+                rel = Path("store_assets/screenshots") / locale / size_label / f"{name}.png"
+                path = ROOT / rel
+                if not path.is_file():
+                    missing.append(str(rel))
+                    continue
+                if Image is None:
+                    continue
+                with Image.open(path) as im:
+                    if im.size != dims:
+                        wrong.append(f"{rel} got {im.size}, expected {dims}")
+    if missing:
+        _fail(
+            "store screenshots missing "
+            f"({len(missing)}): e.g. {missing[0]} — run scripts/capture_store_screenshots.py"
+        )
+    if wrong:
+        _fail(f"store screenshot size mismatch: {wrong[0]}")
+    _ok("store phone screenshots (en/ar/ku × 6.7/5.5 × 5 screens)")
+
+
 def main() -> None:
     print(f"Publish preflight ({ROOT.name})")
     _check_license()
@@ -128,6 +169,7 @@ def main() -> None:
     _check_local_signing()
     _check_no_example_app_id()
     _check_car_catalog_asset()
+    _check_store_screenshots()
     print("All static publish checks passed.")
 
 

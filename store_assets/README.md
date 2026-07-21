@@ -10,15 +10,29 @@ Create these before Play Console / App Store Connect submission. Not bundled in 
 | `app_store_icon_1024.png` | App Store icon (1024×1024) |
 | `play_feature_graphic.png` | Google Play feature graphic (1024×500) |
 | `listing_copy.md` | Short/full description drafts |
+| `screenshots/{en,ar,ku}/phone_6_7/*.png` | Phone screenshots 1290×2796 (6.7") |
+| `screenshots/{en,ar,ku}/phone_5_5/*.png` | Phone screenshots 1242×2208 (5.5") |
 
-## Still needed (device screenshots)
+## Phone screenshot set
 
-| Asset | Android | iOS |
-|-------|---------|-----|
-| Phone screenshots | 2–8 images, min 320px short side | 6.7" and 5.5" sizes per App Store Connect |
-| Tablet screenshots | Optional (7" / 10") | Optional |
+Each locale (`en`, `ar`, `ku`) has five screens at both sizes:
 
-Capture from a **prod** build: home feed, listing detail, sell flow, chat, dealers.
+1. `01_home` — home feed  
+2. `02_listing_detail` — listing detail  
+3. `03_dealers` — dealerships directory  
+4. `04_sell` — add listing (sell)  
+5. `05_profile` — profile  
+
+Recapture (emulator + `com.carzo.app.dev` installed, Pillow required):
+
+```bash
+python scripts/capture_store_screenshots.py
+# or: python scripts/capture_store_screenshots.py --locales en
+```
+
+Raw dumps under `screenshots/_raw/` are gitignored.
+
+Tablet screenshots remain optional (7" / 10").
 
 ## URLs for store forms
 

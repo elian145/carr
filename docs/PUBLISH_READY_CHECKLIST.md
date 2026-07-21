@@ -83,4 +83,4 @@ Runs static preflight, `flutter analyze`, `flutter test`, and backend factory sm
 - Account delete requires password; force-update gates live at `/api/config/app` (admin Settings).
 - Production listings start as `pending` unless `LISTING_REQUIRE_APPROVAL=0`.
 - App Links setup: [`ANDROID_APP_LINKS_SETUP.md`](ANDROID_APP_LINKS_SETUP.md).
-- Store creatives starters are in `store_assets/` (icon + feature graphic + listing copy). **Phone screenshots still required.**
+- Store creatives are in `store_assets/` (icon + feature graphic + listing copy + phone screenshots for en/ar/ku at 6.7" and 5.5"). Recapture with `python scripts/capture_store_screenshots.py`.
