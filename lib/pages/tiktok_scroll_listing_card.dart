@@ -115,37 +115,32 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
               itemCount: _imageUrls.length,
               onPageChanged: (i) => setState(() => _imageIndex = i),
               itemBuilder: (context, i) {
-                return Image.network(
+                return listingNetworkImage(
                   _imageUrls[i],
                   fit: BoxFit.cover,
                   width: double.infinity,
                   height: double.infinity,
                   filterQuality: FilterQuality.low,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[900],
-                      child: Center(
-                        child: Icon(
-                          Icons.directions_car,
-                          size: 80,
-                          color: Colors.grey[600],
-                        ),
+                  errorWidget: Container(
+                    color: Colors.grey[900],
+                    child: Center(
+                      child: Icon(
+                        Icons.directions_car,
+                        size: 80,
+                        color: Colors.grey[600],
                       ),
-                    );
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Colors.black,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
-                        ),
+                    ),
+                  ),
+                  placeholder: Container(
+                    color: Colors.black,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 );
               },
             )

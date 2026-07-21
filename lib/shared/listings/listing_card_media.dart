@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../app/widgets/listing_network_image.dart';
 import '../prefs/sell_draft_media_persistence.dart';
 import 'listing_image_media.dart';
 
@@ -199,7 +200,7 @@ class _SmartListingCardImageState extends State<_SmartListingCardImage> {
     if (_width != null && _height != null) return;
     final ImageProvider provider = widget.slot.filePath != null
         ? FileImage(File(widget.slot.filePath!))
-        : NetworkImage(widget.slot.url!);
+        : listingCachedNetworkImageProvider(widget.slot.url!);
     final stream = provider.resolve(createLocalImageConfiguration(context));
     _listener = ImageStreamListener((info, _) {
       if (!mounted) return;

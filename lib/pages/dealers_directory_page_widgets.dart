@@ -165,12 +165,12 @@ mixin _DealersDirectoryPageWidgets on _DealersDirectoryPageLoad {
                 children: [
                   Positioned.fill(
                     child: cover.isNotEmpty
-                        ? Image.network(
+                        ? listingNetworkImage(
                             cover,
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
-                            errorBuilder: (_, _, _) => ColoredBox(
+                            errorWidget: ColoredBox(
                               color: scheme.surfaceContainerHighest,
                               child: Icon(
                                 Icons.storefront,
@@ -226,7 +226,9 @@ mixin _DealersDirectoryPageWidgets on _DealersDirectoryPageLoad {
                               radius: 26,
                               backgroundColor: scheme.surfaceContainerHighest,
                               backgroundImage:
-                                  logo.isNotEmpty ? NetworkImage(logo) : null,
+                                  logo.isNotEmpty
+                                      ? listingCachedNetworkImageProvider(logo)
+                                      : null,
                               child: logo.isEmpty
                                   ? Icon(
                                       Icons.business,

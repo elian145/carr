@@ -203,27 +203,24 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
                               child:
                                   listing.imageUrl != null &&
                                       listing.imageUrl!.isNotEmpty
-                                  ? Image.network(
+                                  ? listingNetworkImage(
                                       listing.imageUrl!,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return Container(
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    Colors.grey[100]!,
-                                                    Colors.grey[200]!,
-                                                  ],
-                                                ),
-                                              ),
-                                              child: Icon(
-                                                Icons.directions_car_outlined,
-                                                color: Colors.grey[500],
-                                                size: 60,
-                                              ),
-                                            );
-                                          },
+                                      errorWidget: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.grey[100]!,
+                                              Colors.grey[200]!,
+                                            ],
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.directions_car_outlined,
+                                          color: Colors.grey[500],
+                                          size: 60,
+                                        ),
+                                      ),
                                     )
                                   : Container(
                                       decoration: BoxDecoration(

@@ -121,23 +121,18 @@ class _ListingImageGalleryPageState extends State<ListingImageGalleryPage> {
             final url = widget.imageUrls[index];
             final tile = _GalleryTile(
               selected: selected,
-              child: Image.network(
+              child: listingNetworkImage(
                 url,
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.low,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(child: Icon(Icons.broken_image));
-                },
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return const Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
+                errorWidget: const Center(child: Icon(Icons.broken_image)),
+                placeholder: const Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
               ),
               onTap: () => _openListingMediaViewer(
                 context,

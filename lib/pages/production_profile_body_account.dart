@@ -32,7 +32,7 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
         ).copyWith(
           image: hasDealerCover
               ? DecorationImage(
-                  image: NetworkImage(dealerCoverUrl),
+                  image: listingCachedNetworkImageProvider(dealerCoverUrl),
                   fit: BoxFit.cover,
                   alignment: Alignment.center,
                   colorFilter: ColorFilter.mode(
@@ -69,12 +69,12 @@ mixin _ProfilePageBodyAccount on _ProfilePageBodyGuest {
             : null,
       ),
       child: profilePictureUrl.isNotEmpty
-          ? Image.network(
+          ? listingNetworkImage(
               profilePictureUrl,
               width: 88,
               height: 88,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) =>
+              errorWidget:
                   const Icon(Icons.person, size: 48, color: Color(0xFFFF6B00)),
             )
           : const Icon(Icons.person, size: 48, color: Color(0xFFFF6B00)),

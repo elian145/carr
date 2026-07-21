@@ -21,7 +21,7 @@ mixin _CarDetailsPageLifecycle on _CarDetailsPageMedia {
       if (!mounted) return;
       for (final url in urls) {
         if (url.isEmpty) continue;
-        precacheImage(NetworkImage(url), context);
+        precacheImage(listingCachedNetworkImageProvider(url), context);
       }
     });
   }

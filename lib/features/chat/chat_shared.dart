@@ -79,29 +79,26 @@ Widget buildChatListingAvatar(
     width: size,
     height: size,
     child: ClipOval(
-      child: Image.network(
+      child: listingNetworkImage(
         resolved,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => fallback,
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            width: size,
-            height: size,
-            color: cs.primary.withAlpha(30),
-            alignment: Alignment.center,
-            child: SizedBox(
-              width: radius,
-              height: radius,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: cs.primary,
-              ),
+        errorWidget: fallback,
+        placeholder: Container(
+          width: size,
+          height: size,
+          color: cs.primary.withAlpha(30),
+          alignment: Alignment.center,
+          child: SizedBox(
+            width: radius,
+            height: radius,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: cs.primary,
             ),
-          );
-        },
+          ),
+        ),
       ),
     ),
   );

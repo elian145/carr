@@ -392,7 +392,10 @@ mixin _SellStep5Logic on _SellStep5Fields {
               for (final url in urls) {
                 if (url.isEmpty || !mounted) continue;
                 try {
-                  await precacheImage(NetworkImage(url), context);
+                  await precacheImage(
+                    listingCachedNetworkImageProvider(url),
+                    context,
+                  );
                 } catch (e, st) {
                   logNonFatal(e, st);
                 }

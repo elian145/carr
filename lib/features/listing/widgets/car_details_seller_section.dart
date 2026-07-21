@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../app/widgets/listing_network_image.dart';
 import '../../../shared/media/media_url.dart';
 import '../../../theme_provider.dart';
 import '../car_details_listing_fields.dart';
@@ -175,7 +176,7 @@ class CarDetailsSellerSection extends StatelessWidget {
                     radius: 22,
                     backgroundColor: const Color(0x26FF6B00),
                     backgroundImage: isDealerSeller && avatarUrl.isNotEmpty
-                        ? NetworkImage(avatarUrl)
+                        ? listingCachedNetworkImageProvider(avatarUrl)
                         : null,
                     child: !isDealerSeller
                         ? const Icon(

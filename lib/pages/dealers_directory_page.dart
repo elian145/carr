@@ -8,6 +8,7 @@ import '../app/listing_shell.dart' show buildFloatingBottomNav, navigateMainShel
 import '../services/api_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
+import '../app/widgets/listing_network_image.dart';
 import '../theme_provider.dart';
 import '../shared/debug/app_log.dart';
 

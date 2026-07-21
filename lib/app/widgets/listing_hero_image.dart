@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/listings/listing_image_media.dart';
 import 'listing_hero_focus.dart';
+import 'listing_network_image.dart';
 
 /// Hero listing photo: cover + vehicle bias, optional detection crop, fade-in.
 class ListingHeroImage extends StatefulWidget {
@@ -92,7 +93,7 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
       _failed = true;
       return;
     }
-    final provider = NetworkImage(_effectiveUrl);
+    final provider = listingCachedNetworkImageProvider(_effectiveUrl);
     final stream = provider.resolve(const ImageConfiguration());
     late final ImageStreamListener listener;
     listener = ImageStreamListener(

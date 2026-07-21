@@ -75,15 +75,14 @@ class _ChatMediaGroupViewerState extends State<_ChatMediaGroupViewer> {
                               File(attachment.url),
                               fit: BoxFit.contain,
                             )
-                          : Image.network(
+                          : listingNetworkImage(
                               _resolveAttachmentUrl(attachment),
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.white,
-                                    size: 64,
-                                  ),
+                              errorWidget: const Icon(
+                                Icons.broken_image,
+                                color: Colors.white,
+                                size: 64,
+                              ),
                             ),
                     ),
                   );

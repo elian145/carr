@@ -29,7 +29,7 @@ mixin _EditProfilePageWidgets on _EditProfilePageLoad {
                     ? FileImage(File(_profileImage!.path))
                     : (_currentProfilePicture != null &&
                           _currentProfilePicture!.isNotEmpty)
-                    ? NetworkImage(
+                    ? listingCachedNetworkImageProvider(
                         '${getApiBase()}/static/${_currentProfilePicture!}',
                       )
                     : null,

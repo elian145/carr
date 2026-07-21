@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../app/widgets/listing_hero_image.dart';
+import '../app/widgets/listing_network_image.dart';
 import '../data/car_name_translations.dart';
 import '../features/listing/car_details_listing_fields.dart';
 import '../features/listing/car_details_recommendations.dart';

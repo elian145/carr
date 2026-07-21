@@ -113,22 +113,18 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
             const Center(child: Icon(Icons.broken_image)),
       );
     }
-    return Image.network(
+    return listingNetworkImage(
       raw,
       fit: BoxFit.cover,
       filterQuality: FilterQuality.low,
-      errorBuilder: (context, error, stackTrace) =>
-          const Center(child: Icon(Icons.broken_image)),
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        );
-      },
+      errorWidget: const Center(child: Icon(Icons.broken_image)),
+      placeholder: const Center(
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
     );
   }
 

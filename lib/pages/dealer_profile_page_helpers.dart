@@ -154,13 +154,12 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                 fit: StackFit.expand,
                 children: [
                   bannerUrl.isNotEmpty
-                      ? Image.network(
+                      ? listingNetworkImage(
                           bannerUrl,
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
-                          errorBuilder: (context, error, stackTrace) =>
-                              ColoredBox(
+                          errorWidget: ColoredBox(
                             color: scheme.surfaceContainerHighest,
                             child: Icon(
                               Icons.storefront_rounded,
@@ -234,7 +233,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                   radius: 34,
                   backgroundColor: const Color(0x26FF6B00),
                   backgroundImage: logoUrl.isNotEmpty
-                      ? NetworkImage(logoUrl)
+                      ? listingCachedNetworkImageProvider(logoUrl)
                       : null,
                   child: logoUrl.isEmpty
                       ? Text(

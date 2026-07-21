@@ -230,12 +230,12 @@ Widget buildChatEditingAttachmentsPreview(
         onRemove: () => onRemoveAt(index),
         child: isVideo
             ? const Center(child: Icon(Icons.videocam, size: 28))
-            : Image.network(
+            : listingNetworkImage(
                 resolved,
                 width: 72,
                 height: 72,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const Center(
+                errorWidget: const Center(
                   child: Icon(Icons.broken_image_outlined),
                 ),
               ),

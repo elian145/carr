@@ -1,25 +1,36 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../shared/debug/app_log.dart';
 
-/// Listing image widget using Image.network (avoids CachedNetworkImage HTTP issues on Android).
-/// Includes a small auto-retry to reduce transient "connection closed" failures.
+/// Cached [ImageProvider] for remote listing / media URLs (avatars, covers, precache).
+ImageProvider listingCachedNetworkImageProvider(String url) =>
+    CachedNetworkImageProvider(url);
+
+/// Cached network image for listing / media URLs.
+///
+/// Uses [CachedNetworkImage] with a small auto-retry to reduce transient
+/// "connection closed" failures, plus a path-fallback for misplaced uploads.
 Widget listingNetworkImage(
   String url, {
   BoxFit fit = BoxFit.cover,
   Alignment alignment = Alignment.center,
   double? width,
   double? height,
+  FilterQuality filterQuality = FilterQuality.low,
+  Widget? errorWidget,
+  Widget? placeholder,
 }) {
   if (url.isEmpty) {
-    return Container(
-      color: Colors.grey[900],
-      child: Center(
-        child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
-      ),
-    );
+    return errorWidget ??
+        Container(
+          color: Colors.grey[900],
+          child: Center(
+            child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
+          ),
+        );
   }
   return _RetryingListingNetworkImage(
     url: url,
@@ -27,6 +38,9 @@ Widget listingNetworkImage(
     alignment: alignment,
     width: width,
     height: height,
+    filterQuality: filterQuality,
+    errorWidget: errorWidget,
+    placeholder: placeholder,
   );
 }
 
@@ -36,12 +50,19 @@ class _RetryingListingNetworkImage extends StatefulWidget {
   final Alignment alignment;
   final double? width;
   final double? height;
+  final FilterQuality filterQuality;
+  final Widget? errorWidget;
+  final Widget? placeholder;
+
   const _RetryingListingNetworkImage({
     required this.url,
     required this.fit,
     required this.alignment,
     this.width,
     this.height,
+    required this.filterQuality,
+    this.errorWidget,
+    this.placeholder,
   });
 
   @override
@@ -54,7 +75,6 @@ class _RetryingListingNetworkImageState
   int _attempt = 0;
   bool _retryScheduled = false;
   Timer? _retryTimer;
-  // Connection drops can happen when serving many large images; retry a bit more with backoff.
   static const int _maxRetries = 5;
 
   @override
@@ -63,13 +83,21 @@ class _RetryingListingNetworkImageState
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant _RetryingListingNetworkImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _retryTimer?.cancel();
+      _attempt = 0;
+      _retryScheduled = false;
+    }
+  }
+
   String _fallbackUrl(String url) {
     try {
       final uri = Uri.parse(url);
       final path = uri.path;
-      // If we got a bare filename under /static/uploads/, it often actually lives in /static/uploads/car_photos/.
-      // Example wrong:  /static/uploads/processed_x.jpg
-      // Example right:   /static/uploads/car_photos/processed_x.jpg
+      // Bare filenames under /static/uploads/ often live in /static/uploads/car_photos/.
       if (path.contains('/static/uploads/') &&
           !path.contains('/static/uploads/car_photos/')) {
         final idx = path.indexOf('/static/uploads/');
@@ -80,13 +108,13 @@ class _RetryingListingNetworkImageState
           return uri.replace(path: newPath).toString();
         }
       }
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
     return url;
   }
 
   String get _effectiveUrl {
-    // Attempt 0: original
-    // Attempt 1: fallback path variant (fixes some backend path variants)
     if (_attempt == 1) return _fallbackUrl(widget.url);
     return widget.url;
   }
@@ -95,8 +123,7 @@ class _RetryingListingNetworkImageState
     if (_attempt >= _maxRetries) return;
     if (_retryScheduled) return;
     _retryScheduled = true;
-    final delayMs =
-        700 * (1 << _attempt).clamp(1, 8); // 700ms, 1.4s, 2.8s... capped
+    final delayMs = 700 * (1 << _attempt).clamp(1, 8);
     _retryTimer?.cancel();
     _retryTimer = Timer(Duration(milliseconds: delayMs), () {
       if (!mounted) return;
@@ -107,44 +134,9 @@ class _RetryingListingNetworkImageState
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final url = _effectiveUrl;
-    return Image.network(
-      url,
-      key: ValueKey('$url#$_attempt'),
-      fit: widget.fit,
-      alignment: widget.alignment,
-      width: widget.width,
-      height: widget.height,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Container(
-          color: Colors.white10,
-          child: Center(
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          (loadingProgress.expectedTotalBytes ?? 1)
-                    : null,
-              ),
-            ),
-          ),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        try {
-          appLog('Listing image failed (attempt=$_attempt)');
-        } catch (e, st) {
-          logNonFatal(e, st, 'ListingNetworkImage.error');
-        }
-        _scheduleRetry();
-        return Container(
+  Widget _defaultError() {
+    return widget.errorWidget ??
+        Container(
           color: Colors.grey[900],
           child: Center(
             child: Icon(
@@ -154,6 +146,47 @@ class _RetryingListingNetworkImageState
             ),
           ),
         );
+  }
+
+  Widget _defaultPlaceholder() {
+    return widget.placeholder ??
+        Container(
+          color: Colors.white10,
+          child: const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF6B00)),
+              ),
+            ),
+          ),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final url = _effectiveUrl;
+    return CachedNetworkImage(
+      key: ValueKey('$url#$_attempt'),
+      imageUrl: url,
+      fit: widget.fit,
+      alignment: widget.alignment,
+      width: widget.width,
+      height: widget.height,
+      filterQuality: widget.filterQuality,
+      fadeInDuration: const Duration(milliseconds: 120),
+      fadeOutDuration: const Duration(milliseconds: 80),
+      placeholder: (context, _) => _defaultPlaceholder(),
+      errorWidget: (context, _, error) {
+        try {
+          appLog('Listing image failed (attempt=$_attempt)');
+        } catch (e, st) {
+          logNonFatal(e, st, 'ListingNetworkImage.error');
+        }
+        _scheduleRetry();
+        return _defaultError();
       },
     );
   }

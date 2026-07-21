@@ -18,6 +18,7 @@ import '../shared/account/delete_account_dialog.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/media_url.dart';
+import '../app/widgets/listing_network_image.dart';
 import '../state/locale_controller.dart';
 import '../theme_provider.dart';
 part 'production_profile_fields.dart';

@@ -171,12 +171,11 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
       );
     }
     if (coverUrl.isNotEmpty) {
-      return Image.network(
+      return listingNetworkImage(
         coverUrl,
         fit: BoxFit.cover,
         width: double.infinity,
-        errorBuilder: (context, error, stackTrace) =>
-            Container(color: Colors.black12),
+        errorWidget: Container(color: Colors.black12),
       );
     }
     return Container(

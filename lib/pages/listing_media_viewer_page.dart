@@ -178,30 +178,25 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
         width: s.width,
         height: s.height,
         child: Center(
-          child: Image.network(
+          child: listingNetworkImage(
             widget.url,
             fit: BoxFit.contain,
             width: s.width,
             height: s.height,
             filterQuality: FilterQuality.medium,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.broken_image,
-                color: Colors.white38,
-                size: 48,
-              );
-            },
-            loadingBuilder: (context, child, progress) {
-              if (progress == null) return child;
-              return const SizedBox(
-                width: 36,
-                height: 36,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white54,
-                ),
-              );
-            },
+            errorWidget: const Icon(
+              Icons.broken_image,
+              color: Colors.white38,
+              size: 48,
+            ),
+            placeholder: const SizedBox(
+              width: 36,
+              height: 36,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFFFF6B00),
+              ),
+            ),
           ),
         ),
       ),

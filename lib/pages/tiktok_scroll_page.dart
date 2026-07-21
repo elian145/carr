@@ -5,6 +5,7 @@ import '../shared/media/media_url.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/ui/brand_logo_image.dart';
+import '../app/widgets/listing_network_image.dart';
 import '../data/car_name_translations.dart';
 import '../data/brand_logo_filenames.dart';
 import '../l10n/app_localizations.dart';

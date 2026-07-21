@@ -63,12 +63,12 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
                       color: Colors.black12,
                       child: const Icon(Icons.directions_car),
                     )
-                  : Image.network(
+                  : listingNetworkImage(
                       imageUrl,
                       width: double.infinity,
                       height: previewImageHeight,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+                      errorWidget: Container(
                         width: double.infinity,
                         height: previewImageHeight,
                         color: Colors.black12,
@@ -156,12 +156,12 @@ mixin _ChatConversationMessageUi on _ChatConversationMessageUiNav {
         fit: BoxFit.cover,
       );
     } else {
-      child = Image.network(
+      child = listingNetworkImage(
         _resolveAttachmentUrl(attachment),
         width: width,
         height: height,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => Container(
+        errorWidget: Container(
           width: width,
           height: height,
           color: Colors.black12,

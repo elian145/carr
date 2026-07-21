@@ -112,7 +112,9 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
                       ).colorScheme.surfaceContainerHighest,
                       backgroundImage: _logo != null
                           ? FileImage(File(_logo!.path))
-                          : (logoUrl.isNotEmpty ? NetworkImage(logoUrl) : null),
+                          : (logoUrl.isNotEmpty
+                              ? listingCachedNetworkImageProvider(logoUrl)
+                              : null),
                       child: _logo == null && logoUrl.isEmpty
                           ? Icon(
                               Icons.storefront_outlined,
