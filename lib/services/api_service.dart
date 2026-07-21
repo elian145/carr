@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -18,9 +19,51 @@ part 'api/api_chat.dart';
 part 'api/api_admin.dart';
 
 class ApiService {
-  /// 60s to allow Render (and similar PaaS) cold starts on first request.
-  static const Duration _defaultTimeout = Duration(seconds: 60);
+  /// Warm path: typical Render response when the service is already awake.
+  static const Duration _warmTimeout = Duration(seconds: 20);
+
+  /// Cold path: first request / long idle — Render free tier can take ~30–60s.
+  static const Duration _coldTimeout = Duration(seconds: 55);
+
+  /// After this idle gap, treat the next request as a cold start.
+  static const Duration _idleForColdStart = Duration(minutes: 12);
+
   static const Duration _uploadTimeout = Duration(seconds: 180);
+
+  /// Soft TTL for in-memory GET stale-while-revalidate fallbacks.
+  static const Duration _getSwrTtl = Duration(minutes: 5);
+
+  static DateTime? _lastSuccessfulRequestAt;
+  static final Map<String, _ApiGetCacheEntry> _getResponseCache =
+      <String, _ApiGetCacheEntry>{};
+
+  /// Adaptive request timeout (warm vs cold-start).
+  static Duration requestTimeout() {
+    final last = _lastSuccessfulRequestAt;
+    if (last == null) return _coldTimeout;
+    if (DateTime.now().difference(last) >= _idleForColdStart) {
+      return _coldTimeout;
+    }
+    return _warmTimeout;
+  }
+
+  /// Back-compat alias used by API parts.
+  static Duration get _defaultTimeout => requestTimeout();
+
+  static void _markRequestSuccess() {
+    _lastSuccessfulRequestAt = DateTime.now();
+  }
+
+  @visibleForTesting
+  static void debugResetTimeoutPolicy() {
+    _lastSuccessfulRequestAt = null;
+    _getResponseCache.clear();
+  }
+
+  @visibleForTesting
+  static void debugMarkRequestSuccessAt(DateTime at) {
+    _lastSuccessfulRequestAt = at;
+  }
 
   static String get baseUrl {
     return apiBaseApi();
@@ -524,7 +567,7 @@ class ApiService {
 
   static Future<http.Response> getCarsRaw(
     Map<String, String> queryParams, {
-    Duration timeout = const Duration(seconds: 60),
+    Duration? timeout,
     Map<String, String>? extraHeaders,
   }) => _ApiServiceListings.getCarsRaw(
     queryParams,
@@ -674,4 +717,14 @@ class ApiService {
 
   static Future<List<String>> getBlockedUsers() =>
       _ApiServiceAdmin.getBlockedUsers();
+}
+
+class _ApiGetCacheEntry {
+  _ApiGetCacheEntry(this.response, this.savedAt);
+
+  final http.Response response;
+  final DateTime savedAt;
+
+  bool get isUsable =>
+      DateTime.now().difference(savedAt) <= ApiService._getSwrTtl;
 }

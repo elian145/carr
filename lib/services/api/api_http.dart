@@ -4,6 +4,80 @@ part of '../api_service.dart';
 abstract final class _ApiServiceHttp {
   _ApiServiceHttp._();
 
+  static void _cacheGetResponse(String cacheKey, http.Response response) {
+    if (response.statusCode < 200 || response.statusCode >= 300) return;
+    ApiService._getResponseCache[cacheKey] = _ApiGetCacheEntry(
+      response,
+      DateTime.now(),
+    );
+    ApiService._markRequestSuccess();
+  }
+
+  static http.Response? _cachedGetIfFresh(String cacheKey) {
+    final entry = ApiService._getResponseCache[cacheKey];
+    if (entry == null || !entry.isUsable) return null;
+    return entry.response;
+  }
+
+  /// GET with adaptive timeout; on cold-start timeout, return fresh-enough cache.
+  static Future<http.Response> _getWithAdaptiveTimeout(
+    Uri url, {
+    Map<String, String>? headers,
+    Duration? timeout,
+  }) async {
+    final cacheKey = url.toString();
+    final effectiveTimeout = timeout ?? ApiService.requestTimeout();
+    try {
+      final response = await ApiService._httpClient
+          .get(url, headers: headers)
+          .timeout(effectiveTimeout);
+      _cacheGetResponse(cacheKey, response);
+      return response;
+    } on TimeoutException {
+      final stale = _cachedGetIfFresh(cacheKey);
+      if (stale != null) {
+        logNonFatal(
+          TimeoutException('GET $cacheKey'),
+          StackTrace.current,
+          'ApiService.GET stale-while-revalidate',
+        );
+        return stale;
+      }
+      // One cold-start retry when we had used the warm budget.
+      if (effectiveTimeout < ApiService._coldTimeout) {
+        final response = await ApiService._httpClient
+            .get(url, headers: headers)
+            .timeout(ApiService._coldTimeout);
+        _cacheGetResponse(cacheKey, response);
+        return response;
+      }
+      rethrow;
+    }
+  }
+
+  static Future<http.Response> _sendWithAdaptiveTimeout(
+    Future<http.Response> Function() send, {
+    Duration? timeout,
+  }) async {
+    final effectiveTimeout = timeout ?? ApiService.requestTimeout();
+    try {
+      final response = await send().timeout(effectiveTimeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        ApiService._markRequestSuccess();
+      }
+      return response;
+    } on TimeoutException {
+      if (effectiveTimeout < ApiService._coldTimeout) {
+        final response = await send().timeout(ApiService._coldTimeout);
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          ApiService._markRequestSuccess();
+        }
+        return response;
+      }
+      rethrow;
+    }
+  }
+
     // Initialize tokens from storage without discarding an in-memory session
     // when secure storage is empty or temporarily unreadable (tests, keychain).
     static Future<void> initializeTokens() async {
@@ -273,8 +347,9 @@ abstract final class _ApiServiceHttp {
                 'Authorization': 'Bearer $rt',
               },
             )
-            .timeout(ApiService._defaultTimeout);
+            .timeout(ApiService.requestTimeout());
         if (response.statusCode >= 200 && response.statusCode < 300) {
+          ApiService._markRequestSuccess();
           final data = response.body.isNotEmpty
               ? json.decode(response.body)
               : <String, dynamic>{};
@@ -309,41 +384,42 @@ abstract final class _ApiServiceHttp {
 
       switch (method.toUpperCase()) {
         case 'GET':
-          response = await ApiService._httpClient
-              .get(url, headers: requestHeaders)
-              .timeout(ApiService._defaultTimeout);
+          response = await _getWithAdaptiveTimeout(
+            url,
+            headers: requestHeaders,
+          );
           break;
         case 'POST':
-          response = await ApiService._httpClient
-              .post(
-                url,
-                headers: requestHeaders,
-                body: body != null ? json.encode(body) : null,
-              )
-              .timeout(ApiService._defaultTimeout);
+          response = await _sendWithAdaptiveTimeout(
+            () => ApiService._httpClient.post(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            ),
+          );
           break;
         case 'PUT':
-          response = await ApiService._httpClient
-              .put(
-                url,
-                headers: requestHeaders,
-                body: body != null ? json.encode(body) : null,
-              )
-              .timeout(ApiService._defaultTimeout);
+          response = await _sendWithAdaptiveTimeout(
+            () => ApiService._httpClient.put(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            ),
+          );
           break;
         case 'PATCH':
-          response = await ApiService._httpClient
-              .patch(
-                url,
-                headers: requestHeaders,
-                body: body != null ? json.encode(body) : null,
-              )
-              .timeout(ApiService._defaultTimeout);
+          response = await _sendWithAdaptiveTimeout(
+            () => ApiService._httpClient.patch(
+              url,
+              headers: requestHeaders,
+              body: body != null ? json.encode(body) : null,
+            ),
+          );
           break;
         case 'DELETE':
-          response = await ApiService._httpClient
-              .delete(url, headers: requestHeaders)
-              .timeout(ApiService._defaultTimeout);
+          response = await _sendWithAdaptiveTimeout(
+            () => ApiService._httpClient.delete(url, headers: requestHeaders),
+          );
           break;
         default:
           throw Exception('Unsupported HTTP method: $method');
@@ -357,41 +433,45 @@ abstract final class _ApiServiceHttp {
 
           switch (method.toUpperCase()) {
             case 'GET':
-              response = await ApiService._httpClient
-                  .get(url, headers: requestHeaders)
-                  .timeout(ApiService._defaultTimeout);
+              response = await _getWithAdaptiveTimeout(
+                url,
+                headers: requestHeaders,
+              );
               break;
             case 'POST':
-              response = await ApiService._httpClient
-                  .post(
-                    url,
-                    headers: requestHeaders,
-                    body: body != null ? json.encode(body) : null,
-                  )
-                  .timeout(ApiService._defaultTimeout);
+              response = await _sendWithAdaptiveTimeout(
+                () => ApiService._httpClient.post(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                ),
+              );
               break;
             case 'PUT':
-              response = await ApiService._httpClient
-                  .put(
-                    url,
-                    headers: requestHeaders,
-                    body: body != null ? json.encode(body) : null,
-                  )
-                  .timeout(ApiService._defaultTimeout);
+              response = await _sendWithAdaptiveTimeout(
+                () => ApiService._httpClient.put(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                ),
+              );
               break;
             case 'PATCH':
-              response = await ApiService._httpClient
-                  .patch(
-                    url,
-                    headers: requestHeaders,
-                    body: body != null ? json.encode(body) : null,
-                  )
-                  .timeout(ApiService._defaultTimeout);
+              response = await _sendWithAdaptiveTimeout(
+                () => ApiService._httpClient.patch(
+                  url,
+                  headers: requestHeaders,
+                  body: body != null ? json.encode(body) : null,
+                ),
+              );
               break;
             case 'DELETE':
-              response = await ApiService._httpClient
-                  .delete(url, headers: requestHeaders)
-                  .timeout(ApiService._defaultTimeout);
+              response = await _sendWithAdaptiveTimeout(
+                () => ApiService._httpClient.delete(
+                  url,
+                  headers: requestHeaders,
+                ),
+              );
               break;
           }
         } else {
@@ -411,15 +491,17 @@ abstract final class _ApiServiceHttp {
       final url = Uri.parse('${ApiService.baseUrl}$endpoint');
       var requestHeaders = _getHeaders();
 
-      var response = await ApiService._httpClient
-          .get(url, headers: requestHeaders)
-          .timeout(ApiService._defaultTimeout);
+      var response = await _getWithAdaptiveTimeout(
+        url,
+        headers: requestHeaders,
+      );
 
       if (response.statusCode == 401 && await _refreshAccessToken()) {
         requestHeaders = _getHeaders();
-        response = await ApiService._httpClient
-            .get(url, headers: requestHeaders)
-            .timeout(ApiService._defaultTimeout);
+        response = await _getWithAdaptiveTimeout(
+          url,
+          headers: requestHeaders,
+        );
       }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {

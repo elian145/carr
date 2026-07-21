@@ -315,10 +315,7 @@ mixin _HomePageFetchCore on _HomePageFields {
     }
 
     try {
-      // Use longer timeout for sorting requests and add connection headers
-      final timeout = filters.containsKey('sort_by')
-          ? Duration(seconds: 30)
-          : Duration(seconds: 15);
+      final timeout = ApiService.requestTimeout();
       final response = await ApiService.getCarsRaw(
         filters,
         timeout: timeout,

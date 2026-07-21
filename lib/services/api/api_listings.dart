@@ -458,7 +458,7 @@ abstract final class _ApiServiceListings {
   /// Public car search with arbitrary query params (home feed, filters, sort fallbacks).
   static Future<http.Response> getCarsRaw(
     Map<String, String> queryParams, {
-    Duration timeout = const Duration(seconds: 60),
+    Duration? timeout,
     Map<String, String>? extraHeaders,
   }) async {
     final uri = Uri.parse(
@@ -469,6 +469,10 @@ abstract final class _ApiServiceListings {
       ...ApiService._getHeaders(includeAuth: true),
       ...?extraHeaders,
     };
-    return ApiService._httpClient.get(uri, headers: headers).timeout(timeout);
+    return _ApiServiceHttp._getWithAdaptiveTimeout(
+      uri,
+      headers: headers,
+      timeout: timeout,
+    );
   }
 }
