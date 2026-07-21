@@ -833,6 +833,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noFavoritesYet => 'لا توجد مفضلات بعد';
 
   @override
+  String get favoritesEmptyHint => 'اضغط على القلب في أي إعلان لحفظه هنا.';
+
+  @override
+  String get browseCarsAction => 'تصفح السيارات';
+
+  @override
+  String get chatEmptyHint => 'راسل البائع من صفحة الإعلان لبدء محادثة.';
+
+  @override
+  String get recentlyViewedEmptyHint => 'افتح إعلان سيارة لإضافته هنا.';
+
+  @override
+  String get noCarsFoundHint => 'جرّب تعديل الفلاتر أو تصفح كل الإعلانات.';
+
+  @override
   String get descriptionOptionalLabel => 'الوصف (اختياري)';
 
   @override

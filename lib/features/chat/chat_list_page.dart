@@ -182,8 +182,16 @@ class _ChatListPageState extends State<ChatListPage>
             ? ListView(
                 children: [
                   SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    child: Center(child: Text(_noMessagesText(context))),
+                    height: MediaQuery.of(context).size.height * 0.7,
+                    child: EmptyStatePanel(
+                      icon: Icons.chat_bubble_outline,
+                      title: AppLocalizations.of(context)!.noMessagesYet,
+                      hint: AppLocalizations.of(context)!.chatEmptyHint,
+                      actionLabel:
+                          AppLocalizations.of(context)!.browseCarsAction,
+                      actionIcon: Icons.search,
+                      onAction: () => navigateMainShellTab(context, '/'),
+                    ),
                   ),
                 ],
               )

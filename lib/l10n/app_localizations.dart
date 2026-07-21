@@ -1702,6 +1702,36 @@ abstract class AppLocalizations {
   /// **'No favorites yet'**
   String get noFavoritesYet;
 
+  /// No description provided for @favoritesEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a listing to save it here.'**
+  String get favoritesEmptyHint;
+
+  /// No description provided for @browseCarsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse cars'**
+  String get browseCarsAction;
+
+  /// No description provided for @chatEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Message a seller from a listing to start a conversation.'**
+  String get chatEmptyHint;
+
+  /// No description provided for @recentlyViewedEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a car listing to add it here.'**
+  String get recentlyViewedEmptyHint;
+
+  /// No description provided for @noCarsFoundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting filters or browse all listings.'**
+  String get noCarsFoundHint;
+
   /// No description provided for @descriptionOptionalLabel.
   ///
   /// In en, this message translates to:

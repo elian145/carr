@@ -835,6 +835,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noFavoritesYet => 'No favorites yet';
 
   @override
+  String get favoritesEmptyHint =>
+      'Tap the heart on a listing to save it here.';
+
+  @override
+  String get browseCarsAction => 'Browse cars';
+
+  @override
+  String get chatEmptyHint =>
+      'Message a seller from a listing to start a conversation.';
+
+  @override
+  String get recentlyViewedEmptyHint => 'Open a car listing to add it here.';
+
+  @override
+  String get noCarsFoundHint => 'Try adjusting filters or browse all listings.';
+
+  @override
   String get descriptionOptionalLabel => 'Description (optional)';
 
   @override

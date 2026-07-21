@@ -15,6 +15,7 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
+import '../shared/ui/empty_state_panel.dart';
 
 class RecentlyViewedPage extends StatefulWidget {
   const RecentlyViewedPage({super.key});
@@ -227,30 +228,19 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
     );
   }
 
-  Widget _buildEmptyState(String message) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.history,
-              size: 64,
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-              ),
-            ),
-          ],
-        ),
+  Widget _buildEmptyState() {
+    final loc = AppLocalizations.of(context)!;
+    return EmptyStatePanel(
+      icon: Icons.history,
+      title: _tr(
+        'Recently viewed',
+        ar: 'شوهد مؤخراً',
+        ku: 'دواتر بینراو',
       ),
+      hint: loc.recentlyViewedEmptyHint,
+      actionLabel: loc.browseCarsAction,
+      actionIcon: Icons.search,
+      onAction: () => navigateMainShellTab(context, '/'),
     );
   }
 
@@ -333,11 +323,6 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final title = _tr('Recently viewed', ar: 'شوهد مؤخراً', ku: 'دواتر بینراو');
-    final empty = _tr(
-      'You have not viewed any listings yet.\nOpen a car listing to add it here.',
-      ar: 'لم تشاهد أي إعلانات بعد.\nافتح إعلان سيارة لإضافته هنا.',
-      ku: 'هێشتا هیچ ڕیکلامێکت نەبینيوە.\nڕیکلامێکی ئۆتۆمبێل بکەرەوە بۆ زیادکردنی لێرە.',
-    );
 
     Widget body;
     if (_loading) {
@@ -370,7 +355,7 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
         ),
       );
     } else if (_cars.isEmpty) {
-      body = _buildEmptyState(empty);
+      body = _buildEmptyState();
     } else {
       body = RefreshIndicator(onRefresh: _fetch, child: _buildListingGrid());
     }

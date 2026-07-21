@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/ui/empty_state_panel.dart';
 
 /// Empty listings message with optional one-time auto-fetch when a sort is active.
 class HomeEmptyListMessage extends StatefulWidget {
@@ -50,14 +51,11 @@ class _HomeEmptyListMessageState extends State<HomeEmptyListMessage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Text(
-        AppLocalizations.of(context)!.noCarsFound,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
+    final loc = AppLocalizations.of(context)!;
+    return EmptyStatePanel(
+      icon: Icons.search_off_outlined,
+      title: loc.noCarsFound,
+      hint: loc.noCarsFoundHint,
     );
   }
 }

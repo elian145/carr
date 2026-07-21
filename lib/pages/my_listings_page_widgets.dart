@@ -254,57 +254,13 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
             'Create your first car listing to see it here.',
       ),
     };
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.directions_car_outlined,
-                size: 64,
-                color: Color(0xFFFF6B00),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hint,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => Navigator.pushReplacementNamed(context, '/sell'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF6B00),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-              ),
-              icon: const Icon(Icons.add),
-              label: Text(loc?.addYourFirstCar ?? 'Add your first car'),
-            ),
-          ],
-        ),
-      ),
+    return EmptyStatePanel(
+      icon: Icons.directions_car_outlined,
+      title: title,
+      hint: hint,
+      actionLabel: loc?.addYourFirstCar ?? 'Add your first car',
+      actionIcon: Icons.add,
+      onAction: () => Navigator.pushReplacementNamed(context, '/sell'),
     );
   }
 

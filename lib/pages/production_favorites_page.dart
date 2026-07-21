@@ -188,11 +188,13 @@ class _FavoritesPageState extends State<FavoritesPage> {
               ),
             )
           else if (_favorites.isEmpty)
-            Center(
-              child: Text(
-                AppLocalizations.of(context)!.noFavoritesYet,
-                style: TextStyle(color: muted),
-              ),
+            EmptyStatePanel(
+              icon: Icons.favorite_border,
+              title: AppLocalizations.of(context)!.noFavoritesYet,
+              hint: AppLocalizations.of(context)!.favoritesEmptyHint,
+              actionLabel: AppLocalizations.of(context)!.browseCarsAction,
+              actionIcon: Icons.search,
+              onAction: () => navigateMainShellTab(context, '/'),
             )
           else
             RefreshIndicator(

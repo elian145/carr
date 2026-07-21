@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Consistent empty states (UI-02): shared `EmptyStatePanel` on Favorites, Chat, Recently Viewed, My Listings, and home feed (icon + hint + browse/sell CTA where useful).
 - Skeleton loaders on Favorites and Recently Viewed (UI-01): reuse `ListingFeedSkeleton` instead of a bare spinner (home/My Listings/chat already had skeletons).
 - App-wide text scale clamp for accessibility (A-03): allow 0.85–1.5 (1.35 on compact) via `AppResponsive.wrapApp` instead of a near-no-op 1.0–1.2 cap.
 - Accessibility tooltips on remaining close/back IconButtons (A-02): sell pickers/draft/back, filter dialogs, search clears, listing hero/TikTok/recently-viewed backs.

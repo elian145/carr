@@ -837,6 +837,24 @@ class AppLocalizationsKu extends AppLocalizations {
   String get noFavoritesYet => 'هێشتا هیچ دڵخوازێک نییە';
 
   @override
+  String get favoritesEmptyHint =>
+      'دڵ لەسەر ڕێکلامێک دابگرە بۆ پاشەکەوتکردنی لێرە.';
+
+  @override
+  String get browseCarsAction => 'گەڕان بە ئۆتۆمبێل';
+
+  @override
+  String get chatEmptyHint =>
+      'لە پەڕەی ڕێکلامەوە نامە بۆ فرۆشیار بنێرە بۆ دەستپێکردنی گفتوگۆ.';
+
+  @override
+  String get recentlyViewedEmptyHint =>
+      'ڕێکلامێکی ئۆتۆمبێل بکەرەوە بۆ زیادکردنی لێرە.';
+
+  @override
+  String get noCarsFoundHint => 'فلتەرەکان بگۆڕە یان هەموو ڕێکلامەکان بگەڕێ.';
+
+  @override
   String get descriptionOptionalLabel => 'وەسف (هەلبژاردە)';
 
   @override
