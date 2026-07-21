@@ -70,12 +70,7 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
               Icons.bookmark_outline,
               AppLocalizations.of(context)!.savedSearchesTitle,
               () {
-                Navigator.push(
-                  context,
-                  AppPageRoute(
-                    builder: (_) => const SavedSearchesPage(),
-                  ),
-                );
+                Navigator.pushNamed(context, '/saved-searches');
               },
             ),
             SizedBox(height: 12),

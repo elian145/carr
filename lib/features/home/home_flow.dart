@@ -36,7 +36,6 @@ import '../../features/saved_searches/saved_search_home_bridge.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/online_spec_variant.dart';
 import '../../navigation/app_page_route.dart';
-import '../../pages/saved_searches_page.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/car_spec_index.dart';

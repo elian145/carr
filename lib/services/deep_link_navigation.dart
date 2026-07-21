@@ -51,5 +51,16 @@ DeepLinkTarget? resolveDeepLinkTarget(Uri uri) {
     );
   }
 
+  // carzo://saved-searches or path …/saved-searches
+  final pathNorm = path.toLowerCase().replaceAll('_', '-');
+  final hostNorm = uri.host.toLowerCase().replaceAll('_', '-');
+  if ((uri.scheme == 'carzo' &&
+          (hostNorm == 'saved-searches' ||
+              pathNorm.contains('saved-searches'))) ||
+      pathNorm.endsWith('/saved-searches') ||
+      pathNorm.endsWith('saved-searches')) {
+    return const DeepLinkTarget('/saved-searches', <String, dynamic>{});
+  }
+
   return null;
 }

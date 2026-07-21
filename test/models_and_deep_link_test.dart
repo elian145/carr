@@ -4,6 +4,7 @@ import 'package:car_listing_app/models/chat_message.dart';
 import 'package:car_listing_app/models/listing.dart';
 import 'package:car_listing_app/models/user_profile.dart';
 import 'package:car_listing_app/features/listing/listing_mappers.dart';
+import 'package:car_listing_app/services/deep_link_navigation.dart';
 import 'package:car_listing_app/shared/listings/listing_share_urls.dart';
 
 void main() {
@@ -48,6 +49,16 @@ void main() {
     final link = listingDeepLink('abc123');
     expect(link, contains('carzo://'));
     expect(link, contains('abc123'));
+  });
+
+  test('resolveDeepLinkTarget opens saved searches', () {
+    final host = resolveDeepLinkTarget(Uri.parse('carzo://saved-searches'));
+    expect(host?.route, '/saved-searches');
+
+    final path = resolveDeepLinkTarget(
+      Uri.parse('carzo://app/saved-searches'),
+    );
+    expect(path?.route, '/saved-searches');
   });
 
   test('listingMapsFromApiResponse parses list and cars wrapper', () {

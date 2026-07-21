@@ -55,6 +55,7 @@ Map<String, WidgetBuilder> buildLegacyFallbackRoutes() {
         AuthGuard(allowWhenLoggedOut: true, child: ProfilePage()),
     '/legacy_settings': (context) => SettingsPage(),
     '/legacy_login': (context) => LoginPage(),
-    '/legacy_saved_searches': (context) => const SavedSearchesPage(),
+    '/legacy_saved_searches': (context) =>
+        AuthGuard(child: const SavedSearchesPage()),
   };
 }

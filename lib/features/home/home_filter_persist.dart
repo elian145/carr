@@ -359,21 +359,13 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
               : SnackBarAction(
                   label: AppLocalizations.of(snackContext)!.view,
                   onPressed: () {
-                    Navigator.push(
-                      snackContext,
-                      AppPageRoute(
-                        builder: (_) => SavedSearchesPage(parentState: this),
-                      ),
-                    );
+                    Navigator.pushNamed(snackContext, '/saved-searches');
                   },
                 ),
         ),
       );
       if (openSavedSearches) {
-        Navigator.push(
-          context,
-          AppPageRoute(builder: (_) => SavedSearchesPage(parentState: this)),
-        );
+        Navigator.pushNamed(context, '/saved-searches');
       }
     } catch (e, st) { logNonFatal(e, st); }
   }

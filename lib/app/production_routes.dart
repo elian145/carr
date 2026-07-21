@@ -14,6 +14,7 @@ import '../pages/help_center_page.dart';
 import '../pages/my_listings_page.dart' as modern_listings;
 import '../pages/recently_viewed_page.dart';
 import '../pages/reset_password_page.dart';
+import '../pages/saved_searches_page.dart';
 import '../pages/tiktok_scroll_page.dart';
 import '../pages/verify_email_page.dart';
 import '../shared/navigation/route_args.dart';
@@ -150,6 +151,8 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
     '/comparison': (context) => CarComparisonPage(),
     '/recently-viewed': (context) =>
         AuthGuard(child: const RecentlyViewedPage()),
+    '/saved-searches': (context) =>
+        AuthGuard(child: const SavedSearchesPage()),
     '/analytics': (context) => AuthGuard(child: AnalyticsPage()),
     '/reset-password': (context) => ResetPasswordPage(),
     '/verify-email': (context) {
