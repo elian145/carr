@@ -41,6 +41,89 @@ def validate_required_secrets(env: str | None = None) -> None:
         raise RuntimeError("SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
     if (os.environ.get("JWT_SECRET_KEY") or "").strip() == _DEV_JWT_SECRET_FALLBACK:
         raise RuntimeError("JWT_SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
+    validate_upload_persistence(env_name)
+
+
+def _env_flag(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _r2_credentials_present() -> bool:
+    account = (os.environ.get("R2_ACCOUNT_ID") or "").strip()
+    bucket = (os.environ.get("R2_BUCKET_NAME") or "").strip()
+    access = (
+        (os.environ.get("R2_ACCESS_KEY_ID") or "").strip()
+        or (os.environ.get("AWS_ACCESS_KEY_ID") or "").strip()
+    )
+    secret = (
+        (os.environ.get("R2_SECRET_ACCESS_KEY") or "").strip()
+        or (os.environ.get("AWS_SECRET_ACCESS_KEY") or "").strip()
+    )
+    return bool(account and bucket and access and secret)
+
+
+def _r2_public_url_present() -> bool:
+    return bool((os.environ.get("R2_PUBLIC_URL") or "").strip())
+
+
+def _persistent_upload_folder_configured() -> bool:
+    """True when UPLOAD_FOLDER is an absolute path (Render disk / Docker volume)."""
+    raw = (os.environ.get("UPLOAD_FOLDER") or "").strip()
+    if not raw:
+        return False
+    # Production hosts are Linux; treat POSIX absolute paths as persistent even when
+    # this helper runs on Windows (dev machines / CI).
+    if raw.startswith("/"):
+        return True
+    return os.path.isabs(raw)
+
+
+def upload_persistence_mode() -> str:
+    """
+    Report how listing media will survive redeploys.
+
+    - ``r2``: Cloudflare R2 credentials + public URL configured
+    - ``disk``: absolute UPLOAD_FOLDER (persistent volume)
+    - ``r2_incomplete``: R2 credentials without R2_PUBLIC_URL (not publicly durable)
+    - ``ephemeral``: default local path under the container (lost on redeploy)
+    """
+    if _r2_credentials_present() and _r2_public_url_present():
+        return "r2"
+    if _r2_credentials_present() and not _r2_public_url_present():
+        return "r2_incomplete"
+    if _persistent_upload_folder_configured():
+        return "disk"
+    return "ephemeral"
+
+
+def validate_upload_persistence(env: str | None = None) -> None:
+    """
+    Fail fast in production when uploads would vanish on redeploy.
+
+    Escape hatch: ALLOW_EPHEMERAL_UPLOADS=1 (emergency only; not for store launch).
+    """
+    env_name = (env or get_app_env()).strip().lower()
+    if env_name in ("development", "testing", "test"):
+        return
+    if _env_flag("ALLOW_EPHEMERAL_UPLOADS"):
+        return
+    mode = upload_persistence_mode()
+    if mode == "r2" or mode == "disk":
+        return
+    if mode == "r2_incomplete":
+        raise RuntimeError(
+            "R2 credentials are set but R2_PUBLIC_URL is missing. "
+            "Set R2_PUBLIC_URL (e.g. https://pub-….r2.dev) so listing photos "
+            "are publicly reachable after upload, or unset R2_* and use "
+            "UPLOAD_FOLDER=/data/uploads on a persistent disk."
+        )
+    raise RuntimeError(
+        "Production uploads would be ephemeral (lost on every Render/Docker redeploy). "
+        "Configure Cloudflare R2 (R2_ACCOUNT_ID, R2_BUCKET_NAME, R2_ACCESS_KEY_ID, "
+        "R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL) or set UPLOAD_FOLDER to an absolute "
+        "persistent path (e.g. /data/uploads). "
+        "See kk/docs/UPLOAD_PERSISTENCE.md."
+    )
 
 class Config:
     # Basic Flask Configuration

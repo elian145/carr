@@ -34,6 +34,14 @@ After deploy: upload a listing photo, redeploy again, confirm the photo URL stil
 
 See [`kk/docs/UPLOAD_PERSISTENCE.md`](../kk/docs/UPLOAD_PERSISTENCE.md).
 
+After deploy, confirm `/health` shows `"upload_persistence":"r2"` or `"disk"`, or run:
+
+```bash
+python scripts/verify_production_host.py --host https://<your-host> --require-upload-persistence
+```
+
+Do **not** set `ALLOW_EPHEMERAL_UPLOADS=1` for store launches (escape hatch only).
+
 ## App links (listing shares)
 
 | Variable | Notes |

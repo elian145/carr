@@ -8,6 +8,7 @@ import json
 from flask import Blueprint, Response, abort, current_app, jsonify, redirect, request, send_from_directory
 
 from ..legal_pages import default_privacy_url, default_terms_url, privacy_response, terms_response
+from ..config import upload_persistence_mode
 from urllib.parse import quote
 from html import escape
 from werkzeug.utils import safe_join
@@ -142,18 +143,7 @@ def health():
     env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip().lower()
     if env == "production":
         payload["redis_configured"] = bool((os.environ.get("REDIS_URL") or "").strip())
-        r2_ok = all(
-            (os.environ.get(k) or "").strip()
-            for k in (
-                "R2_ACCOUNT_ID",
-                "R2_BUCKET_NAME",
-                "R2_ACCESS_KEY_ID",
-                "R2_SECRET_ACCESS_KEY",
-                "R2_PUBLIC_URL",
-            )
-        )
-        upload_folder = (os.environ.get("UPLOAD_FOLDER") or "").strip()
-        payload["upload_persistence"] = "r2" if r2_ok else ("disk" if upload_folder else "ephemeral")
+        payload["upload_persistence"] = upload_persistence_mode()
         payload["app_links_android"] = bool(
             (os.environ.get("ANDROID_SHA256_CERT_FINGERPRINTS") or "").strip()
         )

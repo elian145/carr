@@ -20,6 +20,7 @@ def _process_image_path(
     """
     from flask import current_app
 
+    from kk.media_processing import blur_image_bytes, persist_jpeg_bytes
     from kk.security import generate_secure_filename
 
     filename = generate_secure_filename(original_filename or "upload.jpg")
@@ -27,31 +28,12 @@ def _process_image_path(
 
     base_name = os.path.splitext(filename)[0]
     final_filename = f"processed_{timestamp}_{base_name}.jpg"
-    final_rel = os.path.join("uploads", "car_photos", final_filename).replace("\\", "/")
-    final_abs = os.path.join(current_app.root_path, "static", final_rel)
-    os.makedirs(os.path.dirname(final_abs), exist_ok=True)
 
     with open(temp_abs, "rb") as fp:
         raw_bytes = fp.read()
 
     # Optional: blur plates (fallback to original on any failure).
-    out_bytes = raw_bytes
-    try:
-        enabled = (os.getenv("PLATE_BLUR_ENABLED", "1").strip() != "0")
-        if enabled and not skip_blur:
-            from kk.license_plate_blur import blur_license_plates, get_plate_detector
-
-            detector = get_plate_detector()
-            if detector.is_configured():
-                expand = float(os.getenv("PLATE_BLUR_EXPAND", "0") or "0")
-                out_bytes, _meta = blur_license_plates(
-                    image_bytes=raw_bytes,
-                    output_ext=".jpg",
-                    detector=detector,
-                    expand_ratio=expand,
-                )
-    except Exception:
-        out_bytes = raw_bytes
+    out_bytes = blur_image_bytes(raw_bytes, ".jpg", skip_blur=skip_blur)
 
     # Downscale/compress
     try:
@@ -73,8 +55,7 @@ def _process_image_path(
     except Exception:
         pass
 
-    with open(final_abs, "wb") as out:
-        out.write(out_bytes)
+    final_rel = persist_jpeg_bytes(out_bytes, object_filename=final_filename)
 
     b64 = None
     if inline_base64:

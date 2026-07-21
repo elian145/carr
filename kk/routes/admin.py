@@ -1902,8 +1902,9 @@ def system_health():
                 "R2_PUBLIC_URL",
             )
         )
-        upload_folder = (os.environ.get("UPLOAD_FOLDER") or "").strip()
-        storage = "r2" if r2_ok else ("disk" if upload_folder else "ephemeral")
+        from ..config import upload_persistence_mode
+
+        storage = upload_persistence_mode()
 
         push = fcm_public_status()
         env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "production").strip()

@@ -64,9 +64,10 @@ def _check_critical(host: str, timeout: float, require_production_ready: bool = 
             if not data.get("redis_configured"):
                 errors.append("/health redis_configured=false (set REDIS_URL on Render)")
             upload = data.get("upload_persistence")
-            if upload == "ephemeral":
+            if upload not in ("r2", "disk"):
                 errors.append(
-                    "/health upload_persistence=ephemeral (set R2_* or UPLOAD_FOLDER)"
+                    f"/health upload_persistence={upload!r} "
+                    "(set R2_* including R2_PUBLIC_URL, or absolute UPLOAD_FOLDER)"
                 )
 
     code, body, _ = _fetch(f"{base}/api/cars", timeout)
@@ -225,6 +226,11 @@ def main() -> None:
         action="store_true",
         help="Fail if Redis or upload persistence are not configured on /health",
     )
+    p.add_argument(
+        "--require-upload-persistence",
+        action="store_true",
+        help="Fail if /health upload_persistence is not r2 or disk (ignores Redis)",
+    )
     args = p.parse_args()
     host = args.host.strip().rstrip("/")
     if not host.startswith("https://"):
@@ -236,6 +242,21 @@ def main() -> None:
     errors = _check_critical(
         host, args.timeout, require_production_ready=args.require_production_ready
     )
+    if args.require_upload_persistence and not args.require_production_ready:
+        # Dedicated upload check without requiring Redis.
+        code, body, _ = _fetch(f"{host.rstrip('/')}/health", args.timeout)
+        if code != 200:
+            errors.append(f"/health returned {code}")
+        else:
+            data = _json(body)
+            upload = (data or {}).get("upload_persistence") if isinstance(data, dict) else None
+            if upload not in ("r2", "disk"):
+                errors.append(
+                    f"/health upload_persistence={upload!r} "
+                    "(set R2_* including R2_PUBLIC_URL, or absolute UPLOAD_FOLDER)"
+                )
+            else:
+                print(f"OK: upload_persistence={upload}")
     for e in errors:
         print(f"FAIL: {e}", file=sys.stderr)
 

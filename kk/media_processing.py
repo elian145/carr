@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import base64
+import logging
 import os
 from io import BytesIO
 from typing import Tuple
 
 from flask import current_app
 
+from .config import get_app_env
 from .security import generate_secure_filename
 from .time_utils import utcnow
+
+logger = logging.getLogger(__name__)
 
 
 def _r2_configured() -> bool:
@@ -28,6 +32,86 @@ def _r2_configured() -> bool:
         and c.get("R2_ACCESS_KEY_ID")
         and c.get("R2_SECRET_ACCESS_KEY")
     )
+
+
+def _r2_public_base() -> str:
+    return (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
+
+
+def _allow_local_upload_fallback() -> bool:
+    """
+    Whether writing listing images to local disk is allowed.
+
+    Dev/test: always. Production: only with persistent UPLOAD_FOLDER or
+    ALLOW_EPHEMERAL_UPLOADS (emergency escape hatch).
+    """
+    env = get_app_env()
+    if env in ("development", "testing", "test"):
+        return True
+    if (os.environ.get("ALLOW_EPHEMERAL_UPLOADS") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    ):
+        return True
+    from .config import _persistent_upload_folder_configured
+
+    return _persistent_upload_folder_configured()
+
+
+def persist_jpeg_bytes(out_bytes: bytes, *, object_filename: str) -> str:
+    """
+    Persist optimized JPEG bytes to R2 (preferred) or local UPLOAD_FOLDER.
+
+    Returns a public HTTPS URL when R2_PUBLIC_URL is set, otherwise a relative
+    ``uploads/car_photos/...`` path for local/static serving.
+    """
+    final_rel_local = os.path.join("uploads", "car_photos", object_filename).replace(
+        "\\", "/"
+    )
+
+    if _r2_configured():
+        public_base = _r2_public_base()
+        if not public_base and not _allow_local_upload_fallback():
+            raise RuntimeError(
+                "R2 is configured but R2_PUBLIC_URL is missing; "
+                "refusing to store non-public object keys in production."
+            )
+        try:
+            client = _r2_client()
+            bucket = current_app.config["R2_BUCKET_NAME"]
+            key = f"car_photos/{object_filename}"
+            client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=out_bytes,
+                ContentType="image/jpeg",
+            )
+            if public_base:
+                return f"{public_base}/{key}"
+            return key
+        except Exception:
+            logger.exception("R2 image upload failed for %s", object_filename)
+            if not _allow_local_upload_fallback():
+                raise
+            # Dev/test or persistent disk: fall through to local disk.
+
+    if not _allow_local_upload_fallback():
+        raise RuntimeError(
+            "Local image persistence is not allowed in this environment. "
+            "Configure R2 (with R2_PUBLIC_URL) or set UPLOAD_FOLDER to an "
+            "absolute path on a persistent volume."
+        )
+
+    upload_root = (current_app.config.get("UPLOAD_FOLDER") or "").strip()
+    if not upload_root:
+        raise RuntimeError("UPLOAD_FOLDER is not configured")
+    final_abs = os.path.join(upload_root, "car_photos", object_filename)
+    os.makedirs(os.path.dirname(final_abs), exist_ok=True)
+    with open(final_abs, "wb") as out:
+        out.write(out_bytes)
+    return final_rel_local
 
 
 def _r2_client():
@@ -110,8 +194,6 @@ def process_and_store_image(file_storage, inline_base64: bool, *, skip_blur: boo
         b64 = None
         base_name = os.path.splitext(filename)[0]
         final_filename = f"processed_{timestamp}_{base_name}.jpg"
-        # Default local-relative path under /static for backward compatibility.
-        final_rel_local = os.path.join("uploads", "car_photos", final_filename).replace("\\", "/")
 
         with open(temp_abs, "rb") as fp:
             raw_bytes = fp.read()
@@ -153,37 +235,7 @@ def process_and_store_image(file_storage, inline_base64: bool, *, skip_blur: boo
 
         # Persist the optimized bytes: prefer Cloudflare R2 when configured,
         # otherwise fall back to local filesystem under /static/uploads.
-        final_rel: str
-        if _r2_configured():
-            try:
-                client = _r2_client()
-                bucket = current_app.config["R2_BUCKET_NAME"]
-                key = f"car_photos/{final_filename}"
-                client.put_object(
-                    Bucket=bucket,
-                    Key=key,
-                    Body=out_bytes,
-                    ContentType="image/jpeg",
-                )
-                public_base = (current_app.config.get("R2_PUBLIC_URL") or "").strip()
-                if public_base:
-                    final_rel = f"{public_base.rstrip('/')}/{key}"
-                else:
-                    # Store the object key when no public base URL is configured.
-                    final_rel = key
-            except Exception:
-                # On any cloud failure, fall back to local disk to avoid breaking uploads.
-                final_abs = os.path.join(current_app.root_path, "static", final_rel_local)
-                os.makedirs(os.path.dirname(final_abs), exist_ok=True)
-                with open(final_abs, "wb") as out:
-                    out.write(out_bytes)
-                final_rel = final_rel_local
-        else:
-            final_abs = os.path.join(current_app.root_path, "static", final_rel_local)
-            os.makedirs(os.path.dirname(final_abs), exist_ok=True)
-            with open(final_abs, "wb") as out:
-                out.write(out_bytes)
-            final_rel = final_rel_local
+        final_rel = persist_jpeg_bytes(out_bytes, object_filename=final_filename)
 
         if inline_base64:
             try:

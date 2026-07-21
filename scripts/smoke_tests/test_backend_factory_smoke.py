@@ -1586,6 +1586,75 @@ class BackendFactorySmokeTest(unittest.TestCase):
             # Restore testing env used by this suite.
             os.environ["APP_ENV"] = "testing"
 
+    def test_upload_persistence_mode_and_production_validation(self):
+        """C-06: production requires R2+public URL or absolute UPLOAD_FOLDER."""
+        from kk import config as cfg
+
+        keys = (
+            "R2_ACCOUNT_ID",
+            "R2_BUCKET_NAME",
+            "R2_ACCESS_KEY_ID",
+            "R2_SECRET_ACCESS_KEY",
+            "R2_PUBLIC_URL",
+            "UPLOAD_FOLDER",
+            "ALLOW_EPHEMERAL_UPLOADS",
+            "APP_ENV",
+        )
+        previous = {k: os.environ.get(k) for k in keys}
+
+        def _clear():
+            for k in keys:
+                os.environ.pop(k, None)
+
+        def _restore():
+            for k, v in previous.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+            os.environ["APP_ENV"] = "testing"
+
+        try:
+            _clear()
+            os.environ["APP_ENV"] = "production"
+            self.assertEqual(cfg.upload_persistence_mode(), "ephemeral")
+            with self.assertRaises(RuntimeError):
+                cfg.validate_upload_persistence("production")
+
+            os.environ["ALLOW_EPHEMERAL_UPLOADS"] = "1"
+            cfg.validate_upload_persistence("production")  # escape hatch
+            del os.environ["ALLOW_EPHEMERAL_UPLOADS"]
+
+            os.environ["R2_ACCOUNT_ID"] = "acc"
+            os.environ["R2_BUCKET_NAME"] = "bucket"
+            os.environ["R2_ACCESS_KEY_ID"] = "key"
+            os.environ["R2_SECRET_ACCESS_KEY"] = "secret"
+            self.assertEqual(cfg.upload_persistence_mode(), "r2_incomplete")
+            with self.assertRaises(RuntimeError):
+                cfg.validate_upload_persistence("production")
+
+            os.environ["R2_PUBLIC_URL"] = "https://pub.example.r2.dev"
+            self.assertEqual(cfg.upload_persistence_mode(), "r2")
+            cfg.validate_upload_persistence("production")
+
+            for k in (
+                "R2_ACCOUNT_ID",
+                "R2_BUCKET_NAME",
+                "R2_ACCESS_KEY_ID",
+                "R2_SECRET_ACCESS_KEY",
+                "R2_PUBLIC_URL",
+            ):
+                del os.environ[k]
+            os.environ["UPLOAD_FOLDER"] = "/data/uploads"
+            self.assertEqual(cfg.upload_persistence_mode(), "disk")
+            cfg.validate_upload_persistence("production")
+
+            # Relative path is treated as ephemeral (not a volume mount).
+            os.environ["UPLOAD_FOLDER"] = "static/uploads"
+            self.assertEqual(cfg.upload_persistence_mode(), "ephemeral")
+        finally:
+            _restore()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
