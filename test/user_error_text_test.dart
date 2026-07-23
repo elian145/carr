@@ -44,6 +44,36 @@ void main() {
     );
   });
 
+  testWidgets('userErrorText surfaces short 5xx ApiException messages', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            final err = ApiException(
+              statusCode: 500,
+              message: 'Failed to send verification code',
+            );
+            expect(
+              userErrorText(context, err, fallback: 'Failed to send OTP'),
+              'Failed to send verification code',
+            );
+            final leaky = ApiException(
+              statusCode: 500,
+              message: 'Exception: traceback dump',
+            );
+            expect(
+              userErrorText(context, leaky, fallback: 'Failed to send OTP'),
+              'Failed to send OTP',
+            );
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  });
+
   test('formatSocketErrorForUser never returns raw internals', () {
     expect(
       formatSocketErrorForUser('SocketException: Connection reset by peer'),

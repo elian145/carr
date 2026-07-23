@@ -131,21 +131,18 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  Future<void> _showApiErrorDialog(ApiException e) async {
+  Future<void> _showApiErrorDialog(
+    ApiException e, {
+    String? fallback,
+  }) async {
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
-    var msg = userErrorText(context, e, fallback: loc.errorTitle);
-    if (e.statusCode == 429) {
-      final retryAfter = e.body?['retry_after'];
-      final seconds = retryAfter is int
-          ? retryAfter
-          : (retryAfter is num ? retryAfter.toInt() : null);
-      if (seconds != null && seconds > 0) {
-        final minutes = (seconds / 60).ceil();
-        msg =
-            '$msg Try again in $minutes minute${minutes == 1 ? '' : 's'}.';
-      }
-    }
+    // ApiService already appends retry timing for 429 responses.
+    final msg = userErrorText(
+      context,
+      e,
+      fallback: fallback ?? loc.errorTitle,
+    );
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -253,7 +250,10 @@ class _LoginPageState extends State<LoginPage> {
         await _showDealerAccountConflictDialog();
         return;
       }
-      await _showApiErrorDialog(e);
+      await _showApiErrorDialog(
+        e,
+        fallback: AppLocalizations.of(context)!.otpFailed,
+      );
     } catch (e, st) {
       if (!mounted) return;
       logNonFatal(e, st, 'LoginPage.sendOtp');

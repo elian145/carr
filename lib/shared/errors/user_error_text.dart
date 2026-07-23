@@ -24,7 +24,18 @@ String userErrorText(
       return phoneVerificationRequiredMessage(loc);
     }
     final msg = normalize(error.message);
-    if (msg.isNotEmpty && error.statusCode >= 400 && error.statusCode < 500) {
+    if (msg.isEmpty) return fallbackText;
+    if (error.statusCode >= 400 && error.statusCode < 500) {
+      return msg;
+    }
+    // Surface short, clean 5xx API messages (e.g. OTP/SMS failures).
+    final lower = msg.toLowerCase();
+    if (error.statusCode >= 500 &&
+        msg.length <= 160 &&
+        !msg.contains('\n') &&
+        !lower.contains('exception') &&
+        !lower.contains('traceback') &&
+        !lower.contains('stack')) {
       return msg;
     }
     return fallbackText;
