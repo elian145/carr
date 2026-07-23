@@ -216,6 +216,7 @@ abstract final class _ApiServiceHttp {
         final messagePart =
             (err['message'] ?? '').toString().trim();
         final errorPart = (err['error'] ?? '').toString().trim();
+        final detailPart = (err['detail'] ?? '').toString().trim();
         String msg = messagePart;
         if (errorPart.isNotEmpty &&
             errorPart != messagePart &&
@@ -224,6 +225,11 @@ abstract final class _ApiServiceHttp {
         }
         if (msg.isEmpty) {
           msg = errorPart;
+        }
+        if (detailPart.isNotEmpty &&
+            detailPart != msg &&
+            !msg.contains(detailPart)) {
+          msg = msg.isEmpty ? detailPart : '$msg ($detailPart)';
         }
         throw ApiException(
           statusCode: code,

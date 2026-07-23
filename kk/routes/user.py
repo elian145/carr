@@ -1051,9 +1051,10 @@ def send_dealer_phone_verification():
     current_user.phone_verification_locked_until = None
     db.session.commit()
 
-    from ..sms_service import send_verification_sms
+    from ..sms_service import send_verification_sms_result
 
-    if not send_verification_sms(phone_digits, code):
+    sms_sent, sms_detail = send_verification_sms_result(phone_digits, code)
+    if not sms_sent:
         current_user.phone_verification_code_hash = None
         current_user.phone_verification_expires_at = None
         current_user.phone_verification_attempts = 0
@@ -1061,7 +1062,10 @@ def send_dealer_phone_verification():
         payload = {
             "message": "Failed to send verification code",
             "sent": False,
+            "code": "sms_send_failed",
         }
+        if sms_detail:
+            payload["detail"] = sms_detail
         if current_app.config.get("DEBUG") or (
             os.environ.get("APP_ENV") or ""
         ).strip().lower() == "development":
@@ -1184,9 +1188,10 @@ def send_contact_phone_verification():
     current_user.phone_verification_locked_until = None
     db.session.commit()
 
-    from ..sms_service import send_verification_sms
+    from ..sms_service import send_verification_sms_result
 
-    if not send_verification_sms(phone_digits, code):
+    sms_sent, sms_detail = send_verification_sms_result(phone_digits, code)
+    if not sms_sent:
         current_user.phone_verification_code_hash = None
         current_user.phone_verification_expires_at = None
         current_user.phone_verification_attempts = 0
@@ -1194,7 +1199,10 @@ def send_contact_phone_verification():
         payload = {
             "message": "Failed to send verification code",
             "sent": False,
+            "code": "sms_send_failed",
         }
+        if sms_detail:
+            payload["detail"] = sms_detail
         if current_app.config.get("DEBUG") or (
             os.environ.get("APP_ENV") or ""
         ).strip().lower() == "development":

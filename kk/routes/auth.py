@@ -1610,9 +1610,11 @@ def send_phone_verification():
         user.phone_verification_locked_until = None
         db.session.commit()
 
-        from ..sms_service import send_verification_sms
+        from ..sms_service import send_verification_sms_result
 
-        sms_sent = send_verification_sms(phone_digits, verification_code)
+        sms_sent, sms_detail = send_verification_sms_result(
+            phone_digits, verification_code
+        )
         if not sms_sent:
             # Do not leave a potentially valid code in DB if SMS failed.
             user.phone_verification_code_hash = None
@@ -1621,8 +1623,15 @@ def send_phone_verification():
             user.phone_verification_locked_until = None
             db.session.commit()
             err_msg = "Failed to send verification code"
+            current_app.logger.error(
+                "send-verification SMS failed provider=%s detail=%s",
+                (os.environ.get("SMS_PROVIDER") or "console").strip().lower(),
+                sms_detail or "unknown",
+            )
             # Legacy client expects 200 with sent: false and error (and optional dev_code in dev).
             payload = {"sent": False, "error": err_msg, "message": err_msg}
+            if sms_detail:
+                payload["detail"] = sms_detail
             if current_app.config.get("DEBUG") or (os.environ.get("APP_ENV") or "").strip().lower() == "development":
                 payload["dev_code"] = verification_code
             return jsonify(payload), 200
@@ -1730,16 +1739,29 @@ def phone_start():
         user.phone_verification_locked_until = None
         db.session.commit()
 
-        from ..sms_service import send_verification_sms
+        from ..sms_service import send_verification_sms_result
 
-        sms_sent = send_verification_sms(phone_digits, verification_code)
+        sms_sent, sms_detail = send_verification_sms_result(
+            phone_digits, verification_code
+        )
         if not sms_sent:
             user.phone_verification_code_hash = None
             user.phone_verification_expires_at = None
             user.phone_verification_attempts = 0
             user.phone_verification_locked_until = None
             db.session.commit()
-            return jsonify({"message": "Failed to send verification code"}), 500
+            current_app.logger.error(
+                "phone_start SMS failed provider=%s detail=%s",
+                (os.environ.get("SMS_PROVIDER") or "console").strip().lower(),
+                sms_detail or "unknown",
+            )
+            payload = {
+                "message": "Failed to send verification code",
+                "code": "sms_send_failed",
+            }
+            if sms_detail:
+                payload["detail"] = sms_detail
+            return jsonify(payload), 500
 
         # Dev convenience: when using console SMS provider, return the OTP in development/testing only.
         # Never include the OTP in production responses.
