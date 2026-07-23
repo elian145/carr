@@ -197,7 +197,10 @@ class SMSService:
             elif self.provider == 'console':
                 return self._send_verification_via_console(phone_number, verification_code)
             else:
-                logger.error(f"Unsupported SMS provider: {self.provider}")
+                logger.error(
+                    "Unsupported SMS provider: %s (supported: twilio, otpiq, console)",
+                    self.provider,
+                )
                 return False
                 
         except Exception as e:
