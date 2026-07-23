@@ -30,6 +30,7 @@ from ..response_cache import (
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url
+from .user import assert_listing_phones_verified, parse_listing_contact_phones
 
 bp = Blueprint("cars", __name__)
 
@@ -943,6 +944,12 @@ def create_car():
         plate_type_val = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
         plate_city_val = _s(raw.get("plate_city") or raw.get("plateCity"), None) or None
 
+        contact_phones = parse_listing_contact_phones(raw)
+        if contact_phones:
+            phone_err = assert_listing_phones_verified(current_user, contact_phones)
+            if phone_err:
+                return jsonify({"message": phone_err}), 400
+
         if not brand or not model:
             return jsonify({"message": "Validation failed", "errors": {"brand/model": "required"}}), 400
 
@@ -976,6 +983,8 @@ def create_car():
             region_specs=region_specs_val,
             plate_type=plate_type_val,
             plate_city=plate_city_val,
+            contact_phone=contact_phones[0] if contact_phones else None,
+            contact_phones=contact_phones or None,
         )
 
         db.session.add(car)
@@ -1122,6 +1131,15 @@ def update_car(car_id: str):
             "plate_type",
             "plate_city",
         ]
+        if "contact_phones" in data or "contact_phone" in data:
+            contact_phones = parse_listing_contact_phones(data)
+            if contact_phones:
+                phone_err = assert_listing_phones_verified(current_user, contact_phones)
+                if phone_err:
+                    return jsonify({"message": phone_err}), 400
+            car.contact_phones = contact_phones or None
+            car.contact_phone = contact_phones[0] if contact_phones else None
+
         for field in updatable_fields:
             if field not in data:
                 continue

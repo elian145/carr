@@ -751,6 +751,20 @@
   "setYourPriceAndContactInformation": "Set your price and contact information",
   "whatsappPhoneNumber": "WhatsApp/Phone Number",
   "whatsappPhoneNumber2": "WhatsApp/Phone Number *",
+  "listingContactPhonesTitle": "Contact phone numbers",
+  "listingContactPhonesHint": "Add up to 3 numbers. Verify each with a code before continuing.",
+  "addPhoneNumber": "Add phone number",
+  "listingContactPhoneN": "Phone {n}",
+  "@listingContactPhoneN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneVerifiedBadge": "Verified",
+  "verifyContactPhonesBeforeContinuing": "Verify each contact phone with a code before continuing.",
+  "duplicateContactPhoneError": "This phone number is already added.",
   "pleaseEnterPhoneNumber": "Please enter phone number",
   "pleaseEnterAValidPhoneNumber": "Please enter a valid phone number",
   "addDetailsAboutTheCarConditionFeaturesOrNotes": "Add details about the car, condition, features, or notes",

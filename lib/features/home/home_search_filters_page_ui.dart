@@ -1,101 +1,6 @@
 part of 'home_flow.dart';
 
 mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
-  bool _searchFilterValueActive(String? value) {
-    if (value == null) return false;
-    final trimmed = value.trim();
-    return trimmed.isNotEmpty && trimmed.toLowerCase() != 'any';
-  }
-
-  bool _searchHasAdvancedFiltersActive() {
-    return _homeSelectedDriveTypes.isNotEmpty ||
-        _searchFilterValueActive(selectedColor) ||
-        _searchFilterValueActive(selectedTitleStatus) ||
-        _searchFilterValueActive(selectedDamagedParts) ||
-        _searchFilterValueActive(selectedRegionSpecs) ||
-        _searchFilterValueActive(selectedPlateType) ||
-        _searchFilterValueActive(selectedPlateCity) ||
-        _searchFilterValueActive(selectedCylinderCount) ||
-        _searchFilterValueActive(selectedSeating) ||
-        _searchFilterValueActive(selectedEngineSize);
-  }
-
-  int _searchAdvancedFiltersActiveCount() {
-    var count = 0;
-    if (_homeSelectedDriveTypes.isNotEmpty) count++;
-    if (_searchFilterValueActive(selectedColor)) count++;
-    if (_searchFilterValueActive(selectedTitleStatus)) count++;
-    if (_searchFilterValueActive(selectedDamagedParts)) count++;
-    if (_searchFilterValueActive(selectedRegionSpecs)) count++;
-    if (_searchFilterValueActive(selectedPlateType)) count++;
-    if (_searchFilterValueActive(selectedPlateCity)) count++;
-    if (_searchFilterValueActive(selectedCylinderCount)) count++;
-    if (_searchFilterValueActive(selectedSeating)) count++;
-    if (_searchFilterValueActive(selectedEngineSize)) count++;
-    return count;
-  }
-
-  Widget _searchAdvancedFiltersToggle(
-    BuildContext context, {
-    required bool expanded,
-    required VoidCallback onToggle,
-  }) {
-    final loc = AppLocalizations.of(context)!;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final titleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
-    final muted = isLight ? const Color(0xFF8E8E93) : Colors.white70;
-    final activeCount = _searchAdvancedFiltersActiveCount();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onToggle,
-          borderRadius: BorderRadius.circular(16),
-          child: Ink(
-            decoration: _searchCardDecoration(context),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      expanded ? loc.less : loc.moreFilters,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: titleColor,
-                      ),
-                    ),
-                  ),
-                  if (activeCount > 0 && !expanded)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: Text(
-                        localizeDigits(context, '$activeCount'),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: muted,
-                        ),
-                      ),
-                    ),
-                  Icon(
-                    expanded
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    color: _searchAccent,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   List<Widget> _searchEssentialFilterSections(
     BuildContext context,
     StateSetter setStateDialog,
@@ -315,22 +220,14 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
   Widget _searchAllFilterSections(
     BuildContext context,
     StateSetter setStateDialog,
-    MoreFiltersDialogStyle style, {
-    required bool advancedExpanded,
-    required VoidCallback onToggleAdvancedExpanded,
-  }) {
+    MoreFiltersDialogStyle style,
+  ) {
     return KeyedSubtree(
       key: ValueKey<int>(_moreFiltersDialogFieldGeneration),
       child: Column(
         children: [
           ..._searchEssentialFilterSections(context, setStateDialog, style),
-          _searchAdvancedFiltersToggle(
-            context,
-            expanded: advancedExpanded,
-            onToggle: onToggleAdvancedExpanded,
-          ),
-          if (advancedExpanded)
-            ..._searchAdvancedFilterSections(context, setStateDialog, style),
+          ..._searchAdvancedFilterSections(context, setStateDialog, style),
         ],
       ),
     );
@@ -341,8 +238,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     StateSetter setStateDialog, {
     required bool brandsExpanded,
     required VoidCallback onToggleBrandsExpanded,
-    required bool advancedExpanded,
-    required VoidCallback onToggleAdvancedExpanded,
   }) {
     final style = _searchMoreFiltersStyle(context);
 
@@ -357,8 +252,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         context,
         setStateDialog,
         style,
-        advancedExpanded: advancedExpanded,
-        onToggleAdvancedExpanded: onToggleAdvancedExpanded,
       ),
     ];
   }
@@ -379,18 +272,11 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         builder: (pageContext) {
           var didRequestSearchFocus = false;
           var searchBrandsExpanded = false;
-          var searchAdvancedExpanded = _searchHasAdvancedFiltersActive();
           return StatefulBuilder(
             builder: (context, setStateDialog) {
               void toggleSearchBrandsExpanded() {
                 setStateDialog(() {
                   searchBrandsExpanded = !searchBrandsExpanded;
-                });
-              }
-
-              void toggleSearchAdvancedExpanded() {
-                setStateDialog(() {
-                  searchAdvancedExpanded = !searchAdvancedExpanded;
                 });
               }
 
@@ -483,9 +369,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                 brandsExpanded: searchBrandsExpanded,
                                 onToggleBrandsExpanded:
                                     toggleSearchBrandsExpanded,
-                                advancedExpanded: searchAdvancedExpanded,
-                                onToggleAdvancedExpanded:
-                                    toggleSearchAdvancedExpanded,
                               ),
                             ),
                           ),

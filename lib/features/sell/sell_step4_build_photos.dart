@@ -52,7 +52,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                       final image = _selectedImages[index];
                       final keyStr = ListingImageMedia.source(image);
                       final localFile = ListingImageMedia.localFile(image);
-                      final isPrimary = index == 0;
+                      final isPrimary = index == _primaryImageIndex;
                       return Stack(
                         key: ValueKey(keyStr),
                         children: [
@@ -197,6 +197,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                               _blurredImages = [];
                               _imagesProcessed = false;
                             }
+                            _onImageRemovedAt(index);
                             if (_selectedImages.isEmpty) {
                               _blurredImages = [];
                               _imagesProcessed = false;

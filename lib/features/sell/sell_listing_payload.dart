@@ -3,6 +3,48 @@ import '../../shared/i18n/region_spec_labels.dart';
 
 const double _kmPerMile = 1.609344;
 
+const int kSellMaxContactPhones = 3;
+
+List<String> sellContactPhonesFromCarData(Map<String, dynamic> carData) {
+  final out = <String>[];
+  final seen = <String>{};
+  void add(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return;
+    var digits = trimmed.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('964') && digits.length >= 12) {
+      digits = digits.substring(3);
+    }
+    if (digits.startsWith('0') && digits.length == 11) {
+      digits = digits.substring(1);
+    }
+    if (digits.isEmpty || seen.contains(digits)) return;
+    seen.add(digits);
+    out.add('+964$digits');
+  }
+
+  final rawList = carData['contact_phones'];
+  if (rawList is List) {
+    for (final item in rawList) {
+      add(item.toString());
+      if (out.length >= kSellMaxContactPhones) break;
+    }
+  }
+  if (out.isEmpty) {
+    add((carData['contact_phone'] ?? '').toString());
+  }
+  return out.take(kSellMaxContactPhones).toList();
+}
+
+Map<String, dynamic> _sellContactPhonePayload(Map<String, dynamic> carData) {
+  final phones = sellContactPhonesFromCarData(carData);
+  if (phones.isEmpty) return const {};
+  return {
+    'contact_phone': phones.first,
+    'contact_phones': phones,
+  };
+}
+
 int sellMileageKmFromCarData(Map<String, dynamic> carData) {
   final raw = int.tryParse(
         (carData['mileage']?.toString() ?? '0').replaceAll(RegExp(r'[^0-9]'), ''),
@@ -87,6 +129,7 @@ Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
     'plate_city': plateCity.isNotEmpty ? plateCity : null,
     if (fuelEconomy.isNotEmpty) 'fuel_economy': fuelEconomy,
     if (description.isNotEmpty) 'description': description,
+    ..._sellContactPhonePayload(carData),
     if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
       'vin': carData['vin'].toString().trim(),
   }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
@@ -172,9 +215,9 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
     'plateType': plateType.isNotEmpty ? plateType : null,
     'plate_city': plateCity.isNotEmpty ? plateCity : null,
     'plateCity': plateCity.isNotEmpty ? plateCity : null,
-    'contact_phone': (carData['contact_phone']?.toString() ?? '').trim(),
     'description': (carData['description']?.toString() ?? '').trim(),
     'is_quick_sell': carData['is_quick_sell'] ?? false,
+    ..._sellContactPhonePayload(carData),
     if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
       'vin': carData['vin'].toString().trim(),
   }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));

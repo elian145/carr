@@ -194,7 +194,15 @@ mixin _SellStep5Logic on _SellStep5Fields {
           }
 
           final dynamic maybeImgs = carData['images'];
-          final List<dynamic> imgs = (maybeImgs is List) ? maybeImgs : const [];
+          final List<dynamic> imgsRaw =
+              (maybeImgs is List) ? maybeImgs : const [];
+          final List<dynamic> imgs = sellImagesWithPrimaryFirst(
+            imgsRaw,
+            primaryIndex: sellPrimaryImageIndex(
+              carData,
+              length: imgsRaw.length,
+            ),
+          );
           final dynamic maybeVideos = carData['videos'];
           final List<dynamic> vids = (maybeVideos is List)
               ? maybeVideos

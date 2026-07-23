@@ -16,6 +16,27 @@ void main() {
     });
   });
 
+  group('sellerPhonesForContact', () {
+    test('returns all listing contact phones', () {
+      expect(
+        sellerPhonesForContact({
+          'contact_phones': ['+9647700000001', '+9647700000002'],
+          'contact_phone': '+9647700000001',
+        }),
+        ['+9647700000001', '+9647700000002'],
+      );
+    });
+
+    test('falls back to seller when listing phones missing', () {
+      expect(
+        sellerPhonesForContact({
+          'seller': {'phone_number': '07701234567'},
+        }),
+        ['07701234567'],
+      );
+    });
+  });
+
   group('sellerPhoneRawForContact', () {
     test('prefers contact_phone on listing', () {
       expect(
@@ -33,6 +54,15 @@ void main() {
           'seller': {'phone_number': '07701234567'},
         }),
         '07701234567',
+      );
+    });
+
+    test('uses first of contact_phones list', () {
+      expect(
+        sellerPhoneRawForContact({
+          'contact_phones': ['+9647700000001', '+9647700000002'],
+        }),
+        '+9647700000001',
       );
     });
   });

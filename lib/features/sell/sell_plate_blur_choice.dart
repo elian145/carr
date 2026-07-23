@@ -1,5 +1,31 @@
 part of 'sell_flow.dart';
 
+/// Returns [images] with the cover photo first, without mutating the input.
+/// Used for listing preview / submit while the sell grid keeps pick order.
+List<dynamic> sellImagesWithPrimaryFirst(
+  List<dynamic> images, {
+  int primaryIndex = 0,
+}) {
+  if (images.isEmpty) return const <dynamic>[];
+  final i = primaryIndex.clamp(0, images.length - 1);
+  if (i == 0) return List<dynamic>.from(images);
+  final copy = List<dynamic>.from(images);
+  final item = copy.removeAt(i);
+  copy.insert(0, item);
+  return copy;
+}
+
+int sellPrimaryImageIndex(Map<String, dynamic> carData, {int length = 0}) {
+  final raw = carData['primary_image_index'];
+  final parsed = raw is int
+      ? raw
+      : int.tryParse(raw?.toString() ?? '') ?? 0;
+  if (length <= 0) return parsed < 0 ? 0 : parsed;
+  if (parsed < 0) return 0;
+  if (parsed >= length) return 0;
+  return parsed;
+}
+
 /// Applies the user's plate-blur preference onto listing + damage images.
 void applySellPlateBlurChoice(Map<String, dynamic> carData, bool useBlurred) {
   carData['use_blurred_plates'] = useBlurred;

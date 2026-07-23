@@ -20,31 +20,57 @@ Map<String, dynamic>? sellerMapFromListing(Map<String, dynamic>? car) {
   return null;
 }
 
-/// Listing phone for WhatsApp/call: `contact_phone` or nested `seller.*`.
-String? sellerPhoneRawForContact(Map<String, dynamic>? car) {
-  if (car == null) return null;
-  final direct = car['contact_phone']?.toString().trim();
-  if (direct != null && direct.isNotEmpty) return direct;
-  final seller = sellerMapFromListing(car);
-  if (seller != null) {
-    for (final key in [
-      'phone_number',
-      'phone',
-      'whatsapp',
-      'mobile',
-      'contact_phone',
-    ]) {
-      final v = seller[key]?.toString().trim();
-      if (v != null && v.isNotEmpty) return v;
+/// All listing contact phones (`contact_phones` / `contact_phone`), else seller.
+List<String> sellerPhonesForContact(Map<String, dynamic>? car) {
+  if (car == null) return const [];
+  final out = <String>[];
+  final seen = <String>{};
+
+  void add(String? raw) {
+    final trimmed = (raw ?? '').trim();
+    if (trimmed.isEmpty) return;
+    final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty || seen.contains(digits)) return;
+    seen.add(digits);
+    out.add(trimmed);
+  }
+
+  final list = car['contact_phones'];
+  if (list is List) {
+    for (final item in list) {
+      add(item?.toString());
     }
   }
-  return null;
+  add(car['contact_phone']?.toString());
+
+  if (out.isEmpty) {
+    final seller = sellerMapFromListing(car);
+    if (seller != null) {
+      for (final key in [
+        'phone_number',
+        'phone',
+        'whatsapp',
+        'mobile',
+        'contact_phone',
+      ]) {
+        add(seller[key]?.toString());
+      }
+    }
+  }
+  return out;
+}
+
+/// Listing phone for WhatsApp/call: first of [sellerPhonesForContact].
+String? sellerPhoneRawForContact(Map<String, dynamic>? car) {
+  final phones = sellerPhonesForContact(car);
+  if (phones.isEmpty) return null;
+  return phones.first;
 }
 
 bool hasDialableSellerPhone(Map<String, dynamic>? car) {
-  final raw = sellerPhoneRawForContact(car);
-  if (raw == null || raw.isEmpty) return false;
-  return raw.replaceAll(RegExp(r'[^0-9]'), '').isNotEmpty;
+  return sellerPhonesForContact(car).any((raw) {
+    return raw.replaceAll(RegExp(r'[^0-9]'), '').isNotEmpty;
+  });
 }
 
 Set<String> listingIdentityIds(Map<String, dynamic> car, String routeCarId) {

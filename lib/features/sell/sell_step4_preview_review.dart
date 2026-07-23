@@ -62,8 +62,14 @@ class _SellReviewCarDetailScrollViewState
     final imgs = widget.carData['images'];
     final vids = widget.carData['videos'];
     final il = imgs is List
-        ? SellDraftMediaPersistence.resolveDynamicMediaList(
-            List<dynamic>.from(imgs),
+        ? sellImagesWithPrimaryFirst(
+            SellDraftMediaPersistence.resolveDynamicMediaList(
+              List<dynamic>.from(imgs),
+            ),
+            primaryIndex: sellPrimaryImageIndex(
+              widget.carData,
+              length: imgs.length,
+            ),
           )
         : const <dynamic>[];
     final vl = vids is List

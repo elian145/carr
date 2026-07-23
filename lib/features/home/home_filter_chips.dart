@@ -43,7 +43,6 @@ class HomeFilterChipLabels {
     required this.cylinders,
     required this.seating,
     required this.engineSize,
-    required this.city,
     required this.plateType,
     required this.plateCity,
     required this.sortBy,
@@ -73,7 +72,6 @@ class HomeFilterChipLabels {
   final String cylinders;
   final String seating;
   final String engineSize;
-  final String city;
   final String plateType;
   final String plateCity;
   final String sortBy;
@@ -491,16 +489,6 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
       'engineSize',
       Icons.engineering,
       Colors.deepOrange,
-    );
-  }
-
-  if (homeFilterChipValueActive(filters.city)) {
-    add(
-      labels.city,
-      formatters.translateValue(filters.city),
-      'city',
-      Icons.location_city,
-      Colors.teal,
     );
   }
 

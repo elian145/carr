@@ -49,7 +49,26 @@ void main() {
       expect(payload['description'], 'Well maintained');
       expect(payload['vin'], '1HGBH41JXMN109186');
       expect(payload.containsKey('city'), isFalse);
-      expect(payload.containsKey('contact_phone'), isFalse);
+      expect(payload['contact_phone'], '+9647701234567');
+      expect(payload['contact_phones'], ['+9647701234567']);
+    });
+
+    test('sends up to three contact phones on update', () {
+      final payload = buildSellCarUpdatePayload({
+        ...sampleCarData,
+        'contact_phones': [
+          '+9647701111111',
+          '+9647702222222',
+          '+9647703333333',
+          '+9647704444444',
+        ],
+      });
+      expect(payload['contact_phone'], '+9647701111111');
+      expect(payload['contact_phones'], [
+        '+9647701111111',
+        '+9647702222222',
+        '+9647703333333',
+      ]);
     });
 
     test('drops invalid region specs', () {
@@ -99,7 +118,8 @@ void main() {
       expect(payload['plateType'], 'private');
       expect(payload['plate_city'], 'Baghdad');
       expect(payload['plateCity'], 'Baghdad');
-      expect(payload['contact_phone'], '07701234567');
+      expect(payload['contact_phone'], '+9647701234567');
+      expect(payload['contact_phones'], ['+9647701234567']);
       expect(payload['description'], 'Well maintained');
       expect(payload['is_quick_sell'], isFalse);
       expect(payload['vin'], '1HGBH41JXMN109186');

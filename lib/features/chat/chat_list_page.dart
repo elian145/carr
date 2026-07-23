@@ -187,10 +187,6 @@ class _ChatListPageState extends State<ChatListPage>
                       icon: Icons.chat_bubble_outline,
                       title: AppLocalizations.of(context)!.noMessagesYet,
                       hint: AppLocalizations.of(context)!.chatEmptyHint,
-                      actionLabel:
-                          AppLocalizations.of(context)!.browseCarsAction,
-                      actionIcon: Icons.search,
-                      onAction: () => navigateMainShellTab(context, '/'),
                     ),
                   ),
                 ],

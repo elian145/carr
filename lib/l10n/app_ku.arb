@@ -720,6 +720,20 @@
   "setYourPriceAndContactInformation": "نرخ و زانیاری پەیوەندی دابنێ",
   "whatsappPhoneNumber": "ژمارەی واتساپ/مۆبایل",
   "whatsappPhoneNumber2": "ژمارەی واتساپ/مۆبایل *",
+  "listingContactPhonesTitle": "ژمارەکانی پەیوەندی",
+  "listingContactPhonesHint": "دەتوانیت تا ٣ ژمارە زیاد بکەیت. پێش بەردەوامبوون هەر ژمارەیەک بە کۆد پشتڕاست بکەوە.",
+  "addPhoneNumber": "زیادکردنی ژمارەی تەلەفۆن",
+  "listingContactPhoneN": "تەلەفۆن {n}",
+  "@listingContactPhoneN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneVerifiedBadge": "پشتڕاستکراو",
+  "verifyContactPhonesBeforeContinuing": "پێش بەردەوامبوون هەر ژمارەیەکی پەیوەندی بە کۆد پشتڕاست بکەوە.",
+  "duplicateContactPhoneError": "ئەم ژمارەیە پێشتر زیادکراوە.",
   "pleaseEnterPhoneNumber": "تکایە ژمارەی مۆبایل بنووسە",
   "pleaseEnterAValidPhoneNumber": "تکایە ژمارەی دروست بنووسە",
   "addDetailsAboutTheCarConditionFeaturesOrNotes": "وردەکاری دەربارەی ئۆتۆمبێلەکە، دۆخ، تایبەتمەندیەکان یان تێبینی زیاد بکە",

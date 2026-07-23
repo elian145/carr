@@ -33,9 +33,29 @@ Map<String, dynamic> listingToSellDraftSnapshot(
     }
   }
   final primary = (listing['image_url'] ?? '').toString().trim();
-  if (primary.isNotEmpty &&
-      !normalImages.any((item) => ListingImageMedia.source(item) == primary)) {
-    normalImages.insert(0, ListingImageMedia.map(primary));
+  var primaryIndex = 0;
+  if (primary.isNotEmpty) {
+    final match = normalImages.indexWhere((item) {
+      final source = ListingImageMedia.source(item);
+      return source == primary ||
+          source.endsWith(primary) ||
+          primary.endsWith(source);
+    });
+    if (match >= 0) {
+      primaryIndex = match;
+    } else {
+      normalImages.insert(0, ListingImageMedia.map(primary));
+      primaryIndex = 0;
+    }
+  } else {
+    for (var i = 0; i < normalImages.length; i++) {
+      final item = normalImages[i];
+      if (item is Map &&
+          (item['is_primary'] == true || item['isPrimary'] == true)) {
+        primaryIndex = i;
+        break;
+      }
+    }
   }
 
   final videoPaths = <String>[];
@@ -100,7 +120,17 @@ Map<String, dynamic> listingToSellDraftSnapshot(
         : (contactPhoneFallback ?? ''),
     'currency': (listing['currency'] ?? 'USD').toString(),
     'images': normalImages,
+    'primary_image_index': primaryIndex,
     'videos': videoPaths,
+    if ((listing['contact_phones'] is List
+            ? (listing['contact_phones'] as List)
+            : const [])
+        .isNotEmpty)
+      'contact_phones': (listing['contact_phones'] as List)
+          .map((e) => e.toString().trim())
+          .where((e) => e.isNotEmpty)
+          .take(3)
+          .toList(),
     if (damageImages.isNotEmpty) 'damage_images': damageImages,
   };
 

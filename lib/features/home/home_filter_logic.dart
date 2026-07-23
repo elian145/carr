@@ -301,7 +301,6 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
         cylinders: l10n.detail_cylinders,
         seating: l10n.seating,
         engineSize: l10n.engineSizeL,
-        city: l10n.cityLabel,
         plateType: AppLocalizations.of(context)!.labelPlateType,
         plateCity: AppLocalizations.of(context)!.labelPlateCity,
         sortBy: l10n.sortBy,

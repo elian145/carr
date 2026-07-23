@@ -41,6 +41,7 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
             }
             parentState.carData['images'] =
                 List<dynamic>.from(_selectedImages);
+            parentState.carData['primary_image_index'] = _primaryImageIndex;
             parentState.carData['original_damage_images'] =
                 List<dynamic>.from(_damageImages);
             parentState.carData['damage_images'] =

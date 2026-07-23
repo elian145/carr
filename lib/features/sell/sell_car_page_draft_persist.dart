@@ -41,6 +41,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     if (_sellPersistFieldNonEmpty(d['price']) ||
         _sellPersistFieldNonEmpty(d['city']) ||
         _sellPersistFieldNonEmpty(d['contact_phone']) ||
+        (d['contact_phones'] is List && (d['contact_phones'] as List).isNotEmpty) ||
         _sellPersistFieldNonEmpty(d['plate_type']) ||
         _sellPersistFieldNonEmpty(d['plate_city']) ||
         _sellPersistFieldNonEmpty(d['description'])) {

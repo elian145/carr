@@ -64,6 +64,8 @@ class User(db.Model):
     dealership_phones = db.Column(db.JSON, nullable=True)
     # Canonical digit-only phone values that completed the dealer SMS challenge.
     dealership_verified_phones = db.Column(db.JSON, nullable=True)
+    # Digit-only phones OTP-proven for listing contact (any authenticated user).
+    contact_verified_phones = db.Column(db.JSON, nullable=True)
     dealership_location = db.Column(db.String(200), nullable=True)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
@@ -148,6 +150,13 @@ class User(db.Model):
             ]
         else:
             verified_phones_out = []
+        contact_verified = getattr(self, "contact_verified_phones", None)
+        if isinstance(contact_verified, list):
+            contact_verified_out = [
+                str(x).strip() for x in contact_verified if str(x).strip()
+            ]
+        else:
+            contact_verified_out = []
 
         data = {
             'id': self.public_id,
@@ -166,6 +175,7 @@ class User(db.Model):
             'dealership_phone': self.dealership_phone,
             'dealership_phones': phones_out,
             'dealership_verified_phones': verified_phones_out,
+            'contact_verified_phones': contact_verified_out,
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,
@@ -476,6 +486,9 @@ class Car(db.Model):
     # License plate metadata (optional)
     plate_type = db.Column(db.String(20), nullable=True, index=True)
     plate_city = db.Column(db.String(50), nullable=True, index=True)
+    # Listing contact numbers (primary + list, max 3 client-side).
+    contact_phone = db.Column(db.String(20), nullable=True)
+    contact_phones = db.Column(db.JSON, nullable=True)
     
     # Status and metadata
     is_active = db.Column(db.Boolean, default=True, index=True)
@@ -534,6 +547,16 @@ class Car(db.Model):
             'plateType': getattr(self, "plate_type", None),
             'plate_city': getattr(self, "plate_city", None),
             'plateCity': getattr(self, "plate_city", None),
+            'contact_phone': getattr(self, "contact_phone", None),
+            'contact_phones': (
+                list(getattr(self, "contact_phones", None) or [])
+                if isinstance(getattr(self, "contact_phones", None), list)
+                else (
+                    [getattr(self, "contact_phone")]
+                    if getattr(self, "contact_phone", None)
+                    else []
+                )
+            ),
             'is_active': self.is_active,
             'is_featured': self.is_featured,
             'views_count': self.views_count,

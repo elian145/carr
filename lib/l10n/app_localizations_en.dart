@@ -2266,6 +2266,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get whatsappPhoneNumber2 => 'WhatsApp/Phone Number *';
 
   @override
+  String get listingContactPhonesTitle => 'Contact phone numbers';
+
+  @override
+  String get listingContactPhonesHint =>
+      'Add up to 3 numbers. Verify each with a code before continuing.';
+
+  @override
+  String get addPhoneNumber => 'Add phone number';
+
+  @override
+  String listingContactPhoneN(int n) {
+    return 'Phone $n';
+  }
+
+  @override
+  String get phoneVerifiedBadge => 'Verified';
+
+  @override
+  String get verifyContactPhonesBeforeContinuing =>
+      'Verify each contact phone with a code before continuing.';
+
+  @override
+  String get duplicateContactPhoneError =>
+      'This phone number is already added.';
+
+  @override
   String get pleaseEnterPhoneNumber => 'Please enter phone number';
 
   @override

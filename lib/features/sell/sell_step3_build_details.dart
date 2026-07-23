@@ -71,46 +71,43 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
             : null,
       ),
       const SizedBox(height: 16),
-      TextFormField(
-        controller: _phoneController,
-        decoration: InputDecoration(
-          labelText: AppLocalizations.of(context)!.whatsappPhoneNumber2,
-          hintText: '7XX XXX XXXX',
-          filled: true,
-          fillColor: _sellFlowManualFieldFill(context),
-          labelStyle: _sellFlowManualFieldLabelStyle(context),
-          hintStyle: _sellFlowManualFieldHintStyle(context),
-          prefixText: '+964 ',
-          prefixStyle: const TextStyle(
-            color: kFilterAccentColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          prefixIcon: const Icon(Icons.phone, color: kFilterAccentColor),
+      Text(
+        AppLocalizations.of(context)!.listingContactPhonesTitle,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurface,
         ),
-        style: _sellFlowManualFieldTextStyle(context),
-        keyboardType: TextInputType.phone,
-        inputFormatters: [
-          services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-          services.LengthLimitingTextInputFormatter(10),
-        ],
-        onChanged: (value) {
-          setState(() => contactPhone = '+964$value');
-          _syncStep3DraftToParent();
-        },
-        validator: (value) {
-          if (value == null || value.trim().isEmpty) {
-            return AppLocalizations.of(context)!.pleaseEnterPhoneNumber;
-          }
-          if (value.trim().length < 10) {
-            return AppLocalizations.of(context)!.pleaseEnterAValidPhoneNumber;
-          }
-          return null;
-        },
       ),
+      const SizedBox(height: 4),
+      Text(
+        AppLocalizations.of(context)!.listingContactPhonesHint,
+        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+      ),
+      const SizedBox(height: 12),
+      ...List<Widget>.generate(_phoneControllers.length, (index) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: index == _phoneControllers.length - 1 ? 0 : 12,
+          ),
+          child: _buildContactPhoneRow(context, index),
+        );
+      }),
+      if (_phoneControllers.length < _SellStep3Fields.maxContactPhones) ...[
+        const SizedBox(height: 8),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                _phoneControllers.add(TextEditingController());
+              });
+            },
+            icon: const Icon(Icons.add),
+            label: Text(AppLocalizations.of(context)!.addPhoneNumber),
+          ),
+        ),
+      ],
       const SizedBox(height: 24),
       TextFormField(
         controller: _descriptionController,
@@ -139,5 +136,134 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
       ),
       const SizedBox(height: 24),
     ];
+  }
+
+  Widget _buildContactPhoneRow(BuildContext context, int index) {
+    final loc = AppLocalizations.of(context)!;
+    final auth = context.read<AuthService>();
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final digits = _phoneControllers[index].text.trim();
+    final fullPhone = digits.isEmpty ? '' : '+964$digits';
+    final verified = fullPhone.isNotEmpty &&
+        isListingContactPhoneVerified(
+          contactPhone: fullPhone,
+          auth: auth,
+          verifiedPhonesCache: parentState?._verifiedListingPhones,
+        );
+    final label = index == 0
+        ? loc.whatsappPhoneNumber2
+        : loc.listingContactPhoneN(index + 1);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _phoneControllers[index],
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: '7XX XXX XXXX',
+            filled: true,
+            fillColor: _sellFlowManualFieldFill(context),
+            labelStyle: _sellFlowManualFieldLabelStyle(context),
+            hintStyle: _sellFlowManualFieldHintStyle(context),
+            prefixText: '+964 ',
+            prefixStyle: const TextStyle(
+              color: kFilterAccentColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            prefixIcon: const Icon(Icons.phone, color: kFilterAccentColor),
+            suffixIcon: index > 0
+                ? IconButton(
+                    tooltip: loc.removeAction,
+                    onPressed: () {
+                      setState(() {
+                        _phoneControllers.removeAt(index).dispose();
+                        contactPhones = _collectContactPhonesFromControllers();
+                        contactPhone =
+                            contactPhones.isEmpty ? null : contactPhones.first;
+                      });
+                      _syncStep3DraftToParent();
+                    },
+                    icon: const Icon(Icons.close),
+                  )
+                : null,
+          ),
+          style: _sellFlowManualFieldTextStyle(context),
+          keyboardType: TextInputType.phone,
+          inputFormatters: [
+            services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+            services.LengthLimitingTextInputFormatter(10),
+          ],
+          onChanged: (_) {
+            setState(() {
+              contactPhones = _collectContactPhonesFromControllers();
+              contactPhone =
+                  contactPhones.isEmpty ? null : contactPhones.first;
+            });
+            _formKey.currentState?.validate();
+            _syncStep3DraftToParent();
+          },
+          validator: (value) {
+            final trimmed = value?.trim() ?? '';
+            if (index > 0) {
+              if (trimmed.isEmpty) return null;
+              if (trimmed.length < 10) {
+                return loc.pleaseEnterAValidPhoneNumber;
+              }
+              if (_isDuplicateContactPhoneDigits(trimmed, index)) {
+                return loc.duplicateContactPhoneError;
+              }
+              return null;
+            }
+            if (trimmed.isEmpty) {
+              return loc.pleaseEnterPhoneNumber;
+            }
+            if (trimmed.length < 10) {
+              return loc.pleaseEnterAValidPhoneNumber;
+            }
+            if (_isDuplicateContactPhoneDigits(trimmed, index)) {
+              return loc.duplicateContactPhoneError;
+            }
+            return null;
+          },
+        ),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: verified ||
+                      digits.length < 10 ||
+                      _isDuplicateContactPhoneDigits(digits, index)
+                  ? null
+                  : () async {
+                      final ok = await ensureListingContactPhoneVerified(
+                        context,
+                        contactPhone: '+964$digits',
+                        verifiedPhonesCache:
+                            parentState?._verifiedListingPhones,
+                      );
+                      if (!mounted) return;
+                      if (ok) setState(() {});
+                    },
+              style: TextButton.styleFrom(
+                foregroundColor: kFilterAccentColor,
+                disabledForegroundColor: Colors.green,
+                visualDensity: VisualDensity.compact,
+              ),
+              icon: Icon(
+                verified ? Icons.verified_rounded : Icons.sms_outlined,
+                size: 18,
+              ),
+              label: Text(
+                verified ? loc.phoneVerifiedBadge : loc.verifyPhoneAction,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 }

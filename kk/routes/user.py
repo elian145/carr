@@ -149,6 +149,12 @@ def _hash_dealer_phone_code(phone_digits: str, code: str) -> str:
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
 
 
+def _hash_contact_phone_code(phone_digits: str, code: str) -> str:
+    key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    message = f"contact-phone:{phone_digits}:{code}".encode("utf-8")
+    return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
 def _verified_dealer_phone_digits(user: User) -> list[str]:
     raw = getattr(user, "dealership_verified_phones", None)
     verified = raw if isinstance(raw, list) else []
@@ -162,6 +168,57 @@ def _verified_dealer_phone_digits(user: User) -> list[str]:
         if account_phone not in output:
             output.append(account_phone)
     return output
+
+
+def _verified_contact_phone_digits(user: User) -> list[str]:
+    raw = getattr(user, "contact_verified_phones", None)
+    verified = raw if isinstance(raw, list) else []
+    output: list[str] = []
+    for value in verified:
+        normalized = _normalize_dealer_phone(value)
+        if normalized and normalized not in output:
+            output.append(normalized)
+    account_phone = _normalize_dealer_phone(getattr(user, "phone_number", None))
+    # Account phone is always acceptable for listing contact without extra OTP.
+    if account_phone and account_phone not in output:
+        output.append(account_phone)
+    return output
+
+
+LISTING_CONTACT_PHONE_MAX = 3
+
+
+def parse_listing_contact_phones(data: dict | None) -> list[str]:
+    """Normalize contact_phones / contact_phone from a request body (max 3)."""
+    data = data or {}
+    phones = _clean_phone_list(data.get("contact_phones"))
+    if not phones:
+        single = (data.get("contact_phone") or "").strip()
+        if single:
+            phones = [single]
+    out: list[str] = []
+    seen: set[str] = set()
+    for phone in phones:
+        digits = _normalize_dealer_phone(phone)
+        if len(digits) not in {10, 11}:
+            continue
+        if digits in seen:
+            continue
+        seen.add(digits)
+        out.append(f"+964{digits}")
+        if len(out) >= LISTING_CONTACT_PHONE_MAX:
+            break
+    return out
+
+
+def assert_listing_phones_verified(user: User, phones: list[str]) -> str | None:
+    """Return an error message if any phone is not OTP-proven for this user."""
+    verified = set(_verified_contact_phone_digits(user))
+    for phone in phones:
+        digits = _normalize_dealer_phone(phone)
+        if digits not in verified:
+            return "Verify each contact phone with a code before publishing"
+    return None
 
 
 def _clean_document_urls(value) -> list[str]:
@@ -1086,6 +1143,138 @@ def verify_dealer_phone():
             "message": "Phone number verified successfully",
             "verified_phone": phone_digits,
             "dealership_verified_phones": verified,
+        }
+    ), 200
+
+
+@bp.route("/api/user/contact-phone/send-verification", methods=["POST"])
+@jwt_required()
+def send_contact_phone_verification():
+    """Send an ownership code for a listing contact number."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
+    phone_digits = _normalize_dealer_phone(raw_phone)
+    if len(phone_digits) not in {10, 11}:
+        return jsonify({"message": "Enter a valid phone number"}), 400
+
+    verified = _verified_contact_phone_digits(current_user)
+    if phone_digits in verified:
+        return jsonify({"message": "Phone number is already verified", "verified": True}), 200
+
+    now = utcnow()
+    locked_until = getattr(current_user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    last_sent = getattr(current_user, "phone_verification_last_sent_at", None)
+    if last_sent and (now - last_sent).total_seconds() < 60:
+        return jsonify({"message": "Please wait before requesting another code"}), 429
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    current_user.phone_verification_code_hash = _hash_contact_phone_code(
+        phone_digits,
+        code,
+    )
+    current_user.phone_verification_expires_at = now + timedelta(minutes=10)
+    current_user.phone_verification_attempts = 0
+    current_user.phone_verification_last_sent_at = now
+    current_user.phone_verification_locked_until = None
+    db.session.commit()
+
+    from ..sms_service import send_verification_sms
+
+    if not send_verification_sms(phone_digits, code):
+        current_user.phone_verification_code_hash = None
+        current_user.phone_verification_expires_at = None
+        current_user.phone_verification_attempts = 0
+        db.session.commit()
+        payload = {
+            "message": "Failed to send verification code",
+            "sent": False,
+        }
+        if current_app.config.get("DEBUG") or (
+            os.environ.get("APP_ENV") or ""
+        ).strip().lower() == "development":
+            payload["dev_code"] = code
+        return jsonify(payload), 502
+
+    payload = {"message": "Verification code sent", "sent": True}
+    if current_app.config.get("DEBUG") or (
+        os.environ.get("APP_ENV") or ""
+    ).strip().lower() == "development":
+        payload["dev_code"] = code
+    return jsonify(payload), 200
+
+
+@bp.route("/api/user/contact-phone/verify", methods=["POST"])
+@jwt_required()
+def verify_contact_phone():
+    """Confirm a listing contact number and persist ownership on the user."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
+    code = str(data.get("verification_code") or data.get("code") or "").strip()
+    phone_digits = _normalize_dealer_phone(raw_phone)
+    if len(phone_digits) not in {10, 11} or len(code) != 6 or not code.isdigit():
+        return jsonify({"message": "Phone number and a six-digit code are required"}), 400
+
+    verified = _verified_contact_phone_digits(current_user)
+    if phone_digits in verified:
+        return jsonify(
+            {
+                "message": "Phone number verified successfully",
+                "verified_phone": phone_digits,
+                "contact_verified_phones": verified,
+            }
+        ), 200
+
+    now = utcnow()
+    locked_until = getattr(current_user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    expires_at = getattr(current_user, "phone_verification_expires_at", None)
+    code_hash = getattr(current_user, "phone_verification_code_hash", None)
+    if not expires_at or not code_hash or expires_at <= now:
+        current_user.phone_verification_code_hash = None
+        current_user.phone_verification_expires_at = None
+        current_user.phone_verification_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    expected = _hash_contact_phone_code(phone_digits, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = int(getattr(current_user, "phone_verification_attempts", 0) or 0) + 1
+        current_user.phone_verification_attempts = attempts
+        if attempts >= 5:
+            current_user.phone_verification_locked_until = now + timedelta(minutes=15)
+            current_user.phone_verification_code_hash = None
+            current_user.phone_verification_expires_at = None
+            current_user.phone_verification_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    stored = getattr(current_user, "contact_verified_phones", None)
+    stored_list = [str(x).strip() for x in stored] if isinstance(stored, list) else []
+    if phone_digits not in stored_list:
+        stored_list.append(phone_digits)
+    current_user.contact_verified_phones = stored_list
+    current_user.phone_verification_code_hash = None
+    current_user.phone_verification_expires_at = None
+    current_user.phone_verification_attempts = 0
+    current_user.phone_verification_locked_until = None
+    db.session.commit()
+    log_user_action(current_user, "contact_phone_verified")
+    return jsonify(
+        {
+            "message": "Phone number verified successfully",
+            "verified_phone": phone_digits,
+            "contact_verified_phones": _verified_contact_phone_digits(current_user),
         }
     ), 200
 

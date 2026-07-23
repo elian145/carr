@@ -2248,6 +2248,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get whatsappPhoneNumber2 => 'رقم واتساب/الهاتف *';
 
   @override
+  String get listingContactPhonesTitle => 'أرقام التواصل';
+
+  @override
+  String get listingContactPhonesHint =>
+      'يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز قبل المتابعة.';
+
+  @override
+  String get addPhoneNumber => 'إضافة رقم هاتف';
+
+  @override
+  String listingContactPhoneN(int n) {
+    return 'الهاتف $n';
+  }
+
+  @override
+  String get phoneVerifiedBadge => 'موثّق';
+
+  @override
+  String get verifyContactPhonesBeforeContinuing =>
+      'تحقق من كل رقم تواصل برمز قبل المتابعة.';
+
+  @override
+  String get duplicateContactPhoneError => 'هذا الرقم مضاف مسبقاً.';
+
+  @override
   String get pleaseEnterPhoneNumber => 'يرجى إدخال رقم الهاتف';
 
   @override

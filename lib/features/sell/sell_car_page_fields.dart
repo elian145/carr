@@ -63,6 +63,7 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
     final vids = carData['videos'];
     final dmg = carData['damage_images'];
     final blurChoice = carData['use_blurred_plates'];
+    final primaryIndex = carData['primary_image_index'] ?? 0;
     final dmgPart = (dmg == null || dmg is! List || dmg.isEmpty)
         ? ''
         : dmg.map((e) => e is XFile ? e.path : e.toString()).join('|');
@@ -73,8 +74,8 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
         ? ''
         : vids.map((e) => e is XFile ? e.path : e.toString()).join('|');
     if (imgPart.isEmpty && vidPart.isEmpty && dmgPart.isEmpty) {
-      return '0::$blurChoice';
+      return '0::$blurChoice::$primaryIndex';
     }
-    return '$imgPart::$vidPart::$dmgPart::$blurChoice';
+    return '$imgPart::$vidPart::$dmgPart::$blurChoice::$primaryIndex';
   }
 }

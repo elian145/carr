@@ -442,7 +442,11 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
       _detailRow(
         icon: Icons.phone,
         label: loc.phoneLabel,
-        value: _getFirstNonEmpty(data, ['contact_phone']),
+        value: () {
+          final phones = sellContactPhonesFromCarData(data);
+          if (phones.isNotEmpty) return phones.join(' · ');
+          return _getFirstNonEmpty(data, ['contact_phone']);
+        }(),
       ),
       _detailRow(
         icon: Icons.pin_outlined,

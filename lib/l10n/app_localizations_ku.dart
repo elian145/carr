@@ -2268,6 +2268,31 @@ class AppLocalizationsKu extends AppLocalizations {
   String get whatsappPhoneNumber2 => 'ژمارەی واتساپ/مۆبایل *';
 
   @override
+  String get listingContactPhonesTitle => 'ژمارەکانی پەیوەندی';
+
+  @override
+  String get listingContactPhonesHint =>
+      'دەتوانیت تا ٣ ژمارە زیاد بکەیت. پێش بەردەوامبوون هەر ژمارەیەک بە کۆد پشتڕاست بکەوە.';
+
+  @override
+  String get addPhoneNumber => 'زیادکردنی ژمارەی تەلەفۆن';
+
+  @override
+  String listingContactPhoneN(int n) {
+    return 'تەلەفۆن $n';
+  }
+
+  @override
+  String get phoneVerifiedBadge => 'پشتڕاستکراو';
+
+  @override
+  String get verifyContactPhonesBeforeContinuing =>
+      'پێش بەردەوامبوون هەر ژمارەیەکی پەیوەندی بە کۆد پشتڕاست بکەوە.';
+
+  @override
+  String get duplicateContactPhoneError => 'ئەم ژمارەیە پێشتر زیادکراوە.';
+
+  @override
   String get pleaseEnterPhoneNumber => 'تکایە ژمارەی مۆبایل بنووسە';
 
   @override

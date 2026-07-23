@@ -82,18 +82,16 @@ mixin _SellStep5Build on _SellStep5Logic {
                                       Map<String, dynamic>.from(
                                         parentState?.carData ?? {},
                                       );
-                                  final contactPhone =
-                                      (carData['contact_phone'] ?? '')
-                                          .toString()
-                                          .trim();
-                                  if (contactPhone.isNotEmpty) {
+                                  final contactPhones =
+                                      sellContactPhonesFromCarData(carData);
+                                  if (contactPhones.isNotEmpty) {
                                     final verified =
-                                        await ensureListingContactPhoneVerified(
-                                          context,
-                                          contactPhone: contactPhone,
-                                          verifiedPhonesCache:
-                                              parentState?._verifiedListingPhones,
-                                        );
+                                        await ensureAllListingContactPhonesVerified(
+                                      context,
+                                      contactPhones: contactPhones,
+                                      verifiedPhonesCache:
+                                          parentState?._verifiedListingPhones,
+                                    );
                                     if (!verified) {
                                       setState(() {
                                         isSubmitting = false;

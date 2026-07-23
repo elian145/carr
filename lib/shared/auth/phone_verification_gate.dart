@@ -183,6 +183,181 @@ String _normalizedPhoneDigits(String input) {
   return normalized.replaceAll(RegExp(r'\D'), '');
 }
 
+List<String> contactVerifiedPhoneDigitsFromProfile(Map<String, dynamic>? user) {
+  if (user == null) return const [];
+  final raw = user['contact_verified_phones'];
+  if (raw is! List) return const [];
+  final out = <String>[];
+  for (final item in raw) {
+    final digits = _normalizedPhoneDigits(item.toString());
+    if (digits.isNotEmpty && !out.contains(digits)) out.add(digits);
+  }
+  return out;
+}
+
+bool isListingContactPhoneVerified({
+  required String contactPhone,
+  required AuthService auth,
+  Set<String>? verifiedPhonesCache,
+}) {
+  final enteredDigits = _normalizedPhoneDigits(contactPhone);
+  if (enteredDigits.isEmpty) return false;
+
+  final accountPhone = (auth.currentUser?['phone_number'] ?? '')
+      .toString()
+      .trim();
+  final accountDigits = _normalizedPhoneDigits(accountPhone);
+  if (accountDigits.isNotEmpty && enteredDigits == accountDigits) {
+    return true;
+  }
+
+  if (verifiedPhonesCache != null &&
+      verifiedPhonesCache.contains(enteredDigits)) {
+    return true;
+  }
+
+  final profileVerified = contactVerifiedPhoneDigitsFromProfile(
+    auth.currentUser,
+  );
+  return profileVerified.contains(enteredDigits);
+}
+
+Future<bool> showContactPhoneVerificationDialog(
+  BuildContext context, {
+  required String phone,
+  required AuthService auth,
+}) async {
+  var codeSent = false;
+  var verified = false;
+  var codeInput = '';
+  final normalizedPhone =
+      normalizePhoneNumber(phone).isEmpty ? phone.trim() : normalizePhoneNumber(phone);
+
+  await showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx2, setDialogState) {
+          final locDialog = AppLocalizations.of(ctx)!;
+          return AlertDialog(
+            title: Text(locDialog.verifyPhoneDialogTitle),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(locDialog.verifyPhoneDialogMessage(normalizedPhone)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: locDialog.sixDigitCodeLabel,
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    onChanged: (value) {
+                      codeInput = value;
+                    },
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(locDialog.cancelAction),
+              ),
+              if (!codeSent)
+                FilledButton(
+                  onPressed: () async {
+                    try {
+                      final response =
+                          await ApiService.sendContactPhoneVerification(
+                        normalizedPhone,
+                      );
+                      if (!ctx2.mounted) return;
+                      if (response['verified'] == true) {
+                        verified = true;
+                        Navigator.pop(ctx);
+                        return;
+                      }
+                      setDialogState(() => codeSent = true);
+                      ScaffoldMessenger.of(ctx2).showSnackBar(
+                        SnackBar(
+                          content: Text(locDialog.codeSentEnterAbove),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!ctx2.mounted) return;
+                      ScaffoldMessenger.of(ctx2).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            userErrorText(
+                              ctx2,
+                              e,
+                              fallback: locDialog.errorTitle,
+                            ),
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(locDialog.sendCodeButton),
+                ),
+              FilledButton(
+                onPressed: () async {
+                  final code = codeInput.trim();
+                  if (code.length != 6) {
+                    ScaffoldMessenger.of(ctx2).showSnackBar(
+                      SnackBar(
+                        content: Text(locDialog.pleaseEnter6DigitCode),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return;
+                  }
+                  try {
+                    await ApiService.verifyContactPhone(normalizedPhone, code);
+                    await auth.refreshProfile();
+                    if (!ctx2.mounted) return;
+                    verified = true;
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(ctx2).showSnackBar(
+                      SnackBar(
+                        content: Text(locDialog.phoneVerifiedSuccess),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    if (!ctx2.mounted) return;
+                    ScaffoldMessenger.of(ctx2).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          userErrorText(
+                            ctx2,
+                            e,
+                            fallback: locDialog.errorTitle,
+                          ),
+                        ),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: Text(locDialog.verifyButton),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+
+  return verified;
+}
+
 Future<bool> ensureListingContactPhoneVerified(
   BuildContext context, {
   required String contactPhone,
@@ -192,31 +367,43 @@ Future<bool> ensureListingContactPhoneVerified(
   if (enteredDigits.isEmpty) return false;
 
   final auth = context.read<AuthService>();
-  final accountPhone = (auth.currentUser?['phone_number'] ?? '')
-      .toString()
-      .trim();
-  final accountDigits = _normalizedPhoneDigits(accountPhone);
-
-  // If seller uses account phone, no extra OTP gate is needed.
-  if (accountDigits.isNotEmpty && enteredDigits == accountDigits) {
-    return true;
-  }
-
-  if (verifiedPhonesCache != null && verifiedPhonesCache.contains(enteredDigits)) {
+  if (isListingContactPhoneVerified(
+    contactPhone: contactPhone,
+    auth: auth,
+    verifiedPhonesCache: verifiedPhonesCache,
+  )) {
+    verifiedPhonesCache?.add(enteredDigits);
     return true;
   }
 
   final normalizedPhone = normalizePhoneNumber(contactPhone);
-  final verified = await showPhoneVerificationDialog(
+  final verified = await showContactPhoneVerificationDialog(
     context,
     phone: normalizedPhone.isEmpty ? contactPhone.trim() : normalizedPhone,
     auth: auth,
-    allowAccountVerifiedFallback: false,
   );
   if (verified) {
     verifiedPhonesCache?.add(enteredDigits);
   }
   return verified;
+}
+
+Future<bool> ensureAllListingContactPhonesVerified(
+  BuildContext context, {
+  required List<String> contactPhones,
+  Set<String>? verifiedPhonesCache,
+}) async {
+  for (final phone in contactPhones) {
+    final trimmed = phone.trim();
+    if (trimmed.isEmpty) continue;
+    final ok = await ensureListingContactPhoneVerified(
+      context,
+      contactPhone: trimmed,
+      verifiedPhonesCache: verifiedPhonesCache,
+    );
+    if (!ok) return false;
+  }
+  return true;
 }
 
 void showPhoneVerificationRequiredSnackBar(BuildContext context) {

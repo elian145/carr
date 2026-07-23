@@ -720,6 +720,20 @@
   "setYourPriceAndContactInformation": "حدد السعر ومعلومات التواصل",
   "whatsappPhoneNumber": "رقم واتساب/الهاتف",
   "whatsappPhoneNumber2": "رقم واتساب/الهاتف *",
+  "listingContactPhonesTitle": "أرقام التواصل",
+  "listingContactPhonesHint": "يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز قبل المتابعة.",
+  "addPhoneNumber": "إضافة رقم هاتف",
+  "listingContactPhoneN": "الهاتف {n}",
+  "@listingContactPhoneN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneVerifiedBadge": "موثّق",
+  "verifyContactPhonesBeforeContinuing": "تحقق من كل رقم تواصل برمز قبل المتابعة.",
+  "duplicateContactPhoneError": "هذا الرقم مضاف مسبقاً.",
   "pleaseEnterPhoneNumber": "يرجى إدخال رقم الهاتف",
   "pleaseEnterAValidPhoneNumber": "يرجى إدخال رقم هاتف صحيح",
   "addDetailsAboutTheCarConditionFeaturesOrNotes": "أضف تفاصيل عن السيارة والحالة والمزايا أو ملاحظات",

@@ -17,6 +17,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _blurredImages = [];
           _damageImages = [];
           _selectedVideos.clear();
+          _primaryImageIndex = 0;
           _imagesProcessed = false;
           _isProcessingImages = false;
         });
@@ -32,6 +33,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData.remove('images_processed');
         parentState.carData.remove('processed_image_paths');
         parentState.carData.remove('use_blurred_plates');
+        parentState.carData.remove('primary_image_index');
       }
     } else {
       final parentImages = parentState?.carData['original_images'] ??
@@ -71,6 +73,13 @@ mixin _SellStep4Logic on _SellStep4Fields {
                   .toList();
             }
             _imagesProcessed = data['imagesProcessed'] == true;
+            final draftPrimary = data['primaryImageIndex'];
+            if (draftPrimary is int) {
+              _primaryImageIndex = draftPrimary;
+            } else {
+              final parsed = int.tryParse(draftPrimary?.toString() ?? '');
+              if (parsed != null) _primaryImageIndex = parsed;
+            }
           }
         }
       } catch (e, st) {
@@ -98,6 +107,13 @@ mixin _SellStep4Logic on _SellStep4Fields {
       if (parentState?.carData['images_processed'] == true) {
         _imagesProcessed = true;
       }
+      if (parentState != null &&
+          parentState.carData['primary_image_index'] != null) {
+        _primaryImageIndex = sellPrimaryImageIndex(
+          parentState.carData,
+          length: mergedImages.length,
+        );
+      }
 
       if (mounted) {
         setState(() {
@@ -107,6 +123,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _selectedVideos
             ..clear()
             ..addAll(mergedVideos.whereType<XFile>());
+          _clampPrimaryImageIndex();
           _isProcessingImages = false;
         });
       }
@@ -128,6 +145,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           mergedVideos.whereType<XFile>(),
         );
         parentState.carData['images_processed'] = _imagesProcessed;
+        parentState.carData['primary_image_index'] = _primaryImageIndex;
         parentState.carData['sell_wizard_v2'] = true;
       }
     }
@@ -233,6 +251,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
               .map((e) => e is XFile ? e.path : e.toString())
               .toList(),
           'imagesProcessed': _imagesProcessed,
+          'primaryImageIndex': _primaryImageIndex,
         }),
       );
       if (parentState != null) {
@@ -315,6 +334,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
     parentState.carData['original_damage_images'] =
         List<dynamic>.from(damage);
     parentState.carData['videos'] = List<XFile>.from(videos);
+    parentState.carData['primary_image_index'] = _primaryImageIndex;
     parentState.carData['sell_wizard_v2'] = true;
 
     // Don't wipe parent blurred results while background blur is running or
@@ -372,28 +392,15 @@ mixin _SellStep4Logic on _SellStep4Fields {
   }
 
   void _setPrimaryImage(int index) {
-    if (index <= 0 || index >= _selectedImages.length) return;
+    if (index < 0 || index >= _selectedImages.length) return;
+    if (index == _primaryImageIndex) return;
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     setState(() {
-      final item = _selectedImages.removeAt(index);
-      _selectedImages.insert(0, item);
-      if (index < _blurredImages.length) {
-        final blurred = _blurredImages.removeAt(index);
-        _blurredImages.insert(0, blurred);
-      } else {
-        _blurredImages = [];
-        _imagesProcessed = false;
-      }
+      _primaryImageIndex = index;
     });
-    parentState?.carData.remove('use_blurred_plates');
-    if (_blurredImages.isEmpty) {
-      parentState?.invalidatePlateBlurJob();
-    }
+    parentState?.carData['primary_image_index'] = _primaryImageIndex;
     unawaited(_syncMediaDraftToParent());
     unawaited(_saveDraft());
-    if (_blurredImages.isEmpty) {
-      unawaited(parentState?.startBackgroundPlateBlur());
-    }
   }
 
   Future<void> _pickImages() async {

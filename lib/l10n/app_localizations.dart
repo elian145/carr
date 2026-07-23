@@ -4333,6 +4333,48 @@ abstract class AppLocalizations {
   /// **'WhatsApp/Phone Number *'**
   String get whatsappPhoneNumber2;
 
+  /// No description provided for @listingContactPhonesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact phone numbers'**
+  String get listingContactPhonesTitle;
+
+  /// No description provided for @listingContactPhonesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add up to 3 numbers. Verify each with a code before continuing.'**
+  String get listingContactPhonesHint;
+
+  /// No description provided for @addPhoneNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Add phone number'**
+  String get addPhoneNumber;
+
+  /// No description provided for @listingContactPhoneN.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone {n}'**
+  String listingContactPhoneN(int n);
+
+  /// No description provided for @phoneVerifiedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get phoneVerifiedBadge;
+
+  /// No description provided for @verifyContactPhonesBeforeContinuing.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify each contact phone with a code before continuing.'**
+  String get verifyContactPhonesBeforeContinuing;
+
+  /// No description provided for @duplicateContactPhoneError.
+  ///
+  /// In en, this message translates to:
+  /// **'This phone number is already added.'**
+  String get duplicateContactPhoneError;
+
   /// No description provided for @pleaseEnterPhoneNumber.
   ///
   /// In en, this message translates to:

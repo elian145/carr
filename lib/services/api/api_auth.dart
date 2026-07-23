@@ -510,6 +510,30 @@ abstract final class _ApiServiceAuth {
     );
   }
 
+  static Future<Map<String, dynamic>> sendContactPhoneVerification(
+    String phoneNumber,
+  ) {
+    return ApiService._makeAuthenticatedRequest(
+      'POST',
+      '/user/contact-phone/send-verification',
+      body: {'phone_number': phoneNumber.trim()},
+    );
+  }
+
+  static Future<Map<String, dynamic>> verifyContactPhone(
+    String phoneNumber,
+    String code,
+  ) {
+    return ApiService._makeAuthenticatedRequest(
+      'POST',
+      '/user/contact-phone/verify',
+      body: {
+        'phone_number': phoneNumber.trim(),
+        'verification_code': code.trim(),
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> profileData,
   ) async {

@@ -26,17 +26,8 @@ String homeFeedLoadingListingsText(BuildContext context) =>
 String homeFeedSortingListingsText(BuildContext context) =>
     AppLocalizations.of(context)!.homeFeedSortingListings;
 
-String homeFeedCachedResultsBannerText(BuildContext context) =>
-    AppLocalizations.of(context)!.homeFeedCachedResultsBanner;
-
-String homeFeedOfflineBannerText(BuildContext context) =>
-    AppLocalizations.of(context)!.homeOfflineCachedBanner;
-
 String homeFeedSortedLocallyText(BuildContext context) =>
     AppLocalizations.of(context)!.homeFeedSortedLocally;
-
-String homeFeedRefreshText(BuildContext context) =>
-    AppLocalizations.of(context)!.commonRefresh;
 
 String homeFeedSortDisabledText(BuildContext context) =>
     AppLocalizations.of(context)!.homeFeedSortDisabled;

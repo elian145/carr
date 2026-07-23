@@ -8,9 +8,32 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   List<dynamic> _selectedImages = [];
   /// Parallel blurred versions produced by auto plate blur.
   List<dynamic> _blurredImages = [];
+  /// Cover photo index into [_selectedImages] (grid order is not changed).
+  int _primaryImageIndex = 0;
   /// Local picks and/or server-relative paths for damage / crash disclosure.
   List<dynamic> _damageImages = [];
   final List<XFile> _selectedVideos = [];
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
+
+  void _clampPrimaryImageIndex() {
+    if (_selectedImages.isEmpty) {
+      _primaryImageIndex = 0;
+      return;
+    }
+    if (_primaryImageIndex < 0 ||
+        _primaryImageIndex >= _selectedImages.length) {
+      _primaryImageIndex = 0;
+    }
+  }
+
+  void _onImageRemovedAt(int index) {
+    // Call after removing the image at [index] from [_selectedImages].
+    if (index == _primaryImageIndex) {
+      _primaryImageIndex = 0;
+    } else if (index < _primaryImageIndex) {
+      _primaryImageIndex -= 1;
+    }
+    _clampPrimaryImageIndex();
+  }
 }

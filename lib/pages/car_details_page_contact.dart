@@ -8,9 +8,53 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
     );
   }
 
+  Future<String?> _pickSellerPhone({required String title}) async {
+    final phones = sellerPhonesForContact(car);
+    if (phones.isEmpty) return null;
+    if (phones.length == 1) return phones.first;
+    if (!mounted) return null;
+    return showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        final loc = AppLocalizations.of(ctx)!;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              for (final phone in phones)
+                ListTile(
+                  leading: const Icon(Icons.phone_outlined),
+                  title: Text(phone),
+                  onTap: () => Navigator.pop(ctx, phone),
+                ),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(loc.cancelAction),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _callSeller() async {
-    final String raw = sellerPhoneRawForContact(car) ?? '';
-    final String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    final String? raw = await _pickSellerPhone(
+      title: AppLocalizations.of(context)!.callSeller,
+    );
+    final String digits = (raw ?? '').replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -34,7 +78,9 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
 
   Future<void> _openWhatsAppToSeller() async {
     if (car == null) return;
-    final String? raw = sellerPhoneRawForContact(car);
+    final String? raw = await _pickSellerPhone(
+      title: AppLocalizations.of(context)!.chatOnWhatsApp,
+    );
     if (raw == null || raw.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,8 +106,10 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
       }
       return;
     }
+    if (!mounted) return;
+    final carTitle = _displayCarTitle(context);
     final String msg = Uri.encodeComponent(
-      'Hi, I am interested in your ${_displayCarTitle(context).isNotEmpty ? _displayCarTitle(context) : 'car'}',
+      'Hi, I am interested in your ${carTitle.isNotEmpty ? carTitle : 'car'}',
     );
     final Uri waApp = Uri.parse('whatsapp://send?phone=$digits&text=$msg');
     final Uri waWeb = Uri.parse('https://wa.me/$digits?text=$msg');

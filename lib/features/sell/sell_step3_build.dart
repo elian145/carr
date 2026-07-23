@@ -54,15 +54,15 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
 
   void _onSellStep3PreviousPressed() {
     _dismissKeyboard();
-    final phoneDigits = _phoneController.text.trim();
     setState(() {
-      contactPhone = phoneDigits.isEmpty ? null : '+964$phoneDigits';
+      contactPhones = _collectContactPhonesFromControllers();
+      contactPhone = contactPhones.isEmpty ? null : contactPhones.first;
     });
     _syncStep3DraftToParent();
     context.findAncestorStateOfType<_SellCarPageState>()?._goToPreviousStep();
   }
 
-  void _onSellStep3NextPressed() {
+  void _onSellStep3NextPressed() async {
     _dismissKeyboard();
     final l = AppLocalizations.of(context)!;
     final phoneLabel = AppLocalizations.of(context)!.whatsappPhoneNumber;
@@ -72,11 +72,11 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
       missing.add(l.cityLabel);
     }
 
-    final phoneDigits = _phoneController.text.trim();
     setState(() {
-      contactPhone = phoneDigits.isEmpty ? null : '+964$phoneDigits';
+      contactPhones = _collectContactPhonesFromControllers();
+      contactPhone = contactPhones.isEmpty ? null : contactPhones.first;
     });
-    if (phoneDigits.isEmpty) {
+    if (contactPhones.isEmpty) {
       missing.add(phoneLabel);
     }
 
@@ -95,8 +95,26 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
     }
     if (!formValid) return;
 
-    _syncStep3DraftToParent();
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final auth = context.read<AuthService>();
+    for (final phone in contactPhones) {
+      final ok = isListingContactPhoneVerified(
+        contactPhone: phone,
+        auth: auth,
+        verifiedPhonesCache: parentState?._verifiedListingPhones,
+      );
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l.verifyContactPhonesBeforeContinuing),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
+    _syncStep3DraftToParent();
     parentState?._goToNextStep();
   }
 

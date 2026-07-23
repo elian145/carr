@@ -33,11 +33,7 @@ class CarDetailsSellerSection extends StatelessWidget {
                 ]) ??
                 '')
             .trim();
-    final String phone =
-        (listingFirstNonEmpty(seller, ['phone_number', 'phone', 'mobile']) ??
-                sellerPhoneRawForContact(car) ??
-                '')
-            .trim();
+    final String phone = sellerPhonesForContact(car).join(' · ');
     final String email =
         ((listingFirstNonEmpty(seller, ['email']) ??
                     listingFirstNonEmpty(car, ['seller_email'])) ??
