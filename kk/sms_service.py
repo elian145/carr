@@ -5,19 +5,77 @@ Supports: Twilio, OTPIQ (Iraq SMS/WhatsApp), console (dev only).
 
 from __future__ import annotations
 
+import json
 import logging
 import os
-from typing import Optional
+import subprocess
+import sys
+from typing import Any, Optional
 
 import requests
 
 logger = logging.getLogger(__name__)
 
 OTPIQ_API_URL = "https://api.otpiq.com/api/sms"
+_otpiq_script_path: Optional[str] = None
 
 
 def _app_env() -> str:
     return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "development").strip().lower()
+
+
+def _get_otpiq_script_path() -> Optional[str]:
+    global _otpiq_script_path
+    if _otpiq_script_path is None:
+        here = os.path.dirname(os.path.abspath(__file__))
+        path = os.path.join(here, "..", "tools", "otpiq_http.py")
+        if os.path.isfile(path):
+            _otpiq_script_path = os.path.normpath(os.path.abspath(path))
+        else:
+            _otpiq_script_path = ""
+    return _otpiq_script_path or None
+
+
+def _otpiq_via_subprocess(
+    *,
+    url: str,
+    headers: dict[str, str],
+    body: dict[str, Any],
+    timeout: float = 15,
+) -> tuple[int, Any]:
+    """
+    Call OTPIQ in a clean interpreter (avoids eventlet recursion on requests).
+
+    Returns (status_code, body). Raises RuntimeError on transport failure.
+    """
+    script_path = _get_otpiq_script_path()
+    if not script_path:
+        raise RuntimeError("otpiq_http.py missing")
+
+    payload = {
+        "url": url,
+        "headers": headers,
+        "json": body,
+        "timeout": timeout,
+    }
+    proc = subprocess.run(
+        [sys.executable, script_path],
+        input=json.dumps(payload),
+        capture_output=True,
+        text=True,
+        timeout=timeout + 10,
+        env=os.environ,
+    )
+    out = (proc.stdout or "").strip()
+    if not out:
+        err = (proc.stderr or "").strip() or f"exit {proc.returncode}"
+        raise RuntimeError(err)
+    result = json.loads(out)
+    if isinstance(result, dict) and result.get("error"):
+        raise RuntimeError(str(result["error"]))
+    if not isinstance(result, dict) or "status" not in result:
+        raise RuntimeError("invalid otpiq subprocess response")
+    return int(result["status"]), result.get("body")
 
 
 def _normalize_phone_otpiq(phone: str) -> str:
@@ -187,22 +245,46 @@ class SMSService:
         }
         if self.otpiq_provider and self.otpiq_provider != "sms":
             payload["provider"] = self.otpiq_provider
+
+        headers = {
+            "Authorization": f"Bearer {self.otpiq_api_key}",
+            "Content-Type": "application/json",
+        }
         try:
-            r = requests.post(
-                OTPIQ_API_URL,
-                json=payload,
-                headers={
-                    "Authorization": f"Bearer {self.otpiq_api_key}",
-                    "Content-Type": "application/json",
-                },
-                timeout=15,
-            )
-            if 200 <= r.status_code < 300:
+            # Always prefer subprocess under eventlet/gunicorn — in-process
+            # requests hits "maximum recursion depth exceeded" on Render.
+            if _get_otpiq_script_path():
+                status, data = _otpiq_via_subprocess(
+                    url=OTPIQ_API_URL,
+                    headers=headers,
+                    body=payload,
+                    timeout=15,
+                )
+            else:
+                logger.warning(
+                    "OTPIQ subprocess script missing; using in-process requests"
+                )
+                response = requests.post(
+                    OTPIQ_API_URL,
+                    json=payload,
+                    headers=headers,
+                    timeout=15,
+                )
+                status = response.status_code
+                try:
+                    data = response.json() if response.text else {}
+                except Exception:
+                    data = response.text
+
+            if 200 <= status < 300:
                 logger.info("OTPIQ %s sent to %s***", purpose, normalized[:4])
                 return True, ""
-            data = r.json() if r.text else {}
-            err = data.get("error", data.get("message", r.text or str(r.status_code)))
-            detail = f"OTPIQ returned {r.status_code}: {err}"
+
+            if isinstance(data, dict):
+                err = data.get("error", data.get("message", data))
+            else:
+                err = data or str(status)
+            detail = f"OTPIQ returned {status}: {err}"
             logger.warning(detail)
             return False, _safe_provider_error(detail)
         except Exception as e:
