@@ -25,7 +25,6 @@ void main() {
     cylinders: 'Cylinders',
     seating: 'Seating',
     engineSize: 'Engine',
-    city: 'City',
     plateType: 'Plate type',
     plateCity: 'Plate city',
     sortBy: 'Sort',
