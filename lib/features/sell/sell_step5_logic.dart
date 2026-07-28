@@ -441,7 +441,8 @@ mixin _SellStep5Logic on _SellStep5Fields {
               }
             }
           }
-        } catch (e) {
+        } catch (e, st) {
+          logNonFatal(e, st, 'sell_step5.uploadMedia');
           if (!mounted) {
             return SellListingSubmitResult(
               id: carId,
@@ -449,17 +450,18 @@ mixin _SellStep5Logic on _SellStep5Fields {
             );
           }
           try {
+            final loc = AppLocalizations.of(context)!;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  AppLocalizations.of(context)!.listingUploadPartialFail(
-                    AppLocalizations.of(context)!.errorTitle,
+                  loc.listingUploadPartialFail(
+                    userErrorText(context, e, fallback: loc.errorTitle),
                   ),
                 ),
               ),
             );
-          } catch (e, st) {
-            logNonFatal(e, st);
+          } catch (snackErr, snackSt) {
+            logNonFatal(snackErr, snackSt);
           }
         }
         _debugLog(

@@ -228,7 +228,7 @@ class CarService extends ChangeNotifier {
         final carIndex = _cars.indexWhere((car) => car['id'] == carId);
         if (carIndex != -1) {
           _cars[carIndex]['images'] = [
-            ..._cars[carIndex]['images'],
+            ...(_cars[carIndex]['images'] ?? const []),
             ...newImages,
           ];
           // Update primary image if backend provided one and we don't have it yet
@@ -245,7 +245,10 @@ class CarService extends ChangeNotifier {
 
         // Update current car if it's the same
         if (_currentCar?['id'] == carId) {
-          _currentCar!['images'] = [..._currentCar!['images'], ...newImages];
+          _currentCar!['images'] = [
+            ...(_currentCar!['images'] ?? const []),
+            ...newImages,
+          ];
           final String? newPrimary = (response['image_url'] as String?)?.trim();
           if ((newPrimary != null && newPrimary.isNotEmpty)) {
             _currentCar!['image_url'] = newPrimary;

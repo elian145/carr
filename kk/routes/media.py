@@ -474,6 +474,7 @@ def upload_car_images(car_id: str):
             return jsonify({"message": "No image files provided"}), 400
 
         uploaded_images = []
+        skip_reasons = []
 
         # Listing owners already passed auth above. Honor skip_blur=1 from the app for normal
         # uploads (no automatic plate blur). Explicit blur uses /process-car-images or /blur-image.
@@ -484,14 +485,16 @@ def upload_car_images(car_id: str):
 
         for fs in incoming_files:
             if not fs or not fs.filename:
+                skip_reasons.append("Missing filename")
                 continue
 
-            is_valid, _msg = validate_file_upload(
+            is_valid, msg = validate_file_upload(
                 fs,
                 max_size_mb=25,
                 allowed_extensions=current_app.config["ALLOWED_EXTENSIONS"],
             )
             if not is_valid:
+                skip_reasons.append(msg or "Invalid file")
                 continue
 
             rel_path, _b64 = process_and_store_image(fs, inline_base64=False, skip_blur=skip_blur)
@@ -509,7 +512,8 @@ def upload_car_images(car_id: str):
         db.session.commit()
 
         if not uploaded_images:
-            return jsonify({"message": "No valid images were uploaded (file type/size)."}), 400
+            detail = skip_reasons[0] if skip_reasons else "file type/size"
+            return jsonify({"message": f"No valid images were uploaded ({detail})."}), 400
 
         log_user_action(current_user, "upload_images", "car", car.public_id)
 
@@ -530,8 +534,30 @@ def upload_car_images(car_id: str):
             ),
             201,
         )
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        current_app.logger.exception("upload_car_images failed: %s", e)
+        err = str(e).strip()
+        lower = err.lower()
+        if any(
+            token in lower
+            for token in (
+                "r2",
+                "upload_folder",
+                "persistence",
+                "s3",
+                "bucket",
+                "storage",
+            )
+        ):
+            return (
+                jsonify(
+                    {
+                        "message": "Image storage is temporarily unavailable. Please try again later."
+                    }
+                ),
+                503,
+            )
         return jsonify({"message": "Failed to upload images"}), 500
 
 

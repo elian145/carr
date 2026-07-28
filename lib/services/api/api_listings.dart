@@ -172,10 +172,11 @@ abstract final class _ApiServiceListings {
     if (skipBlur) qp.add('skip_blur=1');
     if (imageKind.toLowerCase() == 'damage') qp.add('kind=damage');
     final String query = qp.isEmpty ? '' : '?${qp.join('&')}';
+    final id = Uri.encodeComponent(carId.trim());
     final data = await ApiService._sendAuthenticatedMultipart(() async {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiService.baseUrl}/cars/$carId/images$query'),
+        Uri.parse('${ApiService.baseUrl}/cars/$id/images$query'),
       );
       // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
       for (final file in imageFiles) {
