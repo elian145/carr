@@ -79,18 +79,17 @@ def persist_jpeg_bytes(out_bytes: bytes, *, object_filename: str) -> str:
                 "refusing to store non-public object keys in production."
             )
         try:
-            client = _r2_client()
-            bucket = current_app.config["R2_BUCKET_NAME"]
-            key = f"car_photos/{object_filename}"
-            client.put_object(
-                Bucket=bucket,
-                Key=key,
-                Body=out_bytes,
-                ContentType="image/jpeg",
+            from .r2_ops import r2_put_bytes
+
+            bucket_key = f"car_photos/{object_filename}"
+            r2_put_bytes(
+                key=bucket_key,
+                body=out_bytes,
+                content_type="image/jpeg",
             )
             if public_base:
-                return f"{public_base}/{key}"
-            return key
+                return f"{public_base}/{bucket_key}"
+            return bucket_key
         except Exception:
             logger.exception("R2 image upload failed for %s", object_filename)
             if not _allow_local_upload_fallback():
@@ -112,25 +111,6 @@ def persist_jpeg_bytes(out_bytes: bytes, *, object_filename: str) -> str:
     with open(final_abs, "wb") as out:
         out.write(out_bytes)
     return final_rel_local
-
-
-def _r2_client():
-    """Return an S3-compatible client for Cloudflare R2."""
-    import boto3
-    from botocore.config import Config
-
-    c = current_app.config
-    account_id = c["R2_ACCOUNT_ID"]
-    region = (os.environ.get("R2_REGION") or "auto").strip() or "auto"
-    endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
-    return boto3.client(
-        "s3",
-        region_name=region,
-        endpoint_url=endpoint,
-        aws_access_key_id=c["R2_ACCESS_KEY_ID"],
-        aws_secret_access_key=c["R2_SECRET_ACCESS_KEY"],
-        config=Config(signature_version="s3v4"),
-    )
 
 
 def heic_to_jpeg(raw_bytes: bytes) -> Tuple[bytes, bool]:

@@ -26,7 +26,7 @@ from ..models import (
 from ..security import generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..time_utils import utcnow
-from .media import _r2_configured, _r2_client, _r2_public_base
+from .media import _r2_configured, _r2_public_base
 
 bp = Blueprint("user", __name__)
 
@@ -667,9 +667,9 @@ def upload_profile_picture():
         profile_url = None
         try:
             if _r2_configured() and _r2_public_base():
+                from ..r2_ops import r2_put_bytes
+
                 public_base = _r2_public_base()
-                client = _r2_client()
-                bucket = current_app.config["R2_BUCKET_NAME"]
 
                 raw_name = (file.filename or "avatar.jpg").strip()
                 ext = os.path.splitext(raw_name)[1].lower() or ".jpg"
@@ -688,11 +688,10 @@ def upload_profile_picture():
                 if not body:
                     return jsonify({"message": "Empty file body"}), 400
 
-                client.put_object(
-                    Bucket=bucket,
-                    Key=key,
-                    Body=body,
-                    ContentType=file.mimetype or "image/jpeg",
+                r2_put_bytes(
+                    key=key,
+                    body=body,
+                    content_type=file.mimetype or "image/jpeg",
                 )
                 profile_url = f"{public_base}/{key}"
         except Exception as e:
@@ -816,9 +815,9 @@ def upload_dealer_cover():
         cover_url = None
         try:
             if _r2_configured() and _r2_public_base():
+                from ..r2_ops import r2_put_bytes
+
                 public_base = _r2_public_base()
-                client = _r2_client()
-                bucket = current_app.config["R2_BUCKET_NAME"]
 
                 raw_name = (file.filename or "cover.jpg").strip()
                 ext = os.path.splitext(raw_name)[1].lower() or ".jpg"
@@ -837,11 +836,10 @@ def upload_dealer_cover():
                 if not body:
                     return jsonify({"message": "Empty file body"}), 400
 
-                client.put_object(
-                    Bucket=bucket,
-                    Key=key,
-                    Body=body,
-                    ContentType=file.mimetype or "image/jpeg",
+                r2_put_bytes(
+                    key=key,
+                    body=body,
+                    content_type=file.mimetype or "image/jpeg",
                 )
                 cover_url = f"{public_base}/{key}"
         except Exception as e:

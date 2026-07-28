@@ -27,25 +27,6 @@ def _r2_configured() -> bool:
     )
 
 
-def _r2_client():
-    """S3-compatible client for Cloudflare R2."""
-    import boto3
-    from botocore.config import Config
-
-    c = current_app.config
-    account_id = c["R2_ACCOUNT_ID"]
-    region = (os.environ.get("R2_REGION") or "auto").strip() or "auto"
-    endpoint = f"https://{account_id}.r2.cloudflarestorage.com"
-    return boto3.client(
-        "s3",
-        region_name=region,
-        endpoint_url=endpoint,
-        aws_access_key_id=c["R2_ACCESS_KEY_ID"],
-        aws_secret_access_key=c["R2_SECRET_ACCESS_KEY"],
-        config=Config(signature_version="s3v4"),
-    )
-
-
 def _r2_public_base() -> str:
     return (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
 
@@ -142,15 +123,10 @@ def _upload_video_file_to_r2(file_storage) -> str:
     if not body:
         raise RuntimeError("Empty file body")
 
-    client = _r2_client()
-    bucket = current_app.config["R2_BUCKET_NAME"]
+    from ..r2_ops import r2_put_bytes
+
     ct = _video_content_type_for_ext(ext)
-    client.put_object(
-        Bucket=bucket,
-        Key=key,
-        Body=body,
-        ContentType=ct,
-    )
+    r2_put_bytes(key=key, body=body, content_type=ct, timeout=180)
     return f"{public_base}/{key}"
 
 
@@ -409,12 +385,12 @@ def r2_sign_upload():
         if not content_type:
             return jsonify({"message": "Unsupported content_type for this asset"}), 400
 
-        client = _r2_client()
-        bucket = current_app.config["R2_BUCKET_NAME"]
-        put_params = {
-            "Bucket": bucket,
-            "Key": key,
-            "ContentType": content_type,
+        from ..r2_ops import r2_presign_put
+
+        put_kwargs: dict = {
+            "key": key,
+            "content_type": content_type,
+            "expires_in": 900,
         }
         raw_len = data.get("content_length")
         if raw_len is None:
@@ -430,13 +406,9 @@ def r2_sign_upload():
                         "message": f"content_length must be between 1 and {max_bytes} bytes",
                     }
                 ), 400
-            put_params["ContentLength"] = claimed
+            put_kwargs["content_length"] = claimed
 
-        presigned_url = client.generate_presigned_url(
-            "put_object",
-            Params=put_params,
-            ExpiresIn=900,
-        )
+        presigned_url = r2_presign_put(**put_kwargs)
 
         out = {"upload_url": presigned_url, "key": key}
         public_base = (current_app.config.get("R2_PUBLIC_URL") or "").strip()
@@ -565,6 +537,7 @@ def upload_car_images(car_id: str):
                 "s3",
                 "bucket",
                 "storage",
+                "recursion",
             )
         ):
             return (

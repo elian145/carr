@@ -74,27 +74,15 @@ def _upload_chat_attachment(file_storage, *, allowed_extensions: set[str], subdi
     r2_public = (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
 
     if r2_bucket and r2_account and r2_key and r2_secret and r2_public:
-        import boto3
-        from botocore.config import Config as BotoConfig
+        from ..r2_ops import r2_put_bytes
 
-        region = (os.environ.get("R2_REGION") or "auto").strip() or "auto"
-        endpoint = f"https://{r2_account}.r2.cloudflarestorage.com"
-        s3 = boto3.client(
-            "s3",
-            region_name=region,
-            endpoint_url=endpoint,
-            aws_access_key_id=r2_key,
-            aws_secret_access_key=r2_secret,
-            config=BotoConfig(signature_version="s3v4"),
-        )
         obj_key = f"{subdir}/{secrets.token_hex(16)}{ext}"
         file_storage.seek(0)
         body = file_storage.read()
-        s3.put_object(
-            Bucket=r2_bucket,
-            Key=obj_key,
-            Body=body,
-            ContentType=content_types.get(ext, "application/octet-stream"),
+        r2_put_bytes(
+            key=obj_key,
+            body=body,
+            content_type=content_types.get(ext, "application/octet-stream"),
         )
         return f"{r2_public}/{obj_key}"
 
