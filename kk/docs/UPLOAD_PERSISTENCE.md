@@ -29,7 +29,7 @@ If **`R2_ACCOUNT_ID`**, **`R2_BUCKET_NAME`**, API keys, and **`R2_PUBLIC_URL`** 
 
 In production, if R2 is configured but upload fails (or `R2_PUBLIC_URL` is missing), the API **does not** silently write to ephemeral local disk.
 
-Run **`flask db upgrade`** so `car_video.video_url` is wide enough for long URLs.
+Run **`flask db upgrade`** so `car_image.image_url` and `car_video.video_url` are wide enough for long R2/CDN URLs.
 
 ---
 

@@ -542,6 +542,23 @@ def upload_car_images(car_id: str):
         if any(
             token in lower
             for token in (
+                "too long",
+                "stringdatarighttruncation",
+                "value too long",
+                "varying(200)",
+            )
+        ):
+            return (
+                jsonify(
+                    {
+                        "message": "Image URL is too long for the database. Please try again after the latest update."
+                    }
+                ),
+                500,
+            )
+        if any(
+            token in lower
+            for token in (
                 "r2",
                 "upload_folder",
                 "persistence",

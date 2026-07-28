@@ -601,7 +601,8 @@ class CarImage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
-    image_url = db.Column(db.String(200), nullable=False)
+    # Full R2/CDN HTTPS URLs exceed VARCHAR(200); keep aligned with car_video.video_url.
+    image_url = db.Column(db.String(2048), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
     order = db.Column(db.Integer, default=0)
     # "listing" = normal gallery photos; "damage" = crash / damage disclosure (not in main carousel).
