@@ -395,6 +395,13 @@ class _HomePageState extends _HomePageFields
       });
     });
     _loadBodyTypesFromAssets();
+    // Brand/model catalog is lazy (not in bootstrap); load for Search Cars filters.
+    unawaited(
+      CarCatalogLoader.ensureLoaded().then((_) {
+        if (!mounted) return;
+        setState(() {});
+      }),
+    );
     CarSpecIndex.loadWithResult().then((r) {
       if (!mounted) return;
       setState(() {

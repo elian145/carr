@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'legacy_sell_draft_prefs.dart';
 import 'sell_draft_step.dart';
+import '../../features/sell/sell_draft_helpers.dart';
 import '../../shared/debug/app_log.dart';
 
 /// Loads and manages multiple legacy sell drafts (active + archive).
@@ -35,29 +35,8 @@ class LegacySellDraftList {
     };
   }
 
-  static bool _hasMeaningfulValue(dynamic value) {
-    if (value == null) return false;
-    if (value is String) return value.trim().isNotEmpty;
-    if (value is num) return value != 0;
-    if (value is bool) return value;
-    if (value is XFile) return value.path.trim().isNotEmpty;
-    if (value is Map) {
-      for (final entry in value.entries) {
-        if (_hasMeaningfulValue(entry.value)) return true;
-      }
-      return false;
-    }
-    if (value is Iterable) {
-      for (final item in value) {
-        if (_hasMeaningfulValue(item)) return true;
-      }
-      return false;
-    }
-    return value.toString().trim().isNotEmpty;
-  }
-
   static bool isVisible(Map<String, dynamic> draft) {
-    return _hasMeaningfulValue(draft['carData']);
+    return isVisibleSellDraft(draft);
   }
 
   static List<Map<String, dynamic>> _decodeArchive(String? raw) {
@@ -126,11 +105,17 @@ class LegacySellDraftList {
     final sp = await SharedPreferences.getInstance();
     if (isActive) {
       await LegacySellDraftPrefs.clearActiveStorage();
-      return;
     }
-    final archive = _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey));
-    archive.removeWhere((item) => item['draftId'] == draftId);
-    await sp.setString(LegacySellDraftPrefs.archiveKey, _encodeArchive(archive));
+    // Active drafts are mirrored into the archive on save — remove both.
+    if (draftId.isNotEmpty) {
+      final archive =
+          _decodeArchive(sp.getString(LegacySellDraftPrefs.archiveKey));
+      archive.removeWhere((item) => item['draftId'] == draftId);
+      await sp.setString(
+        LegacySellDraftPrefs.archiveKey,
+        _encodeArchive(archive),
+      );
+    }
   }
 
   /// Promotes an archived draft to active (when opening from My Listings).

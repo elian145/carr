@@ -164,6 +164,9 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
         _homeSingleSelectedBrand != null &&
         selectedModel != null &&
         selectedModel!.trim().isNotEmpty;
+    final modelList = hasBrand && _homeSingleSelectedBrand != null
+        ? (models[_homeSingleSelectedBrand!] ?? const <String>[])
+        : const <String>[];
     final trimList = hasBrand && hasModel
         ? (trimsByBrandModel[_homeSingleSelectedBrand!]?[selectedModel!] ??
             const <String>[])
@@ -277,7 +280,9 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                   },
                 ),
               ),
-            if (hasBrand && _homeSingleSelectedBrand != null) ...[
+            if (hasBrand &&
+                _homeSingleSelectedBrand != null &&
+                modelList.isNotEmpty) ...[
               const SizedBox(height: 16),
               _searchSectionHeader(
                 context,

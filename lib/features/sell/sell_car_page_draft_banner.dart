@@ -100,18 +100,13 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
 
                         await _clearAllSellDrafts();
                         if (!mounted) return;
-                        setState(() {
-                          currentStep = 0;
-                          carData = {};
-                          completedSteps.clear();
-                          _hasDraftSnapshot = false;
-                          _draftPreviewStep = 0;
-                          _draftPreviewCarData = null;
-                          _sellPageResetToken++;
-                        });
-                        if (_pageController.hasClients) {
-                          _pageController.jumpToPage(0);
-                        }
+                        // Remount as a fresh listing so step dispose / media reload
+                        // cannot resurrect the discarded draft.
+                        Navigator.pushReplacementNamed(
+                          context,
+                          '/sell',
+                          arguments: {'startFresh': true},
+                        );
                       },
                       icon: const Icon(Icons.delete_outline),
                       label: const Text('Discard draft'),

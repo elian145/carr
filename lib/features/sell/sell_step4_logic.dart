@@ -171,8 +171,10 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
   @override
   void dispose() {
-    if (!LegacySellDraftPrefs.suppressPersist) {
-      final parentState = _parentState;
+    final parentState = _parentState;
+    final skipPersist = LegacySellDraftPrefs.suppressPersist ||
+        (parentState?._skipDraftPersistOnDispose == true);
+    if (!skipPersist) {
       if (parentState != null) {
         _writeMediaListsToParent(
           parentState,
@@ -193,6 +195,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
   Future<void> _saveDraft() async {
     try {
+      if (LegacySellDraftPrefs.suppressPersist ||
+          _parentState?._skipDraftPersistOnDispose == true) {
+        return;
+      }
+      final epoch = LegacySellDraftPrefs.persistEpoch;
       final parentState =
           _parentState ?? context.findAncestorStateOfType<_SellCarPageState>();
       final draftId = parentState?._currentDraftId ?? 'default';
@@ -216,6 +223,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
         draftId: draftId,
         namePrefix: 'video',
       );
+      // Discard may have started while media files were being copied.
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch) ||
+          parentState?._skipDraftPersistOnDispose == true) {
+        return;
+      }
       if (mounted) {
         setState(() {
           _selectedImages = images;
@@ -227,6 +239,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         });
       }
       final sp = await SharedPreferences.getInstance();
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
       await sp.setString(
         _SellStep4Fields._draftKey,
         json.encode(<String, dynamic>{

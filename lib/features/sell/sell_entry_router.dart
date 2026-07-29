@@ -29,10 +29,27 @@ class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
           final active = normalizeSellDraftSnapshot(
             Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
           );
-          hasAnyDraft = isVisibleSellDraft(active);
+          if (isVisibleSellDraft(active)) {
+            hasAnyDraft = true;
+          } else {
+            await sp.remove(_draftSnapshotKey);
+            await sp.remove('legacy_sell_draft_current_step_v1');
+          }
         }
       }
-      hasAnyDraft = hasAnyDraft || archive.any(isVisibleSellDraft);
+      final visibleArchive =
+          archive.where(isVisibleSellDraft).toList(growable: false);
+      if (visibleArchive.length != archive.length) {
+        if (visibleArchive.isEmpty) {
+          await sp.remove(kSellDraftArchiveKey);
+        } else {
+          await sp.setString(
+            kSellDraftArchiveKey,
+            encodeSellDraftArchive(visibleArchive),
+          );
+        }
+      }
+      hasAnyDraft = hasAnyDraft || visibleArchive.isNotEmpty;
       if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,

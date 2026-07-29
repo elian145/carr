@@ -63,8 +63,13 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
 
   Future<void> _saveDraftCurrentStep() async {
     if (_isEditMode) return;
+    if (_skipDraftPersistOnDispose || LegacySellDraftPrefs.suppressPersist) {
+      return;
+    }
+    final epoch = LegacySellDraftPrefs.persistEpoch;
     try {
       final sp = await SharedPreferences.getInstance();
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
       await sp.setInt(_SellCarPageFields._draftCurrentStepKey, _effectivePersistedDraftStep());
     } catch (e, st) { logNonFatal(e, st); }
   }
@@ -80,7 +85,9 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
 
   Future<void> _clearAllSellDrafts() async {
     try {
+      // Block step dispose / in-flight saves from resurrecting the draft.
       _skipDraftPersistOnDispose = true;
+      LegacySellDraftPrefs.invalidatePersist();
       final sp = await SharedPreferences.getInstance();
       await sp.remove(_SellCarPageFields._draftCurrentStepKey);
       await sp.remove(_SellCarPageFields._draftSnapshotKey);
@@ -90,6 +97,9 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         setState(() {
           carData = <String, dynamic>{};
           _hasDraftSnapshot = false;
+          _draftPreviewStep = 0;
+          _draftPreviewCarData = null;
+          _hideDraftBanner = true;
           _currentDraftId = _newSellDraftId();
         });
       }
@@ -142,30 +152,18 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
   }
 
   bool _hasMeaningfulDraftValue(dynamic value) {
-    if (value == null) return false;
-    if (value is String) return value.trim().isNotEmpty;
-    if (value is num) return value != 0;
-    if (value is bool) return value;
-    if (value is XFile) return value.path.trim().isNotEmpty;
-    if (value is Map) {
-      for (final entry in value.entries) {
-        if (_hasMeaningfulDraftValue(entry.value)) return true;
-      }
-      return false;
-    }
-    if (value is Iterable) {
-      for (final item in value) {
-        if (_hasMeaningfulDraftValue(item)) return true;
-      }
-      return false;
-    }
-    return value.toString().trim().isNotEmpty;
+    return sell_draft_helpers.hasMeaningfulSellDraftValue(value);
   }
 
   Future<void> _saveSellDraftSnapshot() async {
     if (_isEditMode) return;
+    if (_skipDraftPersistOnDispose || LegacySellDraftPrefs.suppressPersist) {
+      return;
+    }
+    final epoch = LegacySellDraftPrefs.persistEpoch;
     try {
       final sp = await SharedPreferences.getInstance();
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
       final hasExistingSnapshot =
           (sp.getString(_SellCarPageFields._draftSnapshotKey)?.trim().isNotEmpty == true);
       if (!_hasMeaningfulDraftValue(carData)) {
@@ -194,6 +192,10 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         carData,
         draftId: _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
       );
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch) ||
+          _skipDraftPersistOnDispose) {
+        return;
+      }
       if (mounted) {
         setState(() {
           carData = storedCarData;

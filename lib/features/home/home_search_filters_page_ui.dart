@@ -266,18 +266,31 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     final revertSnapshot = <Map<String, dynamic>>[
       _searchFiltersPageSnapshot(),
     ];
+    // Ensure brand→model map is populated (lazy asset load; not in bootstrap).
+    unawaited(CarCatalogLoader.ensureLoaded());
     final applied = await Navigator.of(context).push<bool>(
       AppPageRoute<bool>(
         fullscreenDialog: true,
         builder: (pageContext) {
           var didRequestSearchFocus = false;
           var searchBrandsExpanded = false;
+          var catalogLoadStarted = false;
           return StatefulBuilder(
             builder: (context, setStateDialog) {
               void toggleSearchBrandsExpanded() {
                 setStateDialog(() {
                   searchBrandsExpanded = !searchBrandsExpanded;
                 });
+              }
+
+              if (!catalogLoadStarted) {
+                catalogLoadStarted = true;
+                unawaited(
+                  CarCatalogLoader.ensureLoaded().then((_) {
+                    if (!context.mounted) return;
+                    setStateDialog(() {});
+                  }),
+                );
               }
 
               if (focusSearchField && !didRequestSearchFocus) {

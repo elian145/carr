@@ -13,6 +13,20 @@ class LegacySellDraftPrefs {
   /// While true, step pages must not persist draft data on [State.dispose].
   static bool suppressPersist = false;
 
+  /// Bumped on discard / fresh-start so in-flight saves cannot resurrect drafts.
+  static int persistEpoch = 0;
+
+  /// Blocks dispose/async saves and invalidates any in-flight persist work.
+  static void invalidatePersist() {
+    suppressPersist = true;
+    persistEpoch++;
+  }
+
+  /// True when [epoch] still matches and persist is allowed.
+  static bool isCurrentPersistEpoch(int epoch) {
+    return !suppressPersist && epoch == persistEpoch;
+  }
+
   /// Clears per-step scratch storage (photos, fields) without touching the archive.
   static Future<void> clearActiveStepStorage() async {
     final sp = await SharedPreferences.getInstance();
@@ -32,7 +46,7 @@ class LegacySellDraftPrefs {
 
   /// Blocks dispose-time re-save and clears step scratch so a new listing starts empty.
   static Future<void> beginFreshListing() async {
-    suppressPersist = true;
+    invalidatePersist();
     await clearActiveStepStorage();
   }
 

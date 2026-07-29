@@ -97,9 +97,12 @@ mixin _SellStep3Catalog on _SellStep3Fields {
 
   Future<void> _saveDraft() async {
     try {
+      if (LegacySellDraftPrefs.suppressPersist) return;
+      final epoch = LegacySellDraftPrefs.persistEpoch;
       contactPhones = _collectContactPhonesFromControllers();
       contactPhone = contactPhones.isEmpty ? null : contactPhones.first;
       final sp = await SharedPreferences.getInstance();
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
       await sp.setString(
         _SellStep3Fields._draftKey,
         json.encode(<String, dynamic>{

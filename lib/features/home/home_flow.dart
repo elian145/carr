@@ -37,6 +37,7 @@ import '../../app/widgets/main_shell_navigation.dart' as main_shell_navigation;
 import '../../data/brand_logo_filenames.dart';
 import '../../shared/ui/brand_logo_image.dart';
 import '../../data/car_catalog.dart';
+import '../../data/car_catalog_loader.dart';
 import '../../data/car_name_translations.dart';
 import '../../features/home/home_feed_client_sort.dart';
 import '../../features/home/home_feed_errors.dart';

@@ -9,6 +9,16 @@ const String kSellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
 
 String newSellDraftId() => DateTime.now().microsecondsSinceEpoch.toString();
 
+/// Keys that are set by the wizard shell even when the user has entered no
+/// listing content. Alone they must not make a draft appear as "in progress".
+const Set<String> kSellDraftMetaCarDataKeys = {
+  'sell_wizard_v2',
+  'images_processed',
+  'primary_image_index',
+  'use_blurred_plates',
+  'processed_image_paths',
+};
+
 Map<String, dynamic> normalizeSellDraftSnapshot(Map<String, dynamic> raw) {
   final rawCarData = raw['carData'];
   final carData = rawCarData is Map
@@ -49,7 +59,10 @@ String encodeSellDraftArchive(List<Map<String, dynamic>> drafts) {
   );
 }
 
-bool hasMeaningfulSellDraftValue(dynamic value) {
+bool hasMeaningfulSellDraftValue(dynamic value, {String? key}) {
+  if (key != null && kSellDraftMetaCarDataKeys.contains(key)) {
+    return false;
+  }
   if (value == null) return false;
   if (value is String) return value.trim().isNotEmpty;
   if (value is num) return value != 0;
@@ -57,7 +70,12 @@ bool hasMeaningfulSellDraftValue(dynamic value) {
   if (value is XFile) return value.path.trim().isNotEmpty;
   if (value is Map) {
     for (final entry in value.entries) {
-      if (hasMeaningfulSellDraftValue(entry.value)) return true;
+      if (hasMeaningfulSellDraftValue(
+        entry.value,
+        key: entry.key.toString(),
+      )) {
+        return true;
+      }
     }
     return false;
   }
@@ -71,5 +89,6 @@ bool hasMeaningfulSellDraftValue(dynamic value) {
 }
 
 bool isVisibleSellDraft(Map<String, dynamic> draft) {
+  if (draft['isPlaceholder'] == true) return false;
   return hasMeaningfulSellDraftValue(draft['carData']);
 }

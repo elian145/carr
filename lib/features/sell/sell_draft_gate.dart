@@ -89,6 +89,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
 
       final drafts = <Map<String, dynamic>>[];
       final seenIds = <String>{};
+      var activeVisible = false;
       if (activeRaw != null && activeRaw.trim().isNotEmpty) {
         try {
           final decoded = json.decode(activeRaw);
@@ -99,16 +100,33 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             if (isVisibleSellDraft(active)) {
               drafts.add(<String, dynamic>{...active, 'isActive': true});
               seenIds.add(active['draftId'].toString());
+              activeVisible = true;
+            } else {
+              // Drop shell/meta-only active snapshots (e.g. only sell_wizard_v2).
+              await sp.remove(_draftSnapshotKey);
+              await sp.remove(_draftCurrentStepKey);
             }
           }
         } catch (e, st) { logNonFatal(e, st); }
       }
+
+      final prunedArchive = <Map<String, dynamic>>[];
       for (final draft in archive) {
         if (!isVisibleSellDraft(draft)) continue;
         final id = draft['draftId'].toString();
         if (seenIds.contains(id)) continue;
+        prunedArchive.add(draft);
         drafts.add(<String, dynamic>{...draft, 'isActive': false});
         seenIds.add(id);
+      }
+      if (prunedArchive.length != archive.length) {
+        await sp.setString(
+          kSellDraftArchiveKey,
+          encodeSellDraftArchive(prunedArchive),
+        );
+      }
+      if (!activeVisible && prunedArchive.isEmpty) {
+        await LegacySellDraftPrefs.clearActiveStepStorage();
       }
 
       if (!mounted) return;
@@ -197,34 +215,52 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     final draftId = (draft['draftId'] ?? '').toString();
     final isActive = draft['isActive'] == true;
     try {
+      LegacySellDraftPrefs.invalidatePersist();
       final sp = await SharedPreferences.getInstance();
       if (isActive) {
-        await sp.remove(_draftSnapshotKey);
-        await sp.remove('legacy_sell_draft_current_step_v1');
-        await sp.remove('legacy_sell_draft_step1_v1');
-        await sp.remove('legacy_sell_draft_step2_v1');
-        await sp.remove('legacy_sell_draft_step3_v1');
-        await sp.remove('legacy_sell_draft_step4_v1');
+        await LegacySellDraftPrefs.clearActiveStorage();
+      }
+      // Always remove from archive (active drafts are mirrored there on save).
+      // Also drop any meta-only zombies so they cannot come back.
+      final archive =
+          decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
+      archive.removeWhere((item) {
+        final id = item['draftId']?.toString() ?? '';
+        if (draftId.isNotEmpty && id == draftId) return true;
+        return !isVisibleSellDraft(item);
+      });
+      if (archive.isEmpty) {
+        await sp.remove(kSellDraftArchiveKey);
       } else {
-        final archive =
-            decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
-        archive.removeWhere((item) => item['draftId'] == draftId);
-        await sp.setString(kSellDraftArchiveKey, encodeSellDraftArchive(archive));
+        await sp.setString(
+          kSellDraftArchiveKey,
+          encodeSellDraftArchive(archive),
+        );
       }
       if (!mounted) return;
       setState(() {
-        _drafts.removeWhere((item) => item['draftId'] == draftId);
+        _drafts.removeWhere((item) {
+          final id = item['draftId']?.toString() ?? '';
+          if (draftId.isNotEmpty && id == draftId) return true;
+          return !isVisibleSellDraft(item);
+        });
       });
       if (_drafts.isEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) unawaited(_startFresh());
-        });
+        await LegacySellDraftPrefs.clearActiveStorage();
+        await sp.remove(kSellDraftArchiveKey);
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(
+          context,
+          '/sell',
+          arguments: {'startFresh': true},
+        );
       }
     } catch (e, st) { logNonFatal(e, st); }
   }
 
   Future<void> _startFresh() async {
-    LegacySellDraftPrefs.suppressPersist = true;
+    LegacySellDraftPrefs.invalidatePersist();
+    // Only archive drafts that still have real listing content.
     await _archiveActiveDraftIfAny(clearActive: true);
     await LegacySellDraftPrefs.clearActiveStepStorage();
     if (!mounted) return;

@@ -14,7 +14,7 @@ import '../shared/debug/app_log.dart';
 ///
 /// Regenerate asset with: `dart run bin/export_car_catalog.dart`
 ///
-/// Call [ensureLoaded] from the sell flow (not app bootstrap) so cold start
+/// Call [ensureLoaded] from home/sell flows (not app bootstrap) so cold start
 /// is not blocked by asset decode or remote catalog fetches.
 class CarCatalogLoader {
   CarCatalogLoader._();

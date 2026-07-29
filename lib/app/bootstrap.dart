@@ -68,8 +68,8 @@ void _runZonedApp(Widget app) {
         await SavedSearchHomeBridge.clearOrphanedStartupKeys();
       } catch (e, st) { logNonFatal(e, st); }
 
-      // Brand/model catalog loads lazily on sell (see CarCatalogLoader.ensureLoaded).
-      // Embedded CarCatalog covers home filters until then — do not block cold start.
+      // Brand/model catalog loads lazily on home/sell (see CarCatalogLoader.ensureLoaded).
+      // Embedded brands cover the UI until models load — do not block cold start.
 
       runApp(app);
 

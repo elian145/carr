@@ -34,7 +34,10 @@ mixin _SellStep1Catalog on _SellStep1Fields {
 
   Future<void> _saveDraft() async {
     try {
+      if (LegacySellDraftPrefs.suppressPersist) return;
+      final epoch = LegacySellDraftPrefs.persistEpoch;
       final sp = await SharedPreferences.getInstance();
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
       await sp.setString(
         _SellStep1Fields._draftKey,
         json.encode(<String, dynamic>{
