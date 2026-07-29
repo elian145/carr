@@ -128,55 +128,65 @@ Widget _buildGridCarCardInnerText(
   }
 
   /// Year / mileage chips: soft accent tint + icon so specs feel less flat.
+  /// Respects a max width from a parent [Flexible] by ellipsizing text instead
+  /// of scaling the whole rectangle down on narrow cards.
   Widget yearMileageChip(String value, {required IconData icon}) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 5 : 7,
-        vertical: compact ? 4 : 5.5,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isLight
-              ? [
-                  priceAccent.withValues(alpha: 0.10),
-                  priceAccent.withValues(alpha: 0.04),
-                ]
-              : [
-                  priceAccent.withValues(alpha: 0.22),
-                  priceAccent.withValues(alpha: 0.10),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        textDirection: textDirection,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: compact ? 11 : 12, color: priceAccent),
-          SizedBox(width: compact ? 3 : 4),
-          Text(
-            value,
-            textDirection: textDirection,
-            textAlign: TextAlign.start,
-            textScaler: const TextScaler.linear(1.0),
-            maxLines: 1,
-            softWrap: false,
-            style: TextStyle(
-              color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
-              fontSize: compact ? 11 : 12.5,
-              fontWeight: FontWeight.w600,
-              height: 1,
-              letterSpacing: 0.1,
+    final textStyle = TextStyle(
+      color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
+      fontSize: compact ? 11 : 12.5,
+      fontWeight: FontWeight.w600,
+      height: 1,
+      letterSpacing: 0.1,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool bounded = constraints.maxWidth.isFinite;
+        final label = Text(
+          value,
+          textDirection: textDirection,
+          textAlign: TextAlign.start,
+          textScaler: const TextScaler.linear(1.0),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: textStyle,
+        );
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 5 : 7,
+            vertical: compact ? 4 : 5.5,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isLight
+                  ? [
+                      priceAccent.withValues(alpha: 0.10),
+                      priceAccent.withValues(alpha: 0.04),
+                    ]
+                  : [
+                      priceAccent.withValues(alpha: 0.22),
+                      priceAccent.withValues(alpha: 0.10),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
+              width: 1,
             ),
           ),
-        ],
-      ),
+          child: Row(
+            textDirection: textDirection,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: compact ? 11 : 12, color: priceAccent),
+              SizedBox(width: compact ? 3 : 4),
+              if (bounded) Flexible(child: label) else label,
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -303,13 +313,10 @@ Widget _buildGridCarCardInnerText(
               SizedBox(width: compact ? 4 : 6),
             if (mileageDisplay.isNotEmpty)
               Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-                  child: yearMileageChip(
-                    mileageDisplay,
-                    icon: Icons.speed_rounded,
-                  ),
+                fit: FlexFit.loose,
+                child: yearMileageChip(
+                  mileageDisplay,
+                  icon: Icons.speed_rounded,
                 ),
               ),
           ],
@@ -556,49 +563,57 @@ Widget _buildListCarCardInnerText(
   }
 
   Widget yearMileageChip(String value, {required IconData icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isLight
-              ? [
-                  priceAccent.withValues(alpha: 0.10),
-                  priceAccent.withValues(alpha: 0.04),
-                ]
-              : [
-                  priceAccent.withValues(alpha: 0.22),
-                  priceAccent.withValues(alpha: 0.10),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        textDirection: textDirection,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: priceAccent),
-          const SizedBox(width: 4),
-          Text(
-            value,
-            textScaler: const TextScaler.linear(1.0),
-            maxLines: 1,
-            softWrap: false,
-            style: TextStyle(
-              color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              height: 1,
-              letterSpacing: 0.1,
+    final textStyle = TextStyle(
+      color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      height: 1,
+      letterSpacing: 0.1,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool bounded = constraints.maxWidth.isFinite;
+        final label = Text(
+          value,
+          textScaler: const TextScaler.linear(1.0),
+          maxLines: 1,
+          softWrap: false,
+          overflow: TextOverflow.ellipsis,
+          style: textStyle,
+        );
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isLight
+                  ? [
+                      priceAccent.withValues(alpha: 0.10),
+                      priceAccent.withValues(alpha: 0.04),
+                    ]
+                  : [
+                      priceAccent.withValues(alpha: 0.22),
+                      priceAccent.withValues(alpha: 0.10),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
+              width: 1,
             ),
           ),
-        ],
-      ),
+          child: Row(
+            textDirection: textDirection,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: priceAccent),
+              const SizedBox(width: 4),
+              if (bounded) Flexible(child: label) else label,
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -609,13 +624,10 @@ Widget _buildListCarCardInnerText(
       yearMileageChip(yearText, icon: Icons.calendar_today_rounded),
       const SizedBox(width: 6),
       Flexible(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-          child: yearMileageChip(
-            mileageText,
-            icon: Icons.speed_rounded,
-          ),
+        fit: FlexFit.loose,
+        child: yearMileageChip(
+          mileageText,
+          icon: Icons.speed_rounded,
         ),
       ),
     ],
