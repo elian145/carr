@@ -85,38 +85,48 @@ class CarCatalogLoader {
       if (brandRows is! List || brandRows.isEmpty) return;
 
       final brandNames = <String>[];
-      final modelsMap = <String, List<String>>{};
+      final brandByLower = <String, String>{};
       for (final row in brandRows) {
         if (row is! Map) continue;
         final name = '${row['name'] ?? ''}'.trim();
         if (name.isEmpty) continue;
         brandNames.add(name);
-        final modelsUri = Uri.parse('$base/api/catalog/models').replace(
-          queryParameters: {'brand': name},
-        );
-        final modelsRes =
-            await http.get(modelsUri).timeout(const Duration(seconds: 8));
-        if (modelsRes.statusCode != 200) {
-          modelsMap[name] = CarCatalog.models[name] ?? const <String>[];
-          continue;
-        }
-        final modelsBody = json.decode(modelsRes.body);
-        final modelRows =
-            modelsBody is Map ? modelsBody['models'] : null;
-        final names = <String>[];
-        if (modelRows is List) {
-          for (final m in modelRows) {
-            if (m is Map) {
+        brandByLower[name.toLowerCase()] = name;
+      }
+
+      // Fetch ALL models in a single request instead of one call per brand
+      // (previously an N+1 that was slow on first home/sell open).
+      final modelsByBrand = <String, List<String>>{};
+      try {
+        final allModelsUri = Uri.parse('$base/api/catalog/models');
+        final allModelsRes =
+            await http.get(allModelsUri).timeout(const Duration(seconds: 10));
+        if (allModelsRes.statusCode == 200) {
+          final body = json.decode(allModelsRes.body);
+          final rows = body is Map ? body['models'] : null;
+          if (rows is List) {
+            for (final m in rows) {
+              if (m is! Map) continue;
               final mn = '${m['name'] ?? ''}'.trim();
-              if (mn.isNotEmpty) names.add(mn);
-            } else {
-              final mn = '$m'.trim();
-              if (mn.isNotEmpty) names.add(mn);
+              final bn = '${m['brand_name'] ?? ''}'.trim();
+              if (mn.isEmpty || bn.isEmpty) continue;
+              final brandKey = brandByLower[bn.toLowerCase()] ?? bn;
+              (modelsByBrand[brandKey] ??= <String>[]).add(mn);
             }
           }
         }
-        modelsMap[name] =
-            names.isNotEmpty ? names : (CarCatalog.models[name] ?? const <String>[]);
+      } catch (e, st) {
+        logNonFatal(e, st, 'CarCatalogLoader.models');
+      }
+
+      // Fall back to the bundled asset catalog for any brand the API returned
+      // no models for, so the picker is never emptier than before.
+      final modelsMap = <String, List<String>>{};
+      for (final name in brandNames) {
+        final remote = modelsByBrand[name];
+        modelsMap[name] = (remote != null && remote.isNotEmpty)
+            ? remote
+            : (CarCatalog.models[name] ?? const <String>[]);
       }
 
       if (brandNames.isEmpty) return;

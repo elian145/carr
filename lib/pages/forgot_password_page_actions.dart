@@ -8,17 +8,13 @@ mixin _ForgotPasswordPageActions on _ForgotPasswordPageLabels {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      if (_recoveryMethod == 'phone') {
-        await authService.forgotPassword(
-          _phoneController.text,
-          isPhone: true,
-        );
-      } else {
-        await authService.forgotPassword(_emailController.text);
-      }
+      await authService.forgotPassword(
+        _phoneController.text,
+        isPhone: true,
+      );
 
       if (!mounted) return;
-      setState(() => _emailSent = true);
+      setState(() => _codeSent = true);
     } catch (e, st) {
       logNonFatal(e, st, 'ForgotPasswordPage');
       if (mounted) {
@@ -27,9 +23,7 @@ mixin _ForgotPasswordPageActions on _ForgotPasswordPageLabels {
             : userErrorText(
                 context,
                 e,
-                fallback: _recoveryMethod == 'phone'
-                    ? _failedToSendSmsResetMessage(context)
-                    : _failedToSendResetEmailMessage(context),
+                fallback: _failedToSendSmsResetMessage(context),
               );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

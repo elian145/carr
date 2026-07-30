@@ -133,6 +133,9 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
               hintStyle: TextStyle(color: style.anyOrange),
             ),
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+            ],
             onChanged: (value) {
               setState(() {
                 selectedMinYear = value.isEmpty ? null : value;
@@ -157,6 +160,9 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
               hintStyle: TextStyle(color: style.anyOrange),
             ),
             keyboardType: TextInputType.number,
+            inputFormatters: [
+              services.FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+            ],
             onChanged: (value) {
               setState(() {
                 selectedMaxYear = value.isEmpty ? null : value;

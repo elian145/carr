@@ -1,5 +1,9 @@
 part of 'sell_flow.dart';
 
+/// Client-side media caps for a single listing (the backend also enforces limits).
+const int _kSellMaxPhotos = 20;
+const int _kSellMaxVideos = 3;
+
 mixin _SellStep4Logic on _SellStep4Fields {
   @override
   void initState() {
@@ -416,12 +420,47 @@ mixin _SellStep4Logic on _SellStep4Fields {
     unawaited(_saveDraft());
   }
 
+  void _showListingMediaLimitSnack({required bool isVideo}) {
+    if (!mounted) return;
+    final code = Localizations.localeOf(context).languageCode;
+    final max = isVideo ? _kSellMaxVideos : _kSellMaxPhotos;
+    String msg;
+    if (isVideo) {
+      if (code == 'ar') {
+        msg = 'يمكنك إضافة حتى $max مقاطع فيديو لكل إعلان.';
+      } else if (code == 'ku' || code == 'ckb') {
+        msg = 'دەتوانیت تا $max ڤیدیۆ بۆ هەر ڕیکلامێک زیاد بکەیت.';
+      } else {
+        msg = 'You can add up to $max videos per listing.';
+      }
+    } else {
+      if (code == 'ar') {
+        msg = 'يمكنك إضافة حتى $max صورة لكل إعلان.';
+      } else if (code == 'ku' || code == 'ckb') {
+        msg = 'دەتوانیت تا $max وێنە بۆ هەر ڕیکلامێک زیاد بکەیت.';
+      } else {
+        msg = 'You can add up to $max photos per listing.';
+      }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
   Future<void> _pickImages() async {
     try {
       final files = await _imagePicker.pickMultiImage();
       if (files.isEmpty || !mounted) return;
       final existing = _selectedImages.map(_imagePathKey).toSet();
-      final newFiles = files.where((f) => !existing.contains(f.path)).toList();
+      var newFiles = files.where((f) => !existing.contains(f.path)).toList();
+      // Enforce a per-listing photo cap client-side.
+      final remaining = _kSellMaxPhotos - _selectedImages.length;
+      final bool overLimit = newFiles.length > remaining;
+      if (overLimit) {
+        newFiles = newFiles.take(remaining < 0 ? 0 : remaining).toList();
+      }
+      if (newFiles.isEmpty) {
+        if (overLimit) _showListingMediaLimitSnack(isVideo: false);
+        return;
+      }
       final additions = await Future.wait(newFiles.map(_pickedImageMedia));
       if (!mounted || additions.isEmpty) return;
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
@@ -436,6 +475,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
       unawaited(parentState?.startBackgroundPlateBlur());
+      if (overLimit) _showListingMediaLimitSnack(isVideo: false);
     } catch (e, st) {
       logNonFatal(e, st);
     }
@@ -477,17 +517,22 @@ mixin _SellStep4Logic on _SellStep4Fields {
         picked = single != null ? <XFile>[single] : <XFile>[];
       }
       if (picked.isEmpty || !mounted) return;
+      bool overLimit = false;
       setState(() {
         final existing = _selectedVideos.map((e) => e.path).toSet();
         for (final v in picked) {
-          if (!existing.contains(v.path)) {
-            _selectedVideos.add(v);
-            existing.add(v.path);
+          if (existing.contains(v.path)) continue;
+          if (_selectedVideos.length >= _kSellMaxVideos) {
+            overLimit = true;
+            break;
           }
+          _selectedVideos.add(v);
+          existing.add(v.path);
         }
       });
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
+      if (overLimit) _showListingMediaLimitSnack(isVideo: true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -12,6 +12,7 @@ import '../shared/ui/responsive.dart';
 import '../theme_provider.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../theme/app_colors.dart';
+import '../shared/ui/shimmer.dart';
 part 'analytics_page_fields.dart';
 part 'analytics_page_load.dart';
 part 'analytics_page_listing_selection.dart';

@@ -5,6 +5,8 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
     return Expanded(
                   child: _loadingHistory && _messages.isEmpty
                       ? const Center(child: CircularProgressIndicator())
+                      : _historyLoadError && _messages.isEmpty
+                      ? _buildChatHistoryErrorRetry(context)
                       : _messages.isEmpty
                       ? Center(child: Text(_noMessagesText(context)))
                       : ListView.builder(
@@ -278,5 +280,33 @@ mixin _ChatConversationPageBuildBodyMessages on _ChatConversationPageLifecycle {
                           },
                         ),
                 );
+  }
+
+  Widget _buildChatHistoryErrorRetry(BuildContext context) {
+    final loc = AppLocalizations.of(context);
+    final muted =
+        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45);
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.wifi_off_rounded, size: 40, color: muted),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              loc?.errorTitle ?? 'Something went wrong',
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _loadingHistory ? null : _loadHistory,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: Text(loc?.retryAction ?? 'Retry'),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -64,29 +64,16 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
     setState(() => _isLoading = true);
     try {
       final auth = Provider.of<AuthService>(context, listen: false);
-      final args = ModalRoute.of(context)?.settings.arguments;
-      final bool isSignup =
-          args is Map<String, dynamic> && (args['mode'] as String?) == 'signup';
-      if (isSignup) {
-        await auth.confirmSignup(token);
-      } else {
-        await auth.verifyEmail(token);
-      }
+      await auth.verifyEmail(token);
       if (!mounted) return;
       final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isSignup
-              ? loc.accountCreatedAndEmailVerified
-              : loc.emailVerifiedSuccessfully),
+          content: Text(loc.emailVerifiedSuccessfully),
           backgroundColor: Colors.green,
         ),
       );
-      if (isSignup) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-      } else {
-        Navigator.of(context).pop(true);
-      }
+      Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

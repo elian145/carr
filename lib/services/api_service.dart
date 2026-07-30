@@ -169,33 +169,6 @@ class ApiService {
   ) => _makeAuthenticatedListRequest(endpoint);
 
   // Authentication & profile (api/api_auth.dart)
-  static Future<Map<String, dynamic>> registerEmailRequest({
-    String? username,
-    required String email,
-    required String password,
-    required String firstName,
-    required String lastName,
-    String? phoneNumber,
-    bool isDealer = false,
-    String? dealershipName,
-    String? dealershipPhone,
-    String? dealershipLocation,
-  }) => _ApiServiceAuth.registerEmailRequest(
-    username: username,
-    email: email,
-    password: password,
-    firstName: firstName,
-    lastName: lastName,
-    phoneNumber: phoneNumber,
-    isDealer: isDealer,
-    dealershipName: dealershipName,
-    dealershipPhone: dealershipPhone,
-    dealershipLocation: dealershipLocation,
-  );
-
-  static Future<Map<String, dynamic>> confirmSignup(String token) =>
-      _ApiServiceAuth.confirmSignup(token);
-
   static Future<Map<String, dynamic>> getDealerApplication() =>
       _ApiServiceAuth.getDealerApplication();
 
@@ -297,8 +270,8 @@ class ApiService {
 
   static Future<Map<String, dynamic>> forgotPassword(
     String value, {
-    bool isPhone = false,
-  }) => _ApiServiceAuth.forgotPassword(value, isPhone: isPhone);
+    bool isPhone = true,
+  }) => _ApiServiceAuth.forgotPassword(value, isPhone: true);
 
   static Future<Map<String, dynamic>> resetPassword(
     String token,

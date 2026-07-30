@@ -14,7 +14,10 @@ void main() {
   });
 
   test('forgotPassword POST returns success envelope', () async {
-    final result = await ApiService.forgotPassword('buyer@test.example');
+    final result = await ApiService.forgotPassword(
+      '+9647701234567',
+      isPhone: true,
+    );
     expect(result['message'], isNotEmpty);
   });
 

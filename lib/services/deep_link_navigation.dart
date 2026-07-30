@@ -24,12 +24,6 @@ DeepLinkTarget? resolveDeepLinkTarget(Uri uri) {
       <String, dynamic>{'token': token},
     );
   }
-  if (path.endsWith('confirm-signup') && token != null && token.isNotEmpty) {
-    return DeepLinkTarget(
-      '/verify-email',
-      <String, dynamic>{'token': token, 'mode': 'signup'},
-    );
-  }
 
   final httpsListingId = listingIdFromSharedHttpsUri(uri);
   if (httpsListingId != null) {

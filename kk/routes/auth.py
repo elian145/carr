@@ -8,10 +8,8 @@ import time
 from datetime import datetime, timedelta
 
 import requests
-from flask import Blueprint, current_app, jsonify, request, Response
+from flask import Blueprint, current_app, jsonify, request
 from flask_mail import Message
-from html import escape as html_escape
-from urllib.parse import quote as url_quote
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -28,7 +26,6 @@ from ..auth import (
     create_password_reset_token,
     get_current_user,
     log_user_action,
-    validate_email,
     validate_password,
     validate_user_input,
     verify_email_verification_token,
@@ -42,7 +39,6 @@ from ..models import (
     EmailVerification,
     Message,
     PasswordReset,
-    PendingSignup,
     TokenBlacklist,
     User,
     db,
@@ -52,49 +48,17 @@ from ..security import check_rate_limit, rate_limit, validate_input_sanitization
 bp = Blueprint("auth", __name__)
 
 
-def _public_base_url() -> str:
-    """Base URL for confirmation/redirect links in emails (e.g. https://api.carzo.com)."""
-    base = (os.environ.get("PUBLIC_BASE_URL") or os.environ.get("CONFIRM_LINK_BASE_URL") or "").strip()
-    if base:
-        return base.rstrip("/")
-    if request and request.host:
-        scheme = "https" if request.is_secure else "http"
-        return f"{scheme}://{request.host}"
-    return ""
+_EMAIL_SIGNUP_GONE = {
+    "message": "Email signup is no longer supported. Use phone OTP instead.",
+    "code": "email_signup_removed",
+}
 
 
 @bp.route("/auth/confirm-signup", methods=["GET"])
 def confirm_signup_redirect():
-    """
-    Web fallback for signup confirmation. Email sends an https link here;
-    we redirect to carzo:// so the app opens on mobile, and show HTML for desktop.
-    """
-    token = (request.args.get("token") or "").strip()
-    if not token:
-        return Response(
-            "<!DOCTYPE html><html><body><p>Invalid or missing token.</p></body></html>",
-            status=400,
-            mimetype="text/html",
-        )
-    # Only allow URL-safe token characters into the deep link / HTML.
-    safe_token = url_quote(token, safe="")
-    app_link = f"carzo://auth/confirm-signup?token={safe_token}"
-    app_link_html = html_escape(app_link, quote=True)
-    html = f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Confirm signup - CarNet</title>
-  <meta http-equiv="refresh" content="0;url={app_link_html}">
-  <style>body {{ font-family: system-ui; max-width: 480px; margin: 2rem auto; padding: 1rem; }}</style>
-</head>
-<body>
-  <p>Redirecting to the CarNet app&hellip;</p>
-  <p>If nothing opens, <a href="{app_link_html}">tap here to open in the app</a>, or open the CarNet app and paste this link in the &quot;Verify email&quot; screen:</p>
-  <p style="word-break: break-all;"><code>{app_link_html}</code></p>
-</body>
-</html>"""
-    return Response(html, mimetype="text/html")
+    """Email signup removed — phone OTP only."""
+    return jsonify(_EMAIL_SIGNUP_GONE), 410
+
 
 # Configurable via RATE_LIMIT_SEND_OTP. Production default is strict; dev/testing default is relaxed.
 def _send_otp_max_requests() -> int:
@@ -291,7 +255,6 @@ def _resolve_user_for_phone_otp(
     username: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
-    email: str | None = None,
     password: str | None = None,
     is_dealer_requested: bool = False,
     dealership_name: str | None = None,
@@ -304,7 +267,6 @@ def _resolve_user_for_phone_otp(
             username=username,
             first_name=first_name,
             last_name=last_name,
-            email=email,
             password=password,
             is_dealer_requested=is_dealer_requested,
             dealership_name=dealership_name,
@@ -323,7 +285,6 @@ def _get_or_create_user_for_phone(
     username: str | None = None,
     first_name: str | None = None,
     last_name: str | None = None,
-    email: str | None = None,
     password: str | None = None,
     is_dealer_requested: bool = False,
     dealership_name: str | None = None,
@@ -345,31 +306,25 @@ def _get_or_create_user_for_phone(
     u = (username or "").strip()
     if is_dealer_requested:
         u = ""
-    e = (email or "").strip().lower()
     fn = (first_name or "").strip()
     ln = (last_name or "").strip()
+    # Signup is phone-only; never accept a client-provided email here.
+    e = ""
 
     # Legacy SQLite compatibility: some old DBs require a non-null, unique email.
     # PRAGMA is SQLite-only; on PostgreSQL it would abort the transaction, so skip it.
-    if not e:
-        try:
-            from sqlalchemy import text
+    try:
+        from sqlalchemy import text
 
-            bind = db.session.get_bind()
-            if getattr(bind, "dialect", None) and getattr(bind.dialect, "name", None) == "sqlite":
-                row = db.session.execute(text("PRAGMA table_info(user)")).fetchall()
-                # (cid, name, type, notnull, dflt_value, pk)
-                email_required = any((r[1] == "email" and int(r[3] or 0) == 1) for r in row)
-                if email_required:
-                    e = f"{phone_digits}@phone.local"
-        except Exception:
-            db.session.rollback()
-
-    if e:
-        if not validate_email(e):
-            raise ValueError("Invalid email")
-        if User.query.filter_by(email=e).first():
-            raise ValueError("Email already exists")
+        bind = db.session.get_bind()
+        if getattr(bind, "dialect", None) and getattr(bind.dialect, "name", None) == "sqlite":
+            row = db.session.execute(text("PRAGMA table_info(user)")).fetchall()
+            # (cid, name, type, notnull, dflt_value, pk)
+            email_required = any((r[1] == "email" and int(r[3] or 0) == 1) for r in row)
+            if email_required:
+                e = f"{phone_digits}@phone.local"
+    except Exception:
+        db.session.rollback()
 
     if u:
         if User.query.filter_by(username=u).first():
@@ -449,43 +404,6 @@ def init_jwt_callbacks(jwt) -> None:
         return jsonify({"message": "Token has been revoked"}), 401
 
 
-def _send_signup_verification_email(to_email: str, token: str) -> bool:
-    """Send signup confirmation link. Returns True if sent."""
-    subject = "Confirm your CarNet signup"
-    base = _public_base_url()
-    app_link = f"carzo://auth/confirm-signup?token={token}"
-    # Prefer https link so the link opens in a browser and can redirect to the app or show fallback
-    primary_link = f"{base}/auth/confirm-signup?token={token}" if base else app_link
-    body = (
-        f"Tap this link to confirm your signup:\n\n{primary_link}\n\n"
-        "If the app does not open, open CarNet and go to Verify email, then paste the link there.\n"
-        "This link expires in 24 hours.\n"
-        "If you did not request this signup, you can ignore this email.\n"
-    )
-    to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
-    resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
-    resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
-    if resend_key:
-        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CarNet <{resend_from}>"
-        try:
-            r = requests.post(
-                "https://api.resend.com/emails",
-                json={"from": resend_from_str, "to": [to_email], "subject": subject, "text": body},
-                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
-                timeout=15,
-            )
-            if 200 <= r.status_code < 300:
-                current_app.logger.info("[SIGNUP-VERIFY] Signup email sent to %s", to_mask)
-                return True
-            current_app.logger.warning("[SIGNUP-VERIFY] Resend returned %s: %s", r.status_code, (r.text or "")[:200])
-        except Exception as e:
-            current_app.logger.exception("[SIGNUP-VERIFY] Resend failed: %s", str(e))
-        return False
-    # Fallbacks (SendGrid/SMTP) are not strictly required for signup; prefer explicit Resend config.
-    current_app.logger.warning("[SIGNUP-VERIFY] No email provider configured for signup confirmation")
-    return False
-
-
 @bp.route("/api/auth/register", methods=["POST"])
 @rate_limit(max_requests=5, window_minutes=60)  # 5 registrations per hour per IP
 def register():
@@ -508,13 +426,13 @@ def register():
         if User.query.filter_by(phone_number=data["phone_number"]).first():
             return jsonify({"message": "Phone number already exists"}), 400
 
-        # Create new user
+        # Create new user (phone signup only — ignore any email in payload)
         user = User(
             username=data["username"],
             phone_number=data["phone_number"],
             first_name=data["first_name"],
             last_name=data["last_name"],
-            email=data.get("email"),  # Email is optional
+            email=None,
         )
         user.set_password(data["password"])
 
@@ -533,199 +451,15 @@ def register():
 @bp.route("/api/auth/register-request", methods=["POST"])
 @rate_limit(max_requests=5, window_minutes=60)
 def register_request():
-    """
-    Start email-based signup: validate input, create PendingSignup, send confirmation email.
-    The real User is only created after /api/auth/register-confirm succeeds.
-    """
-    try:
-        data = request.get_json(silent=True) or {}
-        data = validate_input_sanitization(data)
-
-        raw_email = (data.get("email") or "").strip()
-        raw_username = (data.get("username") or "").strip()
-        password = (data.get("password") or "").strip()
-        first_name = (data.get("first_name") or "User").strip()
-        last_name = (data.get("last_name") or "Demo").strip()
-        phone = (data.get("phone_number") or data.get("phone") or "").strip()
-        is_dealer_requested = _to_bool(data.get("is_dealer"))
-        dealership_name = (data.get("dealership_name") or "").strip()
-        dealership_phone = (data.get("dealership_phone") or "").strip()
-        dealership_location = (data.get("dealership_location") or "").strip()
-
-        if not raw_email or not validate_email(raw_email):
-            return jsonify({"message": "Valid email is required"}), 400
-        if not is_dealer_requested and not raw_username:
-            return jsonify({"message": "Username is required"}), 400
-        if is_dealer_requested:
-            if not dealership_name:
-                return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
-            if not dealership_phone:
-                return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
-            if not dealership_location:
-                return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
-        is_valid, msg = validate_password(password)
-        if not is_valid:
-            return jsonify({"message": msg}), 400
-
-        email_lower = raw_email.lower()
-
-        # Ensure pending_signup table exists (auto-create for environments without migrations).
-        try:
-            bind = db.session.get_bind()
-            if bind is not None:
-                PendingSignup.__table__.create(bind=bind, checkfirst=True)
-        except Exception:
-            # If auto-create fails, continue; subsequent queries will raise a clearer error.
-            db.session.rollback()
-        if User.query.filter(func.lower(User.email) == email_lower).first():
-            return jsonify({"message": "Account already exists. Please log in."}), 409
-
-        if is_dealer_requested:
-            pending_username = _generate_unique_username("dealer")
-            while User.query.filter(func.lower(User.username) == pending_username.lower()).first():
-                pending_username = _generate_unique_username("dealer")
-        else:
-            pending_username = raw_username
-            if User.query.filter(func.lower(User.username) == pending_username.lower()).first():
-                return jsonify({"message": "Username already exists"}), 400
-
-        # Clear previous pending signups for this email.
-        PendingSignup.query.filter(
-            func.lower(PendingSignup.email) == email_lower,
-            PendingSignup.is_used.is_(False),
-        ).delete()
-
-        # Hash password once for pending record using User helper.
-        tmp_user = User(
-            username=pending_username or f"user_{secrets.token_hex(3)}",
-            phone_number="0000000000",
-            first_name=first_name,
-            last_name=last_name,
-        )
-        tmp_user.set_password(password)
-        pw_hash = tmp_user.password_hash
-
-        from ..time_utils import utcnow
-
-        token = secrets.token_urlsafe(32)
-        pending = PendingSignup(
-            email=raw_email,
-            username=pending_username,
-            password_hash=pw_hash,
-            first_name=first_name,
-            last_name=last_name,
-            phone_number=phone or None,
-            is_dealer_requested=is_dealer_requested,
-            dealership_name=dealership_name or None,
-            dealership_phone=dealership_phone or None,
-            dealership_location=dealership_location or None,
-            token=token,
-            created_at=utcnow(),
-            expires_at=utcnow() + timedelta(hours=24),
-        )
-        db.session.add(pending)
-        db.session.commit()
-
-        if not _send_signup_verification_email(raw_email, token):
-            return jsonify({"message": "Failed to send verification email"}), 500
-
-        return jsonify({"message": "Check your email to complete signup."}), 200
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.exception("register_request failed: %s", e)
-        return jsonify({"message": "Signup request failed"}), 500
+    """Email signup removed — use phone OTP."""
+    return jsonify(_EMAIL_SIGNUP_GONE), 410
 
 
 @bp.route("/api/auth/register-confirm", methods=["POST"])
 @rate_limit(max_requests=20, window_minutes=60)
 def register_confirm():
-    """
-    Complete email-based signup using a token from the confirmation email.
-    Creates a verified User and returns tokens.
-    """
-    try:
-        data = request.get_json(silent=True) or {}
-        token = (data.get("token") or "").strip()
-        if not token:
-            return jsonify({"message": "Token is required"}), 400
-
-        from ..time_utils import utcnow
-
-        now = utcnow()
-
-        # Ensure pending_signup table exists before querying.
-        try:
-            bind = db.session.get_bind()
-            if bind is not None:
-                PendingSignup.__table__.create(bind=bind, checkfirst=True)
-        except Exception:
-            db.session.rollback()
-        pending = PendingSignup.query.filter_by(token=token, is_used=False).first()
-        if not pending or pending.expires_at <= now:
-            return jsonify({"message": "Invalid or expired token"}), 400
-
-        email_lower = pending.email.strip().lower()
-        if User.query.filter(func.lower(User.email) == email_lower).first():
-            return jsonify({"message": "Account already exists. Please log in."}), 409
-        if User.query.filter(func.lower(User.username) == pending.username.lower()).first():
-            return jsonify({"message": "Username already exists"}), 400
-        if pending.phone_number:
-            if User.query.filter_by(phone_number=pending.phone_number).first():
-                return jsonify({"message": "Phone number already exists"}), 400
-
-        phone_number = pending.phone_number
-        if not phone_number:
-            phone_number = f"070{secrets.randbelow(10**8):08d}"
-
-        user = User(
-            username=pending.username,
-            email=pending.email,
-            first_name=pending.first_name,
-            last_name=pending.last_name,
-            phone_number=phone_number,
-            is_active=True,
-            is_verified=True,  # email confirmed via pending signup
-            phone_verified=False,  # must complete phone OTP for gated actions
-            public_id=secrets.token_hex(8),
-            account_type="user",
-            dealer_status="none",
-        )
-        _apply_dealer_profile(
-            user,
-            is_dealer_requested=bool(getattr(pending, "is_dealer_requested", False)),
-            dealership_name=getattr(pending, "dealership_name", None),
-            dealership_phone=getattr(pending, "dealership_phone", None),
-            dealership_location=getattr(pending, "dealership_location", None),
-        )
-        user.password_hash = pending.password_hash
-        try:
-            user.password = pending.password_hash
-        except Exception:
-            pass
-
-        db.session.add(user)
-        pending.is_used = True
-        db.session.commit()
-
-        identity = user.public_id
-        access_token = create_access_token(identity=identity)
-        refresh_token = create_refresh_token(identity=identity)
-        return (
-            jsonify(
-                {
-                    "message": "Signup confirmed",
-                    "token": access_token,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "user": user.to_dict(),
-                }
-            ),
-            201,
-        )
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.exception("register_confirm failed: %s", e)
-        return jsonify({"message": "Signup confirmation failed"}), 500
+    """Email signup removed — use phone OTP."""
+    return jsonify(_EMAIL_SIGNUP_GONE), 410
 
 
 @bp.route("/api/auth/login", methods=["POST"])
@@ -736,7 +470,7 @@ def login():
         data = request.get_json()
 
         if not data.get("username") or not data.get("password"):
-            return jsonify({"message": "Email/phone and password are required"}), 400
+            return jsonify({"message": "Phone/username and password are required"}), 400
 
         # Dashboard credentials are intentionally separate from mobile accounts.
         # Deleting a mobile User must not remove the principal used by admin APIs.
@@ -764,8 +498,9 @@ def login():
             ):
                 return jsonify({"message": "Admin account is deactivated"}), 401
         else:
+            # Mobile password login is phone/username only (no email).
             user = User.query.filter(
-                or_(User.email == ident, User.phone_number == ident, User.username == ident)
+                or_(User.phone_number == ident, User.username == ident)
             ).first()
             if user and AdminAccount.query.filter_by(principal_user_id=user.id).first():
                 return jsonify({"message": "Invalid credentials"}), 401
@@ -1121,241 +856,45 @@ def delete_account():
         return jsonify({"message": "Failed to delete account"}), 500
 
 
-def _send_password_reset_email(to_email: str, token: str) -> None:
-    """Send password reset email. Prefer Resend (best deliverability), then SendGrid, then SMTP."""
-    to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
-    current_app.logger.info("[FORGOT-PASSWORD] Sending reset email to %s", to_mask)
-    subject = "Reset your CarNet password"
-    body = (
-        "You requested a password reset. Use the code below in the CarNet app to set a new password.\n\n"
-        f"Reset code: {token}\n\n"
-        "This code expires in 1 hour. If you did not request this, you can ignore this email.\n"
-    )
-    from_addr = (
-        os.environ.get("RESEND_FROM_EMAIL")
-        or os.environ.get("SENDGRID_FROM_EMAIL")
-        or current_app.config.get("MAIL_DEFAULT_SENDER")
-        or current_app.config.get("MAIL_USERNAME")
-    )
-    from_addr = (from_addr or "").strip() if from_addr else ""
-    if "<" in str(from_addr) and ">" in str(from_addr):
-        from_name = str(from_addr).split("<")[0].strip().strip('"') or "CarNet"
-        from_email_only = str(from_addr).split("<")[-1].replace(">", "").strip()
-    else:
-        from_name = "CarNet"
-        from_email_only = from_addr or ""
-
-    # 1) Resend (recommended: simple API, good deliverability, works on Render free tier)
-    resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
-    resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
-    if resend_key:
-        if "<" in resend_from and ">" in resend_from:
-            resend_from_str = resend_from
-        else:
-            resend_from_str = f"CarNet <{resend_from}>"
-        try:
-            r = requests.post(
-                "https://api.resend.com/emails",
-                json={
-                    "from": resend_from_str,
-                    "to": [to_email],
-                    "subject": subject,
-                    "text": body,
-                },
-                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
-                timeout=15,
-            )
-            if 200 <= r.status_code < 300:
-                current_app.logger.info("[FORGOT-PASSWORD] Resend accepted email for %s (check inbox and spam)", to_mask)
-                return
-            err_body = (r.text or "").strip() or "(no body)"
-            current_app.logger.warning(
-                "[FORGOT-PASSWORD] Resend rejected: status=%s body=%s",
-                r.status_code,
-                err_body[:500],
-            )
-        except Exception as e:
-            current_app.logger.exception("[FORGOT-PASSWORD] Resend error: %s", str(e))
-        return
-
-    # 2) SendGrid (works on Render free tier)
-    sendgrid_key = (os.environ.get("SENDGRID_API_KEY") or "").strip()
-    if sendgrid_key and from_email_only:
-        try:
-            payload = {
-                "personalizations": [{"to": [{"email": to_email}]}],
-                "from": {"email": from_email_only, "name": from_name},
-                "subject": subject,
-                "content": [{"type": "text/plain", "value": body}],
-            }
-            r = requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                json=payload,
-                headers={"Authorization": f"Bearer {sendgrid_key}", "Content-Type": "application/json"},
-                timeout=15,
-            )
-            if 200 <= r.status_code < 300:
-                current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent via SendGrid to %s***", to_email[:3])
-                return
-            current_app.logger.warning("[FORGOT-PASSWORD] SendGrid returned %s: %s", r.status_code, (r.text or "")[:300])
-        except Exception as e:
-            current_app.logger.exception("[FORGOT-PASSWORD] SendGrid request failed: %s", str(e)[:200])
-        return
-
-    # 3) SMTP (Flask-Mail; blocked on Render free tier)
-    if not current_app.config.get("MAIL_USERNAME") or not current_app.config.get("MAIL_PASSWORD"):
-        current_app.logger.warning(
-            "[FORGOT-PASSWORD] No RESEND_API_KEY, SENDGRID_API_KEY, or MAIL_* set. "
-            "On Render free tier use Resend (RESEND_API_KEY + RESEND_FROM_EMAIL) or SendGrid."
-        )
-        return
-    try:
-        sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
-        msg = Message(subject=subject, sender=sender, recipients=[to_email], body=body)
-        mail.send(msg)
-        current_app.logger.info("[FORGOT-PASSWORD] Password reset email sent (SMTP) to %s***", to_email[:3])
-    except Exception as e:
-        current_app.logger.exception("[FORGOT-PASSWORD] SMTP failed to %s***: %s", to_email[:3], str(e)[:200])
-
-
-def _send_email_verification_email(to_email: str, token: str) -> bool:
-    """Send email verification link (Resend/SendGrid/SMTP). Returns True if sent."""
-    subject = "Verify your CarNet email"
-    link = f"carzo://auth/verify-email?token={token}"
-    body = (
-        f"Please verify your email by opening this link in the CarNet app:\n\n{link}\n\n"
-        "Or enter the verification code in the app. This link expires in 24 hours.\n"
-        "If you did not request this, you can ignore this email.\n"
-    )
-    to_mask = (to_email[:3] + "***") if len(to_email) >= 3 else "***"
-    resend_key = (os.environ.get("RESEND_API_KEY") or "").strip()
-    resend_from = (os.environ.get("RESEND_FROM_EMAIL") or "").strip() or "onboarding@resend.dev"
-    if resend_key:
-        resend_from_str = resend_from if ("<" in resend_from and ">" in resend_from) else f"CarNet <{resend_from}>"
-        try:
-            r = requests.post(
-                "https://api.resend.com/emails",
-                json={"from": resend_from_str, "to": [to_email], "subject": subject, "text": body},
-                headers={"Authorization": f"Bearer {resend_key}", "Content-Type": "application/json"},
-                timeout=15,
-            )
-            if 200 <= r.status_code < 300:
-                current_app.logger.info("[EMAIL-VERIFY] Verification email sent to %s", to_mask)
-                return True
-            current_app.logger.warning("[EMAIL-VERIFY] Resend returned %s: %s", r.status_code, (r.text or "")[:200])
-        except Exception as e:
-            current_app.logger.exception("[EMAIL-VERIFY] Resend failed: %s", str(e))
-        return False
-    sendgrid_key = (os.environ.get("SENDGRID_API_KEY") or "").strip()
-    from_addr = (current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")) or ""
-    if isinstance(from_addr, str) and "<" in from_addr and ">" in from_addr:
-        from_name, from_email_only = from_addr.split("<")[0].strip().strip('"') or "CarNet", from_addr.split("<")[-1].replace(">", "").strip()
-    else:
-        from_name, from_email_only = "CarNet", (from_addr or "").strip()
-    if sendgrid_key and from_email_only:
-        try:
-            r = requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                json={
-                    "personalizations": [{"to": [{"email": to_email}]}],
-                    "from": {"email": from_email_only, "name": from_name},
-                    "subject": subject,
-                    "content": [{"type": "text/plain", "value": body}],
-                },
-                headers={"Authorization": f"Bearer {sendgrid_key}", "Content-Type": "application/json"},
-                timeout=15,
-            )
-            if 200 <= r.status_code < 300:
-                current_app.logger.info("[EMAIL-VERIFY] Verification email sent to %s", to_mask)
-                return True
-        except Exception as e:
-            current_app.logger.exception("[EMAIL-VERIFY] SendGrid failed: %s", str(e))
-        return False
-    if current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD"):
-        try:
-            sender = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
-            msg = Message(subject=subject, sender=sender, recipients=[to_email], body=body)
-            mail.send(msg)
-            current_app.logger.info("[EMAIL-VERIFY] Verification email sent (SMTP) to %s", to_mask)
-            return True
-        except Exception as e:
-            current_app.logger.exception("[EMAIL-VERIFY] SMTP failed: %s", str(e))
-    return False
-
-
 @bp.route("/api/auth/forgot-password", methods=["POST"])
 @rate_limit(max_requests=5, window_minutes=15)  # 5 requests per 15 min per IP
 def forgot_password():
-    """Forgot password endpoint"""
+    """Forgot password via SMS only."""
     try:
         data = request.get_json(silent=True) or {}
         data = validate_input_sanitization(data)
         raw_phone = (data.get("phone_number") or data.get("phone") or "").strip()
-        raw_email = (data.get("email") or "").strip()
-        email = raw_email.lower()
-
         phone_digits = _normalize_phone(raw_phone)
-        user = None
 
-        # Important: the mobile client sends both "email" and "phone_number" with
-        # the same value for backwards compatibility. In that common case we must
-        # treat this as an email-based reset, not as a phone reset (otherwise the
-        # presence of digits in the email would make us only look up by phone).
-        if email:
-            # Look up case-insensitively by email first.
-            user = User.query.filter(func.lower(User.email) == email).first()
-            # Fallback: some legacy flows may put username into the "email" field.
-            if not user:
-                user = User.query.filter(func.lower(User.username) == email).first()
+        if not phone_digits:
+            return jsonify({"message": "Phone number is required"}), 400
 
-        # Only do a phone-based lookup when we have a real phone input that isn't
-        # just the same string as the email field.
-        if not user and phone_digits and raw_phone and raw_phone != raw_email:
-            user = User.query.filter_by(phone_number=phone_digits).first()
-
-        if not user and not (email or phone_digits):
-            return jsonify({"message": "Phone number or email is required"}), 400
+        user = User.query.filter_by(phone_number=phone_digits).first()
 
         # Prevent account enumeration: always return 200.
         if not user:
             current_app.logger.info(
-                "[FORGOT-PASSWORD] No account found for this email/phone; no email sent (still return 200)."
+                "[FORGOT-PASSWORD] No account found for this phone; no SMS sent (still return 200)."
             )
             return jsonify({"message": "If the account exists, a reset code has been sent"}), 200
 
-        # Prefer SMS if we have a phone number on record.
-        dest_phone = phone_digits or (getattr(user, "phone_number", None) or "")
-        token = create_password_reset_token(
-            user,
-            channel="sms" if dest_phone else "email",
-        )
+        dest_phone = getattr(user, "phone_number", None) or phone_digits
+        token = create_password_reset_token(user, channel="sms")
 
-        sms_sent = False
-        if dest_phone:
-            from ..sms_service import send_password_reset_sms
+        from ..sms_service import send_password_reset_sms
 
-            sms_sent = bool(send_password_reset_sms(dest_phone, token))
-            if not sms_sent:
-                current_app.logger.warning(
-                    "[FORGOT-PASSWORD] SMS send failed for phone=%s*** (provider config/number format?)",
-                    str(dest_phone)[:4],
-                )
-
-        # Send password reset email when user has a real email (and mail is configured).
-        user_email = (getattr(user, "email", None) or "").strip().lower()
-        if user_email and not user_email.endswith("@phone.local"):
-            _send_password_reset_email(user_email, token)
-        else:
-            current_app.logger.info(
-                "[FORGOT-PASSWORD] Not sending email: user has no real email (or placeholder @phone.local). "
-                "Set MAIL_USERNAME/MAIL_PASSWORD on Render and ensure the account has an email."
+        sms_sent = bool(send_password_reset_sms(dest_phone, token))
+        if not sms_sent:
+            current_app.logger.warning(
+                "[FORGOT-PASSWORD] SMS send failed for phone=%s*** (provider config/number format?)",
+                str(dest_phone)[:4],
             )
 
         # Dev convenience for local testing with SMS_PROVIDER=console.
         # Never expose reset tokens in production.
         env_name = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
         sms_provider = (os.environ.get("SMS_PROVIDER") or "console").strip().lower()
-        if env_name in ("development", "testing") and sms_provider == "console" and dest_phone and sms_sent:
+        if env_name in ("development", "testing") and sms_provider == "console" and sms_sent:
             return jsonify(
                 {"message": "If the account exists, a reset code has been sent", "dev_code": token}
             ), 200
@@ -1648,7 +1187,7 @@ def send_phone_verification():
         return jsonify({"message": msg}), 500
 
 
-# --- Option D auth endpoints (email+password AND phone OTP as separate options) ---
+# --- Phone OTP auth endpoints ---
 
 @bp.route("/api/auth/phone/start", methods=["POST"])
 def phone_start():
@@ -1701,7 +1240,6 @@ def phone_start():
                 username=(data.get("username") or None),
                 first_name=(data.get("first_name") or data.get("firstName") or None),
                 last_name=(data.get("last_name") or data.get("lastName") or None),
-                email=(data.get("email") or None),
                 password=(data.get("password") or None),
                 is_dealer_requested=is_dealer_requested,
                 dealership_name=dealership_name or None,
@@ -1810,7 +1348,6 @@ def phone_verify():
                 username=(data.get("username") or None),
                 first_name=(data.get("first_name") or data.get("firstName") or None),
                 last_name=(data.get("last_name") or data.get("lastName") or None),
-                email=(data.get("email") or None),
                 password=(data.get("password") or None),
                 is_dealer_requested=is_dealer_requested,
                 dealership_name=dealership_name or None,
@@ -1888,7 +1425,6 @@ def compat_signup():
 
         raw_username = (data.get("username") or "").strip()
         raw_phone = (data.get("phone") or data.get("phone_number") or "").strip()
-        email = (data.get("email") or "").strip()
         password = (data.get("password") or "").strip()
         first_name = (data.get("first_name") or "User").strip()
         last_name = (data.get("last_name") or "Demo").strip()
@@ -1988,7 +1524,6 @@ def compat_signup():
         else:
             username = (
                 raw_username
-                or (email.split("@")[0] if email and "@" in email else "")
                 or phone_digits
                 or f"user_{secrets.token_hex(3)}"
             ).lower()
@@ -2005,16 +1540,6 @@ def compat_signup():
         if not is_valid:
             return jsonify({"message": message}), 400
 
-        # Uniqueness checks:
-        # - 409 is reserved for "email already in use" so the mobile client can
-        #   show a specific message about the email.
-        # - Username and phone collisions return 400 with specific messages.
-        email_lower = (email or "").strip().lower()
-        if email_lower:
-            existing_email = User.query.filter(func.lower(User.email) == email_lower).first()
-            if existing_email:
-                return jsonify({"message": "Account already exists. Please log in."}), 409
-
         existing_phone = User.query.filter_by(phone_number=phone_digits).first()
         if existing_phone:
             return jsonify({"message": "Phone number already exists"}), 400
@@ -2028,10 +1553,8 @@ def compat_signup():
             phone_number=phone_digits,
             first_name=first_name,
             last_name=last_name,
-            # IMPORTANT: keep missing email as NULL (not empty string),
-            # otherwise the UNIQUE constraint will treat "" as a real value
-            # and block additional users without emails.
-            email=email or None,
+            # Signup is phone-only; keep email NULL (empty string would collide on UNIQUE).
+            email=None,
             is_active=True,
             public_id=secrets.token_hex(8),
             account_type="user",
@@ -2070,7 +1593,6 @@ def compat_signup():
             "compat_signup integrity error",
             extra={
                 "username": (raw_username or "")[:120],
-                "email": (email or "")[:200],
                 "phone_digits": (phone_digits or "")[:32],
             },
             exc_info=True,
@@ -2084,7 +1606,6 @@ def compat_signup():
             e,
             extra={
                 "username": (raw_username or "")[:120],
-                "email": (email or "")[:200],
                 "phone_digits": (phone_digits or "")[:32],
             },
         )

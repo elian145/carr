@@ -3,7 +3,6 @@ part of 'forgot_password_page.dart';
 mixin _ForgotPasswordPageCore on _ForgotPasswordPageActions {
   @override
   Widget build(BuildContext context) {
-    final compact = AppResponsive.isCompactPhone(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(_forgotPasswordTitle(context)),
@@ -24,169 +23,74 @@ mixin _ForgotPasswordPageCore on _ForgotPasswordPageActions {
               ),
               const SizedBox(height: 16),
               Text(
-                _emailSent
-                    ? (_recoveryMethod == 'phone'
-                          ? _checkYourPhoneTitle(context)
-                          : _checkYourEmailTitle(context))
+                _codeSent
+                    ? _checkYourPhoneTitle(context)
                     : _resetPasswordTitle(context),
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
-                _emailSent
-                    ? (_recoveryMethod == 'phone'
-                          ? _resetSmsSent(context, _phoneController.text)
-                          : _resetEmailSent(context, _emailController.text))
-                    : (_recoveryMethod == 'phone'
-                          ? _forgotPasswordIntroPhone(context)
-                          : _forgotPasswordIntroEmail(context)),
+                _codeSent
+                    ? _resetSmsSent(context, _phoneController.text)
+                    : _forgotPasswordIntroPhone(context),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              if (_emailSent) ...[
+              if (_codeSent) ...[
                 const SizedBox(height: 16),
                 Text(
-                  _recoveryMethod == 'phone'
-                      ? _smsResetHint(context)
-                      : _checkSpamHint(context),
+                  _smsResetHint(context),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
               const SizedBox(height: 32),
-              if (!_emailSent) ...[
-                Text(
-                  AppLocalizations.of(context)!.chooseAuthMethodTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                RadioGroup<String>(
-                  groupValue: _recoveryMethod,
-                  onChanged: (v) {
-                    if (v == null) return;
-                    setState(() => _recoveryMethod = v);
-                    requestFocusAfterFrame(
-                      v == 'phone' ? _phoneFocus : _emailFocus,
-                    );
+              if (!_codeSent) ...[
+                TextFormField(
+                  controller: _phoneController,
+                  focusNode: _phoneFocus,
+                  autofocus: true,
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) {
+                    if (!_isLoading) _sendReset();
                   },
-                  child: compact
-                      ? Column(
-                          children: [
-                            RadioListTile<String>(
-                              title: Text(
-                                AppLocalizations.of(context)!.emailLabel,
-                              ),
-                              value: 'email',
-                            ),
-                            RadioListTile<String>(
-                              title: Text(
-                                AppLocalizations.of(context)!.phoneLabel,
-                              ),
-                              value: 'phone',
-                            ),
-                          ],
-                        )
-                      : Row(
-                          children: [
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: Text(
-                                  AppLocalizations.of(context)!.emailLabel,
-                                ),
-                                value: 'email',
-                              ),
-                            ),
-                            Expanded(
-                              child: RadioListTile<String>(
-                                title: Text(
-                                  AppLocalizations.of(context)!.phoneLabel,
-                                ),
-                                value: 'phone',
-                              ),
-                            ),
-                          ],
-                        ),
-                ),
-                const SizedBox(height: 8),
-                if (_recoveryMethod == 'email')
-                  TextFormField(
-                    controller: _emailController,
-                    focusNode: _emailFocus,
-                    autofocus: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) {
-                      if (!_isLoading) _sendReset();
-                    },
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.emailLabel,
-                      prefixIcon: const Icon(Icons.email),
-                      border: const OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return AppLocalizations.of(context)!.emailLabel;
-                      }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
-                        return _pleaseEnterValidEmail(context);
-                      }
-                      return null;
-                    },
-                  )
-                else
-                  TextFormField(
-                    controller: _phoneController,
-                    focusNode: _phoneFocus,
-                    autofocus: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) {
-                      if (!_isLoading) _sendReset();
-                    },
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.phoneLabel,
-                      hintText: AppLocalizations.of(
-                        context,
-                      )!.useInternationalFormat,
-                      prefixIcon: const Icon(Icons.phone),
-                      border: const OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                        RegExp(r'[0-9+\s\-()]+'),
-                      ),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return AppLocalizations.of(context)!.requiredField;
-                      }
-                      final digits = RegExp(
-                        r'\d',
-                      ).allMatches(value).map((m) => m.group(0)!).join();
-                      if (digits.length < 8) {
-                        return _pleaseEnterValidPhone(context);
-                      }
-                      return null;
-                    },
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.phoneLabel,
+                    hintText: AppLocalizations.of(
+                      context,
+                    )!.useInternationalFormat,
+                    prefixIcon: const Icon(Icons.phone),
+                    border: const OutlineInputBorder(),
                   ),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                      RegExp(r'[0-9+\s\-()]+'),
+                    ),
+                  ],
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return AppLocalizations.of(context)!.requiredField;
+                    }
+                    final digits = RegExp(
+                      r'\d',
+                    ).allMatches(value).map((m) => m.group(0)!).join();
+                    if (digits.length < 8) {
+                      return _pleaseEnterValidPhone(context);
+                    }
+                    return null;
+                  },
+                ),
                 const SizedBox(height: 24),
                 Semantics(
                   button: true,
-                  label: _recoveryMethod == 'phone'
-                      ? _sendSmsResetCode(context)
-                      : _sendResetLink(context),
+                  label: _sendSmsResetCode(context),
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _sendReset,
                     child: _isLoading
                         ? const CircularProgressIndicator()
-                        : Text(
-                            _recoveryMethod == 'phone'
-                                ? _sendSmsResetCode(context)
-                                : _sendResetLink(context),
-                          ),
+                        : Text(_sendSmsResetCode(context)),
                   ),
                 ),
               ] else ...[

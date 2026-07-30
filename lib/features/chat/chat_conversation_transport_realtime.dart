@@ -107,7 +107,10 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
 
   Future<void> _loadHistory() async {
     if (_loadingHistory) return;
-    setState(() => _loadingHistory = true);
+    setState(() {
+      _loadingHistory = true;
+      _historyLoadError = false;
+    });
     try {
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
@@ -135,8 +138,10 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       });
       await _ensureCarListingMeta();
       _scrollToBottom(jump: true);
-    } catch (e, st) { logNonFatal(e, st); 
-      // Keep the page usable even if history fetch fails.
+    } catch (e, st) {
+      logNonFatal(e, st);
+      // Surface a retry affordance when there are no messages to show.
+      _historyLoadError = true;
     } finally {
       if (mounted) {
         setState(() => _loadingHistory = false);

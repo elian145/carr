@@ -111,6 +111,7 @@ abstract class _HomePageFields extends State<HomePage> {
   int _page = 1;
   bool _hasNext = true;
   bool _isLoadingMore = false;
+  bool _loadMoreFailed = false;
 
   /// When the list is empty but a non-default sort is set, auto-fetch once
   /// (no sort/apply UI on the empty state).
@@ -442,6 +443,7 @@ class _HomePageState extends _HomePageFields
             cars = [];
             _page = 1;
             _hasNext = true;
+            _loadMoreFailed = false;
           });
         }
         fetchCars(bypassCache: true);
@@ -488,6 +490,7 @@ class _HomePageState extends _HomePageFields
         _HomeFeedScrollPersistence.savePixels(snapshot);
         if (_hasNext &&
             !_isLoadingMore &&
+            !_loadMoreFailed &&
             pos.pixels >= (pos.maxScrollExtent - 400)) {
           _loadMore();
         }

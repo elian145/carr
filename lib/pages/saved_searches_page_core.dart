@@ -8,7 +8,7 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
         title: Text(AppLocalizations.of(context)!.savedSearchesTitle),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? _savedSearchesSkeleton(context)
           : _error != null
           ? Center(
               child: Column(
@@ -112,6 +112,50 @@ mixin _SavedSearchesPageCore on _SavedSearchesPageActions {
                 );
               },
             ),
+    );
+  }
+
+  Widget _savedSearchesSkeleton(BuildContext context) {
+    return Shimmer(
+      child: ListView.builder(
+        itemCount: 6,
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        itemBuilder: (context, _) => Card(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 14, width: 160, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 12,
+                        width: double.infinity,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 6),
+                      Container(height: 12, width: 100, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

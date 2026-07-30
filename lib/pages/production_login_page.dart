@@ -160,7 +160,8 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
-    if (phone.isEmpty) {
+    // Iraqi mobile numbers are 10 digits (7XX XXX XXXX) after the +964 prefix.
+    if (phone.length != 10) {
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -476,6 +477,66 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _buildLegalConsentLine(BuildContext context) {
+    final code = Localizations.localeOf(context).languageCode;
+    String tr(String en, String ar, String ku) {
+      if (code == 'ar') return ar;
+      if (code == 'ku' || code == 'ckb') return ku;
+      return en;
+    }
+
+    final baseStyle = TextStyle(
+      fontSize: 12,
+      height: 1.4,
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+    );
+    final linkStyle = baseStyle.copyWith(
+      color: AppColors.brandOrange,
+      fontWeight: FontWeight.w600,
+    );
+
+    Future<void> openLegal(LegalDocument doc) async {
+      final cfg = await TrustConfig.load();
+      if (!context.mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => LegalDocumentPage(
+            document: doc,
+            externalUrl:
+                doc == LegalDocument.terms ? cfg.termsUrl : cfg.privacyUrl,
+          ),
+        ),
+      );
+    }
+
+    Widget link(String label, LegalDocument doc) => GestureDetector(
+          onTap: () => openLegal(doc),
+          child: Text(label, style: linkStyle),
+        );
+
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(
+          tr(
+            'By continuing, you agree to our ',
+            'بالمتابعة، فإنك توافق على ',
+            'بە بەردەوامبوون، تۆ ڕازی دەبیت بە ',
+          ),
+          style: baseStyle,
+        ),
+        link(tr('Terms', 'شروط الخدمة', 'مەرجەکان'), LegalDocument.terms),
+        Text(tr(' and ', ' و ', ' و '), style: baseStyle),
+        link(
+          tr('Privacy Policy', 'سياسة الخصوصية', 'سیاسەتی تایبەتمەندی'),
+          LegalDocument.privacy,
+        ),
+        Text('.', style: baseStyle),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
@@ -642,9 +703,12 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           services.LengthLimitingTextInputFormatter(10),
                         ],
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? loc.requiredField
-                            : null,
+                        validator: (v) {
+                          final digits = (v ?? '').trim();
+                          if (digits.isEmpty) return loc.requiredField;
+                          if (digits.length != 10) return loc.enterPhoneNumber;
+                          return null;
+                        },
                         onChanged: (_) => _resetOtpState(),
                       ),
                       const SizedBox(height: 14),
@@ -763,6 +827,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      _buildLegalConsentLine(context),
                     ],
                   ),
                 ),

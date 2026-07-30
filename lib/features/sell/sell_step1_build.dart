@@ -339,6 +339,9 @@ mixin _SellStep1Build on _SellStep1Pickers {
                 parentState._goToPreviousStep();
               },
               onNext: () {
+                // Also run field-level validators (e.g. manual year range).
+                final bool formValid =
+                    _formKey.currentState?.validate() ?? true;
                 final List<String> missing = [];
                 if (selectedBrand == null || (selectedBrand ?? '').isEmpty) {
                   missing.add(AppLocalizations.of(context)!.brandLabel);
@@ -376,6 +379,7 @@ mixin _SellStep1Build on _SellStep1Pickers {
                   );
                   return;
                 }
+                if (!formValid) return;
 
                 final parentState = context
                     .findAncestorStateOfType<_SellCarPageState>();

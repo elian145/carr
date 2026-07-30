@@ -110,6 +110,7 @@ workflows:
             --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
             --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
+            --dart-define=SENTRY_DSN="${SENTRY_DSN:-}" \
             --dart-define=FORCE_SKIP_BLUR="$FORCE_SKIP_BLUR"
       - name: Package unsigned IPA for Sideloadly
         script: |
@@ -237,7 +238,8 @@ workflows:
             --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
             --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
-            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
+            --dart-define=SENTRY_DSN="${SENTRY_DSN:-}"
           ARCHIVE="build/ios/archive/Runner.xcarchive"
           if ! compgen -G "build/ios/ipa/*.ipa" > /dev/null && [ -d "$ARCHIVE" ]; then
             echo "Archive exists but no IPA — retrying export with $EXPORT_PLIST"
@@ -291,7 +293,8 @@ workflows:
             --dart-define=LISTING_SHARE_URL_PATH=${LISTING_SHARE_URL_PATH} \
             --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
-            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
+            --dart-define=SENTRY_DSN="${SENTRY_DSN:-}"
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
 
@@ -429,7 +432,8 @@ workflows:
             --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
             --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
-            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
+            --dart-define=SENTRY_DSN="${SENTRY_DSN:-}"
       - name: Build App Bundle (release)
         script: |
           flutter build appbundle --release --no-pub --flavor "$FLAVOR" \
@@ -438,7 +442,8 @@ workflows:
             --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \
             --dart-define=AIRBRIDGE_APP_NAME="${AIRBRIDGE_APP_NAME:-}" \
             --dart-define=AIRBRIDGE_APP_TOKEN="${AIRBRIDGE_APP_TOKEN:-}" \
-            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}"
+            --dart-define=AIRBRIDGE_LISTING_CHANNEL="${AIRBRIDGE_LISTING_CHANNEL:-listing_share}" \
+            --dart-define=SENTRY_DSN="${SENTRY_DSN:-}"
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
       - build/app/outputs/bundle/*/*.aab

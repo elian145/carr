@@ -131,7 +131,7 @@ mixin _HomePageFetchCore on _HomePageFields {
           continue;
         }
         if (pos.maxScrollExtent >= target - slack) break;
-        if (!_hasNext) break;
+        if (!_hasNext || _loadMoreFailed) break;
         await _loadMore();
         await _nextLayoutFrame();
       }
@@ -268,6 +268,7 @@ mixin _HomePageFetchCore on _HomePageFields {
     // Reset pagination
     _page = 1;
     _hasNext = true;
+    _loadMoreFailed = false;
     filters['page'] = _page.toString();
     filters['per_page'] = '20';
 
@@ -462,8 +463,9 @@ mixin _HomePageFetchCore on _HomePageFields {
   }
 
   Future<void> _loadMore() async {
-    if (_isLoadingMore || !_hasNext) return;
+    if (_isLoadingMore || !_hasNext || _loadMoreFailed) return;
     _isLoadingMore = true;
+    bool failed = false;
     try {
       if (_homeInterestProfile == null &&
           (selectedSortBy == null || selectedSortBy!.isEmpty)) {
@@ -499,9 +501,18 @@ mixin _HomePageFetchCore on _HomePageFields {
           _HomePageFields._homeFeedCacheHasNext = _hasNext;
         }
         _page += 1;
+      } else {
+        // Non-200: surface a retry affordance instead of a stuck spinner.
+        failed = true;
       }
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+      failed = true;
+    }
     _isLoadingMore = false;
+    if (failed && mounted) {
+      setState(() => _loadMoreFailed = true);
+    }
   }
 
   void _scrollHomeToTopAndResetCardImages() {

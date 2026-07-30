@@ -35,7 +35,7 @@
 | `api_chat_test.dart` | `getChats`, unread count, send message, message history against mock API |
 | `api_analytics_test.dart` | `AnalyticsService.getUserListingsAnalytics` and `trackView` against mock API |
 | `api_auth_recovery_test.dart` | `forgotPassword`, `resetPassword`, and `verifyEmail` against mock API |
-| `api_auth_profile_test.dart` | `changePassword`, `updateProfile`, and `confirmSignup` against mock API |
+| `api_auth_profile_test.dart` | `changePassword`, `updateProfile`, and `verifyEmail` against mock API |
 | `api_trust_config_test.dart` | `TrustConfig.load` reads support/legal URLs from mock `/api/config/trust` |
 | `saved_search_service_test.dart` | `SavedSearchService.loadMerged` against mock API |
 | `api_dealer_test.dart` | `getDealerProfile` and `searchDealers` against mock API |

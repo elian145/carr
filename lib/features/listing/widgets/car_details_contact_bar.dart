@@ -30,7 +30,7 @@ class CarDetailsContactBar extends StatelessWidget {
                   elevation: 2,
                   shadowColor: Colors.black26,
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  minimumSize: const Size(0, 46),
+                  minimumSize: const Size(0, 48),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(17),
@@ -62,7 +62,7 @@ class CarDetailsContactBar extends StatelessWidget {
                   elevation: 2,
                   shadowColor: Colors.black26,
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  minimumSize: const Size(0, 46),
+                  minimumSize: const Size(0, 48),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(17),

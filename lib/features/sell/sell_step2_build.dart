@@ -3,6 +3,8 @@ part of 'sell_flow.dart';
 mixin _SellStep2Build on _SellStep2BuildMechanical {
   void _onSellStep2NextPressed() {
     final l = AppLocalizations.of(context)!;
+    // Also run field-level validators (e.g. numeric mileage / VIN length).
+    final bool formValid = _formKey.currentState?.validate() ?? true;
     final List<String> missing = [];
 
     if (selectedMileage == null || selectedMileage!.trim().isEmpty) {
@@ -68,6 +70,7 @@ mixin _SellStep2Build on _SellStep2BuildMechanical {
       );
       return;
     }
+    if (!formValid) return;
 
     _syncStep2DraftToParent();
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();

@@ -4,76 +4,6 @@ part of '../api_service.dart';
 abstract final class _ApiServiceAuth {
   _ApiServiceAuth._();
 
-  static Future<Map<String, dynamic>> registerEmailRequest({
-    String? username,
-    required String email,
-    required String password,
-    required String firstName,
-    required String lastName,
-    String? phoneNumber,
-    bool isDealer = false,
-    String? dealershipName,
-    String? dealershipPhone,
-    String? dealershipLocation,
-  }) async {
-    final u = (username ?? '').trim();
-    final normalizedPhone =
-        (phoneNumber != null && phoneNumber.trim().isNotEmpty)
-        ? normalizePhoneNumber(phoneNumber)
-        : null;
-    final response = await ApiService._httpClient
-        .post(
-          Uri.parse('${ApiService.baseUrl}/auth/register-request'),
-          headers: ApiService._getHeaders(includeAuth: false),
-          body: json.encode({
-            if (!isDealer) 'username': u,
-            'email': email,
-            'password': password,
-            'first_name': firstName,
-            'last_name': lastName,
-            if (normalizedPhone != null && normalizedPhone.isNotEmpty)
-              'phone_number': normalizedPhone,
-            'is_dealer': isDealer,
-            if (isDealer &&
-                dealershipName != null &&
-                dealershipName.trim().isNotEmpty)
-              'dealership_name': dealershipName.trim(),
-            if (isDealer &&
-                dealershipPhone != null &&
-                dealershipPhone.trim().isNotEmpty)
-              'dealership_phone': dealershipPhone.trim(),
-            if (isDealer &&
-                dealershipLocation != null &&
-                dealershipLocation.trim().isNotEmpty)
-              'dealership_location': dealershipLocation.trim(),
-          }),
-        )
-        .timeout(ApiService._defaultTimeout);
-
-    return ApiService._handleResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> confirmSignup(String token) async {
-    final response = await ApiService._httpClient
-        .post(
-          Uri.parse('${ApiService.baseUrl}/auth/register-confirm'),
-          headers: ApiService._getHeaders(includeAuth: false),
-          body: json.encode({'token': token}),
-        )
-        .timeout(ApiService._defaultTimeout);
-
-    final data = ApiService._handleResponse(response);
-    final String? access = (data['access_token'] as String?)?.trim();
-    final String? refresh = (data['refresh_token'] as String?)?.trim();
-    if (access != null && access.isNotEmpty) {
-      await ApiService._saveAccessToken(access);
-    }
-    if (refresh != null && refresh.isNotEmpty) {
-      await ApiService._saveRefreshToken(refresh);
-    }
-    return data;
-  }
-
   static Future<Map<String, dynamic>> login(
     String emailOrPhone,
     String password,
@@ -244,16 +174,10 @@ abstract final class _ApiServiceAuth {
 
   static Future<Map<String, dynamic>> forgotPassword(
     String value, {
-    bool isPhone = false,
+    bool isPhone = true,
   }) async {
     final trimmed = value.trim();
-    final Map<String, dynamic> body;
-    if (isPhone) {
-      body = {'phone_number': normalizePhoneNumber(trimmed)};
-    } else {
-      // Backwards-compatible: backend historically mirrored email into phone_number.
-      body = {'email': trimmed, 'phone_number': trimmed};
-    }
+    final body = {'phone_number': normalizePhoneNumber(trimmed)};
     final response = await ApiService._httpClient
         .post(
           Uri.parse('${ApiService.baseUrl}/auth/forgot-password'),

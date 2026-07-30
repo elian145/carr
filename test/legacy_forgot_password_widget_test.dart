@@ -37,21 +37,22 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  testWidgets('Legacy forgot password shows recovery method UI', (tester) async {
+  testWidgets('Forgot password shows phone SMS reset UI', (tester) async {
     await openForgotPassword(tester);
 
     expect(find.text('Forgot Password'), findsWidgets);
-    expect(find.text('Choose authentication method:'), findsOneWidget);
-    expect(find.text('Send Reset Link'), findsOneWidget);
+    expect(find.text('Send reset code (SMS)'), findsOneWidget);
+    expect(find.text('Choose authentication method:'), findsNothing);
+    expect(find.text('Email'), findsNothing);
   });
 
-  testWidgets('Legacy forgot password validates empty email', (tester) async {
+  testWidgets('Forgot password validates empty phone', (tester) async {
     await openForgotPassword(tester);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Send Reset Link'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Send reset code (SMS)'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text('Email'), findsWidgets);
+    expect(find.textContaining('Required', findRichText: true), findsWidgets);
   });
 }

@@ -19,6 +19,7 @@ from ..chat_realtime import (
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, validate_input_sanitization
+from ..time_utils import utcnow
 from .media import _pick_primary_listing_url
 
 bp = Blueprint("chat", __name__)
@@ -878,7 +879,7 @@ def edit_chat_message(message_id: str):
             if not content and not existing_url_to_type:
                 return jsonify({"message": "content required"}), 400
 
-        msg.edited_at = datetime.utcnow()
+        msg.edited_at = utcnow()
         db.session.commit()
 
         payload = msg.to_dict()
@@ -910,7 +911,7 @@ def delete_chat_message(message_id: str):
         msg.attachments = []
         msg.listing_preview = None
         msg.is_deleted = True
-        msg.edited_at = datetime.utcnow()
+        msg.edited_at = utcnow()
         db.session.commit()
 
         payload = msg.to_dict()

@@ -36,11 +36,14 @@ function securityHeaders(res: NextResponse): NextResponse {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Only skip auth for genuine static assets (a file extension at the END of the
+  // path), not for any route that merely contains a dot somewhere in it.
+  const isStaticAsset = /\.[a-zA-Z0-9]+$/.test(pathname);
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/api/admin-session") ||
-    pathname.includes(".")
+    isStaticAsset
   ) {
     return NextResponse.next();
   }

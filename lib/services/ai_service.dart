@@ -25,7 +25,11 @@ class AiService {
         await http.MultipartFile.fromPath('image', imageFile.path),
       );
 
-      final response = await request.send();
+      final response = await request.send().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () =>
+            throw TimeoutException('AI image analysis timed out'),
+      );
       final responseBody = await http.Response.fromStream(response);
 
       if (response.statusCode == 200) {

@@ -88,9 +88,33 @@ mixin _DealersDirectoryPageCore on _DealersDirectoryPageWidgets {
                                     controller: _scroll,
                                     physics: const AlwaysScrollableScrollPhysics(),
                                     padding: const EdgeInsets.only(bottom: 100),
-                                    itemCount: _rows.length + (_loadingMore ? 1 : 0),
+                                    itemCount: _rows.length +
+                                        ((_loadingMore || _loadMoreError)
+                                            ? 1
+                                            : 0),
                                     itemBuilder: (context, i) {
                                       if (i >= _rows.length) {
+                                        if (_loadMoreError) {
+                                          return Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Center(
+                                              child: TextButton.icon(
+                                                onPressed: () {
+                                                  setState(() =>
+                                                      _loadMoreError = false);
+                                                  unawaited(_loadMore());
+                                                },
+                                                icon: const Icon(
+                                                  Icons.refresh,
+                                                  size: 18,
+                                                ),
+                                                label: Text(
+                                                  loc?.retryAction ?? 'Retry',
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }
                                         return const Padding(
                                           padding: EdgeInsets.all(16),
                                           child: Center(

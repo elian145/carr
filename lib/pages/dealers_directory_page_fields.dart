@@ -13,6 +13,7 @@ abstract class _DealersDirectoryPageFields extends State<DealersDirectoryPage> {
   String? _error;
   int _page = 1;
   bool _hasNext = false;
+  bool _loadMoreError = false;
   static const int _perPage = 20;
 
   @override

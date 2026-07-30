@@ -81,7 +81,7 @@ class CarService extends ChangeNotifier {
       }
 
       final pagination = response['pagination'];
-      _hasMore = pagination['has_next'];
+      _hasMore = pagination is Map && pagination['has_next'] == true;
       _currentPage++;
     } catch (e, st) {
       logNonFatal(e, st, 'CarService.getCars');

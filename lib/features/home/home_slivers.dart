@@ -107,7 +107,24 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   if (index >= feedCars.length) {
-                    return Center(
+                    if (_loadMoreFailed) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              setState(() => _loadMoreFailed = false);
+                              _loadMore();
+                            },
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: Text(
+                              AppLocalizations.of(context)!.retryAction,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return const Center(
                       child: Padding(
                         padding: EdgeInsets.all(12),
                         child: CircularProgressIndicator(strokeWidth: 2),

@@ -118,54 +118,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Start email-based registration (no account yet – user must confirm via email link)
-  Future<void> registerEmailWithVerification({
-    String? username,
-    required String email,
-    required String password,
-    required String firstName,
-    required String lastName,
-    String? phoneNumber,
-    bool isDealer = false,
-    String? dealershipName,
-    String? dealershipPhone,
-    String? dealershipLocation,
-  }) async {
-    _setLoading(true);
-    try {
-      await ApiService.registerEmailRequest(
-        username: username?.trim(),
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-        phoneNumber: phoneNumber,
-        isDealer: isDealer,
-        dealershipName: dealershipName,
-        dealershipPhone: dealershipPhone,
-        dealershipLocation: dealershipLocation,
-      );
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // Confirm signup from email link; creates account and logs user in.
-  Future<Map<String, dynamic>> confirmSignup(String token) async {
-    _setLoading(true);
-    try {
-      final data = await ApiService.confirmSignup(token);
-      if (data['user'] is Map) {
-        await activateSession(user: userMapFrom(data['user']));
-      } else if (ApiService.isAuthenticated) {
-        await activateSession();
-      }
-      return data;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
   // Login user
   Future<Map<String, dynamic>> login(
     String emailOrPhone,
@@ -301,15 +253,15 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Forgot password (email or phone; SMS when [isPhone] is true)
+  // Forgot password (SMS only)
   Future<Map<String, dynamic>> forgotPassword(
     String value, {
-    bool isPhone = false,
+    bool isPhone = true,
   }) async {
     _setLoading(true);
 
     try {
-      final response = await ApiService.forgotPassword(value, isPhone: isPhone);
+      final response = await ApiService.forgotPassword(value, isPhone: true);
       return response;
     } catch (e) {
       rethrow;

@@ -169,25 +169,41 @@ class _RetryingListingNetworkImageState
   @override
   Widget build(BuildContext context) {
     final url = _effectiveUrl;
-    return CachedNetworkImage(
-      key: ValueKey('$url#$_attempt'),
-      imageUrl: url,
-      fit: widget.fit,
-      alignment: widget.alignment,
-      width: widget.width,
-      height: widget.height,
-      filterQuality: widget.filterQuality,
-      fadeInDuration: const Duration(milliseconds: 120),
-      fadeOutDuration: const Duration(milliseconds: 80),
-      placeholder: (context, _) => _defaultPlaceholder(),
-      errorWidget: (context, _, error) {
-        try {
-          appLog('Listing image failed (attempt=$_attempt)');
-        } catch (e, st) {
-          logNonFatal(e, st, 'ListingNetworkImage.error');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Decode at the display size (in physical pixels) instead of full
+        // resolution. This dramatically cuts memory for grid thumbnails while
+        // keeping full-screen images crisp (capped to avoid pathological sizes).
+        final dpr = MediaQuery.of(context).devicePixelRatio;
+        final double logicalWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : (widget.width ?? double.infinity);
+        int? memCacheWidth;
+        if (logicalWidth.isFinite && logicalWidth > 0) {
+          memCacheWidth = (logicalWidth * dpr).round().clamp(1, 2048).toInt();
         }
-        _scheduleRetry();
-        return _defaultError();
+        return CachedNetworkImage(
+          key: ValueKey('$url#$_attempt'),
+          imageUrl: url,
+          fit: widget.fit,
+          alignment: widget.alignment,
+          width: widget.width,
+          height: widget.height,
+          memCacheWidth: memCacheWidth,
+          filterQuality: widget.filterQuality,
+          fadeInDuration: const Duration(milliseconds: 120),
+          fadeOutDuration: const Duration(milliseconds: 80),
+          placeholder: (context, _) => _defaultPlaceholder(),
+          errorWidget: (context, _, error) {
+            try {
+              appLog('Listing image failed (attempt=$_attempt)');
+            } catch (e, st) {
+              logNonFatal(e, st, 'ListingNetworkImage.error');
+            }
+            _scheduleRetry();
+            return _defaultError();
+          },
+        );
       },
     );
   }

@@ -40,10 +40,9 @@ void main() {
     expect((result['user'] as Map)['first_name'], 'Updated');
   });
 
-  test('confirmSignup POST returns tokens', () async {
-    final result = await ApiService.confirmSignup('signup-token-abc');
+  test('verifyEmail POST returns success message', () async {
+    final result = await ApiService.verifyEmail('verify-token-abc');
     expect(result['message'], isNotEmpty);
-    expect(result['access_token'], isNotEmpty);
   });
 
   test('getProfile sends stored access token in Authorization header', () async {

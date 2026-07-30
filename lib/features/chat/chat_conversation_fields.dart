@@ -17,6 +17,7 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
   StreamSubscription<bool>? _socketConnectionSub;
   bool _isSending = false;
   bool _loadingHistory = false;
+  bool _historyLoadError = false;
   bool _loadingOlderMessages = false;
   bool _hasMoreMessages = false;
   int _currentPage = 1;

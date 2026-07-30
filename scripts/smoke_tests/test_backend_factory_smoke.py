@@ -709,51 +709,18 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(me.status_code, 200, me.data)
         self.assertEqual((me.get_json() or {}).get("first_name"), "UpdatedName")
 
-    def test_register_confirm_creates_user(self):
-        with self.app.app_context():
-            from datetime import timedelta
-
-            from kk.models import PendingSignup
-            from kk.time_utils import utcnow
-
-            token = f"confirm_{uuid.uuid4().hex}"
-            temp = self._User(
-                username="tmp_hash",
-                phone_number="07000000111",
-                first_name="T",
-                last_name="H",
-                email=None,
-                is_active=True,
-                is_verified=True,
-                phone_verified=True,
-                public_id="ph",
-            )
-            temp.set_password("Aa123456!")
-            pending = PendingSignup(
-                email="confirm@test.example",
-                username=f"confirm_{uuid.uuid4().hex[:8]}",
-                password_hash=temp.password_hash,
-                first_name="C",
-                last_name="U",
-                phone_number="07000000112",
-                token=token,
-                expires_at=utcnow() + timedelta(days=1),
-            )
-            self._db.session.add(pending)
-            self._db.session.commit()
-
+    def test_register_confirm_email_signup_removed(self):
         missing = self.client.post("/api/auth/register-confirm", json={})
-        self.assertEqual(missing.status_code, 400, missing.data)
+        self.assertEqual(missing.status_code, 410, missing.data)
+        body = missing.get_json() or {}
+        self.assertEqual(body.get("code"), "email_signup_removed")
 
-        r = self.client.post("/api/auth/register-confirm", json={"token": token})
-        self.assertIn(r.status_code, (200, 201), r.data)
-        body = r.get_json() or {}
-        self.assertIn("access_token", body)
-
-        with self.app.app_context():
-            user = self._User.query.filter_by(email="confirm@test.example").first()
-            self.assertIsNotNone(user)
-            self.assertTrue(user.is_verified)
+        r = self.client.post(
+            "/api/auth/register-request",
+            json={"email": "gone@test.example", "password": "Aa123456!", "username": "gone"},
+        )
+        self.assertEqual(r.status_code, 410, r.data)
+        self.assertEqual((r.get_json() or {}).get("code"), "email_signup_removed")
 
     def test_report_user_listing_and_block_flow(self):
         user_report = self.client.post(
@@ -1116,26 +1083,36 @@ class BackendFactorySmokeTest(unittest.TestCase):
         body = r.get_json() or {}
         self.assertEqual(body.get("code"), "phone_verification_required")
 
-    def test_email_signup_and_login(self):
-        u = f"e_{uuid.uuid4().hex[:8]}"
+    def test_phone_signup_and_login_without_email(self):
+        u = f"p_{uuid.uuid4().hex[:8]}"
+        phone = f"070{uuid.uuid4().int % 10**7:07d}"
         signup = self.client.post(
             "/api/auth/signup",
             json={
                 "username": u,
-                "email": f"{u}@example.com",
-                "phone": "07000002000",
+                "email": f"{u}@example.com",  # ignored — signup is phone-only
+                "phone": phone,
                 "password": "Aa123456!",
-                "first_name": "E",
+                "first_name": "P",
                 "last_name": "S",
             },
         )
         self.assertEqual(signup.status_code, 201, signup.data)
         body = signup.get_json() or {}
         self.assertIn("access_token", body)
+        user = body.get("user") or {}
+        self.assertFalse(bool(user.get("email")))
 
         login = self.client.post("/api/auth/login", json={"username": u, "password": "Aa123456!"})
         self.assertEqual(login.status_code, 200, login.data)
         self.assertIn("access_token", login.get_json() or {})
+
+        # Email must not work as a mobile password-login identifier.
+        email_login = self.client.post(
+            "/api/auth/login",
+            json={"username": f"{u}@example.com", "password": "Aa123456!"},
+        )
+        self.assertEqual(email_login.status_code, 401, email_login.data)
 
     def test_auth_me_returns_bare_user(self):
         me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))

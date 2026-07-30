@@ -123,6 +123,22 @@ mixin _SellStep5Build on _SellStep5Logic {
                                         (v is String && v.trim().isEmpty);
                                     if (isEmpty) missing.add(k);
                                   }
+                                  // Media + contact live outside the simple
+                                  // string map; validate explicitly so a
+                                  // restored draft or edit cannot submit blank.
+                                  final imagesVal = carData['images'];
+                                  final hasImages =
+                                      imagesVal is List && imagesVal.isNotEmpty;
+                                  if (!hasImages) missing.add('images');
+                                  if ((carData['city'] ?? '')
+                                      .toString()
+                                      .trim()
+                                      .isEmpty) {
+                                    missing.add('city');
+                                  }
+                                  if (contactPhones.isEmpty) {
+                                    missing.add('contact_phone');
+                                  }
                                   if (missing.isNotEmpty) {
                                     int stepFor(String k) {
                                       const basic = {
@@ -143,7 +159,8 @@ mixin _SellStep5Build on _SellStep5Logic {
                                         'region_specs',
                                         'title_status',
                                       };
-                                      // Wizard indices: 0 photos, 1 basic, 2 details, 3 pricing
+                                      // Wizard indices: 0 photos, 1 basic, 2 details, 3 pricing/contact
+                                      if (k == 'images') return 0;
                                       if (basic.contains(k)) return 1;
                                       if (details.contains(k)) return 2;
                                       return 3;

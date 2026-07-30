@@ -45,7 +45,14 @@ async function proxy(request: Request, context: Ctx): Promise<Response> {
     rotatedAccess = access;
     rotatedRefresh = refresh;
   });
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  // Never proxy unauthenticated requests upstream. The admin panel always holds
+  // a session for /backend-api calls (login goes through /api/admin-session),
+  // so a missing token means an unauthenticated caller — reject instead of
+  // acting as an open relay to the API host.
+  if (!token) {
+    return Response.json({ message: "Authentication required" }, { status: 401 });
+  }
+  headers.set("Authorization", `Bearer ${token}`);
 
   const init: RequestInit = {
     method: request.method,

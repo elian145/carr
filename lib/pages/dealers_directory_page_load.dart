@@ -31,7 +31,7 @@ mixin _DealersDirectoryPageLoad on _DealersDirectoryPageFields {
   }
 
   void _onScroll() {
-    if (!_hasNext || _loadingMore || _loading) return;
+    if (!_hasNext || _loadingMore || _loading || _loadMoreError) return;
     final pos = _scroll.position;
     if (pos.pixels > pos.maxScrollExtent - 400) {
       unawaited(_loadMore());
@@ -45,6 +45,7 @@ mixin _DealersDirectoryPageLoad on _DealersDirectoryPageFields {
         _error = null;
         _page = 1;
         _rows.clear();
+        _loadMoreError = false;
       });
     }
     try {
@@ -87,7 +88,7 @@ mixin _DealersDirectoryPageLoad on _DealersDirectoryPageFields {
   }
 
   Future<void> _loadMore() async {
-    if (!_hasNext || _loadingMore || _loading) return;
+    if (!_hasNext || _loadingMore || _loading || _loadMoreError) return;
     final next = _page + 1;
     setState(() => _loadingMore = true);
     try {
@@ -116,7 +117,10 @@ mixin _DealersDirectoryPageLoad on _DealersDirectoryPageFields {
       });
     } catch (e, st) { logNonFatal(e, st); 
       if (!mounted) return;
-      setState(() => _loadingMore = false);
+      setState(() {
+        _loadingMore = false;
+        _loadMoreError = true;
+      });
     }
   }
 

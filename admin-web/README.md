@@ -76,6 +76,7 @@ Deploy this folder to **Vercel**, **Netlify**, or **Cloudflare Pages**:
 | Build command | `npm run build` |
 | Output | Next.js default |
 | Env var | `NEXT_PUBLIC_API_BASE=https://your-api.onrender.com` |
+| Env var (**required in prod**) | `JWT_SECRET_KEY=<same secret as the Flask API>` — used to verify admin session JWTs. If unset in production, session resolution fails closed (all page auth breaks). |
 
 Then add the deployed admin URL to `CORS_ORIGINS` on the API service.
 

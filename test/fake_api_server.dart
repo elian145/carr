@@ -318,13 +318,6 @@ class FakeApiServer {
         return _json(200, {'message': 'Password reset successful'});
       case '/api/auth/verify-email':
         return _json(200, {'message': 'Email verified successfully'});
-      case '/api/auth/register-confirm':
-        return _json(200, {
-          'message': 'Account created successfully',
-          'access_token': 'test_access_token',
-          'refresh_token': 'test_refresh_token',
-          'user': {'id': 2, 'username': 'newuser', 'is_verified': true},
-        });
       case '/api/auth/change-password':
         return _json(200, {'message': 'Password changed successfully'});
       case '/api/auth/me':

@@ -12,6 +12,7 @@ import '../shared/errors/user_error_text.dart';
 import '../shared/i18n/listing_field_labels.dart';
 import '../shared/i18n/listing_value_labels.dart';
 import '../shared/i18n/region_spec_labels.dart';
+import '../shared/ui/shimmer.dart';
 part 'saved_searches_page_fields.dart';
 part 'saved_searches_page_load.dart';
 part 'saved_searches_page_helpers.dart';

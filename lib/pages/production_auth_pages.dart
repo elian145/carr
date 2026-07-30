@@ -18,6 +18,8 @@ import '../l10n/app_localizations.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/trust_config.dart';
+import 'legal_document_page.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/ui/app_haptics.dart';
