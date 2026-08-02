@@ -43,18 +43,14 @@ Without a message queue, chat broadcasts can appear “randomly broken” becaus
 
 ### Recommended production async mode
 
-**Default (recommended on Render):** leave `SOCKETIO_ASYNC_MODE` unset.
-Gunicorn uses `gthread` and Socket.IO uses `threading`. Redis is still used
-as the Socket.IO message queue when `REDIS_URL` is set.
+**Default (required on Render):** leave `SOCKETIO_ASYNC_MODE` unset (or set
+`threading`). Gunicorn uses `gthread` and Socket.IO uses `threading`. Redis is
+still used as the Socket.IO message queue when `REDIS_URL` is set.
 
-For many concurrent websocket clients, opt in explicitly (both required):
-
-- `SOCKETIO_ASYNC_MODE=eventlet`
-- `SOCKETIO_MESSAGE_QUEUE=<redis url>` (or `REDIS_URL`)
-
-`gunicorn.conf.py` sets `worker_class=eventlet` only when **both**
-`SOCKETIO_ASYNC_MODE=eventlet` and a message queue are set. Do not set
-eventlet without Redis — that causes late monkey-patching and worker hangs.
+Do **not** set `SOCKETIO_ASYNC_MODE=eventlet` on Render. Eventlet is deprecated
+and currently breaks boot (`monkey_patch` after Flask import → LocalProxy/RLock
+errors and 502s). `SOCKETIO_ASYNC_MODE=eventlet` is ignored unless you also set
+the break-glass flag `SOCKETIO_ALLOW_EVENTLET=1` and a Redis message queue.
 
 ## Recommended Gunicorn commands
 
@@ -63,7 +59,7 @@ eventlet without Redis — that causes late monkey-patching and worker hangs.
 Run the backend on an internal port (example `:5003`) and put it behind a reverse proxy for HTTPS:
 
 - `APP_ENV=production gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"`
-- (optional websockets) add `SOCKETIO_ASYNC_MODE=eventlet` and `REDIS_URL` / `SOCKETIO_MESSAGE_QUEUE`
+- Keep `REDIS_URL` for Socket.IO fan-out across workers; do not enable eventlet.
 
 ### Multiple workers (only with Redis message queue)
 
@@ -170,7 +166,7 @@ Do **not** commit real secrets; use a secret manager or CI-provided env vars.
 2. **Environment**
    - Set `APP_ENV=production`, `SECRET_KEY`, `JWT_SECRET_KEY`.
    - Set `DATABASE_URL` (e.g. Render PostgreSQL) or `DB_PATH` for SQLite.
-   - For Socket.IO and scaling: set `REDIS_URL` (e.g. Render Redis). Leave `SOCKETIO_ASYNC_MODE` unset unless you need eventlet/gevent websockets.
+   - For Socket.IO and scaling: set `REDIS_URL` (e.g. Render Redis). Leave `SOCKETIO_ASYNC_MODE` unset (or `threading`). Do not set `eventlet`.
    - Set `CORS_ORIGINS` to your frontend origin(s).
 
 3. **Optional worker**

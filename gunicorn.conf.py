@@ -26,27 +26,41 @@ loglevel = os.environ.get("LOG_LEVEL", "info").lower()
 
 # Socket.IO worker class MUST match flask-socketio async_mode (kk.app_factory).
 # Default: gthread + threading (safe; Redis message queue still works for fan-out).
-# Opt-in websockets: set SOCKETIO_ASYNC_MODE=eventlet|gevent AND a message queue
-# so the async worker monkey-patches *before* the app is imported.
-# Never pair SOCKETIO_ASYNC_MODE=eventlet with gthread — late monkey_patch hangs workers.
+#
+# Eventlet is deprecated and currently breaks boot on Render: flask-socketio calls
+# monkey_patch() after Flask/Werkzeug are imported → LocalProxy / RLock errors and
+# 502s. Do NOT enable it just because SOCKETIO_ASYNC_MODE=eventlet is set in the
+# dashboard. Require the explicit break-glass flag SOCKETIO_ALLOW_EVENTLET=1 plus
+# a Redis message queue.
+import sys
+
 _sio_async = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
-_use_async_worker = bool(_mq) and _sio_async in ("eventlet", "gevent")
+_allow_eventlet = (os.environ.get("SOCKETIO_ALLOW_EVENTLET") or "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+_use_async_worker = (
+    _allow_eventlet and bool(_mq) and _sio_async in ("eventlet", "gevent")
+)
 if _use_async_worker and _sio_async == "eventlet":
     worker_class = "eventlet"
 elif _use_async_worker and _sio_async == "gevent":
     worker_class = "gevent"
 else:
     worker_class = "gthread"
-    if _sio_async in ("eventlet", "gevent") and not _mq:
-        # Avoid late monkey_patch under gthread; app_factory should also stay on threading
-        # unless Redis is configured — surface a clear boot warning via stderr.
-        import sys
-
+    if _sio_async in ("eventlet", "gevent"):
+        reason = (
+            "SOCKETIO_ALLOW_EVENTLET is not set"
+            if not _allow_eventlet
+            else "REDIS_URL / SOCKETIO_MESSAGE_QUEUE is missing"
+        )
         print(
-            "WARNING: SOCKETIO_ASYNC_MODE="
+            "WARNING: ignoring SOCKETIO_ASYNC_MODE="
             + _sio_async
-            + " requires REDIS_URL or SOCKETIO_MESSAGE_QUEUE; "
-            "falling back to gthread. Unset SOCKETIO_ASYNC_MODE or set a message queue.",
+            + " ("
+            + reason
+            + "); using gthread. Unset SOCKETIO_ASYNC_MODE on Render.",
             file=sys.stderr,
         )
 
