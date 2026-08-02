@@ -43,12 +43,20 @@ export async function establishSession(
   password: string,
 ): Promise<unknown> {
   scrubLegacyClientAuth();
-  const res = await fetch("/api/admin-session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ username, password }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/admin-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ username, password }),
+    });
+  } catch {
+    throw new ApiRequestError(
+      "Cannot reach the admin app (login request failed). Is `npm run dev` still running? If so, disable browser extensions that intercept fetch (e.g. ImageAssistant) and try again.",
+      0,
+    );
+  }
   const body = (await res.json().catch(() => ({}))) as {
     message?: string;
     user?: unknown;
