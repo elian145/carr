@@ -24,18 +24,31 @@ accesslog = "-"
 errorlog = "-"
 loglevel = os.environ.get("LOG_LEVEL", "info").lower()
 
-# Socket.IO: use eventlet/gevent only when a message queue is configured.
-# Without Redis, use gthread (threaded sync workers) which handles HTTP
-# long-polling for Socket.IO correctly.
-# NOTE: For full websocket support you need eventlet or gevent + Redis.
+# Socket.IO worker class MUST match flask-socketio async_mode (kk.app_factory).
+# Default: gthread + threading (safe; Redis message queue still works for fan-out).
+# Opt-in websockets: set SOCKETIO_ASYNC_MODE=eventlet|gevent AND a message queue
+# so the async worker monkey-patches *before* the app is imported.
+# Never pair SOCKETIO_ASYNC_MODE=eventlet with gthread — late monkey_patch hangs workers.
 _sio_async = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
-_use_async_worker = bool(_mq)
+_use_async_worker = bool(_mq) and _sio_async in ("eventlet", "gevent")
 if _use_async_worker and _sio_async == "eventlet":
     worker_class = "eventlet"
 elif _use_async_worker and _sio_async == "gevent":
     worker_class = "gevent"
 else:
     worker_class = "gthread"
+    if _sio_async in ("eventlet", "gevent") and not _mq:
+        # Avoid late monkey_patch under gthread; app_factory should also stay on threading
+        # unless Redis is configured — surface a clear boot warning via stderr.
+        import sys
+
+        print(
+            "WARNING: SOCKETIO_ASYNC_MODE="
+            + _sio_async
+            + " requires REDIS_URL or SOCKETIO_MESSAGE_QUEUE; "
+            "falling back to gthread. Unset SOCKETIO_ASYNC_MODE or set a message queue.",
+            file=sys.stderr,
+        )
 
 # Basic hardening
 limit_request_line = 8190

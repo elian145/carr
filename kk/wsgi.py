@@ -1,8 +1,9 @@
 """
 WSGI entrypoint for production servers (gunicorn/uwsgi).
-Do not call eventlet.monkey_patch() here: with gthread/sync worker it breaks
-gunicorn's main loop. Eventlet worker is only used when REDIS_URL is set (see
-gunicorn.conf.py); use sync/gthread on Render when Redis is not configured.
+Do not call eventlet.monkey_patch() here: that must run before other imports
+(gunicorn's eventlet/gevent worker does it). Default production setup is
+gthread + Socket.IO threading. Opt into eventlet only with SOCKETIO_ASYNC_MODE
+and a Redis message queue (see gunicorn.conf.py).
 """
 from __future__ import annotations
 

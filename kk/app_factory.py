@@ -66,17 +66,26 @@ def _socketio_async_mode(env_name: str, has_message_queue: bool) -> str | None:
     """
     Socket.IO async mode selection.
 
-    - Dev default: threading (no extra deps)
-    - Production: eventlet only when a message queue (e.g. REDIS_URL) is set.
-      Without a message queue we use gthread worker; eventlet would monkey-patch
-      the process and break gunicorn's arbiter ("do not call blocking functions
-      from the mainloop"). Override with SOCKETIO_ASYNC_MODE=eventlet|gevent|threading.
+    Default is always ``threading`` so it matches gunicorn's ``gthread`` worker
+    (see ``gunicorn.conf.py``). Do **not** auto-enable eventlet just because
+    Redis is set: ``flask-socketio`` would call ``eventlet.monkey_patch()`` after
+    Flask/Werkzeug are imported, which under gthread causes
+    "RLock(s) were not greened", request hangs, and worker timeouts.
+
+    For websockets at scale, set both:
+      SOCKETIO_ASYNC_MODE=eventlet  (or gevent)
+      REDIS_URL / SOCKETIO_MESSAGE_QUEUE
+    so gunicorn switches to the matching async worker (which patches first).
     """
     raw = (os.environ.get("SOCKETIO_ASYNC_MODE") or "").strip().lower()
+    if raw in ("eventlet", "gevent"):
+        if not has_message_queue:
+            # gunicorn falls back to gthread without a queue; forcing eventlet here
+            # would monkey_patch too late and hang workers.
+            return "threading"
+        return raw
     if raw:
         return raw
-    if env_name == "production" and has_message_queue:
-        return "eventlet"
     return "threading"
 
 def _socketio_message_queue_url(env_name: str) -> str | None:

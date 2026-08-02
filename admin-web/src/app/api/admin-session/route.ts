@@ -5,12 +5,54 @@ import {
   setAdminSessionCookies,
 } from "@/lib/admin-session-auth";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+/** Render free-tier cold starts can exceed the default serverless budget. */
+export const maxDuration = 60;
+
 function apiBase(): string {
   return (
     process.env.API_PROXY_TARGET ||
     process.env.NEXT_PUBLIC_API_BASE ||
     "http://localhost:5000"
   ).replace(/\/+$/, "");
+}
+
+type JsonBody = Record<string, unknown>;
+
+async function readJson(res: Response): Promise<JsonBody> {
+  return (await res.json().catch(() => ({}))) as JsonBody;
+}
+
+function upstreamMessage(body: JsonBody, fallback: string): string {
+  const msg = typeof body.message === "string" ? body.message.trim() : "";
+  return msg || fallback;
+}
+
+/** Retry transient gateway / connection failures (common while Render wakes up). */
+async function fetchUpstream(
+  url: string,
+  init: RequestInit,
+  attempts = 3,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url, init);
+      if ([502, 503, 504].includes(res.status) && i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+        continue;
+      }
+      return res;
+    } catch (err) {
+      lastError = err;
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+        continue;
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Upstream fetch failed");
 }
 
 /**
@@ -37,7 +79,7 @@ export async function POST(request: Request) {
   const base = apiBase();
   let loginRes: Response;
   try {
-    loginRes = await fetch(`${base}/api/auth/login`, {
+    loginRes = await fetchUpstream(`${base}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
@@ -48,27 +90,28 @@ export async function POST(request: Request) {
     });
   } catch {
     return NextResponse.json(
-      { message: `Cannot reach API at ${base}` },
+      {
+        message: `Cannot reach API at ${base}. If this is Render, wait for the service to wake and try again.`,
+      },
       { status: 502 },
     );
   }
 
-  const loginBody = (await loginRes.json().catch(() => ({}))) as {
-    access_token?: string;
-    token?: string;
-    refresh_token?: string;
-    message?: string;
-    user?: unknown;
-  };
+  const loginBody = await readJson(loginRes);
   if (!loginRes.ok) {
     return NextResponse.json(
-      { message: loginBody.message || "Login failed" },
+      {
+        message: upstreamMessage(
+          loginBody,
+          `API login failed (${loginRes.status}) at ${base}`,
+        ),
+      },
       { status: loginRes.status },
     );
   }
 
-  const token = (loginBody.access_token || loginBody.token || "").trim();
-  const refresh = (loginBody.refresh_token || "").trim();
+  const token = String(loginBody.access_token || loginBody.token || "").trim();
+  const refresh = String(loginBody.refresh_token || "").trim();
   if (!token) {
     return NextResponse.json({ message: "No token in login response" }, { status: 502 });
   }
@@ -81,7 +124,7 @@ export async function POST(request: Request) {
 
   let meRes: Response;
   try {
-    meRes = await fetch(`${base}/api/auth/me`, {
+    meRes = await fetchUpstream(`${base}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
@@ -91,13 +134,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Cannot verify admin session" }, { status: 502 });
   }
 
-  const me = (await meRes.json().catch(() => ({}))) as {
-    is_admin?: boolean;
-    message?: string;
-  };
+  const me = await readJson(meRes);
   if (!meRes.ok) {
     return NextResponse.json(
-      { message: me.message || "Session verification failed" },
+      {
+        message: upstreamMessage(
+          me,
+          `Session verification failed (${meRes.status})`,
+        ),
+      },
       { status: meRes.status },
     );
   }
@@ -109,7 +154,12 @@ export async function POST(request: Request) {
   }
 
   const res = NextResponse.json({ user: me });
-  setAdminSessionCookies(res, token, refresh, cookieSecureFromRequest(request));
+  setAdminSessionCookies(
+    res,
+    token,
+    refresh,
+    cookieSecureFromRequest(request),
+  );
   return res;
 }
 
