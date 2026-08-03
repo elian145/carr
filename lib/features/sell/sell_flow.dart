@@ -73,6 +73,8 @@ import '../../shared/media/media_url.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
+import '../../shared/prefs/sell_pending_media_prefs.dart';
+import 'sell_listing_media_upload.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/listings/drive_type_assets.dart';
 import '../../shared/listings/fuel_type_assets.dart';

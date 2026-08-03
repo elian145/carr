@@ -16,6 +16,7 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../features/sell/sell_pending_media_resume.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';
 import '../features/listing/listing_mappers.dart';
@@ -209,6 +210,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   Future<void> _loadDrafts() async {
     try {
+      // Finish interrupted submit media before showing drafts/listings.
+      final resumed = await SellPendingMediaResume.tryResume();
       final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();
       final modernDraft = await SellListingDraftPrefs.load(ownerKey);
@@ -226,6 +229,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
         _drafts = drafts;
         _loadingDraft = false;
       });
+      if (resumed) {
+        unawaited(_fetch(refresh: true));
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {

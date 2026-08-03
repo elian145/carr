@@ -531,68 +531,82 @@ class _SellReviewCarDetailScrollViewState
     final rawImages = car['images'] is List ? (car['images'] as List) : [];
     final titleContentHeight = _titleContentHeight(context);
     final heroPhotoHeight = _heroPhotoHeight(context);
+    // Match [CarDetailsPage]: collapsing SliverAppBar so the white sheet
+    // scrolls up over the photo (fixed SliverToBoxAdapter cannot collapse).
+    final expandedHeight = heroPhotoHeight + titleContentHeight;
     final sheetOverlap = titleContentHeight > _sheetTopRadius
         ? titleContentHeight - _sheetTopRadius
         : 0.0;
-    final heroBlockHeight = heroPhotoHeight + titleContentHeight;
     final sheetBg = _sheetColor(isLightShell);
 
     return CustomScrollView(
       clipBehavior: Clip.none,
       slivers: [
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: heroBlockHeight,
-            child: Stack(
-              fit: StackFit.expand,
-              clipBehavior: Clip.none,
-              children: [
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: sheetOverlap,
-                  child: media.isEmpty
-                      ? Container(
-                          color: Colors.grey[900],
-                          child: Icon(
-                            Icons.directions_car,
-                            size: 60,
-                            color: Colors.grey[400],
-                          ),
-                        )
-                      : GestureDetector(
-                          onTap: () =>
-                              _openCarouselDetail(context, media, rawImages),
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (idx) =>
-                                setState(() => _currentMediaIndex = idx),
-                            itemCount: media.length,
-                            itemBuilder: (context, index) =>
-                                _buildMediaSlide(media[index]),
-                          ),
+        // Same collapse primitive as car details hero — no toolbar chrome
+        // inside the sell wizard.
+        // Title lives in flexibleSpace (not `bottom`) so SliverAppBar's
+        // collapsing bottomOpacity cannot fade the white sheet over the photo.
+        SliverAppBar(
+          pinned: false,
+          stretch: true,
+          forceMaterialTransparency: true,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          clipBehavior: Clip.none,
+          automaticallyImplyLeading: false,
+          toolbarHeight: 0,
+          expandedHeight: expandedHeight,
+          flexibleSpace: Stack(
+            fit: StackFit.expand,
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: sheetOverlap,
+                child: media.isEmpty
+                    ? Container(
+                        color: Colors.grey[900],
+                        child: Icon(
+                          Icons.directions_car,
+                          size: 60,
+                          color: Colors.grey[400],
                         ),
-                ),
-                if (media.length > 1)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: titleContentHeight + 12,
-                    child: IgnorePointer(
-                      ignoring: true,
-                      child: Center(child: _buildCarouselDots(media.length)),
-                    ),
-                  ),
+                      )
+                    : GestureDetector(
+                        onTap: () =>
+                            _openCarouselDetail(context, media, rawImages),
+                        child: PageView.builder(
+                          controller: _pageController,
+                          onPageChanged: (idx) =>
+                              setState(() => _currentMediaIndex = idx),
+                          itemCount: media.length,
+                          itemBuilder: (context, index) =>
+                              _buildMediaSlide(media[index]),
+                        ),
+                      ),
+              ),
+              if (media.length > 1)
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 0,
-                  height: titleContentHeight,
-                  child: _buildTitleHeader(context, isLightShell),
+                  bottom: titleContentHeight + 12,
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: Center(child: _buildCarouselDots(media.length)),
+                  ),
                 ),
-              ],
-            ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: titleContentHeight,
+                child: _buildTitleHeader(context, isLightShell),
+              ),
+            ],
           ),
         ),
         SliverToBoxAdapter(

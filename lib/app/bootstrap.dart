@@ -15,6 +15,7 @@ import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
+import '../features/sell/sell_pending_media_resume.dart';
 import '../shared/debug/app_log.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
@@ -86,6 +87,10 @@ void _runZonedApp(Widget app) {
         } catch (e, st) { logNonFatal(e, st); }
         try {
           await AuthService().initialize();
+        } catch (e, st) { logNonFatal(e, st); }
+        // Finish media upload if the app was killed mid-submit.
+        try {
+          await SellPendingMediaResume.tryResume();
         } catch (e, st) { logNonFatal(e, st); }
         // Auth must finish before syncing FCM token to the backend.
         try {

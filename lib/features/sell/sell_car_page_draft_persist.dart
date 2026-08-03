@@ -106,9 +106,22 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     } catch (e, st) { logNonFatal(e, st); }
   }
 
+  /// Blocks dispose/async draft saves while create→upload is in flight.
+  void _beginSubmitDraftHandoff() {
+    _skipDraftPersistOnDispose = true;
+    LegacySellDraftPrefs.invalidatePersist();
+  }
+
+  /// Create failed before a listing existed — allow draft saves again.
+  void _abortSubmitDraftHandoff() {
+    _skipDraftPersistOnDispose = false;
+    LegacySellDraftPrefs.allowPersist();
+  }
+
   Future<void> _clearSubmittedDraftOnly({String? draftId}) async {
     try {
       _skipDraftPersistOnDispose = true;
+      LegacySellDraftPrefs.invalidatePersist();
       final sp = await SharedPreferences.getInstance();
       final String resolvedDraftId =
           (draftId ?? _currentDraftId).toString().trim();

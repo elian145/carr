@@ -1,100 +1,6 @@
 part of 'sell_flow.dart';
 
 mixin _SellStep5Logic on _SellStep5Fields {
-  String? _imageUrlFromApiDict(dynamic item) {
-    if (item is Map) {
-      return (item['image_url'] ?? item['url'] ?? item['path'] ?? '')
-          .toString()
-          .trim();
-    }
-    return item?.toString().trim();
-  }
-
-  void _collectUploadedImageIds(
-    Map<String, int> idsBySource,
-    List<dynamic> sourceItems,
-    Map<String, dynamic>? response,
-  ) {
-    final rows = response?['images'] ?? response?['uploaded'];
-    if (rows is! List) return;
-    for (var i = 0; i < sourceItems.length && i < rows.length; i++) {
-      final row = rows[i];
-      if (row is! Map) continue;
-      final id = int.tryParse((row['id'] ?? '').toString());
-      final source = ListingImageMedia.source(sourceItems[i]);
-      if (id != null && source.isNotEmpty) idsBySource[source] = id;
-    }
-  }
-
-  Future<void> _saveListingImageLayout(
-    String carId,
-    List<dynamic> orderedImages,
-    Map<String, int> idsBySource,
-  ) async {
-    final payload = <Map<String, dynamic>>[];
-    for (var i = 0; i < orderedImages.length; i++) {
-      final item = orderedImages[i];
-      final source = ListingImageMedia.source(item);
-      final id = ListingImageMedia.id(item) ?? idsBySource[source];
-      if (id == null) continue;
-      final row = <String, dynamic>{
-        'id': id,
-        'order': i,
-        'is_primary': i == 0,
-        'focus_y': ListingImageMedia.focusY(item),
-      };
-      final width = ListingImageMedia.width(item);
-      final height = ListingImageMedia.height(item);
-      if (width != null) row['image_width'] = width;
-      if (height != null) row['image_height'] = height;
-      payload.add(row);
-    }
-    if (payload.isNotEmpty) {
-      await ApiService.updateCarImageLayout(carId, payload);
-    }
-  }
-
-  String? _primaryListingImageRef(
-    dynamic firstImage, {
-    Map<String, dynamic>? listingMediaResponse,
-  }) {
-    final s = ListingImageMedia.source(firstImage);
-    if (s.startsWith('http://') ||
-        s.startsWith('https://') ||
-        s.startsWith('uploads/') ||
-        s.startsWith('static/') ||
-        s.startsWith('/static/')) {
-      return s;
-    }
-    if (listingMediaResponse != null) {
-      final dynamic responseImages =
-          listingMediaResponse['images'] ?? listingMediaResponse['uploaded'];
-      if (responseImages is List && responseImages.isNotEmpty) {
-        final url = _imageUrlFromApiDict(responseImages.first);
-        if (url != null && url.isNotEmpty) return url;
-      }
-    }
-    return null;
-  }
-
-  Future<void> _applyPrimaryListingImage(
-    String carId,
-    List<dynamic> orderedImages, {
-    Map<String, dynamic>? listingMediaResponse,
-  }) async {
-    if (orderedImages.isEmpty) return;
-    final primaryRef = _primaryListingImageRef(
-      orderedImages.first,
-      listingMediaResponse: listingMediaResponse,
-    );
-    if (primaryRef == null || primaryRef.isEmpty) return;
-    try {
-      await ApiService.setCarPrimaryImage(carId, primaryRef);
-    } catch (e, st) {
-      logNonFatal(e, st);
-    }
-  }
-
   /// Returns submit result on success so caller can navigate and show the right copy.
   Future<SellListingSubmitResult?> _submitListing(
     Map<String, dynamic> carData, {
@@ -107,6 +13,9 @@ mixin _SellStep5Logic on _SellStep5Fields {
     }
 
     final payload = buildSellCarCreatePayload(carData);
+    final draftId = parentState?._currentDraftId.isNotEmpty == true
+        ? parentState!._currentDraftId
+        : 'default';
 
     try {
       final editId =
@@ -140,16 +49,19 @@ mixin _SellStep5Logic on _SellStep5Fields {
           throw Exception(e.message);
         }
       } else {
+        // Block dispose/async draft saves for the create→upload window so a
+        // killed submit cannot leave both a listing and a draft.
+        parentState?._beginSubmitDraftHandoff();
         try {
           final created = await ApiService.createCar(
             payload,
-            idempotencyKey:
-                '${DateTime.now().microsecondsSinceEpoch}-${math.Random().nextInt(1 << 32)}',
+            idempotencyKey: SellPendingMediaPrefs.createIdempotencyKey(draftId),
           );
           final carObj = unwrapCarApiPayload(created);
           carId = listingPrimaryId(carObj);
           pendingReview = isListingPendingReview(carObj);
         } on ApiException catch (e) {
+          parentState?._abortSubmitDraftHandoff();
           if (e.statusCode == 401) {
             _debugLog('Submission failed: Authentication failed');
             throw Exception('Authentication failed. Please log in again.');
@@ -166,6 +78,9 @@ mixin _SellStep5Logic on _SellStep5Fields {
             }
           }
           throw Exception(msg);
+        } catch (e) {
+          parentState?._abortSubmitDraftHandoff();
+          rethrow;
         }
       }
 
@@ -174,9 +89,34 @@ mixin _SellStep5Logic on _SellStep5Fields {
         unawaited(AppHaptics.success());
         // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
         try {
-          final draftId = parentState?._currentDraftId.isNotEmpty == true
-              ? parentState!._currentDraftId
-              : 'default';
+          // Hide the draft as soon as the server listing exists so a kill
+          // during media prep/upload cannot show listing + draft.
+          if (editId.isEmpty) {
+            await SellPendingMediaPrefs.save(
+              carId: carId,
+              draftId: draftId,
+              carData: carData,
+              pendingReview: pendingReview,
+            );
+            if (parentState != null) {
+              await parentState._clearSubmittedDraftOnly(draftId: draftId);
+            } else {
+              LegacySellDraftPrefs.invalidatePersist();
+              final sp = await SharedPreferences.getInstance();
+              await LegacySellDraftPrefs.clearActiveStorage();
+              final archive = _decodeSellDraftArchive(
+                sp.getString(_sellDraftArchiveKey),
+              );
+              archive.removeWhere(
+                (item) => item['draftId']?.toString() == draftId,
+              );
+              await sp.setString(
+                _sellDraftArchiveKey,
+                _encodeSellDraftArchive(archive),
+              );
+            }
+          }
+
           final storedMedia =
               await SellDraftMediaPersistence.prepareCarDataForStorage(
                 carData,
@@ -185,7 +125,15 @@ mixin _SellStep5Logic on _SellStep5Fields {
           carData['images'] = storedMedia['images'];
           carData['damage_images'] = storedMedia['damage_images'];
           carData['videos'] = storedMedia['videos'];
-          if (parentState != null && parentState.mounted) {
+          // Refresh pending paths after durable media copy.
+          if (editId.isEmpty) {
+            await SellPendingMediaPrefs.save(
+              carId: carId,
+              draftId: draftId,
+              carData: carData,
+              pendingReview: pendingReview,
+            );
+          } else if (parentState != null && parentState.mounted) {
             parentState.setState(() {
               parentState.carData['images'] = carData['images'];
               parentState.carData['damage_images'] = carData['damage_images'];
@@ -193,185 +141,12 @@ mixin _SellStep5Logic on _SellStep5Fields {
             });
           }
 
-          final dynamic maybeImgs = carData['images'];
-          final List<dynamic> imgsRaw =
-              (maybeImgs is List) ? maybeImgs : const [];
-          final List<dynamic> imgs = sellImagesWithPrimaryFirst(
-            imgsRaw,
-            primaryIndex: sellPrimaryImageIndex(
-              carData,
-              length: imgsRaw.length,
-            ),
+          await SellListingMediaUpload.uploadForCar(
+            carId: carId,
+            carData: carData,
+            multipartFileBuilder: _buildVideoMultipartFile,
           );
-          final dynamic maybeVideos = carData['videos'];
-          final List<dynamic> vids = (maybeVideos is List)
-              ? maybeVideos
-              : const [];
-          final List<XFile> toUpload = <XFile>[];
-          final List<String> toAttach = <String>[];
-          final List<dynamic> uploadItems = <dynamic>[];
-          final List<dynamic> attachItems = <dynamic>[];
-          final Map<String, int> imageIdsBySource = <String, int>{};
-          final List<XFile> videosToUpload =
-              SellDraftMediaPersistence.xFilesForUpload(vids);
-          for (final dynamic img in imgs) {
-            final existingId = ListingImageMedia.id(img);
-            final source = ListingImageMedia.source(img);
-            if (existingId != null && source.isNotEmpty) {
-              imageIdsBySource[source] = existingId;
-            }
-            final local = ListingImageMedia.localFile(img);
-            if (local != null && File(local.path).existsSync()) {
-              toUpload.add(local);
-              uploadItems.add(img);
-            } else {
-              final s = source;
-              // If it's a server-relative path (from "Blur Plates"), attach it; don't treat it as a local file.
-              if (s.startsWith('uploads/') ||
-                  s.startsWith('static/') ||
-                  s.startsWith('/static/')) {
-                if (existingId == null) {
-                  toAttach.add(s);
-                  attachItems.add(img);
-                }
-              } else if (s.startsWith('http://') || s.startsWith('https://')) {
-                if (existingId == null) {
-                  toAttach.add(s);
-                  attachItems.add(img);
-                }
-              }
-            }
-          }
-          Map<String, dynamic>? latestMediaResponse;
-          if (toAttach.isNotEmpty) {
-            final attachResponse = await CarService().attachCarImages(
-              carId,
-              toAttach,
-            );
-            latestMediaResponse = attachResponse;
-            _collectUploadedImageIds(
-              imageIdsBySource,
-              attachItems,
-              attachResponse,
-            );
-          }
-          if (toUpload.isNotEmpty) {
-            // No blur on submit; backend is called with skip_blur=1
-            final uploadResponse = await CarService().uploadCarImages(
-              carId,
-              toUpload,
-            );
-            latestMediaResponse = uploadResponse;
-            _collectUploadedImageIds(
-              imageIdsBySource,
-              uploadItems,
-              uploadResponse,
-            );
-          }
-          if (imgs.isNotEmpty) {
-            await _applyPrimaryListingImage(
-              carId,
-              imgs,
-              listingMediaResponse: latestMediaResponse,
-            );
-          }
-          await _saveListingImageLayout(carId, imgs, imageIdsBySource);
-          if (videosToUpload.isNotEmpty) {
-            try {
-              final payload = await ApiService.uploadCarVideos(
-                carId,
-                videosToUpload,
-                multipartFileBuilder: _buildVideoMultipartFile,
-              );
-              final uploaded = payload['videos'];
-              final uploadedCount = uploaded is List ? uploaded.length : 0;
-              if (uploadedCount == 0) {
-                _debugLog(
-                  'Video upload returned success but 0 videos: $payload',
-                );
-                if (mounted) {
-                  final rawMsg = (payload['message'] ?? '').toString().trim();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        userErrorText(
-                          context,
-                          rawMsg.isNotEmpty
-                              ? ApiException(statusCode: 400, message: rawMsg)
-                              : Exception('no videos uploaded'),
-                          fallback:
-                              AppLocalizations.of(context)?.errorTitle ??
-                              'Error',
-                        ),
-                      ),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                }
-              }
-            } on ApiException catch (e) {
-              _debugLog('Video upload failed: ${e.statusCode} ${e.message}');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      userErrorText(
-                        context,
-                        e,
-                        fallback:
-                            AppLocalizations.of(context)?.errorTitle ?? 'Error',
-                      ),
-                    ),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            } catch (e, st) {
-              logNonFatal(e, st);
-            }
-          }
-          final dynamic maybeDmg = carData['damage_images'];
-          final List<dynamic> dimgs = (maybeDmg is List) ? maybeDmg : const [];
-          final List<XFile> damageToUpload = <XFile>[];
-          final List<String> damageToAttach = <String>[];
-          for (final dynamic img in dimgs) {
-            if (img is XFile) {
-              if (File(img.path).existsSync()) {
-                damageToUpload.add(img);
-              }
-            } else if (img is String) {
-              final s = img.trim();
-              if (s.startsWith('uploads/') ||
-                  s.startsWith('static/') ||
-                  s.startsWith('/static/')) {
-                damageToAttach.add(s);
-              } else if (s.startsWith('http://') || s.startsWith('https://')) {
-                // Skip absolute URLs for attach/upload here.
-              } else if (File(s).existsSync()) {
-                damageToUpload.add(XFile(s));
-              }
-            }
-          }
-          if (damageToAttach.isNotEmpty) {
-            await CarService().attachCarImages(
-              carId,
-              damageToAttach,
-              kind: 'damage',
-            );
-          }
-          if (damageToUpload.isNotEmpty) {
-            await CarService().uploadCarImages(
-              carId,
-              damageToUpload,
-              imageKind: 'damage',
-            );
-          }
-          // Refresh list so new listing has server-confirmed image_url/images before success/navigation
-          try {
-            await CarService().getCars(refresh: true);
-          } catch (e, st) {
-            logNonFatal(e, st);
-          }
+
           // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
           if (mounted) {
             final svc = CarService();
@@ -441,8 +216,10 @@ mixin _SellStep5Logic on _SellStep5Fields {
               }
             }
           }
+          await SellPendingMediaPrefs.clear();
         } catch (e, st) {
           logNonFatal(e, st, 'sell_step5.uploadMedia');
+          // Keep pending media so a cold start can finish the upload.
           if (!mounted) {
             return SellListingSubmitResult(
               id: carId,

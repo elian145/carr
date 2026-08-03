@@ -200,13 +200,13 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         child: SizedBox(
-          height: 30,
+          height: 40,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: chips.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, index) => chips[index],
           ),
         ),
