@@ -345,6 +345,15 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     if (_canManageOwnListing) ...[
                       Semantics(
                         button: true,
+                        label: AppLocalizations.of(context)!.analyticsTitle,
+                        child: IconButton(
+                          tooltip: AppLocalizations.of(context)!.analyticsTitle,
+                          onPressed: _showOwnListingAnalytics,
+                          icon: const Icon(Icons.insights_outlined),
+                        ),
+                      ),
+                      Semantics(
+                        button: true,
                         label: _isListingSold
                             ? AppLocalizations.of(context)!.markAsAvailable
                             : AppLocalizations.of(context)!.markAsSold,

@@ -2252,7 +2252,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listingContactPhonesHint =>
-      'يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز قبل المتابعة.';
+      'يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز. يمكنك إزالة رقمك الافتراضي بعد التحقق من رقم آخر.';
 
   @override
   String get addPhoneNumber => 'إضافة رقم هاتف';
@@ -2298,15 +2298,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get damageCrashPhotos => 'صور الضرر / الحادث';
-
-  @override
-  String
-  get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery =>
-      'تظهر بجانب حالة الملكية في إعلانك. لا تُدمج مع معرض الصور الرئيسي.';
-
-  @override
-  String get addPhotosFirstPlatesArePreparedAutomatically =>
-      'أضف الصور أولاً — يتم تجهيز اللوحات تلقائياً';
 
   @override
   String get photos => 'الصور';

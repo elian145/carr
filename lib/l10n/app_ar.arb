@@ -721,7 +721,7 @@
   "whatsappPhoneNumber": "رقم واتساب/الهاتف",
   "whatsappPhoneNumber2": "رقم واتساب/الهاتف *",
   "listingContactPhonesTitle": "أرقام التواصل",
-  "listingContactPhonesHint": "يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز قبل المتابعة.",
+  "listingContactPhonesHint": "يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز. يمكنك إزالة رقمك الافتراضي بعد التحقق من رقم آخر.",
   "addPhoneNumber": "إضافة رقم هاتف",
   "listingContactPhoneN": "الهاتف {n}",
   "@listingContactPhoneN": {
@@ -742,8 +742,6 @@
   "invalidPrice": "سعر غير صالح",
   "priceCannotBeNegative": "لا يمكن أن يكون السعر سالبا",
   "damageCrashPhotos": "صور الضرر / الحادث",
-  "shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery": "تظهر بجانب حالة الملكية في إعلانك. لا تُدمج مع معرض الصور الرئيسي.",
-  "addPhotosFirstPlatesArePreparedAutomatically": "أضف الصور أولاً — يتم تجهيز اللوحات تلقائياً",
   "photos": "الصور",
   "tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing": "اضغط على النجمة على الصورة لتعيينها كصورة الغلاف التي تظهر أولاً في إعلانك.",
   "cover": "الغلاف",

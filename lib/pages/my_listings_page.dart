@@ -8,17 +8,13 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
-import '../services/analytics_service.dart';
-import '../models/analytics_model.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
-import '../shared/ui/responsive.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
-import '../shared/text/pretty_title_case.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';
@@ -477,24 +473,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                 }
 
                                 final car = _cars[index - draftCount];
-                                final id = listingPrimaryId(car);
 
                                 final mapped = mapListingToGlobalCarCardData(
                                   context,
                                   car,
                                 );
-                                final card = buildGlobalCarCard(
+                                return buildGlobalCarCard(
                                   context,
                                   mapped,
                                   listLayout: listingColumns == 1,
                                   allowOwnerManagementOnOpen: true,
-                                );
-
-                                return _buildOwnedListingTile(
-                                  car: car,
-                                  id: id,
-                                  card: card,
-                                  loc: loc,
                                 );
                               },
                             );
@@ -527,7 +515,20 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
     return Scaffold(
       backgroundColor: isLightShell ? Colors.white : null,
-      appBar: AppBar(title: Text(loc?.myListingsTitle ?? 'My listings')),
+      appBar: AppBar(
+        title: Text(loc?.myListingsTitle ?? 'My listings'),
+        leading: Navigator.of(context).canPop()
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/',
+                    (route) => false,
+                  );
+                },
+              ),
+      ),
       body: isLightShell
           ? bodyChild
           : Container(

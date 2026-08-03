@@ -721,7 +721,7 @@
   "whatsappPhoneNumber": "ژمارەی واتساپ/مۆبایل",
   "whatsappPhoneNumber2": "ژمارەی واتساپ/مۆبایل *",
   "listingContactPhonesTitle": "ژمارەکانی پەیوەندی",
-  "listingContactPhonesHint": "دەتوانیت تا ٣ ژمارە زیاد بکەیت. پێش بەردەوامبوون هەر ژمارەیەک بە کۆد پشتڕاست بکەوە.",
+  "listingContactPhonesHint": "دەتوانیت تا ٣ ژمارە زیاد بکەیت. هەر ژمارەیەک بە کۆد پشتڕاست بکەوە. دوای پشتڕاستکردنەوەی ژمارەیەکی تر دەتوانیت ژمارەی بنەڕەتی لاببەیت.",
   "addPhoneNumber": "زیادکردنی ژمارەی تەلەفۆن",
   "listingContactPhoneN": "تەلەفۆن {n}",
   "@listingContactPhoneN": {
@@ -742,8 +742,6 @@
   "invalidPrice": "نرخی نادروست",
   "priceCannotBeNegative": "نرخ ناتوانێت سالب بێت",
   "damageCrashPhotos": "وێنەی زیان / ڕووداو",
-  "shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery": "لەگەڵ دۆکی تایتڵ دەردەکەوێت، ناچێتە ناو گەلەری وێنەی سەرەکی.",
-  "addPhotosFirstPlatesArePreparedAutomatically": "سەرەتا وێنە زیاد بکە — تابلۆ خۆکارانە ئامادە دەکرێت",
   "photos": "وێنەکان",
   "tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing": "کرتە بکە لە ئەستێرەکە لەسەر وێنەکە بۆ ئەوەی وەک وێنەی سەرەکی یەکەم لە ڕیکلامەکەتدا دەربکەوێت.",
   "cover": "سەرەکی",

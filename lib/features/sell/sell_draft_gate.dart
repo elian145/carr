@@ -486,7 +486,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             _buildStepProgress(stepIndex),
             const SizedBox(height: 8),
             Text(
-              '${AppLocalizations.of(context)!.stepXOf5(stepIndex + 1)} · ${SellWizardSteps.progressPercent(stepIndex)}%',
+              AppLocalizations.of(context)!.stepXOf5(stepIndex + 1),
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

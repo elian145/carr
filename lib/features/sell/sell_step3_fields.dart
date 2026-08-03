@@ -44,6 +44,15 @@ mixin _SellStep3Fields on State<SellStep3Page> {
     return false;
   }
 
+  /// True when another phone row (not [index]) has digits entered.
+  bool _hasContactPhoneDigitsBesides(int index) {
+    for (var i = 0; i < _phoneControllers.length; i++) {
+      if (i == index) continue;
+      if (_phoneControllers[i].text.trim().isNotEmpty) return true;
+    }
+    return false;
+  }
+
   List<String> _collectContactPhonesFromControllers() {
     final out = <String>[];
     final seen = <String>{};

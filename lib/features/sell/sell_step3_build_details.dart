@@ -153,6 +153,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
     final label = index == 0
         ? loc.whatsappPhoneNumber2
         : loc.listingContactPhoneN(index + 1);
+    final canRemove = _phoneControllers.length > 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -176,7 +177,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
               borderRadius: BorderRadius.circular(12),
             ),
             prefixIcon: const Icon(Icons.phone, color: kFilterAccentColor),
-            suffixIcon: index > 0
+            suffixIcon: canRemove
                 ? IconButton(
                     tooltip: loc.removeAction,
                     onPressed: () {
@@ -209,18 +210,11 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
           },
           validator: (value) {
             final trimmed = value?.trim() ?? '';
-            if (index > 0) {
-              if (trimmed.isEmpty) return null;
-              if (trimmed.length < 10) {
-                return loc.pleaseEnterAValidPhoneNumber;
-              }
-              if (_isDuplicateContactPhoneDigits(trimmed, index)) {
-                return loc.duplicateContactPhoneError;
-              }
-              return null;
-            }
             if (trimmed.isEmpty) {
-              return loc.pleaseEnterPhoneNumber;
+              // Empty row is fine when another number is present (e.g. user
+              // removed/cleared the default account phone after verifying another).
+              if (_hasContactPhoneDigitsBesides(index)) return null;
+              return index == 0 ? loc.pleaseEnterPhoneNumber : null;
             }
             if (trimmed.length < 10) {
               return loc.pleaseEnterAValidPhoneNumber;

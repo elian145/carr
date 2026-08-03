@@ -9,6 +9,7 @@ mixin _SellStep3Catalog on _SellStep3Fields {
     _descriptionController.text = '';
     _resetStep3();
     _hydrateFromParentCarData();
+    _defaultContactPhoneFromUserIfEmpty();
   }
 
   List<String> _phonesFromCarData(Map<String, dynamic> data) {
@@ -25,6 +26,23 @@ mixin _SellStep3Catalog on _SellStep3Fields {
       if (single.isNotEmpty) out.add(single);
     }
     return out.take(_SellStep3Fields.maxContactPhones).toList();
+  }
+
+  /// Prefill the first contact phone with the signed-in account number.
+  void _defaultContactPhoneFromUserIfEmpty() {
+    if (contactPhones.isNotEmpty) return;
+    final raw = (context.read<AuthService>().userPhone ?? '').trim();
+    if (raw.isEmpty) return;
+    final digits = _localPhoneDigits(raw);
+    if (digits.isEmpty) return;
+    final full = '+964$digits';
+    contactPhones = <String>[full];
+    contactPhone = full;
+    _applyContactPhonesToControllers(contactPhones);
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    if (parentState == null) return;
+    parentState.carData['contact_phone'] = contactPhone;
+    parentState.carData['contact_phones'] = List<String>.from(contactPhones);
   }
 
   void _hydrateFromParentCarData() {

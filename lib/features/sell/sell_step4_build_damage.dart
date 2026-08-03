@@ -17,11 +17,6 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
               title: AppLocalizations.of(context)!.damageCrashPhotos,
               valueSummary: countLabel,
             ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context)!.shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery,
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-            ),
             const SizedBox(height: 12),
             if (hasDamage)
               LayoutBuilder(

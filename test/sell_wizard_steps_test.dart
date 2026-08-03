@@ -12,10 +12,7 @@ void main() {
     expect(SellWizardSteps.clampIndex(99), SellWizardSteps.lastIndex);
   });
 
-  test('SellWizardSteps progress percent spans 17%…100% (UX-01)', () {
-    expect(SellWizardSteps.progressPercent(0), 17);
-    expect(SellWizardSteps.progressPercent(2), 50);
-    expect(SellWizardSteps.progressPercent(SellWizardSteps.lastIndex), 100);
+  test('SellWizardSteps progress fraction spans first…last step (UX-01)', () {
     expect(SellWizardSteps.progressFraction(0), closeTo(1 / 6, 1e-9));
     expect(SellWizardSteps.progressFraction(99), 1.0);
   });

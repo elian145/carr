@@ -752,7 +752,7 @@
   "whatsappPhoneNumber": "WhatsApp/Phone Number",
   "whatsappPhoneNumber2": "WhatsApp/Phone Number *",
   "listingContactPhonesTitle": "Contact phone numbers",
-  "listingContactPhonesHint": "Add up to 3 numbers. Verify each with a code before continuing.",
+  "listingContactPhonesHint": "Add up to 3 numbers. Verify each with a code. You can remove your default number after verifying another.",
   "addPhoneNumber": "Add phone number",
   "listingContactPhoneN": "Phone {n}",
   "@listingContactPhoneN": {
@@ -781,8 +781,6 @@
   "invalidPrice": "Invalid price",
   "priceCannotBeNegative": "Price cannot be negative",
   "damageCrashPhotos": "Damage / crash photos",
-  "shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery": "Shown next to title status on your listing. Not mixed into the main photo gallery.",
-  "addPhotosFirstPlatesArePreparedAutomatically": "Add photos first — plates are prepared automatically",
   "photos": "Photos",
   "tapTheStarOnAPhotoToSetItAsTheCoverImageShownFirstInYourListing": "Tap the star on a photo to set it as the cover image shown first in your listing.",
   "cover": "Cover",

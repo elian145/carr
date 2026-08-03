@@ -2270,7 +2270,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listingContactPhonesHint =>
-      'Add up to 3 numbers. Verify each with a code before continuing.';
+      'Add up to 3 numbers. Verify each with a code. You can remove your default number after verifying another.';
 
   @override
   String get addPhoneNumber => 'Add phone number';
@@ -2318,15 +2318,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get damageCrashPhotos => 'Damage / crash photos';
-
-  @override
-  String
-  get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery =>
-      'Shown next to title status on your listing. Not mixed into the main photo gallery.';
-
-  @override
-  String get addPhotosFirstPlatesArePreparedAutomatically =>
-      'Add photos first — plates are prepared automatically';
 
   @override
   String get photos => 'Photos';

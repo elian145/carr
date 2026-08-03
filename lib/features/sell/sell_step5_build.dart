@@ -292,14 +292,15 @@ mixin _SellStep5Build on _SellStep5Logic {
                                     );
                                   } catch (e, st) { logNonFatal(e, st); }
 
-                                  // Send sellers to My Listings (Pending tab when under review)
+                                  // Send sellers to My Listings (Pending tab when under review).
+                                  // Keep the home route so Back returns to the main shell.
                                   try {
                                     Navigator.of(
                                       context,
                                       rootNavigator: true,
                                     ).pushNamedAndRemoveUntil(
                                       '/my_listings',
-                                      (route) => false,
+                                      ModalRoute.withName('/'),
                                       arguments: <String, dynamic>{
                                         if (pending) 'filter': 'pending',
                                       },

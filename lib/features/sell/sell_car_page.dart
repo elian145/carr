@@ -95,15 +95,15 @@ class _SellCarPageState extends _SellCarPageFields
           child: Column(
             children: [
               if (!_isEditMode) _buildDraftBanner(),
-              // Progress indicator (segments + percent — UX-01)
+              // Progress indicator (segments — UX-01)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Semantics(
-                      label:
-                          '${AppLocalizations.of(context)!.stepXOf5(currentStep + 1)}, ${SellWizardSteps.progressPercent(currentStep)}%',
+                      label: AppLocalizations.of(context)!
+                          .stepXOf5(currentStep + 1),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(2),
                         child: LinearProgressIndicator(
@@ -155,7 +155,8 @@ class _SellCarPageState extends _SellCarPageFields
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${AppLocalizations.of(context)!.stepXOf5(currentStep + 1)} · ${SellWizardSteps.progressPercent(currentStep)}%',
+                      AppLocalizations.of(context)!
+                          .stepXOf5(currentStep + 1),
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],

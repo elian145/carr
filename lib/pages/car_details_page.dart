@@ -25,6 +25,7 @@ import '../pages/listing_image_gallery_page.dart';
 import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../models/analytics_model.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/ui/app_haptics.dart';
@@ -46,6 +47,7 @@ import '../shared/media/media_url.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/text/pretty_title_case.dart';
 import '../shared/trust/report_dialog.dart';
+import '../shared/ui/responsive.dart';
 import '../theme_provider.dart';
 import '../widgets/network_video_thumbnail.dart';
 

@@ -16,8 +16,4 @@ abstract final class SellWizardSteps {
 
   /// Fraction of the wizard completed for the current step (1-based), in `0…1`.
   static double progressFraction(num step) => (clampIndex(step) + 1) / count;
-
-  /// Whole-number percent for UI labels (UX-01), e.g. step 0 → 17, last → 100.
-  static int progressPercent(num step) =>
-      (progressFraction(step) * 100).round();
 }

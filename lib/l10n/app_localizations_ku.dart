@@ -2272,7 +2272,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get listingContactPhonesHint =>
-      'دەتوانیت تا ٣ ژمارە زیاد بکەیت. پێش بەردەوامبوون هەر ژمارەیەک بە کۆد پشتڕاست بکەوە.';
+      'دەتوانیت تا ٣ ژمارە زیاد بکەیت. هەر ژمارەیەک بە کۆد پشتڕاست بکەوە. دوای پشتڕاستکردنەوەی ژمارەیەکی تر دەتوانیت ژمارەی بنەڕەتی لاببەیت.';
 
   @override
   String get addPhoneNumber => 'زیادکردنی ژمارەی تەلەفۆن';
@@ -2318,15 +2318,6 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get damageCrashPhotos => 'وێنەی زیان / ڕووداو';
-
-  @override
-  String
-  get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery =>
-      'لەگەڵ دۆکی تایتڵ دەردەکەوێت، ناچێتە ناو گەلەری وێنەی سەرەکی.';
-
-  @override
-  String get addPhotosFirstPlatesArePreparedAutomatically =>
-      'سەرەتا وێنە زیاد بکە — تابلۆ خۆکارانە ئامادە دەکرێت';
 
   @override
   String get photos => 'وێنەکان';

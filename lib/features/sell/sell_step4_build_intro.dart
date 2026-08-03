@@ -38,12 +38,6 @@ mixin _SellStep4BuildIntro on _SellStep4Logic {
                 color: Colors.grey[800],
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context)!.addPhotosFirstPlatesArePreparedAutomatically,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),

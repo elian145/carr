@@ -4342,7 +4342,7 @@ abstract class AppLocalizations {
   /// No description provided for @listingContactPhonesHint.
   ///
   /// In en, this message translates to:
-  /// **'Add up to 3 numbers. Verify each with a code before continuing.'**
+  /// **'Add up to 3 numbers. Verify each with a code. You can remove your default number after verifying another.'**
   String get listingContactPhonesHint;
 
   /// No description provided for @addPhoneNumber.
@@ -4422,18 +4422,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Damage / crash photos'**
   String get damageCrashPhotos;
-
-  /// No description provided for @shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery.
-  ///
-  /// In en, this message translates to:
-  /// **'Shown next to title status on your listing. Not mixed into the main photo gallery.'**
-  String get shownNextToTitleStatusOnYourListingNotMixedIntoTheMainPhotoGallery;
-
-  /// No description provided for @addPhotosFirstPlatesArePreparedAutomatically.
-  ///
-  /// In en, this message translates to:
-  /// **'Add photos first — plates are prepared automatically'**
-  String get addPhotosFirstPlatesArePreparedAutomatically;
 
   /// No description provided for @photos.
   ///
