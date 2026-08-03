@@ -652,29 +652,32 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: _accountTypeCard(
-                              context: context,
-                              selected: !_isDealer,
-                              icon: Icons.person_outline_rounded,
-                              label: loc.personalAccountLabel,
-                              onTap: () => _setAccountType(false),
+                      // Needed so stretch works under SingleChildScrollView.
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _accountTypeCard(
+                                context: context,
+                                selected: !_isDealer,
+                                icon: Icons.person_outline_rounded,
+                                label: loc.personalAccountLabel,
+                                onTap: () => _setAccountType(false),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _accountTypeCard(
-                              context: context,
-                              selected: _isDealer,
-                              icon: Icons.storefront_outlined,
-                              label: loc.dealerFallbackLabel,
-                              onTap: () => _setAccountType(true),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _accountTypeCard(
+                                context: context,
+                                selected: _isDealer,
+                                icon: Icons.storefront_outlined,
+                                label: loc.dealerFallbackLabel,
+                                onTap: () => _setAccountType(true),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 20),
                       TextFormField(
