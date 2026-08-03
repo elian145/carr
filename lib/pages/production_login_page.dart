@@ -455,19 +455,26 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: border, width: selected ? 2 : 1),
+            border: Border.all(
+              color: border,
+              width: 2,
+            ),
           ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, color: ink, size: 26),
               const SizedBox(height: 8),
               Text(
                 label,
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: ink,
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
+                  height: 1.2,
                 ),
               ),
             ],
@@ -646,6 +653,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 10),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
                             child: _accountTypeCard(
