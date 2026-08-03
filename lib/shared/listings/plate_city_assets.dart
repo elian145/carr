@@ -17,11 +17,13 @@ const Map<String, String> kPlateCityCodes = {
   'Anbar': '15',
   'Halabja': '23',
   'Diyala': '20',
-  'Diyarbakir': '21', // Turkish Diyarbakır province code
   'Maysan': '13',
   'Muthanna': '17',
+  'Qadisiyyah': '16',
+  'Babil': '18',
   'Dhi Qar': '27',
   'Salaheldeen': '26',
+  'Wasit': '29',
 };
 
 /// Official reference sheet (source for plate-city PNGs).
@@ -68,11 +70,13 @@ const List<String> kPlateCityFilterOptions = [
   'Anbar',
   'Halabja',
   'Diyala',
-  'Diyarbakir',
   'Maysan',
   'Muthanna',
+  'Qadisiyyah',
+  'Babil',
   'Dhi Qar',
   'Salaheldeen',
+  'Wasit',
 ];
 
 String? plateCityImageAsset(String? city) {

@@ -203,12 +203,6 @@ String? translateListingValue(BuildContext context, String? raw) {
           : Localizations.localeOf(context).languageCode == 'ku'
           ? loc.city_diyala
           : 'Diyala';
-    case 'diyarbakir':
-      return Localizations.localeOf(context).languageCode == 'ar'
-          ? loc.city_diyarbakir
-          : Localizations.localeOf(context).languageCode == 'ku'
-          ? loc.city_diyarbakir
-          : 'Diyarbakir';
     case 'maysan':
       return Localizations.localeOf(context).languageCode == 'ar'
           ? loc.city_maysan
@@ -221,6 +215,18 @@ String? translateListingValue(BuildContext context, String? raw) {
           : Localizations.localeOf(context).languageCode == 'ku'
           ? loc.city_muthanna
           : 'Muthanna';
+    case 'qadisiyyah':
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_qadisiyyah
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_qadisiyyah
+          : 'Qadisiyyah';
+    case 'babil':
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_babil
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_babil
+          : 'Babil';
     case 'dhi qar':
       return Localizations.localeOf(context).languageCode == 'ar'
           ? loc.city_dhi_qar
@@ -233,6 +239,12 @@ String? translateListingValue(BuildContext context, String? raw) {
           : Localizations.localeOf(context).languageCode == 'ku'
           ? loc.city_salaheldeen
           : 'Salaheldeen';
+    case 'wasit':
+      return Localizations.localeOf(context).languageCode == 'ar'
+          ? loc.city_wasit
+          : Localizations.localeOf(context).languageCode == 'ku'
+          ? loc.city_wasit
+          : 'Wasit';
   }
   return raw;
 }

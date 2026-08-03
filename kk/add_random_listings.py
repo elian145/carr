@@ -39,7 +39,7 @@ transmissions = ['automatic', 'manual']
 fuel_types = ['gasoline', 'diesel', 'electric', 'hybrid', 'lpg', 'plug_in_hybrid']
 colors = ['black', 'white', 'silver', 'gray', 'red', 'blue', 'green', 'yellow', 'orange', 'purple', 'brown', 'beige', 'gold']
 body_types = ['sedan', 'suv', 'hatchback', 'coupe', 'wagon', 'pickup', 'van', 'minivan', 'motorcycle', 'utv', 'atv']
-cities = ['baghdad', 'basra', 'erbil', 'najaf', 'karbala', 'kirkuk', 'mosul', 'sulaymaniyah', 'dohuk', 'anbar', 'halabja', 'diyala', 'diyarbakir', 'maysan', 'muthanna', 'dhi_qar', 'salaheldeen']
+cities = ['baghdad', 'basra', 'erbil', 'najaf', 'karbala', 'kirkuk', 'mosul', 'sulaymaniyah', 'dohuk', 'anbar', 'halabja', 'diyala', 'maysan', 'muthanna', 'qadisiyyah', 'babil', 'dhi_qar', 'salaheldeen', 'wasit']
 
 # Sample car images (using placeholder URLs or existing uploads)
 car_images = [

@@ -193,7 +193,7 @@ real_cars = [
 ]
 
 # Realistic cities in Iraq
-cities = ['baghdad', 'basra', 'erbil', 'najaf', 'karbala', 'kirkuk', 'mosul', 'sulaymaniyah', 'dohuk', 'anbar', 'halabja', 'diyala', 'diyarbakir', 'maysan', 'muthanna', 'dhi_qar', 'salaheldeen']
+cities = ['baghdad', 'basra', 'erbil', 'najaf', 'karbala', 'kirkuk', 'mosul', 'sulaymaniyah', 'dohuk', 'anbar', 'halabja', 'diyala', 'maysan', 'muthanna', 'qadisiyyah', 'babil', 'dhi_qar', 'salaheldeen', 'wasit']
 
 # Available car images
 car_images = [

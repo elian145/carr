@@ -14,7 +14,7 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             FilterSectionHeader(
-              title: AppLocalizations.of(context)!.videos,
+              title: AppLocalizations.of(context)!.videosOptional,
               valueSummary: countLabel,
             ),
             const SizedBox(height: 12),

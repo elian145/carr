@@ -1426,12 +1426,6 @@ abstract class AppLocalizations {
   /// **'Diyala'**
   String get city_diyala;
 
-  /// No description provided for @city_diyarbakir.
-  ///
-  /// In en, this message translates to:
-  /// **'Diyarbakir'**
-  String get city_diyarbakir;
-
   /// No description provided for @city_maysan.
   ///
   /// In en, this message translates to:
@@ -1444,6 +1438,18 @@ abstract class AppLocalizations {
   /// **'Muthanna'**
   String get city_muthanna;
 
+  /// No description provided for @city_qadisiyyah.
+  ///
+  /// In en, this message translates to:
+  /// **'Qadisiyyah'**
+  String get city_qadisiyyah;
+
+  /// No description provided for @city_babil.
+  ///
+  /// In en, this message translates to:
+  /// **'Babil'**
+  String get city_babil;
+
   /// No description provided for @city_dhi_qar.
   ///
   /// In en, this message translates to:
@@ -1455,6 +1461,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Salaheldeen'**
   String get city_salaheldeen;
+
+  /// No description provided for @city_wasit.
+  ///
+  /// In en, this message translates to:
+  /// **'Wasit'**
+  String get city_wasit;
 
   /// No description provided for @sellTitle.
   ///

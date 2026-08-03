@@ -26,11 +26,13 @@ PLATE_CITY_CODES: dict[str, str] = {
     "Anbar": "15",
     "Halabja": "23",
     "Diyala": "20",
-    "Diyarbakir": "21",
     "Maysan": "13",
     "Muthanna": "17",
+    "Qadisiyyah": "16",
+    "Babil": "18",
     "Dhi Qar": "27",
     "Salaheldeen": "26",
+    "Wasit": "29",
 }
 
 KR_CITY_CODES = {"21", "22", "23", "24"}

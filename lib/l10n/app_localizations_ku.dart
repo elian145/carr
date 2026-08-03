@@ -692,19 +692,25 @@ class AppLocalizationsKu extends AppLocalizations {
   String get city_diyala => 'دیالە';
 
   @override
-  String get city_diyarbakir => 'ئامەد';
-
-  @override
   String get city_maysan => 'میسان';
 
   @override
   String get city_muthanna => 'موسانە';
 
   @override
+  String get city_qadisiyyah => 'قادسیە';
+
+  @override
+  String get city_babil => 'بابل';
+
+  @override
   String get city_dhi_qar => 'ذی قار';
 
   @override
   String get city_salaheldeen => 'سەلاحەدین';
+
+  @override
+  String get city_wasit => 'واسط';
 
   @override
   String get sellTitle => 'فرۆشتن';

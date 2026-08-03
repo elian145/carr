@@ -690,19 +690,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get city_diyala => 'ديالى';
 
   @override
-  String get city_diyarbakir => 'ديار بكر';
-
-  @override
   String get city_maysan => 'ميسان';
 
   @override
   String get city_muthanna => 'المثنى';
 
   @override
+  String get city_qadisiyyah => 'القادسية';
+
+  @override
+  String get city_babil => 'بابل';
+
+  @override
   String get city_dhi_qar => 'ذي قار';
 
   @override
   String get city_salaheldeen => 'صلاح الدين';
+
+  @override
+  String get city_wasit => 'واسط';
 
   @override
   String get sellTitle => 'بيع';

@@ -692,19 +692,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get city_diyala => 'Diyala';
 
   @override
-  String get city_diyarbakir => 'Diyarbakir';
-
-  @override
   String get city_maysan => 'Maysan';
 
   @override
   String get city_muthanna => 'Muthanna';
 
   @override
+  String get city_qadisiyyah => 'Qadisiyyah';
+
+  @override
+  String get city_babil => 'Babil';
+
+  @override
   String get city_dhi_qar => 'Dhi Qar';
 
   @override
   String get city_salaheldeen => 'Salaheldeen';
+
+  @override
+  String get city_wasit => 'Wasit';
 
   @override
   String get sellTitle => 'Sell';

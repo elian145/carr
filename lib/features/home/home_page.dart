@@ -276,11 +276,13 @@ abstract class _HomePageFields extends State<HomePage> {
     'Anbar',
     'Halabja',
     'Diyala',
-    'Diyarbakir',
     'Maysan',
     'Muthanna',
+    'Qadisiyyah',
+    'Babil',
     'Dhi Qar',
     'Salaheldeen',
+    'Wasit',
   ];
   List<String> getLocalizedSortOptions(BuildContext context) => [
     AppLocalizations.of(context)!.defaultSort,
