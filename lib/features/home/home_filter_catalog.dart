@@ -256,7 +256,7 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
       }
       return const ['Any'];
     }
-    return engineSizes;
+    return engineSizeFilterOptionsFromCatalog(_homeCarSpecIdx);
   }
 
   List<String> getAvailableConditions() => conditions;

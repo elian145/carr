@@ -34,7 +34,16 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
     return [
       ..._moreFiltersPriceWidgets(context, setStateDialog, style),
       ..._moreFiltersYearWidgets(context, setStateDialog, style),
-      ..._moreFiltersMidWidgets(context, setStateDialog, style),
+      ..._moreFiltersMileageRangeWidgets(context, setStateDialog, style),
+      ..._moreFiltersTitleConditionWidgets(context, setStateDialog, style),
+      ..._moreFiltersSpecsEngineWidgets(
+        context,
+        setStateDialog,
+        style,
+        includeSeating: false,
+      ),
+      ..._moreFiltersTransmissionChipWidgets(context, setStateDialog, style),
+      ..._moreFiltersBodyColorWidgets(context, setStateDialog, style),
       ..._moreFiltersSpecsWidgets(context, setStateDialog, style),
     ];
   }

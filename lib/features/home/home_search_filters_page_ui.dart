@@ -43,6 +43,38 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
         textOnly: true,
       ),
+      _searchNumericRangeCard(
+        context: context,
+        children: _moreFiltersSpecsEngineWidgets(
+          context,
+          setStateDialog,
+          style,
+          narrowMenu: true,
+          includeSeating: false,
+        ),
+      ),
+      _searchIconCardSection(
+        context,
+        setStateDialog,
+        title: loc.titleStatus,
+        options: const ['clean', 'damaged'],
+        selected: selectedTitleStatus,
+        onSelected: (v) {
+          selectedTitleStatus = v;
+          if (v != 'damaged') {
+            selectedDamagedParts = null;
+          }
+        },
+        labelForOption: _searchTitleStatusLabel,
+        textOnly: true,
+      ),
+      if (selectedTitleStatus == 'damaged')
+        _searchNumericRangeCard(
+          context: context,
+          children: [
+            _searchDamagedPartsField(context, setStateDialog, style),
+          ],
+        ),
       _searchMultiIconCardSection(
         context,
         setStateDialog,
@@ -132,28 +164,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
       _searchIconCardSection(
         context,
         setStateDialog,
-        title: loc.titleStatus,
-        options: const ['clean', 'damaged'],
-        selected: selectedTitleStatus,
-        onSelected: (v) {
-          selectedTitleStatus = v;
-          if (v != 'damaged') {
-            selectedDamagedParts = null;
-          }
-        },
-        labelForOption: _searchTitleStatusLabel,
-        textOnly: true,
-      ),
-      if (selectedTitleStatus == 'damaged')
-        _searchNumericRangeCard(
-          context: context,
-          children: [
-            _searchDamagedPartsField(context, setStateDialog, style),
-          ],
-        ),
-      _searchIconCardSection(
-        context,
-        setStateDialog,
         title: loc.regionSpecsLabel,
         options: kCarRegionSpecCodes,
         selected: selectedRegionSpecs,
@@ -208,10 +218,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
       ),
       _searchNumericRangeCard(
         context: context,
-        children: _moreFiltersSpecsDropdownWidgets(
+        children: _moreFiltersSpecsEngineWidgets(
           context,
           setStateDialog,
           style,
+          narrowMenu: true,
+          includeCylinder: false,
+          includeEngine: false,
         ),
       ),
     ];

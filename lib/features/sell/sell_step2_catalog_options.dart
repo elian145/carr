@@ -73,7 +73,7 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
         return x != null && x > 0.001;
       }).toList();
       if (online.isEmpty) {
-        // Bad API data (e.g. 0.0 L) — use full list like no-online.
+        // Bad API data (e.g. 0.0 L) — use full catalog list like no-online.
       } else if (online.length == 1) {
         return online;
       } else {
@@ -81,18 +81,19 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
       }
     }
     final o = _catalogSellOpts;
-    if (o == null || o.engineSizes.isEmpty) return engineSizes;
-    final f = engineSizes
-        .where((e) => e == 'Any' || o.engineSizes.contains(e))
-        .toList();
-    final concrete = f.where((e) => e != 'Any').toList();
-    if (concrete.length == 1) {
-      return concrete;
+    if (o != null && o.engineSizes.isNotEmpty) {
+      final catalog = o.engineSizes.toList()
+        ..sort((a, b) {
+          final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
+          final be = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
+          final c = ae.compareTo(be);
+          if (c != 0) return c;
+          return a.toLowerCase().compareTo(b.toLowerCase());
+        });
+      if (catalog.length == 1) return catalog;
+      return <String>['Any', ...catalog];
     }
-    if (f.length <= 1) {
-      return engineSizes;
-    }
-    return f;
+    return engineSizeFilterOptionsFromCatalog(_specIdx);
   }
 
   List<String> getAvailableCylinderCounts() {

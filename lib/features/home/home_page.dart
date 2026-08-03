@@ -261,7 +261,6 @@ abstract class _HomePageFields extends State<HomePage> {
     '49',
     '50',
   ];
-  final List<String> engineSizes = kEngineSizeFilterOptions;
   final List<String> cities = [
     'Any',
     'Baghdad',

@@ -350,15 +350,49 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     );
   }
 
-  /// Engine-size labels and cylinder counts unioned across catalog years for
-  /// [appBrand] + [appModel]. Empty [appTrim] uses the full model line
-  /// ([catalogAutofillModelOnly]); a non-empty trim narrows via the same rules as
-  /// [sellFieldOptionsUnion].
-  ///
-  /// When [rangeMinYear] and/or [rangeMaxYear] are set, only those model years are
-  /// included (inclusive). If that window excludes every catalog year, returns empty
-  /// lists so the UI can show only "Any".
-  ///
-  /// Returns null when there is no model coverage, or when there are years in scope
-  /// but no spec rows with engine/cylinder data.
+  List<String>? _allCatalogEngineSizeLabelsCache;
+
+  /// Every distinct engine-size label in the bundled catalog (e.g. `2.0`, `2.0 T`,
+  /// `3.0 D`), sorted by liters then label. Cached after first call.
+  List<String> allCatalogEngineSizeLabels() {
+    final cached = _allCatalogEngineSizeLabelsCache;
+    if (cached != null) return cached;
+
+    final trimHintById = <int, String>{};
+    for (final entry in _trimsByModelId.entries) {
+      final model = _modelsById[entry.key];
+      for (final trim in entry.value) {
+        trimHintById[trim.id] =
+            model != null ? '${model.name} ${trim.name}' : trim.name;
+      }
+    }
+
+    final engines = <String>{};
+    for (final entry in _specByTrimId.entries) {
+      try {
+        final fields = _mapSpecToFormFields(
+          entry.value,
+          catalogLabelHint: trimHintById[entry.key],
+        );
+        final liters = fields.engineSizeLiters;
+        if (liters == null || liters <= 0.001) continue;
+        engines.add(
+          '${liters.toStringAsFixed(1)}${fields.displacementSuffix}',
+        );
+      } catch (_) {
+        // Skip malformed rows; still return the rest of the catalog.
+      }
+    }
+
+    final list = engines.toList()
+      ..sort((a, b) {
+        final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
+        final be = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
+        final c = ae.compareTo(be);
+        if (c != 0) return c;
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+    _allCatalogEngineSizeLabelsCache = list;
+    return list;
+  }
 }

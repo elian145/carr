@@ -117,7 +117,13 @@ mixin _HomePageMoreFiltersSpecs on _HomePageMoreFiltersSpecsPlate {
   ) => [
         ..._moreFiltersSpecsDriveWidgets(context, setStateDialog, style),
         ..._moreFiltersRegionSpecsWidgets(context, setStateDialog, style),
-        ..._moreFiltersSpecsEngineWidgets(context, setStateDialog, style),
+        ..._moreFiltersSpecsEngineWidgets(
+          context,
+          setStateDialog,
+          style,
+          includeCylinder: false,
+          includeEngine: false,
+        ),
         ..._moreFiltersSpecsPlateWidgets(context, setStateDialog, style),
       ];
 
@@ -133,6 +139,7 @@ mixin _HomePageMoreFiltersSpecs on _HomePageMoreFiltersSpecsPlate {
           style,
           narrowMenu: true,
           includeAnyOption: includeAnyOption,
+          includeSeating: false,
         ),
       ];
 }

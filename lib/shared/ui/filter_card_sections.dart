@@ -504,6 +504,33 @@ MoreFiltersDialogStyle filterDialogStyle(BuildContext context) {
   );
 }
 
+double _filterIconTileVerticalPad({
+  required bool textOnly,
+  double? imageHeight,
+  bool compactImageTile = false,
+}) {
+  if (textOnly) return 14.0;
+  final slot = imageHeight ?? 26;
+  if (compactImageTile) {
+    if (slot <= 24) return 4.0;
+    if (slot <= 40) return 6.0;
+    return 8.0;
+  }
+  if (slot > 80) return 8.0;
+  return 10.0;
+}
+
+double _filterIconTileGap({
+  required bool textOnly,
+  double? imageHeight,
+  bool compactImageTile = false,
+}) {
+  if (textOnly) return 0;
+  final slot = imageHeight ?? 26;
+  if (compactImageTile && slot <= 40) return 4.0;
+  return 6.0;
+}
+
 double _filterIconTileHeight({
   required bool textOnly,
   double? imageHeight,
@@ -511,11 +538,18 @@ double _filterIconTileHeight({
 }) {
   if (textOnly) return 52;
   final slotHeight = imageHeight ?? 26;
-  final verticalPadding = compactImageTile
-      ? 16.0
-      : (slotHeight > 80 ? 16.0 : 20.0);
-  const gap = 6.0;
-  const labelHeight = 15.0;
+  final verticalPadding = _filterIconTileVerticalPad(
+        textOnly: textOnly,
+        imageHeight: imageHeight,
+        compactImageTile: compactImageTile,
+      ) *
+      2;
+  final gap = _filterIconTileGap(
+    textOnly: textOnly,
+    imageHeight: imageHeight,
+    compactImageTile: compactImageTile,
+  );
+  const labelHeight = 14.0;
   const borderAllowance = 4.0;
   return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
 }
@@ -531,12 +565,21 @@ double filterIconScrollListHeight({
   if (textOnly) return 52;
   var maxHeight = 0.0;
   for (final option in options) {
-    final hasGraphic =
-        graphicForOption != null || (imageAssetForOption?.call(option) != null);
+    final asset = imageAssetForOption?.call(option);
+    final hasGraphic = graphicForOption != null || asset != null;
+    final isFuel =
+        asset != null && asset.startsWith('assets/fuel_types/');
+    final effectiveHeight = !hasGraphic
+        ? null
+        : (isFuel
+            ? (tileImageHeight == null
+                ? 40.0
+                : tileImageHeight.clamp(32.0, 48.0).toDouble())
+            : tileImageHeight);
     final height = _filterIconTileHeight(
       textOnly: false,
-      imageHeight: hasGraphic ? tileImageHeight : null,
-      compactImageTile: compactImageTile,
+      imageHeight: effectiveHeight,
+      compactImageTile: compactImageTile || isFuel,
     );
     if (height > maxHeight) maxHeight = height;
   }
@@ -579,20 +622,36 @@ class FilterIconOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isLight = Theme.of(context).brightness == Brightness.light;
     final idleColor = isLight ? const Color(0xFF1A1A1A) : Colors.white;
+    final isFuelAsset =
+        imageAsset != null && imageAsset!.startsWith('assets/fuel_types/');
+    // Fuel artwork is 256²; keep tiles modestly compact (between original
+    // oversized cards and the too-tiny experiment).
+    final effectiveImageWidth = isFuelAsset
+        ? (imageWidth == null ? 40.0 : imageWidth!.clamp(32.0, 48.0).toDouble())
+        : imageWidth;
+    final effectiveImageHeight = isFuelAsset
+        ? (imageHeight == null
+            ? 40.0
+            : imageHeight!.clamp(32.0, 48.0).toDouble())
+        : imageHeight;
+    final effectiveCompact = compactImageTile || isFuelAsset;
+    final effectiveWidth = isFuelAsset
+        ? (width == null ? 80.0 : width!.clamp(72.0, 88.0).toDouble())
+        : width;
     final Widget? graphic;
     if (textOnly) {
       graphic = null;
     } else if (customGraphic != null) {
-      final slotWidth = imageWidth ?? 26;
-      final slotHeight = imageHeight ?? 26;
+      final slotWidth = effectiveImageWidth ?? 26;
+      final slotHeight = effectiveImageHeight ?? 26;
       graphic = SizedBox(
         width: slotWidth,
         height: slotHeight,
         child: Center(child: customGraphic),
       );
     } else {
-      final slotWidth = imageWidth ?? 26;
-      final slotHeight = imageHeight ?? 26;
+      final slotWidth = effectiveImageWidth ?? 26;
+      final slotHeight = effectiveImageHeight ?? 26;
       final Widget slotChild;
       if (imageAsset != null) {
         slotChild = buildFilterIconImage(
@@ -620,15 +679,22 @@ class FilterIconOptionTile extends StatelessWidget {
     final hPad = textOnly
         ? 12.0
         : (AppResponsive.isCompactPhone(context) ? 4.0 : 6.0);
-    final vPad = textOnly
-        ? 14.0
-        : (compactImageTile
-            ? 8.0
-            : ((imageHeight ?? 0) > 80 ? 8.0 : 10.0));
+    final vPad = _filterIconTileVerticalPad(
+      textOnly: textOnly,
+      imageHeight: effectiveImageHeight,
+      compactImageTile: effectiveCompact,
+    );
+    final gap = _filterIconTileGap(
+      textOnly: textOnly,
+      imageHeight: effectiveImageHeight,
+      compactImageTile: effectiveCompact,
+    );
+    final radius =
+        effectiveCompact && (effectiveImageHeight ?? 26) <= 40 ? 8.0 : 12.0;
     final tile = Material(
       color: isLight ? Colors.white : filterIconTileBackdropColor(context),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(radius),
         side: BorderSide(
           color: selected ? kFilterAccentColor : const Color(0xFFE0E0E5),
           width: selected ? 2 : 1,
@@ -637,7 +703,7 @@ class FilterIconOptionTile extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(radius),
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: vPad, horizontal: hPad),
           child: Column(
@@ -646,7 +712,7 @@ class FilterIconOptionTile extends StatelessWidget {
             children: [
               if (graphic != null) ...[
                 Center(child: graphic),
-                const SizedBox(height: 6),
+                SizedBox(height: gap),
               ],
               AppResponsive.fittedLabel(
                 label,
@@ -655,6 +721,10 @@ class FilterIconOptionTile extends StatelessWidget {
                   fontSize: AppResponsive.filterIconLabelFontSize(
                     context,
                     textOnly: textOnly,
+                    regular: effectiveCompact &&
+                            (effectiveImageHeight ?? 26) < 36
+                        ? 11
+                        : 12,
                   ),
                   height: 1.1,
                   fontWeight: FontWeight.w600,
@@ -667,10 +737,10 @@ class FilterIconOptionTile extends StatelessWidget {
       ),
     );
 
-    if (width == null) {
+    if (effectiveWidth == null) {
       return SizedBox(width: double.infinity, child: tile);
     }
-    return SizedBox(width: width, child: tile);
+    return SizedBox(width: effectiveWidth, child: tile);
   }
 }
 
@@ -736,6 +806,20 @@ class FilterIconCardSection extends StatelessWidget {
             ? null
             : selected;
 
+    final hasFuelArtwork = effectiveOptions.any((o) {
+      final asset = imageAssetForOption?.call(o);
+      return asset != null && asset.startsWith('assets/fuel_types/');
+    });
+    final resolvedTileWidth =
+        hasFuelArtwork ? tileWidth.clamp(72.0, 88.0).toDouble() : tileWidth;
+    final resolvedImageWidth = hasFuelArtwork
+        ? (tileImageWidth ?? 40).clamp(32.0, 48.0).toDouble()
+        : tileImageWidth;
+    final resolvedImageHeight = hasFuelArtwork
+        ? (tileImageHeight ?? 40).clamp(32.0, 48.0).toDouble()
+        : tileImageHeight;
+    final resolvedCompact = compactImageTile || hasFuelArtwork;
+
     final tiles = effectiveOptions.map((option) {
       final isAny = option == 'Any';
       final isSelected =
@@ -767,18 +851,22 @@ class FilterIconCardSection extends StatelessWidget {
         customGraphic: customGraphic,
         label: label,
         width: scrollHorizontally
-            ? AppResponsive.filterIconTileWidth(context, tileWidth)
+            ? AppResponsive.filterIconTileWidth(
+                context,
+                resolvedTileWidth,
+                compactBoost: resolvedCompact ? 0 : 16,
+              )
             : null,
         imageWidth: (usesImageAsset || customGraphic != null)
-            ? tileImageWidth
+            ? resolvedImageWidth
             : null,
         imageHeight: (usesImageAsset || customGraphic != null)
-            ? tileImageHeight
+            ? resolvedImageHeight
             : null,
         imageFit: tileImageFit,
         imageBorderRadius: tileImageBorderRadius,
         textOnly: textOnly,
-        compactImageTile: compactImageTile,
+        compactImageTile: resolvedCompact,
         onTap: () => onSelected(isAny ? null : option),
       );
     }).toList();
@@ -801,21 +889,16 @@ class FilterIconCardSection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (scrollHorizontally)
-            SizedBox(
-              height: scrollListHeight ??
-                  filterIconScrollListHeight(
-                    textOnly: textOnly,
-                    options: effectiveOptions,
-                    tileImageHeight: tileImageHeight,
-                    imageAssetForOption: imageAssetForOption,
-                    graphicForOption: graphicForOption,
-                    compactImageTile: compactImageTile,
-                  ),
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: tiles.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 6),
-                itemBuilder: (context, index) => tiles[index],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < tiles.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 6),
+                    tiles[i],
+                  ],
+                ],
               ),
             )
           else

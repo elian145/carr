@@ -1,4 +1,7 @@
-/// Engine size filter/sell options (0.5L–16.0L step 0.1).
+import '../../services/car_spec_index.dart';
+
+/// Fallback engine-size ladder when [CarSpecIndex] is not loaded yet.
+/// Prefer [CarSpecIndex.allCatalogEngineSizeLabels] for real catalog sizes.
 const List<String> kEngineSizeFilterOptions = [
   'Any',
   '0.5',
@@ -158,3 +161,11 @@ const List<String> kEngineSizeFilterOptions = [
   '15.9',
   '16.0',
 ];
+
+/// Sorted engine-size options for filters/sell: catalog sizes when available,
+/// otherwise [kEngineSizeFilterOptions].
+List<String> engineSizeFilterOptionsFromCatalog(CarSpecIndex? index) {
+  final fromCatalog = index?.allCatalogEngineSizeLabels() ?? const <String>[];
+  if (fromCatalog.isEmpty) return kEngineSizeFilterOptions;
+  return <String>['Any', ...fromCatalog];
+}
