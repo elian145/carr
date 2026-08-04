@@ -82,26 +82,29 @@ class FilterSectionHeader extends StatelessWidget {
     );
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Text(
             displayTitle.toUpperCase(),
-            maxLines: 1,
+            maxLines: 2,
+            softWrap: true,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 15,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.6,
               color: titleColor,
+              height: 1.25,
             ),
           ),
         ),
-        if (onSummaryTap != null)
-          InkWell(
-            onTap: onSummaryTap,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8),
+        if (valueSummary.trim().isNotEmpty) ...[
+          const SizedBox(width: 8),
+          if (onSummaryTap != null)
+            InkWell(
+              onTap: onSummaryTap,
+              borderRadius: BorderRadius.circular(8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -116,13 +119,13 @@ class FilterSectionHeader extends StatelessWidget {
                   ),
                 ],
               ),
+            )
+          else
+            Text(
+              valueSummary,
+              style: summaryStyle,
             ),
-          )
-        else
-          Text(
-            valueSummary,
-            style: summaryStyle,
-          ),
+        ],
       ],
     );
   }
@@ -153,12 +156,12 @@ InputDecoration filterFieldDecoration(
     errorText: errorText,
     labelStyle: TextStyle(
       color: style.onSurface,
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: FontWeight.bold,
     ),
     floatingLabelStyle: TextStyle(
       color: style.onSurface,
-      fontSize: 15,
+      fontSize: 17,
       fontWeight: FontWeight.bold,
     ),
     filled: true,
@@ -197,7 +200,7 @@ InputDecoration filterDropdownFieldDecoration(
 }) {
   final labelStyle = TextStyle(
     color: style.onSurface,
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: FontWeight.bold,
     height: 1.1,
   );

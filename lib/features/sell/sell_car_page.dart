@@ -98,54 +98,39 @@ class _SellCarPageState extends _SellCarPageFields
               // Progress indicator (segments — UX-01)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Semantics(
-                      label: AppLocalizations.of(context)!
-                          .stepXOf5(currentStep + 1),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: SellWizardSteps.progressFraction(currentStep),
-                          minHeight: 4,
-                          backgroundColor: Colors.grey[300],
-                          color: AppColors.brandOrange,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: List.generate(
-                        _SellCarPageFields._kSellStepCount,
-                        (index) {
-                          bool isCompleted = completedSteps.contains(index);
-                          bool isCurrent = index == currentStep;
-                          bool isAccessible =
-                              index <= currentStep || isCompleted;
+                child: Semantics(
+                  label: AppLocalizations.of(context)!
+                      .stepXOf5(currentStep + 1),
+                  child: Row(
+                    children: List.generate(
+                      _SellCarPageFields._kSellStepCount,
+                      (index) {
+                        bool isCompleted = completedSteps.contains(index);
+                        bool isCurrent = index == currentStep;
+                        bool isAccessible =
+                            index <= currentStep || isCompleted;
 
-                          return Expanded(
-                            child: Container(
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: isCompleted
-                                    ? Colors.green
-                                    : isCurrent
-                                        ? AppColors.brandOrange
-                                        : isAccessible
-                                            ? AppColors.brandOrange
-                                                .withValues(alpha: 0.5)
-                                            : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                        return Expanded(
+                          child: Container(
+                            margin:
+                                const EdgeInsets.symmetric(horizontal: 4),
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: isCompleted
+                                  ? Colors.green
+                                  : isCurrent
+                                      ? AppColors.brandOrange
+                                      : isAccessible
+                                          ? AppColors.brandOrange
+                                              .withValues(alpha: 0.5)
+                                          : Colors.grey[300],
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  ],
+                  ),
                 ),
               ),
               // Step indicator

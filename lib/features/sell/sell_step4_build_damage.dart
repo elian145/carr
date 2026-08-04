@@ -6,7 +6,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
     final hasDamage = _damageImages.isNotEmpty;
     final countLabel = hasDamage
         ? loc.addDamagePhotosCount(_damageImages.length)
-        : loc.tapToSelect;
+        : '';
 
     return [
       FilterCard(

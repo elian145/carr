@@ -34,6 +34,7 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
             selectedPlateCity =
                 (value == null || value.isEmpty) ? null : value;
           });
+          setStateDialog(() {});
           _persistFilters();
         },
       ),
@@ -98,6 +99,7 @@ mixin _HomePageMoreFiltersSpecsPlate on _HomePageMoreFiltersSpecsEngine {
                                     ? null
                                     : value;
                               });
+                              setStateDialog(() {});
                               _persistFilters();
                             },
                           ),

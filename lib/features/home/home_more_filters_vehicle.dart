@@ -106,6 +106,12 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       labelText: label,
       labelStyle: TextStyle(
         color: style.onSurface,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+      ),
+      floatingLabelStyle: TextStyle(
+        color: style.onSurface,
+        fontSize: 17,
         fontWeight: FontWeight.w600,
       ),
       filled: true,

@@ -77,6 +77,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
               () => selectedSeating =
                   value == null || value.isEmpty ? null : value,
             );
+            setStateDialog(() {});
             _persistFilters();
           },
         ),
