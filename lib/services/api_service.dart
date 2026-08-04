@@ -335,6 +335,15 @@ class ApiService {
     String code,
   ) => _ApiServiceAuth.verifyDealerPhone(phoneNumber, code);
 
+  static Future<Map<String, dynamic>> sendDealerEmailVerification(
+    String email,
+  ) => _ApiServiceAuth.sendDealerEmailVerification(email);
+
+  static Future<Map<String, dynamic>> verifyDealerEmail(
+    String email,
+    String code,
+  ) => _ApiServiceAuth.verifyDealerEmail(email, code);
+
   static Future<Map<String, dynamic>> sendContactPhoneVerification(
     String phoneNumber,
   ) => _ApiServiceAuth.sendContactPhoneVerification(phoneNumber);

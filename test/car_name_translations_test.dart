@@ -22,6 +22,46 @@ void main() {
     );
   });
 
+  test('hyphenated brand matches spaced translation key', () {
+    CarNameTranslations.debugInstallPack(
+      'ar',
+      brands: const {'land rover': 'لاند روفر'},
+      models: const {'land rover|range rover sport': 'رينج روفر سبورت'},
+    );
+    expect(
+      CarNameTranslations.getLocalizedBrandForLocale('ar', 'Land-Rover'),
+      'لاند روفر',
+    );
+    expect(
+      CarNameTranslations.getLocalizedModelForLocale(
+        'ar',
+        'Land-Rover',
+        'Range Rover Sport',
+      ),
+      'رينج روفر سبورت',
+    );
+  });
+
+  test('spaced brand matches hyphenated translation key', () {
+    CarNameTranslations.debugInstallPack(
+      'ar',
+      brands: const {'mercedes-benz': 'مرسيدس بنز'},
+      models: const {'mercedes-benz|c-class': 'سي كلاس'},
+    );
+    expect(
+      CarNameTranslations.getLocalizedBrandForLocale('ar', 'Mercedes Benz'),
+      'مرسيدس بنز',
+    );
+    expect(
+      CarNameTranslations.getLocalizedModelForLocale(
+        'ar',
+        'Mercedes Benz',
+        'C-Class',
+      ),
+      'سي كلاس',
+    );
+  });
+
   test('ensureLoadedForLocale keeps only active translated pack', () async {
     await CarNameTranslations.ensureLoadedForLocale('ar').timeout(
       const Duration(seconds: 15),

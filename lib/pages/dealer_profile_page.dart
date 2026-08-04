@@ -129,7 +129,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
     final double? mapLat = parseDealerCoord(dealer?['dealership_latitude']);
     final double? mapLng = parseDealerCoord(dealer?['dealership_longitude']);
     final phones = _phonesFromAnySource(dealer);
-    final email = (dealer?['email'] ?? '').toString().trim();
+    final emails = _emailsFromAnySource(dealer);
     final description = (dealer?['dealership_description'] ?? '')
         .toString()
         .trim();
@@ -306,7 +306,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             if (_section == _DealerSection.about)
                               _buildAboutSection(
                                 phones: phones,
-                                email: email,
+                                emails: emails,
                                 location: location,
                                 mapLat: mapLat,
                                 mapLng: mapLng,

@@ -2,6 +2,7 @@ part of 'edit_dealer_page.dart';
 
 const Color _editDealerAccent = AppColors.brandOrange;
 const int _editDealerMaxPhones = 5;
+const int _editDealerMaxEmails = 5;
 
 String normalizeDealerPhoneForVerification(String value) {
   var digits = value.replaceAll(RegExp(r'[^0-9]'), '');
@@ -12,6 +13,18 @@ String normalizeDealerPhoneForVerification(String value) {
     digits = digits.substring(digits.length - 11);
   }
   return digits;
+}
+
+String normalizeDealerEmailForVerification(String value) {
+  return value.trim().toLowerCase();
+}
+
+bool isValidDealerEmailForVerification(String value) {
+  final email = normalizeDealerEmailForVerification(value);
+  if (email.isEmpty || email.length > 120 || email.endsWith('@phone.local')) {
+    return false;
+  }
+  return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
 }
 
 const List<({String key, String label})> _editDealerDays = [
@@ -45,6 +58,8 @@ abstract class _EditDealerPageFields extends State<EditDealerPage> {
   final _name = TextEditingController();
   final List<TextEditingController> _phones = [];
   final Set<String> _verifiedPhones = {};
+  final List<TextEditingController> _emails = [];
+  final Set<String> _verifiedEmails = {};
   final _location = TextEditingController();
   final _description = TextEditingController();
   final _coordLat = TextEditingController();

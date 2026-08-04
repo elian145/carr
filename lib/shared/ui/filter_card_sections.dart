@@ -197,11 +197,25 @@ InputDecoration filterDropdownFieldDecoration(
 }) {
   final labelStyle = TextStyle(
     color: style.onSurface,
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: FontWeight.bold,
+    height: 1.1,
+  );
+  // Scale long RTL labels (e.g. أقصى سعر) down instead of ellipsizing in
+  // half-width min/max fields.
+  final labelWidget = Text(
+    label,
+    style: labelStyle,
+    maxLines: 1,
+    softWrap: false,
+    overflow: TextOverflow.visible,
   );
   return InputDecoration(
-    labelText: label,
+    label: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: labelWidget,
+    ),
     errorText: errorText,
     labelStyle: labelStyle,
     floatingLabelStyle: labelStyle,
@@ -412,7 +426,7 @@ class FilterDropdownField extends StatelessWidget {
                               color: isSelected
                                   ? kFilterAccentColor.withValues(alpha: 0.1)
                                   : null,
-                              alignment: Alignment.centerLeft,
+                              alignment: AlignmentDirectional.centerStart,
                               child: DefaultTextStyle(
                                 style: TextStyle(
                                   color: style.onSurface,
@@ -474,7 +488,7 @@ class FilterDropdownField extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: selectedChild ?? const SizedBox.shrink(),
                     ),
                   ),

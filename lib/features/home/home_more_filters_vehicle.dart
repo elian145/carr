@@ -68,20 +68,13 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
     required Widget maxField,
     double gap = 8,
   }) {
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: FractionallySizedBox(
-        widthFactor: 0.84,
-        alignment: AlignmentDirectional.centerStart,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: minField),
-            SizedBox(width: gap),
-            Expanded(child: maxField),
-          ],
-        ),
-      ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: minField),
+        SizedBox(width: gap),
+        Expanded(child: maxField),
+      ],
     );
   }
 

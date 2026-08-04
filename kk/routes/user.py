@@ -4,6 +4,7 @@ import json
 import os
 import hashlib
 import hmac
+import re
 from datetime import datetime, timedelta
 import secrets
 
@@ -153,6 +154,61 @@ def _hash_contact_phone_code(phone_digits: str, code: str) -> str:
     key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
     message = f"contact-phone:{phone_digits}:{code}".encode("utf-8")
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
+DEALERSHIP_EMAIL_MAX = 5
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _normalize_dealer_email(value) -> str:
+    return ("" if value is None else str(value)).strip().lower()
+
+
+def _is_valid_dealer_email(value: str) -> bool:
+    email = _normalize_dealer_email(value)
+    if not email or len(email) > 120 or email.endswith("@phone.local"):
+        return False
+    return bool(_EMAIL_RE.match(email))
+
+
+def _clean_email_list(value) -> list[str]:
+    if value is None:
+        return []
+    items = list(value) if isinstance(value, (list, tuple, set)) else [value]
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        email = _normalize_dealer_email(item)
+        if not email or email in seen:
+            continue
+        seen.add(email)
+        out.append(email)
+        if len(out) >= DEALERSHIP_EMAIL_MAX:
+            break
+    return out
+
+
+def _hash_dealer_email_code(email: str, code: str) -> str:
+    key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    message = f"dealer-email:{email}:{code}".encode("utf-8")
+    return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
+def _verified_dealer_emails(user: User) -> list[str]:
+    raw = getattr(user, "dealership_verified_emails", None)
+    verified = raw if isinstance(raw, list) else []
+    output: list[str] = []
+    for value in verified:
+        email = _normalize_dealer_email(value)
+        if email and email not in output:
+            output.append(email)
+    return output
+
+
+def _is_dev_email_payload() -> bool:
+    return bool(current_app.config.get("DEBUG")) or (
+        os.environ.get("APP_ENV") or ""
+    ).strip().lower() == "development"
 
 
 def _verified_dealer_phone_digits(user: User) -> list[str]:
@@ -1002,6 +1058,15 @@ def dealer_profile(dealer_public_id: str):
             dealer_data["id"] = dealer.public_id
             dealer_data["account_type"] = "dealer"
             dealer_data["dealer_status"] = "approved"
+        # Public contact uses verified dealership emails only (not account login email).
+        dealer_data.pop("email", None)
+        emails = dealer_data.get("dealership_emails")
+        if not isinstance(emails, list):
+            emails = []
+        dealer_data["dealership_emails"] = [
+            str(x).strip() for x in emails if str(x).strip()
+        ]
+        dealer_data.pop("dealership_verified_emails", None)
         return jsonify({"dealer": dealer_data, "listings": listing_dicts, "stats": stats}), 200
     except Exception as e:
         current_app.logger.exception("dealer_profile failed: %s", e)
@@ -1145,6 +1210,148 @@ def verify_dealer_phone():
             "message": "Phone number verified successfully",
             "verified_phone": phone_digits,
             "dealership_verified_phones": verified,
+        }
+    ), 200
+
+
+@bp.route("/api/user/dealer-email/send-verification", methods=["POST"])
+@jwt_required()
+def send_dealer_email_verification():
+    """Send an ownership code for a dealership contact email."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+    if (current_user.account_type or "").strip().lower() != "dealer":
+        return jsonify({"message": "Only dealers can verify dealership emails"}), 403
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    email = _normalize_dealer_email(data.get("email") or data.get("email_address") or "")
+    if not _is_valid_dealer_email(email):
+        return jsonify({"message": "Enter a valid email address"}), 400
+
+    verified = _verified_dealer_emails(current_user)
+    if email in verified:
+        current_user.dealership_verified_emails = verified
+        db.session.commit()
+        return jsonify({"message": "Email is already verified", "verified": True}), 200
+
+    now = utcnow()
+    locked_until = getattr(current_user, "dealer_email_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    last_sent = getattr(current_user, "dealer_email_verification_last_sent_at", None)
+    if last_sent and (now - last_sent).total_seconds() < 60:
+        return jsonify({"message": "Please wait before requesting another code"}), 429
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    current_user.dealer_email_verification_code_hash = _hash_dealer_email_code(email, code)
+    current_user.dealer_email_verification_expires_at = now + timedelta(minutes=10)
+    current_user.dealer_email_verification_attempts = 0
+    current_user.dealer_email_verification_last_sent_at = now
+    current_user.dealer_email_verification_locked_until = None
+    db.session.commit()
+
+    from ..email_service import send_dealer_email_verification_code
+
+    mail_sent = send_dealer_email_verification_code(email, code)
+    if not mail_sent:
+        if _is_dev_email_payload():
+            # Keep the OTP so local clients can verify with `dev_code`.
+            payload = {
+                "message": "Verification code ready (email not configured)",
+                "sent": False,
+                "code": "email_send_failed",
+                "dev_code": code,
+            }
+            return jsonify(payload), 200
+        current_user.dealer_email_verification_code_hash = None
+        current_user.dealer_email_verification_expires_at = None
+        current_user.dealer_email_verification_attempts = 0
+        db.session.commit()
+        return jsonify(
+            {
+                "message": "Failed to send verification code",
+                "sent": False,
+                "code": "email_send_failed",
+            }
+        ), 502
+
+    payload = {"message": "Verification code sent", "sent": True}
+    if _is_dev_email_payload():
+        payload["dev_code"] = code
+    return jsonify(payload), 200
+
+
+@bp.route("/api/user/dealer-email/verify", methods=["POST"])
+@jwt_required()
+def verify_dealer_email():
+    """Confirm a dealership contact email and persist ownership."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+    if (current_user.account_type or "").strip().lower() != "dealer":
+        return jsonify({"message": "Only dealers can verify dealership emails"}), 403
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    email = _normalize_dealer_email(data.get("email") or data.get("email_address") or "")
+    code = str(data.get("verification_code") or data.get("code") or "").strip()
+    if not _is_valid_dealer_email(email) or len(code) != 6 or not code.isdigit():
+        return jsonify({"message": "Email and a six-digit code are required"}), 400
+
+    verified = _verified_dealer_emails(current_user)
+    if email in verified:
+        current_user.dealership_verified_emails = verified
+        db.session.commit()
+        return jsonify(
+            {
+                "message": "Email verified successfully",
+                "verified_email": email,
+                "dealership_verified_emails": verified,
+            }
+        ), 200
+
+    now = utcnow()
+    locked_until = getattr(current_user, "dealer_email_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    expires_at = getattr(current_user, "dealer_email_verification_expires_at", None)
+    code_hash = getattr(current_user, "dealer_email_verification_code_hash", None)
+    if not expires_at or not code_hash or expires_at <= now:
+        current_user.dealer_email_verification_code_hash = None
+        current_user.dealer_email_verification_expires_at = None
+        current_user.dealer_email_verification_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    expected = _hash_dealer_email_code(email, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = int(
+            getattr(current_user, "dealer_email_verification_attempts", 0) or 0
+        ) + 1
+        current_user.dealer_email_verification_attempts = attempts
+        if attempts >= 5:
+            current_user.dealer_email_verification_locked_until = now + timedelta(
+                minutes=15
+            )
+            current_user.dealer_email_verification_code_hash = None
+            current_user.dealer_email_verification_expires_at = None
+            current_user.dealer_email_verification_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    verified.append(email)
+    current_user.dealership_verified_emails = verified
+    current_user.dealer_email_verification_code_hash = None
+    current_user.dealer_email_verification_expires_at = None
+    current_user.dealer_email_verification_attempts = 0
+    current_user.dealer_email_verification_locked_until = None
+    db.session.commit()
+    log_user_action(current_user, "dealer_email_verified")
+    return jsonify(
+        {
+            "message": "Email verified successfully",
+            "verified_email": email,
+            "dealership_verified_emails": verified,
         }
     ), 200
 
@@ -1362,6 +1569,23 @@ def update_dealer_profile():
             except Exception:
                 pass
 
+        if "dealership_emails" in data:
+            emails = _clean_email_list(data.get("dealership_emails"))
+            if any(not _is_valid_dealer_email(email) for email in emails):
+                return jsonify({"message": "Enter valid dealership email addresses"}), 400
+            verified_emails = set(_verified_dealer_emails(current_user))
+            unverified = [email for email in emails if email not in verified_emails]
+            if unverified:
+                return jsonify(
+                    {
+                        "message": "Verify every dealership email before saving",
+                        "code": "dealer_email_verification_required",
+                        "unverified_emails": unverified,
+                    }
+                ), 400
+            current_user.dealership_emails = emails
+            current_user.dealership_verified_emails = list(dict.fromkeys(emails))
+
         if "dealership_location" in data:
             v = (data.get("dealership_location") or "").strip()
             if not v:
@@ -1430,6 +1654,10 @@ def update_dealer_profile():
         profile.dealership_name = current_user.dealership_name
         profile.dealership_phone = current_user.dealership_phone
         profile.dealership_phones = current_user.dealership_phones
+        profile.dealership_emails = getattr(current_user, "dealership_emails", None)
+        profile.dealership_verified_emails = getattr(
+            current_user, "dealership_verified_emails", None
+        )
         profile.dealership_location = current_user.dealership_location
         profile.dealership_description = current_user.dealership_description
         profile.dealership_cover_picture = current_user.dealership_cover_picture

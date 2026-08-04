@@ -62,6 +62,27 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
       );
       if (accountPhone.isNotEmpty) _verifiedPhones.add(accountPhone);
     }
+    final initialEmails = <String>[];
+    final rawEmails = me?['dealership_emails'];
+    if (rawEmails is List) {
+      for (final x in rawEmails) {
+        final s = (x ?? '').toString().trim();
+        if (s.isNotEmpty) initialEmails.add(s);
+      }
+    }
+    _emails
+      ..clear()
+      ..addAll(initialEmails.map((e) => TextEditingController(text: e)));
+    _verifiedEmails.clear();
+    final rawVerifiedEmails = me?['dealership_verified_emails'];
+    if (rawVerifiedEmails is List) {
+      for (final value in rawVerifiedEmails) {
+        final normalized = normalizeDealerEmailForVerification(
+          (value ?? '').toString(),
+        );
+        if (normalized.isNotEmpty) _verifiedEmails.add(normalized);
+      }
+    }
     _location.text = (me?['dealership_location'] ?? '').toString();
     _description.text = (me?['dealership_description'] ?? '').toString();
     final rawHours = me?['dealership_opening_hours'];
@@ -99,6 +120,9 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
   void dispose() {
     _name.dispose();
     for (final c in _phones) {
+      c.dispose();
+    }
+    for (final c in _emails) {
       c.dispose();
     }
     _location.dispose();

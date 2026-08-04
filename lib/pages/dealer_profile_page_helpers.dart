@@ -401,7 +401,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
 
   Widget _buildAboutSection({
     required List<String> phones,
-    required String email,
+    required List<String> emails,
     required String location,
     required double? mapLat,
     required double? mapLng,
@@ -411,7 +411,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (phones.isNotEmpty || email.isNotEmpty || location.isNotEmpty)
+        if (phones.isNotEmpty || emails.isNotEmpty || location.isNotEmpty)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
@@ -470,48 +470,52 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
                       ),
                     ),
                 ],
-                if (email.isNotEmpty) ...[
+                if (emails.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Tooltip(
-                    message: _tr(
-                      'Tap to send email • Hold to copy',
-                      ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ',
-                      ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی',
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _brandOrange,
-                          side: BorderSide(
-                            color: _brandOrange.withValues(alpha: 0.4),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
+                  for (var i = 0; i < emails.length; i++)
+                    Padding(
+                      padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
+                      child: Tooltip(
+                        message: _tr(
+                          'Tap to send email • Hold to copy',
+                          ar: 'اضغط لإرسال بريد • اضغط مطولاً للنسخ',
+                          ku: 'کرتە بکە بۆ ناردنی ئیمەیل • چەند چرکە هەڵبگرە بۆ کۆپی',
                         ),
-                        onPressed: () => _emailDealer(email),
-                        onLongPress: () => _copyToClipboard(
-                          email,
-                          _tr(
-                            'Email copied to clipboard',
-                            ar: 'تم نسخ البريد الإلكتروني',
-                            ku: 'ئیمەیل کۆپی کرا',
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _brandOrange,
+                              side: BorderSide(
+                                color: _brandOrange.withValues(alpha: 0.4),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                            ),
+                            onPressed: () => _emailDealer(emails[i]),
+                            onLongPress: () => _copyToClipboard(
+                              emails[i],
+                              _tr(
+                                'Email copied to clipboard',
+                                ar: 'تم نسخ البريد الإلكتروني',
+                                ku: 'ئیمەیل کۆپی کرا',
+                              ),
+                            ),
+                            icon: const Icon(Icons.email_outlined, size: 18),
+                            label: Text(
+                              emails[i],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        icon: const Icon(Icons.email_outlined, size: 18),
-                        label: Text(
-                          email,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
-                  ),
                 ],
                 _infoRow(
                   Icons.location_on_outlined,
@@ -659,6 +663,22 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
     // De-dupe (preserve order)
     final seen = <String>{};
     return out.where((p) => seen.add(p)).toList();
+  }
+
+  List<String> _emailsFromAnySource(Map<String, dynamic>? dealer) {
+    final out = <String>[];
+    final raw = dealer?['dealership_emails'];
+    if (raw is List) {
+      for (final x in raw) {
+        final s = (x ?? '').toString().trim();
+        if (s.isNotEmpty) out.add(s);
+      }
+    }
+    final seen = <String>{};
+    return out
+        .map((e) => e.toLowerCase())
+        .where((e) => seen.add(e))
+        .toList();
   }
 
   Future<void> _emailDealer(String rawEmail) async {

@@ -1,6 +1,6 @@
 part of 'edit_dealer_page.dart';
 
-mixin _EditDealerPageSave on _EditDealerPagePhoneVerification {
+mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -35,6 +35,47 @@ mixin _EditDealerPageSave on _EditDealerPagePhoneVerification {
               'Verify every phone number before saving.',
               ar: 'تحقق من كل رقم هاتف قبل الحفظ.',
               ku: 'پێش پاشەکەوتکردن هەموو ژمارەکانی تەلەفۆن پشتڕاست بکەرەوە.',
+            ),
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final emails = _emails
+        .map((c) => normalizeDealerEmailForVerification(c.text))
+        .where((s) => s.isNotEmpty)
+        .toList();
+    for (final email in emails) {
+      if (!isValidDealerEmailForVerification(email)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _tr(
+                'Enter a valid email address.',
+                ar: 'أدخل بريداً إلكترونياً صالحاً.',
+                ku: 'ئیمەیلێکی دروست بنووسە.',
+              ),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+    final unverifiedEmails = emails
+        .where((email) => !_isDealerEmailVerified(email))
+        .toList();
+    if (unverifiedEmails.isNotEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr(
+              'Verify every email before saving.',
+              ar: 'تحقق من كل بريد إلكتروني قبل الحفظ.',
+              ku: 'پێش پاشەکەوتکردن هەموو ئیمەیلەکان پشتڕاست بکەرەوە.',
             ),
           ),
           backgroundColor: Colors.orange,
@@ -127,6 +168,7 @@ mixin _EditDealerPageSave on _EditDealerPagePhoneVerification {
         'dealership_name': _name.text.trim(),
         'dealership_phone': phones.first,
         'dealership_phones': phones,
+        'dealership_emails': emails,
         'dealership_location': _location.text.trim(),
         'dealership_description': _description.text.trim(),
         'dealership_opening_hours': openingHours,

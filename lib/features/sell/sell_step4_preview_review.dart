@@ -163,7 +163,8 @@ class _SellReviewCarDetailScrollViewState
     if (hasModelOrPrice) height += 4 + _modelPriceRowHeight(context);
     if (hasMeta) height += 16 + 18;
     height += _metaToDividerGap + 1;
-    height += 10 + 26; // gap + Specifications
+    // Specs title needs extra descent for Arabic/Kurdish underdots + bottom pad.
+    height += 8 + 32 + 6;
     if (hasQuickSell) height += 44 + 16;
     return height;
   }
@@ -317,7 +318,7 @@ class _SellReviewCarDetailScrollViewState
       child: Theme(
         data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -513,6 +514,8 @@ class _SellReviewCarDetailScrollViewState
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                  height: 1.35,
+                  leadingDistribution: TextLeadingDistribution.even,
                   color: AppColors.brandOrange,
                 ),
               ),

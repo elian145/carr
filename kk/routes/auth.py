@@ -990,6 +990,12 @@ def send_email_verification():
         return jsonify({"message": "Failed to send verification email"}), 500
 
 
+def _send_email_verification_email(user_email: str, token: str) -> bool:
+    from ..email_service import send_account_email_verification
+
+    return bool(send_account_email_verification(user_email, token))
+
+
 @bp.route("/api/auth/verify-email", methods=["POST"])
 @rate_limit(max_requests=10, window_minutes=15)
 def verify_email():

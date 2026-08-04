@@ -14,4 +14,18 @@ void main() {
   test('dealer phone normalization rejects non-number content as empty', () {
     expect(normalizeDealerPhoneForVerification('phone'), isEmpty);
   });
+
+  test('dealer email verification normalizes case and whitespace', () {
+    expect(
+      normalizeDealerEmailForVerification('  Sales@Shop.COM '),
+      'sales@shop.com',
+    );
+  });
+
+  test('dealer email validation accepts only real addresses', () {
+    expect(isValidDealerEmailForVerification('sales@shop.com'), isTrue);
+    expect(isValidDealerEmailForVerification('not-an-email'), isFalse);
+    expect(isValidDealerEmailForVerification('x@phone.local'), isFalse);
+    expect(isValidDealerEmailForVerification(''), isFalse);
+  });
 }

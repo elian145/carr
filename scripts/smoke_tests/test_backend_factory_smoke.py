@@ -266,6 +266,116 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400, response.data)
         self.assertIn("expired", response.get_json()["message"].lower())
 
+    def test_dealer_email_must_be_verified_before_profile_save(self):
+        from unittest.mock import patch
+
+        new_email = "sales@dealership.test"
+        rejected = self.client.put(
+            "/api/user/dealer-profile",
+            json={"dealership_emails": [new_email]},
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(rejected.status_code, 400, rejected.data)
+        self.assertEqual(
+            rejected.get_json().get("code"),
+            "dealer_email_verification_required",
+        )
+
+        captured = {}
+
+        def capture_mail(email, code):
+            captured["email"] = email
+            captured["code"] = code
+            return True
+
+        with patch(
+            "kk.email_service.send_dealer_email_verification_code",
+            side_effect=capture_mail,
+        ):
+            sent = self.client.post(
+                "/api/user/dealer-email/send-verification",
+                json={"email": new_email},
+                headers=self._auth(self.dealer_token),
+            )
+        self.assertEqual(sent.status_code, 200, sent.data)
+        self.assertEqual(captured["email"], new_email)
+
+        invalid = self.client.post(
+            "/api/user/dealer-email/verify",
+            json={"email": new_email, "verification_code": "000000"},
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(invalid.status_code, 400, invalid.data)
+
+        verified = self.client.post(
+            "/api/user/dealer-email/verify",
+            json={
+                "email": new_email,
+                "verification_code": captured["code"],
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(verified.status_code, 200, verified.data)
+
+        saved = self.client.put(
+            "/api/user/dealer-profile",
+            json={"dealership_emails": [new_email]},
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(saved.status_code, 200, saved.data)
+        self.assertEqual(
+            saved.get_json()["user"]["dealership_emails"],
+            [new_email],
+        )
+        self.assertEqual(
+            saved.get_json()["user"]["dealership_verified_emails"],
+            [new_email],
+        )
+
+        public = self.client.get("/api/dealers/pd")
+        self.assertEqual(public.status_code, 200, public.data)
+        dealer = public.get_json()["dealer"]
+        self.assertNotIn("email", dealer)
+        self.assertEqual(dealer.get("dealership_emails"), [new_email])
+        self.assertNotIn("dealership_verified_emails", dealer)
+
+    def test_non_dealer_cannot_verify_dealership_email(self):
+        response = self.client.post(
+            "/api/user/dealer-email/send-verification",
+            json={"email": "x@test.example"},
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(response.status_code, 403, response.data)
+
+    def test_expired_dealer_email_code_is_rejected(self):
+        from datetime import timedelta
+
+        with self.app.app_context():
+            from kk.routes.user import _hash_dealer_email_code
+            from kk.time_utils import utcnow
+
+            dealer = self._User.query.filter_by(username="dealer").first()
+            dealer.dealer_email_verification_code_hash = _hash_dealer_email_code(
+                "ops@dealership.test",
+                "123456",
+            )
+            dealer.dealer_email_verification_expires_at = utcnow() - timedelta(
+                seconds=1
+            )
+            dealer.dealer_email_verification_attempts = 0
+            self._db.session.commit()
+
+        response = self.client.post(
+            "/api/user/dealer-email/verify",
+            json={
+                "email": "ops@dealership.test",
+                "verification_code": "123456",
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(response.status_code, 400, response.data)
+        self.assertIn("expired", response.get_json()["message"].lower())
+
     def test_analytics_track_and_list(self):
         from kk.listing_metrics import clear_engagement_claims_for_tests
         from kk.models import ListingAnalytics

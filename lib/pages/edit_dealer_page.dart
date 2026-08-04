@@ -34,6 +34,7 @@ part 'edit_dealer_page_profile.dart';
 part 'edit_dealer_page_location.dart';
 part 'edit_dealer_page_media.dart';
 part 'edit_dealer_page_phone_verification.dart';
+part 'edit_dealer_page_email_verification.dart';
 part 'edit_dealer_page_save.dart';
 part 'edit_dealer_page_build_body_upper.dart';
 part 'edit_dealer_page_build_body_lower.dart';
@@ -55,6 +56,7 @@ class _EditDealerPageState extends _EditDealerPageFields
         _EditDealerPageLocation,
         _EditDealerPageMedia,
         _EditDealerPagePhoneVerification,
+        _EditDealerPageEmailVerification,
         _EditDealerPageSave,
         _EditDealerPageBuildBodyUpper,
         _EditDealerPageBuildBodyLower,

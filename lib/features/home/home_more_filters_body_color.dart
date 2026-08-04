@@ -201,7 +201,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                   dlgContext,
                                                 ),
                                                 childAspectRatio:
-                                                    1.2,
+                                                    0.9,
                                                 crossAxisSpacing:
                                                     10,
                                                 mainAxisSpacing:
@@ -282,15 +282,17 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                             color: borderSubtle,
                                                           ),
                                                         ),
-                                                        padding: EdgeInsets.all(
-                                                          8,
+                                                        padding: const EdgeInsets.symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 8,
                                                         ),
                                                         child: Column(
                                                           mainAxisAlignment: MainAxisAlignment.center,
+                                                          mainAxisSize: MainAxisSize.min,
                                                           children: [
                                                             Container(
-                                                              width: 40,
-                                                              height: 40,
+                                                              width: 36,
+                                                              height: 36,
                                                               decoration: BoxDecoration(
                                                                 color: colorValue,
                                                                 borderRadius: BorderRadius.circular(
@@ -302,8 +304,8 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                                 ),
                                                               ),
                                                             ),
-                                                            SizedBox(
-                                                              height: 8,
+                                                            const SizedBox(
+                                                              height: 6,
                                                             ),
                                                             Text(
                                                               _translateValueGlobal(
@@ -311,10 +313,11 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                                                                     colorName,
                                                                   ) ??
                                                                   colorName,
-                                                              style: GoogleFonts.orbitron(
+                                                              style: TextStyle(
                                                                 fontSize: 12,
+                                                                height: 1.25,
                                                                 color: onPicker,
-                                                                fontWeight: FontWeight.bold,
+                                                                fontWeight: FontWeight.w600,
                                                               ),
                                                               textAlign: TextAlign.center,
                                                               overflow: TextOverflow.ellipsis,

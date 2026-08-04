@@ -19,11 +19,33 @@ class HomeFilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final chipLabel = '${descriptor.label}: ${descriptor.value}';
     final color = descriptor.color;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    final bool useLatinDisplayFont =
+        languageCode != 'ar' && languageCode != 'ku';
+    final textStyle = (useLatinDisplayFont
+            ? GoogleFonts.orbitron(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              )
+            : TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w700,
+                height: 1.25,
+              ));
+
     return Semantics(
       button: true,
       label: '${AppLocalizations.of(context)!.clearFilters}, $chipLabel',
       child: Container(
-        padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6),
+        padding: const EdgeInsetsDirectional.only(
+          start: 10,
+          end: 2,
+          top: 6,
+          bottom: 6,
+        ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(14),
@@ -31,19 +53,17 @@ class HomeFilterChip extends StatelessWidget {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(descriptor.icon, color: color, size: 15),
             const SizedBox(width: 6),
             Text(
               chipLabel,
-              style: GoogleFonts.orbitron(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.bold,
-                height: 1.0,
-              ),
+              style: textStyle,
               maxLines: 1,
+              softWrap: false,
               overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.start,
             ),
             Material(
               color: Colors.transparent,
@@ -51,7 +71,7 @@ class HomeFilterChip extends StatelessWidget {
                 onTap: onClear,
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 2, 8, 2),
+                  padding: const EdgeInsetsDirectional.fromSTEB(6, 2, 8, 2),
                   child: Icon(Icons.close, color: color, size: 16),
                 ),
               ),

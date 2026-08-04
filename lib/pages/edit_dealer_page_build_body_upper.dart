@@ -53,6 +53,58 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
     setState(() {});
   }
 
+  Future<void> _confirmRemoveEmail(int index) async {
+    if (_saving || index < 0 || index >= _emails.length) return;
+
+    final emailAddress = _emails[index].text.trim();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          _tr(
+            'Remove email?',
+            ar: 'إزالة البريد الإلكتروني؟',
+            ku: 'ئیمەیل لاببرێت؟',
+          ),
+        ),
+        content: Text(
+          emailAddress.isNotEmpty
+              ? _tr(
+                  'Remove $emailAddress from your contact emails?',
+                  ar: 'إزالة $emailAddress من رسائل التواصل؟',
+                  ku: '$emailAddress لە ئیمەیلەکانی پەیوەندیدا لاببرێت؟',
+                )
+              : _tr(
+                  'Remove this email from your contact emails?',
+                  ar: 'إزالة هذا البريد من رسائل التواصل؟',
+                  ku: 'ئەم ئیمەیلە لە ئیمەیلەکانی پەیوەندیدا لاببرێت؟',
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              _loc?.cancelAction ??
+                  _tr('Cancel', ar: 'إلغاء', ku: 'پاشگەزبوونەوە'),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              _tr('Remove', ar: 'إزالة', ku: 'لابردن'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final c = _emails.removeAt(index);
+    c.dispose();
+    setState(() {});
+  }
+
   List<Widget> _editDealerUpperFormCards(BuildContext context) {
     final logoUrl = buildMediaUrl((_currentLogo ?? '').trim());
     final coverUrl = buildMediaUrl((_currentCover ?? '').trim());
@@ -376,6 +428,137 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
                   ],
                 ),
                 if (i != _phones.length - 1) const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 12),
+      Card(
+        color: cardFill,
+        shadowColor: Colors.black54,
+        elevation: isLightShell ? 6 : 10,
+        shape: cardShape,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle(
+                icon: Icons.email_outlined,
+                title: _tr(
+                  'Contact emails',
+                  ar: 'رسائل التواصل',
+                  ku: 'ئیمەیلەکانی پەیوەندی',
+                ),
+                subtitle: _tr(
+                  'Optional. Add up to $_editDealerMaxEmails verified emails.',
+                  ar: 'اختياري. يمكنك إضافة حتى $_editDealerMaxEmails بريد موثّق.',
+                  ku: 'ئارەزوومەندانە. دەتوانیت تا $_editDealerMaxEmails ئیمەیلی پشتڕاستکراو زیاد بکەیت.',
+                ),
+                trailing: OutlinedButton.icon(
+                  onPressed: (_saving || _emails.length >= _editDealerMaxEmails)
+                      ? null
+                      : () => setState(
+                          () => _emails.add(TextEditingController()),
+                        ),
+                  style: _outlineAccentStyle(),
+                  icon: const Icon(Icons.add),
+                  label: Text(_tr('Add', ar: 'إضافة', ku: 'زیادکردن')),
+                ),
+              ),
+              if (_emails.isEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _tr(
+                    'No contact emails yet.',
+                    ar: 'لا توجد رسائل تواصل بعد.',
+                    ku: 'هێشتا ئیمەیلی پەیوەندی نییە.',
+                  ),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (_emails.isNotEmpty) const SizedBox(height: 12),
+              for (var i = 0; i < _emails.length; i++) ...[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _emails[i],
+                      keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      style: _fieldTextStyle(isLightShell),
+                      decoration: _fieldDecoration(
+                        isLightShell,
+                        label:
+                            '${_tr('Email', ar: 'البريد', ku: 'ئیمەیل')} ${i + 1}',
+                        icon: Icons.email_outlined,
+                      ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (v) {
+                        final value = (v ?? '').trim();
+                        if (value.isEmpty) return null;
+                        if (!isValidDealerEmailForVerification(value)) {
+                          return _tr(
+                            'Enter a valid email address',
+                            ar: 'أدخل بريداً إلكترونياً صالحاً',
+                            ku: 'ئیمەیلێکی دروست بنووسە',
+                          );
+                        }
+                        return null;
+                      },
+                    ),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: _isDealerEmailVerified(_emails[i].text)
+                              ? null
+                              : () => _verifyDealerEmailAt(i),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
+                            foregroundColor: _editDealerAccent,
+                            disabledForegroundColor: Colors.green,
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: Icon(
+                            _isDealerEmailVerified(_emails[i].text)
+                                ? Icons.verified_rounded
+                                : Icons.mark_email_unread_outlined,
+                            size: 18,
+                          ),
+                          label: Text(
+                            _isDealerEmailVerified(_emails[i].text)
+                                ? _tr(
+                                    'Verified',
+                                    ar: 'موثّق',
+                                    ku: 'پشتڕاستکراو',
+                                  )
+                                : _tr(
+                                    'Verify',
+                                    ar: 'تحقق',
+                                    ku: 'پشتڕاستکردنەوە',
+                                  ),
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          tooltip: _tr('Remove', ar: 'إزالة', ku: 'لابردن'),
+                          onPressed: _saving
+                              ? null
+                              : () => _confirmRemoveEmail(i),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                if (i != _emails.length - 1) const SizedBox(height: 12),
               ],
             ],
           ),

@@ -32,6 +32,46 @@ class CarNameTranslations {
 
   static String _key(String? s) => (s ?? '').trim().toLowerCase();
 
+  /// Lookup forms for catalog keys: raw, hyphen↔space (Land-Rover ↔ land rover).
+  static Iterable<String> _keyVariants(String? s) sync* {
+    final base = _key(s);
+    if (base.isEmpty) return;
+    yield base;
+    final spaced = base
+        .replaceAll(RegExp(r'[-_]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (spaced.isNotEmpty && spaced != base) yield spaced;
+    final hyphenated = spaced.replaceAll(' ', '-');
+    if (hyphenated.isNotEmpty &&
+        hyphenated != base &&
+        hyphenated != spaced) {
+      yield hyphenated;
+    }
+  }
+
+  static String? _packLookup(Map<String, String> map, String? raw) {
+    for (final k in _keyVariants(raw)) {
+      final v = map[k];
+      if (v != null && v.isNotEmpty) return v;
+    }
+    return null;
+  }
+
+  static String? _packModelLookup(
+    Map<String, String> models,
+    String? brand,
+    String? model,
+  ) {
+    for (final bk in _keyVariants(brand)) {
+      for (final mk in _keyVariants(model)) {
+        final v = models['$bk|$mk'];
+        if (v != null && v.isNotEmpty) return v;
+      }
+    }
+    return null;
+  }
+
   /// True if token is a short alphanumeric code to keep in English: has a digit (X7, M5, X80, 4Runner)
   /// or is very short letters only (iX, RX, M). Words like Land, Santa, Bestune are false.
   static bool _isCodeLike(String token) {
@@ -118,7 +158,7 @@ class CarNameTranslations {
     if (brand == null || brand.isEmpty) return '';
     final pack = _cachedPack(languageCode);
     if (pack == null) return brand;
-    return pack.brands[_key(brand)] ?? brand;
+    return _packLookup(pack.brands, brand) ?? brand;
   }
 
   static String getLocalizedModel(
@@ -148,23 +188,17 @@ class CarNameTranslations {
     final pack = _cachedPack(languageCode);
     if (pack == null) return model;
 
-    final key = '${_key(brand)}|${_key(model)}';
     final isAr = languageCode == 'ar';
-    final existing = pack.models[key];
-    if (existing != null && existing.isNotEmpty) return existing;
+    final existing = _packModelLookup(pack.models, brand, model);
+    if (existing != null) return existing;
 
     final parts = <String>[];
     for (final token in tokens) {
       if (_isCodeLike(token)) {
         parts.add(token);
       } else {
-        final singleKey = '${_key(brand)}|${_key(token)}';
-        final singleTr = pack.models[singleKey];
-        parts.add(
-          (singleTr != null && singleTr.isNotEmpty)
-              ? singleTr
-              : _transliterateToken(token, isAr),
-        );
+        final singleTr = _packModelLookup(pack.models, brand, token);
+        parts.add(singleTr ?? _transliterateToken(token, isAr));
       }
     }
     final joined = parts.join(' ').trim();
@@ -183,7 +217,7 @@ class CarNameTranslations {
     if (trim == null || trim.isEmpty) return '';
     final pack = _cachedPack(languageCode);
     if (pack == null) return trim;
-    return pack.trims[_key(trim)] ?? trim;
+    return _packLookup(pack.trims, trim) ?? trim;
   }
 
   /// Returns localized "Brand Model" or "Brand Model Trim" for display.

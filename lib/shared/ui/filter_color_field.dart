@@ -144,7 +144,7 @@ class _ColorPickerDialog extends StatelessWidget {
                   physics: const BouncingScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    childAspectRatio: 1.2,
+                    childAspectRatio: 0.9,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10,
                   ),
@@ -161,24 +161,29 @@ class _ColorPickerDialog extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: borderSubtle),
                         ),
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 8,
+                        ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 40,
-                              height: 40,
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
                                 color: colorValue,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: borderSubtle, width: 2),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Text(
                               labelForColor(context, colorName),
                               style: TextStyle(
                                 fontSize: 12,
+                                height: 1.25,
                                 color: onPicker,
                                 fontWeight: FontWeight.w600,
                               ),

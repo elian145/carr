@@ -66,6 +66,15 @@ class User(db.Model):
     dealership_verified_phones = db.Column(db.JSON, nullable=True)
     # Digit-only phones OTP-proven for listing contact (any authenticated user).
     contact_verified_phones = db.Column(db.JSON, nullable=True)
+    # JSON list of public dealership contact emails (verified before save).
+    dealership_emails = db.Column(db.JSON, nullable=True)
+    # Lowercased emails that completed the dealer email OTP challenge.
+    dealership_verified_emails = db.Column(db.JSON, nullable=True)
+    dealer_email_verification_code_hash = db.Column(db.String(128), nullable=True)
+    dealer_email_verification_expires_at = db.Column(db.DateTime, nullable=True)
+    dealer_email_verification_attempts = db.Column(db.Integer, nullable=True)
+    dealer_email_verification_last_sent_at = db.Column(db.DateTime, nullable=True)
+    dealer_email_verification_locked_until = db.Column(db.DateTime, nullable=True)
     dealership_location = db.Column(db.String(200), nullable=True)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
@@ -157,6 +166,18 @@ class User(db.Model):
             ]
         else:
             contact_verified_out = []
+        emails = getattr(self, "dealership_emails", None)
+        if isinstance(emails, list):
+            emails_out = [str(x).strip() for x in emails if str(x).strip()]
+        else:
+            emails_out = []
+        verified_emails = getattr(self, "dealership_verified_emails", None)
+        if isinstance(verified_emails, list):
+            verified_emails_out = [
+                str(x).strip().lower() for x in verified_emails if str(x).strip()
+            ]
+        else:
+            verified_emails_out = []
 
         data = {
             'id': self.public_id,
@@ -176,6 +197,8 @@ class User(db.Model):
             'dealership_phones': phones_out,
             'dealership_verified_phones': verified_phones_out,
             'contact_verified_phones': contact_verified_out,
+            'dealership_emails': emails_out,
+            'dealership_verified_emails': verified_emails_out,
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,
@@ -364,6 +387,8 @@ class DealerProfile(db.Model):
     dealership_name = db.Column(db.String(120), nullable=False)
     dealership_phone = db.Column(db.String(20), nullable=False)
     dealership_phones = db.Column(db.JSON, nullable=True)
+    dealership_emails = db.Column(db.JSON, nullable=True)
+    dealership_verified_emails = db.Column(db.JSON, nullable=True)
     dealership_location = db.Column(db.String(200), nullable=False)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)
@@ -377,11 +402,21 @@ class DealerProfile(db.Model):
     user = db.relationship("User", back_populates="dealer_profile")
 
     def to_dict(self):
+        emails = self.dealership_emails or []
+        if not isinstance(emails, list):
+            emails = []
+        verified_emails = self.dealership_verified_emails or []
+        if not isinstance(verified_emails, list):
+            verified_emails = []
         return {
             "id": self.public_id,
             "dealership_name": self.dealership_name,
             "dealership_phone": self.dealership_phone,
             "dealership_phones": self.dealership_phones or [],
+            "dealership_emails": [str(x).strip() for x in emails if str(x).strip()],
+            "dealership_verified_emails": [
+                str(x).strip().lower() for x in verified_emails if str(x).strip()
+            ],
             "dealership_location": self.dealership_location,
             "dealership_description": self.dealership_description,
             "dealership_cover_picture": self.dealership_cover_picture,
