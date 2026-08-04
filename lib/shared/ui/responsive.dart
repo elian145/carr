@@ -203,15 +203,16 @@ abstract final class AppResponsive {
     // Standard marketplace 4:3 frame. It preserves more of typical landscape
     // car photos while portrait photos use automatic downward vehicle bias.
     final ratio = quickSell ? 0.62 : 0.75;
-    var height = (colW * ratio).clamp(
-      quickSell ? 100.0 : 120.0,
-      quickSell ? 130.0 : 230.0,
-    );
+    final preferredMin = quickSell ? 100.0 : 120.0;
+    final preferredMax = quickSell ? 130.0 : 230.0;
+    var height = (colW * ratio).clamp(preferredMin, preferredMax);
     if (maxHeight != null && maxHeight.isFinite) {
-      height = height.clamp(
-        quickSell ? 100.0 : 120.0,
-        maxHeight.clamp(quickSell ? 100.0 : 120.0, 230.0),
-      );
+      // Cap to the caller budget even when it's below the preferred minimum,
+      // so grid text never loses height to an inflexible image floor.
+      final cappedMax = maxHeight.clamp(78.0, preferredMax);
+      final effectiveMin =
+          preferredMin > cappedMax ? cappedMax : preferredMin;
+      height = height.clamp(effectiveMin, cappedMax);
     }
     return height;
   }
