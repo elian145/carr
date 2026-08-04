@@ -407,7 +407,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                             child: Row(
                               children: [
                                 Expanded(
-                                  flex: 2,
+                                  flex: 3,
                                   child: OutlinedButton(
                                     onPressed: () async {
                                       await _resetSearchFiltersPage(
@@ -422,15 +422,25 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                         color: _searchAccent,
                                         width: 1.4,
                                       ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    child: Text(
-                                      AppLocalizations.of(context)!.resetButton,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.resetButton,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -454,6 +464,9 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                     },
                                     child: Text(
                                       _searchShowCarsLabel(context),
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,

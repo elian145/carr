@@ -128,8 +128,8 @@ Widget _buildGridCarCardInnerText(
   }
 
   /// Year / mileage chips: soft accent tint + icon so specs feel less flat.
-  /// Pass [fillWidth] for the mileage chip so it may use remaining row space;
-  /// digits scale down instead of ellipsizing. Year stays intrinsic-sized.
+  /// Pass [fillWidth] for the mileage chip so it fills remaining row space;
+  /// digits scale down only when they overflow. Year stays intrinsic-sized.
   Widget yearMileageChip(
     String value, {
     required IconData icon,
@@ -137,14 +137,15 @@ Widget _buildGridCarCardInnerText(
   }) {
     final textStyle = TextStyle(
       color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
-      fontSize: compact ? 11 : 12.5,
+      // Keep readable on compact phones; mileage chip fills leftover row width.
+      fontSize: compact ? 12 : 12.5,
       fontWeight: FontWeight.w600,
       height: 1,
       letterSpacing: 0.1,
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool canConstrain =
+        final bool canFill =
             fillWidth &&
             constraints.maxWidth.isFinite &&
             constraints.maxWidth < double.infinity;
@@ -159,6 +160,7 @@ Widget _buildGridCarCardInnerText(
           style: textStyle,
         );
         final chip = Container(
+          width: canFill ? constraints.maxWidth : null,
           padding: EdgeInsets.symmetric(
             horizontal: compact ? 5 : 7,
             vertical: compact ? 4 : 5.5,
@@ -185,12 +187,12 @@ Widget _buildGridCarCardInnerText(
           ),
           child: Row(
             textDirection: textDirection,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: canFill ? MainAxisSize.max : MainAxisSize.min,
             children: [
               Icon(icon, size: compact ? 11 : 12, color: priceAccent),
               SizedBox(width: compact ? 3 : 4),
-              if (canConstrain)
-                Flexible(
+              if (canFill)
+                Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: isRtl
@@ -204,11 +206,7 @@ Widget _buildGridCarCardInnerText(
             ],
           ),
         );
-        if (!canConstrain) return chip;
-        return ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-          child: chip,
-        );
+        return chip;
       },
     );
   }
@@ -335,8 +333,7 @@ Widget _buildGridCarCardInnerText(
             if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
               SizedBox(width: compact ? 4 : 6),
             if (mileageDisplay.isNotEmpty)
-              Flexible(
-                fit: FlexFit.loose,
+              Expanded(
                 child: yearMileageChip(
                   mileageDisplay,
                   icon: Icons.speed_rounded,
@@ -600,7 +597,7 @@ Widget _buildListCarCardInnerText(
     );
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool canConstrain =
+        final bool canFill =
             fillWidth &&
             constraints.maxWidth.isFinite &&
             constraints.maxWidth < double.infinity;
@@ -613,6 +610,7 @@ Widget _buildListCarCardInnerText(
           style: textStyle,
         );
         final chip = Container(
+          width: canFill ? constraints.maxWidth : null,
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -636,12 +634,12 @@ Widget _buildListCarCardInnerText(
           ),
           child: Row(
             textDirection: textDirection,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: canFill ? MainAxisSize.max : MainAxisSize.min,
             children: [
               Icon(icon, size: 12, color: priceAccent),
               const SizedBox(width: 4),
-              if (canConstrain)
-                Flexible(
+              if (canFill)
+                Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: isRtl
@@ -655,11 +653,7 @@ Widget _buildListCarCardInnerText(
             ],
           ),
         );
-        if (!canConstrain) return chip;
-        return ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-          child: chip,
-        );
+        return chip;
       },
     );
   }
@@ -670,8 +664,7 @@ Widget _buildListCarCardInnerText(
     children: [
       yearMileageChip(yearText, icon: Icons.calendar_today_rounded),
       const SizedBox(width: 6),
-      Flexible(
-        fit: FlexFit.loose,
+      Expanded(
         child: yearMileageChip(
           mileageText,
           icon: Icons.speed_rounded,
