@@ -2258,7 +2258,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listingContactPhonesHint =>
-      'يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز. يمكنك إزالة رقمك الافتراضي بعد التحقق من رقم آخر.';
+      'يمكنك إضافة حتى 3 أرقام. تحقق من كل رقم برمز.';
 
   @override
   String get addPhoneNumber => 'إضافة رقم هاتف';

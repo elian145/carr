@@ -2278,7 +2278,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get listingContactPhonesHint =>
-      'دەتوانیت تا ٣ ژمارە زیاد بکەیت. هەر ژمارەیەک بە کۆد پشتڕاست بکەوە. دوای پشتڕاستکردنەوەی ژمارەیەکی تر دەتوانیت ژمارەی بنەڕەتی لاببەیت.';
+      'دەتوانیت تا ٣ ژمارە زیاد بکەیت. هەر ژمارەیەک پشتڕاست بکەوە.';
 
   @override
   String get addPhoneNumber => 'زیادکردنی ژمارەی تەلەفۆن';

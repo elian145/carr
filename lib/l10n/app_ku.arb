@@ -723,7 +723,7 @@
   "whatsappPhoneNumber": "ژمارەی واتساپ/مۆبایل",
   "whatsappPhoneNumber2": "ژمارەی واتساپ/مۆبایل *",
   "listingContactPhonesTitle": "ژمارەکانی پەیوەندی",
-  "listingContactPhonesHint": "دەتوانیت تا ٣ ژمارە زیاد بکەیت. هەر ژمارەیەک بە کۆد پشتڕاست بکەوە. دوای پشتڕاستکردنەوەی ژمارەیەکی تر دەتوانیت ژمارەی بنەڕەتی لاببەیت.",
+  "listingContactPhonesHint": "دەتوانیت تا ٣ ژمارە زیاد بکەیت. هەر ژمارەیەک پشتڕاست بکەوە.",
   "addPhoneNumber": "زیادکردنی ژمارەی تەلەفۆن",
   "listingContactPhoneN": "تەلەفۆن {n}",
   "@listingContactPhoneN": {

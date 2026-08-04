@@ -754,7 +754,7 @@
   "whatsappPhoneNumber": "WhatsApp/Phone Number",
   "whatsappPhoneNumber2": "WhatsApp/Phone Number *",
   "listingContactPhonesTitle": "Contact phone numbers",
-  "listingContactPhonesHint": "Add up to 3 numbers. Verify each with a code. You can remove your default number after verifying another.",
+  "listingContactPhonesHint": "Add up to 3 numbers. Verify each with a code.",
   "addPhoneNumber": "Add phone number",
   "listingContactPhoneN": "Phone {n}",
   "@listingContactPhoneN": {

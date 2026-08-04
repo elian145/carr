@@ -2276,7 +2276,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listingContactPhonesHint =>
-      'Add up to 3 numbers. Verify each with a code. You can remove your default number after verifying another.';
+      'Add up to 3 numbers. Verify each with a code.';
 
   @override
   String get addPhoneNumber => 'Add phone number';

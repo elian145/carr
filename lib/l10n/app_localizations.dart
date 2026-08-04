@@ -4354,7 +4354,7 @@ abstract class AppLocalizations {
   /// No description provided for @listingContactPhonesHint.
   ///
   /// In en, this message translates to:
-  /// **'Add up to 3 numbers. Verify each with a code. You can remove your default number after verifying another.'**
+  /// **'Add up to 3 numbers. Verify each with a code.'**
   String get listingContactPhonesHint;
 
   /// No description provided for @addPhoneNumber.

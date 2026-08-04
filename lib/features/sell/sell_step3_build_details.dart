@@ -160,6 +160,9 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
       children: [
         TextFormField(
           controller: _phoneControllers[index],
+          // Keep +964 and digits in LTR order even on Arabic/Kurdish screens.
+          textDirection: ui.TextDirection.ltr,
+          textAlign: TextAlign.left,
           decoration: InputDecoration(
             labelText: label,
             hintText: '7XX XXX XXXX',

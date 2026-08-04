@@ -309,8 +309,8 @@ Widget _buildGlobalCarCard(
             // FittedBox shrink in the details block). A few extra px absorb
             // font/metric rounding so the text Column never overflows by <1px.
             final textReserve = AppResponsive.isCompactPhone(context)
-                ? 136.0
-                : 152.0;
+                ? 138.0
+                : 154.0;
             // Prefer a shorter image over stealing from the text block — the
             // preferred 120px floor must not win when the card is short.
             final availableForImage =

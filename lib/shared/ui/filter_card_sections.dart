@@ -150,19 +150,35 @@ InputDecoration filterFieldDecoration(
   Widget? suffixIcon,
   String? errorText,
 }) {
+  final labelStyle = TextStyle(
+    color: style.onSurface,
+    fontSize: 18,
+    fontWeight: FontWeight.bold,
+    height: 1.1,
+  );
+  // Scale long RTL labels (e.g. Kurdish VIN optional) down instead of
+  // ellipsizing inside the field outline.
+  final labelWidget = Text(
+    label,
+    style: labelStyle,
+    maxLines: 1,
+    softWrap: false,
+    overflow: TextOverflow.visible,
+  );
   return InputDecoration(
-    labelText: label,
+    label: FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerStart,
+      child: labelWidget,
+    ),
     isDense: true,
     errorText: errorText,
-    labelStyle: TextStyle(
-      color: style.onSurface,
-      fontSize: 18,
-      fontWeight: FontWeight.bold,
-    ),
+    labelStyle: labelStyle,
     floatingLabelStyle: TextStyle(
       color: style.onSurface,
       fontSize: 17,
       fontWeight: FontWeight.bold,
+      height: 1.1,
     ),
     filled: true,
     fillColor: style.fieldFill,
