@@ -121,14 +121,17 @@ Widget _buildGridCarCardInnerText(
   // Grid tiles: brand logo + title, trim, year/price, mileage/city.
   final bool compact = AppResponsive.isCompactPhone(context);
   // Fixed title metrics so the brand logo sits at the same spot on every card.
+  // 1.28 line height keeps Arabic/Kurdish descenders from clipping in the
+  // fixed two-line slot (1.12 was too tight with forceStrutHeight).
   const double titleFontSize = 15;
-  const double titleLineHeight = 1.12;
+  const double titleLineHeight = 1.28;
   const int titleMaxLines = 2;
   const double logoSize = 24;
   const double logoPad = 4.0;
   const double logoTitleGap = 6.0;
   final double titleLineBoxHeight = titleFontSize * titleLineHeight;
-  final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines;
+  // +2px slack covers font metric rounding on the second line.
+  final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines + 2;
   final double sectionGap = compact ? 4.0 : 6.0;
   final double blockGap = compact ? 6.0 : 8.0;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
@@ -185,26 +188,35 @@ Widget _buildGridCarCardInnerText(
   }
 
   /// Year / mileage chips: soft accent tint + icon so specs feel less flat.
-  /// Pass [constrainWidth] for the mileage chip so it respects remaining row
-  /// width. Mileage content is always LTR (icon then digits). The chip only
-  /// stretches to the full slot when the full-size label would overflow —
-  /// otherwise it hugs content so the pill has no empty internal gap.
+  /// Pass [constrainWidth] when the chip sits in an [Expanded] slot (long
+  /// mileage). Uses a larger type size; hugs when that fits, otherwise fills
+  /// the slot and scales down so leftover space is not wasted beside a tiny
+  /// label inside a wide empty pill.
   Widget yearMileageChip(
     String value, {
     required IconData icon,
     bool constrainWidth = false,
   }) {
-    final double baseFontSize = compact ? 12.0 : 12.5;
-    final double iconSize = compact ? 11.0 : 12.0;
+    // Larger type in the Expanded slot so mid-length mileages stay readable
+    // instead of looking tiny inside a stretched pill.
+    final double baseFontSize = constrainWidth
+        ? (compact ? 15.0 : 16.0)
+        : (compact ? 12.0 : 12.5);
+    final double iconSize = constrainWidth
+        ? (compact ? 13.0 : 14.0)
+        : (compact ? 11.0 : 12.0);
     final double iconGap = compact ? 3.0 : 4.0;
-    final double hPad = compact ? 5.0 : 7.0;
+    final double hPad = constrainWidth
+        ? (compact ? 5.0 : 7.0)
+        : (compact ? 5.0 : 7.0);
+    final double chipHeight = compact ? 28.0 : 30.0;
     const TextDirection chipDir = TextDirection.ltr;
     final textStyle = TextStyle(
       color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
       fontSize: baseFontSize,
       fontWeight: FontWeight.w600,
       height: 1,
-      letterSpacing: 0.1,
+      letterSpacing: 0,
     );
 
     Widget buildChip({
@@ -224,13 +236,12 @@ Widget _buildGridCarCardInnerText(
       );
       return SizedBox(
         width: width,
+        height: chipHeight,
         child: Container(
           width: fillWidth ? double.infinity : null,
-          alignment: fillWidth ? Alignment.centerLeft : null,
-          padding: EdgeInsets.symmetric(
-            horizontal: hPad,
-            vertical: compact ? 4 : 5.5,
-          ),
+          height: chipHeight,
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.symmetric(horizontal: hPad),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -254,6 +265,7 @@ Widget _buildGridCarCardInnerText(
           child: Row(
             textDirection: chipDir,
             mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: fillWidth ? MainAxisSize.max : MainAxisSize.min,
             children: [
               Icon(icon, size: iconSize, color: priceAccent),
@@ -297,20 +309,20 @@ Widget _buildGridCarCardInnerText(
         painter.dispose();
 
         final preferredW = iconSize + iconGap + textW + hPad * 2 + 2;
-        // Only stretch the pill when the label cannot fit at full size.
-        // Stretching while it fits leaves empty space inside the chip.
-        if (preferredW > constraints.maxWidth) {
-          return buildChip(
-            fontSize: baseFontSize,
-            fillWidth: true,
-            width: constraints.maxWidth,
+        if (preferredW <= constraints.maxWidth) {
+          // Fits at the larger size — hug content and sit beside the year so
+          // the pill is not a wide empty box with a tiny label.
+          return Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: buildChip(fontSize: baseFontSize, fillWidth: false),
           );
         }
 
-        // Fits at full size — hug content and sit beside the year.
-        return Align(
-          alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-          child: buildChip(fontSize: baseFontSize, fillWidth: false),
+        // Needs the full slot — fill and scale down from the larger size.
+        return buildChip(
+          fontSize: baseFontSize,
+          fillWidth: true,
+          width: constraints.maxWidth,
         );
       },
     );
@@ -433,34 +445,51 @@ Widget _buildGridCarCardInnerText(
       // Same leadingShift as title/trim so year lines up with those chips.
       Transform.translate(
         offset: Offset(leadingShift, 0),
-        child: Row(
-          textDirection: textDirection,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (yearDisplay.isNotEmpty)
-              yearMileageChip(
-                yearDisplay,
-                icon: Icons.calendar_today_rounded,
-              ),
-            if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
-              SizedBox(width: compact ? 4 : 6),
-            if (mileageDisplay.isNotEmpty)
-              // Short values sit beside the year. Long values take the rest of
-              // the row so the number can stay larger.
-              longMileage
-                  ? Expanded(
+        child: longMileage
+            ? Row(
+                textDirection: textDirection,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (yearDisplay.isNotEmpty)
+                    yearMileageChip(
+                      yearDisplay,
+                      icon: Icons.calendar_today_rounded,
+                    ),
+                  if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
+                    SizedBox(width: compact ? 4 : 6),
+                  if (mileageDisplay.isNotEmpty)
+                    Expanded(
                       child: yearMileageChip(
                         mileageDisplay,
                         icon: Icons.speed_rounded,
                         constrainWidth: true,
                       ),
-                    )
-                  : yearMileageChip(
-                      mileageDisplay,
-                      icon: Icons.speed_rounded,
                     ),
-          ],
-        ),
+                ],
+              )
+            : Align(
+                alignment:
+                    isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                child: Row(
+                  textDirection: textDirection,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (yearDisplay.isNotEmpty)
+                      yearMileageChip(
+                        yearDisplay,
+                        icon: Icons.calendar_today_rounded,
+                      ),
+                    if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
+                      SizedBox(width: compact ? 4 : 6),
+                    if (mileageDisplay.isNotEmpty)
+                      yearMileageChip(
+                        mileageDisplay,
+                        icon: Icons.speed_rounded,
+                      ),
+                  ],
+                ),
+              ),
       ),
     ],
   );
@@ -472,38 +501,63 @@ Widget _buildGridCarCardInnerText(
         hasPrice: hasPrice,
         listLayout: false,
       );
-      // Keep enough room for the city; long price labels shrink instead.
+      // Long prices need most of the footer; city can scale down.
       final double maxPriceWidth =
-          constraints.maxWidth * (hasPrice ? 0.62 : 0.52);
-      final Widget priceBadge = ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxPriceWidth),
-        child: Transform.translate(
-          offset: Offset(trailingShift, 0),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: priceStyle.horizontalPadding,
-              vertical: priceStyle.verticalPadding,
-            ),
-            decoration: BoxDecoration(
-              color: priceAccent,
-              borderRadius: BorderRadius.circular(priceStyle.radius),
-            ),
-            // No FittedBox: it expands to the max width and leaves empty
-            // orange beside short prices. Text + maxWidth hugs content.
-            child: Text(
-              priceText,
-              textScaler: const TextScaler.linear(1.0),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: priceStyle.fontSize,
-                height: 1,
-              ),
-            ),
+          constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
+      final priceTextStyle = TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w800,
+        fontSize: priceStyle.fontSize,
+        height: 1,
+      );
+      final pricePainter = TextPainter(
+        text: TextSpan(text: priceText, style: priceTextStyle),
+        textDirection: TextDirection.ltr,
+        textScaler: TextScaler.noScaling,
+        maxLines: 1,
+      )..layout(minWidth: 0, maxWidth: double.infinity);
+      final priceTextW = pricePainter.width;
+      pricePainter.dispose();
+      final priceNeeded =
+          priceTextW + priceStyle.horizontalPadding * 2;
+      final bool priceNeedsShrink = priceNeeded > maxPriceWidth;
+
+      final Widget priceBadge = Transform.translate(
+        offset: Offset(trailingShift, 0),
+        child: Container(
+          width: priceNeedsShrink ? maxPriceWidth : null,
+          padding: EdgeInsets.symmetric(
+            horizontal: priceStyle.horizontalPadding,
+            vertical: priceStyle.verticalPadding,
           ),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: priceAccent,
+            borderRadius: BorderRadius.circular(priceStyle.radius),
+          ),
+          // LTR + scaleDown: full amount stays visible; short prices still hug.
+          child: priceNeedsShrink
+              ? FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    priceText,
+                    textDirection: TextDirection.ltr,
+                    textScaler: const TextScaler.linear(1.0),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: priceTextStyle,
+                  ),
+                )
+              : Text(
+                  priceText,
+                  textDirection: TextDirection.ltr,
+                  textScaler: const TextScaler.linear(1.0),
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: priceTextStyle,
+                ),
         ),
       );
 
@@ -650,7 +704,7 @@ Widget _buildListCarCardInnerText(
             fontWeight: FontWeight.w800,
             color: titleTextColor,
             fontSize: 15,
-            height: 1.1,
+            height: 1.28,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -666,36 +720,52 @@ Widget _buildListCarCardInnerText(
     double? maxWidth,
     required _ListingPriceBadgeStyle style,
   }) {
-    Widget badge = Container(
+    final textStyle = TextStyle(
+      color: Colors.white,
+      fontWeight: FontWeight.w800,
+      fontSize: style.fontSize,
+      height: 1,
+    );
+    final bool canMeasure =
+        maxWidth != null && maxWidth.isFinite && maxWidth > 0;
+    bool needsShrink = false;
+    if (canMeasure) {
+      final painter = TextPainter(
+        text: TextSpan(text: priceText, style: textStyle),
+        textDirection: TextDirection.ltr,
+        textScaler: TextScaler.noScaling,
+        maxLines: 1,
+      )..layout(minWidth: 0, maxWidth: double.infinity);
+      final needed = painter.width + style.horizontalPadding * 2;
+      painter.dispose();
+      needsShrink = needed > maxWidth;
+    }
+
+    final label = Text(
+      priceText,
+      textDirection: TextDirection.ltr,
+      textScaler: const TextScaler.linear(1.0),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.visible,
+      style: textStyle,
+    );
+
+    return Container(
+      width: needsShrink ? maxWidth : null,
       padding: EdgeInsets.symmetric(
         horizontal: style.horizontalPadding,
         vertical: style.verticalPadding,
       ),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: priceAccent,
         borderRadius: BorderRadius.circular(style.radius),
       ),
-      child: Text(
-        priceText,
-        textScaler: const TextScaler.linear(1.0),
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: style.fontSize,
-          height: 1,
-        ),
-      ),
+      child: needsShrink
+          ? FittedBox(fit: BoxFit.scaleDown, child: label)
+          : label,
     );
-    if (maxWidth != null) {
-      badge = ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: badge,
-      );
-    }
-    return badge;
   }
 
   Widget infoChip(Widget child) {
@@ -716,17 +786,18 @@ Widget _buildListCarCardInnerText(
     required IconData icon,
     bool constrainWidth = false,
   }) {
-    const double baseFontSize = 13;
-    const double iconSize = 12.0;
+    final double baseFontSize = constrainWidth ? 15.0 : 13.0;
+    final double iconSize = constrainWidth ? 14.0 : 12.0;
     const double iconGap = 4.0;
-    const double hPad = 7.0;
+    final double hPad = constrainWidth ? 6.0 : 7.0;
+    const double chipHeight = 30.0;
     const TextDirection chipDir = TextDirection.ltr;
     final textStyle = TextStyle(
       color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
       fontSize: baseFontSize,
       fontWeight: FontWeight.w600,
       height: 1,
-      letterSpacing: 0.1,
+      letterSpacing: 0,
     );
 
     Widget buildChip({
@@ -746,10 +817,12 @@ Widget _buildListCarCardInnerText(
       );
       return SizedBox(
         width: width,
+        height: chipHeight,
         child: Container(
           width: fillWidth ? double.infinity : null,
-          alignment: fillWidth ? Alignment.centerLeft : null,
-          padding: const EdgeInsets.symmetric(horizontal: hPad, vertical: 6),
+          height: chipHeight,
+          alignment: Alignment.centerLeft,
+          padding: EdgeInsets.symmetric(horizontal: hPad),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -773,6 +846,7 @@ Widget _buildListCarCardInnerText(
           child: Row(
             textDirection: chipDir,
             mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisSize: fillWidth ? MainAxisSize.max : MainAxisSize.min,
             children: [
               Icon(icon, size: iconSize, color: priceAccent),
@@ -816,17 +890,17 @@ Widget _buildListCarCardInnerText(
         painter.dispose();
 
         final preferredW = iconSize + iconGap + textW + hPad * 2 + 2;
-        if (preferredW > constraints.maxWidth) {
-          return buildChip(
-            fontSize: baseFontSize,
-            fillWidth: true,
-            width: constraints.maxWidth,
+        if (preferredW <= constraints.maxWidth) {
+          return Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: buildChip(fontSize: baseFontSize, fillWidth: false),
           );
         }
 
-        return Align(
-          alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-          child: buildChip(fontSize: baseFontSize, fillWidth: false),
+        return buildChip(
+          fontSize: baseFontSize,
+          fillWidth: true,
+          width: constraints.maxWidth,
         );
       },
     );
@@ -897,7 +971,7 @@ Widget _buildListCarCardInnerText(
         listLayout: true,
       );
       final double maxPriceWidth =
-          constraints.maxWidth * (hasPrice ? 0.62 : 0.52);
+          constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
       return Row(
         textDirection: textDirection,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -969,7 +1043,7 @@ Widget _buildListCarCardInnerText(
                 style: const TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
-                  height: 1.1,
+                  height: 1.28,
                 ),
               ),
               maxLines: 1,

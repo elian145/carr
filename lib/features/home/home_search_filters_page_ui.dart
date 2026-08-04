@@ -452,6 +452,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: _searchAccent,
                                       foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 12,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
@@ -462,14 +466,17 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                                       onFilterChanged();
                                       Navigator.pop(context, true);
                                     },
-                                    child: Text(
-                                      _searchShowCarsLabel(context),
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        _searchShowCarsLabel(context),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        overflow: TextOverflow.visible,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                   ),
