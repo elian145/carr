@@ -126,12 +126,15 @@ mixin _ProfilePageWidgets on _ProfilePageLoad {
 
   Future<void> _showDeleteAccountDialog(BuildContext context) async {
     final loc = AppLocalizations.of(context)!;
-    final password = await showDeleteAccountPasswordDialog(context);
-    if (password == null || password.isEmpty || !context.mounted) return;
+    final auth = AuthService();
+    final confirmation = await showDeleteAccountConfirmDialog(
+      context,
+      auth: auth,
+    );
+    final code = confirmation?.code ?? '';
+    if (code.isEmpty || !context.mounted) return;
     try {
-      await AuthService().deleteAccount(
-        password: password,
-      );
+      await auth.deleteAccount(code: code);
       if (!context.mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
       ScaffoldMessenger.of(

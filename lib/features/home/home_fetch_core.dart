@@ -348,6 +348,11 @@ mixin _HomePageFetchCore on _HomePageFields {
 
         _debugLog('[home-feed] Parsed ${parsed.length} cars from response');
 
+        // An empty first page means there is nothing more to load, whatever the
+        // server said, otherwise the footer spinner never resolves.
+        if (parsed.isEmpty) _hasNext = false;
+        _page = 2; // next page to request
+
         if (mounted) {
           setState(() {
             cars = _applyDamagedPartsExactFilter(parsed);
@@ -358,6 +363,8 @@ mixin _HomePageFetchCore on _HomePageFields {
             servingCachedFeed = false;
             if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
           });
+          // Cache the page to request next, not the one just consumed, so a
+          // restore from cache cannot re-fetch it and duplicate rows.
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
           _HomePageFields._homeFeedCachePage = _page;
           _HomePageFields._homeFeedCacheHasNext = _hasNext;
@@ -369,7 +376,6 @@ mixin _HomePageFetchCore on _HomePageFields {
         // Save fresh cache with TTL timestamp
         unawaited(_writeHomeDiskCache(sp, cacheKey, response.body));
         _debugLog('[home-feed] Found ${parsed.length} cars with applied filters');
-        _page = 2; // next page to request
         // Reset retry count on success
         _fetchRetryCount = 0;
       } else {
@@ -481,26 +487,35 @@ mixin _HomePageFetchCore on _HomePageFields {
       );
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
+        var hasNext = _hasNext;
         if (decoded is Map) {
           try {
             final pg = (decoded['pagination'] as Map?);
             if (pg != null && pg['has_next'] is bool) {
-              _hasNext = pg['has_next'] as bool;
+              hasNext = pg['has_next'] as bool;
             }
           } catch (e, st) { logNonFatal(e, st); }
         }
         final List<Map<String, dynamic>> more = _applyDefaultFeedOrdering(
           listingMapsFromApiResponse(decoded),
         );
-        if (mounted && more.isNotEmpty) {
+        // An empty page ends the feed even if the server omits or stales
+        // `has_next`, which would otherwise keep the footer spinner forever.
+        if (more.isEmpty) hasNext = false;
+        _page += 1;
+        _hasNext = hasNext;
+        // Always rebuild: the footer spinner is driven by _hasNext, so a final
+        // empty page still has to repaint it away.
+        if (mounted) {
           setState(() {
-            cars.addAll(_applyDamagedPartsExactFilter(more));
+            if (more.isNotEmpty) {
+              cars.addAll(_applyDamagedPartsExactFilter(more));
+            }
           });
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
           _HomePageFields._homeFeedCachePage = _page;
           _HomePageFields._homeFeedCacheHasNext = _hasNext;
         }
-        _page += 1;
       } else {
         // Non-200: surface a retry affordance instead of a stuck spinner.
         failed = true;
@@ -552,6 +567,16 @@ mixin _HomePageFetchCore on _HomePageFields {
         if (decoded is Map && decoded['cars'] is List) {
           final List<Map<String, dynamic>> parsed =
               _applyDefaultFeedOrdering(listingMapsFromApiResponse(decoded));
+          // This replaces page 1, so pagination has to be reset with it or
+          // load-more keeps requesting from wherever the failed attempt left off.
+          var hasNext = true;
+          final pg = (decoded['pagination'] as Map?);
+          if (pg != null && pg['has_next'] is bool) {
+            hasNext = pg['has_next'] as bool;
+          }
+          if (parsed.isEmpty) hasNext = false;
+          _hasNext = hasNext;
+          _page = 2;
           if (mounted) {
             setState(() {
               cars = _applyDamagedPartsExactFilter(parsed);
@@ -559,6 +584,9 @@ mixin _HomePageFetchCore on _HomePageFields {
               hasLoadedOnce = true;
               loadErrorMessage = null;
             });
+            _HomePageFields._homeFeedCache = copyListingMapList(cars);
+            _HomePageFields._homeFeedCachePage = _page;
+            _HomePageFields._homeFeedCacheHasNext = _hasNext;
           }
           return true;
         }

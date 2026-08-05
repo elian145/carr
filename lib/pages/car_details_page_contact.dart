@@ -69,7 +69,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
       await AnalyticsService.trackCall(widget.carId.toString());
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to make call')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.unableToMakeCall)),
       );
     }
   }
@@ -145,9 +145,15 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
     final loc = AppLocalizations.of(context)!;
     final auth = Provider.of<AuthService>(context, listen: false);
     if (!auth.isAuthenticated) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(loc.loginRequired)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(loc.loginRequired),
+          action: SnackBarAction(
+            label: loc.loginAction,
+            onPressed: () => Navigator.pushNamed(context, '/login'),
+          ),
+        ),
+      );
       return;
     }
 
@@ -247,6 +253,12 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
       await AnalyticsService.trackShare(widget.carId.toString());
     } catch (e) {
       appLog('Failed to share car: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.failedToShareListing),
+        ),
+      );
     }
   }
 }

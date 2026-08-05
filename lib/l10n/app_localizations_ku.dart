@@ -491,6 +491,12 @@ class AppLocalizationsKu extends AppLocalizations {
   String get unableToOpenWhatsApp => 'ناتوانرێت واتساپ بکرێتەوە';
 
   @override
+  String get unableToMakeCall => 'ناتوانرێت پەیوەندی بکرێت';
+
+  @override
+  String get failedToShareListing => 'بڵاوکردنەوەی ڕیکلام سەرکەوتوو نەبوو';
+
+  @override
   String get backToList => 'گەڕانەوە بۆ لیست';
 
   @override

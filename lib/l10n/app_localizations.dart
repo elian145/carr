@@ -1054,6 +1054,18 @@ abstract class AppLocalizations {
   /// **'Unable to open WhatsApp'**
   String get unableToOpenWhatsApp;
 
+  /// No description provided for @unableToMakeCall.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to make call'**
+  String get unableToMakeCall;
+
+  /// No description provided for @failedToShareListing.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to share listing'**
+  String get failedToShareListing;
+
   /// No description provided for @backToList.
   ///
   /// In en, this message translates to:

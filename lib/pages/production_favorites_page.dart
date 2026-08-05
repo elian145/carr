@@ -124,6 +124,18 @@ class _FavoritesPageState extends State<FavoritesPage> {
       }
     } catch (e, st) {
       logNonFatal(e, st);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              e,
+              fallback: AppLocalizations.of(context)!.error,
+            ),
+          ),
+        ),
+      );
     }
   }
 
@@ -181,10 +193,23 @@ class _FavoritesPageState extends State<FavoritesPage> {
             )
           else if (_error != null)
             Center(
-              child: Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: muted),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: muted),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _loadFavorites,
+                      child: Text(AppLocalizations.of(context)!.retryAction),
+                    ),
+                  ],
+                ),
               ),
             )
           else if (_favorites.isEmpty)

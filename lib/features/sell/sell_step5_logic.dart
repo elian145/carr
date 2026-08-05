@@ -9,7 +9,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
     // Require authentication before allowing submission
     final existingToken = ApiService.accessToken;
     if (existingToken == null || existingToken.isEmpty) {
-      throw Exception('Authentication required');
+      throw ApiException(statusCode: 401, message: 'Authentication required');
     }
 
     final payload = buildSellCarCreatePayload(carData);
@@ -45,8 +45,10 @@ mixin _SellStep5Logic on _SellStep5Fields {
           } catch (e, st) {
             logNonFatal(e, st);
           }
-        } on ApiException catch (e) {
-          throw Exception(e.message);
+        } on ApiException {
+          // Keep the ApiException so status code and error code survive for the
+          // user-facing message (validation details, phone verification, 401).
+          rethrow;
         }
       } else {
         // Block dispose/async draft saves for the create→upload window so a
@@ -62,13 +64,9 @@ mixin _SellStep5Logic on _SellStep5Fields {
           pendingReview = isListingPendingReview(carObj);
         } on ApiException catch (e) {
           parentState?._abortSubmitDraftHandoff();
-          if (e.statusCode == 401) {
-            _debugLog('Submission failed: Authentication failed');
-            throw Exception('Authentication failed. Please log in again.');
-          }
           _debugLog('Submission failed: ${e.statusCode} - ${e.message}');
           final body = e.body;
-          String? msg = e.message;
+          String msg = e.message;
           if (body != null) {
             final List<dynamic>? errs = (body['errors'] is List)
                 ? List<dynamic>.from(body['errors']!)
@@ -77,7 +75,13 @@ mixin _SellStep5Logic on _SellStep5Fields {
               msg = errs.map((err) => err.toString()).join(', ');
             }
           }
-          throw Exception(msg);
+          // Re-throw as ApiException so the status code and error code still
+          // drive the user-facing message (401 relogin, phone verification).
+          throw ApiException(
+            statusCode: e.statusCode,
+            message: msg,
+            body: e.body,
+          );
         } catch (e) {
           parentState?._abortSubmitDraftHandoff();
           rethrow;

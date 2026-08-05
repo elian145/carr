@@ -265,8 +265,13 @@ class ApiService {
     newPassword: newPassword,
   );
 
-  static Future<Map<String, dynamic>> deleteAccount({String? password}) =>
-      _ApiServiceAuth.deleteAccount(password: password);
+  static Future<Map<String, dynamic>> sendDeleteAccountCode() =>
+      _ApiServiceAuth.sendDeleteAccountCode();
+
+  static Future<Map<String, dynamic>> deleteAccount({
+    String? password,
+    String? code,
+  }) => _ApiServiceAuth.deleteAccount(password: password, code: code);
 
   static Future<Map<String, dynamic>> forgotPassword(
     String value, {

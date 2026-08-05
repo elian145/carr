@@ -175,6 +175,8 @@
   "chatOnCarzo": "چات لەسەر CarNet",
   "chatCarzoOwnListing": "ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕێکلامی خۆت.",
   "unableToOpenWhatsApp": "ناتوانرێت واتساپ بکرێتەوە",
+  "unableToMakeCall": "ناتوانرێت پەیوەندی بکرێت",
+  "failedToShareListing": "بڵاوکردنەوەی ڕیکلام سەرکەوتوو نەبوو",
   "backToList": "گەڕانەوە بۆ لیست",
   "quickSell": "فرۆشی خێرا",
   "vehicleVideos": "ڤیدیۆی ئۆتۆمبێل",

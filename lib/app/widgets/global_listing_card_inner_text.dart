@@ -1183,8 +1183,15 @@ class _ListingCardFavoriteButtonState
     final tok = ApiService.accessToken;
     if (tok == null || tok.isEmpty) {
       if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)),
+        SnackBar(
+          content: Text(loc.loginRequired),
+          action: SnackBarAction(
+            label: loc.loginAction,
+            onPressed: () => Navigator.pushNamed(context, '/login'),
+          ),
+        ),
       );
       return;
     }
@@ -1206,9 +1213,18 @@ class _ListingCardFavoriteButtonState
       if (favorited) {
         unawaited(AnalyticsService.trackFavorite(id));
       }
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       setState(() => _isFavorite = previous);
+      final is401 = e is ApiException && e.statusCode == 401;
+      final loc = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            is401 ? loc.loginRequired : userErrorText(context, e, fallback: loc.error),
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }

@@ -175,6 +175,8 @@
   "chatOnCarzo": "محادثة على CarNet",
   "chatCarzoOwnListing": "لا يمكنك مراسلة نفسك على إعلانك.",
   "unableToOpenWhatsApp": "تعذر فتح واتساب",
+  "unableToMakeCall": "تعذر إجراء المكالمة",
+  "failedToShareListing": "تعذرت مشاركة الإعلان",
   "backToList": "عودة إلى القائمة",
   "quickSell": "بيع سريع",
   "vehicleVideos": "فيديوهات المركبة",

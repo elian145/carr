@@ -231,6 +231,10 @@ class SellListingMediaUpload {
     }
     await _saveListingImageLayout(carId, imgs, imageIdsBySource);
 
+    // Videos must not abort the remaining photo work, but the failure still has
+    // to reach the caller so the user isn't told the listing published intact.
+    Object? videoError;
+    StackTrace? videoStack;
     if (videosToUpload.isNotEmpty) {
       try {
         await ApiService.uploadCarVideos(
@@ -241,6 +245,8 @@ class SellListingMediaUpload {
         );
       } catch (e, st) {
         logNonFatal(e, st, 'SellListingMediaUpload.videos');
+        videoError = e;
+        videoStack = st;
       }
     }
 
@@ -285,6 +291,10 @@ class SellListingMediaUpload {
       await CarService().getCars(refresh: true);
     } catch (e, st) {
       logNonFatal(e, st);
+    }
+
+    if (videoError != null) {
+      Error.throwWithStackTrace(videoError, videoStack ?? StackTrace.current);
     }
   }
 }

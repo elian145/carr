@@ -491,6 +491,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unableToOpenWhatsApp => 'Unable to open WhatsApp';
 
   @override
+  String get unableToMakeCall => 'Unable to make call';
+
+  @override
+  String get failedToShareListing => 'Failed to share listing';
+
+  @override
   String get backToList => 'Back to list';
 
   @override

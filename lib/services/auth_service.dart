@@ -114,7 +114,13 @@ class AuthService extends ChangeNotifier {
       if (ApiService.accessToken != tokenAtStart) {
         return;
       }
-      await _clearAuthState();
+      // 401s already clear tokens (and this session) via onApiTokensCleared,
+      // triggered from inside ApiService. A transient network/5xx failure here
+      // must not log the user out — the token is still valid, so keep the
+      // existing session and let the next successful call repopulate it.
+      if (e is ApiException && e.statusCode == 401) {
+        await _clearAuthState();
+      }
     }
   }
 
@@ -306,12 +312,18 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Permanently delete the current user's account. Optionally pass [password] for confirmation.
+  /// Sends an SMS confirmation code for account deletion.
+  Future<Map<String, dynamic>> sendDeleteAccountCode() {
+    return ApiService.sendDeleteAccountCode();
+  }
+
+  /// Permanently delete the current user's account, confirmed by an SMS [code]
+  /// or a [password] for accounts that have one.
   /// Clears local auth state and disconnects WebSocket after successful deletion.
-  Future<void> deleteAccount({String? password}) async {
+  Future<void> deleteAccount({String? password, String? code}) async {
     _setLoading(true);
     try {
-      await ApiService.deleteAccount(password: password);
+      await ApiService.deleteAccount(password: password, code: code);
       WebSocketService.disconnect();
       await _clearAuthState();
     } catch (e) {

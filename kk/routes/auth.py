@@ -27,7 +27,6 @@ from ..auth import (
     get_current_user,
     log_user_action,
     validate_password,
-    validate_user_input,
     verify_email_verification_token,
     verify_password_reset_token,
 )
@@ -51,6 +50,11 @@ bp = Blueprint("auth", __name__)
 _EMAIL_SIGNUP_GONE = {
     "message": "Email signup is no longer supported. Use phone OTP instead.",
     "code": "email_signup_removed",
+}
+
+_DIRECT_SIGNUP_GONE = {
+    "message": "Direct registration is no longer supported. Verify your phone with a code instead.",
+    "code": "direct_signup_removed",
 }
 
 
@@ -113,6 +117,14 @@ def _to_bool(value) -> bool:
     if value is None:
         return False
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_dev_environment() -> bool:
+    """True only for local/dev runs, where OTP codes may be echoed to the client."""
+    if current_app.config.get("DEBUG"):
+        return True
+    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
+    return env == "development"
 
 
 def _apply_dealer_profile(
@@ -407,45 +419,8 @@ def init_jwt_callbacks(jwt) -> None:
 @bp.route("/api/auth/register", methods=["POST"])
 @rate_limit(max_requests=5, window_minutes=60)  # 5 registrations per hour per IP
 def register():
-    """User registration endpoint"""
-    try:
-        data = request.get_json()
-
-        # Sanitize input
-        data = validate_input_sanitization(data)
-
-        # Validate input
-        errors = validate_user_input(data, ["username", "phone_number", "password", "first_name", "last_name"])
-        if errors:
-            return jsonify({"message": "Validation failed", "errors": errors}), 400
-
-        # Check if user already exists
-        if User.query.filter_by(username=data["username"]).first():
-            return jsonify({"message": "Username already exists"}), 400
-
-        if User.query.filter_by(phone_number=data["phone_number"]).first():
-            return jsonify({"message": "Phone number already exists"}), 400
-
-        # Create new user (phone signup only — ignore any email in payload)
-        user = User(
-            username=data["username"],
-            phone_number=data["phone_number"],
-            first_name=data["first_name"],
-            last_name=data["last_name"],
-            email=None,
-        )
-        user.set_password(data["password"])
-
-        db.session.add(user)
-        db.session.commit()
-
-        log_user_action(user, "register")
-
-        return jsonify({"message": "User registered successfully.", "user": user.to_dict()}), 201
-
-    except Exception as e:
-        current_app.logger.exception("registration failed: %s", e)
-        return jsonify({"message": "Registration failed"}), 500
+    """Retired: created accounts without proving phone ownership. Use /api/auth/signup."""
+    return jsonify(_DIRECT_SIGNUP_GONE), 410
 
 
 @bp.route("/api/auth/register-request", methods=["POST"])
@@ -542,7 +517,7 @@ def login():
                     "token": access_token,  # mobile compatibility
                     "access_token": access_token,
                     "refresh_token": refresh_token,
-                    "user": user.to_dict(),
+                    "user": user.to_dict(include_private=True),
                 }
             ),
             200,
@@ -738,6 +713,118 @@ def _scrub_user_listings_on_delete(user_id: int) -> None:
             db.session.delete(vid)
 
 
+def _hash_delete_account_code(phone_digits: str, code: str) -> str:
+    """Namespaced so a signup OTP can never be replayed as a deletion code."""
+    return _hash_phone_verification_code(f"delete-account:{phone_digits}", code)
+
+
+@bp.route("/api/auth/delete-account/send-code", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=5, window_minutes=60, per_ip=False)
+def delete_account_send_code():
+    """SMS a confirmation code for account deletion.
+
+    Phone-OTP accounts have a server-generated password they can never type, so
+    proving control of the account phone is the only workable confirmation.
+    """
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "Unauthorized"}), 401
+        if AdminAccount.query.filter_by(principal_user_id=current_user.id).first():
+            return jsonify({"message": "Dashboard admin accounts cannot be deleted"}), 403
+
+        phone_digits = _normalize_phone(getattr(current_user, "phone_number", "") or "")
+        if not phone_digits:
+            return jsonify({"message": "No phone number on this account"}), 400
+
+        from ..time_utils import utcnow
+
+        now = utcnow()
+        locked_until = getattr(current_user, "phone_verification_locked_until", None)
+        if locked_until and locked_until > now:
+            return jsonify({"message": "Too many attempts. Please try again later."}), 429
+
+        last_sent = getattr(current_user, "phone_verification_last_sent_at", None)
+        if last_sent and (now - last_sent).total_seconds() < 60:
+            return jsonify({"message": "Please wait before requesting another code"}), 429
+
+        code = f"{secrets.randbelow(1_000_000):06d}"
+        current_user.phone_verification_code_hash = _hash_delete_account_code(
+            phone_digits, code
+        )
+        current_user.phone_verification_expires_at = now + timedelta(minutes=10)
+        current_user.phone_verification_attempts = 0
+        current_user.phone_verification_last_sent_at = now
+        current_user.phone_verification_locked_until = None
+        db.session.commit()
+
+        from ..sms_service import send_verification_sms_result
+
+        sms_sent, sms_detail = send_verification_sms_result(phone_digits, code)
+        if not sms_sent:
+            current_user.phone_verification_code_hash = None
+            current_user.phone_verification_expires_at = None
+            current_user.phone_verification_last_sent_at = None
+            db.session.commit()
+            current_app.logger.error(
+                "delete-account SMS failed provider=%s detail=%s",
+                (os.environ.get("SMS_PROVIDER") or "console").strip().lower(),
+                sms_detail or "unknown",
+            )
+            payload = {"sent": False, "message": "Failed to send confirmation code"}
+            if _is_dev_environment():
+                payload["dev_code"] = code
+            return jsonify(payload), 502
+
+        payload = {"sent": True, "message": "Confirmation code sent"}
+        if _is_dev_environment():
+            payload["dev_code"] = code
+        return jsonify(payload), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("delete_account_send_code failed: %s", e)
+        return jsonify({"message": "Failed to send confirmation code"}), 500
+
+
+def _verify_delete_account_code(user: User, code: str) -> str | None:
+    """Validate a deletion code with attempt lockout. Returns an error message or None."""
+    if len(code) != 6 or not code.isdigit():
+        return "Invalid or expired confirmation code"
+
+    from ..time_utils import utcnow
+
+    now = utcnow()
+    locked_until = getattr(user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return "Too many attempts. Please try again later."
+
+    expires_at = getattr(user, "phone_verification_expires_at", None)
+    code_hash = getattr(user, "phone_verification_code_hash", None)
+    if not expires_at or not code_hash or expires_at <= now:
+        return "Invalid or expired confirmation code"
+
+    phone_digits = _normalize_phone(getattr(user, "phone_number", "") or "")
+    expected = _hash_delete_account_code(phone_digits, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
+        user.phone_verification_attempts = attempts
+        if attempts >= 5:
+            user.phone_verification_locked_until = now + timedelta(minutes=15)
+            user.phone_verification_code_hash = None
+            user.phone_verification_expires_at = None
+            user.phone_verification_attempts = 0
+        db.session.commit()
+        return "Invalid or expired confirmation code"
+
+    # Single-use: burn the code before the delete runs.
+    user.phone_verification_code_hash = None
+    user.phone_verification_expires_at = None
+    user.phone_verification_attempts = 0
+    db.session.commit()
+    return None
+
+
 @bp.route("/api/auth/delete-account", methods=["POST", "DELETE"])
 @jwt_required()
 @rate_limit(max_requests=5, window_minutes=60, per_ip=False)
@@ -752,11 +839,20 @@ def delete_account():
 
         data = request.get_json(silent=True) or {}
         password = (data.get("password") or data.get("current_password") or "").strip()
+        code = (data.get("code") or data.get("verification_code") or "").strip()
 
-        # Always require password confirmation so a stolen JWT alone cannot wipe an account.
-        if not password:
-            return jsonify({"message": "Password is required to delete your account"}), 400
-        if not current_user.check_password(password):
+        # Require a second factor so a stolen JWT alone cannot wipe an account.
+        # Phone-OTP accounts never chose a password, so an SMS code is accepted too.
+        if not password and not code:
+            return jsonify(
+                {"message": "A confirmation code is required to delete your account"}
+            ), 400
+        if code:
+            code_error = _verify_delete_account_code(current_user, code)
+            if code_error:
+                status = 429 if code_error.startswith("Too many") else 400
+                return jsonify({"message": code_error}), status
+        elif not current_user.check_password(password):
             return jsonify({"message": "Incorrect password"}), 400
 
         user_id = current_user.id
@@ -1413,7 +1509,7 @@ def phone_verify():
         access_token = create_access_token(identity=identity)
         refresh_token = create_refresh_token(identity=identity)
         log_user_action(user, "login_phone")
-        return jsonify({"access_token": access_token, "refresh_token": refresh_token, "user": user.to_dict()}), 200
+        return jsonify({"access_token": access_token, "refresh_token": refresh_token, "user": user.to_dict(include_private=True)}), 200
     except Exception:
         return jsonify({"message": "Phone verification failed"}), 500
 
@@ -1518,7 +1614,7 @@ def compat_signup():
                 "token": access_token,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
-                "user": user.to_dict(),
+                "user": user.to_dict(include_private=True),
             }), 201
 
         if not phone_digits:
@@ -1587,7 +1683,7 @@ def compat_signup():
                     "token": access_token,
                     "access_token": access_token,
                     "refresh_token": refresh_token,
-                    "user": user.to_dict(),
+                    "user": user.to_dict(include_private=True),
                 }
             ),
             201,

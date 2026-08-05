@@ -4,6 +4,12 @@ part of 'sell_flow.dart';
 const int _kSellMaxPhotos = 20;
 const int _kSellMaxVideos = 3;
 
+/// Downscale/re-encode listing photos at pick time. A modern phone camera
+/// produces 10-25MB frames; uploading 20 of those times out or hits the
+/// server's 25MB-per-file limit. This still exceeds what the gallery displays.
+const double _kSellPhotoMaxEdge = 2048;
+const int _kSellPhotoQuality = 85;
+
 mixin _SellStep4Logic on _SellStep4Fields {
   @override
   void initState() {
@@ -447,7 +453,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
   Future<void> _pickImages() async {
     try {
-      final files = await _imagePicker.pickMultiImage();
+      final files = await _imagePicker.pickMultiImage(
+        maxWidth: _kSellPhotoMaxEdge,
+        maxHeight: _kSellPhotoMaxEdge,
+        imageQuality: _kSellPhotoQuality,
+      );
       if (files.isEmpty || !mounted) return;
       final existing = _selectedImages.map(_imagePathKey).toSet();
       var newFiles = files.where((f) => !existing.contains(f.path)).toList();
@@ -478,12 +488,34 @@ mixin _SellStep4Logic on _SellStep4Fields {
       if (overLimit) _showListingMediaLimitSnack(isVideo: false);
     } catch (e, st) {
       logNonFatal(e, st);
+      _showMediaPickError(e);
     }
+  }
+
+  /// Picker/permission failures are otherwise invisible, so the photo button
+  /// looks dead.
+  void _showMediaPickError(Object error) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          userErrorText(
+            context,
+            error,
+            fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _pickDamageImages() async {
     try {
-      final files = await _imagePicker.pickMultiImage();
+      final files = await _imagePicker.pickMultiImage(
+        maxWidth: _kSellPhotoMaxEdge,
+        maxHeight: _kSellPhotoMaxEdge,
+        imageQuality: _kSellPhotoQuality,
+      );
       if (files.isEmpty || !mounted) return;
       final existing = _damageImages.map(_imagePathKey).toSet();
       final additions = files.where((f) => !existing.contains(f.path)).toList();
@@ -499,6 +531,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       unawaited(parentState?.startBackgroundPlateBlur());
     } catch (e, st) {
       logNonFatal(e, st);
+      _showMediaPickError(e);
     }
   }
 
@@ -534,18 +567,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       unawaited(_saveDraft());
       if (overLimit) _showListingMediaLimitSnack(isVideo: true);
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
-            ),
-          ),
-        ),
-      );
+      _showMediaPickError(e);
     }
   }
 }

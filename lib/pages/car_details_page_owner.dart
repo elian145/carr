@@ -251,8 +251,15 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
       final tok = ApiService.accessToken;
       if (tok == null || tok.isEmpty) {
         if (!mounted) return;
+        final loc = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context)!.loginRequired)),
+          SnackBar(
+            content: Text(loc.loginRequired),
+            action: SnackBarAction(
+              label: loc.loginAction,
+              onPressed: () => Navigator.pushNamed(context, '/login'),
+            ),
+          ),
         );
         return;
       }

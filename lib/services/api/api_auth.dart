@@ -157,18 +157,34 @@ abstract final class _ApiServiceAuth {
     );
   }
 
-  static Future<Map<String, dynamic>> deleteAccount({String? password}) async {
-    final trimmed = (password ?? '').trim();
-    if (trimmed.isEmpty) {
+  /// SMS a confirmation code to the signed-in account's phone.
+  static Future<Map<String, dynamic>> sendDeleteAccountCode() async {
+    return await ApiService._makeAuthenticatedRequest(
+      'POST',
+      '/auth/delete-account/send-code',
+    );
+  }
+
+  /// Confirms with an SMS [code] or, for password accounts, a [password].
+  static Future<Map<String, dynamic>> deleteAccount({
+    String? password,
+    String? code,
+  }) async {
+    final trimmedCode = (code ?? '').trim();
+    final trimmedPassword = (password ?? '').trim();
+    if (trimmedCode.isEmpty && trimmedPassword.isEmpty) {
       throw ApiException(
         statusCode: 400,
-        message: 'Password is required to delete your account',
+        message: 'A confirmation code is required to delete your account',
       );
     }
     return await ApiService._makeAuthenticatedRequest(
       'POST',
       '/auth/delete-account',
-      body: {'password': trimmed},
+      body: {
+        if (trimmedCode.isNotEmpty) 'code': trimmedCode,
+        if (trimmedPassword.isNotEmpty) 'password': trimmedPassword,
+      },
     );
   }
 

@@ -179,10 +179,12 @@ class User(db.Model):
         else:
             verified_emails_out = []
 
+        # Public payload only. Account credentials (login phone, email), OTP
+        # bookkeeping and session metadata stay behind include_private because
+        # this dict is embedded in public listing/dealer responses.
         data = {
             'id': self.public_id,
             'username': self.username,
-            'phone_number': self.phone_number,
             'first_name': self.first_name,
             'last_name': self.last_name,
             'profile_picture': self.profile_picture,
@@ -195,10 +197,7 @@ class User(db.Model):
             'dealership_name': self.dealership_name,
             'dealership_phone': self.dealership_phone,
             'dealership_phones': phones_out,
-            'dealership_verified_phones': verified_phones_out,
-            'contact_verified_phones': contact_verified_out,
             'dealership_emails': emails_out,
-            'dealership_verified_emails': verified_emails_out,
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,
@@ -207,19 +206,22 @@ class User(db.Model):
             'dealership_opening_hours': self.dealership_opening_hours,
             'is_featured_dealer': bool(getattr(self, "is_featured_dealer", False)),
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_login': self.last_login.isoformat() if self.last_login else None
         }
 
-        # Only include email if it exists and isn't an internal placeholder.
-        # Phone OTP flows may create a stable placeholder email for legacy DB schemas.
-        if self.email and not str(self.email).lower().endswith("@phone.local"):
-            data['email'] = self.email
-        
         if include_private:
             data.update({
                 'is_admin': self.is_admin,
+                'phone_number': self.phone_number,
+                'contact_verified_phones': contact_verified_out,
+                'dealership_verified_phones': verified_phones_out,
+                'dealership_verified_emails': verified_emails_out,
+                'last_login': self.last_login.isoformat() if self.last_login else None,
                 'updated_at': self.updated_at.isoformat() if self.updated_at else None
             })
+            # Only include email if it exists and isn't an internal placeholder.
+            # Phone OTP flows may create a stable placeholder email for legacy DB schemas.
+            if self.email and not str(self.email).lower().endswith("@phone.local"):
+                data['email'] = self.email
             application = getattr(self, "dealer_application", None)
             if application is not None:
                 data["dealer_application"] = application.to_dict()
@@ -599,7 +601,11 @@ class Car(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'images': [img.to_dict() for img in self.images],
             'videos': [video.to_dict() for video in self.videos],
-            'seller': self.seller.to_dict() if self.seller else None,
+            'seller': (
+                self.seller.to_dict(include_private=include_private)
+                if self.seller
+                else None
+            ),
             # AI Analysis fields
             'ai_analyzed': self.ai_analyzed,
             'ai_detected_brand': self.ai_detected_brand,

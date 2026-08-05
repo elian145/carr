@@ -490,6 +490,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unableToOpenWhatsApp => 'تعذر فتح واتساب';
 
   @override
+  String get unableToMakeCall => 'تعذر إجراء المكالمة';
+
+  @override
+  String get failedToShareListing => 'تعذرت مشاركة الإعلان';
+
+  @override
   String get backToList => 'عودة إلى القائمة';
 
   @override

@@ -218,7 +218,8 @@ For production deployment details (Gunicorn/Celery/Redis/Socket.IO scaling), see
 ## 📱 API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - User registration
+- `POST /api/auth/phone/start` - Send a phone verification code
+- `POST /api/auth/signup` - Create an account with a verified phone code
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 - `POST /api/auth/refresh` - Refresh access token
