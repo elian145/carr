@@ -188,121 +188,182 @@ Widget _buildGridCarCardInnerText(
   }
 
   /// Year / mileage chips: soft accent tint + icon so specs feel less flat.
-  /// Always hugs content at a shared size — never stretches into a wide empty
-  /// pill with a tiny label. The parent row scales both chips together when
-  /// the card is too narrow.
+  /// Always hugs its label — never stretches into a wide empty pill.
   Widget yearMileageChip(
     String value, {
     required IconData icon,
+    required double fontSize,
   }) {
-    final double fontSize = compact ? 12.0 : 12.5;
-    final double iconSize = compact ? 11.0 : 12.0;
-    final double iconGap = compact ? 3.0 : 4.0;
-    final double hPad = compact ? 5.0 : 7.0;
-    final double chipHeight = compact ? 28.0 : 30.0;
+    final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
+    final double iconGap = compact ? 3.0 : 3.5;
+    final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
+    // Tight to the type so the pill does not look like a tall empty box.
+    final double chipHeight = fontSize + (compact ? 10.0 : 12.0);
     const TextDirection chipDir = TextDirection.ltr;
 
-    return SizedBox(
+    return Container(
       height: chipHeight,
-      child: Container(
-        height: chipHeight,
-        alignment: Alignment.centerLeft,
-        padding: EdgeInsets.symmetric(horizontal: hPad),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isLight
-                ? [
-                    priceAccent.withValues(alpha: 0.10),
-                    priceAccent.withValues(alpha: 0.04),
-                  ]
-                : [
-                    priceAccent.withValues(alpha: 0.22),
-                    priceAccent.withValues(alpha: 0.10),
-                  ],
-          ),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
-            width: 1,
-          ),
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? [
+                  priceAccent.withValues(alpha: 0.10),
+                  priceAccent.withValues(alpha: 0.04),
+                ]
+              : [
+                  priceAccent.withValues(alpha: 0.22),
+                  priceAccent.withValues(alpha: 0.10),
+                ],
         ),
-        child: Row(
-          textDirection: chipDir,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: iconSize, color: priceAccent),
-            SizedBox(width: iconGap),
-            Text(
-              value,
-              textDirection: chipDir,
-              textAlign: TextAlign.left,
-              textScaler: const TextScaler.linear(1.0),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.visible,
-              style: TextStyle(
-                color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-                height: 1,
-                letterSpacing: 0,
-              ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        textDirection: chipDir,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: iconSize, color: priceAccent),
+          SizedBox(width: iconGap),
+          Text(
+            value,
+            textDirection: chipDir,
+            textAlign: TextAlign.left,
+            textScaler: const TextScaler.linear(1.0),
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            style: TextStyle(
+              color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              letterSpacing: 0,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  /// Year + mileage side by side at identical chip/type size. Both hug their
-  /// labels; if the pair is wider than the card, scale the whole row down
-  /// together so neither number ends up tiny inside a stretched pill.
+  double _yearMileageChipWidth(String value, double fontSize) {
+    final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
+    final double iconGap = compact ? 3.0 : 3.5;
+    final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: value,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w600,
+          height: 1,
+          letterSpacing: 0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: TextScaler.noScaling,
+      maxLines: 1,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    final textW = painter.width;
+    painter.dispose();
+    return iconSize + iconGap + textW + hPad * 2 + 2;
+  }
+
+  /// Year + mileage at one shared type size. Grows into leftover row width so
+  /// numbers stay readable; shrinks together when the card is narrow. Chips
+  /// always hug their labels (never a wide empty mileage pill).
   Widget matchedYearMileageRow() {
     final double gap = compact ? 4.0 : 6.0;
     final Alignment align =
         isRtl ? Alignment.centerRight : Alignment.centerLeft;
-    final chips = Row(
-      textDirection: textDirection,
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (yearDisplay.isNotEmpty)
-          yearMileageChip(
-            yearDisplay,
-            icon: Icons.calendar_today_rounded,
-          ),
-        if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
-          SizedBox(width: gap),
-        if (mileageDisplay.isNotEmpty)
-          yearMileageChip(
-            mileageDisplay,
-            icon: Icons.speed_rounded,
-          ),
-      ],
-    );
+    // Prefer a readable size; grow when the row has room, floor when tight.
+    final double minFont = compact ? 11.0 : 11.5;
+    final double maxFont = compact ? 13.5 : 14.5;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool bounded =
             constraints.maxWidth.isFinite &&
             constraints.maxWidth < double.infinity;
+        final double maxW = bounded ? constraints.maxWidth : double.infinity;
+
+        double rowWidthAt(double fontSize) {
+          double total = 0;
+          if (yearDisplay.isNotEmpty) {
+            total += _yearMileageChipWidth(yearDisplay, fontSize);
+          }
+          if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
+            total += gap;
+          }
+          if (mileageDisplay.isNotEmpty) {
+            total += _yearMileageChipWidth(mileageDisplay, fontSize);
+          }
+          return total;
+        }
+
+        double fontSize = maxFont;
+        if (bounded) {
+          // Largest shared size that fits the full row width.
+          fontSize = minFont;
+          for (double fs = maxFont; fs >= minFont - 0.001; fs -= 0.25) {
+            if (rowWidthAt(fs) <= maxW) {
+              fontSize = fs;
+              break;
+            }
+          }
+          // Even the floor is too wide — keep floor and scale the pair together.
+          if (rowWidthAt(minFont) > maxW) {
+            fontSize = minFont;
+          }
+        }
+
+        final chips = Row(
+          textDirection: textDirection,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (yearDisplay.isNotEmpty)
+              yearMileageChip(
+                yearDisplay,
+                icon: Icons.calendar_today_rounded,
+                fontSize: fontSize,
+              ),
+            if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty)
+              SizedBox(width: gap),
+            if (mileageDisplay.isNotEmpty)
+              yearMileageChip(
+                mileageDisplay,
+                icon: Icons.speed_rounded,
+                fontSize: fontSize,
+              ),
+          ],
+        );
+
         if (!bounded) {
           return Align(alignment: align, child: chips);
         }
+
+        final bool needsScale = rowWidthAt(fontSize) > maxW;
         return Align(
           alignment: align,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: align,
-              child: chips,
-            ),
-          ),
+          child: needsScale
+              ? ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxW),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: align,
+                    child: chips,
+                  ),
+                )
+              : chips,
         );
       },
     );
@@ -714,100 +775,158 @@ Widget _buildListCarCardInnerText(
   Widget yearMileageChip(
     String value, {
     required IconData icon,
+    required double fontSize,
   }) {
-    const double fontSize = 13.0;
-    const double iconSize = 12.0;
-    const double iconGap = 4.0;
-    const double hPad = 7.0;
-    const double chipHeight = 30.0;
+    final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
+    const double iconGap = 3.5;
+    final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
+    final double chipHeight = fontSize + 12.0;
     const TextDirection chipDir = TextDirection.ltr;
 
-    return SizedBox(
+    return Container(
       height: chipHeight,
-      child: Container(
-        height: chipHeight,
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.symmetric(horizontal: hPad),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isLight
-                ? [
-                    priceAccent.withValues(alpha: 0.10),
-                    priceAccent.withValues(alpha: 0.04),
-                  ]
-                : [
-                    priceAccent.withValues(alpha: 0.22),
-                    priceAccent.withValues(alpha: 0.10),
-                  ],
-          ),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
-            width: 1,
-          ),
+      padding: EdgeInsets.symmetric(horizontal: hPad),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isLight
+              ? [
+                  priceAccent.withValues(alpha: 0.10),
+                  priceAccent.withValues(alpha: 0.04),
+                ]
+              : [
+                  priceAccent.withValues(alpha: 0.22),
+                  priceAccent.withValues(alpha: 0.10),
+                ],
         ),
-        child: Row(
-          textDirection: chipDir,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: iconSize, color: priceAccent),
-            const SizedBox(width: iconGap),
-            Text(
-              value,
-              textDirection: chipDir,
-              textAlign: TextAlign.left,
-              textScaler: const TextScaler.linear(1.0),
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.visible,
-              style: TextStyle(
-                color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-                height: 1,
-                letterSpacing: 0,
-              ),
-            ),
-          ],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: priceAccent.withValues(alpha: isLight ? 0.28 : 0.40),
+          width: 1,
         ),
       ),
+      child: Row(
+        textDirection: chipDir,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: iconSize, color: priceAccent),
+          const SizedBox(width: iconGap),
+          Text(
+            value,
+            textDirection: chipDir,
+            textAlign: TextAlign.left,
+            textScaler: const TextScaler.linear(1.0),
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            style: TextStyle(
+              color: isLight ? const Color(0xFF3A3A3A) : Colors.white,
+              fontSize: fontSize,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  double _yearMileageChipWidth(String value, double fontSize) {
+    final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
+    const double iconGap = 3.5;
+    final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: value,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w600,
+          height: 1,
+          letterSpacing: 0,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: TextScaler.noScaling,
+      maxLines: 1,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    final textW = painter.width;
+    painter.dispose();
+    return iconSize + iconGap + textW + hPad * 2 + 2;
   }
 
   final Alignment specsAlign =
       isRtl ? Alignment.centerRight : Alignment.centerLeft;
   final Widget specsRow = LayoutBuilder(
     builder: (context, constraints) {
+      const double gap = 6.0;
+      const double minFont = 11.5;
+      const double maxFont = 14.5;
+      final bool bounded =
+          constraints.maxWidth.isFinite &&
+          constraints.maxWidth < double.infinity;
+      final double maxW = bounded ? constraints.maxWidth : double.infinity;
+
+      double rowWidthAt(double fontSize) {
+        return _yearMileageChipWidth(yearText, fontSize) +
+            gap +
+            _yearMileageChipWidth(mileageText, fontSize);
+      }
+
+      double fontSize = maxFont;
+      if (bounded) {
+        fontSize = minFont;
+        for (double fs = maxFont; fs >= minFont - 0.001; fs -= 0.25) {
+          if (rowWidthAt(fs) <= maxW) {
+            fontSize = fs;
+            break;
+          }
+        }
+        if (rowWidthAt(minFont) > maxW) {
+          fontSize = minFont;
+        }
+      }
+
       final chips = Row(
         textDirection: textDirection,
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          yearMileageChip(yearText, icon: Icons.calendar_today_rounded),
-          const SizedBox(width: 6),
-          yearMileageChip(mileageText, icon: Icons.speed_rounded),
+          yearMileageChip(
+            yearText,
+            icon: Icons.calendar_today_rounded,
+            fontSize: fontSize,
+          ),
+          const SizedBox(width: gap),
+          yearMileageChip(
+            mileageText,
+            icon: Icons.speed_rounded,
+            fontSize: fontSize,
+          ),
         ],
       );
-      final bool bounded =
-          constraints.maxWidth.isFinite &&
-          constraints.maxWidth < double.infinity;
+
       if (!bounded) {
         return Align(alignment: specsAlign, child: chips);
       }
+
+      final bool needsScale = rowWidthAt(fontSize) > maxW;
       return Align(
         alignment: specsAlign,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: specsAlign,
-            child: chips,
-          ),
-        ),
+        child: needsScale
+            ? ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxW),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: specsAlign,
+                  child: chips,
+                ),
+              )
+            : chips,
       );
     },
   );
