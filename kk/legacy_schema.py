@@ -138,6 +138,12 @@ def ensure_minimal_schema_compat(app, db) -> None:
                     ("last_login", "DATETIME"),
                     ("created_at", "DATETIME"),
                     ("updated_at", "DATETIME"),
+                    ("pending_email", "TEXT"),
+                    ("email_change_code_hash", "TEXT"),
+                    ("email_change_expires_at", "DATETIME"),
+                    ("email_change_attempts", "INTEGER DEFAULT 0"),
+                    ("email_change_last_sent_at", "DATETIME"),
+                    ("email_change_locked_until", "DATETIME"),
                 ):
                     _add_user(col, typ)
 

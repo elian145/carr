@@ -160,13 +160,33 @@ def send_dealer_email_verification_code(to_email: str, code: str) -> bool:
     return send_email(to_email, subject=subject, text_body=text_body, html_body=html_body)
 
 
+def send_account_email_change_code(to_email: str, code: str) -> bool:
+    """Send an ownership code for a *new* personal account email before it is saved."""
+    subject = "Confirm your new Carzo email"
+    text_body = (
+        f"Your Carzo verification code is: {code}\n\n"
+        "Enter this code in the app to confirm this is your new account email. "
+        "It expires in 10 minutes. If you did not request this, you can ignore this email."
+    )
+    html_body = (
+        f"<p>Your Carzo verification code is:</p>"
+        f"<p style='font-size:24px;font-weight:700;letter-spacing:2px'>{code}</p>"
+        f"<p>Enter this code in the app to confirm this is your new account email. "
+        f"It expires in 10 minutes. If you did not request this, you can ignore this email.</p>"
+    )
+    return send_email(to_email, subject=subject, text_body=text_body, html_body=html_body)
+
+
 def send_account_email_verification(to_email: str, token: str) -> bool:
     """Send the account email verification magic link."""
     public_base = (os.environ.get("PUBLIC_BASE_URL") or "").strip().rstrip("/")
     if public_base:
         link = f"{public_base}/verify-email?token={token}"
     else:
-        link = f"carzo://verify-email?token={token}"
+        # Must match the app's registered `carzo://auth` intent-filter/URL
+        # scheme host (see AndroidManifest.xml); `carzo://verify-email` is
+        # unclaimed by any app and silently does nothing when tapped (S9).
+        link = f"carzo://auth/verify-email?token={token}"
     subject = "Verify your Carzo email"
     text_body = (
         "Verify your Carzo email address by opening this link:\n\n"

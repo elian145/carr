@@ -1630,6 +1630,12 @@ abstract class AppLocalizations {
   /// **'This will remove it from public listings.'**
   String get deleteListingBody;
 
+  /// No description provided for @listingRemovedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Listing removed'**
+  String get listingRemovedSuccess;
+
   /// No description provided for @cancelAction.
   ///
   /// In en, this message translates to:
@@ -1743,6 +1749,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Message a seller from a listing to start a conversation.'**
   String get chatEmptyHint;
+
+  /// No description provided for @originalMessageNotLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Original message is not loaded.'**
+  String get originalMessageNotLoaded;
+
+  /// No description provided for @messageCannotBeEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Message cannot be empty.'**
+  String get messageCannotBeEmpty;
+
+  /// No description provided for @chatUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat unavailable'**
+  String get chatUnavailableTitle;
+
+  /// No description provided for @chatUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Messaging is temporarily disabled. Please try again later.'**
+  String get chatUnavailableBody;
 
   /// No description provided for @recentlyViewedEmptyHint.
   ///
@@ -2325,6 +2355,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to update profile'**
   String get failedToUpdateProfile;
+
+  /// No description provided for @verifyNewEmailDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your new email'**
+  String get verifyNewEmailDialogTitle;
+
+  /// No description provided for @verifyNewEmailDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send a 6-digit code to {email} to confirm you own it. Your other changes are saved already.'**
+  String verifyNewEmailDialogMessage(Object email);
+
+  /// No description provided for @emailUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Email updated successfully'**
+  String get emailUpdatedSuccess;
 
   /// No description provided for @failedToPickImage.
   ///

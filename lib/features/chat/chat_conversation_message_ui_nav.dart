@@ -29,8 +29,11 @@ mixin _ChatConversationMessageUiNav on _ChatConversationComposer {
     if (index == -1) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Original message is not loaded.'),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)?.originalMessageNotLoaded ??
+                'Original message is not loaded.',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -155,119 +158,8 @@ mixin _ChatConversationMessageUiNav on _ChatConversationComposer {
   void _showReportDialog() {
     final receiverId = widget.receiverId;
     if (receiverId == null || receiverId.isEmpty) return;
-    final reasonController = TextEditingController();
-    final detailsController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          _chatText(
-            context,
-            'Report User',
-            ar: 'الإبلاغ عن المستخدم',
-            ku: 'ڕاپۆرتکردنی بەکارهێنەر',
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: reasonController,
-                decoration: const InputDecoration(
-                  labelText: 'Reason',
-                  hintText: 'e.g. spam, harassment, scam',
-                  border: OutlineInputBorder(),
-                ),
-                maxLength: 200,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: detailsController,
-                decoration: const InputDecoration(
-                  labelText: 'Details (optional)',
-                  hintText: 'Provide additional details...',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                maxLength: 2000,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(AppLocalizations.of(context)?.cancelAction ?? 'Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final reason = reasonController.text.trim();
-              if (reason.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      _chatText(
-                        context,
-                        'Please provide a reason',
-                        ar: 'يرجى إدخال السبب',
-                        ku: 'تکایە هۆکارێک بنووسە',
-                      ),
-                    ),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-                return;
-              }
-              Navigator.pop(ctx);
-              try {
-                await ApiService.reportUser(
-                  receiverId,
-                  reason: reason,
-                  details: detailsController.text.trim(),
-                );
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      _chatText(
-                        context,
-                        'Report submitted. Thank you.',
-                        ar: 'تم إرسال البلاغ. شكراً لك.',
-                        ku: 'ڕاپۆرتەکە نێردرا. سوپاس.',
-                      ),
-                    ),
-                  ),
-                );
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      userErrorText(
-                        context,
-                        e,
-                        fallback:
-                            AppLocalizations.of(context)?.errorTitle ?? 'Error',
-                      ),
-                    ),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            child: Text(
-              _chatText(
-                context,
-                'Submit Report',
-                ar: 'إرسال البلاغ',
-                ku: 'ناردنی ڕاپۆرت',
-              ),
-              style: const TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
+    // Shared dialog (see lib/shared/trust/report_dialog.dart) disposes its own
+    // text controllers; the old inline copy of this dialog never did.
+    showReportUserDialog(context, userPublicId: receiverId);
   }
 }

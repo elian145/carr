@@ -75,6 +75,14 @@ class User(db.Model):
     dealer_email_verification_attempts = db.Column(db.Integer, nullable=True)
     dealer_email_verification_last_sent_at = db.Column(db.DateTime, nullable=True)
     dealer_email_verification_locked_until = db.Column(db.DateTime, nullable=True)
+    # Personal account login/contact email. `email` itself is only overwritten once
+    # `pending_email` is proven via a code sent to it (see /api/user/email-change/*).
+    pending_email = db.Column(db.String(120), nullable=True)
+    email_change_code_hash = db.Column(db.String(128), nullable=True)
+    email_change_expires_at = db.Column(db.DateTime, nullable=True)
+    email_change_attempts = db.Column(db.Integer, nullable=True)
+    email_change_last_sent_at = db.Column(db.DateTime, nullable=True)
+    email_change_locked_until = db.Column(db.DateTime, nullable=True)
     dealership_location = db.Column(db.String(200), nullable=True)
     dealership_description = db.Column(db.Text, nullable=True)
     dealership_cover_picture = db.Column(db.String(200), nullable=True)

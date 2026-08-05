@@ -521,6 +521,85 @@ def android_assetlinks():
     )
 
 
+@bp.route("/verify-email", methods=["GET"])
+def verify_email_landing():
+    """Browser landing page for the account-email verification link.
+
+    The token is applied by the app calling ``POST /api/auth/verify-email``
+    (see ``verify_email_page.dart``), not by this page — it only hands the
+    token to the app or lets the user paste it in manually.
+    """
+    token = (request.args.get("token") or "").strip()
+    if not token:
+        abort(404)
+
+    deep = f"carzo://auth/verify-email?token={quote(token, safe='')}"
+    esc_deep = escape(deep, quote=True)
+    esc_token = escape(token, quote=True)
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Verify your Carzo email</title>
+  <style>
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+    }}
+    .btn {{
+      display: block;
+      width: 100%;
+      max-width: 20rem;
+      padding: 1.1rem 1.25rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(180deg, #ff7a1a, #e85f00);
+      color: #fff !important;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-radius: 14px;
+      text-decoration: none;
+      font-family: inherit;
+    }}
+    .token {{
+      max-width: 20rem;
+      word-break: break-all;
+      font-size: 0.85rem;
+      color: #bbb;
+      margin-top: 0.5rem;
+    }}
+  </style>
+</head>
+<body>
+  <p>Tap below to verify your email in the Carzo app.</p>
+  <a class="btn" id="carzo-open" href="{esc_deep}">Open in Carzo app</a>
+  <p class="token">App not opening? Paste this code in Carzo &rarr; Verify email:<br/>{esc_token}</p>
+  <script>
+    setTimeout(function () {{ window.location.href = {json.dumps(deep)}; }}, 120);
+  </script>
+</body>
+</html>"""
+    return Response(
+        html,
+        200,
+        headers={
+            "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
+        },
+    )
+
+
 @bp.route("/listing/<listing_id>", methods=["GET"])
 def listing_share_landing(listing_id: str):
     """Public listing page for shared URLs: ``https://<host>/listing/<id>`` *is* the listing."""

@@ -57,6 +57,7 @@ import '../../app/widgets/listing_network_image.dart';
 import '../../shared/ui/listing_feed_skeleton.dart';
 import '../../shared/ui/empty_state_panel.dart';
 import '../../app/widgets/main_shell_navigation.dart' show navigateMainShellTab;
+import '../../shared/trust/report_dialog.dart';
 import 'chat_live_transport.dart';
 import 'chat_strings.dart';
 import 'chat_theme.dart';

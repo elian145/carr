@@ -799,6 +799,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteListingBody => 'This will remove it from public listings.';
 
   @override
+  String get listingRemovedSuccess => 'Listing removed';
+
+  @override
   String get cancelAction => 'Cancel';
 
   @override
@@ -856,6 +859,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatEmptyHint =>
       'Message a seller from a listing to start a conversation.';
+
+  @override
+  String get originalMessageNotLoaded => 'Original message is not loaded.';
+
+  @override
+  String get messageCannotBeEmpty => 'Message cannot be empty.';
+
+  @override
+  String get chatUnavailableTitle => 'Chat unavailable';
+
+  @override
+  String get chatUnavailableBody =>
+      'Messaging is temporarily disabled. Please try again later.';
 
   @override
   String get recentlyViewedEmptyHint => 'Open a car listing to add it here.';
@@ -1170,6 +1186,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get failedToUpdateProfile => 'Failed to update profile';
+
+  @override
+  String get verifyNewEmailDialogTitle => 'Verify your new email';
+
+  @override
+  String verifyNewEmailDialogMessage(Object email) {
+    return 'We\'ll send a 6-digit code to $email to confirm you own it. Your other changes are saved already.';
+  }
+
+  @override
+  String get emailUpdatedSuccess => 'Email updated successfully';
 
   @override
   String get failedToPickImage => 'Failed to pick image';

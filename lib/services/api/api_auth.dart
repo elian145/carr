@@ -474,6 +474,33 @@ abstract final class _ApiServiceAuth {
     );
   }
 
+  /// Sends an ownership code to [email] before it can replace the account's
+  /// personal login/contact email. The address is only saved after
+  /// [verifyAccountEmailChange] confirms the code.
+  static Future<Map<String, dynamic>> sendAccountEmailChangeCode(
+    String email,
+  ) {
+    return ApiService._makeAuthenticatedRequest(
+      'POST',
+      '/user/email-change/send-code',
+      body: {'email': email.trim()},
+    );
+  }
+
+  static Future<Map<String, dynamic>> verifyAccountEmailChange(
+    String email,
+    String code,
+  ) {
+    return ApiService._makeAuthenticatedRequest(
+      'POST',
+      '/user/email-change/verify',
+      body: {
+        'email': email.trim(),
+        'verification_code': code.trim(),
+      },
+    );
+  }
+
   static Future<Map<String, dynamic>> sendContactPhoneVerification(
     String phoneNumber,
   ) {

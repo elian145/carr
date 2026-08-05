@@ -88,8 +88,11 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
         if (content.isEmpty && _editingKeepAttachments.isEmpty) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Message cannot be empty.'),
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)?.messageCannotBeEmpty ??
+                    'Message cannot be empty.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );

@@ -5,6 +5,7 @@ import 'dart:io';
 import '../l10n/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/config.dart';
+import '../shared/account/email_change_dialog.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/media/pick_circular_image.dart';
 import '../app/widgets/listing_network_image.dart';

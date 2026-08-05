@@ -797,6 +797,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get deleteListingBody => 'سيتم إزالته من الإعلانات العامة.';
 
   @override
+  String get listingRemovedSuccess => 'تمت إزالة الإعلان';
+
+  @override
   String get cancelAction => 'إلغاء';
 
   @override
@@ -852,6 +855,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get chatEmptyHint => 'راسل البائع من صفحة الإعلان لبدء محادثة.';
+
+  @override
+  String get originalMessageNotLoaded => 'الرسالة الأصلية لم تُحمّل.';
+
+  @override
+  String get messageCannotBeEmpty => 'لا يمكن أن تكون الرسالة فارغة.';
+
+  @override
+  String get chatUnavailableTitle => 'المحادثة غير متوفرة';
+
+  @override
+  String get chatUnavailableBody =>
+      'المراسلة معطّلة مؤقتاً. حاول مرة أخرى لاحقاً.';
 
   @override
   String get recentlyViewedEmptyHint => 'افتح إعلان سيارة لإضافته هنا.';
@@ -1164,6 +1180,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get failedToUpdateProfile => 'فشل تحديث الملف الشخصي';
+
+  @override
+  String get verifyNewEmailDialogTitle => 'تحقق من بريدك الإلكتروني الجديد';
+
+  @override
+  String verifyNewEmailDialogMessage(Object email) {
+    return 'سنرسل رمزاً من 6 أرقام إلى $email لتأكيد ملكيتك له. تم حفظ التغييرات الأخرى مسبقاً.';
+  }
+
+  @override
+  String get emailUpdatedSuccess => 'تم تحديث البريد الإلكتروني بنجاح';
 
   @override
   String get failedToPickImage => 'فشل اختيار الصورة';

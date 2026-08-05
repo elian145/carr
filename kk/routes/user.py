@@ -194,6 +194,32 @@ def _hash_dealer_email_code(email: str, code: str) -> str:
     return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
 
 
+def _hash_account_email_change_code(email: str, code: str) -> str:
+    """Namespaced separately so it can never be replayed as a dealer-email code."""
+    key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    message = f"account-email-change:{email}:{code}".encode("utf-8")
+    return hmac.new(key, msg=message, digestmod=hashlib.sha256).hexdigest()
+
+
+def resolve_profile_email_change(current_email, new_email_raw) -> tuple[bool, bool]:
+    """Return (is_change, requires_code) for a profile-update `email` field.
+
+    A change is only meaningful when the new value differs from the
+    account's real (non-placeholder) email. Setting a genuinely new,
+    non-blank address always requires OTP proof via
+    /api/user/email-change/* (S7); clearing it back to blank does not,
+    since that makes no ownership claim on anyone's address.
+    """
+    current_email_raw = current_email or ""
+    current_effective = (
+        "" if current_email_raw.lower().endswith("@phone.local") else current_email_raw
+    )
+    new_email_raw = (new_email_raw or "").strip()
+    is_change = new_email_raw != current_effective
+    requires_code = is_change and bool(new_email_raw)
+    return is_change, requires_code
+
+
 def _verified_dealer_emails(user: User) -> list[str]:
     raw = getattr(user, "dealership_verified_emails", None)
     verified = raw if isinstance(raw, list) else []
@@ -662,11 +688,20 @@ def update_profile():
             if existing and existing.id != current_user.id:
                 return jsonify({"message": "Username already exists"}), 400
             current_user.username = new_username
-        if "email" in data and data["email"] != current_user.email:
-            if User.query.filter_by(email=data["email"]).first():
-                return jsonify({"message": "Email already exists"}), 400
-            current_user.email = data["email"]
-            current_user.is_verified = False
+        if "email" in data:
+            is_change, requires_code = resolve_profile_email_change(
+                current_user.email, data.get("email")
+            )
+            if is_change:
+                if requires_code:
+                    return jsonify(
+                        {
+                            "message": "Verify the new email address with a code before changing it.",
+                            "code": "email_change_verification_required",
+                        }
+                    ), 400
+                current_user.email = None
+                current_user.is_verified = False
 
         # Backwards-compatible dealer request flow for older mobile clients.
         if _to_bool(data.get("is_dealer")):
@@ -1354,6 +1389,140 @@ def verify_dealer_email():
             "dealership_verified_emails": verified,
         }
     ), 200
+
+
+@bp.route("/api/user/email-change/send-code", methods=["POST"])
+@jwt_required()
+def send_account_email_change_code():
+    """Send an ownership code to a NEW personal account email before saving it."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    email = _normalize_dealer_email(data.get("email") or data.get("new_email") or "")
+    if not _is_valid_dealer_email(email):
+        return jsonify({"message": "Enter a valid email address"}), 400
+
+    existing = User.query.filter_by(email=email).first()
+    if existing and existing.id != current_user.id:
+        return jsonify({"message": "Email already exists"}), 400
+
+    now = utcnow()
+    locked_until = getattr(current_user, "email_change_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    last_sent = getattr(current_user, "email_change_last_sent_at", None)
+    if last_sent and (now - last_sent).total_seconds() < 60:
+        return jsonify({"message": "Please wait before requesting another code"}), 429
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    current_user.pending_email = email
+    current_user.email_change_code_hash = _hash_account_email_change_code(email, code)
+    current_user.email_change_expires_at = now + timedelta(minutes=10)
+    current_user.email_change_attempts = 0
+    current_user.email_change_last_sent_at = now
+    current_user.email_change_locked_until = None
+    db.session.commit()
+
+    from ..email_service import send_account_email_change_code as _send_code
+
+    mail_sent = _send_code(email, code)
+    if not mail_sent:
+        if _is_dev_email_payload():
+            # Keep the OTP so local clients can verify with `dev_code`.
+            payload = {
+                "message": "Verification code ready (email not configured)",
+                "sent": False,
+                "code": "email_send_failed",
+                "dev_code": code,
+            }
+            return jsonify(payload), 200
+        current_user.pending_email = None
+        current_user.email_change_code_hash = None
+        current_user.email_change_expires_at = None
+        current_user.email_change_attempts = 0
+        db.session.commit()
+        return jsonify(
+            {
+                "message": "Failed to send verification code",
+                "sent": False,
+                "code": "email_send_failed",
+            }
+        ), 502
+
+    payload = {"message": "Verification code sent", "sent": True}
+    if _is_dev_email_payload():
+        payload["dev_code"] = code
+    return jsonify(payload), 200
+
+
+@bp.route("/api/user/email-change/verify", methods=["POST"])
+@jwt_required()
+def verify_account_email_change():
+    """Confirm ownership of a new personal account email and apply it."""
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    email = _normalize_dealer_email(data.get("email") or data.get("new_email") or "")
+    code = str(data.get("verification_code") or data.get("code") or "").strip()
+    if not _is_valid_dealer_email(email) or len(code) != 6 or not code.isdigit():
+        return jsonify({"message": "Email and a six-digit code are required"}), 400
+
+    pending = _normalize_dealer_email(getattr(current_user, "pending_email", None))
+    if not pending or pending != email:
+        return jsonify({"message": "Request a new code for this email first"}), 400
+
+    now = utcnow()
+    locked_until = getattr(current_user, "email_change_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    expires_at = getattr(current_user, "email_change_expires_at", None)
+    code_hash = getattr(current_user, "email_change_code_hash", None)
+    if not expires_at or not code_hash or expires_at <= now:
+        current_user.pending_email = None
+        current_user.email_change_code_hash = None
+        current_user.email_change_expires_at = None
+        current_user.email_change_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    expected = _hash_account_email_change_code(email, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = int(getattr(current_user, "email_change_attempts", 0) or 0) + 1
+        current_user.email_change_attempts = attempts
+        if attempts >= 5:
+            current_user.email_change_locked_until = now + timedelta(minutes=15)
+            current_user.pending_email = None
+            current_user.email_change_code_hash = None
+            current_user.email_change_expires_at = None
+            current_user.email_change_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Invalid or expired verification code"}), 400
+
+    # Re-check uniqueness at commit time in case someone else claimed it meanwhile.
+    existing = User.query.filter_by(email=email).first()
+    if existing and existing.id != current_user.id:
+        current_user.pending_email = None
+        current_user.email_change_code_hash = None
+        current_user.email_change_expires_at = None
+        current_user.email_change_attempts = 0
+        db.session.commit()
+        return jsonify({"message": "Email already exists"}), 400
+
+    current_user.email = email
+    current_user.is_verified = True
+    current_user.pending_email = None
+    current_user.email_change_code_hash = None
+    current_user.email_change_expires_at = None
+    current_user.email_change_attempts = 0
+    current_user.email_change_locked_until = None
+    current_user.updated_at = now
+    db.session.commit()
+    log_user_action(current_user, "account_email_changed")
+    return jsonify({"message": "Email updated successfully", "email": email}), 200
 
 
 @bp.route("/api/user/contact-phone/send-verification", methods=["POST"])

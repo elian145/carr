@@ -100,6 +100,23 @@ def _allowed_attach_media_url(url: str) -> bool:
     return key.startswith("car_photos/") or key.startswith("car_videos/")
 
 
+def _http_url_owned_by_user(url: str, user_id: int) -> bool:
+    """True if this exact URL is already attached to one of this user's own cars.
+
+    The R2 bucket is public-read, so `car_photos/<key>.jpg` URLs are guessable
+    from any listing a scraper can see. Attach must only let a seller re-attach
+    media they already own (e.g. keeping existing photos when editing a
+    listing), not hot-link someone else's photo onto their own listing.
+    """
+    return (
+        db.session.query(CarImage.id)
+        .join(Car, Car.id == CarImage.car_id)
+        .filter(Car.seller_id == user_id, CarImage.image_url == url)
+        .first()
+        is not None
+    )
+
+
 def _upload_video_file_to_r2(file_storage) -> str:
     """
     Read validated multipart file, put to R2, return public HTTPS URL for DB storage.
@@ -385,30 +402,33 @@ def r2_sign_upload():
         if not content_type:
             return jsonify({"message": "Unsupported content_type for this asset"}), 400
 
-        from ..r2_ops import r2_presign_put
-
-        put_kwargs: dict = {
-            "key": key,
-            "content_type": content_type,
-            "expires_in": 900,
-        }
+        # Required, not optional: ContentLength is only bound into the presigned
+        # signature when we pass it to boto3. Skipping it here would let anyone
+        # with a valid JWT PUT an object of any size to this key.
         raw_len = data.get("content_length")
         if raw_len is None:
             raw_len = data.get("size")
-        if raw_len is not None:
-            try:
-                claimed = int(raw_len)
-            except (TypeError, ValueError):
-                return jsonify({"message": "Invalid content_length"}), 400
-            if claimed < 1 or claimed > max_bytes:
-                return jsonify(
-                    {
-                        "message": f"content_length must be between 1 and {max_bytes} bytes",
-                    }
-                ), 400
-            put_kwargs["content_length"] = claimed
+        if raw_len is None:
+            return jsonify({"message": "content_length is required"}), 400
+        try:
+            claimed = int(raw_len)
+        except (TypeError, ValueError):
+            return jsonify({"message": "Invalid content_length"}), 400
+        if claimed < 1 or claimed > max_bytes:
+            return jsonify(
+                {
+                    "message": f"content_length must be between 1 and {max_bytes} bytes",
+                }
+            ), 400
 
-        presigned_url = r2_presign_put(**put_kwargs)
+        from ..r2_ops import r2_presign_put
+
+        presigned_url = r2_presign_put(
+            key=key,
+            content_type=content_type,
+            expires_in=900,
+            content_length=claimed,
+        )
 
         out = {"upload_url": presigned_url, "key": key}
         public_base = (current_app.config.get("R2_PUBLIC_URL") or "").strip()
@@ -583,6 +603,10 @@ def attach_car_images(car_id: str):
                 # Full URL (e.g. R2 public URL): store as-is
                 if rel_str.lower().startswith("http://") or rel_str.lower().startswith("https://"):
                     if not _allowed_attach_media_url(rel_str):
+                        continue
+                    if not current_user.is_admin and not _http_url_owned_by_user(
+                        rel_str, current_user.id
+                    ):
                         continue
                     listing_n = _count_listing_images(car)
                     is_primary = attach_kind == "listing" and listing_n == 0

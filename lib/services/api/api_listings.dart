@@ -234,11 +234,15 @@ abstract final class _ApiServiceListings {
     );
   }
 
+  /// [contentLength] is required by the server: it is bound into the
+  /// presigned URL's signature, so it's the only thing stopping an
+  /// authenticated client from uploading an arbitrarily large object.
   static Future<Map<String, dynamic>> signR2ImageUpload({
+    required int contentLength,
     String? filename,
     String? contentType,
   }) async {
-    final body = <String, dynamic>{};
+    final body = <String, dynamic>{'content_length': contentLength};
     if (filename != null && filename.isNotEmpty) {
       body['filename'] = filename;
     }
@@ -248,7 +252,7 @@ abstract final class _ApiServiceListings {
     return await ApiService._makeAuthenticatedRequest(
       'POST',
       '/media/r2/sign-upload',
-      body: body.isNotEmpty ? body : null,
+      body: body,
     );
   }
 

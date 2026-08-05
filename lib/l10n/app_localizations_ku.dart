@@ -800,6 +800,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get deleteListingBody => 'ئەمە لە ڕێکلامە گشتییەکان لادەبرێت.';
 
   @override
+  String get listingRemovedSuccess => 'ڕێکلامەکە سڕدرایەوە';
+
+  @override
   String get cancelAction => 'هەڵوەشاندنەوە';
 
   @override
@@ -858,6 +861,19 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String get chatEmptyHint =>
       'لە پەڕەی ڕێکلامەوە نامە بۆ فرۆشیار بنێرە بۆ دەستپێکردنی گفتوگۆ.';
+
+  @override
+  String get originalMessageNotLoaded => 'نامەی ڕەسەن بارنەکراوە.';
+
+  @override
+  String get messageCannotBeEmpty => 'نابێت نامەکە بەتاڵ بێت.';
+
+  @override
+  String get chatUnavailableTitle => 'گفتوگۆ بەردەست نییە';
+
+  @override
+  String get chatUnavailableBody =>
+      'نامەکردن بۆ ماوەیەک ڕاگیراوە. تکایە دواتر هەوڵبدەرەوە.';
 
   @override
   String get recentlyViewedEmptyHint =>
@@ -1171,6 +1187,17 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get failedToUpdateProfile => 'نوێکردنەوەی پرۆفایل شکستی هێنا';
+
+  @override
+  String get verifyNewEmailDialogTitle => 'پشتڕاستکردنەوەی ئیمەیلی نوێت';
+
+  @override
+  String verifyNewEmailDialogMessage(Object email) {
+    return 'کۆدێکی ٦ ژمارەیی بۆ $email دەنێرین بۆ پشتڕاستکردنەوەی خاوەندارێتیت. گۆڕانکاریی ترەکان پێشتر پاشەکەوت کراوە.';
+  }
+
+  @override
+  String get emailUpdatedSuccess => 'ئیمەیل بە سەرکەوتوویی نوێ کرا';
 
   @override
   String get failedToPickImage => 'هەڵبژاردنی وێنە شکستی هێنا';

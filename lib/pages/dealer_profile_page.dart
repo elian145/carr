@@ -196,15 +196,18 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                       ),
                     ],
                   )
-                : ListView(
-                    children: [
-                      _buildDealerHero(
-                        bannerUrl: bannerUrl,
-                        logoUrl: logoUrl,
-                        displayName: displayName,
-                        isLightShell: isLightShell,
+                : CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: _buildDealerHero(
+                          bannerUrl: bannerUrl,
+                          logoUrl: logoUrl,
+                          displayName: displayName,
+                          isLightShell: isLightShell,
+                        ),
                       ),
-                      Padding(
+                      SliverToBoxAdapter(
+                        child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,40 +318,43 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               ),
                           ],
                         ),
+                        ),
                       ),
                       if (_section == _DealerSection.listings) ...[
                         if (_listings.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 28,
-                              ),
-                              decoration: _softCardDecoration(isLightShell),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.directions_car_outlined,
-                                    size: 36,
-                                    color: AppColors.brandOrange.withValues(alpha: 0.7),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    _tr(
-                                      'No active vehicles right now.',
-                                      ar: 'لا توجد مركبات نشطة حالياً.',
-                                      ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 28,
+                                ),
+                                decoration: _softCardDecoration(isLightShell),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.directions_car_outlined,
+                                      size: 36,
+                                      color: AppColors.brandOrange.withValues(alpha: 0.7),
                                     ),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: isLightShell
-                                          ? const Color(0xFF5C5C5C)
-                                          : Colors.white70,
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      _tr(
+                                        'No active vehicles right now.',
+                                        ar: 'لا توجد مركبات نشطة حالياً.',
+                                        ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: isLightShell
+                                            ? const Color(0xFF5C5C5C)
+                                            : Colors.white70,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           )
@@ -364,39 +370,42 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                     cols == 1 ? 1 : 2,
                                     screenWidth,
                                   );
-                              return GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
+                              return SliverPadding(
                                 padding: EdgeInsets.fromLTRB(
                                   listingColumns == 1 ? 4 : 12,
                                   0,
                                   listingColumns == 1 ? 4 : 12,
                                   16,
                                 ),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: listingColumns,
-                                      childAspectRatio:
-                                          ListingLayoutPrefs.gridChildAspectRatioForWidth(
-                                            listingColumns,
-                                            screenWidth,
-                                          ),
-                                      crossAxisSpacing: 8,
-                                      mainAxisSpacing: 8,
-                                    ),
-                                itemCount: _listings.length,
-                                itemBuilder: (context, index) {
-                                  final item = _listings[index];
-                                  final mapped = mapListingToGlobalCarCardData(
-                                    context,
-                                    item,
-                                  );
-                                  return buildGlobalCarCard(
-                                    context,
-                                    mapped,
-                                    listLayout: listingColumns == 1,
-                                  );
-                                },
+                                sliver: SliverGrid(
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: listingColumns,
+                                        childAspectRatio:
+                                            ListingLayoutPrefs.gridChildAspectRatioForWidth(
+                                              listingColumns,
+                                              screenWidth,
+                                            ),
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                      ),
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) {
+                                      final item = _listings[index];
+                                      final mapped =
+                                          mapListingToGlobalCarCardData(
+                                            context,
+                                            item,
+                                          );
+                                      return buildGlobalCarCard(
+                                        context,
+                                        mapped,
+                                        listLayout: listingColumns == 1,
+                                      );
+                                    },
+                                    childCount: _listings.length,
+                                  ),
+                                ),
                               );
                             },
                           ),

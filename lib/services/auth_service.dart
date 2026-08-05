@@ -386,6 +386,26 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Sends an ownership code to [email] before it can become the account's
+  /// personal login/contact email (S7: the profile-update endpoint refuses
+  /// to accept a new email without this proof).
+  Future<Map<String, dynamic>> sendAccountEmailChangeCode(String email) {
+    return ApiService.sendAccountEmailChangeCode(email);
+  }
+
+  Future<Map<String, dynamic>> verifyAccountEmailChange(
+    String email,
+    String code,
+  ) async {
+    final response = await ApiService.verifyAccountEmailChange(email, code);
+    if (_currentUser != null) {
+      _currentUser!['email'] = email;
+      _currentUser!['email_verified'] = true;
+      notifyListeners();
+    }
+    return response;
+  }
+
   Future<Map<String, dynamic>> updateDealerProfile(
     Map<String, dynamic> dealerData,
   ) async {

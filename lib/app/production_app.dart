@@ -33,6 +33,12 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Built once per app build, not on every theme/locale change: the route
+    // map's closures are stable and `registerAppRoutes` mutates a shared
+    // global map, so re-running this inside the Consumer/ValueListenableBuilder
+    // below would needlessly reallocate + re-register on every rebuild.
+    final routes = buildProductionRoutes();
+    registerAppRoutes(routes);
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -44,8 +50,6 @@ class MyApp extends StatelessWidget {
         valueListenable: LocaleController.currentLocale,
         builder: (context, locale, _) => Consumer<ThemeProvider>(
           builder: (context, themeProvider, child) {
-            final routes = buildProductionRoutes();
-            registerAppRoutes(routes);
             return AppWithDeepLinks(
               navigatorKey: productionNavigatorKey,
               child: MaterialApp(

@@ -46,7 +46,7 @@ Future<bool> confirmAndDeleteListing(
     await invalidateListingDiskCaches(carId);
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Listing removed')),
+      SnackBar(content: Text(loc?.listingRemovedSuccess ?? 'Listing removed')),
     );
     return true;
   } catch (e) {

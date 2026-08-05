@@ -26,17 +26,19 @@ class _ChatListPageState extends State<ChatListPage>
     if (!flags.chatEnabled) {
       if (!mounted) return;
       setState(() => _loading = false);
+      final loc = AppLocalizations.of(context);
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Chat unavailable'),
-          content: const Text(
-            'Messaging is temporarily disabled. Please try again later.',
+          title: Text(loc?.chatUnavailableTitle ?? 'Chat unavailable'),
+          content: Text(
+            loc?.chatUnavailableBody ??
+                'Messaging is temporarily disabled. Please try again later.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
+              child: Text(loc?.okAction ?? 'OK'),
             ),
           ],
         ),

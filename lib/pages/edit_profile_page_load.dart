@@ -1,6 +1,10 @@
 part of 'edit_profile_page.dart';
 
 mixin _EditProfilePageLoad on _EditProfilePageStyle {
+  /// Email as loaded from the server, used to detect real changes so we only
+  /// prompt for OTP confirmation when the value actually changed (S7).
+  String _originalEmail = '';
+
   @override
   void initState() {
     super.initState();
@@ -22,7 +26,8 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
       if (currentUser != null) {
         _firstNameController.text = currentUser['first_name'] ?? '';
         _lastNameController.text = currentUser['last_name'] ?? '';
-        _emailController.text = currentUser['email'] ?? '';
+        _originalEmail = (currentUser['email'] ?? '').toString();
+        _emailController.text = _originalEmail;
         // Remove +964 prefix when loading phone number for editing
         String phoneNumber = currentUser['phone_number'] ?? '';
         if (phoneNumber.startsWith('+964')) {
@@ -94,17 +99,44 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
 
-      // Prepare profile data
+      final newEmail = _emailController.text.trim();
+      // A genuinely new, non-blank email can't be saved directly: the server
+      // requires proof of ownership first (S7). Clearing it to blank, or
+      // resubmitting the unchanged value, is still a plain profile update.
+      final emailNeedsVerification =
+          newEmail.isNotEmpty && newEmail != _originalEmail;
+
+      // Prepare profile data (omit 'email' when it needs separate OTP proof
+      // so this call can't be rejected because of it).
       final profileData = {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
-        'email': _emailController.text.trim(),
+        if (!emailNeedsVerification) 'email': newEmail,
         'phone_number': '+964${_phoneController.text.trim()}',
         'username': _usernameController.text.trim(),
       };
 
       // Update profile
       await authService.updateProfile(profileData);
+
+      if (emailNeedsVerification) {
+        if (!mounted) return;
+        final verified = await showEmailChangeConfirmDialog(
+          context,
+          auth: authService,
+          newEmail: newEmail,
+        );
+        if (verified && mounted) {
+          _originalEmail = newEmail;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.emailUpdatedSuccess),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
 
       // Upload profile picture if selected
       if (_profileImage != null) {

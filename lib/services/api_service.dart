@@ -349,6 +349,15 @@ class ApiService {
     String code,
   ) => _ApiServiceAuth.verifyDealerEmail(email, code);
 
+  static Future<Map<String, dynamic>> sendAccountEmailChangeCode(
+    String email,
+  ) => _ApiServiceAuth.sendAccountEmailChangeCode(email);
+
+  static Future<Map<String, dynamic>> verifyAccountEmailChange(
+    String email,
+    String code,
+  ) => _ApiServiceAuth.verifyAccountEmailChange(email, code);
+
   static Future<Map<String, dynamic>> sendContactPhoneVerification(
     String phoneNumber,
   ) => _ApiServiceAuth.sendContactPhoneVerification(phoneNumber);
@@ -460,9 +469,11 @@ class ApiService {
   ) => _ApiServiceListings.updateCarImageLayout(carId, images);
 
   static Future<Map<String, dynamic>> signR2ImageUpload({
+    required int contentLength,
     String? filename,
     String? contentType,
   }) => _ApiServiceListings.signR2ImageUpload(
+    contentLength: contentLength,
     filename: filename,
     contentType: contentType,
   );
