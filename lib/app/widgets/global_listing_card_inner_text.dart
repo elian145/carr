@@ -277,9 +277,9 @@ Widget _buildGridCarCardInnerText(
     return iconSize + iconGap + textW + hPad * 2 + 2;
   }
 
-  /// Year + mileage at one shared type size. Grows into leftover row width so
-  /// numbers stay readable; shrinks together when the card is narrow. Chips
-  /// always hug their labels (never a wide empty mileage pill).
+  /// Year + mileage at one shared type size. Font is chosen as if mileage were
+  /// a 6-digit odometer so short values stay the same type size as long ones.
+  /// Chips always hug their labels (never a wide empty mileage pill).
   Widget matchedYearMileageRow() {
     final double gap = compact ? 4.0 : 6.0;
     final Alignment align =
@@ -287,6 +287,11 @@ Widget _buildGridCarCardInnerText(
     // Prefer a readable size; grow when the row has room, floor when tight.
     final double minFont = compact ? 11.0 : 11.5;
     final double maxFont = compact ? 13.5 : 14.5;
+    // Reference long mileage (6 digits + unit) so short odometers do not get a
+    // larger type size than cards with 5+ digit mileages.
+    final String mileageUnit = AppLocalizations.of(context)!.unit_km;
+    final String referenceMileageDisplay =
+        '${localizeDigits(context, decimalFormatterForLocale(context).format(999999))} $mileageUnit';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -295,7 +300,29 @@ Widget _buildGridCarCardInnerText(
             constraints.maxWidth < double.infinity;
         final double maxW = bounded ? constraints.maxWidth : double.infinity;
 
+        double mileageWidthForSizing(double fontSize) {
+          if (mileageDisplay.isEmpty) return 0;
+          final actual = _yearMileageChipWidth(mileageDisplay, fontSize);
+          final reference =
+              _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+          return actual > reference ? actual : reference;
+        }
+
         double rowWidthAt(double fontSize) {
+          double total = 0;
+          if (yearDisplay.isNotEmpty) {
+            total += _yearMileageChipWidth(yearDisplay, fontSize);
+          }
+          if (yearDisplay.isNotEmpty && mileageDisplay.isNotEmpty) {
+            total += gap;
+          }
+          total += mileageWidthForSizing(fontSize);
+          return total;
+        }
+
+        // Actual rendered row may be narrower than the sizing probe when
+        // mileage is short — only scale the painted chips if they overflow.
+        double paintedRowWidthAt(double fontSize) {
           double total = 0;
           if (yearDisplay.isNotEmpty) {
             total += _yearMileageChipWidth(yearDisplay, fontSize);
@@ -311,7 +338,7 @@ Widget _buildGridCarCardInnerText(
 
         double fontSize = maxFont;
         if (bounded) {
-          // Largest shared size that fits the full row width.
+          // Largest shared size that would fit year + a long mileage.
           fontSize = minFont;
           for (double fs = maxFont; fs >= minFont - 0.001; fs -= 0.25) {
             if (rowWidthAt(fs) <= maxW) {
@@ -351,7 +378,7 @@ Widget _buildGridCarCardInnerText(
           return Align(alignment: align, child: chips);
         }
 
-        final bool needsScale = rowWidthAt(fontSize) > maxW;
+        final bool needsScale = paintedRowWidthAt(fontSize) > maxW;
         return Align(
           alignment: align,
           child: needsScale
@@ -870,8 +897,25 @@ Widget _buildListCarCardInnerText(
           constraints.maxWidth.isFinite &&
           constraints.maxWidth < double.infinity;
       final double maxW = bounded ? constraints.maxWidth : double.infinity;
+      // Size type as if mileage were 6 digits so short values match long ones.
+      final String mileageUnit = AppLocalizations.of(context)!.unit_km;
+      final String referenceMileageDisplay =
+          '${localizeDigits(context, decimalFormatterForLocale(context).format(999999))} $mileageUnit';
+
+      double mileageWidthForSizing(double fontSize) {
+        final actual = _yearMileageChipWidth(mileageText, fontSize);
+        final reference =
+            _yearMileageChipWidth(referenceMileageDisplay, fontSize);
+        return actual > reference ? actual : reference;
+      }
 
       double rowWidthAt(double fontSize) {
+        return _yearMileageChipWidth(yearText, fontSize) +
+            gap +
+            mileageWidthForSizing(fontSize);
+      }
+
+      double paintedRowWidthAt(double fontSize) {
         return _yearMileageChipWidth(yearText, fontSize) +
             gap +
             _yearMileageChipWidth(mileageText, fontSize);
@@ -914,7 +958,7 @@ Widget _buildListCarCardInnerText(
         return Align(alignment: specsAlign, child: chips);
       }
 
-      final bool needsScale = rowWidthAt(fontSize) > maxW;
+      final bool needsScale = paintedRowWidthAt(fontSize) > maxW;
       return Align(
         alignment: specsAlign,
         child: needsScale
