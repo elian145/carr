@@ -17,6 +17,12 @@
 #   LISTING_REQUIRE_APPROVAL=1
 #   LISTING_REQUIRE_APPROVAL=0   # auto-publish (explicit)
 #
+# Also provision separately in the Render dashboard (not in this minimal blueprint):
+#   - Redis instance → set REDIS_URL on the web service (required at boot)
+#   - Background Worker running: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info
+#   - Background Worker/cron for beat if you use scheduled notifications:
+#       celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
+#
 # Force-update (optional; also editable in admin Settings):
 #   MIN_APP_VERSION=1.0.1
 #   MIN_ANDROID_BUILD=4

@@ -24,9 +24,11 @@ export type AdminJwtCheck =
   | { ok: false; reason: string };
 
 /**
- * Verify an access JWT.
+ * Verify an admin access JWT.
  * When `secret` is set, signature must match (HS256).
  * When `secret` is empty, only structure + exp are checked (dev fallback).
+ * Requires `is_admin` / `account_scope=admin` claim so a normal user JWT
+ * cannot pass the admin edge gate.
  */
 export async function verifyAdminAccessJwt(
   token: string,
@@ -44,6 +46,8 @@ export async function verifyAdminAccessJwt(
     exp?: number;
     sub?: string;
     type?: string;
+    is_admin?: boolean;
+    account_scope?: string;
   }>(payloadB64);
   if (!header || !payload) return { ok: false, reason: "decode" };
   if ((header.alg || "HS256") !== "HS256") {
@@ -57,6 +61,13 @@ export async function verifyAdminAccessJwt(
   }
   const sub = payload.sub != null ? String(payload.sub) : "";
   if (!sub) return { ok: false, reason: "sub" };
+
+  const isAdminClaim =
+    payload.is_admin === true ||
+    String(payload.account_scope || "").toLowerCase() === "admin";
+  if (!isAdminClaim) {
+    return { ok: false, reason: "not_admin" };
+  }
 
   if (!secret) {
     return { ok: true, sub };

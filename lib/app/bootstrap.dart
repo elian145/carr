@@ -52,6 +52,25 @@ void _runZonedApp(Widget app) {
         FlutterError.presentError(details);
       };
 
+      ErrorWidget.builder = (FlutterErrorDetails details) {
+        if (kDebugMode) {
+          return ErrorWidget(details.exception);
+        }
+        return const Material(
+          color: Color(0xFFF7F7F8),
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Something went wrong. Please restart the app.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
+              ),
+            ),
+          ),
+        );
+      };
+
       // Load runtime API override early so first screen uses it.
       try {
         final sp = await SharedPreferences.getInstance();

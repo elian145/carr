@@ -892,7 +892,7 @@ def create_car():
                 except Exception:
                     return None
 
-        brand = _s(raw.get("brand"), "unknown")
+        brand = _s(raw.get("brand"), "")
         model = _s(raw.get("model"), "")
         year = _i(raw.get("year"), 0)
         mileage = _i(raw.get("mileage"), 0)
@@ -950,8 +950,20 @@ def create_car():
             if phone_err:
                 return jsonify({"message": phone_err}), 400
 
-        if not brand or not model:
-            return jsonify({"message": "Validation failed", "errors": {"brand/model": "required"}}), 400
+        errors = {}
+        if not brand or brand.lower() in {"unknown", "n/a", "na"}:
+            errors["brand"] = "required"
+        if not model:
+            errors["model"] = "required"
+        max_year = int(utcnow().year) + 1
+        if year < 1950 or year > max_year:
+            errors["year"] = f"must be between 1950 and {max_year}"
+        if price is None or float(price) <= 0:
+            errors["price"] = "must be greater than 0"
+        if not location:
+            errors["location"] = "required"
+        if errors:
+            return jsonify({"message": "Validation failed", "errors": errors}), 400
 
         car = Car(
             seller_id=current_user.id,

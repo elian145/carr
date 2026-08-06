@@ -38,6 +38,10 @@ async function verifyAdminAccessJwt(token, secret) {
   }
   const sub = payload.sub != null ? String(payload.sub) : "";
   if (!sub) return { ok: false, reason: "sub" };
+  const isAdminClaim =
+    payload.is_admin === true ||
+    String(payload.account_scope || "").toLowerCase() === "admin";
+  if (!isAdminClaim) return { ok: false, reason: "not_admin" };
   if (!secret) return { ok: true, sub };
 
   const key = await crypto.subtle.importKey(
@@ -60,16 +64,24 @@ const secret = "test-admin-jwt-secret";
 const good = mint(secret, {
   sub: "admin-public-id",
   type: "access",
+  is_admin: true,
+  exp: Math.floor(Date.now() / 1000) + 3600,
+});
+const nonAdmin = mint(secret, {
+  sub: "user-public-id",
+  type: "access",
   exp: Math.floor(Date.now() / 1000) + 3600,
 });
 const badSig = `${good.slice(0, good.lastIndexOf(".") + 1)}deadbeefdeadbeefdeadbeefdeadbeef`;
 const expired = mint(secret, {
   sub: "admin-public-id",
   type: "access",
+  is_admin: true,
   exp: Math.floor(Date.now() / 1000) - 10,
 });
 
 assert.equal((await verifyAdminAccessJwt(good, secret)).ok, true);
+assert.equal((await verifyAdminAccessJwt(nonAdmin, secret)).ok, false);
 assert.equal((await verifyAdminAccessJwt(badSig, secret)).ok, false);
 assert.equal((await verifyAdminAccessJwt(expired, secret)).ok, false);
 assert.equal((await verifyAdminAccessJwt("1", secret)).ok, false);

@@ -8,6 +8,7 @@ import secrets
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload, selectinload
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
@@ -229,13 +230,16 @@ def list_chats():
         }
 
         q = (
-            Message.query.filter(or_(Message.sender_id == me.id, Message.receiver_id == me.id))
+            Message.query.options(joinedload(Message.sender))
+            .filter(or_(Message.sender_id == me.id, Message.receiver_id == me.id))
             .order_by(Message.created_at.desc())
             .limit(500)
             .all()
         )
         seen = set()
-        chats = []
+        conversation_rows = []
+        other_ids = set()
+        car_ids = set()
         for m in q:
             other_id = m.receiver_id if m.sender_id == me.id else m.sender_id
             if other_id in blocked_ids:
@@ -244,20 +248,47 @@ def list_chats():
             if key in seen:
                 continue
             seen.add(key)
+            conversation_rows.append((m, other_id))
+            other_ids.add(int(other_id))
+            if m.car_id:
+                car_ids.add(int(m.car_id))
 
-            other = db.session.get(User, other_id)
-            car = db.session.get(Car, m.car_id) if m.car_id else None
+        users_by_id = {
+            u.id: u
+            for u in User.query.filter(User.id.in_(other_ids)).all()
+        } if other_ids else {}
+        cars_by_id = {
+            c.id: c
+            for c in Car.query.options(selectinload(Car.images))
+            .filter(Car.id.in_(car_ids))
+            .all()
+        } if car_ids else {}
 
-            unread = (
-                Message.query.filter(
+        unread_by_key: dict[tuple[int, int], int] = {}
+        if car_ids and other_ids:
+            unread_rows = (
+                db.session.query(
+                    Message.car_id,
+                    Message.sender_id,
+                    func.count(Message.id),
+                )
+                .filter(
                     Message.receiver_id == me.id,
                     Message.is_read == False,  # noqa: E712
-                    Message.sender_id == other_id,
-                    Message.car_id == m.car_id,
-                ).count()
-                if m.car_id
-                else 0
+                    Message.car_id.in_(car_ids),
+                    Message.sender_id.in_(other_ids),
+                )
+                .group_by(Message.car_id, Message.sender_id)
+                .all()
             )
+            for car_id, sender_id, cnt in unread_rows:
+                unread_by_key[(int(car_id or 0), int(sender_id))] = int(cnt or 0)
+
+        chats = []
+        for m, other_id in conversation_rows:
+            other = users_by_id.get(int(other_id))
+            car = cars_by_id.get(int(m.car_id)) if m.car_id else None
+            unread = unread_by_key.get((int(m.car_id or 0), int(other_id)), 0) if m.car_id else 0
 
             car_title = None
             car_image_url = None
@@ -341,7 +372,13 @@ def get_messages(conversation_id: str):
 
         total = base_q.count()
         msgs = (
-            base_q.order_by(Message.created_at.asc())
+            base_q.options(
+                joinedload(Message.sender),
+                joinedload(Message.receiver),
+                joinedload(Message.car),
+                joinedload(Message.reply_to).joinedload(Message.sender),
+            )
+            .order_by(Message.created_at.asc())
             .offset((page - 1) * per_page)
             .limit(per_page)
             .all()

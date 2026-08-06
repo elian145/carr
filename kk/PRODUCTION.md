@@ -90,9 +90,13 @@ changes are needed.
 
 ## Optional
 
-- **Redis** (`REDIS_URL`): Improves rate limiting and Socket.IO across workers.
 - **Sentry** (`SENTRY_DSN`): Error tracking in production.
-- **R2 / S3**: For presigned image uploads; see `.env.example`.
+- **Celery worker + beat** (Procfile `worker` / `beat`): Required for scheduled notifications and async image jobs. The web service boots without them, but those features will not run until workers are provisioned.
+- **R2 / S3**: For durable image uploads; see `.env.example`. Prefer R2 (or an absolute persistent `UPLOAD_FOLDER`) in production.
+
+## Required (boot)
+
+- **Redis** (`REDIS_URL`): Required in production for rate limiting (and used as the default Socket.IO / Celery broker). The API will refuse to start without a reachable Redis unless you set an explicit escape hatch (`ALLOW_INMEMORY_RATE_LIMITS=1`) — do not use that for real traffic.
 
 ## Quick check
 

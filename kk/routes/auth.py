@@ -33,13 +33,16 @@ from ..auth import (
 from ..extensions import mail
 from ..models import (
     AdminAccount,
+    BlockedUser,
     DealerApplication,
     DealerDecision,
     EmailVerification,
+    ListingReport,
     Message,
     PasswordReset,
     TokenBlacklist,
     User,
+    UserReport,
     db,
 )
 from ..security import check_rate_limit, rate_limit, validate_input_sanitization
@@ -437,12 +440,68 @@ def register_confirm():
     return jsonify(_EMAIL_SIGNUP_GONE), 410
 
 
+def _resolve_user_by_jwt_identity(identity) -> User | None:
+    """Resolve a User from a JWT identity (public_id, user:{id}, or numeric id)."""
+    if not identity:
+        return None
+    ident = str(identity).strip()
+    user = User.query.filter_by(public_id=ident).first()
+    if not user and ident.startswith("user:"):
+        try:
+            user = User.query.filter_by(id=int(ident.split(":", 1)[1])).first()
+        except Exception:
+            user = None
+    if not user and ident.isdigit():
+        try:
+            user = User.query.filter_by(id=int(ident)).first()
+        except Exception:
+            user = None
+    return user
+
+
+def _ensure_user_public_id(user: User) -> str:
+    """Guarantee a stable public_id for JWT identity (never issue user:{id} for new tokens)."""
+    if getattr(user, "public_id", None):
+        return str(user.public_id)
+    user.public_id = secrets.token_hex(8)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        if not getattr(user, "public_id", None):
+            user.public_id = secrets.token_hex(8)
+            db.session.commit()
+    return str(user.public_id)
+
+
+def _access_token_for_user(user: User) -> str:
+    identity = _ensure_user_public_id(user)
+    claims = {}
+    if getattr(user, "is_admin", False):
+        claims["is_admin"] = True
+        claims["account_scope"] = "admin"
+    if claims:
+        return create_access_token(identity=identity, additional_claims=claims)
+    return create_access_token(identity=identity)
+
+
+def _refresh_token_for_user(user: User) -> str:
+    identity = _ensure_user_public_id(user)
+    claims = {}
+    if getattr(user, "is_admin", False):
+        claims["is_admin"] = True
+        claims["account_scope"] = "admin"
+    if claims:
+        return create_refresh_token(identity=identity, additional_claims=claims)
+    return create_refresh_token(identity=identity)
+
+
 @bp.route("/api/auth/login", methods=["POST"])
 @rate_limit(max_requests=10, window_minutes=15)  # 10 login attempts per 15 minutes per IP
 def login():
     """User login endpoint"""
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
 
         if not data.get("username") or not data.get("password"):
             return jsonify({"message": "Phone/username and password are required"}), 400
@@ -488,25 +547,17 @@ def login():
         if not user.is_active:
             return jsonify({"message": "Account is deactivated"}), 401
 
-        # Ensure user has a public_id for JWT identity compatibility
-        if not getattr(user, "public_id", None):
-            try:
-                user.public_id = secrets.token_hex(8)
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
         # Update last login
         from ..time_utils import utcnow
 
+        _ensure_user_public_id(user)
         user.last_login = utcnow()
         if admin_account is not None:
             admin_account.last_login = user.last_login
         db.session.commit()
 
-        identity = getattr(user, "public_id", None) or f"user:{user.id}"
-        access_token = create_access_token(identity=identity)
-        refresh_token = create_refresh_token(identity=identity)
+        access_token = _access_token_for_user(user)
+        refresh_token = _refresh_token_for_user(user)
 
         log_user_action(user, "login")
 
@@ -534,8 +585,7 @@ def refresh():
     """Refresh access token (rotating refresh tokens)."""
     try:
         jwt_payload = get_jwt()
-        current_user_id = get_jwt_identity()
-        user = User.query.filter_by(public_id=current_user_id).first()
+        user = _resolve_user_by_jwt_identity(get_jwt_identity())
 
         if not user or not user.is_active:
             return jsonify({"message": "User not found or inactive"}), 401
@@ -571,8 +621,8 @@ def refresh():
                 except Exception:
                     pass
 
-        new_access_token = create_access_token(identity=user.public_id)
-        new_refresh_token = create_refresh_token(identity=user.public_id)
+        new_access_token = _access_token_for_user(user)
+        new_refresh_token = _refresh_token_for_user(user)
 
         return jsonify({"access_token": new_access_token, "refresh_token": new_refresh_token}), 200
 
@@ -873,6 +923,21 @@ def delete_account():
                 (Message.sender_id == user_id) | (Message.receiver_id == user_id),
             ).delete(synchronize_session=False)
 
+        if "blocked_user" in table_names:
+            BlockedUser.query.filter(
+                (BlockedUser.blocker_id == user_id) | (BlockedUser.blocked_id == user_id),
+            ).delete(synchronize_session=False)
+
+        if "user_report" in table_names:
+            UserReport.query.filter(
+                (UserReport.reporter_id == user_id) | (UserReport.reported_id == user_id),
+            ).delete(synchronize_session=False)
+
+        if "listing_report" in table_names:
+            ListingReport.query.filter_by(reporter_id=user_id).delete(
+                synchronize_session=False
+            )
+
         if "token_blacklist" in table_names:
             TokenBlacklist.query.filter_by(user_id=user_id).delete()
 
@@ -910,6 +975,20 @@ def delete_account():
                 Message.query.filter(
                     (Message.sender_id == user_id) | (Message.receiver_id == user_id),
                 ).delete(synchronize_session=False)
+            if "blocked_user" in table_names:
+                BlockedUser.query.filter(
+                    (BlockedUser.blocker_id == user_id)
+                    | (BlockedUser.blocked_id == user_id),
+                ).delete(synchronize_session=False)
+            if "user_report" in table_names:
+                UserReport.query.filter(
+                    (UserReport.reporter_id == user_id)
+                    | (UserReport.reported_id == user_id),
+                ).delete(synchronize_session=False)
+            if "listing_report" in table_names:
+                ListingReport.query.filter_by(reporter_id=user_id).delete(
+                    synchronize_session=False
+                )
             if "saved_search" in table_names:
                 from ..models import SavedSearch
 
@@ -985,12 +1064,18 @@ def forgot_password():
                 "[FORGOT-PASSWORD] SMS send failed for phone=%s*** (provider config/number format?)",
                 str(dest_phone)[:4],
             )
+            # Prefer clear failure over a fake "code sent" UX. Slight account
+            # existence signal is acceptable vs users stuck on a dead reset flow.
+            return jsonify({
+                "message": "Unable to send reset code right now. Please try again later.",
+                "code": "sms_send_failed",
+            }), 503
 
         # Dev convenience for local testing with SMS_PROVIDER=console.
         # Never expose reset tokens in production.
         env_name = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
         sms_provider = (os.environ.get("SMS_PROVIDER") or "console").strip().lower()
-        if env_name in ("development", "testing") and sms_provider == "console" and sms_sent:
+        if env_name in ("development", "testing") and sms_provider == "console":
             return jsonify(
                 {"message": "If the account exists, a reset code has been sent", "dev_code": token}
             ), 200
@@ -1292,6 +1377,7 @@ def send_phone_verification():
 # --- Phone OTP auth endpoints ---
 
 @bp.route("/api/auth/phone/start", methods=["POST"])
+@rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
 def phone_start():
     """Start phone OTP login/signup (passwordless)."""
     try:
@@ -1327,13 +1413,6 @@ def phone_start():
                 "message": "No account found with this phone number. Please sign up first.",
                 "code": "account_not_found",
             }), 404
-
-        limited = check_rate_limit(
-            max_requests=_SEND_OTP_MAX_REQUESTS,
-            window_minutes=_SEND_OTP_WINDOW_MINUTES,
-        )
-        if limited is not None:
-            return limited
 
         try:
             user = _resolve_user_for_phone_otp(
@@ -1443,27 +1522,16 @@ def phone_verify():
 
         create_if_missing = _phone_otp_create_if_missing(data)
         purpose = (data.get("purpose") or "").strip().lower()
-        try:
-            user = _resolve_user_for_phone_otp(
-                phone_digits,
-                create_if_missing=create_if_missing,
-                username=(data.get("username") or None),
-                first_name=(data.get("first_name") or data.get("firstName") or None),
-                last_name=(data.get("last_name") or data.get("lastName") or None),
-                password=(data.get("password") or None),
-                is_dealer_requested=is_dealer_requested,
-                dealership_name=dealership_name or None,
-                dealership_phone=dealership_phone or None,
-                dealership_location=dealership_location or None,
-            )
-        except ValueError as e:
-            if str(e) == "account_not_found":
+        # Do not create users here — phone/start owns creation and OTP storage.
+        # Creating before OTP validation left unverified orphan rows on bad codes.
+        user = _get_active_user_by_phone(phone_digits)
+        if not user:
+            if not create_if_missing:
                 return jsonify({
                     "message": "No account found with this phone number. Please sign up first.",
                     "code": "account_not_found",
                 }), 404
-            current_app.logger.info("phone_verify validation error: %s", str(e))
-            return jsonify({"message": "Invalid input"}), 400
+            return jsonify({"message": "Invalid or expired verification code"}), 400
 
         personal_conflict = _reject_dealer_flow_for_personal(user, purpose=purpose)
         if personal_conflict is not None:
@@ -1496,6 +1564,15 @@ def phone_verify():
             db.session.commit()
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
+        if is_dealer_requested:
+            _apply_dealer_profile(
+                user,
+                is_dealer_requested=True,
+                dealership_name=dealership_name or None,
+                dealership_phone=dealership_phone or None,
+                dealership_location=dealership_location or None,
+            )
+
         user.is_verified = True
         user.phone_verified = True
         user.phone_verification_code_hash = None
@@ -1505,9 +1582,8 @@ def phone_verify():
         user.last_login = now
         db.session.commit()
 
-        identity = getattr(user, "public_id", None) or f"user:{user.id}"
-        access_token = create_access_token(identity=identity)
-        refresh_token = create_refresh_token(identity=identity)
+        access_token = _access_token_for_user(user)
+        refresh_token = _refresh_token_for_user(user)
         log_user_action(user, "login_phone")
         return jsonify({"access_token": access_token, "refresh_token": refresh_token, "user": user.to_dict(include_private=True)}), 200
     except Exception:
@@ -1606,9 +1682,8 @@ def compat_signup():
             user.phone_verification_locked_until = None
             db.session.commit()
             log_user_action(user, "phone_verified")
-            identity = getattr(user, "public_id", None) or f"user:{user.id}"
-            access_token = create_access_token(identity=identity)
-            refresh_token = create_refresh_token(identity=identity)
+            access_token = _access_token_for_user(user)
+            refresh_token = _refresh_token_for_user(user)
             return jsonify({
                 "message": "Signup successful",
                 "token": access_token,
@@ -1673,9 +1748,8 @@ def compat_signup():
         db.session.add(user)
         db.session.commit()
 
-        identity = user.public_id
-        access_token = create_access_token(identity=identity)
-        refresh_token = create_refresh_token(identity=identity)
+        access_token = _access_token_for_user(user)
+        refresh_token = _refresh_token_for_user(user)
         return (
             jsonify(
                 {

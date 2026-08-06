@@ -649,7 +649,7 @@ class CarImage(db.Model):
     __tablename__ = 'car_image'
     
     id = db.Column(db.Integer, primary_key=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
     # Full R2/CDN HTTPS URLs exceed VARCHAR(200); keep aligned with car_video.video_url.
     image_url = db.Column(db.String(2048), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
@@ -681,7 +681,7 @@ class CarVideo(db.Model):
     __tablename__ = 'car_video'
     
     id = db.Column(db.Integer, primary_key=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
     # Full R2/CDN URLs can exceed 200 chars
     video_url = db.Column(db.String(2048), nullable=False)
     thumbnail_url = db.Column(db.String(2048), nullable=True)

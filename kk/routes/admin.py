@@ -5,7 +5,7 @@ import os
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
 from sqlalchemy import asc, desc, func, or_
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import admin_required, get_current_user, log_user_action
 from ..extensions import socketio
@@ -134,7 +134,16 @@ def dashboard():
             if can_read_users
             else []
         )
-        recent_cars = Car.query.order_by(Car.created_at.desc()).limit(10).all()
+        recent_cars = (
+            Car.query.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+            .order_by(Car.created_at.desc())
+            .limit(10)
+            .all()
+        )
         recent_messages = (
             Message.query.order_by(Message.created_at.desc()).limit(10).all()
             if can_read_messages
@@ -286,7 +295,15 @@ def user_detail(user_id: str):
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        cars = Car.query.filter_by(seller_id=user.id).all()
+        cars = (
+            Car.query.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+            .filter_by(seller_id=user.id)
+            .all()
+        )
         recent_actions = (
             UserAction.query.filter_by(user_id=user.id).order_by(UserAction.created_at.desc()).limit(20).all()
         )
@@ -356,7 +373,15 @@ def cars():
         }
         order_by = order_map.get(sort, desc(Car.created_at))
 
-        pagination = q.order_by(order_by).paginate(page=page, per_page=per_page, error_out=False)
+        pagination = (
+            q.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+            .order_by(order_by)
+            .paginate(page=page, per_page=per_page, error_out=False)
+        )
         items = [c.to_dict() for c in pagination.items]
         return (
             jsonify(
@@ -1081,12 +1106,24 @@ def global_search():
             .limit(limit)
             .all()
         )
-        cars_q, _rank = apply_listing_text_search(Car.query, q)
+        cars_q, _rank = apply_listing_text_search(
+            Car.query.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            ),
+            q,
+        )
         cars = cars_q.order_by(Car.created_at.desc()).limit(limit).all()
         # Merge public_id hits that FTS may miss (UUID fragments).
         by_id = {c.id: c for c in cars}
         for c in (
-            Car.query.filter(Car.public_id.ilike(like))
+            Car.query.options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
+            .filter(Car.public_id.ilike(like))
             .order_by(Car.created_at.desc())
             .limit(limit)
             .all()
