@@ -955,10 +955,16 @@ class BackendFactorySmokeTest(unittest.TestCase):
         terms = self.client.get("/terms")
         self.assertEqual(terms.status_code, 200, terms.data)
         self.assertIn(b"CarNet", terms.data)
+        self.assertIn(b"off-platform", terms.data)
+        self.assertIn(b"Profile", terms.data)
 
         privacy = self.client.get("/privacy")
         self.assertEqual(privacy.status_code, 200, privacy.data)
         self.assertIn(b"CarNet", privacy.data)
+        self.assertIn(b"do not sell", privacy.data.lower())
+        self.assertIn(b"SMS", privacy.data)
+        self.assertIn(b"Profile", privacy.data)
+        self.assertIn(b"does not process vehicle purchase payments", privacy.data)
 
     def test_delete_account_requires_password(self):
         missing = self.client.delete(

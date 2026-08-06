@@ -66,6 +66,30 @@ def _effective_date() -> str:
     return date.today().strftime("%B %d, %Y")
 
 
+def _operator_name() -> str:
+    return (
+        os.environ.get("LEGAL_OPERATOR_NAME") or "CarNet (Carzo)"
+    ).strip() or "CarNet (Carzo)"
+
+
+def _operator_address() -> str:
+    return (os.environ.get("LEGAL_OPERATOR_ADDRESS") or "").strip()
+
+
+def _jurisdiction() -> str:
+    return (
+        os.environ.get("LEGAL_JURISDICTION") or "Iraq"
+    ).strip() or "Iraq"
+
+
+def _operator_address_block() -> str:
+    """HTML snippet: optional address line under the operator name."""
+    addr = _operator_address()
+    if not addr:
+        return ""
+    return f"<br>{escape(addr)}"
+
+
 def _render_legal_html(slug: str) -> Response:
     path = _LEGAL_DIR / f"{slug}.html"
     if not path.is_file():
@@ -77,6 +101,9 @@ def _render_legal_html(slug: str) -> Response:
     terms_url = escape(f"{base}/terms" if base else "/terms")
     privacy_url = escape(f"{base}/privacy" if base else "/privacy")
     support_mailto = escape(f"mailto:{_support_email()}")
+    operator = escape(_operator_name())
+    jurisdiction = escape(_jurisdiction())
+    address_block = _operator_address_block()
 
     body = path.read_text(encoding="utf-8")
     body = (
@@ -85,6 +112,9 @@ def _render_legal_html(slug: str) -> Response:
         .replace("{{TERMS_URL}}", terms_url)
         .replace("{{PRIVACY_URL}}", privacy_url)
         .replace("{{SUPPORT_MAILTO}}", support_mailto)
+        .replace("{{OPERATOR_NAME}}", operator)
+        .replace("{{OPERATOR_ADDRESS_BLOCK}}", address_block)
+        .replace("{{JURISDICTION}}", jurisdiction)
     )
     return Response(body, 200, {"Content-Type": "text/html; charset=utf-8"})
 

@@ -31,28 +31,34 @@ class LegalDocumentPage extends StatelessWidget {
       return _tr(
         context,
         'By using this app you agree to list and browse vehicles responsibly, '
-        'provide accurate information, and comply with local laws. We may remove '
-        'listings or accounts that violate our policies. Fees and promotions may '
-        'change with notice where required by law.\n\n'
+        'provide accurate information, and comply with local laws. Vehicle deals '
+        'and payments are arranged off-platform between buyers and sellers. We may '
+        'remove listings or accounts that violate our policies.\n\n'
         'For the full terms, tap “Open in browser” below.',
         ar: 'باستخدام هذا التطبيق فإنك توافق على نشر الإعلانات والتصفح بمسؤولية '
-            'وتقديم معلومات دقيقة والامتثال للقوانين المحلية. قد نزيل الإعلانات أو '
+            'وتقديم معلومات دقيقة والامتثال للقوانين المحلية. صفقات السيارات '
+            'والدفع تتم خارج التطبيق بين المشتري والبائع. قد نزيل الإعلانات أو '
             'الحسابات التي تنتهك سياساتنا.',
         ku: 'بە بەکارهێنانی ئەم ئەپە ڕازیت بە بەرپرسیارانە ڕیکلام بکەیت و بگەڕێیت '
-            'و زانیاری دروست بدەیت و یاسای ناوخۆ ڕەچاو بکەیت.',
+            'و زانیاری دروست بدەیت و یاسای ناوخۆ ڕەچاو بکەیت. مامەڵەی ئۆتۆمبێل '
+            'لە دەرەوەی ئەپ لە نێوان کڕیار و فرۆشیار ئەنجام دەدرێت.',
       );
     }
     return _tr(
       context,
       'We collect account and listing data needed to operate the marketplace, '
       'including contact details you provide, device tokens for notifications, '
-      'and usage analytics to improve the service. We do not sell your personal '
-      'data. You may request account deletion from Settings.\n\n'
+      'usage analytics, and diagnostic logs. We do not sell your personal data '
+      'and we do not process vehicle purchase payments in the app. Delete your '
+      'account from Profile → Delete account (SMS confirmation).\n\n'
       'For the full privacy policy, tap “Open in browser” below.',
       ar: 'نجمع بيانات الحساب والإعلانات اللازمة لتشغيل السوق، بما في ذلك '
-          'بيانات الاتصال ورموز الإشعارات والتحليلات لتحسين الخدمة. لا نبيع بياناتك الشخصية.',
+          'بيانات الاتصال ورموز الإشعارات والتحليلات وسجلات التشخيص. لا نبيع '
+          'بياناتك الشخصية ولا نعالج مدفوعات شراء السيارات داخل التطبيق. احذف '
+          'حسابك من الملف الشخصي ← حذف الحساب (تأكيد برسالة SMS).',
       ku: 'ئێمە داتای هەژمار و ڕیکلام کۆدەکەینەوە بۆ کارپێکردنی بازاڕەکە. '
-          'داتای کەسیت نافروشین.',
+          'داتای کەسیت نافروشین و پارەدانی کڕینی ئۆتۆمبێل لەناو ئەپ مامەڵە ناکەین. '
+          'هەژمارەکەت لە پرۆفایل ← سڕینەوەی هەژمار بسڕەوە (پشتڕاستکردنەوە بە SMS).',
     );
   }
 

@@ -10,6 +10,8 @@ Use this document when completing Google Play Data Safety, Apple App Privacy, an
 - Support email: set `SUPPORT_EMAIL` on the backend to your real monitored inbox (default in API/legal pages is `support@carzo.app` until overridden).
 - Privacy policy URL: required before submission. Hosted at `{API_BASE}/privacy` after deploy (or set `PRIVACY_URL`).
 - Terms URL: recommended before submission. Hosted at `{API_BASE}/terms` after deploy (or set `TERMS_URL`).
+- Legal pages: set `LEGAL_OPERATOR_NAME`, optional `LEGAL_OPERATOR_ADDRESS`, and `LEGAL_JURISDICTION` (default Iraq) so `/terms` and `/privacy` show your real operator identity. Set `LEGAL_EFFECTIVE_DATE` when you publish a revision.
+- Account deletion (store forms): **Profile → Delete account**, confirmed with an **SMS code** to the account phone.
 - Production API base: `https://carr-5hrm.onrender.com` unless a custom domain replaces it.
 
 ## Permission Justifications
