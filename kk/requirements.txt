@@ -19,7 +19,7 @@ gunicorn==22.0.0
 # Postgres driver (Python 3.13 compatible)
 psycopg[binary]
 marshmallow==3.26.2
-marshmallow-sqlalchemy==0.29.0
+marshmallow-sqlalchemy==1.5.0
 email-validator==2.1.0
 phonenumbers==8.13.26
 cryptography==48.0.1
