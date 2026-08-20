@@ -2,8 +2,8 @@ part of 'global_listing_card.dart';
 
 /// Price badge metrics scaled to the listing card's text-row width.
 ///
-/// Narrow 2-column tiles get a smaller orange pill; wider cards / list rows
-/// keep the fuller size. [footerHeight] matches padding + type so the row
+/// Narrow 2-column tiles get a smaller orange pill; wider grid cards grow
+/// toward the full size. [footerHeight] matches padding + type so the row
 /// does not overflow.
 class _ListingPriceBadgeStyle {
   const _ListingPriceBadgeStyle({
@@ -24,30 +24,18 @@ class _ListingPriceBadgeStyle {
 _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required double rowWidth,
   required bool hasPrice,
-  required bool listLayout,
 }) {
-  // Grid reference: ~148px text width → smallest badge, ~204px → full size.
-  // List rows are wider, so they use a higher reference band.
-  final double t = listLayout
-      ? ((rowWidth - 200) / 140).clamp(0.0, 1.0)
-      : ((rowWidth - 148) / 56).clamp(0.0, 1.0);
+  // ~148px text width → smallest badge, ~204px → full size.
+  final double t = ((rowWidth - 148) / 56).clamp(0.0, 1.0);
 
-  // Slightly larger than the compact baseline so prices read clearly without
-  // overpowering the rest of the card.
-  final double fontSize = listLayout
-      ? (hasPrice ? 15.0 + 2.5 * t : 12.5 + 2.0 * t)
-      : (hasPrice ? 14.0 + 3.0 * t : 11.5 + 2.5 * t);
-  final double horizontalPadding = listLayout
-      ? (hasPrice ? 9.5 + 3.5 * t : 6.5 + 2.0 * t)
-      : (hasPrice ? 6.5 + 4.5 * t : 5.0 + 3.5 * t);
-  final double verticalPadding = listLayout
-      ? 6.0 + 2.0 * t
-      : 4.0 + 3.0 * t;
-  final double radius = listLayout ? 7.5 + 2.0 * t : 7.0 + 2.0 * t;
+  final double fontSize = hasPrice ? 14.0 + 3.0 * t : 11.5 + 2.5 * t;
+  final double horizontalPadding =
+      hasPrice ? 6.5 + 4.5 * t : 5.0 + 3.5 * t;
+  final double verticalPadding = 4.0 + 3.0 * t;
+  final double radius = 7.0 + 2.0 * t;
   // +1.5 slack covers font metric rounding inside the fixed footer slot.
-  final double footerHeight = listLayout
-      ? verticalPadding * 2 + fontSize + 1.5
-      : (verticalPadding * 2 + fontSize + 1.5).clamp(24.0, 34.0);
+  final double footerHeight =
+      (verticalPadding * 2 + fontSize + 1.5).clamp(24.0, 34.0);
 
   return _ListingPriceBadgeStyle(
     fontSize: fontSize,
@@ -517,7 +505,6 @@ Widget _buildGridCarCardInnerText(
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
-        listLayout: false,
       );
       // Long prices need most of the footer; city can scale down.
       final double maxPriceWidth =
@@ -548,7 +535,6 @@ Widget _buildGridCarCardInnerText(
             horizontal: priceStyle.horizontalPadding,
             vertical: priceStyle.verticalPadding,
           ),
-          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: priceAccent,
             borderRadius: BorderRadius.circular(priceStyle.radius),
@@ -769,13 +755,14 @@ Widget _buildListCarCardInnerText(
       style: textStyle,
     );
 
+    // No Container.alignment — inside Expanded that would stretch the orange
+    // box to the full footer slot height.
     return Container(
       width: needsShrink ? maxWidth : null,
       padding: EdgeInsets.symmetric(
         horizontal: style.horizontalPadding,
         vertical: style.verticalPadding,
       ),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: priceAccent,
         borderRadius: BorderRadius.circular(style.radius),
@@ -1009,60 +996,64 @@ Widget _buildListCarCardInnerText(
 
   final Widget priceRow = LayoutBuilder(
     builder: (context, constraints) {
+      // Same metrics as a typical 2-column card (~160px text width).
       final priceStyle = _listingPriceBadgeStyle(
-        rowWidth: constraints.maxWidth,
+        rowWidth: 160,
         hasPrice: hasPrice,
-        listLayout: true,
       );
       final double maxPriceWidth =
           constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
-      return Row(
-        textDirection: textDirection,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Transform.translate(
-              offset: Offset(leadingShift, 0),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-                child: Row(
-                  textDirection: textDirection,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: priceAccent,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      cityText,
-                      textDirection: textDirection,
-                      textScaler: const TextScaler.linear(1.0),
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.visible,
-                      style: TextStyle(
-                        color: titleTextColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+      return SizedBox(
+        height: priceStyle.footerHeight,
+        child: Row(
+          textDirection: textDirection,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Transform.translate(
+                offset: Offset(leadingShift, 0),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment:
+                      isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Row(
+                    textDirection: textDirection,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: priceAccent,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 2),
+                      Text(
+                        cityText,
+                        textDirection: textDirection,
+                        textScaler: const TextScaler.linear(1.0),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        style: TextStyle(
+                          color: titleTextColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Transform.translate(
-            offset: Offset(trailingShift, 0),
-            child: buildPriceBadge(
-              maxWidth: maxPriceWidth,
-              style: priceStyle,
+            const SizedBox(width: 6),
+            Transform.translate(
+              offset: Offset(trailingShift, 0),
+              child: buildPriceBadge(
+                maxWidth: maxPriceWidth,
+                style: priceStyle,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     },
   );
