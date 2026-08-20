@@ -3997,6 +3997,24 @@ abstract class AppLocalizations {
   /// **'Get started'**
   String get onboardingGetStarted;
 
+  /// No description provided for @onboardingAuthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in or create an account'**
+  String get onboardingAuthTitle;
+
+  /// No description provided for @onboardingAuthBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in to save favorites, chat with sellers, and list your car. You can also browse as a guest.'**
+  String get onboardingAuthBody;
+
+  /// No description provided for @onboardingContinueAsGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue as guest'**
+  String get onboardingContinueAsGuest;
+
   /// No description provided for @enterYourPhoneNumberToLogInOrCreateAnAccount.
   ///
   /// In en, this message translates to:

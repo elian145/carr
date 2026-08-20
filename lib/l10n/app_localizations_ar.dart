@@ -2068,6 +2068,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onboardingGetStarted => 'ابدأ';
 
   @override
+  String get onboardingAuthTitle => 'سجّل الدخول أو أنشئ حسابًا';
+
+  @override
+  String get onboardingAuthBody =>
+      'سجّل الدخول لحفظ المفضلة والدردشة مع البائعين ونشر سيارتك. يمكنك أيضًا التصفح كزائر.';
+
+  @override
+  String get onboardingContinueAsGuest => 'المتابعة كزائر';
+
+  @override
   String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
       'أدخل رقم هاتفك لتسجيل الدخول أو إنشاء حساب.';
 

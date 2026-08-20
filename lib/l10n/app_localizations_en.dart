@@ -2084,6 +2084,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingGetStarted => 'Get started';
 
   @override
+  String get onboardingAuthTitle => 'Sign in or create an account';
+
+  @override
+  String get onboardingAuthBody =>
+      'Log in to save favorites, chat with sellers, and list your car. You can also browse as a guest.';
+
+  @override
+  String get onboardingContinueAsGuest => 'Continue as guest';
+
+  @override
   String get enterYourPhoneNumberToLogInOrCreateAnAccount =>
       'Enter your phone number to log in or create an account.';
 
