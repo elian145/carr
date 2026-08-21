@@ -213,11 +213,13 @@ InputDecoration filterDropdownFieldDecoration(
   MoreFiltersDialogStyle style,
   String label, {
   String? errorText,
+  /// Smaller in-field label for narrow manual min/max text inputs.
+  bool compactLabel = false,
 }) {
   final labelStyle = TextStyle(
     color: style.onSurface,
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
+    fontSize: compactLabel ? 13 : 18,
+    fontWeight: compactLabel ? FontWeight.w600 : FontWeight.bold,
     height: 1.1,
   );
   // Scale long RTL labels (e.g. أقصى سعر) down instead of ellipsizing in
@@ -237,7 +239,9 @@ InputDecoration filterDropdownFieldDecoration(
     ),
     errorText: errorText,
     labelStyle: labelStyle,
-    floatingLabelStyle: labelStyle,
+    floatingLabelStyle: labelStyle.copyWith(
+      fontSize: compactLabel ? 12 : 18,
+    ),
     filled: true,
     fillColor: style.fieldFill,
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

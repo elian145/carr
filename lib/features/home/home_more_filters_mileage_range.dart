@@ -132,12 +132,18 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
         _moreFiltersMinMaxRow(
           minField: TextFormField(
             controller: _minMileageController,
+            style: TextStyle(
+              color: style.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: _moreFiltersColorMatchedFieldDecoration(
               style,
               loc.minMileage,
+              compactLabel: true,
             ).copyWith(
               hintText: loc.any,
-              hintStyle: TextStyle(color: style.anyOrange),
+              hintStyle: TextStyle(color: style.anyOrange, fontSize: 13),
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {
@@ -155,12 +161,18 @@ mixin _HomePageMoreFiltersMileageRange on _HomePageMoreFiltersYear {
           ),
           maxField: TextFormField(
             controller: _maxMileageController,
+            style: TextStyle(
+              color: style.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: _moreFiltersColorMatchedFieldDecoration(
               style,
               loc.maxMileage,
+              compactLabel: true,
             ).copyWith(
               hintText: loc.any,
-              hintStyle: TextStyle(color: style.anyOrange),
+              hintStyle: TextStyle(color: style.anyOrange, fontSize: 13),
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {

@@ -139,6 +139,7 @@ Widget _buildGridCarCardInnerText(
   const Color priceAccent = Color(0xFFFF5A00);
 
   Widget infoChip(String value, {Color? color, bool scaleDown = false}) {
+    final double chipFont = compact ? 11.0 : 13.0;
     final text = Text(
       value,
       textDirection: textDirection,
@@ -149,7 +150,7 @@ Widget _buildGridCarCardInnerText(
       overflow: scaleDown ? TextOverflow.visible : TextOverflow.ellipsis,
       style: TextStyle(
         color: color ?? titleTextColor,
-        fontSize: compact ? 11 : 13,
+        fontSize: chipFont,
         fontWeight: FontWeight.w500,
         height: 1,
       ),
@@ -157,7 +158,8 @@ Widget _buildGridCarCardInnerText(
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 6 : 8,
-        vertical: compact ? 4 : 6,
+        // Matches year/mileage chip height: font + (compact ? 10 : 12).
+        vertical: compact ? 5 : 6,
       ),
       decoration: BoxDecoration(
         color: isLight
@@ -177,6 +179,7 @@ Widget _buildGridCarCardInnerText(
 
   /// Year / mileage chips: soft accent tint + icon so specs feel less flat.
   /// Always hugs its label — never stretches into a wide empty pill.
+  /// Height matches [infoChip] so engine/trim and year/mileage rows align.
   Widget yearMileageChip(
     String value, {
     required IconData icon,
@@ -185,8 +188,8 @@ Widget _buildGridCarCardInnerText(
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
     final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
-    // Tight to the type so the pill does not look like a tall empty box.
-    final double chipHeight = fontSize + (compact ? 10.0 : 12.0);
+    final double chipFont = compact ? 11.0 : 13.0;
+    final double chipHeight = chipFont + (compact ? 10.0 : 12.0);
     const TextDirection chipDir = TextDirection.ltr;
 
     return Container(
@@ -273,8 +276,9 @@ Widget _buildGridCarCardInnerText(
     final Alignment align =
         isRtl ? Alignment.centerRight : Alignment.centerLeft;
     // Prefer a readable size; grow when the row has room, floor when tight.
-    final double minFont = compact ? 11.0 : 11.5;
-    final double maxFont = compact ? 13.5 : 14.5;
+    // Cap at the info-chip type size so year/mileage pills match engine/trim.
+    final double minFont = compact ? 10.0 : 11.0;
+    final double maxFont = compact ? 11.0 : 13.0;
     // Reference long mileage (6 digits + unit) so short odometers do not get a
     // larger type size than cards with 5+ digit mileages.
     final String mileageUnit = AppLocalizations.of(context)!.unit_km;
@@ -647,6 +651,9 @@ Widget _buildListCarCardInnerText(
   required Color metaTextColor,
 }) {
   final bool isLight = Theme.of(context).brightness == Brightness.light;
+  final bool compact = AppResponsive.isCompactPhone(context);
+  final double chipFontSize = compact ? 11.0 : 13.0;
+  final double sharedChipHeight = chipFontSize + (compact ? 10.0 : 12.0);
   final inheritedTextDirection = Directionality.of(context);
   final languageCode = Localizations.localeOf(context).languageCode;
   final bool isRtl =
@@ -775,7 +782,11 @@ Widget _buildListCarCardInnerText(
 
   Widget infoChip(Widget child) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        // Matches year/mileage chip height: font + (compact ? 10 : 12).
+        vertical: compact ? 5 : 6,
+      ),
       decoration: BoxDecoration(
         color: isLight
             ? const Color(0xFFF4F4F4)
@@ -792,13 +803,12 @@ Widget _buildListCarCardInnerText(
     required double fontSize,
   }) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
-    const double iconGap = 3.5;
+    final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
-    final double chipHeight = fontSize + 12.0;
     const TextDirection chipDir = TextDirection.ltr;
 
     return Container(
-      height: chipHeight,
+      height: sharedChipHeight,
       padding: EdgeInsets.symmetric(horizontal: hPad),
       alignment: Alignment.center,
       decoration: BoxDecoration(
@@ -828,7 +838,7 @@ Widget _buildListCarCardInnerText(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: iconSize, color: priceAccent),
-          const SizedBox(width: iconGap),
+          SizedBox(width: iconGap),
           Text(
             value,
             textDirection: chipDir,
@@ -852,7 +862,7 @@ Widget _buildListCarCardInnerText(
 
   double _yearMileageChipWidth(String value, double fontSize) {
     final double iconSize = (fontSize * 0.92).clamp(10.0, 14.0);
-    const double iconGap = 3.5;
+    final double iconGap = compact ? 3.0 : 3.5;
     final double hPad = (fontSize * 0.42).clamp(4.0, 7.0);
     final painter = TextPainter(
       text: TextSpan(
@@ -877,9 +887,9 @@ Widget _buildListCarCardInnerText(
       isRtl ? Alignment.centerRight : Alignment.centerLeft;
   final Widget specsRow = LayoutBuilder(
     builder: (context, constraints) {
-      const double gap = 6.0;
-      const double minFont = 11.5;
-      const double maxFont = 14.5;
+      final double gap = compact ? 4.0 : 6.0;
+      final double minFont = compact ? 10.0 : 11.0;
+      final double maxFont = chipFontSize;
       final bool bounded =
           constraints.maxWidth.isFinite &&
           constraints.maxWidth < double.infinity;
@@ -932,7 +942,7 @@ Widget _buildListCarCardInnerText(
             icon: Icons.calendar_today_rounded,
             fontSize: fontSize,
           ),
-          const SizedBox(width: gap),
+          SizedBox(width: gap),
           yearMileageChip(
             mileageText,
             icon: Icons.speed_rounded,
@@ -973,7 +983,7 @@ Widget _buildListCarCardInnerText(
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
         color: color,
-        fontSize: 14,
+        fontSize: chipFontSize,
         fontWeight: FontWeight.w500,
         height: 1,
       ),
@@ -996,9 +1006,12 @@ Widget _buildListCarCardInnerText(
 
   final Widget priceRow = LayoutBuilder(
     builder: (context, constraints) {
-      // Same metrics as a typical 2-column card (~160px text width).
+      // Match the two-per-row grid badge: same text-width scale + metrics.
+      final gridTextWidth =
+          (AppResponsive.homeGridListingCardWidth(context) - 24)
+              .clamp(140.0, 320.0);
       final priceStyle = _listingPriceBadgeStyle(
-        rowWidth: 160,
+        rowWidth: gridTextWidth,
         hasPrice: hasPrice,
       );
       final double maxPriceWidth =

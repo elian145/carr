@@ -115,12 +115,18 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
         _moreFiltersMinMaxRow(
           minField: TextFormField(
             controller: _minPriceController,
+            style: TextStyle(
+              color: style.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: _moreFiltersColorMatchedFieldDecoration(
               style,
               loc.minPrice,
+              compactLabel: true,
             ).copyWith(
               hintText: loc.any,
-              hintStyle: TextStyle(color: style.anyOrange),
+              hintStyle: TextStyle(color: style.anyOrange, fontSize: 13),
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {
@@ -138,12 +144,18 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
           ),
           maxField: TextFormField(
             controller: _maxPriceController,
+            style: TextStyle(
+              color: style.onSurface,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: _moreFiltersColorMatchedFieldDecoration(
               style,
               loc.maxPrice,
+              compactLabel: true,
             ).copyWith(
               hintText: loc.any,
-              hintStyle: TextStyle(color: style.anyOrange),
+              hintStyle: TextStyle(color: style.anyOrange, fontSize: 13),
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {

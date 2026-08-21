@@ -14,9 +14,14 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
 
   InputDecoration _moreFiltersColorMatchedFieldDecoration(
     MoreFiltersDialogStyle style,
-    String label,
-  ) =>
-      filterDropdownFieldDecoration(style, label);
+    String label, {
+    bool compactLabel = false,
+  }) =>
+      filterDropdownFieldDecoration(
+        style,
+        label,
+        compactLabel: compactLabel,
+      );
 
   Widget _moreFiltersRangeModeToggle({
     required BuildContext context,
@@ -44,7 +49,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
   Widget _moreFiltersRangeSectionHeader({
     required String title,
     required MoreFiltersDialogStyle style,
-    required Widget toggle,
+    Widget? toggle,
   }) {
     return Row(
       children: [
@@ -58,7 +63,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
             ),
           ),
         ),
-        toggle,
+        if (toggle != null) toggle,
       ],
     );
   }
