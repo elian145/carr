@@ -40,6 +40,7 @@ import '../shared/listings/listing_management.dart'
         setListingSoldStatus;
 import '../shared/listings/listing_owner.dart';
 import '../shared/listings/listing_share.dart';
+import '../shared/listings/listing_share_urls.dart';
 import '../shared/listings/listing_sold_badge.dart';
 import '../shared/listings/listing_status.dart';
 import '../shared/listings/listing_uploaded_ago.dart';

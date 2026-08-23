@@ -97,6 +97,31 @@ String listingShareLinkOnly(String listingId) {
   return listingDeepLink(listingId);
 }
 
+/// HTTPS listing URL for chat apps (WhatsApp, etc.).
+///
+/// Prefers the web preview URL (`?web=1`) so link unfurling shows the listing hero
+/// image via Open Graph metadata on the server.
+String listingChatShareLink(String listingId) {
+  final preview = listingWebShareLinkWebPreview(listingId);
+  if (preview != null && preview.isNotEmpty) return preview;
+  final web = listingWebShareLink(listingId);
+  if (web != null && web.isNotEmpty) return web;
+  return listingShareLinkOnly(listingId);
+}
+
+/// Pre-filled WhatsApp message: interest text plus a shareable listing link.
+String buildListingWhatsAppMessage({
+  required String interestText,
+  required String listingId,
+}) {
+  final link = listingChatShareLink(listingId).trim();
+  final buffer = StringBuffer(interestText.trim());
+  if (link.isNotEmpty) {
+    buffer.write('\n\n$link');
+  }
+  return buffer.toString();
+}
+
 bool _isListingPublicId(String id) {
   if (id.isEmpty || id.length > 128) return false;
   return RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(id);

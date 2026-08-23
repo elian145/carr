@@ -1036,6 +1036,18 @@ abstract class AppLocalizations {
   /// **'Chat on WhatsApp'**
   String get chatOnWhatsApp;
 
+  /// No description provided for @whatsappListingInterestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, I am interested in your {title}.'**
+  String whatsappListingInterestMessage(String title);
+
+  /// No description provided for @whatsappListingInterestDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'car'**
+  String get whatsappListingInterestDefaultTitle;
+
   /// No description provided for @chatOnCarzo.
   ///
   /// In en, this message translates to:

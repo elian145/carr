@@ -481,6 +481,14 @@ class AppLocalizationsKu extends AppLocalizations {
   String get chatOnWhatsApp => 'وتووێژ لە واتساپ';
 
   @override
+  String whatsappListingInterestMessage(String title) {
+    return 'سڵاو، ئارەزوومە بۆ $title.';
+  }
+
+  @override
+  String get whatsappListingInterestDefaultTitle => 'ئۆتۆمبێل';
+
+  @override
   String get chatOnCarzo => 'چات لەسەر CarNet';
 
   @override

@@ -481,6 +481,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatOnWhatsApp => 'Chat on WhatsApp';
 
   @override
+  String whatsappListingInterestMessage(String title) {
+    return 'Hi, I am interested in your $title.';
+  }
+
+  @override
+  String get whatsappListingInterestDefaultTitle => 'car';
+
+  @override
   String get chatOnCarzo => 'Chat on CarNet';
 
   @override

@@ -172,6 +172,15 @@
   "noCarsFound": "لا توجد سيارات",
   "carNotFound": "السيارة غير موجودة",
   "chatOnWhatsApp": "محادثة على واتساب",
+  "whatsappListingInterestMessage": "مرحباً، أنا مهتم بـ {title}.",
+  "@whatsappListingInterestMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsappListingInterestDefaultTitle": "سيارة",
   "chatOnCarzo": "محادثة على CarNet",
   "chatCarzoOwnListing": "لا يمكنك مراسلة نفسك على إعلانك.",
   "unableToOpenWhatsApp": "تعذر فتح واتساب",

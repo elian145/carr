@@ -107,9 +107,19 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
       return;
     }
     if (!mounted) return;
+    final loc = AppLocalizations.of(context)!;
     final carTitle = _displayCarTitle(context);
+    final String listingId = listingPrimaryId(car!).isNotEmpty
+        ? listingPrimaryId(car!)
+        : widget.carId.toString();
+    final title = carTitle.trim().isNotEmpty
+        ? carTitle.trim()
+        : loc.whatsappListingInterestDefaultTitle;
     final String msg = Uri.encodeComponent(
-      'Hi, I am interested in your ${carTitle.isNotEmpty ? carTitle : 'car'}',
+      buildListingWhatsAppMessage(
+        interestText: loc.whatsappListingInterestMessage(title),
+        listingId: listingId,
+      ),
     );
     final Uri waApp = Uri.parse('whatsapp://send?phone=$digits&text=$msg');
     final Uri waWeb = Uri.parse('https://wa.me/$digits?text=$msg');

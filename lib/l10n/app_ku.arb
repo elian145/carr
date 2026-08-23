@@ -172,6 +172,15 @@
   "noCarsFound": "هیچ ئۆتۆمبێلێک نەدۆزرایەوە",
   "carNotFound": "ئۆتۆمبێل نەدۆزرایەوە",
   "chatOnWhatsApp": "وتووێژ لە واتساپ",
+  "whatsappListingInterestMessage": "سڵاو، ئارەزوومە بۆ {title}.",
+  "@whatsappListingInterestMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsappListingInterestDefaultTitle": "ئۆتۆمبێل",
   "chatOnCarzo": "چات لەسەر CarNet",
   "chatCarzoOwnListing": "ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕێکلامی خۆت.",
   "unableToOpenWhatsApp": "ناتوانرێت واتساپ بکرێتەوە",

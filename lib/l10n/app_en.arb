@@ -171,6 +171,15 @@
   "noCarsFound": "No cars found",
   "carNotFound": "Car not found",
   "chatOnWhatsApp": "Chat on WhatsApp",
+  "whatsappListingInterestMessage": "Hi, I am interested in your {title}.",
+  "@whatsappListingInterestMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "whatsappListingInterestDefaultTitle": "car",
   "chatOnCarzo": "Chat on CarNet",
   "chatCarzoOwnListing": "You can't message yourself on your own listing.",
   "unableToOpenWhatsApp": "Unable to open WhatsApp",
