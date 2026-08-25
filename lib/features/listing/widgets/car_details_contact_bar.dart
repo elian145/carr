@@ -63,8 +63,8 @@ class _ContactActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double hPad = compact ? 8 : 12;
-    final double iconSize = compact ? 17 : 19;
-    final double fontSize = compact ? 12 : 13;
+    final double iconSize = compact ? 18 : 20;
+    final double fontSize = compact ? 14 : 16;
     final double gap = compact ? 5 : 6;
 
     return SizedBox(

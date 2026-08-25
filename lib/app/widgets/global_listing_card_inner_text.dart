@@ -138,23 +138,11 @@ Widget _buildGridCarCardInnerText(
   final double trailingShift = isRtl ? -4 : 4;
   const Color priceAccent = Color(0xFFFF5A00);
 
-  Widget infoChip(String value, {Color? color, bool scaleDown = false}) {
+  /// Spec chip that always hugs its label. Do not put a FittedBox inside a
+  /// Flexible — that expands the pill to the flex share while shrinking text,
+  /// leaving empty space to the right (common on Android).
+  Widget infoChip(String value, {Color? color}) {
     final double chipFont = compact ? 11.0 : 13.0;
-    final text = Text(
-      value,
-      textDirection: textDirection,
-      textAlign: TextAlign.start,
-      textScaler: const TextScaler.linear(1.0),
-      maxLines: 1,
-      softWrap: false,
-      overflow: scaleDown ? TextOverflow.visible : TextOverflow.ellipsis,
-      style: TextStyle(
-        color: color ?? titleTextColor,
-        fontSize: chipFont,
-        fontWeight: FontWeight.w500,
-        height: 1,
-      ),
-    );
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 6 : 8,
@@ -167,13 +155,21 @@ Widget _buildGridCarCardInnerText(
             : Colors.white.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(7),
       ),
-      child: scaleDown
-          ? FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-              child: text,
-            )
-          : text,
+      child: Text(
+        value,
+        textDirection: textDirection,
+        textAlign: TextAlign.start,
+        textScaler: const TextScaler.linear(1.0),
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.visible,
+        style: TextStyle(
+          color: color ?? titleTextColor,
+          fontSize: chipFont,
+          fontWeight: FontWeight.w500,
+          height: 1,
+        ),
+      ),
     );
   }
 
@@ -461,31 +457,40 @@ Widget _buildGridCarCardInnerText(
   );
 
   final bool hasDetail = engineLine.isNotEmpty || trimLine.isNotEmpty;
+  final Alignment trimAlign =
+      isRtl ? Alignment.centerRight : Alignment.centerLeft;
+  // Intrinsic chips first; scale the whole row only when it overflows so a long
+  // trim can use leftover width instead of shrinking inside a wide empty pill.
   final Widget trimBlock = Padding(
     padding: EdgeInsets.only(top: blockGap),
     child: Transform.translate(
       offset: Offset(leadingShift, 0),
-      child: Row(
-        textDirection: textDirection,
-        children: [
-          if (engineLine.isNotEmpty)
-            Flexible(
-              flex: 2,
-              child: infoChip(
-                engineLine,
-                color: metaTextColor,
-                scaleDown: true,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final chips = Row(
+            textDirection: textDirection,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (engineLine.isNotEmpty)
+                infoChip(engineLine, color: metaTextColor),
+              if (engineLine.isNotEmpty && trimLine.isNotEmpty)
+                SizedBox(width: compact ? 4 : 6),
+              if (trimLine.isNotEmpty)
+                infoChip(trimLine, color: metaTextColor),
+            ],
+          );
+          return Align(
+            alignment: trimAlign,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: trimAlign,
+                child: chips,
               ),
             ),
-          if (engineLine.isNotEmpty && trimLine.isNotEmpty)
-            SizedBox(width: compact ? 4 : 6),
-          if (trimLine.isNotEmpty) ...[
-            Flexible(
-              flex: 4,
-              child: infoChip(trimLine, color: metaTextColor, scaleDown: true),
-            ),
-          ],
-        ],
+          );
+        },
       ),
     ),
   );
@@ -972,15 +977,14 @@ Widget _buildListCarCardInnerText(
     },
   );
 
-  Widget adaptiveDetailText(String value, Color color) {
-    return AutoSizeText(
+  Widget detailChipText(String value, Color color) {
+    return Text(
       value,
       textDirection: textDirection,
-      textScaleFactor: 1.0,
+      textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
-      minFontSize: 10,
-      stepGranularity: 0.25,
-      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+      overflow: TextOverflow.visible,
       style: TextStyle(
         color: color,
         fontSize: chipFontSize,
@@ -990,18 +994,34 @@ Widget _buildListCarCardInnerText(
     );
   }
 
-  final Widget engineTrimRow = Row(
-    textDirection: textDirection,
-    crossAxisAlignment: CrossAxisAlignment.center,
-    children: [
-      if (hasEngine)
-        Flexible(
-          child: infoChip(adaptiveDetailText(engineLine, metaTextColor)),
+  final Alignment detailAlign =
+      isRtl ? Alignment.centerRight : Alignment.centerLeft;
+  // Same as grid: hug labels at full size; only scale the row if it overflows.
+  final Widget engineTrimRow = LayoutBuilder(
+    builder: (context, constraints) {
+      final chips = Row(
+        textDirection: textDirection,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (hasEngine)
+            infoChip(detailChipText(engineLine, metaTextColor)),
+          if (hasEngine && hasTrim) const SizedBox(width: 6),
+          if (hasTrim) infoChip(detailChipText(trimLine, metaTextColor)),
+        ],
+      );
+      return Align(
+        alignment: detailAlign,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: detailAlign,
+            child: chips,
+          ),
         ),
-      if (hasEngine && hasTrim) const SizedBox(width: 6),
-      if (hasTrim)
-        Flexible(child: infoChip(adaptiveDetailText(trimLine, metaTextColor))),
-    ],
+      );
+    },
   );
 
   final Widget priceRow = LayoutBuilder(
