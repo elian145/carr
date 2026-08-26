@@ -1032,6 +1032,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String timeMonthsAgo(Object count) {
+    return '$count months ago';
+  }
+
+  @override
+  String timeYearsAgo(Object count) {
+    return '$count years ago';
+  }
+
+  @override
   String get deleteAccountTitle => 'Delete account';
 
   @override

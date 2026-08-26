@@ -1033,6 +1033,16 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
+  String timeMonthsAgo(Object count) {
+    return 'پێش $count مانگ';
+  }
+
+  @override
+  String timeYearsAgo(Object count) {
+    return 'پێش $count ساڵ';
+  }
+
+  @override
   String get deleteAccountTitle => 'سڕینەوەی هەژمار';
 
   @override

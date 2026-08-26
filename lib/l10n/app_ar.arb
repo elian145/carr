@@ -348,6 +348,8 @@
   "timeDaysAgo": "قبل {count} يوم",
   "timeHoursAgo": "قبل {count} ساعة",
   "timeMinutesAgo": "قبل {count} دقيقة",
+  "timeMonthsAgo": "قبل {count} شهر",
+  "timeYearsAgo": "قبل {count} سنة",
   "deleteAccountTitle": "حذف الحساب",
   "deleteAccountBody": "سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. إذا تعذر الحذف الكامل، يتم تعطيل الحساب وإزالة البيانات الشخصية ووسائط الإعلانات. لا يمكن التراجع عن ذلك.",
   "passwordRequiredConfirm": "كلمة المرور",

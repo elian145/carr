@@ -1027,6 +1027,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String timeMonthsAgo(Object count) {
+    return 'قبل $count شهر';
+  }
+
+  @override
+  String timeYearsAgo(Object count) {
+    return 'قبل $count سنة';
+  }
+
+  @override
   String get deleteAccountTitle => 'حذف الحساب';
 
   @override

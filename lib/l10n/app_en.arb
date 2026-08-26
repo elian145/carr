@@ -347,6 +347,8 @@
   "timeDaysAgo": "{count} days ago",
   "timeHoursAgo": "{count} hours ago",
   "timeMinutesAgo": "{count} minutes ago",
+  "timeMonthsAgo": "{count} months ago",
+  "timeYearsAgo": "{count} years ago",
   "deleteAccountTitle": "Delete account",
   "deleteAccountBody": "This will permanently delete your account and all your data (listings, messages, favorites). If full deletion is blocked by system constraints, your account is deactivated and personal data and listing media are scrubbed. This cannot be undone.",
   "passwordRequiredConfirm": "Password",

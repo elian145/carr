@@ -348,6 +348,8 @@
   "timeDaysAgo": "پێش {count} ڕۆژ",
   "timeHoursAgo": "پێش {count} کاتژمێر",
   "timeMinutesAgo": "پێش {count} خولەک",
+  "timeMonthsAgo": "پێش {count} مانگ",
+  "timeYearsAgo": "پێش {count} ساڵ",
   "deleteAccountTitle": "سڕینەوەی هەژمار",
   "deleteAccountBody": "هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ئەگەر سڕینەوەی تەواو ئەستەم بوو، هەژمارەکە ناچالاک دەکرێت و زانیاری کەسی و میدیای ڕێکلام دەسڕدرێنەوە. ناگەڕێتەوە.",
   "passwordRequiredConfirm": "وشەی نهێنی",

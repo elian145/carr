@@ -2050,6 +2050,18 @@ abstract class AppLocalizations {
   /// **'{count} minutes ago'**
   String timeMinutesAgo(Object count);
 
+  /// No description provided for @timeMonthsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} months ago'**
+  String timeMonthsAgo(Object count);
+
+  /// No description provided for @timeYearsAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} years ago'**
+  String timeYearsAgo(Object count);
+
   /// No description provided for @deleteAccountTitle.
   ///
   /// In en, this message translates to:
