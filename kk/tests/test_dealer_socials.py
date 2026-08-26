@@ -17,6 +17,22 @@ def test_handles_become_canonical_urls():
     }
 
 
+def test_facebook_handle_accepts_spaces():
+    cleaned, err = clean_dealership_socials({"facebook": "Best Cars Erbil"})
+    assert err is None
+    assert cleaned == {
+        "facebook": "https://www.facebook.com/search/pages/?q=Best+Cars+Erbil"
+    }
+
+    cleaned, err = clean_dealership_socials(
+        {"facebook": "https://www.facebook.com/Best Cars Erbil"}
+    )
+    assert err is None
+    assert cleaned == {
+        "facebook": "https://www.facebook.com/search/pages/?q=Best+Cars+Erbil"
+    }
+
+
 def test_full_urls_are_https_and_host_checked():
     cleaned, err = clean_dealership_socials(
         {

@@ -9,6 +9,13 @@ void main() {
         'https://www.facebook.com/BestCarsErbil',
       );
       expect(
+        DealerSocials.normalize(
+          DealerSocialNetwork.facebook,
+          'Best Cars Erbil',
+        ),
+        'https://www.facebook.com/search/pages/?q=Best+Cars+Erbil',
+      );
+      expect(
         DealerSocials.normalize(DealerSocialNetwork.instagram, '@bestcars'),
         'https://www.instagram.com/bestcars',
       );
@@ -48,6 +55,21 @@ void main() {
     test('empty input is allowed', () {
       expect(DealerSocials.normalize(DealerSocialNetwork.facebook, '  '), '');
     });
+
+    test('payload sends canonical facebook URLs so spaces survive the API', () {
+      expect(
+        DealerSocials.payload(
+          facebook: 'Best Cars Erbil',
+          instagram: '',
+          tiktok: '',
+        ),
+        {
+          'facebook': 'https://www.facebook.com/search/pages/?q=Best+Cars+Erbil',
+          'instagram': '',
+          'tiktok': '',
+        },
+      );
+    });
   });
 
   test('fromDealerMap skips empty platforms', () {
@@ -69,6 +91,20 @@ void main() {
         'https://www.facebook.com/testdealer',
       ),
       'testdealer',
+    );
+    expect(
+      DealerSocials.editHandle(
+        DealerSocialNetwork.facebook,
+        'https://www.facebook.com/Best%20Cars%20Erbil',
+      ),
+      'Best Cars Erbil',
+    );
+    expect(
+      DealerSocials.editHandle(
+        DealerSocialNetwork.facebook,
+        'https://www.facebook.com/search/pages/?q=Best+Cars+Erbil',
+      ),
+      'Best Cars Erbil',
     );
     expect(
       DealerSocials.editHandle(

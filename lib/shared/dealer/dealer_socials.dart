@@ -84,10 +84,14 @@ class DealerSocials {
     required String instagram,
     required String tiktok,
   }) {
+    String encoded(DealerSocialNetwork network, String raw) {
+      return normalize(network, raw) ?? raw.trim();
+    }
+
     return {
-      'facebook': facebook.trim(),
-      'instagram': instagram.trim(),
-      'tiktok': tiktok.trim(),
+      'facebook': encoded(DealerSocialNetwork.facebook, facebook),
+      'instagram': encoded(DealerSocialNetwork.instagram, instagram),
+      'tiktok': encoded(DealerSocialNetwork.tiktok, tiktok),
     };
   }
 
@@ -103,7 +107,7 @@ class DealerSocials {
       return null;
     }
     if (_looksLikeUrl(network, text)) {
-      return _normalizeUrl(network, text);
+      return _normalizeUrl(network, text.replaceAll(RegExp(r'\s'), '%20'));
     }
     return _normalizeHandle(network, text);
   }
@@ -114,6 +118,12 @@ class DealerSocials {
     final segments = uri.pathSegments
         .where((s) => s.trim().isNotEmpty)
         .toList();
+    final searchQuery = (uri.queryParameters['q'] ?? '').trim();
+    if (searchQuery.isNotEmpty &&
+        segments.isNotEmpty &&
+        segments.first == 'search') {
+      return searchQuery;
+    }
     if (segments.isEmpty) return label(network);
     var handle = segments.first;
     if (handle == 'profile.php' && (uri.queryParameters['id'] ?? '').isNotEmpty) {
@@ -161,21 +171,36 @@ class DealerSocials {
   static String? _normalizeHandle(DealerSocialNetwork network, String value) {
     var handle = value.trim();
     if (handle.startsWith('@')) handle = handle.substring(1);
+    handle = handle.replaceAll(RegExp(r'\s+', unicode: true), ' ').trim();
+    if (handle.isEmpty) return null;
     if (handle.toLowerCase().startsWith('www.')) return null;
     final ok = switch (network) {
-      DealerSocialNetwork.facebook => RegExp(r'^[A-Za-z0-9.\-]{1,80}$'),
+      DealerSocialNetwork.facebook =>
+        RegExp(r"^[\p{L}\p{N}._'\-& ]{1,80}$", unicode: true),
       DealerSocialNetwork.instagram => RegExp(r'^[A-Za-z0-9._]{1,30}$'),
       DealerSocialNetwork.tiktok => RegExp(r'^[A-Za-z0-9._]{2,24}$'),
     };
     if (!ok.hasMatch(handle)) return null;
     switch (network) {
       case DealerSocialNetwork.facebook:
-        return 'https://www.facebook.com/$handle';
+        if (RegExp(r'^[A-Za-z0-9.]{1,80}$').hasMatch(handle)) {
+          return 'https://www.facebook.com/$handle';
+        }
+        return _facebookSearchUrl(handle);
       case DealerSocialNetwork.instagram:
         return 'https://www.instagram.com/$handle';
       case DealerSocialNetwork.tiktok:
         return 'https://www.tiktok.com/@$handle';
     }
+  }
+
+  static String _facebookSearchUrl(String name) {
+    return Uri(
+      scheme: 'https',
+      host: 'www.facebook.com',
+      path: '/search/pages/',
+      queryParameters: {'q': name},
+    ).toString();
   }
 
   static String? _normalizeUrl(DealerSocialNetwork network, String value) {
@@ -195,6 +220,12 @@ class DealerSocials {
     if (uri.hasPort && uri.port != 80 && uri.port != 443) return null;
     final path = uri.path.isEmpty ? '/' : uri.path;
     if ((path == '/' || path.isEmpty) && !uri.hasQuery) return null;
+    if (network == DealerSocialNetwork.facebook) {
+      final named = uri.pathSegments.where((s) => s.trim().isNotEmpty);
+      if (named.isNotEmpty && named.first.contains(' ')) {
+        return _facebookSearchUrl(named.first);
+      }
+    }
     final rebuilt = Uri(
       scheme: 'https',
       host: host,

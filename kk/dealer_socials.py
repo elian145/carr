@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import quote_plus, unquote, urlparse, urlunparse
 
 SOCIAL_KEYS = ("facebook", "instagram", "tiktok")
 _MAX_URL_LEN = 300
@@ -32,8 +32,9 @@ _HOSTS: dict[str, frozenset[str]] = {
     ),
 }
 
+_FACEBOOK_VANITY_RE = re.compile(r"^[A-Za-z0-9.]{1,80}$")
 _HANDLE_RE: dict[str, re.Pattern[str]] = {
-    "facebook": re.compile(r"^[A-Za-z0-9.\-]{1,80}$"),
+    "facebook": re.compile(r"^[\w._'\-& ]{1,80}$", re.UNICODE),
     "instagram": re.compile(r"^[A-Za-z0-9._]{1,30}$"),
     "tiktok": re.compile(r"^[A-Za-z0-9._]{2,24}$"),
 }
@@ -117,7 +118,7 @@ def _normalize_one(platform: str, value: str) -> str | None:
         return None
 
     if _looks_like_url(text, platform):
-        return _normalize_url(platform, text)
+        return _normalize_url(platform, re.sub(r"\s", "%20", text))
     return _normalize_handle(platform, text)
 
 
@@ -136,13 +137,23 @@ def _looks_like_url(text: str, platform: str) -> bool:
 
 
 def _normalize_handle(platform: str, value: str) -> str | None:
-    handle = value.strip().lstrip("@")
+    handle = " ".join(value.strip().lstrip("@").split())
+    if not handle:
+        return None
     if handle.lower().startswith("www."):
         return None
     pattern = _HANDLE_RE.get(platform)
     if not pattern or not pattern.match(handle):
         return None
+    if platform == "facebook":
+        if _FACEBOOK_VANITY_RE.match(handle):
+            return _CANONICAL[platform].format(handle=handle)
+        return _facebook_search_url(handle)
     return _CANONICAL[platform].format(handle=handle)
+
+
+def _facebook_search_url(name: str) -> str:
+    return f"https://www.facebook.com/search/pages/?q={quote_plus(name)}"
 
 
 def _normalize_url(platform: str, value: str) -> str | None:
@@ -175,6 +186,12 @@ def _normalize_url(platform: str, value: str) -> str | None:
     query = parsed.query or ""
     if path in {"", "/"} and not query:
         return None
+
+    if platform == "facebook":
+        decoded = unquote(path)
+        segments = [s for s in decoded.split("/") if s]
+        if segments and " " in segments[0]:
+            return _facebook_search_url(segments[0])
 
     rebuilt = urlunparse(("https", host, path, "", query, ""))
     if len(rebuilt) > _MAX_URL_LEN:
