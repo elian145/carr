@@ -38,6 +38,7 @@ def _seller() -> User:
     user.dealership_verified_phones = ["+9647709999999"]
     user.contact_verified_phones = ["+9647701234567"]
     user.dealership_emails = ["sales@bestcars.example"]
+    user.dealership_socials = {"instagram": "https://www.instagram.com/bestcars"}
     user.dealership_verified_emails = ["sales@bestcars.example"]
     user.created_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
     user.last_login = datetime(2026, 2, 1, tzinfo=timezone.utc)
@@ -61,6 +62,9 @@ def test_public_user_dict_keeps_public_business_fields():
     assert data["dealership_phone"] == "+9647709999999"
     assert data["dealership_phones"] == ["+9647709999999"]
     assert data["dealership_emails"] == ["sales@bestcars.example"]
+    assert data["dealership_socials"] == {
+        "instagram": "https://www.instagram.com/bestcars",
+    }
 
 
 def test_private_user_dict_still_exposes_owner_fields():

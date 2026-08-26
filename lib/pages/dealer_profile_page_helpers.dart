@@ -526,6 +526,7 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
               ],
             ),
           ),
+        _buildSocialMediaCard(isLight: isLightShell),
         if (mapLat != null &&
             mapLng != null &&
             isValidDealerLatLng(mapLat, mapLng)) ...[
@@ -544,6 +545,145 @@ extension _DealerProfilePageHelpers on _DealerProfilePageState {
         _openingHoursTable(openingHours, isLight: isLightShell),
       ],
     );
+  }
+
+  Widget _buildSocialMediaCard({required bool isLight}) {
+    final links = DealerSocials.fromDealerMap(_dealer);
+    if (links.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: _softCardDecoration(isLight),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _tr(
+                'Social media',
+                ar: 'وسائل التواصل',
+                ku: 'تۆڕە کۆمەڵایەتییەکان',
+              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 10),
+            for (var i = 0; i < links.length; i++) ...[
+              if (i > 0) const SizedBox(height: 8),
+              _socialLinkRow(links[i], isLight: isLight),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _socialLinkRow(DealerSocialLink link, {required bool isLight}) {
+    final name = DealerSocials.label(link.network);
+    return Tooltip(
+      message: _tr(
+        'Tap to open • Hold to copy',
+        ar: 'اضغط للفتح • اضغط مطولاً للنسخ',
+        ku: 'کرتە بکە بۆ کردنەوە • چەند چرکە هەڵبگرە بۆ کۆپی',
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _openSocialLink(link),
+          onLongPress: () => _copyToClipboard(
+            link.url,
+            _tr(
+              '$name link copied to clipboard',
+              ar: 'تم نسخ رابط $name',
+              ku: 'لینکی $name کۆپی کرا',
+            ),
+          ),
+          borderRadius: BorderRadius.circular(12),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: isLight
+                  ? const Color(0xFFF7F7F7)
+                  : Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                DealerSocialBrandIcon(network: link.network, size: 36),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: isLight
+                              ? AppThemes.darkHomeShellBackground
+                              : const Color(0xFFF7F7F7),
+                        ),
+                      ),
+                      if (link.handle.isNotEmpty && link.handle != name) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          link.handle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isLight
+                                ? const Color(0xFF8E8E93)
+                                : Colors.white60,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.open_in_new_rounded,
+                  size: 16,
+                  color: isLight ? const Color(0xFF8E8E93) : Colors.white54,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSocialLink(DealerSocialLink link) async {
+    final uri = Uri.tryParse(link.url);
+    if (uri == null) return;
+    bool launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    ).catchError((_) => false);
+    if (!launched) {
+      launched = await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+      ).catchError((_) => false);
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _tr(
+              'Could not open ${DealerSocials.label(link.network)}',
+              ar: 'تعذر فتح ${DealerSocials.label(link.network)}',
+              ku: 'نەکرا ${DealerSocials.label(link.network)} بکرێتەوە',
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _infoRow(

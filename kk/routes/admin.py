@@ -637,6 +637,7 @@ def _review_dealer_application(
         profile.dealership_latitude = target.dealership_latitude
         profile.dealership_longitude = target.dealership_longitude
         profile.dealership_opening_hours = target.dealership_opening_hours
+        profile.dealership_socials = getattr(target, "dealership_socials", None)
         profile.is_featured = bool(target.is_featured_dealer)
     else:
         target.account_type = "user"

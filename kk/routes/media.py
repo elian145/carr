@@ -71,6 +71,7 @@ _ALLOWED_VIDEO_CONTENT_TYPES = frozenset(
 )
 _R2_IMAGE_MAX_BYTES = 25 * 1024 * 1024
 _R2_VIDEO_MAX_BYTES = 200 * 1024 * 1024
+MAX_DAMAGE_PHOTOS = 10
 
 
 def _normalize_signed_content_type(raw: str, *, asset: str, default_ct: str) -> str | None:
@@ -163,15 +164,35 @@ def _normalize_car_image_kind(raw) -> str:
     return "damage" if s == "damage" else "listing"
 
 
-def _count_listing_images(car: Car) -> int:
+def _count_images_of_kind(car: Car, kind: str) -> int:
+    want = _normalize_car_image_kind(kind)
     try:
         return sum(
             1
             for img in car.images
-            if _normalize_car_image_kind(getattr(img, "kind", None)) == "listing"
+            if _normalize_car_image_kind(getattr(img, "kind", None)) == want
         )
     except Exception:
         return 0
+
+
+def _count_listing_images(car: Car) -> int:
+    return _count_images_of_kind(car, "listing")
+
+
+def _damage_photo_limit_error(existing: int, incoming: int):
+    if existing + incoming <= MAX_DAMAGE_PHOTOS:
+        return None
+    return (
+        jsonify(
+            {
+                "message": (
+                    f"You can add up to {MAX_DAMAGE_PHOTOS} damage photos per listing."
+                )
+            }
+        ),
+        400,
+    )
 
 
 def _pick_primary_listing_url(car: Car):
@@ -474,6 +495,13 @@ def upload_car_images(car_id: str):
         requested_skip = skip_param in ("1", "true", "yes", "y", "on")
         skip_blur = bool(requested_skip)
         upload_kind = _normalize_car_image_kind(request.args.get("kind"))
+        if upload_kind == "damage":
+            limit_err = _damage_photo_limit_error(
+                _count_images_of_kind(car, "damage"),
+                len(incoming_files),
+            )
+            if limit_err:
+                return limit_err
 
         for fs in incoming_files:
             if not fs or not fs.filename:
@@ -594,6 +622,13 @@ def attach_car_images(car_id: str):
             return jsonify({"message": "No image paths or URLs provided"}), 400
 
         attach_kind = _normalize_car_image_kind(data.get("kind"))
+        if attach_kind == "damage":
+            limit_err = _damage_photo_limit_error(
+                _count_images_of_kind(car, "damage"),
+                len(paths),
+            )
+            if limit_err:
+                return limit_err
 
         attached = []
         upload_root = os.path.abspath(os.path.join(current_app.root_path, "static", "uploads"))

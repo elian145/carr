@@ -3,6 +3,7 @@ part of 'sell_flow.dart';
 /// Client-side media caps for a single listing (the backend also enforces limits).
 const int _kSellMaxPhotos = 20;
 const int _kSellMaxVideos = 3;
+const int _kSellMaxDamagePhotos = 10;
 
 /// Downscale/re-encode listing photos at pick time. A modern phone camera
 /// produces 10-25MB frames; uploading 20 of those times out or hits the
@@ -426,12 +427,27 @@ mixin _SellStep4Logic on _SellStep4Fields {
     unawaited(_saveDraft());
   }
 
-  void _showListingMediaLimitSnack({required bool isVideo}) {
+  void _showListingMediaLimitSnack({
+    bool isVideo = false,
+    bool isDamage = false,
+  }) {
     if (!mounted) return;
     final code = Localizations.localeOf(context).languageCode;
-    final max = isVideo ? _kSellMaxVideos : _kSellMaxPhotos;
+    final max = isDamage
+        ? _kSellMaxDamagePhotos
+        : isVideo
+            ? _kSellMaxVideos
+            : _kSellMaxPhotos;
     String msg;
-    if (isVideo) {
+    if (isDamage) {
+      if (code == 'ar') {
+        msg = 'يمكنك إضافة حتى $max صورة ضرر لكل إعلان.';
+      } else if (code == 'ku' || code == 'ckb') {
+        msg = 'دەتوانیت تا $max وێنەی زیان بۆ هەر ڕیکلامێک زیاد بکەیت.';
+      } else {
+        msg = 'You can add up to $max damage photos per listing.';
+      }
+    } else if (isVideo) {
       if (code == 'ar') {
         msg = 'يمكنك إضافة حتى $max مقاطع فيديو لكل إعلان.';
       } else if (code == 'ku' || code == 'ckb') {
@@ -511,6 +527,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
 
   Future<void> _pickDamageImages() async {
     try {
+      final remaining = _kSellMaxDamagePhotos - _damageImages.length;
+      if (remaining <= 0) {
+        _showListingMediaLimitSnack(isDamage: true);
+        return;
+      }
       final files = await _imagePicker.pickMultiImage(
         maxWidth: _kSellPhotoMaxEdge,
         maxHeight: _kSellPhotoMaxEdge,
@@ -518,8 +539,15 @@ mixin _SellStep4Logic on _SellStep4Fields {
       );
       if (files.isEmpty || !mounted) return;
       final existing = _damageImages.map(_imagePathKey).toSet();
-      final additions = files.where((f) => !existing.contains(f.path)).toList();
-      if (additions.isEmpty) return;
+      var additions = files.where((f) => !existing.contains(f.path)).toList();
+      final bool overLimit = additions.length > remaining;
+      if (overLimit) {
+        additions = additions.take(remaining).toList();
+      }
+      if (additions.isEmpty) {
+        if (overLimit) _showListingMediaLimitSnack(isDamage: true);
+        return;
+      }
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       setState(() {
         _damageImages = [..._damageImages, ...additions];
@@ -529,6 +557,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       unawaited(_syncMediaDraftToParent());
       unawaited(_saveDraft());
       unawaited(parentState?.startBackgroundPlateBlur());
+      if (overLimit) _showListingMediaLimitSnack(isDamage: true);
     } catch (e, st) {
       logNonFatal(e, st);
       _showMediaPickError(e);

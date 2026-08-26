@@ -564,6 +564,99 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
           ),
         ),
       ),
+      const SizedBox(height: 12),
+      Card(
+        color: cardFill,
+        shadowColor: Colors.black54,
+        elevation: isLightShell ? 6 : 10,
+        shape: cardShape,
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle(
+                icon: Icons.share_outlined,
+                title: _tr(
+                  'Social media',
+                  ar: 'وسائل التواصل',
+                  ku: 'تۆڕە کۆمەڵایەتییەکان',
+                ),
+                subtitle: _tr(
+                  'Optional. Paste a profile link or username.',
+                  ar: 'اختياري. ألصق رابط الصفحة أو اسم المستخدم.',
+                  ku: 'ئارەزوومەندانە. لینکی پەڕە یان ناوی بەکارهێنەر بلکێنە.',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _facebook,
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                style: _fieldTextStyle(isLightShell),
+                decoration: _fieldDecoration(
+                  isLightShell,
+                  label: 'Facebook',
+                  hint: 'facebook.com/yourpage',
+                  icon: Icons.facebook,
+                ),
+                validator: (v) => _socialFieldError(
+                  DealerSocialNetwork.facebook,
+                  v,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _instagram,
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                style: _fieldTextStyle(isLightShell),
+                decoration: _fieldDecoration(
+                  isLightShell,
+                  label: 'Instagram',
+                  hint: 'instagram.com/yourpage',
+                  icon: Icons.camera_alt_outlined,
+                ),
+                validator: (v) => _socialFieldError(
+                  DealerSocialNetwork.instagram,
+                  v,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _tiktok,
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                style: _fieldTextStyle(isLightShell),
+                decoration: _fieldDecoration(
+                  isLightShell,
+                  label: 'TikTok',
+                  hint: 'tiktok.com/@yourpage',
+                  icon: Icons.music_note_outlined,
+                ),
+                validator: (v) => _socialFieldError(
+                  DealerSocialNetwork.tiktok,
+                  v,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     ];
+  }
+
+  String? _socialFieldError(DealerSocialNetwork network, String? value) {
+    final text = (value ?? '').trim();
+    if (text.isEmpty) return null;
+    if (DealerSocials.normalize(network, text) == null) {
+      return _tr(
+        'Enter a valid ${DealerSocials.label(network)} link',
+        ar: 'أدخل رابط ${DealerSocials.label(network)} صالحاً',
+        ku: 'لینکی دروستی ${DealerSocials.label(network)} بنووسە',
+      );
+    }
+    return null;
   }
 }

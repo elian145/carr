@@ -26,6 +26,7 @@ import '../widgets/dealer_location_map_preview.dart';
 import '../navigation/app_page_route.dart';
 import 'dealer_location_picker_page.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/dealer/dealer_socials.dart';
 
 part 'edit_dealer_page_fields.dart';
 part 'edit_dealer_page_style.dart';

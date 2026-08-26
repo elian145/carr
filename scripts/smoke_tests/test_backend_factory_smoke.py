@@ -339,6 +339,47 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertEqual(dealer.get("dealership_emails"), [new_email])
         self.assertNotIn("dealership_verified_emails", dealer)
 
+    def test_dealer_socials_saved_and_shown_on_public_profile(self):
+        saved = self.client.put(
+            "/api/user/dealer-profile",
+            json={
+                "dealership_socials": {
+                    "facebook": "BestCarsErbil",
+                    "instagram": "@bestcars",
+                    "tiktok": "https://www.tiktok.com/@bestcars.iq",
+                }
+            },
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(saved.status_code, 200, saved.data)
+        self.assertEqual(
+            saved.get_json()["user"]["dealership_socials"],
+            {
+                "facebook": "https://www.facebook.com/BestCarsErbil",
+                "instagram": "https://www.instagram.com/bestcars",
+                "tiktok": "https://www.tiktok.com/@bestcars.iq",
+            },
+        )
+
+        rejected = self.client.put(
+            "/api/user/dealer-profile",
+            json={"dealership_socials": {"instagram": "https://evil.example/x"}},
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(rejected.status_code, 400, rejected.data)
+
+        public = self.client.get("/api/dealers/pd")
+        self.assertEqual(public.status_code, 200, public.data)
+        dealer = public.get_json()["dealer"]
+        self.assertEqual(
+            dealer.get("dealership_socials"),
+            {
+                "facebook": "https://www.facebook.com/BestCarsErbil",
+                "instagram": "https://www.instagram.com/bestcars",
+                "tiktok": "https://www.tiktok.com/@bestcars.iq",
+            },
+        )
+
     def test_non_dealer_cannot_verify_dealership_email(self):
         response = self.client.post(
             "/api/user/dealer-email/send-verification",

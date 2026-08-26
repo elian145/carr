@@ -64,6 +64,9 @@ abstract class _EditDealerPageFields extends State<EditDealerPage> {
   final _description = TextEditingController();
   final _coordLat = TextEditingController();
   final _coordLng = TextEditingController();
+  final _facebook = TextEditingController();
+  final _instagram = TextEditingController();
+  final _tiktok = TextEditingController();
   final GlobalKey _mapPreviewKey = GlobalKey();
   XFile? _logo;
   XFile? _cover;

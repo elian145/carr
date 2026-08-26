@@ -144,6 +144,31 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
       return;
     }
 
+    for (final network in DealerSocials.networks) {
+      final raw = switch (network) {
+        DealerSocialNetwork.facebook => _facebook.text,
+        DealerSocialNetwork.instagram => _instagram.text,
+        DealerSocialNetwork.tiktok => _tiktok.text,
+      };
+      if (raw.trim().isEmpty) continue;
+      if (DealerSocials.normalize(network, raw) == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _tr(
+                'Enter a valid ${DealerSocials.label(network)} link.',
+                ar: 'أدخل رابط ${DealerSocials.label(network)} صالحاً.',
+                ku: 'لینکی دروستی ${DealerSocials.label(network)} بنووسە.',
+              ),
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _saving = true);
     try {
       final auth = context.read<AuthService>();
@@ -174,6 +199,11 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
         'dealership_opening_hours': openingHours,
         'dealership_latitude': lat,
         'dealership_longitude': lng,
+        'dealership_socials': DealerSocials.payload(
+          facebook: _facebook.text,
+          instagram: _instagram.text,
+          tiktok: _tiktok.text,
+        ),
       });
       if (_logo != null) {
         await auth.uploadProfilePicture(_logo!);

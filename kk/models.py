@@ -10,6 +10,7 @@ bcrypt = Bcrypt()
 
 # Use a single UTC helper (avoids deprecated datetime.utcnow()).
 from .time_utils import utcnow
+from .dealer_socials import public_dealership_socials as _public_dealership_socials
 
 # Association tables for many-to-many relationships
 user_favorites = db.Table('user_favorites',
@@ -90,6 +91,8 @@ class User(db.Model):
     dealership_longitude = db.Column(db.Float, nullable=True)
     # JSON map: { "mon": "9:00 AM - 6:00 PM", ... }
     dealership_opening_hours = db.Column(db.JSON, nullable=True)
+    # JSON map: { "facebook": "https://...", "instagram": "https://...", "tiktok": "https://..." }
+    dealership_socials = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
@@ -212,6 +215,9 @@ class User(db.Model):
             'dealership_latitude': self.dealership_latitude,
             'dealership_longitude': self.dealership_longitude,
             'dealership_opening_hours': self.dealership_opening_hours,
+            'dealership_socials': _public_dealership_socials(
+                getattr(self, "dealership_socials", None)
+            ),
             'is_featured_dealer': bool(getattr(self, "is_featured_dealer", False)),
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
@@ -405,6 +411,7 @@ class DealerProfile(db.Model):
     dealership_latitude = db.Column(db.Float, nullable=True)
     dealership_longitude = db.Column(db.Float, nullable=True)
     dealership_opening_hours = db.Column(db.JSON, nullable=True)
+    dealership_socials = db.Column(db.JSON, nullable=True)
     is_featured = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
@@ -433,6 +440,7 @@ class DealerProfile(db.Model):
             "dealership_latitude": self.dealership_latitude,
             "dealership_longitude": self.dealership_longitude,
             "dealership_opening_hours": self.dealership_opening_hours,
+            "dealership_socials": _public_dealership_socials(self.dealership_socials),
             "is_featured_dealer": bool(self.is_featured),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

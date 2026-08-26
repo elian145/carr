@@ -114,6 +114,20 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
     _pickLng = lng0;
     _coordLat.text = lat0 != null ? lat0.toString() : '';
     _coordLng.text = lng0 != null ? lng0.toString() : '';
+    final socials = DealerSocials.fromDealerMap(me);
+    _facebook.text = '';
+    _instagram.text = '';
+    _tiktok.text = '';
+    for (final link in socials) {
+      switch (link.network) {
+        case DealerSocialNetwork.facebook:
+          _facebook.text = link.url;
+        case DealerSocialNetwork.instagram:
+          _instagram.text = link.url;
+        case DealerSocialNetwork.tiktok:
+          _tiktok.text = link.url;
+      }
+    }
   }
 
   @override
@@ -129,6 +143,9 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
     _description.dispose();
     _coordLat.dispose();
     _coordLng.dispose();
+    _facebook.dispose();
+    _instagram.dispose();
+    _tiktok.dispose();
     super.dispose();
   }
 }

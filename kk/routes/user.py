@@ -27,6 +27,7 @@ from ..models import (
 from ..security import generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..time_utils import utcnow
+from ..dealer_socials import clean_dealership_socials, public_dealership_socials
 from .media import _r2_configured, _r2_public_base
 
 bp = Blueprint("user", __name__)
@@ -1102,6 +1103,11 @@ def dealer_profile(dealer_public_id: str):
             str(x).strip() for x in emails if str(x).strip()
         ]
         dealer_data.pop("dealership_verified_emails", None)
+        socials = dealer_data.get("dealership_socials")
+        if not socials:
+            dealer_data["dealership_socials"] = public_dealership_socials(
+                getattr(dealer, "dealership_socials", None)
+            )
         return jsonify({"dealer": dealer_data, "listings": listing_dicts, "stats": stats}), 200
     except Exception as e:
         current_app.logger.exception("dealer_profile failed: %s", e)
@@ -1811,6 +1817,12 @@ def update_dealer_profile():
                 current_user.dealership_latitude = lat
                 current_user.dealership_longitude = lng
 
+        if "dealership_socials" in data:
+            cleaned, err = clean_dealership_socials(data.get("dealership_socials"))
+            if err:
+                return jsonify({"message": err}), 400
+            current_user.dealership_socials = cleaned or None
+
         profile = current_user.dealer_profile
         if profile is None:
             profile = DealerProfile(
@@ -1833,6 +1845,7 @@ def update_dealer_profile():
         profile.dealership_latitude = current_user.dealership_latitude
         profile.dealership_longitude = current_user.dealership_longitude
         profile.dealership_opening_hours = current_user.dealership_opening_hours
+        profile.dealership_socials = getattr(current_user, "dealership_socials", None)
         profile.is_featured = bool(current_user.is_featured_dealer)
         profile.updated_at = utcnow()
         current_user.updated_at = utcnow()

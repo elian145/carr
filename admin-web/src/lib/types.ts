@@ -19,6 +19,11 @@ export interface User {
   dealership_description?: string;
   dealership_cover_picture?: string;
   dealership_opening_hours?: string | Record<string, unknown>;
+  dealership_socials?: {
+    facebook?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
   dealer_application?: DealerApplication;
   is_featured_dealer?: boolean;
   created_at?: string;

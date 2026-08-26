@@ -183,6 +183,11 @@ class FakeApiServer {
           'public_id': id,
           'dealership_name': 'Test Dealer',
           'dealership_location': 'Erbil',
+          'dealership_socials': {
+            'facebook': 'https://www.facebook.com/testdealer',
+            'instagram': 'https://www.instagram.com/testdealer',
+            'tiktok': 'https://www.tiktok.com/@testdealer',
+          },
         },
         'listings': <dynamic>[],
         'stats': {'total_listings': 0, 'featured_listings': 0},
