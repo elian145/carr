@@ -5,5 +5,6 @@ abstract class _ProfilePageFields extends State<ProfilePage> {
   bool _loading = true;
   late final AuthService _authService;
   int _unreadChatCount = 0;
+  int _unreadNotificationCount = 0;
   StreamSubscription<Map<String, dynamic>>? _chatNotificationSub;
 }

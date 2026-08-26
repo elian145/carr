@@ -409,6 +409,8 @@
   "enterEmailOrPhoneHint": "ئیمەیل یان ژمارەی تەلەفۆن بنووسە",
   "forgotPasswordLink": "وشەی نهێنیت لەبیرچووە؟",
   "accountActionsTitle": "کردارەکانی هەژمار",
+  "notificationsTitle": "ئاگادارکردنەوەکان",
+  "noNotificationsYet": "هێشتا هیچ ئاگادارکردنەوەیەک نییە",
   "helpSupportTitle": "یارمەتی و پشتگیری",
   "carComparisonCount": "بەراوردی ئۆتۆمبێل",
   "addNewButton": "زیادکردنی نوێ +",

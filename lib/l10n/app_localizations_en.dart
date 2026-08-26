@@ -1223,6 +1223,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountActionsTitle => 'Account Actions';
 
   @override
+  String get notificationsTitle => 'Notifications';
+
+  @override
+  String get noNotificationsYet => 'No notifications yet';
+
+  @override
   String get helpSupportTitle => 'Help & Support';
 
   @override

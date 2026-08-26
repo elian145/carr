@@ -409,6 +409,8 @@
   "enterEmailOrPhoneHint": "أدخل بريدك الإلكتروني أو رقم هاتفك",
   "forgotPasswordLink": "نسيت كلمة المرور؟",
   "accountActionsTitle": "إجراءات الحساب",
+  "notificationsTitle": "الإشعارات",
+  "noNotificationsYet": "لا توجد إشعارات بعد",
   "helpSupportTitle": "المساعدة والدعم",
   "carComparisonCount": "مقارنة السيارات",
   "addNewButton": "إضافة جديد +",

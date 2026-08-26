@@ -1216,6 +1216,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get accountActionsTitle => 'إجراءات الحساب';
 
   @override
+  String get notificationsTitle => 'الإشعارات';
+
+  @override
+  String get noNotificationsYet => 'لا توجد إشعارات بعد';
+
+  @override
   String get helpSupportTitle => 'المساعدة والدعم';
 
   @override

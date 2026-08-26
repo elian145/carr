@@ -253,14 +253,44 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? data;
+    final rawData = json['data'];
+    if (rawData is Map) {
+      data = Map<String, dynamic>.from(
+        rawData.map((key, value) => MapEntry(key.toString(), value)),
+      );
+    }
     return AppNotification(
       id: (json['id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       message: (json['message'] ?? '').toString(),
-      notificationType: (json['notification_type'] ?? 'message').toString(),
-      isRead: json['is_read'] == true,
-      data: json['data'] is Map<String, dynamic> ? json['data'] : null,
-      createdAt: parseApiDateTime(json['created_at']),
+      notificationType: (json['notification_type'] ??
+              json['type'] ??
+              'message')
+          .toString(),
+      isRead: json['is_read'] == true || json['isRead'] == true,
+      data: data,
+      createdAt: parseApiDateTime(json['created_at'] ?? json['createdAt']),
+    );
+  }
+
+  AppNotification copyWith({
+    String? id,
+    String? title,
+    String? message,
+    String? notificationType,
+    bool? isRead,
+    Map<String, dynamic>? data,
+    DateTime? createdAt,
+  }) {
+    return AppNotification(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      notificationType: notificationType ?? this.notificationType,
+      isRead: isRead ?? this.isRead,
+      data: data ?? this.data,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 

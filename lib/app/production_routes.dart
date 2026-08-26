@@ -63,6 +63,8 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         AuthGuard(allowWhenLoggedOut: true, child: FavoritesPage()),
     '/dealers': (context) => const DealersDirectoryPage(),
     '/chat': (context) => AuthGuard(child: ChatListPage()),
+    '/notifications': (context) =>
+        AuthGuard(child: const carzo_chat.NotificationsPage()),
     '/login': (context) => LoginPage(),
     '/signup': (context) => LoginPage(initialDealerMode: true),
     '/dealer-onboarding': (context) =>

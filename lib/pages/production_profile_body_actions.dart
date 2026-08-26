@@ -105,6 +105,22 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
             ),
             SizedBox(height: 12),
             _buildActionButton(
+              Icons.notifications_outlined,
+              AppLocalizations.of(context)!.notificationsTitle,
+              () async {
+                if (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty) {
+                  _showAuthRequiredDialog(context);
+                  return;
+                }
+                await Navigator.pushNamed(context, '/notifications');
+                if (!mounted) return;
+                _loadUnreadNotificationCount();
+              },
+              badgeCount: _unreadNotificationCount,
+            ),
+            SizedBox(height: 12),
+            _buildActionButton(
               Icons.history,
               AppLocalizations.of(context)!.recentlyViewed,
               () {

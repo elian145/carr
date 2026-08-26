@@ -15,10 +15,14 @@ mixin _ProfilePageLoad on _ProfilePageStyle {
       notification,
     ) {
       if (!mounted) return;
-      final type = (notification['notification_type'] ?? '').toString();
+      final type = (notification['notification_type'] ??
+              notification['type'] ??
+              '')
+          .toString();
       if (type == 'message') {
         _loadUnreadChatCount();
       }
+      _loadUnreadNotificationCount();
     });
   }
 
@@ -50,6 +54,7 @@ mixin _ProfilePageLoad on _ProfilePageStyle {
           me = null;
           _loading = false;
           _unreadChatCount = 0;
+          _unreadNotificationCount = 0;
         });
         return;
       }
@@ -63,11 +68,40 @@ mixin _ProfilePageLoad on _ProfilePageStyle {
     if (me == null && _authService.currentUser != null) {
       me = Map<String, dynamic>.from(_authService.currentUser!);
     }
-    await _loadUnreadChatCount();
+    await Future.wait([_loadUnreadChatCount(), _loadUnreadNotificationCount()]);
     if (mounted) {
       setState(() {
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadUnreadNotificationCount() async {
+    final tok = ApiService.accessToken;
+    if (tok == null || tok.isEmpty) {
+      if (mounted) {
+        setState(() => _unreadNotificationCount = 0);
+      } else {
+        _unreadNotificationCount = 0;
+      }
+      return;
+    }
+    try {
+      final response = await ApiService.getUserNotifications(
+        unreadOnly: true,
+        perPage: 1,
+      );
+      final rawCount = response['unread_count'];
+      final count = rawCount is int
+          ? rawCount
+          : int.tryParse(rawCount?.toString() ?? '') ?? 0;
+      if (mounted) {
+        setState(() => _unreadNotificationCount = count);
+      } else {
+        _unreadNotificationCount = count;
+      }
+    } catch (e, st) {
+      logNonFatal(e, st, 'ProfilePage.loadUnreadNotificationCount');
     }
   }
 
@@ -88,7 +122,9 @@ mixin _ProfilePageLoad on _ProfilePageStyle {
       } else {
         _unreadChatCount = count;
       }
-    } catch (e, st) { logNonFatal(e, st); }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   void refreshProfile() {

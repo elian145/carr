@@ -408,6 +408,8 @@
   "enterEmailOrPhoneHint": "Enter your email address or phone number",
   "forgotPasswordLink": "Forgot password?",
   "accountActionsTitle": "Account Actions",
+  "notificationsTitle": "Notifications",
+  "noNotificationsYet": "No notifications yet",
   "helpSupportTitle": "Help & Support",
   "carComparisonCount": "Car Comparison",
   "addNewButton": "Add New +",

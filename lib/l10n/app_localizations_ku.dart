@@ -1223,6 +1223,12 @@ class AppLocalizationsKu extends AppLocalizations {
   String get accountActionsTitle => 'کردارەکانی هەژمار';
 
   @override
+  String get notificationsTitle => 'ئاگادارکردنەوەکان';
+
+  @override
+  String get noNotificationsYet => 'هێشتا هیچ ئاگادارکردنەوەیەک نییە';
+
+  @override
   String get helpSupportTitle => 'یارمەتی و پشتگیری';
 
   @override

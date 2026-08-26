@@ -2416,6 +2416,18 @@ abstract class AppLocalizations {
   /// **'Account Actions'**
   String get accountActionsTitle;
 
+  /// No description provided for @notificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsTitle;
+
+  /// No description provided for @noNotificationsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get noNotificationsYet;
+
   /// No description provided for @helpSupportTitle.
   ///
   /// In en, this message translates to:
