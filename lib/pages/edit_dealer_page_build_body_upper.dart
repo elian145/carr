@@ -584,21 +584,25 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
                   ku: 'تۆڕە کۆمەڵایەتییەکان',
                 ),
                 subtitle: _tr(
-                  'Optional. Paste a profile link or username.',
-                  ar: 'اختياري. ألصق رابط الصفحة أو اسم المستخدم.',
-                  ku: 'ئارەزوومەندانە. لینکی پەڕە یان ناوی بەکارهێنەر بلکێنە.',
+                  'Optional. Enter the username only.',
+                  ar: 'اختياري. أدخل اسم المستخدم فقط.',
+                  ku: 'ئارەزوومەندانە. تەنها ناوی بەکارهێنەر بنووسە.',
                 ),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _facebook,
-                keyboardType: TextInputType.url,
+                keyboardType: TextInputType.text,
                 autocorrect: false,
                 style: _fieldTextStyle(isLightShell),
                 decoration: _fieldDecoration(
                   isLightShell,
-                  label: 'Facebook',
-                  hint: 'facebook.com/yourpage',
+                  label: _tr(
+                    'Facebook username',
+                    ar: 'اسم مستخدم فيسبوك',
+                    ku: 'ناوی بەکارهێنەری فەیسبووک',
+                  ),
+                  hint: 'yourpage',
                   icon: Icons.facebook,
                 ),
                 validator: (v) => _socialFieldError(
@@ -609,14 +613,19 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _instagram,
-                keyboardType: TextInputType.url,
+                keyboardType: TextInputType.text,
                 autocorrect: false,
                 style: _fieldTextStyle(isLightShell),
                 decoration: _fieldDecoration(
                   isLightShell,
-                  label: 'Instagram',
-                  hint: 'instagram.com/yourpage',
+                  label: _tr(
+                    'Instagram username',
+                    ar: 'اسم مستخدم إنستغرام',
+                    ku: 'ناوی بەکارهێنەری ئینستاگرام',
+                  ),
+                  hint: 'username',
                   icon: Icons.camera_alt_outlined,
+                  prefixText: '@',
                 ),
                 validator: (v) => _socialFieldError(
                   DealerSocialNetwork.instagram,
@@ -626,14 +635,19 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _tiktok,
-                keyboardType: TextInputType.url,
+                keyboardType: TextInputType.text,
                 autocorrect: false,
                 style: _fieldTextStyle(isLightShell),
                 decoration: _fieldDecoration(
                   isLightShell,
-                  label: 'TikTok',
-                  hint: 'tiktok.com/@yourpage',
+                  label: _tr(
+                    'TikTok username',
+                    ar: 'اسم مستخدم تيك توك',
+                    ku: 'ناوی بەکارهێنەری تیک تۆک',
+                  ),
+                  hint: 'username',
                   icon: Icons.music_note_outlined,
+                  prefixText: '@',
                 ),
                 validator: (v) => _socialFieldError(
                   DealerSocialNetwork.tiktok,
@@ -652,9 +666,9 @@ mixin _EditDealerPageBuildBodyUpper on _EditDealerPageSave {
     if (text.isEmpty) return null;
     if (DealerSocials.normalize(network, text) == null) {
       return _tr(
-        'Enter a valid ${DealerSocials.label(network)} link',
-        ar: 'أدخل رابط ${DealerSocials.label(network)} صالحاً',
-        ku: 'لینکی دروستی ${DealerSocials.label(network)} بنووسە',
+        'Enter a valid ${DealerSocials.label(network)} username',
+        ar: 'أدخل اسم مستخدم ${DealerSocials.label(network)} صالحاً',
+        ku: 'ناوی بەکارهێنەری دروستی ${DealerSocials.label(network)} بنووسە',
       );
     }
     return null;

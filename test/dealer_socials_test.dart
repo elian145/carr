@@ -61,4 +61,21 @@ void main() {
     expect(links.first.network, DealerSocialNetwork.facebook);
     expect(links.first.handle, 'testdealer');
   });
+
+  test('editHandle strips @ and URLs down to the username', () {
+    expect(
+      DealerSocials.editHandle(
+        DealerSocialNetwork.facebook,
+        'https://www.facebook.com/testdealer',
+      ),
+      'testdealer',
+    );
+    expect(
+      DealerSocials.editHandle(
+        DealerSocialNetwork.tiktok,
+        'https://www.tiktok.com/@bestcars.iq',
+      ),
+      'bestcars.iq',
+    );
+  });
 }

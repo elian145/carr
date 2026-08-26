@@ -41,6 +41,7 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
     required String label,
     String? hint,
     IconData? icon,
+    String? prefixText,
   }) {
     final fill = isLightShell
         ? Theme.of(context).colorScheme.surfaceContainerHighest
@@ -71,6 +72,8 @@ mixin _EditDealerPageStyle on _EditDealerPageFields {
               icon,
               color: isLightShell ? Colors.grey.shade700 : Colors.white70,
             ),
+      prefixText: prefixText,
+      prefixStyle: _fieldTextStyle(isLightShell),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       enabledBorder: enabledBorder,
       border: enabledBorder,

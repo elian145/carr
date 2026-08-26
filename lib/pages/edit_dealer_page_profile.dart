@@ -119,13 +119,14 @@ mixin _EditDealerPageProfile on _EditDealerPageHours {
     _instagram.text = '';
     _tiktok.text = '';
     for (final link in socials) {
+      final handle = DealerSocials.editHandle(link.network, link.url);
       switch (link.network) {
         case DealerSocialNetwork.facebook:
-          _facebook.text = link.url;
+          _facebook.text = handle;
         case DealerSocialNetwork.instagram:
-          _instagram.text = link.url;
+          _instagram.text = handle;
         case DealerSocialNetwork.tiktok:
-          _tiktok.text = link.url;
+          _tiktok.text = handle;
       }
     }
   }

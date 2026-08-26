@@ -157,9 +157,9 @@ mixin _EditDealerPageSave on _EditDealerPageEmailVerification {
           SnackBar(
             content: Text(
               _tr(
-                'Enter a valid ${DealerSocials.label(network)} link.',
-                ar: 'أدخل رابط ${DealerSocials.label(network)} صالحاً.',
-                ku: 'لینکی دروستی ${DealerSocials.label(network)} بنووسە.',
+                'Enter a valid ${DealerSocials.label(network)} username.',
+                ar: 'أدخل اسم مستخدم ${DealerSocials.label(network)} صالحاً.',
+                ku: 'ناوی بەکارهێنەری دروستی ${DealerSocials.label(network)} بنووسە.',
               ),
             ),
             backgroundColor: Colors.orange,

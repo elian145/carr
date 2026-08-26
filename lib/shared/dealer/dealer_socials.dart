@@ -127,6 +127,14 @@ class DealerSocials {
     return network == DealerSocialNetwork.tiktok ? '@$handle' : handle;
   }
 
+  /// Username shown in the edit form (no leading @).
+  static String editHandle(DealerSocialNetwork network, String url) {
+    var handle = displayHandle(network, url);
+    if (handle == label(network)) return '';
+    if (handle.startsWith('@')) handle = handle.substring(1);
+    return handle;
+  }
+
   static Map<String, String> _coerceMap(dynamic raw) {
     if (raw is Map) {
       return {
