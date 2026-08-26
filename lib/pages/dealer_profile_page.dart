@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -23,7 +24,15 @@ import '../app/widgets/listing_network_image.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/ui/responsive.dart';
 import '../features/listing/listing_mappers.dart';
+import '../features/home/home_feed_client_sort.dart';
+import '../features/home/home_filter_chip_bar.dart';
+import '../features/home/home_filter_chips.dart';
+import '../features/home/home_filters_query.dart';
+import '../features/home/home_flow.dart' show HomePage;
+import '../features/home/widgets/listing_layout_toggle.dart';
+import '../features/home/widgets/listing_sort_button.dart';
 import '../shared/errors/user_error_text.dart';
+import '../shared/i18n/sort_api_mapping.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
 import 'edit_dealer_page.dart';
@@ -33,6 +42,7 @@ import '../shared/dealer/dealer_socials.dart';
 import '../shared/ui/social_brand_icon.dart';
 
 part 'dealer_profile_page_helpers.dart';
+part 'dealer_profile_page_search.dart';
 
 class DealerProfilePage extends StatefulWidget {
   final String dealerPublicId;
@@ -60,6 +70,8 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
   String? _error;
   Map<String, dynamic>? _dealer;
   List<Map<String, dynamic>> _listings = const [];
+  HomeFiltersSnapshot _searchFilters = const HomeFiltersSnapshot();
+  String? _selectedSortBy;
 
   @override
   void initState() {
@@ -102,6 +114,40 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
 
   void _selectSection(_DealerSection section) {
     setState(() => _section = section);
+  }
+
+  List<Map<String, dynamic>> get _visibleListings {
+    final filtered = filterListingsByHomeFilters(_listings, _searchFilters);
+    final apiSort = convertSortToApiValue(context, _selectedSortBy);
+    if (apiSort == null || apiSort.isEmpty) return filtered;
+    return homeFeedClientSortedListings(filtered, apiSort);
+  }
+
+  Future<void> _openDealerListingSearch() async {
+    final applied = await Navigator.of(context).push<HomeFiltersSnapshot>(
+      AppPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => HomePage.searchFilters(
+          initialSearchFilters: _searchFilters,
+        ),
+      ),
+    );
+    if (!mounted || applied == null) return;
+    setState(() => _searchFilters = applied);
+  }
+
+  void _setDealerSortBy(String value) {
+    setState(() => _selectedSortBy = value == '' ? null : value);
+  }
+
+  void _clearDealerSearchFilter(String filterType) {
+    setState(() {
+      if (filterType == 'sortBy') {
+        _selectedSortBy = null;
+        return;
+      }
+      _searchFilters = clearHomeFilterChip(_searchFilters, filterType);
+    });
   }
 
   @override
@@ -157,6 +203,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
       appBar: AppBar(
         title: Text(_tr('Dealer', ar: 'الوكيل', ku: 'وەکیل')),
         actions: [
+          _buildDealerSearchAppBarAction(isLightShell),
           if (auth.isAuthenticated && !isActualDealerOwner)
             IconButton(
               tooltip: _tr(
@@ -210,7 +257,12 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                       ),
                       SliverToBoxAdapter(
                         child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          8,
+                          16,
+                          _section == _DealerSection.listings ? 0 : 16,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -307,7 +359,11 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                             ],
                             const SizedBox(height: 16),
                             _buildSectionControl(isLightShell),
-                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: _section == _DealerSection.listings
+                                  ? 4
+                                  : 16,
+                            ),
                             if (_section == _DealerSection.about)
                               _buildAboutSection(
                                 phones: phones,
@@ -323,7 +379,17 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                         ),
                       ),
                       if (_section == _DealerSection.listings) ...[
-                        if (_listings.isEmpty)
+                        SliverToBoxAdapter(
+                          child: _buildDealerInventorySearchBar(isLightShell),
+                        ),
+                        SliverToBoxAdapter(
+                          child: _buildDealerActiveFiltersBar(),
+                        ),
+                        if (_listings.isNotEmpty)
+                          SliverToBoxAdapter(
+                            child: _buildDealerListingsToolbar(),
+                          ),
+                        if (_visibleListings.isEmpty)
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -337,17 +403,27 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                 child: Column(
                                   children: [
                                     Icon(
-                                      Icons.directions_car_outlined,
+                                      _searchFilters.hasActiveFilters
+                                          ? Icons.search_off_rounded
+                                          : Icons.directions_car_outlined,
                                       size: 36,
-                                      color: AppColors.brandOrange.withValues(alpha: 0.7),
+                                      color: AppColors.brandOrange.withValues(
+                                        alpha: 0.7,
+                                      ),
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      _tr(
-                                        'No active vehicles right now.',
-                                        ar: 'لا توجد مركبات نشطة حالياً.',
-                                        ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
-                                      ),
+                                      _searchFilters.hasActiveFilters
+                                          ? _tr(
+                                              'No vehicles match this search.',
+                                              ar: 'لا توجد مركبات مطابقة لهذا البحث.',
+                                              ku: 'هیچ ئۆتۆمبێلێک لەگەڵ ئەم گەڕانەدا ناگونجێت.',
+                                            )
+                                          : _tr(
+                                              'No active vehicles right now.',
+                                              ar: 'لا توجد مركبات نشطة حالياً.',
+                                              ku: 'لە ئێستادا هیچ ئۆتۆمبێلێکی چالاک نییە.',
+                                            ),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: isLightShell
@@ -393,7 +469,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                       ),
                                   delegate: SliverChildBuilderDelegate(
                                     (context, index) {
-                                      final item = _listings[index];
+                                      final item = _visibleListings[index];
                                       final mapped =
                                           mapListingToGlobalCarCardData(
                                             context,
@@ -405,7 +481,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                         listLayout: listingColumns == 1,
                                       );
                                     },
-                                    childCount: _listings.length,
+                                    childCount: _visibleListings.length,
                                   ),
                                 ),
                               );

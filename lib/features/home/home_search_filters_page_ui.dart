@@ -269,12 +269,232 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     ];
   }
 
+  Widget _buildListingSearchFiltersPage({
+    required bool focusSearchField,
+    required bool asRootRoute,
+    List<Map<String, dynamic>>? revertSnapshot,
+  }) {
+    return StatefulBuilder(
+      builder: (context, setStateDialog) {
+        void toggleSearchBrandsExpanded() {
+          setStateDialog(() {
+            _searchFiltersBrandsExpanded = !_searchFiltersBrandsExpanded;
+          });
+        }
+
+        if (!_searchFiltersCatalogLoadStarted) {
+          _searchFiltersCatalogLoadStarted = true;
+          unawaited(
+            CarCatalogLoader.ensureLoaded().then((_) {
+              if (!context.mounted) return;
+              setStateDialog(() {});
+            }),
+          );
+        }
+
+        if (focusSearchField && !_searchFiltersDidRequestFocus) {
+          _searchFiltersDidRequestFocus = true;
+          _focusSearchFiltersKeywordField();
+        }
+        final isLightShell = Theme.of(context).brightness == Brightness.light;
+        final titleColor =
+            isLightShell ? const Color(0xFF1A1A1A) : Colors.white;
+        return PopScope(
+          canPop: true,
+          onPopInvokedWithResult: (bool didPop, dynamic result) {
+            if (asRootRoute || revertSnapshot == null) return;
+            if (didPop && result != true) {
+              _cancelSearchFiltersPage(revertSnapshot.first);
+            }
+          },
+          child: Scaffold(
+            resizeToAvoidBottomInset: true,
+            backgroundColor: isLightShell ? Colors.white : null,
+            body: SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          tooltip: AppLocalizations.of(context)!.close,
+                          icon: const Icon(Icons.close),
+                          color: titleColor,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(context)!.searchCars,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: titleColor,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: AppLocalizations.of(context)!.saveSearch,
+                          icon: const Icon(Icons.bookmark_add_outlined),
+                          color: _searchAccent,
+                          onPressed: () => unawaited(
+                            _saveSearchFromFiltersPage(context),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: AppLocalizations.of(context)!.notifyMe,
+                          icon: const Icon(
+                            Icons.notifications_active_outlined,
+                          ),
+                          color: _searchAccent,
+                          onPressed: () => unawaited(
+                            _enableSearchMatchAlerts(context),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: _searchKeywordField(
+                      context,
+                      setStateDialog,
+                      autofocus: focusSearchField,
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      decoration: isLightShell
+                          ? null
+                          : AppThemes.shellBackgroundDecoration(
+                              Theme.of(context).brightness,
+                            ),
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        children: _searchFiltersPageScrollBody(
+                          context,
+                          setStateDialog,
+                          brandsExpanded: _searchFiltersBrandsExpanded,
+                          onToggleBrandsExpanded: toggleSearchBrandsExpanded,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SafeArea(
+                    top: false,
+                    minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: SizedBox(
+                      height: 58,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: OutlinedButton(
+                              onPressed: () async {
+                                await _resetSearchFiltersPage(
+                                  () => setStateDialog(() {}),
+                                );
+                                if (revertSnapshot != null) {
+                                  revertSnapshot[0] =
+                                      _searchFiltersPageSnapshot();
+                                }
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: _searchAccent,
+                                side: const BorderSide(
+                                  color: _searchAccent,
+                                  width: 1.4,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  AppLocalizations.of(context)!.resetButton,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 5,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _searchAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                elevation: 0,
+                              ),
+                              onPressed: () {
+                                if (asRootRoute) {
+                                  Navigator.pop(
+                                    context,
+                                    _homeFiltersSnapshot(),
+                                  );
+                                  return;
+                                }
+                                unawaited(_persistFilters());
+                                onFilterChanged();
+                                Navigator.pop(context, true);
+                              },
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _searchShowCarsLabel(context),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.visible,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _openHomeSearchFiltersPage(
     BuildContext context, {
     bool focusSearchField = true,
   }) async {
     _searchFiltersKeywordController.clear();
     _searchFiltersKeywordFocusNode.unfocus();
+    _searchFiltersDidRequestFocus = false;
+    _searchFiltersBrandsExpanded = false;
+    _searchFiltersCatalogLoadStarted = false;
     _syncMoreFiltersControllers();
     final revertSnapshot = <Map<String, dynamic>>[
       _searchFiltersPageSnapshot(),
@@ -285,212 +505,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
       AppPageRoute<bool>(
         fullscreenDialog: true,
         builder: (pageContext) {
-          var didRequestSearchFocus = false;
-          var searchBrandsExpanded = false;
-          var catalogLoadStarted = false;
-          return StatefulBuilder(
-            builder: (context, setStateDialog) {
-              void toggleSearchBrandsExpanded() {
-                setStateDialog(() {
-                  searchBrandsExpanded = !searchBrandsExpanded;
-                });
-              }
-
-              if (!catalogLoadStarted) {
-                catalogLoadStarted = true;
-                unawaited(
-                  CarCatalogLoader.ensureLoaded().then((_) {
-                    if (!context.mounted) return;
-                    setStateDialog(() {});
-                  }),
-                );
-              }
-
-              if (focusSearchField && !didRequestSearchFocus) {
-                didRequestSearchFocus = true;
-                _focusSearchFiltersKeywordField();
-              }
-              final isLightShell =
-                  Theme.of(context).brightness == Brightness.light;
-              final titleColor =
-                  isLightShell ? const Color(0xFF1A1A1A) : Colors.white;
-              return PopScope(
-                canPop: true,
-                onPopInvokedWithResult: (bool didPop, dynamic result) {
-                  if (didPop && result != true) {
-                    _cancelSearchFiltersPage(revertSnapshot.first);
-                  }
-                },
-                child: Scaffold(
-                  resizeToAvoidBottomInset: true,
-                  backgroundColor: isLightShell ? Colors.white : null,
-                  body: SafeArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                tooltip: AppLocalizations.of(context)!.close,
-                                icon: const Icon(Icons.close),
-                                color: titleColor,
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  AppLocalizations.of(context)!.searchCars,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w700,
-                                    color: titleColor,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: AppLocalizations.of(context)!.saveSearch,
-                                icon: const Icon(Icons.bookmark_add_outlined),
-                                color: _searchAccent,
-                                onPressed: () => unawaited(
-                                  _saveSearchFromFiltersPage(context),
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: AppLocalizations.of(context)!.notifyMe,
-                                icon: const Icon(
-                                  Icons.notifications_active_outlined,
-                                ),
-                                color: _searchAccent,
-                                onPressed: () => unawaited(
-                                  _enableSearchMatchAlerts(context),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                          child: _searchKeywordField(
-                            context,
-                            setStateDialog,
-                            autofocus: focusSearchField,
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            decoration: isLightShell
-                                ? null
-                                : AppThemes.shellBackgroundDecoration(
-                                    Theme.of(context).brightness,
-                                  ),
-                            child: ListView(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                              keyboardDismissBehavior:
-                                  ScrollViewKeyboardDismissBehavior.onDrag,
-                              children: _searchFiltersPageScrollBody(
-                                context,
-                                setStateDialog,
-                                brandsExpanded: searchBrandsExpanded,
-                                onToggleBrandsExpanded:
-                                    toggleSearchBrandsExpanded,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SafeArea(
-                          top: false,
-                          minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                          child: SizedBox(
-                            height: 58,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: OutlinedButton(
-                                    onPressed: () async {
-                                      await _resetSearchFiltersPage(
-                                        () => setStateDialog(() {}),
-                                      );
-                                      revertSnapshot[0] =
-                                          _searchFiltersPageSnapshot();
-                                    },
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: _searchAccent,
-                                      side: const BorderSide(
-                                        color: _searchAccent,
-                                        width: 1.4,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                    ),
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        )!.resetButton,
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  flex: 5,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _searchAccent,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 12,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                      ),
-                                      elevation: 0,
-                                    ),
-                                    onPressed: () {
-                                      unawaited(_persistFilters());
-                                      onFilterChanged();
-                                      Navigator.pop(context, true);
-                                    },
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        _searchShowCarsLabel(context),
-                                        maxLines: 1,
-                                        softWrap: false,
-                                        overflow: TextOverflow.visible,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+          return _buildListingSearchFiltersPage(
+            focusSearchField: focusSearchField,
+            asRootRoute: false,
+            revertSnapshot: revertSnapshot,
           );
         },
       ),

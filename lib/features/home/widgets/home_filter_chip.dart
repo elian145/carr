@@ -24,16 +24,16 @@ class HomeFilterChip extends StatelessWidget {
         languageCode != 'ar' && languageCode != 'ku';
     final textStyle = (useLatinDisplayFont
             ? GoogleFonts.orbitron(
-                fontSize: 12,
+                fontSize: 10,
                 color: color,
                 fontWeight: FontWeight.bold,
-                height: 1.2,
+                height: 1.15,
               )
             : TextStyle(
-                fontSize: 12,
+                fontSize: 10,
                 color: color,
                 fontWeight: FontWeight.w700,
-                height: 1.25,
+                height: 1.2,
               ));
 
     return Semantics(
@@ -41,22 +41,22 @@ class HomeFilterChip extends StatelessWidget {
       label: '${AppLocalizations.of(context)!.clearFilters}, $chipLabel',
       child: Container(
         padding: const EdgeInsetsDirectional.only(
-          start: 10,
-          end: 2,
-          top: 6,
-          bottom: 6,
+          start: 6,
+          end: 1,
+          top: 3,
+          bottom: 3,
         ),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color, width: 1.2),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(descriptor.icon, color: color, size: 15),
-            const SizedBox(width: 6),
+            Icon(descriptor.icon, color: color, size: 12),
+            const SizedBox(width: 4),
             Text(
               chipLabel,
               style: textStyle,
@@ -69,10 +69,10 @@ class HomeFilterChip extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 onTap: onClear,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(6, 2, 8, 2),
-                  child: Icon(Icons.close, color: color, size: 16),
+                  padding: const EdgeInsetsDirectional.fromSTEB(4, 1, 5, 1),
+                  child: Icon(Icons.close, color: color, size: 13),
                 ),
               ),
             ),

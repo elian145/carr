@@ -3,6 +3,13 @@ part of 'home_flow.dart';
 mixin _HomePageBuild on _HomePageSlivers {
   @override
   Widget build(BuildContext context) {
+    if (widget.isSearchFiltersHost) {
+      return _buildListingSearchFiltersPage(
+        focusSearchField: true,
+        asRootRoute: true,
+      );
+    }
+
     final isLight = Theme.of(context).brightness == Brightness.light;
     final appBarFg = isLight ? const Color(0xFF0A0A0A) : Colors.white;
     final searchPillBg = isLight

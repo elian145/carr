@@ -202,11 +202,11 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
         child: SizedBox(
-          height: 40,
+          height: 28,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: chips.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, __) => const SizedBox(width: 6),
             itemBuilder: (context, index) => chips[index],
           ),
         ),

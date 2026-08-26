@@ -1,7 +1,22 @@
 part of 'home_flow.dart';
 
+enum _HomePageMode { feed, searchFilters }
+
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key})
+      : _mode = _HomePageMode.feed,
+        initialSearchFilters = null;
+
+  /// Same full-screen Search Cars page used on Home.
+  const HomePage.searchFilters({
+    super.key,
+    this.initialSearchFilters,
+  }) : _mode = _HomePageMode.searchFilters;
+
+  final _HomePageMode _mode;
+  final HomeFiltersSnapshot? initialSearchFilters;
+
+  bool get isSearchFiltersHost => _mode == _HomePageMode.searchFilters;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -283,16 +298,8 @@ abstract class _HomePageFields extends State<HomePage> {
     'Salaheldeen',
     'Wasit',
   ];
-  List<String> getLocalizedSortOptions(BuildContext context) => [
-    AppLocalizations.of(context)!.defaultSort,
-    AppLocalizations.of(context)!.sort_newest,
-    AppLocalizations.of(context)!.sort_price_low_high,
-    AppLocalizations.of(context)!.sort_price_high_low,
-    AppLocalizations.of(context)!.sort_year_newest,
-    AppLocalizations.of(context)!.sort_year_oldest,
-    AppLocalizations.of(context)!.sort_mileage_low_high,
-    AppLocalizations.of(context)!.sort_mileage_high_low,
-  ];
+  List<String> getLocalizedSortOptions(BuildContext context) =>
+      localizedListingSortOptions(context);
 
   bool useCustomMinPrice = false;
   bool useCustomMaxPrice = false;
@@ -310,6 +317,9 @@ abstract class _HomePageFields extends State<HomePage> {
   late final TextEditingController _engineSizeController;
   late final TextEditingController _searchFiltersKeywordController;
   late final FocusNode _searchFiltersKeywordFocusNode;
+  bool _searchFiltersDidRequestFocus = false;
+  bool _searchFiltersBrandsExpanded = false;
+  bool _searchFiltersCatalogLoadStarted = false;
 
   void _focusSearchFiltersKeywordField() {
     void request() {
@@ -381,6 +391,29 @@ class _HomePageState extends _HomePageFields
     _engineSizeController = TextEditingController();
     _searchFiltersKeywordController = TextEditingController();
     _searchFiltersKeywordFocusNode = FocusNode();
+    if (widget.isSearchFiltersHost) {
+      final initial = widget.initialSearchFilters;
+      if (initial != null) {
+        _applyHomeFiltersSnapshot(initial);
+      }
+      _syncHomeFilterTextControllersFromSelection();
+      _loadBodyTypesFromAssets();
+      unawaited(
+        CarCatalogLoader.ensureLoaded().then((_) {
+          if (!mounted) return;
+          setState(() {});
+        }),
+      );
+      CarSpecIndex.loadWithResult().then((r) {
+        if (!mounted) return;
+        setState(() {
+          _homeCarSpecIdx = r.index;
+          _invalidateHomeCatalogFilterCaches();
+          _pruneHomeMotorFilterSelectionsIfInvalid();
+        });
+      });
+      return;
+    }
     if (_HomePageFields._homeFeedCache.isNotEmpty) {
       cars = copyListingMapList(_HomePageFields._homeFeedCache);
       isLoading = false;
@@ -525,6 +558,25 @@ class _HomePageState extends _HomePageFields
   }
   @override
   void dispose() {
+    if (widget.isSearchFiltersHost) {
+      _sortDebounceTimer?.cancel();
+      _minPriceController.dispose();
+      _maxPriceController.dispose();
+      _minYearController.dispose();
+      _maxYearController.dispose();
+      _minMileageController.dispose();
+      _maxMileageController.dispose();
+      _engineSizeController.dispose();
+      _searchFiltersKeywordController.dispose();
+      _searchFiltersKeywordFocusNode.dispose();
+      try {
+        _homeScrollController.dispose();
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
+      super.dispose();
+      return;
+    }
     ListingEvents.deletedListingId.removeListener(_onHomeListingDeleted);
     ConnectivityService.instance.isOnline.removeListener(_onConnectivityChanged);
     _sortDebounceTimer?.cancel();

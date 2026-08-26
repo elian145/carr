@@ -554,6 +554,11 @@ def get_cars():
         plate_type = plate_type_raw if plate_type_raw in _ALLOWED_PLATE_TYPES else None
         plate_city = (request.args.get("plate_city") or request.args.get("plateCity") or "").strip() or None
         text_q = (request.args.get("q") or request.args.get("search") or "").strip()
+        seller_public_id = (
+            request.args.get("seller_public_id")
+            or request.args.get("dealer_public_id")
+            or ""
+        ).strip()
 
         query = _public_listings_filter(
             Car.query.options(
@@ -564,6 +569,13 @@ def get_cars():
         )
 
         query, search_rank = apply_listing_text_search(query, text_q)
+
+        if seller_public_id:
+            seller = User.query.filter_by(public_id=seller_public_id).first()
+            if seller is None:
+                query = query.filter(Car.seller_id == -1)
+            else:
+                query = query.filter(Car.seller_id == seller.id)
 
         brands = _split_multi_filter(brand)
         if brands:

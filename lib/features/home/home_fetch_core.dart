@@ -660,6 +660,7 @@ mixin _HomePageFetchCore on _HomePageFields {
   }
 
   void onFilterChanged() {
+    if (widget.isSearchFiltersHost) return;
     // Analytics tracking for filters applied
     fetchCars();
     unawaited(fetchFeaturedCars());

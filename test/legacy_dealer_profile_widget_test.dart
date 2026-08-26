@@ -47,5 +47,6 @@ void main() {
     expect(ready, isTrue, reason: 'Dealer profile should load dealership name');
     expect(find.text('Dealer'), findsWidgets);
     expect(find.text('Listings'), findsWidgets);
+    expect(find.byKey(const Key('dealerInventorySearchAction')), findsOneWidget);
   });
 }

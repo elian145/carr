@@ -238,6 +238,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
   }
 
   Future<void> _persistFilters() async {
+    if (widget.isSearchFiltersHost) return;
     try {
       if (!_homeFiltersSnapshot().hasActiveFilters) {
         _HomeFilterSessionPersistence.clear();

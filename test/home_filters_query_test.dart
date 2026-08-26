@@ -72,4 +72,51 @@ void main() {
       expect(out.first['damaged_parts'], '2');
     });
   });
+
+  group('listingMatchesHomeFilters', () {
+    const toyota = {
+      'brand': 'toyota',
+      'model': 'camry',
+      'year': 2020,
+      'price': 10000,
+      'mileage': 40000,
+      'condition': 'used',
+      'body_type': 'sedan',
+      'fuel_type': 'gasoline',
+    };
+    const honda = {
+      'brand': 'honda',
+      'model': 'civic',
+      'year': 2018,
+      'price': 8000,
+      'mileage': 70000,
+      'condition': 'used',
+      'body_type': 'sedan',
+      'fuel_type': 'gasoline',
+    };
+
+    test('keeps only matching dealer inventory rows', () {
+      final out = filterListingsByHomeFilters(
+        [toyota, honda],
+        const HomeFiltersSnapshot(brand: 'Toyota'),
+      );
+      expect(out, [toyota]);
+    });
+
+    test('applies price range', () {
+      final out = filterListingsByHomeFilters(
+        [toyota, honda],
+        const HomeFiltersSnapshot(minPrice: '9000'),
+      );
+      expect(out, [toyota]);
+    });
+
+    test('returns all rows when no filters are active', () {
+      final out = filterListingsByHomeFilters(
+        [toyota, honda],
+        const HomeFiltersSnapshot(),
+      );
+      expect(out, [toyota, honda]);
+    });
+  });
 }

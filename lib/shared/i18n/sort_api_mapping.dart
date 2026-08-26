@@ -19,3 +19,18 @@ String? convertSortToApiValue(BuildContext context, String? sortOption) {
 
   return sortOption;
 }
+
+/// Localized labels for the listing sort menu (Home and dealer inventory).
+List<String> localizedListingSortOptions(BuildContext context) {
+  final loc = AppLocalizations.of(context)!;
+  return [
+    loc.defaultSort,
+    loc.sort_newest,
+    loc.sort_price_low_high,
+    loc.sort_price_high_low,
+    loc.sort_year_newest,
+    loc.sort_year_oldest,
+    loc.sort_mileage_low_high,
+    loc.sort_mileage_high_low,
+  ];
+}

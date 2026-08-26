@@ -42,12 +42,12 @@ import '../../data/car_name_translations.dart';
 import '../../features/home/home_feed_client_sort.dart';
 import '../../features/home/home_feed_errors.dart';
 import '../../features/home/home_brand_model_search.dart';
+import '../../features/home/home_filter_chip_bar.dart';
 import '../../features/home/home_filter_chip_style.dart';
 import '../../features/home/home_filter_chips.dart';
 import '../../features/home/home_filter_persistence.dart';
 import '../../features/home/home_filters_query.dart';
 import '../../features/home/home_multi_select_filter.dart';
-import '../../features/home/widgets/home_filter_chip.dart';
 import '../../features/home/more_filters_dialog_style.dart';
 import '../../features/home/widgets/home_feed_states.dart';
 import '../../features/home/widgets/listing_layout_toggle.dart';
@@ -148,9 +148,6 @@ String? _translateValueGlobal(BuildContext context, String? raw) =>
 
 String _localizeDigitsGlobal(BuildContext context, String input) =>
     localizeDigits(context, input);
-
-String _engineSizeChipLabel(BuildContext context, String raw) =>
-    engineSizeChipLabel(context, raw);
 
 String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
     formatCurrency(context, raw);

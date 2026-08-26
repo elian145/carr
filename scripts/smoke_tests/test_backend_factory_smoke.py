@@ -1363,6 +1363,46 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("car", body)
         self.assertEqual((body.get("car") or {}).get("brand"), "toyota")
 
+    def test_get_cars_filters_by_seller_public_id(self):
+        with self.app.app_context():
+            dealer = self._User.query.filter_by(public_id="pd").one()
+            dealer_car = self._Car(
+                seller_id=dealer.id,
+                brand="honda",
+                model="civic",
+                year=2019,
+                mileage=5000,
+                engine_type="gas",
+                transmission="auto",
+                drive_type="fwd",
+                condition="used",
+                body_type="sedan",
+                price=14000.0,
+                location="Erbil",
+                is_active=True,
+            )
+            self._db.session.add(dealer_car)
+            self._db.session.commit()
+            dealer_car_public = dealer_car.public_id
+
+        scoped = self.client.get("/api/cars?seller_public_id=pd")
+        self.assertEqual(scoped.status_code, 200, scoped.data)
+        scoped_body = scoped.get_json() or {}
+        scoped_cars = scoped_body.get("cars") or []
+        scoped_brands = [c.get("brand") for c in scoped_cars]
+        self.assertIn("honda", scoped_brands)
+        self.assertNotIn("toyota", scoped_brands)
+        scoped_ids = [c.get("id") or c.get("public_id") for c in scoped_cars]
+        self.assertIn(dealer_car_public, scoped_ids)
+        self.assertNotIn(self.car_public, scoped_ids)
+
+        seller_scoped = self.client.get("/api/cars?seller_public_id=ps")
+        self.assertEqual(seller_scoped.status_code, 200, seller_scoped.data)
+        seller_cars = (seller_scoped.get_json() or {}).get("cars") or []
+        seller_brands = [c.get("brand") for c in seller_cars]
+        self.assertIn("toyota", seller_brands)
+        self.assertNotIn("honda", seller_brands)
+
     def test_create_car_as_verified_seller(self):
         r = self.client.post(
             "/api/cars",

@@ -348,6 +348,242 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
   return out;
 }
 
+String? _listingStringField(Map<String, dynamic> listing, List<String> keys) {
+  for (final key in keys) {
+    final raw = listing[key];
+    if (raw == null) continue;
+    final value = raw.toString().trim();
+    if (value.isNotEmpty) return value;
+  }
+  return null;
+}
+
+double? _listingNumField(Map<String, dynamic> listing, List<String> keys) {
+  for (final key in keys) {
+    final raw = listing[key];
+    if (raw == null) continue;
+    if (raw is num) return raw.toDouble();
+    final parsed = double.tryParse(raw.toString().trim());
+    if (parsed != null) return parsed;
+  }
+  return null;
+}
+
+bool _ciContains(String? haystack, String needle) {
+  final h = haystack?.trim() ?? '';
+  if (h.isEmpty) return false;
+  return h.toLowerCase().contains(needle.trim().toLowerCase());
+}
+
+bool _ciEquals(String? left, String right) {
+  final l = left?.trim() ?? '';
+  if (l.isEmpty) return false;
+  return l.toLowerCase() == right.trim().toLowerCase();
+}
+
+bool _matchesSelectedList(String? listingValue, String? encodedFilter) {
+  final selected = homeFilterDecodeList(encodedFilter)
+      .map((v) => v.toLowerCase())
+      .toList();
+  if (selected.isEmpty) return true;
+  final value = listingValue?.trim().toLowerCase() ?? '';
+  if (value.isEmpty) return false;
+  return selected.contains(value);
+}
+
+bool _inNumericRange({
+  required double? value,
+  String? minRaw,
+  String? maxRaw,
+}) {
+  final min = minRaw == null || minRaw.trim().isEmpty
+      ? null
+      : double.tryParse(minRaw.trim());
+  final max = maxRaw == null || maxRaw.trim().isEmpty
+      ? null
+      : double.tryParse(maxRaw.trim());
+  if (min == null && max == null) return true;
+  if (value == null) return false;
+  if (min != null && value < min) return false;
+  if (max != null && value > max) return false;
+  return true;
+}
+
+/// Whether [listing] matches [filters], using the same rules as `/api/cars`.
+bool listingMatchesHomeFilters(
+  Map<String, dynamic> listing,
+  HomeFiltersSnapshot filters,
+) {
+  final brand = homeFilterDecodeSingle(filters.brand);
+  if (HomeFiltersSnapshot._has(brand) &&
+      !_ciContains(
+        _listingStringField(listing, const ['brand']),
+        brand!,
+      )) {
+    return false;
+  }
+  if (HomeFiltersSnapshot._has(filters.model) &&
+      !_ciContains(
+        _listingStringField(listing, const ['model']),
+        filters.model!,
+      )) {
+    return false;
+  }
+  if (HomeFiltersSnapshot._has(filters.trim) &&
+      !_ciContains(
+        _listingStringField(listing, const ['trim']),
+        filters.trim!,
+      )) {
+    return false;
+  }
+  if (!_inNumericRange(
+    value: _listingNumField(listing, const ['price']),
+    minRaw: filters.minPrice,
+    maxRaw: filters.maxPrice,
+  )) {
+    return false;
+  }
+  if (!_inNumericRange(
+    value: _listingNumField(listing, const ['year']),
+    minRaw: filters.minYear,
+    maxRaw: filters.maxYear,
+  )) {
+    return false;
+  }
+  if (!_inNumericRange(
+    value: _listingNumField(listing, const ['mileage']),
+    minRaw: filters.minMileage,
+    maxRaw: filters.maxMileage,
+  )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.condition) &&
+      !_ciEquals(
+        _listingStringField(listing, const ['condition']),
+        filters.condition!,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.transmission) &&
+      !_ciEquals(
+        _listingStringField(listing, const ['transmission']),
+        filters.transmission!,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.fuelType) &&
+      !_matchesSelectedList(
+        _listingStringField(listing, const ['fuel_type', 'fuelType']),
+        filters.fuelType,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.bodyType) &&
+      !_matchesSelectedList(
+        _listingStringField(listing, const ['body_type', 'bodyType']),
+        filters.bodyType,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.color) &&
+      !_ciContains(
+        _listingStringField(listing, const ['color']),
+        filters.color!,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.driveType) &&
+      !_matchesSelectedList(
+        _listingStringField(listing, const ['drive_type', 'driveType']),
+        filters.driveType,
+      )) {
+    return false;
+  }
+  if (HomeFiltersSnapshot._has(filters.regionSpecs) &&
+      isValidCarRegionSpecCode(filters.regionSpecs) &&
+      !_ciEquals(
+        _listingStringField(listing, const ['region_specs', 'regionSpecs']),
+        filters.regionSpecs!,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.cylinderCount) &&
+      !_inNumericRange(
+        value: _listingNumField(
+          listing,
+          const ['cylinder_count', 'cylinderCount'],
+        ),
+        minRaw: filters.cylinderCount,
+        maxRaw: filters.cylinderCount,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.seating) &&
+      !_inNumericRange(
+        value: _listingNumField(listing, const ['seating']),
+        minRaw: filters.seating,
+        maxRaw: filters.seating,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.engineSize) &&
+      !_inNumericRange(
+        value: _listingNumField(listing, const ['engine_size', 'engineSize']),
+        minRaw: filters.engineSize,
+        maxRaw: filters.engineSize,
+      )) {
+    return false;
+  }
+  if (HomeFiltersSnapshot._has(filters.city) &&
+      !_ciContains(
+        _listingStringField(listing, const ['location', 'city']),
+        filters.city!,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.plateType) &&
+      !_ciEquals(
+        _listingStringField(listing, const ['plate_type', 'plateType']),
+        filters.plateType!,
+      )) {
+    return false;
+  }
+  if (!HomeFiltersSnapshot._isAny(filters.plateCity) &&
+      !_ciContains(
+        _listingStringField(listing, const ['plate_city', 'plateCity']),
+        filters.plateCity!,
+      )) {
+    return false;
+  }
+  if (HomeFiltersSnapshot._has(filters.titleStatus)) {
+    if (!_ciEquals(
+      _listingStringField(listing, const ['title_status', 'titleStatus']),
+      filters.titleStatus!,
+    )) {
+      return false;
+    }
+    if (filters.titleStatus == 'damaged' &&
+        HomeFiltersSnapshot._has(filters.damagedParts)) {
+      final parts = int.tryParse(filters.damagedParts!.trim());
+      final listingParts = _listingNumField(
+        listing,
+        const ['damaged_parts', 'damagedParts'],
+      )?.round();
+      if (parts == null || listingParts != parts) return false;
+    }
+  }
+  return true;
+}
+
+/// Keeps listings that match [filters], preserving input order.
+List<Map<String, dynamic>> filterListingsByHomeFilters(
+  List<Map<String, dynamic>> source,
+  HomeFiltersSnapshot filters,
+) {
+  if (!filters.hasActiveFilters) return source;
+  return source.where((row) => listingMatchesHomeFilters(row, filters)).toList();
+}
+
 /// Client-side exact match when API returns broad damaged-title rows.
 List<Map<String, dynamic>> applyDamagedPartsListingFilter(
   List<Map<String, dynamic>> source, {
