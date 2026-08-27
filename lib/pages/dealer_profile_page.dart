@@ -451,7 +451,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                               return SliverPadding(
                                 padding: EdgeInsets.fromLTRB(
                                   listingColumns == 1 ? 4 : 12,
-                                  0,
+                                  8,
                                   listingColumns == 1 ? 4 : 12,
                                   16,
                                 ),
@@ -465,7 +465,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                                               screenWidth,
                                             ),
                                         crossAxisSpacing: 8,
-                                        mainAxisSpacing: 8,
+                                        mainAxisSpacing: 16,
                                       ),
                                   delegate: SliverChildBuilderDelegate(
                                     (context, index) {

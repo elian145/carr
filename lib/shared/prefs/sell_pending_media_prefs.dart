@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../debug/app_log.dart';
+import '../listings/listing_image_media.dart';
 
 /// Survives process death between [createCar] and finished media upload.
 ///
@@ -12,6 +14,42 @@ class SellPendingMediaPrefs {
   SellPendingMediaPrefs._();
 
   static const String prefsKey = 'legacy_sell_pending_media_v1';
+
+  /// JSON-safe media item (XFile → path, Map → string/num fields only).
+  static dynamic jsonSafeMediaItem(dynamic item) {
+    if (item == null) return null;
+    if (item is String || item is num || item is bool) return item;
+    if (item is XFile) {
+      final path = item.path.trim();
+      return path.isEmpty ? null : path;
+    }
+    if (item is Map) {
+      final source = ListingImageMedia.source(item);
+      if (source.isEmpty) return null;
+      final out = <String, dynamic>{'source': source};
+      final id = ListingImageMedia.id(item);
+      if (id != null) out['id'] = id;
+      final focus = ListingImageMedia.focusY(item);
+      if (focus != null) out['focus_y'] = focus;
+      final width = ListingImageMedia.width(item);
+      if (width != null) out['image_width'] = width;
+      final height = ListingImageMedia.height(item);
+      if (height != null) out['image_height'] = height;
+      return out;
+    }
+    final asString = item.toString().trim();
+    return asString.isEmpty ? null : asString;
+  }
+
+  static List<dynamic> jsonSafeMediaList(dynamic raw) {
+    if (raw is! List) return const <dynamic>[];
+    final out = <dynamic>[];
+    for (final item in raw) {
+      final safe = jsonSafeMediaItem(item);
+      if (safe != null) out.add(safe);
+    }
+    return out;
+  }
 
   static Future<Map<String, dynamic>?> load() async {
     try {
@@ -43,9 +81,9 @@ class SellPendingMediaPrefs {
       'pendingReview': pendingReview,
       'savedAt': DateTime.now().millisecondsSinceEpoch,
       'carData': <String, dynamic>{
-        'images': carData['images'],
-        'damage_images': carData['damage_images'],
-        'videos': carData['videos'],
+        'images': jsonSafeMediaList(carData['images']),
+        'damage_images': jsonSafeMediaList(carData['damage_images']),
+        'videos': jsonSafeMediaList(carData['videos']),
         'primary_image_index': carData['primary_image_index'],
       },
     };

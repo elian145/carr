@@ -1,6 +1,11 @@
 part of 'sell_flow.dart';
 
 mixin _SellStep5Logic on _SellStep5Fields {
+  void _setSubmitStatus(String message) {
+    if (!mounted) return;
+    setState(() => submitStatusMessage = message);
+  }
+
   /// Returns submit result on success so caller can navigate and show the right copy.
   Future<SellListingSubmitResult?> _submitListing(
     Map<String, dynamic> carData, {
@@ -16,6 +21,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
     final draftId = parentState?._currentDraftId.isNotEmpty == true
         ? parentState!._currentDraftId
         : 'default';
+    final loc = AppLocalizations.of(context)!;
 
     try {
       final editId =
@@ -24,6 +30,10 @@ mixin _SellStep5Logic on _SellStep5Fields {
               ?._editListingId
               ?.trim() ??
           '';
+
+      _setSubmitStatus(
+        editId.isNotEmpty ? loc.submitting : loc.creatingListing,
+      );
 
       String carId = '';
       var pendingReview = false;
@@ -93,6 +103,18 @@ mixin _SellStep5Logic on _SellStep5Fields {
         unawaited(AppHaptics.success());
         // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
         try {
+          // Copy media into durable draft paths BEFORE pending-prefs / draft
+          // clear so upload always has real filesystem paths (and JSON-safe
+          // pending state never needs live XFile instances).
+          final storedMedia =
+              await SellDraftMediaPersistence.prepareCarDataForStorage(
+                carData,
+                draftId: draftId,
+              );
+          carData['images'] = storedMedia['images'];
+          carData['damage_images'] = storedMedia['damage_images'];
+          carData['videos'] = storedMedia['videos'];
+
           // Hide the draft as soon as the server listing exists so a kill
           // during media prep/upload cannot show listing + draft.
           if (editId.isEmpty) {
@@ -119,24 +141,6 @@ mixin _SellStep5Logic on _SellStep5Fields {
                 _encodeSellDraftArchive(archive),
               );
             }
-          }
-
-          final storedMedia =
-              await SellDraftMediaPersistence.prepareCarDataForStorage(
-                carData,
-                draftId: draftId,
-              );
-          carData['images'] = storedMedia['images'];
-          carData['damage_images'] = storedMedia['damage_images'];
-          carData['videos'] = storedMedia['videos'];
-          // Refresh pending paths after durable media copy.
-          if (editId.isEmpty) {
-            await SellPendingMediaPrefs.save(
-              carId: carId,
-              draftId: draftId,
-              carData: carData,
-              pendingReview: pendingReview,
-            );
           } else if (parentState != null && parentState.mounted) {
             parentState.setState(() {
               parentState.carData['images'] = carData['images'];
@@ -149,6 +153,18 @@ mixin _SellStep5Logic on _SellStep5Fields {
             carId: carId,
             carData: carData,
             multipartFileBuilder: _buildVideoMultipartFile,
+            onPhase: (phase) {
+              if (!mounted) return;
+              final phaseLoc = AppLocalizations.of(context)!;
+              switch (phase) {
+                case SellMediaUploadPhase.photos:
+                  _setSubmitStatus(phaseLoc.uploadingPhotos);
+                case SellMediaUploadPhase.videos:
+                  _setSubmitStatus(phaseLoc.uploadingVideos);
+                case SellMediaUploadPhase.damagePhotos:
+                  _setSubmitStatus(phaseLoc.uploadingDamagePhotos);
+              }
+            },
           );
 
           // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
@@ -231,12 +247,12 @@ mixin _SellStep5Logic on _SellStep5Fields {
             );
           }
           try {
-            final loc = AppLocalizations.of(context)!;
+            final uploadLoc = AppLocalizations.of(context)!;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  loc.listingUploadPartialFail(
-                    userErrorText(context, e, fallback: loc.errorTitle),
+                  uploadLoc.listingUploadPartialFail(
+                    userErrorText(context, e, fallback: uploadLoc.errorTitle),
                   ),
                 ),
               ),

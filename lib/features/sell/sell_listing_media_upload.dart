@@ -10,6 +10,13 @@ import '../../shared/listings/listing_image_media.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import 'sell_video_helpers.dart';
 
+/// Phases reported while [SellListingMediaUpload.uploadForCar] runs.
+enum SellMediaUploadPhase {
+  photos,
+  videos,
+  damagePhotos,
+}
+
 /// Uploads listing / damage / video media for a car that already exists on the server.
 class SellListingMediaUpload {
   SellListingMediaUpload._();
@@ -146,6 +153,27 @@ class SellListingMediaUpload {
     return count;
   }
 
+  /// True when [file] can be read for multipart upload.
+  ///
+  /// Prefer [File.existsSync] for normal paths; fall back to [XFile.length]
+  /// for content URIs / sandbox paths where dart:io File lies.
+  static Future<bool> _localUploadFileExists(XFile file) async {
+    final path = file.path.trim();
+    if (path.isEmpty) return false;
+    try {
+      if (File(path).existsSync()) return true;
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+    try {
+      final len = await file.length();
+      return len > 0;
+    } catch (e, st) {
+      logNonFatal(e, st);
+      return false;
+    }
+  }
+
   /// True when the server listing already has any listing media.
   static Future<bool> listingAlreadyHasMedia(String carId) async {
     try {
@@ -166,6 +194,7 @@ class SellListingMediaUpload {
     required String carId,
     required Map<String, dynamic> carData,
     Future<http.MultipartFile> Function(XFile video)? multipartFileBuilder,
+    void Function(SellMediaUploadPhase phase)? onPhase,
   }) async {
     final dynamic maybeImgs = carData['images'];
     final List<dynamic> imgsRaw = (maybeImgs is List) ? maybeImgs : const [];
@@ -190,7 +219,7 @@ class SellListingMediaUpload {
         imageIdsBySource[source] = existingId;
       }
       final local = ListingImageMedia.localFile(img);
-      if (local != null && File(local.path).existsSync()) {
+      if (local != null && await _localUploadFileExists(local)) {
         toUpload.add(local);
         uploadItems.add(img);
       } else {
@@ -211,7 +240,19 @@ class SellListingMediaUpload {
       }
     }
 
+    if (imgs.isNotEmpty &&
+        toUpload.isEmpty &&
+        toAttach.isEmpty &&
+        imageIdsBySource.isEmpty) {
+      throw StateError(
+        'Listing photos could not be read for upload. Please re-add the photos and try again.',
+      );
+    }
+
     Map<String, dynamic>? latestMediaResponse;
+    if (toAttach.isNotEmpty || toUpload.isNotEmpty || imgs.isNotEmpty) {
+      onPhase?.call(SellMediaUploadPhase.photos);
+    }
     if (toAttach.isNotEmpty) {
       final attachResponse = await CarService().attachCarImages(carId, toAttach);
       latestMediaResponse = attachResponse;
@@ -236,6 +277,7 @@ class SellListingMediaUpload {
     Object? videoError;
     StackTrace? videoStack;
     if (videosToUpload.isNotEmpty) {
+      onPhase?.call(SellMediaUploadPhase.videos);
       try {
         await ApiService.uploadCarVideos(
           carId,
@@ -255,22 +297,22 @@ class SellListingMediaUpload {
     final List<XFile> damageToUpload = <XFile>[];
     final List<String> damageToAttach = <String>[];
     for (final dynamic img in dimgs) {
-      if (img is XFile) {
-        if (File(img.path).existsSync()) {
-          damageToUpload.add(img);
-        }
-      } else if (img is String) {
-        final s = img.trim();
-        if (s.startsWith('uploads/') ||
-            s.startsWith('static/') ||
-            s.startsWith('/static/')) {
-          damageToAttach.add(s);
-        } else if (s.startsWith('http://') || s.startsWith('https://')) {
-          // Skip absolute URLs for attach/upload here.
-        } else if (File(s).existsSync()) {
-          damageToUpload.add(XFile(s));
-        }
+      final local = ListingImageMedia.localFile(img);
+      if (local != null && await _localUploadFileExists(local)) {
+        damageToUpload.add(local);
+        continue;
       }
+      final s = ListingImageMedia.source(img);
+      if (s.startsWith('uploads/') ||
+          s.startsWith('static/') ||
+          s.startsWith('/static/')) {
+        damageToAttach.add(s);
+      } else if (s.startsWith('http://') || s.startsWith('https://')) {
+        // Skip absolute URLs for attach/upload here.
+      }
+    }
+    if (damageToAttach.isNotEmpty || damageToUpload.isNotEmpty) {
+      onPhase?.call(SellMediaUploadPhase.damagePhotos);
     }
     if (damageToAttach.isNotEmpty) {
       await CarService().attachCarImages(

@@ -139,7 +139,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _pickDamageImages,
+                onPressed: _isImportingMedia ? null : _pickDamageImages,
                 icon: const Icon(Icons.car_crash_outlined),
                 label: Text(
                   loc.addDamagePhotosCount(

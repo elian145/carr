@@ -130,7 +130,7 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _pickVideos,
+                onPressed: _isImportingMedia ? null : _pickVideos,
                 icon: const Icon(Icons.videocam),
                 label: Text(
                   hasVideos

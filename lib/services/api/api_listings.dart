@@ -180,8 +180,18 @@ abstract final class _ApiServiceListings {
       );
       // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
       for (final file in imageFiles) {
+        var filename = file.name.trim();
+        if (filename.isEmpty) {
+          final path = file.path.replaceAll('\\', '/');
+          filename = path.split('/').last;
+        }
+        if (filename.isEmpty) filename = 'photo.jpg';
         request.files.add(
-          await http.MultipartFile.fromPath('images', file.path),
+          await http.MultipartFile.fromPath(
+            'images',
+            file.path,
+            filename: filename,
+          ),
         );
       }
       return request;

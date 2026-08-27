@@ -191,11 +191,9 @@ class SellDraftMediaPersistence {
       if (stored == null || stored.isEmpty) continue;
       final id = canonicalMediaIdentity(stored);
       if (!seen.add(id)) continue;
-      out.add(
-        item is Map
-            ? ListingImageMedia.map(item, source: stored)
-            : XFile(stored),
-      );
+      // Always persist as a metadata map so pending-prefs / drafts stay
+      // JSON-serializable (never leave live XFile instances in carData).
+      out.add(ListingImageMedia.map(item, source: stored));
     }
     return out;
   }

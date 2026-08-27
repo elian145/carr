@@ -114,7 +114,7 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
             const SizedBox(height: 14),
             DropdownButtonFormField<int>(
               key: ValueKey(
-                'cat_year_${_catYear ?? years.first}_${years.join('-')}',
+                'cat_year_${_catYear ?? 'none'}_${years.join('-')}',
               ),
               isExpanded: true,
               isDense: true,
@@ -122,7 +122,11 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
               dropdownColor: style.menuFill,
               initialValue: _catYear != null && years.contains(_catYear)
                   ? _catYear
-                  : years.first,
+                  : null,
+              hint: Text(
+                AppLocalizations.of(context)!.tapToSelect,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
               decoration: filterDropdownFieldDecoration(
                 style,
                 AppLocalizations.of(context)!.modelYear,

@@ -6,13 +6,17 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
       const SizedBox(height: 32),
       buildSellWizardNavRow(
         context,
-        onPrevious: () {
-          unawaited(_syncMediaDraftToParent());
-          context
-              .findAncestorStateOfType<_SellCarPageState>()
-              ?._goToPreviousStep();
-        },
-        onNext: () {
+        onPrevious: _isImportingMedia
+            ? null
+            : () {
+                unawaited(_syncMediaDraftToParent());
+                context
+                    .findAncestorStateOfType<_SellCarPageState>()
+                    ?._goToPreviousStep();
+              },
+        onNext: _isImportingMedia
+            ? null
+            : () {
           if (_selectedImages.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -67,18 +71,33 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ..._sellStep4BuildIntroSection(),
-          ..._sellStep4BuildPhotosSection(),
-          ..._sellStep4BuildDamageSection(),
-          ..._sellStep4BuildVideosSection(),
-          ..._sellStep4BuildNavSection(),
-        ],
-      ),
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ..._sellStep4BuildIntroSection(),
+              ..._sellStep4BuildPhotosSection(),
+              ..._sellStep4BuildDamageSection(),
+              ..._sellStep4BuildVideosSection(),
+              ..._sellStep4BuildNavSection(),
+            ],
+          ),
+        ),
+        if (_isImportingMedia)
+          Positioned.fill(
+            child: AbsorbPointer(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.35),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

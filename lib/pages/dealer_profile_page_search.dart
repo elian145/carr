@@ -105,7 +105,7 @@ extension _DealerProfilePageSearch on _DealerProfilePageState {
   Widget _buildDealerListingsToolbar() {
     final loc = AppLocalizations.of(context)!;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

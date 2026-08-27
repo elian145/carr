@@ -15,6 +15,8 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   final List<XFile> _selectedVideos = [];
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
+  /// True while chosen photos/videos are being processed into the draft.
+  bool _isImportingMedia = false;
 
   void _clampPrimaryImageIndex() {
     if (_selectedImages.isEmpty) {

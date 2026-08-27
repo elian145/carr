@@ -487,21 +487,26 @@ mixin _SellStep4Logic on _SellStep4Fields {
         if (overLimit) _showListingMediaLimitSnack(isVideo: false);
         return;
       }
-      final additions = await Future.wait(newFiles.map(_pickedImageMedia));
-      if (!mounted || additions.isEmpty) return;
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-      setState(() {
-        _selectedImages = [..._selectedImages, ...additions];
-        _imagesProcessed = false;
-        _blurredImages = [];
-        _isProcessingImages = false;
-      });
-      parentState?.carData.remove('use_blurred_plates');
-      parentState?.invalidatePlateBlurJob();
-      unawaited(_syncMediaDraftToParent());
-      unawaited(_saveDraft());
-      unawaited(parentState?.startBackgroundPlateBlur());
-      if (overLimit) _showListingMediaLimitSnack(isVideo: false);
+      setState(() => _isImportingMedia = true);
+      try {
+        final additions = await Future.wait(newFiles.map(_pickedImageMedia));
+        if (!mounted || additions.isEmpty) return;
+        final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+        setState(() {
+          _selectedImages = [..._selectedImages, ...additions];
+          _imagesProcessed = false;
+          _blurredImages = [];
+          _isProcessingImages = false;
+        });
+        parentState?.carData.remove('use_blurred_plates');
+        parentState?.invalidatePlateBlurJob();
+        await _syncMediaDraftToParent();
+        unawaited(_saveDraft());
+        unawaited(parentState?.startBackgroundPlateBlur());
+        if (overLimit) _showListingMediaLimitSnack(isVideo: false);
+      } finally {
+        if (mounted) setState(() => _isImportingMedia = false);
+      }
     } catch (e, st) {
       logNonFatal(e, st);
       _showMediaPickError(e);
@@ -548,16 +553,21 @@ mixin _SellStep4Logic on _SellStep4Fields {
         if (overLimit) _showListingMediaLimitSnack(isDamage: true);
         return;
       }
-      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
-      setState(() {
-        _damageImages = [..._damageImages, ...additions];
-      });
-      parentState?.carData.remove('use_blurred_plates');
-      parentState?.invalidatePlateBlurJob();
-      unawaited(_syncMediaDraftToParent());
-      unawaited(_saveDraft());
-      unawaited(parentState?.startBackgroundPlateBlur());
-      if (overLimit) _showListingMediaLimitSnack(isDamage: true);
+      setState(() => _isImportingMedia = true);
+      try {
+        final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+        setState(() {
+          _damageImages = [..._damageImages, ...additions];
+        });
+        parentState?.carData.remove('use_blurred_plates');
+        parentState?.invalidatePlateBlurJob();
+        await _syncMediaDraftToParent();
+        unawaited(_saveDraft());
+        unawaited(parentState?.startBackgroundPlateBlur());
+        if (overLimit) _showListingMediaLimitSnack(isDamage: true);
+      } finally {
+        if (mounted) setState(() => _isImportingMedia = false);
+      }
     } catch (e, st) {
       logNonFatal(e, st);
       _showMediaPickError(e);
@@ -579,22 +589,27 @@ mixin _SellStep4Logic on _SellStep4Fields {
         picked = single != null ? <XFile>[single] : <XFile>[];
       }
       if (picked.isEmpty || !mounted) return;
-      bool overLimit = false;
-      setState(() {
-        final existing = _selectedVideos.map((e) => e.path).toSet();
-        for (final v in picked) {
-          if (existing.contains(v.path)) continue;
-          if (_selectedVideos.length >= _kSellMaxVideos) {
-            overLimit = true;
-            break;
+      setState(() => _isImportingMedia = true);
+      try {
+        bool overLimit = false;
+        setState(() {
+          final existing = _selectedVideos.map((e) => e.path).toSet();
+          for (final v in picked) {
+            if (existing.contains(v.path)) continue;
+            if (_selectedVideos.length >= _kSellMaxVideos) {
+              overLimit = true;
+              break;
+            }
+            _selectedVideos.add(v);
+            existing.add(v.path);
           }
-          _selectedVideos.add(v);
-          existing.add(v.path);
-        }
-      });
-      unawaited(_syncMediaDraftToParent());
-      unawaited(_saveDraft());
-      if (overLimit) _showListingMediaLimitSnack(isVideo: true);
+        });
+        await _syncMediaDraftToParent();
+        unawaited(_saveDraft());
+        if (overLimit) _showListingMediaLimitSnack(isVideo: true);
+      } finally {
+        if (mounted) setState(() => _isImportingMedia = false);
+      }
     } catch (e) {
       _showMediaPickError(e);
     }

@@ -279,7 +279,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _pickImages,
+                onPressed: _isImportingMedia ? null : _pickImages,
                 icon: const Icon(Icons.photo_library),
                 label: Text(
                   hasPhotos ? loc.addMorePhotos : loc.addPhotos,

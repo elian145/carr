@@ -123,28 +123,33 @@ mixin _SellStep1Catalog on _SellStep1Fields {
             newId = null;
             newY = null;
           } else {
-            int resolvedYear;
+            int? resolvedYear;
             if (formYear != null && years.contains(formYear)) {
               resolvedYear = formYear;
             } else if (newY != null && years.contains(newY)) {
               resolvedYear = newY;
             } else {
-              resolvedYear = years.first;
+              // Keep empty until the user picks a catalog model year.
+              resolvedYear = null;
             }
             newY = resolvedYear;
-            final preferred = idx.suggestDatasetModelIdForFormYear(
-              b,
-              m,
-              CarSpecIndex.catalogAutofillModelOnly,
-              resolvedYear,
-            );
-            var mid = newId ?? 0;
-            if (mid == 0 || !variants.any((v) => v.id == mid)) {
-              mid = preferred ?? variants.first.id;
-            } else if (!idx.datasetVariantCoversYear(mid, resolvedYear)) {
-              mid = preferred ?? mid;
+            if (resolvedYear == null) {
+              newId = null;
+            } else {
+              final preferred = idx.suggestDatasetModelIdForFormYear(
+                b,
+                m,
+                CarSpecIndex.catalogAutofillModelOnly,
+                resolvedYear,
+              );
+              var mid = newId ?? 0;
+              if (mid == 0 || !variants.any((v) => v.id == mid)) {
+                mid = preferred ?? variants.first.id;
+              } else if (!idx.datasetVariantCoversYear(mid, resolvedYear)) {
+                mid = preferred ?? mid;
+              }
+              newId = mid;
             }
-            newId = mid;
           }
         }
       }

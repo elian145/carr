@@ -380,8 +380,8 @@ String _pleaseFillRequiredGlobal(BuildContext context) =>
 
 Widget buildSellWizardNavRow(
   BuildContext context, {
-  required VoidCallback onPrevious,
-  required VoidCallback onNext,
+  required VoidCallback? onPrevious,
+  required VoidCallback? onNext,
 }) {
   final compact = AppResponsive.isCompactPhone(context);
   final previousButton = SizedBox(
