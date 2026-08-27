@@ -177,69 +177,24 @@ mixin _HomePageFetchCore on _HomePageFields {
   }
 
   Future<void> _loadBodyTypesFromAssets() async {
+    if (globalBodyTypeAssetMap.isNotEmpty) return;
     try {
-      final String manifestJson = await services.rootBundle.loadString(
-        'AssetManifest.json',
+      // Flutter 3.16+ ships AssetManifest.bin, not AssetManifest.json.
+      final manifest = await services.AssetManifest.loadFromAssetBundle(
+        services.rootBundle,
       );
-      final Map<String, dynamic> manifestMap = json.decode(manifestJson);
-      final Iterable<String> allAssets = manifestMap.keys.cast<String>();
-
-      // Accept both SVG (clean) and PNG variants from both folders
-      final List<String> btAssets = allAssets
-          .where(
-            (p) =>
-                (p.startsWith('assets/body_types_clean/') &&
-                    (p.endsWith('.svg') || p.endsWith('.png'))) ||
-                (p.startsWith('assets/body_types_png/') && p.endsWith('.png')),
-          )
-          .toList();
-
-      // Build normalized label -> canonical svg path map
-      final Map<String, String> labelToSvg = {};
-      for (final String path in btAssets) {
-        // Extract base filename without extension
-        final String fileName = path.split('/').last; // e.g., sedan.svg
-        final String base = fileName
-            .replaceAll('.svg', '')
-            .replaceAll('.png', '');
-        if (base.toLowerCase() == 'default') {
-          continue; // skip default placeholder
-        }
-
-        // Build a user-friendly label (title case, even if file uses underscores)
-        final String label = base
-            .replaceAll('_', ' ')
-            .split(' ')
-            .map(
-              (w) => w.isEmpty
-                  ? w
-                  : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '')),
-            )
-            .join(' ');
-
-        // Prefer clean SVG if available for same label, otherwise use PNG
-        if (!labelToSvg.containsKey(label)) {
-          labelToSvg[label] = path;
-        } else {
-          final String existing = labelToSvg[label]!;
-          final bool existingIsSvg = existing.toLowerCase().endsWith('.svg');
-          final bool incomingIsSvg = path.toLowerCase().endsWith('.svg');
-          if (!existingIsSvg && incomingIsSvg) {
-            labelToSvg[label] = path;
-          }
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          final List<String> labels = labelToSvg.keys.toList()..sort();
-          globalBodyTypes = ['Any', ...labels];
-          // Keep bodyTypes as sell-page list so More Filters options stay aligned
-          globalBodyTypeAssetMap = labelToSvg;
-        });
-      }
-    } catch (e, st) { logNonFatal(e, st); 
-      // If anything fails, keep the existing static fallback already present in code
+      final labelToAsset = body_type_assets.discoverBodyTypeAssetMap(
+        manifest.listAssets(),
+      );
+      if (!mounted || labelToAsset.isEmpty) return;
+      setState(() {
+        final labels = labelToAsset.keys.toList()..sort();
+        globalBodyTypes = ['Any', ...labels];
+        globalBodyTypeAssetMap = labelToAsset;
+      });
+    } catch (e, st) {
+      // Static [bodyTypes] + [getBodyTypeAsset] already cover the UI.
+      if (!isExpectedClientNoise(e)) logNonFatal(e, st);
     }
   }
   Future<void> fetchCars({

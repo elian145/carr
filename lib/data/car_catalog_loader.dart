@@ -3,9 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
 import 'car_catalog.dart';
+import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/debug/app_log.dart';
 
@@ -62,6 +62,8 @@ class CarCatalogLoader {
   }
 
   static Future<void> _overlayFromApi() async {
+    if (const bool.fromEnvironment('FLUTTER_TEST')) return;
+
     String base;
     try {
       base = apiBase().trim();
@@ -72,7 +74,7 @@ class CarCatalogLoader {
 
     try {
       final brandsUri = Uri.parse('$base/api/catalog/brands');
-      final brandsRes = await http.get(brandsUri).timeout(const Duration(seconds: 8));
+      final brandsRes = await ApiService.getHttp(brandsUri);
       if (brandsRes.statusCode != 200) {
         appLog(
           'CarCatalogLoader: remote brands HTTP ${brandsRes.statusCode} — keeping asset catalog',
@@ -99,8 +101,7 @@ class CarCatalogLoader {
       final modelsByBrand = <String, List<String>>{};
       try {
         final allModelsUri = Uri.parse('$base/api/catalog/models');
-        final allModelsRes =
-            await http.get(allModelsUri).timeout(const Duration(seconds: 10));
+        final allModelsRes = await ApiService.getHttp(allModelsUri);
         if (allModelsRes.statusCode == 200) {
           final body = json.decode(allModelsRes.body);
           final rows = body is Map ? body['models'] : null;
@@ -115,6 +116,8 @@ class CarCatalogLoader {
             }
           }
         }
+      } on TimeoutException catch (e) {
+        appLog('CarCatalogLoader: remote models timed out ($e)');
       } catch (e, st) {
         logNonFatal(e, st, 'CarCatalogLoader.models');
       }
@@ -155,6 +158,8 @@ class CarCatalogLoader {
       appLog(
         'CarCatalogLoader: overlaid API catalog (${brandNames.length} brands)',
       );
+    } on TimeoutException catch (e) {
+      appLog('CarCatalogLoader: remote overlay timed out ($e)');
     } catch (e, st) {
       logNonFatal(e, st, 'CarCatalogLoader.remote');
       appLog('CarCatalogLoader: remote overlay skipped');

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -51,6 +52,8 @@ class FeatureFlags {
           return _cached;
         }
       }
+    } on TimeoutException catch (e) {
+      appLog('FeatureFlags.load timed out: $e');
     } catch (e, st) {
       logNonFatal(e, st, 'FeatureFlags.load');
     }

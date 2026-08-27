@@ -4,6 +4,51 @@ List<String> globalBodyTypes = ['Any'];
 /// Maps normalized body-type label → asset path under [assets/body_types_png/].
 Map<String, String> globalBodyTypeAssetMap = {};
 
+/// Builds the label → asset map from Flutter asset keys (not AssetManifest.json).
+///
+/// Skips `_dark` variants so they are not shown as separate body types.
+Map<String, String> discoverBodyTypeAssetMap(Iterable<String> allAssets) {
+  final btAssets = allAssets.where(_isDiscoverableBodyTypeAsset).toList();
+  final labelToAsset = <String, String>{};
+  for (final path in btAssets) {
+    final fileName = path.split('/').last;
+    final dot = fileName.lastIndexOf('.');
+    final base = dot <= 0 ? fileName : fileName.substring(0, dot);
+    if (base.toLowerCase() == 'default') continue;
+
+    final label = base
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map(
+          (w) => w.isEmpty
+              ? w
+              : (w[0].toUpperCase() + (w.length > 1 ? w.substring(1) : '')),
+        )
+        .join(' ');
+
+    if (!labelToAsset.containsKey(label)) {
+      labelToAsset[label] = path;
+      continue;
+    }
+    final existing = labelToAsset[label]!;
+    final existingIsSvg = existing.toLowerCase().endsWith('.svg');
+    final incomingIsSvg = path.toLowerCase().endsWith('.svg');
+    if (!existingIsSvg && incomingIsSvg) {
+      labelToAsset[label] = path;
+    }
+  }
+  return labelToAsset;
+}
+
+bool _isDiscoverableBodyTypeAsset(String path) {
+  if (path.contains('_dark')) return false;
+  if (path.startsWith('assets/body_types_clean/') &&
+      (path.endsWith('.svg') || path.endsWith('.png'))) {
+    return true;
+  }
+  return path.startsWith('assets/body_types_png/') && path.endsWith('.png');
+}
+
 /// Resolves a body-type label to a bundled PNG asset path.
 String getBodyTypeAsset(String bodyType) {
   if (bodyType.toLowerCase() == 'any') {

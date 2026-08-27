@@ -231,7 +231,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
                     context,
                   );
                 } catch (e, st) {
-                  logNonFatal(e, st);
+                  if (!isExpectedClientNoise(e)) logNonFatal(e, st);
                 }
               }
             }

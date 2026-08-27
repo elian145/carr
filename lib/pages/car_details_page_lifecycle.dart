@@ -21,7 +21,14 @@ mixin _CarDetailsPageLifecycle on _CarDetailsPageMedia {
       if (!mounted) return;
       for (final url in urls) {
         if (url.isEmpty) continue;
-        precacheImage(listingCachedNetworkImageProvider(url), context);
+        unawaited(() async {
+          try {
+            await precacheImage(
+              listingCachedNetworkImageProvider(url),
+              context,
+            );
+          } catch (_) {}
+        }());
       }
     });
   }

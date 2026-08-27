@@ -202,16 +202,19 @@ class _SmartListingCardImageState extends State<_SmartListingCardImage> {
         ? FileImage(File(widget.slot.filePath!))
         : listingCachedNetworkImageProvider(widget.slot.url!);
     final stream = provider.resolve(createLocalImageConfiguration(context));
-    _listener = ImageStreamListener((info, _) {
-      if (!mounted) return;
-      final width = info.image.width;
-      final height = info.image.height;
-      if (width == _width && height == _height) return;
-      setState(() {
-        _width = width;
-        _height = height;
-      });
-    });
+    _listener = ImageStreamListener(
+      (info, _) {
+        if (!mounted) return;
+        final width = info.image.width;
+        final height = info.image.height;
+        if (width == _width && height == _height) return;
+        setState(() {
+          _width = width;
+          _height = height;
+        });
+      },
+      onError: (Object _, StackTrace? _) {},
+    );
     _stream = stream;
     stream.addListener(_listener!);
   }

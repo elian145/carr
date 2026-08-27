@@ -5,6 +5,7 @@ import '../../theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../shared/debug/app_log.dart';
+import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_image_media.dart';
 import 'listing_hero_focus.dart';
 import 'listing_network_image.dart';
@@ -117,7 +118,9 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
         }
         if (!mounted) return;
         setState(() => _failed = true);
-        _scheduleRetry();
+        if (!isPermanentHttpImageError(error)) {
+          _scheduleRetry();
+        }
       },
     );
     stream.addListener(listener);

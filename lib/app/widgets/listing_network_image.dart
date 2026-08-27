@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../shared/debug/app_log.dart';
+import '../../shared/debug/expected_client_noise.dart';
 
 /// Cached [ImageProvider] for remote listing / media URLs (avatars, covers, precache).
 ImageProvider listingCachedNetworkImageProvider(String url) =>
@@ -194,13 +195,16 @@ class _RetryingListingNetworkImageState
           fadeInDuration: const Duration(milliseconds: 120),
           fadeOutDuration: const Duration(milliseconds: 80),
           placeholder: (context, _) => _defaultPlaceholder(),
+          errorListener: (_) {},
           errorWidget: (context, _, error) {
             try {
               appLog('Listing image failed (attempt=$_attempt)');
             } catch (e, st) {
               logNonFatal(e, st, 'ListingNetworkImage.error');
             }
-            _scheduleRetry();
+            if (!isPermanentHttpImageError(error)) {
+              _scheduleRetry();
+            }
             return _defaultError();
           },
         );

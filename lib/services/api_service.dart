@@ -9,6 +9,7 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/phone/phone_normalizer.dart';
 import 'api_exception.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/debug/expected_client_noise.dart';
 
 export 'api_exception.dart';
 
@@ -75,8 +76,18 @@ class ApiService {
   /// Optional hook when [clearTokens] runs outside [AuthService.logout].
   static void Function()? onTokensCleared;
 
-  static final http.Client _productionHttpClient = http.Client();
+  static http.Client _productionHttpClient = http.Client();
   static http.Client? _testHttpClient;
+
+  /// Replace the shared [http.Client] after iOS reclaims keep-alive sockets.
+  static void recycleProductionHttpClient() {
+    if (_testHttpClient != null) return;
+    final previous = _productionHttpClient;
+    _productionHttpClient = http.Client();
+    try {
+      previous.close();
+    } catch (_) {}
+  }
 
   /// Widget/integration tests: route API calls through [FakeApiServer] mock client.
   @visibleForTesting
@@ -91,11 +102,18 @@ class ApiService {
   static bool get isTestHttpClientBound => _testHttpClient != null;
 
   /// Shared GET helper for services that are not yet on [ApiService] endpoints.
+  ///
+  /// Uses the adaptive warm/cold timeout unless [timeout] is passed.
   static Future<http.Response> getHttp(
     Uri uri, {
-    Duration timeout = const Duration(seconds: 8),
+    Duration? timeout,
+    Map<String, String>? headers,
   }) {
-    return _httpClient.get(uri).timeout(timeout);
+    return _ApiServiceHttp._getWithAdaptiveTimeout(
+      uri,
+      timeout: timeout,
+      headers: headers,
+    );
   }
 
   static http.Client get _httpClient =>

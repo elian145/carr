@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -32,6 +33,8 @@ class TrustConfig {
           );
         }
       }
+    } on TimeoutException catch (e) {
+      appLog('TrustConfig.load timed out: $e');
     } catch (e, st) { logNonFatal(e, st); }
 
     _cached = TrustConfigData(

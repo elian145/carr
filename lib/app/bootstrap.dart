@@ -17,6 +17,7 @@ import '../state/locale_controller.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../features/sell/sell_pending_media_resume.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/debug/expected_client_noise.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
 
@@ -28,6 +29,22 @@ Future<void> bootstrapAndRun(Widget app) async {
         options.dsn = dsn;
         options.environment = kReleaseMode ? 'production' : 'development';
         options.tracesSampleRate = 0.0;
+        options.beforeSend = (event, hint) {
+          final throwable = event.throwable;
+          if (throwable != null && isExpectedClientNoise(throwable)) {
+            return null;
+          }
+          final exceptions = event.exceptions;
+          if (exceptions != null) {
+            for (final ex in exceptions) {
+              final value = ex.value;
+              if (value != null && isExpectedClientNoise(value)) {
+                return null;
+              }
+            }
+          }
+          return event;
+        };
       },
       appRunner: () => _runZonedApp(app),
     );
@@ -48,6 +65,7 @@ void _runZonedApp(Widget app) {
       }
 
       FlutterError.onError = (FlutterErrorDetails details) async {
+        if (isExpectedClientNoise(details.exception)) return;
         await _captureStartupError(details.exception, details.stack);
         FlutterError.presentError(details);
       };
@@ -118,6 +136,7 @@ void _runZonedApp(Widget app) {
       });
     },
     (error, stack) async {
+      if (isExpectedClientNoise(error)) return;
       await _captureStartupError(error, stack);
       if (kDebugMode) {
         // ignore: avoid_print
@@ -128,6 +147,7 @@ void _runZonedApp(Widget app) {
 }
 
 Future<void> _captureStartupError(Object error, StackTrace? stack) async {
+  if (isExpectedClientNoise(error)) return;
   try {
     final sp = await SharedPreferences.getInstance();
     await sp.setString('last_startup_error', error.toString());

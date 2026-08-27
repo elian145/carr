@@ -19,6 +19,16 @@ abstract final class _ApiServiceHttp {
     return entry.response;
   }
 
+  static Future<T> _withStaleClientRetry<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } catch (e) {
+      if (!isStaleHttpClientError(e)) rethrow;
+      ApiService.recycleProductionHttpClient();
+      return await action();
+    }
+  }
+
   /// GET with adaptive timeout; on cold-start timeout, return fresh-enough cache.
   static Future<http.Response> _getWithAdaptiveTimeout(
     Uri url, {
@@ -27,27 +37,25 @@ abstract final class _ApiServiceHttp {
   }) async {
     final cacheKey = url.toString();
     final effectiveTimeout = timeout ?? ApiService.requestTimeout();
+    Future<http.Response> sendOnce(Duration t) {
+      return _withStaleClientRetry(
+        () => ApiService._httpClient.get(url, headers: headers).timeout(t),
+      );
+    }
+
     try {
-      final response = await ApiService._httpClient
-          .get(url, headers: headers)
-          .timeout(effectiveTimeout);
+      final response = await sendOnce(effectiveTimeout);
       _cacheGetResponse(cacheKey, response);
       return response;
     } on TimeoutException {
       final stale = _cachedGetIfFresh(cacheKey);
       if (stale != null) {
-        logNonFatal(
-          TimeoutException('GET $cacheKey'),
-          StackTrace.current,
-          'ApiService.GET stale-while-revalidate',
-        );
+        appLog('ApiService.GET stale-while-revalidate $cacheKey');
         return stale;
       }
       // One cold-start retry when we had used the warm budget.
       if (effectiveTimeout < ApiService._coldTimeout) {
-        final response = await ApiService._httpClient
-            .get(url, headers: headers)
-            .timeout(ApiService._coldTimeout);
+        final response = await sendOnce(ApiService._coldTimeout);
         _cacheGetResponse(cacheKey, response);
         return response;
       }
@@ -61,14 +69,18 @@ abstract final class _ApiServiceHttp {
   }) async {
     final effectiveTimeout = timeout ?? ApiService.requestTimeout();
     try {
-      final response = await send().timeout(effectiveTimeout);
+      final response = await _withStaleClientRetry(
+        () => send().timeout(effectiveTimeout),
+      );
       if (response.statusCode >= 200 && response.statusCode < 300) {
         ApiService._markRequestSuccess();
       }
       return response;
     } on TimeoutException {
       if (effectiveTimeout < ApiService._coldTimeout) {
-        final response = await send().timeout(ApiService._coldTimeout);
+        final response = await _withStaleClientRetry(
+          () => send().timeout(ApiService._coldTimeout),
+        );
         if (response.statusCode >= 200 && response.statusCode < 300) {
           ApiService._markRequestSuccess();
         }

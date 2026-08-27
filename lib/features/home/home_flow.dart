@@ -63,6 +63,7 @@ import '../../services/connectivity_service.dart';
 import '../../services/home_interest_service.dart';
 import '../../services/saved_search_service.dart';
 import '../../shared/debug/app_log.dart';
+import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/i18n/digits.dart';
 import '../../shared/i18n/listing_field_labels.dart';
 import '../../shared/i18n/listing_value_labels.dart';

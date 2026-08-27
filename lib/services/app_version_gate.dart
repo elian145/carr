@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -45,6 +46,8 @@ class AppVersionGate {
           FeatureFlags.applyFromAppConfigJson(map);
         }
       }
+    } on TimeoutException catch (e) {
+      appLog('AppVersionGate.load timed out: $e');
     } catch (e, st) {
       logNonFatal(e, st, 'AppVersionGate.load');
     }
