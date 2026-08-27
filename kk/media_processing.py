@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import logging
 import os
 from io import BytesIO
@@ -38,6 +40,35 @@ def _r2_public_base() -> str:
     return (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
 
 
+def media_owner_tag(owner_public_id: str | None) -> str | None:
+    """Key prefix that marks a stored object as belonging to one seller.
+
+    Photos are stored before the listing row exists, so ``/images/attach`` has
+    no CarImage row to check ownership against. The prefix is an HMAC of the
+    seller's public id, so a scraper who sees someone else's photo URL cannot
+    produce a URL that carries their own prefix.
+    """
+    owner = (owner_public_id or "").strip()
+    if not owner:
+        return None
+    secret = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    if not secret:
+        return None
+    digest = hmac.new(secret, f"media-owner:{owner}".encode("utf-8"), hashlib.sha256)
+    return f"u{digest.hexdigest()[:16]}"
+
+
+def media_key_owner_prefix_matches(key: str, owner_public_id: str | None) -> bool:
+    """True when ``key`` carries the owner prefix for ``owner_public_id``."""
+    expected = media_owner_tag(owner_public_id)
+    if not expected:
+        return False
+    parts = (key or "").strip("/").split("/")
+    if len(parts) < 3:
+        return False
+    return hmac.compare_digest(parts[1], expected)
+
+
 def _allow_local_upload_fallback() -> bool:
     """
     Whether writing listing images to local disk is allowed.
@@ -60,12 +91,20 @@ def _allow_local_upload_fallback() -> bool:
     return _persistent_upload_folder_configured()
 
 
-def persist_jpeg_bytes(out_bytes: bytes, *, object_filename: str) -> str:
+def persist_jpeg_bytes(
+    out_bytes: bytes,
+    *,
+    object_filename: str,
+    owner_public_id: str | None = None,
+) -> str:
     """
     Persist optimized JPEG bytes to R2 (preferred) or local UPLOAD_FOLDER.
 
     Returns a public HTTPS URL when R2_PUBLIC_URL is set, otherwise a relative
     ``uploads/car_photos/...`` path for local/static serving.
+
+    ``owner_public_id`` adds an owner prefix to the R2 key so the seller can
+    attach the object to a listing they create afterwards.
     """
     final_rel_local = os.path.join("uploads", "car_photos", object_filename).replace(
         "\\", "/"
@@ -81,7 +120,12 @@ def persist_jpeg_bytes(out_bytes: bytes, *, object_filename: str) -> str:
         try:
             from .r2_ops import r2_put_bytes
 
-            bucket_key = f"car_photos/{object_filename}"
+            owner_tag = media_owner_tag(owner_public_id)
+            bucket_key = (
+                f"car_photos/{owner_tag}/{object_filename}"
+                if owner_tag
+                else f"car_photos/{object_filename}"
+            )
             r2_put_bytes(
                 key=bucket_key,
                 body=out_bytes,
@@ -156,7 +200,13 @@ def blur_image_bytes(raw_bytes: bytes, ext: str, *, skip_blur: bool = False) -> 
     return out_bytes
 
 
-def process_and_store_image(file_storage, inline_base64: bool, *, skip_blur: bool = False):
+def process_and_store_image(
+    file_storage,
+    inline_base64: bool,
+    *,
+    skip_blur: bool = False,
+    owner_public_id: str | None = None,
+):
     """
     Save one uploaded image into `kk/static/uploads/car_photos/` as an optimized JPEG.
 
@@ -215,7 +265,11 @@ def process_and_store_image(file_storage, inline_base64: bool, *, skip_blur: boo
 
         # Persist the optimized bytes: prefer Cloudflare R2 when configured,
         # otherwise fall back to local filesystem under /static/uploads.
-        final_rel = persist_jpeg_bytes(out_bytes, object_filename=final_filename)
+        final_rel = persist_jpeg_bytes(
+            out_bytes,
+            object_filename=final_filename,
+            owner_public_id=owner_public_id,
+        )
 
         if inline_base64:
             try:

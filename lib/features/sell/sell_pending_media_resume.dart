@@ -32,12 +32,8 @@ class SellPendingMediaResume {
           ? Map<String, dynamic>.from(rawCarData.cast<String, dynamic>())
           : <String, dynamic>{};
 
-      // If any media already landed, skip to avoid duplicate uploads.
-      if (await SellListingMediaUpload.listingAlreadyHasMedia(carId)) {
-        await SellPendingMediaPrefs.clear();
-        return true;
-      }
-
+      // Duplicate listing photos are skipped inside uploadForCar. Do not bail
+      // out just because *some* image already landed — videos/damage may remain.
       await SellListingMediaUpload.uploadForCar(
         carId: carId,
         carData: carData,

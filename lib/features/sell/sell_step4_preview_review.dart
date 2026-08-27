@@ -51,6 +51,7 @@ class _SellReviewCarDetailScrollViewState
 
   final PageController _pageController = PageController();
   int _currentMediaIndex = 0;
+  Map<String, dynamic>? _lastNonEmptyCar;
 
   @override
   void dispose() {
@@ -58,28 +59,46 @@ class _SellReviewCarDetailScrollViewState
     super.dispose();
   }
 
-  List<_PreviewMediaEntry> _buildMediaList() {
-    final imgs = widget.carData['images'];
-    final vids = widget.carData['videos'];
+  /// Live wizard data, so edits on earlier steps show up here.
+  ///
+  /// Submitting clears the parent's draft data while this page is still on
+  /// screen; fall back to the data this page was built with so the review never
+  /// blanks out into a placeholder car.
+  /// Live wizard data, so edits on earlier steps show up here.
+  ///
+  /// Mid-submit draft clearing must not blank this preview: prefer live parent
+  /// data when present, otherwise keep the last non-empty snapshot.
+  Map<String, dynamic> _reviewCar(BuildContext context) {
+    final parent = context.findAncestorStateOfType<_SellCarPageState>();
+    final live = parent?.carData;
+    if (live != null && live.isNotEmpty) {
+      _lastNonEmptyCar = Map<String, dynamic>.from(live);
+      return live;
+    }
+    if (widget.carData.isNotEmpty) {
+      _lastNonEmptyCar = Map<String, dynamic>.from(widget.carData);
+      return widget.carData;
+    }
+    return _lastNonEmptyCar ?? widget.carData;
+  }
+
+  List<_PreviewMediaEntry> _buildMediaList(Map<String, dynamic> car) {
+    final imgs = car['images'];
+    final vids = car['videos'];
     final il = imgs is List
         ? sellImagesWithPrimaryFirst(
-            SellDraftMediaPersistence.resolveDynamicMediaList(
-              List<dynamic>.from(imgs),
-            ),
-            primaryIndex: sellPrimaryImageIndex(
-              widget.carData,
-              length: imgs.length,
-            ),
+            List<dynamic>.from(imgs),
+            primaryIndex: sellPrimaryImageIndex(car, length: imgs.length),
           )
         : const <dynamic>[];
-    final vl = vids is List
-        ? SellDraftMediaPersistence.resolveDynamicMediaList(
-            List<dynamic>.from(vids),
-          )
-        : const <dynamic>[];
+    final vl = vids is List ? List<dynamic>.from(vids) : const <dynamic>[];
     return [
-      ...il.map((e) => _PreviewMediaEntry(isVideo: false, item: e)),
-      ...vl.map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
+      ...il
+          .where((e) => ListingImageMedia.source(e).isNotEmpty)
+          .map((e) => _PreviewMediaEntry(isVideo: false, item: e)),
+      ...vl
+          .where((e) => ListingImageMedia.source(e).isNotEmpty)
+          .map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
     ];
   }
 
@@ -98,8 +117,8 @@ class _SellReviewCarDetailScrollViewState
     const lineHeight = 1.15;
     const singleLine = fontSize * lineHeight;
 
-    final modelName = _sellReviewListingModel(context, widget.carData);
-    final hasPrice = _sellReviewHasPrice(widget.carData);
+    final modelName = _sellReviewListingModel(context, _reviewCar(context));
+    final hasPrice = _sellReviewHasPrice(_reviewCar(context));
     if (modelName.isEmpty) return singleLine;
 
     final textDir = Directionality.of(context);
@@ -107,7 +126,7 @@ class _SellReviewCarDetailScrollViewState
     if (hasPrice) {
       final pricePainter = TextPainter(
         text: TextSpan(
-          text: formatCurrency(context, widget.carData['price']),
+          text: formatCurrency(context, _reviewCar(context)['price']),
           style: const TextStyle(
             fontSize: fontSize,
             fontWeight: FontWeight.w700,
@@ -140,7 +159,7 @@ class _SellReviewCarDetailScrollViewState
   }
 
   double _titleContentHeight(BuildContext context) {
-    final car = widget.carData;
+    final car = _reviewCar(context);
     final bool hasQuickSell =
         car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
     final bool hasModelOrPrice =
@@ -192,7 +211,7 @@ class _SellReviewCarDetailScrollViewState
   }
 
   Widget _buildVideoCarouselSlide(dynamic item) {
-    final String path = item is XFile ? item.path : item.toString().trim();
+    final String path = ListingImageMedia.source(item);
     final bool isLocalFile =
         path.isNotEmpty &&
         !path.startsWith('http://') &&
@@ -243,30 +262,10 @@ class _SellReviewCarDetailScrollViewState
   Widget _buildMediaSlide(_PreviewMediaEntry slot) {
     if (slot.isVideo) return _buildVideoCarouselSlide(slot.item);
     final item = slot.item;
-    final local = ListingImageMedia.localFile(item);
-    final alignment = ListingImageMedia.coverAlignment(item);
-    if (local != null) {
-      return Image.file(
-        File(local.path),
-        fit: BoxFit.cover,
-        alignment: alignment,
-        width: double.infinity,
-        errorBuilder: (context, error, stackTrace) => Container(
-          color: Colors.grey[900],
-          child: Icon(
-            Icons.broken_image_outlined,
-            size: 48,
-            color: Colors.grey[400],
-          ),
-        ),
-      );
-    }
-    final url = ListingImageMedia.source(item);
-    final fullUrl = url.startsWith('http') ? url : _buildFullImageUrl(url);
     return _listingNetworkImage(
-      fullUrl,
+      ListingImageMedia.source(item),
       fit: BoxFit.cover,
-      alignment: alignment,
+      alignment: ListingImageMedia.coverAlignment(item),
       width: double.infinity,
     );
   }
@@ -303,7 +302,7 @@ class _SellReviewCarDetailScrollViewState
   }
 
   Widget _buildTitleHeader(BuildContext context, bool isLightShell) {
-    final car = widget.carData;
+    final car = _reviewCar(context);
     final brandStr = _sellReviewListingBrand(context, car);
     final modelStr = _sellReviewListingModel(context, car);
     final hasPrice = _sellReviewHasPrice(car);
@@ -529,8 +528,8 @@ class _SellReviewCarDetailScrollViewState
   @override
   Widget build(BuildContext context) {
     final isLightShell = Theme.of(context).brightness == Brightness.light;
-    final car = widget.carData;
-    final media = _buildMediaList();
+    final car = _reviewCar(context);
+    final media = _buildMediaList(car);
     final rawImages = car['images'] is List ? (car['images'] as List) : [];
     final titleContentHeight = _titleContentHeight(context);
     final heroPhotoHeight = _heroPhotoHeight(context);

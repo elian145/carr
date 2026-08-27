@@ -43,13 +43,10 @@ class _ListingPreviewMediaViewerPageState
     super.dispose();
   }
 
-  String _asPathOrUrl(dynamic item) {
-    if (item is XFile) return item.path;
-    return item.toString().trim();
-  }
+  String _asPathOrUrl(dynamic item) => ListingImageMedia.source(item);
 
   bool _looksLikeLocalPath(String s) {
-    final v = s.trim();
+    final v = ListingImageMedia.source(s);
     if (v.isEmpty) return false;
     if (v.startsWith('http://') || v.startsWith('https://')) return false;
     if (v.startsWith('/')) return true;
@@ -58,10 +55,11 @@ class _ListingPreviewMediaViewerPageState
   }
 
   Widget _buildImage(dynamic item) {
-    if (item is XFile) {
-      return _ZoomableFileImage(path: item.path);
+    final local = ListingImageMedia.localFile(item);
+    if (local != null) {
+      return _ZoomableFileImage(path: local.path);
     }
-    final raw = item.toString().trim();
+    final raw = ListingImageMedia.source(item);
     if (raw.isEmpty) {
       return const Center(
         child: Icon(Icons.broken_image, color: Colors.white38, size: 48),

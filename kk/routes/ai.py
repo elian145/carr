@@ -184,6 +184,14 @@ def process_car_images():
             return jsonify({"error": "No image files provided"}), 400
 
         want_b64 = request.args.get("inline_base64") == "1"
+        # Sellers who keep their original plates still stage photos through this
+        # route so the photos exist before the listing row does.
+        skip_blur = (request.args.get("skip_blur") or "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
 
         # Optional async mode: enqueue work to Celery.
         if (request.args.get("async") or "").strip().lower() in ("1", "true", "yes", "on"):
@@ -205,7 +213,7 @@ def process_car_images():
                     temp_abs,
                     fs.filename,
                     want_b64,
-                    False,
+                    skip_blur,
                     owner_public_id=current_user.public_id,
                 )
                 register_job_owner(res.id, current_user.public_id)
@@ -218,7 +226,12 @@ def process_car_images():
         for fs in files:
             if not fs or not fs.filename:
                 continue
-            rel, b64 = process_and_store_image(fs, want_b64, skip_blur=False)
+            rel, b64 = process_and_store_image(
+                fs,
+                want_b64,
+                skip_blur=skip_blur,
+                owner_public_id=current_user.public_id,
+            )
             processed.append(rel)
             if want_b64 and b64:
                 processed_b64.append(b64)

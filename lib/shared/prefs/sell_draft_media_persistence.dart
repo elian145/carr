@@ -100,25 +100,51 @@ class SellDraftMediaPersistence {
       }
     }
     try {
-      final bytes = await XFile(local).readAsBytes();
-      if (bytes.isEmpty) return false;
-      await _writeBytesToFile(dest, bytes);
-      return await dest.exists();
+      final sink = dest.openWrite();
+      try {
+        await for (final chunk in XFile(local).openRead()) {
+          sink.add(chunk);
+        }
+        await sink.flush();
+      } finally {
+        await sink.close();
+      }
+      return await dest.exists() && await dest.length() > 0;
     } catch (e, st) {
       logNonFatal(e, st);
+      try {
+        if (await dest.exists()) await dest.delete();
+      } catch (_) {}
       return false;
     }
   }
 
   static Future<String> _contentKeyForLocalFile(String local) async {
     try {
-      final bytes = await XFile(local).readAsBytes();
-      if (bytes.isEmpty) return Object.hashAll([local]).abs().toString();
-      final sampleLen = bytes.length < 16384 ? bytes.length : 16384;
-      return Object.hash(
-        bytes.length,
-        Object.hashAll(bytes.sublist(0, sampleLen)),
-      ).abs().toString();
+      int length = 0;
+      List<int> sample = const [];
+      final file = File(local);
+      if (await file.exists()) {
+        length = await file.length();
+        final raf = await file.open();
+        try {
+          sample = await raf.read(16384);
+        } finally {
+          await raf.close();
+        }
+      } else {
+        final xf = XFile(local);
+        length = await xf.length();
+        await for (final chunk in xf.openRead(0, 16384)) {
+          sample = [...sample, ...chunk];
+          if (sample.length >= 16384) {
+            sample = sample.sublist(0, 16384);
+            break;
+          }
+        }
+      }
+      if (length <= 0) return Object.hashAll([local]).abs().toString();
+      return Object.hash(length, Object.hashAll(sample)).abs().toString();
     } catch (e, st) {
       logNonFatal(e, st);
       return Object.hashAll([local]).abs().toString();
@@ -147,7 +173,9 @@ class SellDraftMediaPersistence {
 
     final dir = await _draftDir(draftId);
     final ext = p.extension(local);
-    final safeExt = ext.isEmpty ? '.jpg' : ext;
+    final safeExt = ext.isEmpty
+        ? (namePrefix.startsWith('video') ? '.mp4' : '.jpg')
+        : ext;
     final contentKey = await _contentKeyForLocalFile(local);
     final dest = File(p.join(dir.path, '${namePrefix}_$contentKey$safeExt'));
     final normSrc = p.normalize(local);
@@ -396,10 +424,15 @@ class SellDraftMediaPersistence {
           resolved = item is Map
               ? ListingImageMedia.map(item, source: local)
               : XFile(local);
-        } else if (includeMissingLocalPaths && _isUnderSellDraftMedia(local)) {
+        } else if (local.startsWith('content://') ||
+            includeMissingLocalPaths ||
+            _isUnderSellDraftMedia(local) ||
+            p.isAbsolute(local)) {
+          // Android picker/cache paths often fail File.existsSync even when
+          // XFile can still read them. Keep them so review/upload can proceed.
           resolved = item is Map
               ? ListingImageMedia.map(item, source: local)
-              : XFile(local);
+              : (item is XFile ? item : XFile(local));
         } else {
           continue;
         }

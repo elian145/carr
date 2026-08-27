@@ -321,9 +321,11 @@ abstract final class _ApiServiceHttp {
         return http.Response.fromStream(streamed);
       }
 
-      var response = await sendOnce();
+      // Recycle a dead socket, but do not retry timeouts here: the server may
+      // have already stored the files and a second POST would duplicate them.
+      var response = await _withStaleClientRetry(sendOnce);
       if (response.statusCode == 401 && await _refreshAccessToken()) {
-        response = await sendOnce();
+        response = await _withStaleClientRetry(sendOnce);
       }
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return _decodeMapBody(

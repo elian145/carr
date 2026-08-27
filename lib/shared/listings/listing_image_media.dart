@@ -16,7 +16,18 @@ abstract final class ListingImageMedia {
           .toString()
           .trim();
     }
-    return item?.toString().trim() ?? '';
+    return _unwrapMapToString(item?.toString().trim() ?? '');
+  }
+
+  /// Dart [Map.toString] leak: `{source: /var/mobile/...}`.
+  static String _unwrapMapToString(String raw) {
+    if (raw.isEmpty) return '';
+    if (raw.startsWith('{') && raw.contains('source:')) {
+      final match = RegExp(r'source:\s*([^,}]+)').firstMatch(raw);
+      final extracted = match?.group(1)?.trim() ?? '';
+      if (extracted.isNotEmpty) return extracted;
+    }
+    return raw;
   }
 
   static int? id(dynamic item) {
@@ -100,6 +111,20 @@ abstract final class ListingImageMedia {
       return null;
     }
     return XFile(raw);
+  }
+
+  /// Reconstructs local [XFile]s from picker files, path strings, or draft maps.
+  static List<XFile> localFiles(Iterable<dynamic> items) {
+    final out = <XFile>[];
+    final seen = <String>{};
+    for (final item in items) {
+      final file = localFile(item);
+      if (file == null) continue;
+      final key = file.path;
+      if (key.isEmpty || !seen.add(key)) continue;
+      out.add(file);
+    }
+    return out;
   }
 
   static Alignment coverAlignment(dynamic item) {

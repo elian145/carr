@@ -47,8 +47,12 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
       listingHeroAlignmentFor(widget.detectionSource ?? const {});
 
   String _fallbackUrl(String url) {
+    final resolved = ListingImageMedia.source(url);
+    if (!resolved.startsWith('http://') && !resolved.startsWith('https://')) {
+      return resolved;
+    }
     try {
-      final uri = Uri.parse(url);
+      final uri = Uri.parse(resolved);
       final path = uri.path;
       if (path.contains('/static/uploads/') &&
           !path.contains('/static/uploads/car_photos/')) {
@@ -60,10 +64,10 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
           return uri.replace(path: newPath).toString();
         }
       }
-    } catch (e, st) {
-      logNonFatal(e, st);
+    } catch (e) {
+      appLog('Hero listing image fallback skipped: $e');
     }
-    return url;
+    return resolved;
   }
 
   String get _effectiveUrl {
@@ -74,7 +78,7 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
   void _scheduleRetry() {
     if (_attempt >= _maxRetries || _retryScheduled) return;
     _retryScheduled = true;
-    final delayMs = 700 * (1 << _attempt).clamp(1, 8);
+    final delayMs = 1000 * (1 << _attempt).clamp(1, 8);
     _retryTimer?.cancel();
     _retryTimer = Timer(Duration(milliseconds: delayMs), () {
       if (!mounted) return;
@@ -95,7 +99,10 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
       _failed = true;
       return;
     }
-    final provider = listingCachedNetworkImageProvider(_effectiveUrl);
+    final provider = listingCachedNetworkImageProvider(
+      _effectiveUrl,
+      cacheKey: _attempt == 0 ? null : '$_attempt|$_effectiveUrl',
+    );
     final stream = provider.resolve(const ImageConfiguration());
     late final ImageStreamListener listener;
     listener = ImageStreamListener(
@@ -118,7 +125,8 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
         }
         if (!mounted) return;
         setState(() => _failed = true);
-        if (!isPermanentHttpImageError(error)) {
+        if (!isPermanentHttpImageError(error) &&
+            !isUnparseableImageUrlError(error)) {
           _scheduleRetry();
         }
       },

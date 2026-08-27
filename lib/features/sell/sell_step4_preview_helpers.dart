@@ -24,7 +24,7 @@ extension _ListingPreviewWidgetHelpers on _ListingPreviewWidgetState {
   }
 
   Widget _buildVideoCarouselSlide(dynamic item) {
-    final String path = item is XFile ? item.path : item.toString().trim();
+    final String path = ListingImageMedia.source(item);
     final bool isLocalFile =
         path.isNotEmpty &&
         !path.startsWith('http://') &&

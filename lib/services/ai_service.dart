@@ -183,9 +183,14 @@ class AiService {
   /// Blur/store images on the server (single request) and return both:
   /// - `paths`: server-relative paths (e.g. uploads/car_photos/processed_...jpg)
   /// - `base64`: data URIs (image/jpeg) for immediate local preview without downloading static URLs.
+  ///
+  /// Pass [skipBlur] to store the photos untouched (sellers who keep their
+  /// original plates still stage photos so they exist before the listing row).
   static Future<Map<String, List<String>>?> processCarImagesToServerPayload(
-    List<XFile> imageFiles,
-  ) async {
+    List<XFile> imageFiles, {
+    bool skipBlur = false,
+    bool inlineBase64 = true,
+  }) async {
     if (imageFiles.isEmpty) {
       return {'paths': const <String>[], 'base64': const <String>[]};
     }
@@ -199,7 +204,9 @@ class AiService {
     // which can cause "connection closed while receiving data" on mobile/dev servers.
     Future<Map<String, List<String>>?> sendBatch(List<XFile> batch) async {
       final url = Uri.parse(
-        '${apiBaseApi()}/process-car-images?inline_base64=1',
+        '${apiBaseApi()}/process-car-images'
+        '?inline_base64=${inlineBase64 ? 1 : 0}'
+        '${skipBlur ? '&skip_blur=1' : ''}',
       );
       final request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer $token';

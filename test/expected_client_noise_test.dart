@@ -14,21 +14,35 @@ void main() {
       );
     });
 
-    test('drops listing photo 404s', () {
-      expect(
-        isPermanentHttpImageError(
+    test('retries listing photo 404s but still drops them from Sentry', () {
+      const notFound =
           'HttpException: Invalid statusCode: 404, uri = '
-          'https://example.com/static/uploads/car_photos/preview.jpg',
-        ),
+          'https://example.com/static/uploads/car_photos/preview.jpg';
+      expect(isPermanentHttpImageError(notFound), isFalse);
+      expect(isListingImageNotFoundError(notFound), isTrue);
+      expect(isExpectedClientNoise(notFound), isTrue);
+    });
+
+    test('treats listing photo 403 as permanent', () {
+      const forbidden =
+          'HttpException: Invalid statusCode: 403, uri = '
+          'https://example.com/static/uploads/car_photos/preview.jpg';
+      expect(isPermanentHttpImageError(forbidden), isTrue);
+      expect(isExpectedClientNoise(forbidden), isTrue);
+    });
+
+    test('retries transient upload network errors', () {
+      expect(
+        isTransientNetworkError('TimeoutException after 0:03:00.000000:'),
         isTrue,
       );
       expect(
-        isExpectedClientNoise(
-          'HttpException: Invalid statusCode: 404, uri = '
-          'https://example.com/static/uploads/car_photos/preview.jpg',
+        isTransientNetworkError(
+          'SocketException: Failed host lookup: carr-5hrm.onrender.com',
         ),
         isTrue,
       );
+      expect(isTransientNetworkError(StateError('boom')), isFalse);
     });
 
     test('drops iOS bad file descriptor after background', () {
@@ -49,6 +63,26 @@ void main() {
     test('does not drop unrelated errors', () {
       expect(isExpectedClientNoise(StateError('boom')), isFalse);
       expect(isPermanentHttpImageError('SocketException: timed out'), isFalse);
+    });
+
+    test('drops Uri.parse of local media map leaks', () {
+      expect(
+        isUnparseableImageUrlError(
+          const FormatException(
+            'Scheme not starting with alphabetic character (at character 1)\n'
+            '{source: /var/mobile/Containers/Data/Application/ABC/tmp.jpg}',
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        isExpectedClientNoise(
+          const FormatException(
+            'Scheme not starting with alphabetic character (at character 1)',
+          ),
+        ),
+        isTrue,
+      );
     });
   });
 

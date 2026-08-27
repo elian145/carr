@@ -9,7 +9,11 @@ from flask_jwt_extended import jwt_required
 from werkzeug.utils import safe_join
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
-from ..media_processing import process_and_store_image
+from ..media_processing import (
+    media_key_owner_prefix_matches,
+    media_owner_tag,
+    process_and_store_image,
+)
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
 
@@ -116,6 +120,23 @@ def _http_url_owned_by_user(url: str, user_id: int) -> bool:
         .first()
         is not None
     )
+
+
+def _http_url_staged_by_user(url: str, owner_public_id: str | None) -> bool:
+    """True if this URL is an object this seller uploaded but hasn't attached yet.
+
+    Sellers stage listing photos before the car row exists (so the photos land
+    with the listing instead of trailing behind it), which means there is no
+    CarImage row to prove ownership. The object key carries an HMAC of the
+    seller's public id instead.
+    """
+    public_base = _r2_public_base()
+    if not public_base:
+        return False
+    prefix = public_base.rstrip("/") + "/"
+    if not (url or "").startswith(prefix):
+        return False
+    return media_key_owner_prefix_matches(url[len(prefix) :], owner_public_id)
 
 
 def _upload_video_file_to_r2(file_storage) -> str:
@@ -402,16 +423,20 @@ def r2_sign_upload():
             raw_name = "image.jpg" if asset != "video" else "clip.mp4"
         ext = os.path.splitext(raw_name)[1].lower()
 
+        # Owner prefix lets the seller attach this object to a listing they
+        # create later, before any CarImage row exists to prove ownership.
+        owner_tag = media_owner_tag(current_user.public_id)
+        owner_segment = f"{owner_tag}/" if owner_tag else ""
         if asset == "video":
             if ext not in {".mp4", ".mov", ".avi", ".mkv", ".webm"}:
                 ext = ".mp4"
-            key = f"car_videos/{secrets.token_hex(8)}{ext}"
+            key = f"car_videos/{owner_segment}{secrets.token_hex(8)}{ext}"
             default_ct = _video_content_type_for_ext(ext)
             max_bytes = _R2_VIDEO_MAX_BYTES
         else:
             if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"}:
                 ext = ".jpg"
-            key = f"car_photos/{secrets.token_hex(8)}{ext}"
+            key = f"car_photos/{owner_segment}{secrets.token_hex(8)}{ext}"
             default_ct = "image/jpeg"
             max_bytes = _R2_IMAGE_MAX_BYTES
 
@@ -517,7 +542,12 @@ def upload_car_images(car_id: str):
                 skip_reasons.append(msg or "Invalid file")
                 continue
 
-            rel_path, _b64 = process_and_store_image(fs, inline_base64=False, skip_blur=skip_blur)
+            rel_path, _b64 = process_and_store_image(
+                fs,
+                inline_base64=False,
+                skip_blur=skip_blur,
+                owner_public_id=current_user.public_id,
+            )
             listing_n = _count_listing_images(car)
             is_primary = upload_kind == "listing" and listing_n == 0
             car_image = CarImage(
@@ -639,8 +669,12 @@ def attach_car_images(car_id: str):
                 if rel_str.lower().startswith("http://") or rel_str.lower().startswith("https://"):
                     if not _allowed_attach_media_url(rel_str):
                         continue
-                    if not current_user.is_admin and not _http_url_owned_by_user(
-                        rel_str, current_user.id
+                    if (
+                        not current_user.is_admin
+                        and not _http_url_owned_by_user(rel_str, current_user.id)
+                        and not _http_url_staged_by_user(
+                            rel_str, current_user.public_id
+                        )
                     ):
                         continue
                     listing_n = _count_listing_images(car)

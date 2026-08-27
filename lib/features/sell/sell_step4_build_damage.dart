@@ -26,9 +26,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                   const spacing = 8.0;
                   return GridView.builder(
                     key: ValueKey(
-                      _damageImages
-                          .map((e) => e is XFile ? e.path : e.toString())
-                          .join('|'),
+                      _damageImages.map(ListingImageMedia.source).join('|'),
                     ),
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -42,8 +40,8 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                     itemCount: _damageImages.length,
                     itemBuilder: (context, index) {
                       final image = _damageImages[index];
-                      final keyStr =
-                          image is XFile ? image.path : image.toString();
+                      final keyStr = ListingImageMedia.source(image);
+                      final localFile = ListingImageMedia.localFile(image);
                       return Stack(
                         key: ValueKey('dmg_$keyStr'),
                         children: [
@@ -52,7 +50,12 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                               Navigator.of(context).push(
                                 AppPageRoute(
                                   builder: (_) => ListingPreviewGalleryPage(
-                                    imageFilesOrUrls: _damageImages,
+                                    imageFilesOrUrls: _damageImages.map((item) {
+                                      final local =
+                                          ListingImageMedia.localFile(item);
+                                      return local ??
+                                          ListingImageMedia.source(item);
+                                    }).toList(),
                                     initialIndex: index,
                                   ),
                                 ),
@@ -66,23 +69,28 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                                 ),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: (image is XFile)
+                              child: localFile != null
                                   ? Image.file(
-                                      File(image.path),
+                                      File(localFile.path),
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,
-                                      key: ValueKey(image.path),
+                                      key: ValueKey(localFile.path),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                        color: Colors.grey.shade200,
+                                        child: Icon(
+                                          Icons.broken_image_outlined,
+                                          color: Colors.grey.shade500,
+                                          size: 32,
+                                        ),
+                                      ),
                                     )
                                   : _listingNetworkImage(
-                                      (image
-                                              .toString()
-                                              .trim()
-                                              .startsWith('http'))
-                                          ? image.toString().trim()
-                                          : _buildFullImageUrl(
-                                              image.toString(),
-                                            ),
+                                      keyStr.startsWith('http')
+                                          ? keyStr
+                                          : _buildFullImageUrl(keyStr),
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,

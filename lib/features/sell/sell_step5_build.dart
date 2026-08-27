@@ -210,13 +210,9 @@ mixin _SellStep5Build on _SellStep5Logic {
                                             final fresh = await ApiService.getCar(
                                               submittedId!,
                                             );
-                                            final inner = fresh['car'];
-                                            if (inner is Map) {
-                                              updatedCar =
-                                                  Map<String, dynamic>.from(
-                                                inner.cast<String, dynamic>(),
-                                              );
-                                            }
+                                            // getCar already unwraps `{car: ...}`.
+                                            updatedCar =
+                                                Map<String, dynamic>.from(fresh);
                                           } catch (e, st) { logNonFatal(e, st); 
                                             updatedCar['id'] = submittedId;
                                             updatedCar['public_id'] = submittedId;

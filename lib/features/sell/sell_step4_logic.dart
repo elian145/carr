@@ -78,7 +78,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
             }
             if (data['selectedVideos'] is List) {
               stepVideos = (data['selectedVideos'] as List)
-                  .map((e) => e.toString())
+                  .map(ListingImageMedia.source)
                   .where((e) => e.trim().isNotEmpty && File(e).existsSync())
                   .map((e) => XFile(e))
                   .toList();
@@ -133,7 +133,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _damageImages = mergedDamage;
           _selectedVideos
             ..clear()
-            ..addAll(mergedVideos.whereType<XFile>());
+            ..addAll(ListingImageMedia.localFiles(mergedVideos));
           _clampPrimaryImageIndex();
           _isProcessingImages = false;
         });
@@ -153,7 +153,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData['damage_images'] =
             List<dynamic>.from(mergedDamage);
         parentState.carData['videos'] = List<XFile>.from(
-          mergedVideos.whereType<XFile>(),
+          ListingImageMedia.localFiles(mergedVideos),
         );
         parentState.carData['images_processed'] = _imagesProcessed;
         parentState.carData['primary_image_index'] = _primaryImageIndex;
@@ -246,7 +246,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _damageImages = damage;
           _selectedVideos
             ..clear()
-            ..addAll(videos.whereType<XFile>());
+            ..addAll(ListingImageMedia.localFiles(videos));
         });
       }
       final sp = await SharedPreferences.getInstance();
@@ -268,12 +268,8 @@ mixin _SellStep4Logic on _SellStep4Fields {
                     : ListingImageMedia.map(e),
               )
               .toList(),
-          'damage_images': damage
-              .map((e) => e is XFile ? e.path : e.toString())
-              .toList(),
-          'selectedVideos': videos
-              .map((e) => e is XFile ? e.path : e.toString())
-              .toList(),
+          'damage_images': damage.map(ListingImageMedia.source).toList(),
+          'selectedVideos': videos.map(ListingImageMedia.source).toList(),
           'imagesProcessed': _imagesProcessed,
           'primaryImageIndex': _primaryImageIndex,
         }),
@@ -284,7 +280,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           images: images,
           blurred: blurred,
           damage: damage,
-          videos: videos.whereType<XFile>().toList(),
+          videos: ListingImageMedia.localFiles(videos),
         );
       }
       unawaited(parentState?._saveSellDraftSnapshot());
@@ -324,14 +320,14 @@ mixin _SellStep4Logic on _SellStep4Fields {
       _damageImages = damage;
       _selectedVideos
         ..clear()
-        ..addAll(videos.whereType<XFile>());
+        ..addAll(ListingImageMedia.localFiles(videos));
     });
     _writeMediaListsToParent(
       parentState,
       images: images,
       blurred: blurred,
       damage: damage,
-      videos: videos.whereType<XFile>().toList(),
+      videos: ListingImageMedia.localFiles(videos),
     );
     if (_imagesProcessed && blurred.isNotEmpty) {
       parentState.carData['processed_image_paths'] = blurred

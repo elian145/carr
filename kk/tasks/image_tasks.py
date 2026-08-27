@@ -13,6 +13,7 @@ def _process_image_path(
     original_filename: str,
     inline_base64: bool,
     skip_blur: bool,
+    owner_public_id: str | None = None,
 ) -> dict:
     """
     Process an image already saved to disk at temp_abs.
@@ -53,7 +54,11 @@ def _process_image_path(
     except Exception:
         pass
 
-    final_rel = persist_jpeg_bytes(out_bytes, object_filename=final_filename)
+    final_rel = persist_jpeg_bytes(
+        out_bytes,
+        object_filename=final_filename,
+        owner_public_id=owner_public_id,
+    )
 
     b64 = None
     if inline_base64:
@@ -107,6 +112,7 @@ def process_car_image_file(
             original_filename=original_filename,
             inline_base64=bool(inline_base64),
             skip_blur=bool(skip_blur),
+            owner_public_id=owner,
         )
         out = {"ok": True, **res}
         if owner:

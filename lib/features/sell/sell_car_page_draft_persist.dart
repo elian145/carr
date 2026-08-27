@@ -118,6 +118,13 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     LegacySellDraftPrefs.allowPersist();
   }
 
+  /// Clears persisted draft storage after the listing exists.
+  ///
+  /// Intentionally leaves in-memory [carData] alone: wiping it mid-submit
+  /// changes the Review step's [ValueKey] and Flutter recreates the page as an
+  /// empty placeholder while upload is still running. Prefs +
+  /// [_skipDraftPersistOnDispose] are enough to avoid a draft+listing pair if
+  /// the process is killed; the sell route is disposed on navigate-away.
   Future<void> _clearSubmittedDraftOnly({String? draftId}) async {
     try {
       _skipDraftPersistOnDispose = true;
@@ -143,9 +150,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
 
       if (mounted) {
         setState(() {
-          carData = <String, dynamic>{};
           _hasDraftSnapshot = false;
-          _currentDraftId = _newSellDraftId();
         });
       }
     } catch (e, st) { logNonFatal(e, st); }
@@ -211,15 +216,15 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       }
       if (mounted) {
         setState(() {
-          carData = storedCarData;
+          _mergePersistedCarData(storedCarData);
         });
       } else {
-        carData = storedCarData;
+        _mergePersistedCarData(storedCarData);
       }
       final snapshot = <String, dynamic>{
         'draftId': _currentDraftId.isNotEmpty ? _currentDraftId : _newSellDraftId(),
         'currentStep': persistedStep,
-        'carData': _draftValue(storedCarData),
+        'carData': _draftValue(carData),
         'updatedAt': DateTime.now().millisecondsSinceEpoch,
       };
       _currentDraftId = snapshot['draftId'].toString();
@@ -233,6 +238,34 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       archive.insert(0, snapshot);
       await sp.setString(_sellDraftArchiveKey, _encodeSellDraftArchive(archive));
     } catch (e, st) { logNonFatal(e, st); }
+  }
+
+  static const _kSellMediaKeys = <String>{
+    'images',
+    'original_images',
+    'blurred_images',
+    'damage_images',
+    'original_damage_images',
+    'blurred_damage_images',
+    'videos',
+    'processed_image_paths',
+  };
+
+  /// Copy persisted draft fields onto the live [carData] map without replacing
+  /// it, and without wiping picker files when the copy-to-disk step dropped them.
+  void _mergePersistedCarData(Map<String, dynamic> stored) {
+    for (final entry in stored.entries) {
+      if (_kSellMediaKeys.contains(entry.key)) {
+        final persisted = entry.value;
+        final live = carData[entry.key];
+        final persistedEmpty = persisted is! List || persisted.isEmpty;
+        final liveHas = live is List && live.isNotEmpty;
+        if (persistedEmpty && liveHas) continue;
+        carData[entry.key] = persisted;
+      } else {
+        carData[entry.key] = entry.value;
+      }
+    }
   }
 
   Future<void> _restoreSellDraftSnapshot() async {
@@ -338,6 +371,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       if (copy[key] is List) {
         copy[key] = SellDraftMediaPersistence.resolveDynamicMediaList(
           List<dynamic>.from(copy[key] as List),
+          includeMissingLocalPaths: true,
         );
       }
     }

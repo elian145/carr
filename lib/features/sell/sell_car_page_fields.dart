@@ -66,16 +66,29 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
     final primaryIndex = carData['primary_image_index'] ?? 0;
     final dmgPart = (dmg == null || dmg is! List || dmg.isEmpty)
         ? ''
-        : dmg.map((e) => e is XFile ? e.path : e.toString()).join('|');
+        : dmg.map(ListingImageMedia.source).join('|');
     final imgPart = (imgs == null || imgs is! List || imgs.isEmpty)
         ? ''
-        : imgs.map((e) => e is XFile ? e.path : e.toString()).join('|');
+        : imgs.map(ListingImageMedia.source).join('|');
     final vidPart = (vids == null || vids is! List || vids.isEmpty)
         ? ''
-        : vids.map((e) => e is XFile ? e.path : e.toString()).join('|');
+        : vids.map(ListingImageMedia.source).join('|');
+    final specPart = [
+      carData['brand'],
+      carData['model'],
+      carData['year'],
+      carData['price'],
+      carData['mileage'],
+      carData['cylinder_count'],
+      carData['engine_size'],
+      carData['region_specs'],
+      carData['transmission'],
+      carData['fuel_type'],
+      carData['city'],
+    ].join('|');
     if (imgPart.isEmpty && vidPart.isEmpty && dmgPart.isEmpty) {
-      return '0::$blurChoice::$primaryIndex';
+      return '0::$blurChoice::$primaryIndex::$specPart';
     }
-    return '$imgPart::$vidPart::$dmgPart::$blurChoice::$primaryIndex';
+    return '$imgPart::$vidPart::$dmgPart::$blurChoice::$primaryIndex::$specPart';
   }
 }

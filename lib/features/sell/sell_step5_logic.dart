@@ -6,6 +6,34 @@ mixin _SellStep5Logic on _SellStep5Fields {
     setState(() => submitStatusMessage = message);
   }
 
+  void _adoptPreparedMedia(
+    Map<String, dynamic> live,
+    Map<String, dynamic> stored,
+  ) {
+    for (final key in ['images', 'damage_images', 'videos']) {
+      final persisted = stored[key];
+      if (persisted is List && persisted.isNotEmpty) {
+        live[key] = persisted;
+        continue;
+      }
+      // Keep the live picker / content-URI files when the disk copy dropped
+      // them, so an empty persist result never wipes the user's photos.
+      final current = live[key];
+      final liveHas = current is List && current.isNotEmpty;
+      if (!liveHas && persisted != null) live[key] = persisted;
+    }
+  }
+
+  int _listingPhotoCount(Map<String, dynamic> carData) {
+    final imgs = carData['images'];
+    if (imgs is! List) return 0;
+    var n = 0;
+    for (final item in imgs) {
+      if (ListingImageMedia.source(item).isNotEmpty) n++;
+    }
+    return n;
+  }
+
   /// Returns submit result on success so caller can navigate and show the right copy.
   Future<SellListingSubmitResult?> _submitListing(
     Map<String, dynamic> carData, {
@@ -34,6 +62,26 @@ mixin _SellStep5Logic on _SellStep5Fields {
       _setSubmitStatus(
         editId.isNotEmpty ? loc.submitting : loc.creatingListing,
       );
+
+      // Copy picker files to durable paths first. Android cache/content URIs
+      // can vanish; never replace live photos with an empty persist result.
+      final storedMedia =
+          await SellDraftMediaPersistence.prepareCarDataForStorage(
+            carData,
+            draftId: draftId,
+          );
+      _adoptPreparedMedia(carData, storedMedia);
+
+      // Upload the photos before the listing exists so creating it only has to
+      // attach URLs. Falls back to uploading after create when this fails.
+      if (_listingPhotoCount(carData) > 0) {
+        _setSubmitStatus(loc.uploadingPhotos);
+        await SellPhotoPrestage.stageCarData(carData);
+        if (!mounted) return null;
+        _setSubmitStatus(
+          editId.isNotEmpty ? loc.submitting : loc.creatingListing,
+        );
+      }
 
       String carId = '';
       var pendingReview = false;
@@ -99,24 +147,8 @@ mixin _SellStep5Logic on _SellStep5Fields {
       }
 
       if (carId.isNotEmpty) {
-        // Success - listing created or updated
-        unawaited(AppHaptics.success());
-        // Upload/attach images and wait for list refresh so the new listing has all image URLs before we show success
+        // Upload media before treating submit as done. Haptics wait until photos land.
         try {
-          // Copy media into durable draft paths BEFORE pending-prefs / draft
-          // clear so upload always has real filesystem paths (and JSON-safe
-          // pending state never needs live XFile instances).
-          final storedMedia =
-              await SellDraftMediaPersistence.prepareCarDataForStorage(
-                carData,
-                draftId: draftId,
-              );
-          carData['images'] = storedMedia['images'];
-          carData['damage_images'] = storedMedia['damage_images'];
-          carData['videos'] = storedMedia['videos'];
-
-          // Hide the draft as soon as the server listing exists so a kill
-          // during media prep/upload cannot show listing + draft.
           if (editId.isEmpty) {
             await SellPendingMediaPrefs.save(
               carId: carId,
@@ -166,6 +198,24 @@ mixin _SellStep5Logic on _SellStep5Fields {
               }
             },
           );
+
+          if (_listingPhotoCount(carData) > 0) {
+            _setSubmitStatus(loc.uploadingPhotos);
+            var hasMedia =
+                await SellListingMediaUpload.listingAlreadyHasMedia(carId);
+            for (var attempt = 0; !hasMedia && attempt < 8; attempt++) {
+              await Future<void>.delayed(
+                Duration(milliseconds: 400 * (attempt + 1)),
+              );
+              hasMedia =
+                  await SellListingMediaUpload.listingAlreadyHasMedia(carId);
+            }
+            if (!hasMedia) {
+              throw StateError(
+                'Listing photos did not finish uploading. Please try again.',
+              );
+            }
+          }
 
           // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
           if (mounted) {
@@ -239,28 +289,14 @@ mixin _SellStep5Logic on _SellStep5Fields {
           await SellPendingMediaPrefs.clear();
         } catch (e, st) {
           logNonFatal(e, st, 'sell_step5.uploadMedia');
-          // Keep pending media so a cold start can finish the upload.
-          if (!mounted) {
-            return SellListingSubmitResult(
-              id: carId,
-              pendingReview: pendingReview,
-            );
-          }
-          try {
-            final uploadLoc = AppLocalizations.of(context)!;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  uploadLoc.listingUploadPartialFail(
-                    userErrorText(context, e, fallback: uploadLoc.errorTitle),
-                  ),
-                ),
-              ),
-            );
-          } catch (snackErr, snackSt) {
-            logNonFatal(snackErr, snackSt);
-          }
+          unawaited(
+            Future<void>.delayed(const Duration(seconds: 4), () {
+              SellPendingMediaResume.tryResume();
+            }),
+          );
+          Error.throwWithStackTrace(e, st);
         }
+        unawaited(AppHaptics.success());
         _debugLog(
           editId.isNotEmpty
               ? 'Listing updated successfully'

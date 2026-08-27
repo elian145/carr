@@ -95,15 +95,16 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
   }
 
   Widget _buildImageTile(dynamic item) {
-    if (item is XFile) {
+    final local = ListingImageMedia.localFile(item);
+    if (local != null) {
       return Image.file(
-        File(item.path),
+        File(local.path),
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) =>
             const Center(child: Icon(Icons.broken_image)),
       );
     }
-    final raw = item.toString().trim();
+    final raw = ListingImageMedia.source(item);
     if (raw.isEmpty) return const Center(child: Icon(Icons.broken_image));
     if (_looksLikeLocalPath(raw)) {
       return Image.file(
@@ -129,7 +130,7 @@ class _ListingPreviewMediaGridPageState extends State<ListingPreviewMediaGridPag
   }
 
   Widget _buildVideoTile(dynamic item) {
-    final raw = item is XFile ? item.path : item.toString().trim();
+    final raw = ListingImageMedia.source(item);
     final isNetwork =
         raw.startsWith('http://') || raw.startsWith('https://');
     return Stack(
