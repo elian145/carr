@@ -63,8 +63,20 @@ mixin _SellStep5Logic on _SellStep5Fields {
         editId.isNotEmpty ? loc.submitting : loc.creatingListing,
       );
 
-      // Copy picker files to durable paths first. Android cache/content URIs
-      // can vanish; never replace live photos with an empty persist result.
+      // Finish background photo upload started when leaving the photos step.
+      if (_listingPhotoCount(carData) > 0 ||
+          (parentState?.carData['images'] is List &&
+              (parentState!.carData['images'] as List).isNotEmpty)) {
+        _setSubmitStatus(loc.uploadingPhotos);
+        await parentState?.awaitBackgroundPhotoPrestage();
+        if (!mounted) return null;
+        if (parentState != null) {
+          _adoptPreparedMedia(carData, parentState.carData);
+        }
+      }
+
+      // Copy remaining local picker files to durable paths. Android
+      // cache/content URIs can vanish; never replace live photos with empty.
       final storedMedia =
           await SellDraftMediaPersistence.prepareCarDataForStorage(
             carData,
@@ -72,8 +84,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
           );
       _adoptPreparedMedia(carData, storedMedia);
 
-      // Upload the photos before the listing exists so creating it only has to
-      // attach URLs. Falls back to uploading after create when this fails.
+      // Stage whatever is still local (no-op when background prestage finished).
       if (_listingPhotoCount(carData) > 0) {
         _setSubmitStatus(loc.uploadingPhotos);
         await SellPhotoPrestage.stageCarData(carData);
@@ -181,7 +192,8 @@ mixin _SellStep5Logic on _SellStep5Fields {
             });
           }
 
-          await SellListingMediaUpload.uploadForCar(
+          final listingMediaConfirmed =
+              await SellListingMediaUpload.uploadForCar(
             carId: carId,
             carData: carData,
             multipartFileBuilder: _buildVideoMultipartFile,
@@ -199,13 +211,13 @@ mixin _SellStep5Logic on _SellStep5Fields {
             },
           );
 
-          if (_listingPhotoCount(carData) > 0) {
+          if (_listingPhotoCount(carData) > 0 && !listingMediaConfirmed) {
             _setSubmitStatus(loc.uploadingPhotos);
             var hasMedia =
                 await SellListingMediaUpload.listingAlreadyHasMedia(carId);
-            for (var attempt = 0; !hasMedia && attempt < 8; attempt++) {
+            for (var attempt = 0; !hasMedia && attempt < 4; attempt++) {
               await Future<void>.delayed(
-                Duration(milliseconds: 400 * (attempt + 1)),
+                Duration(milliseconds: 300 * (attempt + 1)),
               );
               hasMedia =
                   await SellListingMediaUpload.listingAlreadyHasMedia(carId);
@@ -217,7 +229,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
             }
           }
 
-          // Precache all listing images so they appear instantly when user views the listing (no placeholder wait)
+          // Precache off the submit path so success navigation is not blocked.
           if (mounted) {
             final svc = CarService();
             final createdCar = svc.cars
@@ -227,63 +239,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
                 ? createdCar.first
                 : null;
             if (car != null) {
-              final List<String> urls = <String>[];
-              final String primary = (car['image_url'] ?? '').toString();
-              final List<dynamic> imgs = (car['images'] is List)
-                  ? (car['images'] as List)
-                  : const [];
-              if (primary.isNotEmpty) urls.add(_buildFullImageUrl(primary));
-              for (final dynamic it in imgs) {
-                if (it is Map &&
-                    (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
-                  continue;
-                }
-                final String s = it is Map
-                    ? (it['image_url'] ??
-                              it['url'] ??
-                              it['path'] ??
-                              it['src'] ??
-                              '')
-                          .toString()
-                    : it.toString();
-                if (s.isNotEmpty) {
-                  final full = _buildFullImageUrl(s);
-                  if (!urls.contains(full)) urls.add(full);
-                }
-              }
-              if (urls.isEmpty && imgs.isNotEmpty) {
-                dynamic first;
-                for (final dynamic e in imgs) {
-                  if (e is Map &&
-                      (e['kind'] ?? '').toString().toLowerCase() == 'damage') {
-                    continue;
-                  }
-                  first = e;
-                  break;
-                }
-                if (first != null) {
-                  final String s = first is Map
-                      ? (first['image_url'] ??
-                                first['url'] ??
-                                first['path'] ??
-                                first['src'] ??
-                                '')
-                            .toString()
-                      : first.toString();
-                  if (s.isNotEmpty) urls.add(_buildFullImageUrl(s));
-                }
-              }
-              for (final url in urls) {
-                if (url.isEmpty || !mounted) continue;
-                try {
-                  await precacheImage(
-                    listingCachedNetworkImageProvider(url),
-                    context,
-                  );
-                } catch (e, st) {
-                  if (!isExpectedClientNoise(e)) logNonFatal(e, st);
-                }
-              }
+              unawaited(_precacheSubmittedListingImages(car));
             }
           }
           await SellPendingMediaPrefs.clear();
@@ -311,6 +267,40 @@ mixin _SellStep5Logic on _SellStep5Fields {
       throw Exception('Failed to create listing');
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {
+    final List<String> urls = <String>[];
+    final String primary = (car['image_url'] ?? '').toString();
+    final List<dynamic> imgs = (car['images'] is List)
+        ? (car['images'] as List)
+        : const [];
+    if (primary.isNotEmpty) urls.add(_buildFullImageUrl(primary));
+    for (final dynamic it in imgs) {
+      if (it is Map &&
+          (it['kind'] ?? '').toString().toLowerCase() == 'damage') {
+        continue;
+      }
+      final String s = it is Map
+          ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
+                .toString()
+          : it.toString();
+      if (s.isNotEmpty) {
+        final full = _buildFullImageUrl(s);
+        if (!urls.contains(full)) urls.add(full);
+      }
+    }
+    for (final url in urls) {
+      if (url.isEmpty || !mounted) continue;
+      try {
+        await precacheImage(
+          listingCachedNetworkImageProvider(url),
+          context,
+        );
+      } catch (e, st) {
+        if (!isExpectedClientNoise(e)) logNonFatal(e, st);
+      }
     }
   }
 }

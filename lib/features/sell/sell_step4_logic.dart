@@ -160,12 +160,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData['sell_wizard_v2'] = true;
       }
     }
-    if (!mounted) return;
-    if (_selectedImages.isNotEmpty ||
-        _damageImages.isNotEmpty ||
-        _selectedVideos.isNotEmpty) {
-      await _syncMediaDraftToParent();
-    }
     if (_selectedImages.isNotEmpty &&
         parentState != null &&
         !parentState.hasBlurredPlatesReady &&
@@ -239,14 +233,21 @@ mixin _SellStep4Logic on _SellStep4Fields {
           parentState?._skipDraftPersistOnDispose == true) {
         return;
       }
+      final resolvedImages = _persistedOrLiveMedia(_selectedImages, images);
+      final resolvedBlurred = _persistedOrLiveMedia(_blurredImages, blurred);
+      final resolvedDamage = _persistedOrLiveMedia(_damageImages, damage);
+      final resolvedVideos = _persistedOrLiveMedia(
+        _selectedVideos.map((f) => f.path).toList(),
+        videos,
+      );
       if (mounted) {
         setState(() {
-          _selectedImages = images;
-          _blurredImages = blurred;
-          _damageImages = damage;
+          _selectedImages = resolvedImages;
+          _blurredImages = resolvedBlurred;
+          _damageImages = resolvedDamage;
           _selectedVideos
             ..clear()
-            ..addAll(ListingImageMedia.localFiles(videos));
+            ..addAll(ListingImageMedia.localFiles(resolvedVideos));
         });
       }
       final sp = await SharedPreferences.getInstance();
@@ -254,22 +255,22 @@ mixin _SellStep4Logic on _SellStep4Fields {
       await sp.setString(
         _SellStep4Fields._draftKey,
         json.encode(<String, dynamic>{
-          'selectedImages': images
+          'selectedImages': resolvedImages
               .map(
                 (e) => e is Map
                     ? Map<String, dynamic>.from(e)
                     : ListingImageMedia.map(e),
               )
               .toList(),
-          'blurredImages': blurred
+          'blurredImages': resolvedBlurred
               .map(
                 (e) => e is Map
                     ? Map<String, dynamic>.from(e)
                     : ListingImageMedia.map(e),
               )
               .toList(),
-          'damage_images': damage.map(ListingImageMedia.source).toList(),
-          'selectedVideos': videos.map(ListingImageMedia.source).toList(),
+          'damage_images': resolvedDamage.map(ListingImageMedia.source).toList(),
+          'selectedVideos': resolvedVideos.map(ListingImageMedia.source).toList(),
           'imagesProcessed': _imagesProcessed,
           'primaryImageIndex': _primaryImageIndex,
         }),
@@ -277,10 +278,10 @@ mixin _SellStep4Logic on _SellStep4Fields {
       if (parentState != null) {
         _writeMediaListsToParent(
           parentState,
-          images: images,
-          blurred: blurred,
-          damage: damage,
-          videos: ListingImageMedia.localFiles(videos),
+          images: resolvedImages,
+          blurred: resolvedBlurred,
+          damage: resolvedDamage,
+          videos: ListingImageMedia.localFiles(resolvedVideos),
         );
       }
       unawaited(parentState?._saveSellDraftSnapshot());
@@ -313,24 +314,31 @@ mixin _SellStep4Logic on _SellStep4Fields {
       draftId: draftId,
       namePrefix: 'video',
     );
+    final resolvedImages = _persistedOrLiveMedia(_selectedImages, images);
+    final resolvedBlurred = _persistedOrLiveMedia(_blurredImages, blurred);
+    final resolvedDamage = _persistedOrLiveMedia(_damageImages, damage);
+    final resolvedVideos = _persistedOrLiveMedia(
+      _selectedVideos.map((f) => f.path).toList(),
+      videos,
+    );
     if (!mounted) return;
     setState(() {
-      _selectedImages = images;
-      _blurredImages = blurred;
-      _damageImages = damage;
+      _selectedImages = resolvedImages;
+      _blurredImages = resolvedBlurred;
+      _damageImages = resolvedDamage;
       _selectedVideos
         ..clear()
-        ..addAll(ListingImageMedia.localFiles(videos));
+        ..addAll(ListingImageMedia.localFiles(resolvedVideos));
     });
     _writeMediaListsToParent(
       parentState,
-      images: images,
-      blurred: blurred,
-      damage: damage,
-      videos: ListingImageMedia.localFiles(videos),
+      images: resolvedImages,
+      blurred: resolvedBlurred,
+      damage: resolvedDamage,
+      videos: ListingImageMedia.localFiles(resolvedVideos),
     );
-    if (_imagesProcessed && blurred.isNotEmpty) {
-      parentState.carData['processed_image_paths'] = blurred
+    if (_imagesProcessed && resolvedBlurred.isNotEmpty) {
+      parentState.carData['processed_image_paths'] = resolvedBlurred
           .map(ListingImageMedia.source)
           .where((s) => s.trim().isNotEmpty)
           .toList();
@@ -342,6 +350,17 @@ mixin _SellStep4Logic on _SellStep4Fields {
   }
 
   String _imagePathKey(dynamic item) => ListingImageMedia.source(item);
+
+  /// Keep live picker files when a persist pass drops unreadable paths.
+  List<dynamic> _persistedOrLiveMedia(
+    List<dynamic> live,
+    List<dynamic> persisted,
+  ) {
+    if (live.isEmpty) return persisted;
+    if (persisted.isEmpty) return live;
+    if (persisted.length >= live.length) return persisted;
+    return SellDraftMediaPersistence.mergeRawMediaLists([persisted, live]);
+  }
 
   void _writeMediaListsToParent(
     _SellCarPageState parentState, {
@@ -496,6 +515,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         });
         parentState?.carData.remove('use_blurred_plates');
         parentState?.invalidatePlateBlurJob();
+        parentState?.invalidatePhotoPrestage();
         await _syncMediaDraftToParent();
         unawaited(_saveDraft());
         unawaited(parentState?.startBackgroundPlateBlur());
@@ -557,6 +577,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         });
         parentState?.carData.remove('use_blurred_plates');
         parentState?.invalidatePlateBlurJob();
+        parentState?.invalidatePhotoPrestage();
         await _syncMediaDraftToParent();
         unawaited(_saveDraft());
         unawaited(parentState?.startBackgroundPlateBlur());

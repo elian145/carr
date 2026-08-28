@@ -337,7 +337,10 @@ class SellListingMediaUpload {
   }
 
   /// Uploads images, videos, and damage media for [carId] from [carData].
-  static Future<void> uploadForCar({
+  ///
+  /// Returns true when listing photos are confirmed on the server (or none
+  /// were needed), so the caller can skip a redundant confirmation poll.
+  static Future<bool> uploadForCar({
     required String carId,
     required Map<String, dynamic> carData,
     Future<http.MultipartFile> Function(XFile video)? multipartFileBuilder,
@@ -395,6 +398,7 @@ class SellListingMediaUpload {
 
     Map<String, dynamic>? latestMediaResponse;
     var remoteListingCount = 0;
+    var listingMediaConfirmed = imgs.isEmpty;
     if (toUpload.isNotEmpty) {
       remoteListingCount = await _remoteImageCount(carId, 'listing');
       if (remoteListingCount >= imageIdsBySource.length + toUpload.length) {
@@ -404,6 +408,7 @@ class SellListingMediaUpload {
         );
         toUpload.clear();
         uploadItems.clear();
+        listingMediaConfirmed = true;
       }
     }
     if (toAttach.isNotEmpty || toUpload.isNotEmpty || imgs.isNotEmpty) {
@@ -413,7 +418,9 @@ class SellListingMediaUpload {
       final attachResponse = await CarService().attachCarImages(carId, toAttach);
       latestMediaResponse = attachResponse;
       _collectUploadedImageIds(imageIdsBySource, attachItems, attachResponse);
-      if (_attachedRowCount(attachResponse) == 0) {
+      if (_attachedRowCount(attachResponse) > 0) {
+        listingMediaConfirmed = true;
+      } else {
         final recovered = await _recoverRejectedAttach(
           carId: carId,
           attachItems: attachItems,
@@ -422,6 +429,9 @@ class SellListingMediaUpload {
         if (recovered != null) {
           latestMediaResponse = recovered;
           _collectUploadedImageIds(imageIdsBySource, attachItems, recovered);
+          if (_attachedRowCount(recovered) > 0) {
+            listingMediaConfirmed = true;
+          }
         }
       }
     }
@@ -433,6 +443,13 @@ class SellListingMediaUpload {
       );
       latestMediaResponse = uploadResponse;
       _collectUploadedImageIds(imageIdsBySource, uploadItems, uploadResponse);
+      if (_attachedRowCount(uploadResponse) > 0 ||
+          imageIdsBySource.isNotEmpty) {
+        listingMediaConfirmed = true;
+      }
+    }
+    if (imageIdsBySource.isNotEmpty && toUpload.isEmpty && toAttach.isEmpty) {
+      listingMediaConfirmed = true;
     }
     if (imgs.isNotEmpty) {
       await _applyPrimaryListingImage(
@@ -536,5 +553,9 @@ class SellListingMediaUpload {
     if (videoError != null) {
       Error.throwWithStackTrace(videoError, videoStack ?? StackTrace.current);
     }
+    if (!listingMediaConfirmed && imgs.isNotEmpty) {
+      listingMediaConfirmed = await listingAlreadyHasMedia(carId);
+    }
+    return listingMediaConfirmed;
   }
 }

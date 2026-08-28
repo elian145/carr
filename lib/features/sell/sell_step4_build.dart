@@ -16,7 +16,7 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
               },
         onNext: _isImportingMedia
             ? null
-            : () {
+            : () async {
           if (_selectedImages.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -29,7 +29,8 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
             return;
           }
 
-          unawaited(_syncMediaDraftToParent());
+          await _syncMediaDraftToParent();
+          if (!mounted) return;
           final parentState =
               context.findAncestorStateOfType<_SellCarPageState>();
           if (parentState != null) {
@@ -62,6 +63,8 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
                 _selectedImages.isNotEmpty) {
               unawaited(parentState.startBackgroundPlateBlur());
             }
+            // Upload photos while the seller fills later steps.
+            unawaited(parentState.startBackgroundPhotoPrestage());
             parentState._goToNextStep();
           }
         },
@@ -71,6 +74,7 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Stack(
       children: [
         SingleChildScrollView(

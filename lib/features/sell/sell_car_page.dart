@@ -18,6 +18,7 @@ class _SellCarPageState extends _SellCarPageFields
     with
         _SellCarPageDraftPersist,
         _SellCarPagePlateBlur,
+        _SellCarPagePhotoPrestage,
         _SellCarPageDraftBanner {
   @override
   void initState() {

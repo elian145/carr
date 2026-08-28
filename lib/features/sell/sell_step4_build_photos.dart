@@ -8,7 +8,6 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
         ? loc.addPhotosCount(_selectedImages.length)
         : loc.tapToSelect;
     final parent = context.findAncestorStateOfType<_SellCarPageState>();
-    final blurring = parent?.isBlurringPlates == true;
     final blurReady = parent?.hasBlurredPlatesReady == true ||
         (_imagesProcessed && _blurredImages.isNotEmpty);
 
@@ -205,6 +204,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                           });
                           parentState?.carData.remove('use_blurred_plates');
                           parentState?.invalidatePlateBlurJob();
+                          parentState?.invalidatePhotoPrestage();
                           unawaited(_syncMediaDraftToParent());
                           if (_selectedImages.isNotEmpty) {
                             unawaited(parentState?.startBackgroundPlateBlur());
@@ -233,30 +233,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                 },
               ),
             if (hasPhotos) const SizedBox(height: 12),
-            if (blurring)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)!.blurringLicensePlatesInTheBackground,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (blurReady)
+            if (blurReady)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(

@@ -27,11 +27,12 @@ class SellPhotoPrestage {
     Map<String, dynamic> carData, {
     void Function(int staged, int total)? onProgress,
   }) async {
-    var staged = 0;
-    for (final key in _mediaKeys) {
-      staged += await _stageList(carData, key, onProgress: onProgress);
-    }
-    return staged;
+    // Listing + damage in parallel — they hit separate upload batches.
+    final results = await Future.wait([
+      for (final key in _mediaKeys)
+        _stageList(carData, key, onProgress: onProgress),
+    ]);
+    return results.fold<int>(0, (sum, n) => sum + n);
   }
 
   static Future<int> _stageList(

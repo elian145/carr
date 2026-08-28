@@ -112,6 +112,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                                 });
                                 parentState?.carData.remove('use_blurred_plates');
                                 parentState?.invalidatePlateBlurJob();
+                                parentState?.invalidatePhotoPrestage();
                                 unawaited(_syncMediaDraftToParent());
                                 unawaited(_saveDraft());
                                 if (_damageImages.isNotEmpty ||

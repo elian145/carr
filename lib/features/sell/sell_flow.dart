@@ -109,6 +109,7 @@ import '../../shared/i18n/legacy_inline_text.dart';
 part 'sell_car_page_fields.dart';
 part 'sell_car_page_draft_persist.dart';
 part 'sell_car_page_plate_blur.dart';
+part 'sell_car_page_photo_prestage.dart';
 part 'sell_car_page_draft_banner.dart';
 part 'sell_car_page.dart';
 part 'sell_step1_fields.dart';
