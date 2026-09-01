@@ -36,12 +36,17 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       icon: Icon(
         isDropdown ? Icons.edit : Icons.list,
         color: AppColors.brandOrange,
+        size: 18,
       ),
       style: IconButton.styleFrom(
         backgroundColor: style.fieldFill,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.all(6),
+        minimumSize: const Size(32, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }
@@ -59,7 +64,7 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
             style: TextStyle(
               color: style.onSurface,
               fontWeight: FontWeight.bold,
-              fontSize: 18,
+              fontSize: 16,
             ),
           ),
         ),

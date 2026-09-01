@@ -17,7 +17,7 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
         title: loc.yearRange,
         style: style,
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: 8),
       _moreFiltersMinMaxRow(
         minField: _moreFiltersDropdownField(
           context: context,

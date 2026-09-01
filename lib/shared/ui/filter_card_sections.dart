@@ -244,15 +244,16 @@ InputDecoration filterDropdownFieldDecoration(
   /// When a [FilterSectionHeader] already shows [label], omit the field label.
   bool hideLabel = false,
 }) {
-  final labelFontSize = 20.0;
-  final floatingFontSize = 20.0;
+  final labelFontSize = compactLabel ? 13.0 : 20.0;
+  final floatingFontSize = compactLabel ? 13.0 : 20.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
     fontSize: labelFontSize,
     fontWeight: FontWeight.w600,
-    height: 1.15,
+    height: 1.1,
   );
   return InputDecoration(
+    isDense: true,
     labelText: hideLabel ? null : label,
     errorText: errorText,
     labelStyle: labelStyle,
@@ -266,9 +267,9 @@ InputDecoration filterDropdownFieldDecoration(
     fillColor: style.fieldFill,
     contentPadding: EdgeInsets.fromLTRB(
       12,
-      hideLabel ? 16 : (compactLabel ? 26 : 20),
+      hideLabel ? 12 : (compactLabel ? 16 : 20),
       12,
-      hideLabel ? 16 : (compactLabel ? 14 : 14),
+      hideLabel ? 12 : (compactLabel ? 8 : 14),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -511,7 +512,7 @@ class FilterDropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedChild = _selectedChild();
     final enabled = onChanged != null;
-    const fieldFontSize = 18.0;
+    final fieldFontSize = narrowMenu ? 15.0 : 18.0;
 
     return InputDecorator(
       decoration: filterDropdownFieldDecoration(
@@ -536,7 +537,7 @@ class FilterDropdownField extends StatelessWidget {
                     color: style.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: fieldFontSize,
-                    height: 1.35,
+                    height: narrowMenu ? 1.2 : 1.35,
                     leadingDistribution: TextLeadingDistribution.even,
                   ),
                   maxLines: 1,
@@ -550,6 +551,7 @@ class FilterDropdownField extends StatelessWidget {
               ),
               Icon(
                 Icons.arrow_drop_down,
+                size: narrowMenu ? 20 : 24,
                 color: style.onSurface.withValues(alpha: 0.7),
               ),
             ],

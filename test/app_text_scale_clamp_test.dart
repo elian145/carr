@@ -2,25 +2,25 @@ import 'package:car_listing_app/shared/ui/responsive.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('AppResponsive.clampAppTextScaleFactor (A-03)', () {
-    test('caps extreme accessibility scale on regular phones', () {
+  group('AppResponsive.clampAppTextScaleFactor', () {
+    test('ignores system font scale on regular phones', () {
       expect(
         AppResponsive.clampAppTextScaleFactor(2.0, compactPhone: false),
-        AppResponsive.maxAppTextScale,
+        1.0,
       );
     });
 
-    test('uses a tighter cap on compact phones', () {
+    test('ignores system font scale on compact phones', () {
       expect(
         AppResponsive.clampAppTextScaleFactor(2.0, compactPhone: true),
-        AppResponsive.maxAppTextScaleCompact,
+        1.0,
       );
     });
 
-    test('allows modest downscaling but not collapse', () {
+    test('stays at designed size for small or large system scale', () {
       expect(
         AppResponsive.clampAppTextScaleFactor(0.5, compactPhone: false),
-        AppResponsive.minAppTextScale,
+        1.0,
       );
       expect(
         AppResponsive.clampAppTextScaleFactor(1.0, compactPhone: false),
@@ -28,7 +28,7 @@ void main() {
       );
       expect(
         AppResponsive.clampAppTextScaleFactor(1.25, compactPhone: false),
-        1.25,
+        1.0,
       );
     });
   });

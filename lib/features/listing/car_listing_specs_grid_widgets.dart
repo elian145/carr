@@ -1,6 +1,7 @@
 part of 'car_listing_specs_grid.dart';
 
-/// Layout at ~107dp tile width; all dimensions scale proportionally with tile width.
+/// Layout at ~107dp tile width; every dimension scales with the tile so the
+/// rounded-rectangle aspect ratio stays the same at any size.
 const double _specsDesignTileWidth = 107.0;
 const double _specsDesignTileHeight = _specsDesignTileWidth / 1.05;
 const double _specsDesignIconSize = 30.0;
@@ -8,16 +9,70 @@ const double _specsDesignCircleSize = 44.0;
 const double _specsDesignLabelFontSize = 11.0;
 const double _specsDesignValueFontSize = 14.0;
 const double _specsDesignOrangeBar = 2.5;
+const double _specsDesignPadH = 8.0;
+const double _specsDesignPadTop = 10.0;
+const double _specsDesignPadBottom = 6.0;
+const double _specsDesignGap = 12.0;
+const double _specsDesignOuterPad = 12.0;
+const double _specsDesignRadius = 14.0;
+const double _specsDetailCircleSize = 32.0;
+const double _specsDetailIconSize = 17.0;
+const double _specsDetailFontSize = 15.0;
+const double _specsDetailPadL = 12.0;
+const double _specsDetailPadT = 8.0;
+const double _specsDetailPadR = 20.0;
+const double _specsDetailPadB = 8.0;
+const double _specsDetailIconGap = 12.0;
+const double _specsDetailValueGap = 8.0;
+const double _specsDetailChevronSize = 22.0;
+const double _specsDetailChevronGap = 4.0;
+const double _specsDetailRowGap = 12.0;
 const int _specsIconFlex = 5;
 const int _specsLabelFlex = 2;
 const int _specsValueFlex = 3;
 const int _specsContentFlexTotal =
     _specsIconFlex + _specsLabelFlex + _specsValueFlex;
 
-double _specsTileScale(double tileWidth) =>
-    tileWidth / _specsDesignTileWidth;
-
 double _specsDim(double designPixels, double scale) => designPixels * scale;
+
+double _specsPackedWidth(int crossCount) =>
+    crossCount * _specsDesignTileWidth +
+    (crossCount - 1) * _specsDesignGap;
+
+final class _SpecsGridMetrics {
+  const _SpecsGridMetrics({
+    required this.crossCount,
+    required this.scale,
+    required this.gap,
+    required this.rowH,
+  });
+
+  final int crossCount;
+  final double scale;
+  final double gap;
+  final double rowH;
+
+  double gridHeight(int itemCount) {
+    final rows = (itemCount / crossCount).ceil();
+    return rowH * rows + gap * math.max(0, rows - 1);
+  }
+}
+
+/// Always 3×2. Tile size follows available width so the rounded-rectangle
+/// design stays the same when system font or display size changes.
+_SpecsGridMetrics _specsGridMetrics({
+  required double availableWidth,
+}) {
+  const crossCount = 3;
+  final width = availableWidth <= 0 ? _specsPackedWidth(crossCount) : availableWidth;
+  final scale = width / _specsPackedWidth(crossCount);
+  return _SpecsGridMetrics(
+    crossCount: crossCount,
+    scale: scale,
+    gap: _specsDim(_specsDesignGap, scale),
+    rowH: _specsDim(_specsDesignTileHeight, scale),
+  );
+}
 
 Widget carListingSpecsDetailRow(
   BuildContext context, {
@@ -43,98 +98,109 @@ Widget carListingSpecsDetailRow(
     final iconCircleFill = isLight ? iconCircleFillLight : iconCircleFillDark;
     final valueColor = isLight ? Colors.black : Colors.white;
 
+    const scale = 1.0;
+    final radius = _specsDim(_specsDesignRadius, scale);
+    final circle = _specsDim(_specsDetailCircleSize, scale);
+    final iconSize = _specsDim(_specsDetailIconSize, scale);
+    final fontSize = _specsDim(_specsDetailFontSize, scale);
+    final orangeBar = _specsDim(_specsDesignOrangeBar, scale);
+
     final row = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 20, 8),
+          padding: EdgeInsets.fromLTRB(
+            _specsDim(_specsDetailPadL, scale),
+            _specsDim(_specsDetailPadT, scale),
+            _specsDim(_specsDetailPadR, scale),
+            _specsDim(_specsDetailPadB, scale),
+          ),
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: circle,
+                height: circle,
                 decoration: BoxDecoration(
                   color: iconCircleFill,
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, size: 17, color: brandOrange),
+                child: Icon(icon, size: iconSize, color: brandOrange),
               ),
-              const SizedBox(width: 12),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: labelGrey,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  height: 1.1,
+              SizedBox(width: _specsDim(_specsDetailIconGap, scale)),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    color: labelGrey,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w500,
+                    height: 1.1,
+                  ),
                 ),
               ),
               if (valueWidget != null) ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: valueWidget,
-                  ),
-                ),
+                SizedBox(width: _specsDim(_specsDetailValueGap, scale)),
+                valueWidget,
               ] else if (value != null) ...[
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    value!,
-                    textAlign: TextAlign.end,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: onTap != null ? brandOrange : valueColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      height: 1.15,
-                    ),
+                SizedBox(width: _specsDim(_specsDetailValueGap, scale)),
+                Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    color: onTap != null ? brandOrange : valueColor,
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.w800,
+                    height: 1.15,
                   ),
                 ),
                 if (onTap != null) ...[
-                  const SizedBox(width: 4),
-                  const Icon(
+                  SizedBox(width: _specsDim(_specsDetailChevronGap, scale)),
+                  Icon(
                     Icons.chevron_right,
                     color: brandOrange,
-                    size: 22,
+                    size: _specsDim(_specsDetailChevronSize, scale),
                   ),
                 ],
               ] else if (onTap != null) ...[
-                const Spacer(),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
                   color: brandOrange,
-                  size: 22,
+                  size: _specsDim(_specsDetailChevronSize, scale),
                 ),
               ],
             ],
           ),
         ),
-        const ColoredBox(
+        ColoredBox(
           color: brandOrange,
-          child: SizedBox(height: 2.5, width: double.infinity),
+          child: SizedBox(height: orangeBar, width: double.infinity),
         ),
       ],
     );
 
     final card = Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: _specsDim(_specsDetailRowGap, scale)),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(radius),
         color: cardBg,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isLight ? 0.10 : 0.50),
-            blurRadius: isLight ? 18 : 20,
-            offset: const Offset(0, 8),
+            blurRadius: (isLight ? 18 : 20) * scale,
+            offset: Offset(0, 8 * scale),
           ),
           BoxShadow(
             color: Colors.black.withValues(alpha: isLight ? 0.05 : 0.28),
-            blurRadius: isLight ? 6 : 8,
-            offset: const Offset(0, 2),
+            blurRadius: (isLight ? 6 : 8) * scale,
+            offset: Offset(0, 2 * scale),
           ),
         ],
         border: onTap != null
@@ -153,16 +219,17 @@ Widget carListingSpecsDetailRow(
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(radius),
         onTap: onTap,
         child: card,
       ),
     );
   }
 
-Widget carListingSpecsCard(ListingSpecItem item) {
+Widget carListingSpecsCard(ListingSpecItem item, {required double scale}) {
   const brandOrange = AppColors.brandOrange;
   const labelGrey = Color(0xFF8E8E93);
+  final radius = _specsDim(_specsDesignRadius, scale);
 
   return Semantics(
     label: '${item.label}: ${item.value ?? ''}',
@@ -176,18 +243,18 @@ Widget carListingSpecsCard(ListingSpecItem item) {
 
         return DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(radius),
             color: cardBg,
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isLight ? 0.10 : 0.50),
-                blurRadius: isLight ? 16 : 18,
-                offset: const Offset(0, 6),
+                blurRadius: (isLight ? 16 : 18) * scale,
+                offset: Offset(0, 6 * scale),
               ),
               BoxShadow(
                 color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.28),
-                blurRadius: isLight ? 4 : 6,
-                offset: const Offset(0, 2),
+                blurRadius: (isLight ? 4 : 6) * scale,
+                offset: Offset(0, 2 * scale),
               ),
             ],
             border: Border.all(
@@ -197,29 +264,32 @@ Widget carListingSpecsCard(ListingSpecItem item) {
             ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(radius),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final scale = _specsTileScale(constraints.maxWidth);
-                final padH = _specsDim(8, scale);
-                final padTop = _specsDim(10, scale);
-                final padBottom = _specsDim(6, scale);
-                final iconSize = _specsDim(_specsDesignIconSize, scale);
-                final circleSize = _specsDim(_specsDesignCircleSize, scale);
+                final padH = _specsDim(_specsDesignPadH, scale);
+                final padTop = _specsDim(_specsDesignPadTop, scale);
+                final padBottom = _specsDim(_specsDesignPadBottom, scale);
                 final labelFontSize = _specsDim(_specsDesignLabelFontSize, scale);
                 final valueFontSize = _specsDim(_specsDesignValueFontSize, scale);
                 final orangeBar = _specsDim(_specsDesignOrangeBar, scale);
 
-                final innerH = constraints.maxHeight -
-                    orangeBar -
-                    padTop -
-                    padBottom;
+                final innerH = math.max(
+                  0.0,
+                  constraints.maxHeight - orangeBar - padTop - padBottom,
+                );
                 final iconZoneH =
                     innerH * _specsIconFlex / _specsContentFlexTotal;
                 final labelZoneH =
                     innerH * _specsLabelFlex / _specsContentFlexTotal;
                 final valueZoneH =
                     innerH * _specsValueFlex / _specsContentFlexTotal;
+                final desiredCircle = _specsDim(_specsDesignCircleSize, scale);
+                final circleSize = iconZoneH > 0
+                    ? math.min(desiredCircle, iconZoneH)
+                    : 0.0;
+                final iconSize = circleSize *
+                    (_specsDesignIconSize / _specsDesignCircleSize);
 
                 final Widget iconGlyph;
                 final asset = item.imageAsset;
@@ -280,41 +350,39 @@ Widget carListingSpecsCard(ListingSpecItem item) {
                             ),
                             SizedBox(
                               height: labelZoneH,
-                              child: Center(
-                                child: AutoSizeText(
+                              width: double.infinity,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
                                   item.label,
                                   maxLines: 1,
                                   textAlign: TextAlign.center,
-                                  textScaleFactor: 1.0,
+                                  textScaler: TextScaler.noScaling,
                                   style: TextStyle(
                                     fontSize: labelFontSize,
                                     height: 1.05,
                                     color: labelGrey,
                                     fontWeight: FontWeight.w500,
                                   ),
-                                  minFontSize: 7,
-                                  stepGranularity: 0.5,
-                                  overflow: TextOverflow.clip,
                                 ),
                               ),
                             ),
                             SizedBox(
                               height: valueZoneH,
-                              child: Center(
-                                child: AutoSizeText(
+                              width: double.infinity,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
                                   item.value!,
                                   maxLines: 1,
                                   textAlign: TextAlign.center,
-                                  textScaleFactor: 1.0,
+                                  textScaler: TextScaler.noScaling,
                                   style: TextStyle(
                                     fontSize: valueFontSize,
                                     height: 1.05,
                                     color: valueColor,
                                     fontWeight: FontWeight.w800,
                                   ),
-                                  minFontSize: 9,
-                                  stepGranularity: 0.5,
-                                  overflow: TextOverflow.clip,
                                 ),
                               ),
                             ),

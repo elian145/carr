@@ -295,55 +295,51 @@ Widget buildCarListingSpecsGrid(
   }
 
   final isLightSpecs = Theme.of(context).brightness == Brightness.light;
-  // Width-based row height: tighter than childAspectRatio 1.5 so the outer
-  // shell does not grow vertically on narrow phones (GridView + padding).
   final primGrid = LayoutBuilder(
     builder: (context, constraints) {
-      const double crossGap = 12;
-      const int crossCount = 3;
-      final double maxW = constraints.maxWidth;
-      final double tileW = (maxW - crossGap * (crossCount - 1)) / crossCount;
-      final double rowH = tileW * (_specsDesignTileHeight / _specsDesignTileWidth);
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        padding: EdgeInsets.zero,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossCount,
-          crossAxisSpacing: crossGap,
-          mainAxisSpacing: 12,
-          mainAxisExtent: rowH,
+      final metrics = _specsGridMetrics(
+        availableWidth: constraints.maxWidth,
+      );
+      return SizedBox(
+        width: constraints.maxWidth,
+        height: metrics.gridHeight(primary.length),
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: metrics.crossCount,
+            crossAxisSpacing: metrics.gap,
+            mainAxisSpacing: metrics.gap,
+            mainAxisExtent: metrics.rowH,
+          ),
+          itemCount: primary.length,
+          itemBuilder: (context, index) =>
+              carListingSpecsCard(primary[index], scale: metrics.scale),
         ),
-        itemCount: primary.length,
-        itemBuilder: (context, index) => carListingSpecsCard(primary[index]),
       );
     },
   );
 
-  final topSpecs = MediaQuery(
-    data: MediaQuery.of(context).copyWith(
-      textScaler: TextScaler.noScaling,
-    ),
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      decoration: BoxDecoration(
+  final topSpecs = Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(_specsDesignOuterPad),
+    decoration: BoxDecoration(
+      color: isLightSpecs
+          ? const Color(0xFFF5F5F7)
+          : const Color(0xFF161616),
+      borderRadius: BorderRadius.circular(_specsDesignRadius),
+      border: Border.all(
         color: isLightSpecs
-            ? const Color(0xFFF5F5F7)
-            : const Color(0xFF161616),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isLightSpecs
-              ? const Color(0xFFE8E8ED)
-              : Colors.white.withValues(alpha: 0.08),
-        ),
+            ? const Color(0xFFE8E8ED)
+            : Colors.white.withValues(alpha: 0.08),
       ),
-      child: primGrid,
     ),
+    child: primGrid,
   );
 
   return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [topSpecs, SizedBox(height: 12), ...details],
   );
 }

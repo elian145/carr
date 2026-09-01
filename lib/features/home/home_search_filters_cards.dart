@@ -13,7 +13,7 @@ mixin _HomePageSearchFiltersCards on _HomePageMoreFiltersDialog {
       anyOrange: base.anyOrange,
       fieldFill: isLight ? Colors.white : base.fieldFill,
       menuFill: base.menuFill,
-      fieldGap: 12,
+      fieldGap: 0,
     );
   }
 
@@ -22,10 +22,10 @@ mixin _HomePageSearchFiltersCards on _HomePageMoreFiltersDialog {
     required List<Widget> children,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 10),
       child: _searchCard(
         context,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: children,

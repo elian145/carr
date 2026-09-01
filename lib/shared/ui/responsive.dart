@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../prefs/listing_layout_prefs.dart';
 import 'keyboard.dart';
+import 'system_display_lock.dart';
 
 /// Layout helpers so UI stays consistent and overflow-free across phone sizes.
 abstract final class AppResponsive {
@@ -337,32 +338,24 @@ abstract final class AppResponsive {
     );
   }
 
-  /// Min/max system text scale applied app-wide via [wrapApp] (A-03).
-  /// Dense cards may still pin [TextScaler.linear] locally where overflow is critical.
-  static const double minAppTextScale = 0.85;
-  static const double maxAppTextScaleCompact = 1.35;
-  static const double maxAppTextScale = 1.5;
+  /// System text scale is ignored app-wide via [wrapApp].
+  static const double minAppTextScale = 1.0;
+  static const double maxAppTextScaleCompact = 1.0;
+  static const double maxAppTextScale = 1.0;
 
-  /// Clamp a raw system text scale factor for CarNet layouts.
+  /// Always 1.0 — layouts keep their designed sizes regardless of phone
+  /// font-size settings.
   static double clampAppTextScaleFactor(
     double scaleFactor, {
     required bool compactPhone,
   }) {
-    final maxScale = compactPhone ? maxAppTextScaleCompact : maxAppTextScale;
-    return scaleFactor.clamp(minAppTextScale, maxScale).toDouble();
+    return 1.0;
   }
 
-  /// Allow accessibility text scaling, but cap it to keep dense mobile layouts stable.
+  /// Pin the app to designed sizes: ignore system font scale and Android
+  /// Display size (density).
   static Widget wrapApp(BuildContext context, Widget child) {
-    final mq = MediaQuery.of(context);
-    const baseFontSize = 14.0;
-    final rawScale = mq.textScaler.scale(baseFontSize) / baseFontSize;
-    final scaleFactor = clampAppTextScaleFactor(
-      rawScale,
-      compactPhone: isCompactPhone(context),
-    );
-    return MediaQuery(
-      data: mq.copyWith(textScaler: TextScaler.linear(scaleFactor)),
+    return _LockedSystemDisplay(
       child: KeyboardDismissOnTap(child: child),
     );
   }
@@ -422,5 +415,46 @@ class ResponsiveDialogBody extends StatelessWidget {
       content = SingleChildScrollView(child: content);
     }
     return ConstrainedBox(constraints: constraints, child: content);
+  }
+}
+
+class _LockedSystemDisplay extends StatefulWidget {
+  const _LockedSystemDisplay({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LockedSystemDisplay> createState() => _LockedSystemDisplayState();
+}
+
+class _LockedSystemDisplayState extends State<_LockedSystemDisplay> {
+  @override
+  void initState() {
+    super.initState();
+    SystemDisplayLock.init().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final locked = SystemDisplayLock.lock(mq);
+    final visualScale = SystemDisplayLock.visualScaleOf(mq);
+    Widget child = MediaQuery(data: locked, child: widget.child);
+    if ((visualScale - 1.0).abs() < 0.02) {
+      return child;
+    }
+    // MediaQuery size/DPR overrides do not change Flutter's paint density.
+    // Layout at the designed logical size, then scale to the real window.
+    return FittedBox(
+      fit: BoxFit.fill,
+      clipBehavior: Clip.hardEdge,
+      child: SizedBox(
+        width: locked.size.width,
+        height: locked.size.height,
+        child: child,
+      ),
+    );
   }
 }
