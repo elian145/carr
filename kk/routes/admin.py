@@ -485,6 +485,62 @@ def images():
         return jsonify({"message": "Failed to get images"}), 500
 
 
+@bp.route("/images/<int:image_id>", methods=["DELETE"])
+@admin_required
+def delete_image(image_id: int):
+    """Remove a listing image from the database (and reassign primary if needed)."""
+    try:
+        denied = _deny("listings.write")
+        if denied:
+            return denied
+        admin_user = get_current_user()
+        img = (
+            CarImage.query.options(joinedload(CarImage.car))
+            .filter_by(id=image_id)
+            .first()
+        )
+        if not img:
+            return jsonify({"message": "Image not found"}), 404
+
+        car = img.car
+        was_primary = bool(img.is_primary)
+        kind = getattr(img, "kind", None) or "listing"
+        image_url = img.image_url
+        car_ref = (
+            car.public_id if car and getattr(car, "public_id", None) else str(car.id) if car else None
+        )
+
+        db.session.delete(img)
+        db.session.flush()
+
+        if car and was_primary and kind == "listing":
+            remaining = [
+                i
+                for i in car.images
+                if (getattr(i, "kind", None) or "listing") == "listing"
+            ]
+            if remaining:
+                remaining.sort(key=lambda i: (i.order or 0, i.id or 0))
+                for i in remaining:
+                    i.is_primary = i.id == remaining[0].id
+
+        db.session.commit()
+
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_delete_image",
+                target_type="car_image",
+                target_id=str(image_id),
+                metadata={"car_id": car_ref, "image_url": image_url, "kind": kind},
+            )
+        return jsonify({"message": "Image deleted", "id": image_id}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin delete_image error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to delete image"}), 500
+
+
 @bp.route("/messages", methods=["GET"])
 @admin_required
 def messages():

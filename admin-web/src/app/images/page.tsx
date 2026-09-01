@@ -3,49 +3,69 @@
 import Link from "next/link";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Pagination } from "@/components/Pagination";
 import { FilterSelect } from "@/components/FilterSelect";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
-import { fetchImages, type ImageListParams } from "@/lib/api";
-import { formatDate, listingTitle, mediaUrl } from "@/lib/format";
-import type { AdminImage } from "@/lib/types";
+import { useConfirm } from "@/context/ConfirmContext";
+import { useToast } from "@/context/ToastContext";
+import { useAuth } from "@/context/AuthContext";
 import {
-  buildUrlQuery,
-  paramPage,
-  paramString,
-} from "@/lib/urlParams";
+  deleteImage,
+  fetchAllImages,
+  type ImageListParams,
+} from "@/lib/api";
+import { formatDate, listingTitle, mediaUrl } from "@/lib/format";
+import { hasPermission } from "@/lib/permissions";
+import type { AdminImage } from "@/lib/types";
+import { buildUrlQuery, paramString } from "@/lib/urlParams";
 
-function ImageCard({ image }: { image: AdminImage }) {
+function ImageCard({
+  image,
+  canDelete,
+  deleting,
+  onDelete,
+}: {
+  image: AdminImage;
+  canDelete: boolean;
+  deleting: boolean;
+  onDelete: (image: AdminImage) => void;
+}) {
   const src = mediaUrl(image.image_url);
   const car = image.car;
   const title = car ? listingTitle(car) : "Unknown listing";
 
   return (
     <article className="group overflow-hidden rounded-xl border border-surface-border bg-surface-card/50">
-      <a
-        href={src}
-        target="_blank"
-        rel="noreferrer"
-        className="relative block aspect-[4/3] overflow-hidden bg-black/40"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={src}
-          alt={title}
-          loading="lazy"
-          className="h-full w-full object-cover transition group-hover:scale-[1.02]"
-        />
+      <div className="relative aspect-[4/3] overflow-hidden bg-black/40">
+        <a href={src} target="_blank" rel="noreferrer" className="block h-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={title}
+            loading="lazy"
+            className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+          />
+        </a>
         {image.is_primary ? (
-          <span className="absolute left-2 top-2 rounded bg-brand-700/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+          <span className="pointer-events-none absolute left-2 top-2 rounded bg-brand-700/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
             Primary
           </span>
         ) : null}
         {image.kind === "damage" ? (
-          <span className="absolute right-2 top-2 rounded bg-amber-800/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+          <span className="pointer-events-none absolute right-2 top-2 rounded bg-amber-800/90 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
             Damage
           </span>
         ) : null}
-      </a>
+        {canDelete && image.id != null ? (
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={() => onDelete(image)}
+            className="absolute bottom-2 right-2 rounded-lg bg-red-900/90 px-2.5 py-1 text-xs font-medium text-white opacity-0 transition hover:bg-red-800 group-hover:opacity-100 disabled:opacity-50"
+          >
+            {deleting ? "Deleting…" : "Delete"}
+          </button>
+        ) : null}
+      </div>
       <div className="space-y-1 p-3">
         {car ? (
           <Link
@@ -79,8 +99,11 @@ function ImagesPageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const toast = useToast();
+  const { confirm } = useConfirm();
+  const { user } = useAuth();
+  const canDeleteImages = hasPermission(user, "listings.write");
 
-  const page = paramPage(searchParams);
   const query = paramString(searchParams, "q");
   const kind = paramString(searchParams, "kind", "all");
   const carId = paramString(searchParams, "car_id");
@@ -88,6 +111,7 @@ function ImagesPageInner() {
 
   const [search, setSearch] = useState(query);
   const [carFilter, setCarFilter] = useState(carId);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     setSearch(query);
@@ -97,7 +121,7 @@ function ImagesPageInner() {
     setCarFilter(carId);
   }, [carId]);
 
-  const listParams: ImageListParams = useMemo(
+  const listParams: Omit<ImageListParams, "page" | "per_page"> = useMemo(
     () => ({
       search: query || undefined,
       kind: kind !== "all" ? kind : undefined,
@@ -109,36 +133,25 @@ function ImagesPageInner() {
 
   function replaceFilters(
     patch: Record<string, string | number | boolean | undefined | null>,
-    resetPage = true,
   ) {
     const next = {
       q: query || undefined,
       kind: kind !== "all" ? kind : undefined,
       car_id: carId || undefined,
       sort: sort !== "created_desc" ? sort : undefined,
-      page: resetPage ? undefined : page > 1 ? page : undefined,
       ...patch,
     };
-    if (resetPage && patch.page === undefined) {
-      next.page = undefined;
-    }
     router.replace(
       `${pathname}${buildUrlQuery(next, {
         kind: "all",
         sort: "created_desc",
-        page: 1,
       })}`,
     );
   }
 
   const { data, error, loading, reload } = useAsyncData(
-    () =>
-      fetchImages({
-        page,
-        per_page: 48,
-        ...listParams,
-      }),
-    [page, listParams],
+    () => fetchAllImages(listParams),
+    [listParams],
   );
 
   function applySearch() {
@@ -148,11 +161,35 @@ function ImagesPageInner() {
     });
   }
 
+  async function handleDelete(image: AdminImage) {
+    if (image.id == null) return;
+    const car = image.car;
+    const title = car ? listingTitle(car) : "this listing";
+    const ok = await confirm({
+      title: "Delete image?",
+      description: `Remove this photo from ${title}. This cannot be undone.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
+
+    setDeletingId(image.id);
+    try {
+      const result = await deleteImage(image.id);
+      toast.success(result.message);
+      reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete image");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <AsyncPageBody
       title="Images"
       description="All listing photos uploaded across the platform"
-      count={data?.pagination.total}
+      count={data?.total}
       data={data}
       error={error}
       loading={loading}
@@ -227,17 +264,16 @@ function ImagesPageInner() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {result.images.map((img) => (
-                <ImageCard key={img.id ?? img.image_url} image={img} />
+                <ImageCard
+                  key={img.id ?? img.image_url}
+                  image={img}
+                  canDelete={canDeleteImages}
+                  deleting={deletingId === img.id}
+                  onDelete={handleDelete}
+                />
               ))}
             </div>
           )}
-
-          <Pagination
-            pagination={result.pagination}
-            onPageChange={(p) =>
-              replaceFilters({ page: p > 1 ? p : undefined }, false)
-            }
-          />
         </>
       )}
     </AsyncPageBody>

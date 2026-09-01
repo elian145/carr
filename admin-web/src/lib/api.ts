@@ -133,6 +133,31 @@ export async function fetchImages(
   );
 }
 
+/** Fetch every image matching filters (paginates server-side until exhausted). */
+export async function fetchAllImages(
+  params: Omit<ImageListParams, "page" | "per_page">,
+): Promise<{ images: AdminImage[]; total: number }> {
+  const perPage = 100;
+  const images: AdminImage[] = [];
+  let page = 1;
+  let pages = 1;
+  let total = 0;
+
+  while (page <= pages) {
+    const result = await fetchImages({ ...params, page, per_page: perPage });
+    total = result.pagination.total;
+    pages = Math.max(1, result.pagination.pages);
+    images.push(...result.images);
+    page += 1;
+  }
+
+  return { images, total };
+}
+
+export async function deleteImage(imageId: number): Promise<{ message: string }> {
+  return apiRequest(`/api/admin/images/${imageId}`, { method: "DELETE" });
+}
+
 export async function updateListingStatus(
   carId: string,
   patch: { is_active?: boolean; status?: string; is_featured?: boolean },
