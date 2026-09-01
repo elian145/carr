@@ -140,8 +140,8 @@ Widget _buildGridCarCardInnerText(
   final double titleLineBoxHeight = titleFontSize * titleLineHeight;
   // +2px slack covers font metric rounding on the second line.
   final double reservedTitleHeight = titleLineBoxHeight * titleMaxLines + 2;
-  final double sectionGap = compact ? 4.0 : 6.0;
-  final double blockGap = compact ? 6.0 : 8.0;
+  final double sectionGap = compact ? 3.0 : 4.0;
+  final double blockGap = compact ? 5.0 : 6.0;
   final bool hasPrice = tryParseCurrencyValue(car['price']) != null;
   final String priceText = hasPrice
       ? formatCurrency(context, car['price'])

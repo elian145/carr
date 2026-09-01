@@ -244,8 +244,8 @@ InputDecoration filterDropdownFieldDecoration(
   /// When a [FilterSectionHeader] already shows [label], omit the field label.
   bool hideLabel = false,
 }) {
-  final labelFontSize = compactLabel ? 14.0 : 15.0;
-  final floatingFontSize = compactLabel ? 13.5 : 13.0;
+  final labelFontSize = 20.0;
+  final floatingFontSize = 20.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
     fontSize: labelFontSize,
@@ -266,7 +266,7 @@ InputDecoration filterDropdownFieldDecoration(
     fillColor: style.fieldFill,
     contentPadding: EdgeInsets.fromLTRB(
       12,
-      hideLabel ? 16 : (compactLabel ? 22 : 18),
+      hideLabel ? 16 : (compactLabel ? 26 : 20),
       12,
       hideLabel ? 16 : (compactLabel ? 14 : 14),
     ),
@@ -482,7 +482,7 @@ class FilterDropdownField extends StatelessWidget {
                                 style: TextStyle(
                                   color: style.onSurface,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 15,
+                                  fontSize: 18,
                                 ),
                                 child: item.child,
                               ),
@@ -511,7 +511,7 @@ class FilterDropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedChild = _selectedChild();
     final enabled = onChanged != null;
-    final fieldFontSize = narrowMenu ? 14.0 : 15.0;
+    const fieldFontSize = 18.0;
 
     return InputDecorator(
       decoration: filterDropdownFieldDecoration(

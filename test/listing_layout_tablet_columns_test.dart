@@ -24,22 +24,22 @@ void main() {
     test('narrow two-column grid uses card aspect ratio not list ratio', () {
       expect(
         ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 330),
-        0.59,
+        0.61,
       );
       expect(
         ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 310),
-        0.57,
+        0.59,
       );
     });
 
     test('tablet grid aspect ratios stay card-shaped', () {
       expect(
         ListingLayoutPrefs.gridChildAspectRatioForWidth(3, 800),
-        0.68,
+        0.70,
       );
       expect(
         ListingLayoutPrefs.gridChildAspectRatioForWidth(4, 1100),
-        0.70,
+        0.72,
       );
     });
   });

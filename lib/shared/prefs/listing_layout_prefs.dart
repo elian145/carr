@@ -70,12 +70,12 @@ class ListingLayoutPrefs {
     }
     if (listingColumns >= 3) {
       // Slightly taller tiles so title/price stay readable in narrower columns.
-      return width >= 1000 ? 0.70 : 0.68;
+      return width >= 1000 ? 0.72 : 0.70;
     }
     // Taller cells → more image area; text block sizes are fixed in the card.
-    if (width < 320) return 0.57;
-    if (width < 380) return 0.59;
-    if (width >= 420) return 0.62;
-    return 0.60;
+    if (width < 320) return 0.59;
+    if (width < 380) return 0.61;
+    if (width >= 420) return 0.64;
+    return 0.62;
   }
 }

@@ -305,12 +305,11 @@ Widget _buildGlobalCarCard(
       : LayoutBuilder(
           builder: (context, constraints) {
             final bannerH = quickSell ? 35.0 : 0.0;
-            // Room for two-line title + chips + footer at fixed sizes.
-            // Keep a few px above the measured minimum so Arabic metrics
-            // don't trigger sub-pixel overflow on some devices.
+            // Room for two-line title + trim chips + specs + footer; keep a few
+            // px slack so Arabic metrics don't clip on some devices.
             final textReserve = AppResponsive.isCompactPhone(context)
-                ? 138.0
-                : 154.0;
+                ? 136.0
+                : 150.0;
             // Prefer a shorter image over stealing from the text block — the
             // preferred 120px floor must not win when the card is short.
             final availableForImage =
