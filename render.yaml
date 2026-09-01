@@ -23,6 +23,9 @@
 #   - Background Worker/cron for beat if you use scheduled notifications:
 #       celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
 #
+# Admin dashboard (admin-web): second web service below (carr-admin).
+# On the carr-admin service set JWT_SECRET_KEY to the SAME value as the API (carr).
+#
 # Force-update (optional; also editable in admin Settings):
 #   MIN_APP_VERSION=1.0.1
 #   MIN_ANDROID_BUILD=4
@@ -40,4 +43,27 @@ services:
       # Non-secret; sync:false so dashboard can append Play App Signing SHA later.
       - key: ANDROID_SHA256_CERT_FINGERPRINTS
         value: "9E:7A:AC:CF:0B:CE:7E:A3:0E:B9:9D:AF:DF:37:8E:1D:3E:6C:F6:C5:E8:C8:22:41:1E:53:F5:A5:72:40:97:E8"
+        sync: false
+
+  # Browser admin dashboard (Next.js). Proxies API calls to the carr service.
+  - type: web
+    runtime: node
+    name: carr-admin
+    rootDir: admin-web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Baked into the client bundle at build time; server proxy uses the same value.
+      - key: NEXT_PUBLIC_API_BASE
+        fromService:
+          type: web
+          name: carr
+          envVarKey: RENDER_EXTERNAL_URL
+      # Required in production — copy the same secret from the carr service (cannot auto-sync secrets).
+      - key: JWT_SECRET_KEY
         sync: false

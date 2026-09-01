@@ -43,6 +43,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/api/admin-session") ||
+    pathname.startsWith("/api/health") ||
     isStaticAsset
   ) {
     return NextResponse.next();

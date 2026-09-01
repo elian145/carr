@@ -113,6 +113,21 @@ export interface CarImage {
   image_height?: number | null;
 }
 
+export interface AdminImage extends CarImage {
+  created_at?: string;
+  car?: {
+    id: string;
+    title?: string;
+    brand?: string;
+    model?: string;
+    status?: string;
+  } | null;
+  seller?: {
+    id: string;
+    username?: string;
+  } | null;
+}
+
 export interface CarVideo {
   id?: number;
   video_url: string;

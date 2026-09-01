@@ -68,6 +68,30 @@ Restart the API after changing `CORS_ORIGINS`.
 
 ## Production deploy
 
+### Render (recommended for this repo)
+
+The root [`render.yaml`](../render.yaml) defines a **`carr-admin`** Node service alongside the Flask API (`carr`).
+
+1. In Render Dashboard → **Blueprint** → sync from repo (or create the `carr-admin` web service manually).
+2. Set **`JWT_SECRET_KEY`** on **carr-admin** to the **same value** as the `carr` API service (required for session cookies).
+3. `NEXT_PUBLIC_API_BASE` is wired to the API’s `RENDER_EXTERNAL_URL` in the blueprint.
+4. After deploy, open `https://<carr-admin-host>/api/health` → `{"status":"ok"}`.
+5. Sign in at `https://<carr-admin-host>/login`.
+
+Manual service settings if not using the blueprint:
+
+| Setting | Value |
+|---------|--------|
+| Root directory | `admin-web` |
+| Runtime | Node |
+| Build command | `npm ci && npm run build` |
+| Start command | `npm start` |
+| Health check | `/api/health` |
+| `NEXT_PUBLIC_API_BASE` | `https://carr-5hrm.onrender.com` (your API URL) |
+| `JWT_SECRET_KEY` | Same as Flask API |
+
+### Vercel / Netlify / Cloudflare Pages
+
 Deploy this folder to **Vercel**, **Netlify**, or **Cloudflare Pages**:
 
 | Setting | Value |
@@ -78,7 +102,7 @@ Deploy this folder to **Vercel**, **Netlify**, or **Cloudflare Pages**:
 | Env var | `NEXT_PUBLIC_API_BASE=https://your-api.onrender.com` |
 | Env var (**required in prod**) | `JWT_SECRET_KEY=<same secret as the Flask API>` — used to verify admin session JWTs. If unset in production, session resolution fails closed (all page auth breaks). |
 
-Then add the deployed admin URL to `CORS_ORIGINS` on the API service.
+Then add the deployed admin URL to `CORS_ORIGINS` on the API service (only needed if the browser calls the API directly; the `/backend-api` proxy avoids CORS for most admin calls).
 
 ## Auth
 

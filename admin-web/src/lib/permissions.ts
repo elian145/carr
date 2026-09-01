@@ -8,6 +8,7 @@ export const NAV_PERMISSION: Record<string, string> = {
   "/analytics": "analytics",
   "/users": "users.read",
   "/listings": "listings.read",
+  "/images": "listings.read",
   "/reports": "reports",
   "/dealers": "dealers",
   "/messages": "messages",

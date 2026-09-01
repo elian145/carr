@@ -18,6 +18,7 @@ from ..admin_roles import (
 )
 from ..models import (
     Car,
+    CarImage,
     DealerApplication,
     DealerDecision,
     DealerProfile,
@@ -77,6 +78,33 @@ def _find_user(public_id: str) -> User | None:
     if not pid:
         return None
     return User.query.filter_by(public_id=pid).first()
+
+
+def _image_admin_dict(img: CarImage) -> dict:
+    data = img.to_dict()
+    data["created_at"] = img.created_at.isoformat() if img.created_at else None
+    car = img.car
+    if car:
+        data["car"] = {
+            "id": car.public_id if getattr(car, "public_id", None) else str(car.id),
+            "title": getattr(car, "title", None)
+            or f"{car.brand} {car.model} {car.year}".strip(),
+            "brand": car.brand,
+            "model": car.model,
+            "status": getattr(car, "status", None),
+        }
+        seller = car.seller
+        if seller:
+            data["seller"] = {
+                "id": seller.public_id,
+                "username": seller.username,
+            }
+        else:
+            data["seller"] = None
+    else:
+        data["car"] = None
+        data["seller"] = None
+    return data
 
 
 def _deny(permission: str):
@@ -395,6 +423,66 @@ def cars():
     except Exception as e:
         logger.error("admin get cars error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to get cars"}), 500
+
+
+@bp.route("/images", methods=["GET"])
+@admin_required
+def images():
+    """List all car listing images with pagination and filters."""
+    try:
+        denied = _deny("listings.read")
+        if denied:
+            return denied
+        page = request.args.get("page", 1, type=int)
+        per_page = min(max(request.args.get("per_page", 48, type=int), 1), 100)
+        kind = (request.args.get("kind") or "all").strip().lower()
+        car_id = (request.args.get("car_id") or "").strip()
+        search = (request.args.get("search") or "").strip()
+        sort = (request.args.get("sort") or "created_desc").strip().lower()
+
+        q = CarImage.query.join(Car, CarImage.car_id == Car.id)
+        if kind and kind != "all":
+            q = q.filter(CarImage.kind == kind)
+        if car_id:
+            car = _find_car(car_id)
+            if car:
+                q = q.filter(CarImage.car_id == car.id)
+            else:
+                q = q.filter(CarImage.id < 0)
+        if search:
+            like = f"%{search}%"
+            q = q.filter(
+                CarImage.image_url.ilike(like)
+                | Car.title.ilike(like)
+                | Car.brand.ilike(like)
+                | Car.model.ilike(like)
+                | Car.public_id.ilike(like)
+            )
+
+        order_map = {
+            "created_desc": desc(CarImage.created_at),
+            "created_asc": asc(CarImage.created_at),
+        }
+        order_by = order_map.get(sort, desc(CarImage.created_at))
+
+        pagination = (
+            q.options(joinedload(CarImage.car).joinedload(Car.seller))
+            .order_by(order_by)
+            .paginate(page=page, per_page=per_page, error_out=False)
+        )
+        items = [_image_admin_dict(img) for img in pagination.items]
+        return (
+            jsonify(
+                {
+                    "images": items,
+                    "pagination": _pagination_dict(pagination, page, per_page),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("admin get images error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to get images"}), 500
 
 
 @bp.route("/messages", methods=["GET"])

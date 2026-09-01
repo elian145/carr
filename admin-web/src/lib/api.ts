@@ -1,6 +1,7 @@
 import { ApiRequestError, apiBlobRequest, apiRequest } from "./auth";
 import { buildQuery } from "./query";
 import type {
+  AdminImage,
   AdminReport,
   AnalyticsOverview,
   CarDetail,
@@ -113,6 +114,23 @@ export async function fetchListings(
 
 export async function fetchListingDetail(carId: string): Promise<CarDetail> {
   return apiRequest<CarDetail>(`/api/admin/cars/${encodeURIComponent(carId)}`);
+}
+
+export interface ImageListParams {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  kind?: string;
+  car_id?: string;
+  sort?: string;
+}
+
+export async function fetchImages(
+  params: ImageListParams,
+): Promise<{ images: AdminImage[]; pagination: Pagination }> {
+  return apiRequest(
+    `/api/admin/images${buildQuery(params as Record<string, string | number | boolean>)}`,
+  );
 }
 
 export async function updateListingStatus(
