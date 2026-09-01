@@ -845,20 +845,6 @@ def listing_share_landing(listing_id: str):
       -webkit-appearance: none;
       appearance: none;
     }}
-    .hint {{
-      font-size: 0.8rem;
-      color: #666;
-      line-height: 1.45;
-      margin: 0 0 0.25rem;
-    }}
-    .foot {{
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #eee;
-      font-size: 0.8rem;
-      color: #888;
-    }}
-    .foot a {{ color: #e85f00; font-weight: 600; }}
   </style>
 </head>
 <body>
@@ -875,13 +861,6 @@ def listing_share_landing(listing_id: str):
         <p class="price">{currency} {price_s}</p>
         <div class="desc">{desc_html}</div>
         <a href="{esc_deep}" class="cta" id="carzo-open-btn" rel="noopener noreferrer">Open in CarNet app</a>
-        <p class="hint">
-          Opening CarNet… If nothing happens, tap the orange button above.
-        </p>
-        <p class="foot">
-          Universal Links open this URL in CarNet when iOS/Android is fully configured.
-          Web-only view: add <strong>?web=1</strong> to the URL to skip opening the app.
-        </p>
       </div>
     </div>
   </div>
