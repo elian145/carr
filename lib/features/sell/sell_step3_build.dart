@@ -2,43 +2,7 @@ part of 'sell_flow.dart';
 
 mixin _SellStep3Build on _SellStep3BuildDetails {
   List<Widget> _sellStep3BuildHeaderSection() {
-    return [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.brandOrange.withValues(alpha: 0.1), Colors.white],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.brandOrange.withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.attach_money, size: 48, color: AppColors.brandOrange),
-                  SizedBox(height: 12),
-                  Text(
-                    AppLocalizations.of(context)!.pricingContactTitle,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    AppLocalizations.of(context)!.setYourPriceAndContactInformation,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 24),
-    ];
+    return const [];
   }
 
   List<Widget> _sellStep3BuildNavSection() {

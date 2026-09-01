@@ -286,49 +286,6 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  kFilterAccentColor.withValues(alpha: 0.1),
-                  Colors.white,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: kFilterAccentColor.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.blur_on,
-                  size: 48,
-                  color: kFilterAccentColor,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  AppLocalizations.of(context)!.licensePlates,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  AppLocalizations.of(context)!.chooseWhetherToPublishPhotosWithBlurredPlates,
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
           FilterCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

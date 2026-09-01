@@ -8,6 +8,7 @@ import '../../services/deep_link_service.dart';
 import '../../services/push_notification_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/ui/keyboard.dart';
+import '../../shared/ui/responsive.dart';
 import '../../l10n/app_localizations.dart';
 
 final AppRouteTracker appRouteTracker = AppRouteTracker();
@@ -238,50 +239,70 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
                   : AppLocalizations.of(dialogContext)!.yourDealershipIsApproved,
               textAlign: TextAlign.center,
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  alreadyEditing
-                      ? AppLocalizations.of(dialogContext)!
-                          .yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT
-                      : AppLocalizations.of(dialogContext)!
-                          .completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT,
-                  style: TextStyle(color: colors.onSurfaceVariant, height: 1.4),
+            content: SizedBox(
+              width: AppResponsive.dialogWidth(dialogContext, preferred: 400),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: AppResponsive.dialogMaxHeight(
+                    dialogContext,
+                    fraction: 0.55,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                ...missing.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 9),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.add_circle_outline_rounded,
-                          color: colors.primary,
-                          size: 19,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        alreadyEditing
+                            ? AppLocalizations.of(dialogContext)!
+                                .yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT
+                            : AppLocalizations.of(dialogContext)!
+                                .completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT,
+                        style: TextStyle(
+                          color: colors.onSurfaceVariant,
+                          height: 1.4,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 16),
+                      ...missing.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 9),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.add_circle_outline_rounded,
+                                color: colors.primary,
+                                size: 19,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  item,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        AppLocalizations.of(dialogContext)!
+                            .youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin,
+                        style: TextStyle(
+                          color: colors.onSurfaceVariant,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  AppLocalizations.of(dialogContext)!.youCanAlsoReviewYourContactDetailsLocationDescriptionAndMapPin,
-                  style: TextStyle(
-                    color: colors.onSurfaceVariant,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-              ],
+              ),
             ),
             actions: [
               if (alreadyEditing)

@@ -362,45 +362,6 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
     final loc = AppLocalizations.of(context)!;
 
     return [
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              kFilterAccentColor.withValues(alpha: 0.1),
-              Colors.white,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: kFilterAccentColor.withValues(alpha: 0.2),
-          ),
-        ),
-        child: Column(
-          children: [
-            const Icon(Icons.settings, size: 48, color: kFilterAccentColor),
-            const SizedBox(height: 12),
-            Text(
-              loc.carDetailsTitle,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              loc.carDetailsSubtitle,
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 24),
       ..._sellStep2MileageSection(),
       FilterIconCardSection(
         title: loc.conditionLabel,

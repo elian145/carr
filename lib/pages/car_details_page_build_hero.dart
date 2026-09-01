@@ -78,10 +78,45 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
     if (hasModelOrPrice) height += 4 + _modelPriceRowHeight(context);
     if (hasMeta) height += 16 + 18;
     height += _metaToDividerGap + 1;
-    // Specs title needs extra descent for Arabic/Kurdish underdots + bottom pad.
-    height += 8 + 32 + 6;
+    // Specs title — measure Arabic/Kurdish glyph metrics instead of a fixed box.
+    height += 4 + _specsTitleRowHeight(context) + 2;
     if (hasQuickSell) height += 44 + 16;
     return height;
+  }
+
+  static const double _specsTitleFontSize = 28;
+  static const double _specsTitleHeightBuffer = 12;
+
+  double _specsTitleLineHeight(BuildContext context) {
+    const style = TextStyle(
+      fontSize: _specsTitleFontSize,
+      fontWeight: FontWeight.bold,
+      height: 1.35,
+      leadingDistribution: TextLeadingDistribution.even,
+      color: AppColors.brandOrange,
+    );
+    final painter = TextPainter(
+      text: TextSpan(
+        text: AppLocalizations.of(context)!.specificationsLabel,
+        style: style,
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: const TextScaler.linear(1.0),
+      maxLines: 1,
+      strutStyle: const StrutStyle(
+        fontSize: _specsTitleFontSize,
+        height: 1.35,
+        leadingDistribution: TextLeadingDistribution.even,
+        forceStrutHeight: true,
+      ),
+    )..layout();
+    return painter.size.height.ceilToDouble();
+  }
+
+  double _specsTitleRowHeight(BuildContext context) {
+    // Ceil + small margin: device Arabic fonts can exceed TextPainter by a few px.
+    return (_specsTitleLineHeight(context) + _specsTitleHeightBuffer + 2)
+        .ceilToDouble();
   }
 
   Widget _buildCarDetailsTitleHeader(BuildContext context, bool isLightShell) {
@@ -97,7 +132,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       child: Theme(
         data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -145,21 +180,26 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: AutoSizeText(
-                    _displayBrandName(context),
-                    textScaleFactor: 1.0,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      height: 1.15,
-                      color: isLightShell
-                          ? const Color(0xFF858585)
-                          : Colors.white60,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.noScaling,
                     ),
-                    maxLines: 1,
-                    minFontSize: 11,
-                    stepGranularity: 0.5,
-                    overflow: TextOverflow.clip,
+                    child: AutoSizeText(
+                      _displayBrandName(context),
+                      textScaleFactor: 1.0,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        height: 1.15,
+                        color: isLightShell
+                            ? const Color(0xFF858585)
+                            : Colors.white60,
+                      ),
+                      maxLines: 1,
+                      minFontSize: 11,
+                      stepGranularity: 0.5,
+                      overflow: TextOverflow.clip,
+                    ),
                   ),
                 ),
               ],
@@ -292,15 +332,30 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
             // Push Specs to the bottom of the sheet so PreferredSize slack can't
             // open a gap between Specs and the grid below.
             const Spacer(),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context)!.specificationsLabel,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                height: 1.35,
-                leadingDistribution: TextLeadingDistribution.even,
-                color: AppColors.brandOrange,
+            const SizedBox(height: 4),
+            SizedBox(
+              height: _specsTitleRowHeight(context),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  AppLocalizations.of(context)!.specificationsLabel,
+                  textScaler: TextScaler.noScaling,
+                  maxLines: 1,
+                  overflow: TextOverflow.clip,
+                  strutStyle: const StrutStyle(
+                    fontSize: _specsTitleFontSize,
+                    height: 1.35,
+                    leadingDistribution: TextLeadingDistribution.even,
+                    forceStrutHeight: true,
+                  ),
+                  style: const TextStyle(
+                    fontSize: _specsTitleFontSize,
+                    fontWeight: FontWeight.bold,
+                    height: 1.35,
+                    leadingDistribution: TextLeadingDistribution.even,
+                    color: AppColors.brandOrange,
+                  ),
+                ),
               ),
             ),
           ],

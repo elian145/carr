@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/home/home_filter_chip_style.dart';
 import '../../l10n/app_localizations.dart';
 import 'filter_card_sections.dart';
+import 'responsive.dart';
 
 class FilterColorField extends StatelessWidget {
   const FilterColorField({
@@ -112,7 +113,11 @@ class _ColorPickerDialog extends StatelessWidget {
       backgroundColor: pickerBg,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420, maxHeight: 480),
+        constraints: AppResponsive.dialogBoxConstraints(
+          context,
+          preferredWidth: 420,
+          maxHeight: 480,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -138,16 +143,16 @@ class _ColorPickerDialog extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              Flexible(
+              SizedBox(
+                height: AppResponsive.dialogScrollHeight(
+                  context,
+                  preferred: 300,
+                  headerFooterReserve: 100,
+                ),
                 child: GridView.builder(
                   shrinkWrap: true,
                   physics: const BouncingScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    childAspectRatio: 0.9,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
+                  gridDelegate: AppResponsive.colorPickerGridDelegate(context),
                   itemCount: colors.length,
                   itemBuilder: (context, index) {
                     final colorName = colors[index];

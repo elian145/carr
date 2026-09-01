@@ -1,5 +1,24 @@
 part of 'car_listing_specs_grid.dart';
 
+/// Layout at ~107dp tile width; all dimensions scale proportionally with tile width.
+const double _specsDesignTileWidth = 107.0;
+const double _specsDesignTileHeight = _specsDesignTileWidth / 1.05;
+const double _specsDesignIconSize = 30.0;
+const double _specsDesignCircleSize = 44.0;
+const double _specsDesignLabelFontSize = 11.0;
+const double _specsDesignValueFontSize = 14.0;
+const double _specsDesignOrangeBar = 2.5;
+const int _specsIconFlex = 5;
+const int _specsLabelFlex = 2;
+const int _specsValueFlex = 3;
+const int _specsContentFlexTotal =
+    _specsIconFlex + _specsLabelFlex + _specsValueFlex;
+
+double _specsTileScale(double tileWidth) =>
+    tileWidth / _specsDesignTileWidth;
+
+double _specsDim(double designPixels, double scale) => designPixels * scale;
+
 Widget carListingSpecsDetailRow(
   BuildContext context, {
     required IconData icon,
@@ -179,123 +198,142 @@ Widget carListingSpecsCard(ListingSpecItem item) {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            child: Column(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 10, 8, 6),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final double iconSize =
-                              (constraints.maxWidth * 0.28).clamp(22.0, 30.0);
-                          final double circleSize =
-                              (constraints.maxWidth * 0.42).clamp(34.0, 44.0);
-                          final double labelFontSize =
-                              (constraints.maxWidth * 0.12).clamp(9.0, 11.0);
-                          final double valueFontSize =
-                              (constraints.maxWidth * 0.15).clamp(11.0, 14.0);
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final scale = _specsTileScale(constraints.maxWidth);
+                final padH = _specsDim(8, scale);
+                final padTop = _specsDim(10, scale);
+                final padBottom = _specsDim(6, scale);
+                final iconSize = _specsDim(_specsDesignIconSize, scale);
+                final circleSize = _specsDim(_specsDesignCircleSize, scale);
+                final labelFontSize = _specsDim(_specsDesignLabelFontSize, scale);
+                final valueFontSize = _specsDim(_specsDesignValueFontSize, scale);
+                final orangeBar = _specsDim(_specsDesignOrangeBar, scale);
 
-                          final Widget iconGlyph;
-                          final asset = item.imageAsset;
-                          if (asset != null && asset.isNotEmpty) {
-                            iconGlyph = ColorFiltered(
-                              colorFilter: const ColorFilter.mode(
-                                brandOrange,
-                                BlendMode.srcIn,
-                              ),
-                              child: Image.asset(
-                                asset,
-                                width: iconSize,
-                                height: iconSize,
-                                fit: BoxFit.contain,
-                                filterQuality: FilterQuality.high,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Icon(
-                                  item.icon,
-                                  size: iconSize,
-                                  color: brandOrange,
-                                ),
-                              ),
-                            );
-                          } else {
-                            iconGlyph = Icon(
-                              item.icon,
-                              size: iconSize,
-                              color: brandOrange,
-                            );
-                          }
+                final innerH = constraints.maxHeight -
+                    orangeBar -
+                    padTop -
+                    padBottom;
+                final iconZoneH =
+                    innerH * _specsIconFlex / _specsContentFlexTotal;
+                final labelZoneH =
+                    innerH * _specsLabelFlex / _specsContentFlexTotal;
+                final valueZoneH =
+                    innerH * _specsValueFlex / _specsContentFlexTotal;
 
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                flex: 5,
-                                child: Center(
-                                  child: Container(
-                                    width: circleSize,
-                                    height: circleSize,
-                                    decoration: BoxDecoration(
-                                      color: iconCircleFill,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: iconGlyph,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Center(
-                                  child: AutoSizeText(
-                                    item.label,
-                                    maxLines: 1,
-                                    textAlign: TextAlign.center,
-                                    textScaleFactor: 1.0,
-                                    style: TextStyle(
-                                      fontSize: labelFontSize,
-                                      height: 1.05,
-                                      color: labelGrey,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    minFontSize: 7,
-                                    stepGranularity: 0.5,
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Center(
-                                  child: AutoSizeText(
-                                    item.value!,
-                                    maxLines: 1,
-                                    textAlign: TextAlign.center,
-                                    textScaleFactor: 1.0,
-                                    style: TextStyle(
-                                      fontSize: valueFontSize,
-                                      height: 1.05,
-                                      color: valueColor,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                    minFontSize: 9,
-                                    stepGranularity: 0.5,
-                                    overflow: TextOverflow.clip,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                final Widget iconGlyph;
+                final asset = item.imageAsset;
+                if (asset != null && asset.isNotEmpty) {
+                  iconGlyph = ColorFiltered(
+                    colorFilter: const ColorFilter.mode(
+                      brandOrange,
+                      BlendMode.srcIn,
+                    ),
+                    child: Image.asset(
+                      asset,
+                      width: iconSize,
+                      height: iconSize,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        item.icon,
+                        size: iconSize,
+                        color: brandOrange,
                       ),
                     ),
-                  ),
-                  const ColoredBox(
+                  );
+                } else {
+                  iconGlyph = Icon(
+                    item.icon,
+                    size: iconSize,
                     color: brandOrange,
-                    child: SizedBox(height: 2.5, width: double.infinity),
-                  ),
-                ],
-              ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        padH,
+                        padTop,
+                        padH,
+                        padBottom,
+                      ),
+                      child: SizedBox(
+                        height: innerH,
+                        child: Column(
+                          children: [
+                            SizedBox(
+                              height: iconZoneH,
+                              child: Center(
+                                child: Container(
+                                  width: circleSize,
+                                  height: circleSize,
+                                  decoration: BoxDecoration(
+                                    color: iconCircleFill,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: iconGlyph,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              height: labelZoneH,
+                              child: Center(
+                                child: AutoSizeText(
+                                  item.label,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  textScaleFactor: 1.0,
+                                  style: TextStyle(
+                                    fontSize: labelFontSize,
+                                    height: 1.05,
+                                    color: labelGrey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  minFontSize: 7,
+                                  stepGranularity: 0.5,
+                                  overflow: TextOverflow.clip,
+                                ),
+                              ),
+                            ),
+                            SizedBox(
+                              height: valueZoneH,
+                              child: Center(
+                                child: AutoSizeText(
+                                  item.value!,
+                                  maxLines: 1,
+                                  textAlign: TextAlign.center,
+                                  textScaleFactor: 1.0,
+                                  style: TextStyle(
+                                    fontSize: valueFontSize,
+                                    height: 1.05,
+                                    color: valueColor,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  minFontSize: 9,
+                                  stepGranularity: 0.5,
+                                  overflow: TextOverflow.clip,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    ColoredBox(
+                      color: brandOrange,
+                      child: SizedBox(
+                        height: orangeBar,
+                        width: double.infinity,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
+          ),
           );
       },
     ),

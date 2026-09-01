@@ -518,6 +518,7 @@ class _ModelDropdown extends StatelessWidget {
       value: currentModel,
       errorText: isError ? loc.pleaseSelectModel : null,
       narrowMenu: false,
+      hideLabel: true,
       items: modelList.map((model) {
         final display = CarNameTranslations.getLocalizedModel(context, brand, model)
                 .isNotEmpty
@@ -530,7 +531,7 @@ class _ModelDropdown extends StatelessWidget {
       }).toList(),
       hint: Text(
         loc.tapToSelect,
-        style: TextStyle(color: style.anyOrange, fontWeight: FontWeight.w600),
+        style: filterDropdownHintStyle(style),
       ),
       onChanged: onChanged,
     );
@@ -563,6 +564,7 @@ class _TrimDropdown extends StatelessWidget {
       value: currentTrim,
       errorText: isError ? loc.pleaseSelectTrim : null,
       narrowMenu: false,
+      hideLabel: true,
       items: trimList.map((trim) {
         return DropdownMenuItem<String>(
           value: trim,
@@ -571,7 +573,7 @@ class _TrimDropdown extends StatelessWidget {
       }).toList(),
       hint: Text(
         loc.tapToSelect,
-        style: TextStyle(color: style.anyOrange, fontWeight: FontWeight.w600),
+        style: filterDropdownHintStyle(style),
       ),
       onChanged: onChanged,
     );

@@ -158,6 +158,27 @@ abstract final class AppResponsive {
     return 3;
   }
 
+  /// Fixed row height for color-picker tiles (swatch + localized label).
+  static double colorPickerGridTileExtent(BuildContext context) {
+    const swatch = 36.0;
+    const gap = 6.0;
+    const verticalPad = 16.0;
+    const buffer = 8.0;
+    final labelLine = MediaQuery.textScalerOf(context).scale(12) * 1.25;
+    return verticalPad + swatch + gap + labelLine + buffer;
+  }
+
+  static SliverGridDelegateWithFixedCrossAxisCount colorPickerGridDelegate(
+    BuildContext context,
+  ) {
+    return SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: bodyTypeGridCrossAxisCount(context),
+      mainAxisExtent: colorPickerGridTileExtent(context),
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+    );
+  }
+
   /// Full-bleed featured carousel card (image + title/price/specs).
   /// Matches the home featured section horizontal padding (8 + 4 each side).
   static const double featuredSectionHorizontalInset = 12;
@@ -200,9 +221,8 @@ abstract final class AppResponsive {
   }) {
     final w = screenSize(context).width;
     final colW = cardWidth ?? ((w - 24) / 2);
-    // Standard marketplace 4:3 frame. It preserves more of typical landscape
-    // car photos while portrait photos use automatic downward vehicle bias.
-    final ratio = quickSell ? 0.62 : 0.75;
+    // Slightly taller than 4:3 on grid tiles so car photos feel less cropped.
+    final ratio = quickSell ? 0.62 : 0.82;
     final preferredMin = quickSell ? 100.0 : 120.0;
     final preferredMax = quickSell ? 130.0 : 230.0;
     var height = (colW * ratio).clamp(preferredMin, preferredMax);

@@ -11,13 +11,25 @@ void main() {
       expect(ListingLayoutPrefs.effectiveColumnsForWidth(1, 320), 1);
     });
 
-    test('grid expands on tablet and large tablet widths', () {
-      expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 330), 1);
+    test('grid stays two columns on narrow phones when user picks grid', () {
+      expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 320), 2);
+      expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 330), 2);
       expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 390), 2);
       expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 719), 2);
       expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 720), 3);
       expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 999), 3);
       expect(ListingLayoutPrefs.effectiveColumnsForWidth(2, 1000), 4);
+    });
+
+    test('narrow two-column grid uses card aspect ratio not list ratio', () {
+      expect(
+        ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 330),
+        0.59,
+      );
+      expect(
+        ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 310),
+        0.57,
+      );
     });
 
     test('tablet grid aspect ratios stay card-shaped', () {

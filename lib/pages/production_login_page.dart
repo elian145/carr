@@ -374,7 +374,7 @@ class _LoginPageState extends State<LoginPage> {
 
   InputDecoration _loginFieldDecoration(
     BuildContext context, {
-    required String labelText,
+    String? labelText,
     String? hintText,
     String? prefixText,
     Widget? prefixIcon,
@@ -723,48 +723,56 @@ class _LoginPageState extends State<LoginPage> {
                         onChanged: (_) => _resetOtpState(),
                       ),
                       const SizedBox(height: 14),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _otpController,
-                              focusNode: _otpFocus,
-                              keyboardType: TextInputType.number,
-                              textInputAction: TextInputAction.done,
-                              onFieldSubmitted: (_) {
-                                if (_otpSent && !_loading) {
-                                  _loginWithPhone();
-                                }
-                              },
-                              style: TextStyle(
-                                color: primaryInk,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                letterSpacing: 2,
-                              ),
-                              decoration: _loginFieldDecoration(
-                                context,
-                                labelText: loc.sixDigitCodeLabel,
-                                prefixIcon: const Icon(
-                                  Icons.lock_outline_rounded,
-                                  color: AppColors.brandOrange,
-                                ),
-                              ),
-                              inputFormatters: [
-                                services.FilteringTextInputFormatter.digitsOnly,
-                                services.LengthLimitingTextInputFormatter(6),
-                              ],
-                              validator: (v) => (!_otpSent)
-                                  ? loc.sendCodeFirst
-                                  : ((v == null || v.trim().length != 6)
-                                        ? loc.requiredField
-                                        : null),
+                      Text(
+                        loc.sixDigitCodeLabel,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: secondaryInk,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final stackOtpActions =
+                              constraints.maxWidth < 400;
+                          final otpField = TextFormField(
+                            controller: _otpController,
+                            focusNode: _otpFocus,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) {
+                              if (_otpSent && !_loading) {
+                                _loginWithPhone();
+                              }
+                            },
+                            style: TextStyle(
+                              color: primaryInk,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              letterSpacing: 2,
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          SizedBox(
-                            height: 56,
+                            decoration: _loginFieldDecoration(
+                              context,
+                              hintText: '000000',
+                              prefixIcon: const Icon(
+                                Icons.lock_outline_rounded,
+                                color: AppColors.brandOrange,
+                              ),
+                            ),
+                            inputFormatters: [
+                              services.FilteringTextInputFormatter.digitsOnly,
+                              services.LengthLimitingTextInputFormatter(6),
+                            ],
+                            validator: (v) => (!_otpSent)
+                                ? loc.sendCodeFirst
+                                : ((v == null || v.trim().length != 6)
+                                      ? loc.requiredField
+                                      : null),
+                          );
+                          final sendButton = SizedBox(
+                            height: 52,
                             child: ElevatedButton(
                               onPressed:
                                   (_loading || _sendingOtp) ? null : _sendOtp,
@@ -797,8 +805,27 @@ class _LoginPageState extends State<LoginPage> {
                                       ),
                                     ),
                             ),
-                          ),
-                        ],
+                          );
+
+                          if (stackOtpActions) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                otpField,
+                                const SizedBox(height: 10),
+                                sendButton,
+                              ],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: otpField),
+                              const SizedBox(width: 10),
+                              sendButton,
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 22),
                       Semantics(

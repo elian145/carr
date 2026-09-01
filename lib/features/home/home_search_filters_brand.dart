@@ -439,6 +439,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
       label: loc.modelLabel,
       value: currentModel,
       narrowMenu: false,
+      hideLabel: true,
       items: modelList.map(
         (model) {
           final display =
@@ -454,10 +455,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
       ).toList(),
       hint: Text(
         loc.tapToSelect,
-        style: TextStyle(
-          color: _searchAccent,
-          fontWeight: FontWeight.w600,
-        ),
+        style: filterDropdownHintStyle(_searchMoreFiltersStyle(context)),
       ),
       onChanged: (value) {
         setState(() {
@@ -485,6 +483,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
       label: loc.trimLabel,
       value: currentTrim,
       narrowMenu: false,
+      hideLabel: true,
       items: trimList
           .map(
             (trim) => DropdownMenuItem<String>(
@@ -495,10 +494,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
           .toList(),
       hint: Text(
         loc.tapToSelect,
-        style: TextStyle(
-          color: _searchAccent,
-          fontWeight: FontWeight.w600,
-        ),
+        style: filterDropdownHintStyle(_searchMoreFiltersStyle(context)),
       ),
       onChanged: (value) {
         setState(() {

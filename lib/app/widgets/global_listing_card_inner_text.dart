@@ -24,7 +24,27 @@ class _ListingPriceBadgeStyle {
 _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required double rowWidth,
   required bool hasPrice,
+  bool listLayout = false,
 }) {
+  if (listLayout) {
+    // Horizontal list cards: slightly smaller than grid, but still readable.
+    final double t = ((rowWidth - 110) / 70).clamp(0.0, 1.0);
+    final double fontSize = hasPrice ? 12.0 + 2.5 * t : 10.5 + 2.0 * t;
+    final double horizontalPadding = hasPrice ? 5.5 + 3.5 * t : 4.5 + 3.0 * t;
+    final double verticalPadding = 3.0 + 2.0 * t;
+    final double radius = 6.5 + 1.5 * t;
+    final double footerHeight =
+        (verticalPadding * 2 + fontSize + 1.5).clamp(22.0, 28.0);
+
+    return _ListingPriceBadgeStyle(
+      fontSize: fontSize,
+      horizontalPadding: horizontalPadding,
+      verticalPadding: verticalPadding,
+      radius: radius,
+      footerHeight: footerHeight,
+    );
+  }
+
   // ~148px text width → smallest badge, ~204px → full size.
   final double t = ((rowWidth - 148) / 56).clamp(0.0, 1.0);
 
@@ -666,8 +686,6 @@ Widget _buildListCarCardInnerText(
       languageCode == 'ar' ||
       languageCode == 'ku';
   final textDirection = isRtl ? TextDirection.rtl : TextDirection.ltr;
-  final double leadingShift = isRtl ? 6 : -6;
-  final double trailingShift = isRtl ? -4 : 4;
   final String titleText = localizedCarTitleForCard(context, car);
   final bool hasTrim = trimLine.isNotEmpty;
   final bool hasEngine = engineLine.isNotEmpty;
@@ -742,20 +760,6 @@ Widget _buildListCarCardInnerText(
       fontSize: style.fontSize,
       height: 1,
     );
-    final bool canMeasure =
-        maxWidth != null && maxWidth.isFinite && maxWidth > 0;
-    bool needsShrink = false;
-    if (canMeasure) {
-      final painter = TextPainter(
-        text: TextSpan(text: priceText, style: textStyle),
-        textDirection: TextDirection.ltr,
-        textScaler: TextScaler.noScaling,
-        maxLines: 1,
-      )..layout(minWidth: 0, maxWidth: double.infinity);
-      final needed = painter.width + style.horizontalPadding * 2;
-      painter.dispose();
-      needsShrink = needed > maxWidth;
-    }
 
     final label = Text(
       priceText,
@@ -763,14 +767,14 @@ Widget _buildListCarCardInnerText(
       textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
-      overflow: TextOverflow.visible,
+      overflow: TextOverflow.ellipsis,
       style: textStyle,
     );
 
-    // No Container.alignment — inside Expanded that would stretch the orange
-    // box to the full footer slot height.
     return Container(
-      width: needsShrink ? maxWidth : null,
+      constraints: maxWidth != null && maxWidth.isFinite
+          ? BoxConstraints(maxWidth: maxWidth)
+          : null,
       padding: EdgeInsets.symmetric(
         horizontal: style.horizontalPadding,
         vertical: style.verticalPadding,
@@ -779,9 +783,10 @@ Widget _buildListCarCardInnerText(
         color: priceAccent,
         borderRadius: BorderRadius.circular(style.radius),
       ),
-      child: needsShrink
-          ? FittedBox(fit: BoxFit.scaleDown, child: label)
-          : label,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: label,
+      ),
     );
   }
 
@@ -917,12 +922,6 @@ Widget _buildListCarCardInnerText(
             mileageWidthForSizing(fontSize);
       }
 
-      double paintedRowWidthAt(double fontSize) {
-        return _yearMileageChipWidth(yearText, fontSize) +
-            gap +
-            _yearMileageChipWidth(mileageText, fontSize);
-      }
-
       double fontSize = maxFont;
       if (bounded) {
         fontSize = minFont;
@@ -960,19 +959,16 @@ Widget _buildListCarCardInnerText(
         return Align(alignment: specsAlign, child: chips);
       }
 
-      final bool needsScale = paintedRowWidthAt(fontSize) > maxW;
       return Align(
         alignment: specsAlign,
-        child: needsScale
-            ? ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: maxW),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: specsAlign,
-                  child: chips,
-                ),
-              )
-            : chips,
+        child: SizedBox(
+          width: maxW,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: specsAlign,
+            child: chips,
+          ),
+        ),
       );
     },
   );
@@ -1026,16 +1022,13 @@ Widget _buildListCarCardInnerText(
 
   final Widget priceRow = LayoutBuilder(
     builder: (context, constraints) {
-      // Match the two-per-row grid badge: same text-width scale + metrics.
-      final gridTextWidth =
-          (AppResponsive.homeGridListingCardWidth(context) - 24)
-              .clamp(140.0, 320.0);
       final priceStyle = _listingPriceBadgeStyle(
-        rowWidth: gridTextWidth,
+        rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
+        listLayout: true,
       );
       final double maxPriceWidth =
-          constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
+          constraints.maxWidth * (hasPrice ? 0.64 : 0.48);
       return SizedBox(
         height: priceStyle.footerHeight,
         child: Row(
@@ -1043,47 +1036,41 @@ Widget _buildListCarCardInnerText(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: Transform.translate(
-                offset: Offset(leadingShift, 0),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment:
-                      isRtl ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Row(
-                    textDirection: textDirection,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: priceAccent,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment:
+                    isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                child: Row(
+                  textDirection: textDirection,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: priceAccent,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      cityText,
+                      textDirection: textDirection,
+                      textScaler: const TextScaler.linear(1.0),
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: titleTextColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(width: 2),
-                      Text(
-                        cityText,
-                        textDirection: textDirection,
-                        textScaler: const TextScaler.linear(1.0),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        style: TextStyle(
-                          color: titleTextColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
             const SizedBox(width: 6),
-            Transform.translate(
-              offset: Offset(trailingShift, 0),
-              child: buildPriceBadge(
-                maxWidth: maxPriceWidth,
-                style: priceStyle,
-              ),
+            buildPriceBadge(
+              maxWidth: maxPriceWidth,
+              style: priceStyle,
             ),
           ],
         ),
@@ -1132,23 +1119,38 @@ Widget _buildListCarCardInnerText(
       if (hasDetailRow) ...[
         Expanded(
           flex: 3,
-          child: Align(
-            alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-            child: Transform.translate(
-              offset: const Offset(0, -2),
-              child: engineTrimRow,
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Align(
+                alignment:
+                    isRtl ? Alignment.centerRight : Alignment.centerLeft,
+                child: SizedBox(
+                  width: constraints.maxWidth,
+                  child: Transform.translate(
+                    offset: const Offset(0, -2),
+                    child: engineTrimRow,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],
       Expanded(
         flex: 3,
-        child: Align(
-          alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
-          child: Transform.translate(
-            offset: const Offset(0, -2),
-            child: specsRow,
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Align(
+              alignment: isRtl ? Alignment.centerRight : Alignment.centerLeft,
+              child: SizedBox(
+                width: constraints.maxWidth,
+                child: Transform.translate(
+                  offset: const Offset(0, -2),
+                  child: specsRow,
+                ),
+              ),
+            );
+          },
         ),
       ),
       Expanded(flex: 3, child: priceRow),

@@ -57,6 +57,7 @@ mixin _SellStep1Build on _SellStep1Pickers {
                             ? selectedYear
                             : null,
                         errorText: errYear ? loc.pleaseSelectYear : null,
+                        hideLabel: true,
                         items: availableYears.map((year) {
                           return DropdownMenuItem<String>(
                             value: year,
@@ -67,10 +68,7 @@ mixin _SellStep1Build on _SellStep1Pickers {
                         }).toList(),
                         hint: Text(
                           loc.tapToSelect,
-                          style: TextStyle(
-                            color: style.anyOrange,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: filterDropdownHintStyle(style),
                         ),
                         onChanged: (value) {
                           setState(() => selectedYear = value);
@@ -130,49 +128,6 @@ mixin _SellStep1Build on _SellStep1Pickers {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    kFilterAccentColor.withValues(alpha: 0.1),
-                    Colors.white,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: kFilterAccentColor.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.directions_car,
-                    size: 48,
-                    color: kFilterAccentColor,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppLocalizations.of(context)!.basicInformationTitle,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    AppLocalizations.of(context)!.basicInformationSubtitle,
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
             MakeModelKeywordSearch(
               brands: brands,
               models: models,

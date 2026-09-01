@@ -84,14 +84,8 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                               shrinkWrap: true,
                               physics: const BouncingScrollPhysics(),
                               gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount:
-                                        AppResponsive.bodyTypeGridCrossAxisCount(
-                                          dlgContext,
-                                        ),
-                                    childAspectRatio: 0.9,
-                                    crossAxisSpacing: 10,
-                                    mainAxisSpacing: 10,
+                                  AppResponsive.colorPickerGridDelegate(
+                                    dlgContext,
                                   ),
                               itemCount: colorOptions.length,
                               itemBuilder: (context, index) {

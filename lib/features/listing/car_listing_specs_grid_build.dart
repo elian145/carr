@@ -303,8 +303,7 @@ Widget buildCarListingSpecsGrid(
       const int crossCount = 3;
       final double maxW = constraints.maxWidth;
       final double tileW = (maxW - crossGap * (crossCount - 1)) / crossCount;
-      // Taller tiles for icon circle + label + value.
-      final double rowH = tileW / 1.05;
+      final double rowH = tileW * (_specsDesignTileHeight / _specsDesignTileWidth);
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -321,21 +320,26 @@ Widget buildCarListingSpecsGrid(
     },
   );
 
-  final topSpecs = Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-    decoration: BoxDecoration(
-      color: isLightSpecs
-          ? const Color(0xFFF5F5F7)
-          : const Color(0xFF161616),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: isLightSpecs
-            ? const Color(0xFFE8E8ED)
-            : Colors.white.withValues(alpha: 0.08),
-      ),
+  final topSpecs = MediaQuery(
+    data: MediaQuery.of(context).copyWith(
+      textScaler: TextScaler.noScaling,
     ),
-    child: primGrid,
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      decoration: BoxDecoration(
+        color: isLightSpecs
+            ? const Color(0xFFF5F5F7)
+            : const Color(0xFF161616),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isLightSpecs
+              ? const Color(0xFFE8E8ED)
+              : Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: primGrid,
+    ),
   );
 
   return Column(

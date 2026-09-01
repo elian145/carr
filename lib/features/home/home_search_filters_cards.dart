@@ -111,24 +111,34 @@ mixin _HomePageSearchFiltersCards on _HomePageMoreFiltersDialog {
             ),
           ),
         ),
-        InkWell(
-          onTap: onSummaryTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  valueSummary,
-                  style: summaryStyle,
+        Flexible(
+          child: Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: InkWell(
+              onTap: onSummaryTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        valueSummary,
+                        style: summaryStyle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 20,
+                      color: summaryColor,
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 20,
-                  color: summaryColor,
-                ),
-              ],
+              ),
             ),
           ),
         ),

@@ -50,12 +50,11 @@ class ListingLayoutPrefs {
   /// Resolves list vs grid, then expands grid columns on tablet / landscape (UI-04).
   ///
   /// - list (`requestedColumns == 1`) → always 1
-  /// - grid: 1 below 340, 2 on phones, 3 from ~720, 4 from ~1000
+  /// - grid: 2 on phones, 3 from ~720, 4 from ~1000
   static int effectiveColumnsForWidth(int requestedColumns, double width) {
     if (requestedColumns == 1) {
       return requestedColumns;
     }
-    if (width < 340) return 1;
     if (width < 720) return 2;
     if (width < 1000) return 3;
     return 4;
@@ -73,11 +72,10 @@ class ListingLayoutPrefs {
       // Slightly taller tiles so title/price stay readable in narrower columns.
       return width >= 1000 ? 0.70 : 0.68;
     }
-    if (width < 340) return 2.55;
-    // Keep grid tile proportions close across phone widths so listing cards
-    // (image vs details) match on compact Android and large iPhones.
-    if (width < 380) return 0.64;
-    if (width >= 420) return 0.66;
-    return gridChildAspectRatio(listingColumns);
+    // Taller cells → more image area; text block sizes are fixed in the card.
+    if (width < 320) return 0.57;
+    if (width < 380) return 0.59;
+    if (width >= 420) return 0.62;
+    return 0.60;
   }
 }

@@ -101,30 +101,42 @@ class FilterSectionHeader extends StatelessWidget {
         ),
         if (valueSummary.trim().isNotEmpty) ...[
           const SizedBox(width: 8),
-          if (onSummaryTap != null)
-            InkWell(
-              onTap: onSummaryTap,
-              borderRadius: BorderRadius.circular(8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    valueSummary,
-                    style: summaryStyle,
-                  ),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 20,
-                    color: summaryColor,
-                  ),
-                ],
-              ),
-            )
-          else
-            Text(
-              valueSummary,
-              style: summaryStyle,
+          Flexible(
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: onSummaryTap != null
+                  ? InkWell(
+                      onTap: onSummaryTap,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              valueSummary,
+                              style: summaryStyle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 20,
+                            color: summaryColor,
+                          ),
+                        ],
+                      ),
+                    )
+                  : Text(
+                      valueSummary,
+                      style: summaryStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.end,
+                    ),
             ),
+          ),
         ],
       ],
     );
@@ -208,6 +220,20 @@ double filterDropdownMenuWidth(BuildContext context) {
   return (width * 0.48).clamp(160.0, 240.0);
 }
 
+/// Orange placeholder style for closed filter dropdowns (RTL-safe metrics).
+TextStyle filterDropdownHintStyle(
+  MoreFiltersDialogStyle style, {
+  double fontSize = 15,
+}) {
+  return TextStyle(
+    color: style.anyOrange,
+    fontWeight: FontWeight.w600,
+    fontSize: fontSize,
+    height: 1.35,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+}
+
 /// Closed-field decoration matching search-page filter dropdowns.
 InputDecoration filterDropdownFieldDecoration(
   MoreFiltersDialogStyle style,
@@ -215,36 +241,35 @@ InputDecoration filterDropdownFieldDecoration(
   String? errorText,
   /// Smaller in-field label for narrow manual min/max text inputs.
   bool compactLabel = false,
+  /// When a [FilterSectionHeader] already shows [label], omit the field label.
+  bool hideLabel = false,
 }) {
+  final labelFontSize = compactLabel ? 14.0 : 15.0;
+  final floatingFontSize = compactLabel ? 13.5 : 13.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
-    fontSize: compactLabel ? 13 : 18,
-    fontWeight: compactLabel ? FontWeight.w600 : FontWeight.bold,
-    height: 1.1,
-  );
-  // Scale long RTL labels (e.g. أقصى سعر) down instead of ellipsizing in
-  // half-width min/max fields.
-  final labelWidget = Text(
-    label,
-    style: labelStyle,
-    maxLines: 1,
-    softWrap: false,
-    overflow: TextOverflow.visible,
+    fontSize: labelFontSize,
+    fontWeight: FontWeight.w600,
+    height: 1.15,
   );
   return InputDecoration(
-    label: FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: AlignmentDirectional.centerStart,
-      child: labelWidget,
-    ),
+    labelText: hideLabel ? null : label,
     errorText: errorText,
     labelStyle: labelStyle,
-    floatingLabelStyle: labelStyle.copyWith(
-      fontSize: compactLabel ? 12 : 18,
-    ),
+    floatingLabelStyle: hideLabel
+        ? null
+        : labelStyle.copyWith(fontSize: floatingFontSize),
+    floatingLabelBehavior:
+        hideLabel ? FloatingLabelBehavior.never : FloatingLabelBehavior.always,
+    alignLabelWithHint: !hideLabel,
     filled: true,
     fillColor: style.fieldFill,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    contentPadding: EdgeInsets.fromLTRB(
+      12,
+      hideLabel ? 16 : (compactLabel ? 22 : 18),
+      12,
+      hideLabel ? 16 : (compactLabel ? 14 : 14),
+    ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
     ),
@@ -281,6 +306,7 @@ class FilterDropdownField extends StatelessWidget {
     this.errorText,
     this.hint,
     this.narrowMenu = true,
+    this.hideLabel = false,
   });
 
   final MoreFiltersDialogStyle style;
@@ -291,6 +317,8 @@ class FilterDropdownField extends StatelessWidget {
   final String? errorText;
   final Widget? hint;
   final bool narrowMenu;
+  /// When true, the section header already shows [label] — omit the field label.
+  final bool hideLabel;
 
   String? get _effectiveValue {
     final hasEmptyItem = items.any((item) => item.value == '');
@@ -483,45 +511,48 @@ class FilterDropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedChild = _selectedChild();
     final enabled = onChanged != null;
+    final fieldFontSize = narrowMenu ? 14.0 : 15.0;
 
     return InputDecorator(
       decoration: filterDropdownFieldDecoration(
         style,
         label,
         errorText: errorText,
+        compactLabel: narrowMenu,
+        hideLabel: hideLabel,
       ),
-      // Keep label floated so closed height matches search dropdowns.
       isEmpty: false,
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
           onTap: enabled ? () => _openMenu(context) : null,
           borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: 24,
-            child: Row(
-              children: [
-                Expanded(
-                  child: DefaultTextStyle(
-                    style: TextStyle(
-                      color: style.onSurface,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: selectedChild ?? const SizedBox.shrink(),
-                    ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: DefaultTextStyle(
+                  style: TextStyle(
+                    color: style.onSurface,
+                    fontWeight: FontWeight.w600,
+                    fontSize: fieldFontSize,
+                    height: 1.35,
+                    leadingDistribution: TextLeadingDistribution.even,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: selectedChild ?? const SizedBox.shrink(),
                   ),
                 ),
-                Icon(
-                  Icons.arrow_drop_down,
-                  color: style.onSurface.withValues(alpha: 0.7),
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.arrow_drop_down,
+                color: style.onSurface.withValues(alpha: 0.7),
+              ),
+            ],
           ),
         ),
       ),
@@ -1007,6 +1038,7 @@ class FilterDropdownCardSection extends StatelessWidget {
             value: value,
             items: items,
             onChanged: onChanged,
+            hideLabel: true,
             hint: hint == null
                 ? null
                 : Text(

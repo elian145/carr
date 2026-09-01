@@ -7,8 +7,8 @@ import 'package:car_listing_app/shared/ui/responsive.dart';
 void main() {
   test('grid card ratios keep the white details area compact', () {
     expect(ListingLayoutPrefs.gridChildAspectRatio(2), 0.66);
-    expect(ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 370), 0.64);
-    expect(ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 430), 0.66);
+    expect(ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 370), 0.59);
+    expect(ListingLayoutPrefs.gridChildAspectRatioForWidth(2, 430), 0.62);
   });
 
   testWidgets('listing grid uses a 4:3 cover frame', (tester) async {
@@ -38,7 +38,7 @@ void main() {
       ),
     );
 
-    expect(imageHeights, [126, 150, 225]);
+    expect(imageHeights, [137.76, 164.0, 230.0]);
     expect(horizontalImageWidth, closeTo(179.4, 0.01));
   });
 }
