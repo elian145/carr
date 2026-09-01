@@ -37,7 +37,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                         ],
                       )
                     : Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: _sellStep5PreviousButton(
