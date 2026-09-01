@@ -176,26 +176,11 @@ mixin _HomePageFetchCore on _HomePageFields {
       _pendingHomeScrollRestore = null;
   }
 
-  Future<void> _loadBodyTypesFromAssets() async {
+  void _loadBodyTypesFromAssets() {
     if (globalBodyTypeAssetMap.isNotEmpty) return;
-    try {
-      // Flutter 3.16+ ships AssetManifest.bin, not AssetManifest.json.
-      final manifest = await services.AssetManifest.loadFromAssetBundle(
-        services.rootBundle,
-      );
-      final labelToAsset = body_type_assets.discoverBodyTypeAssetMap(
-        manifest.listAssets(),
-      );
-      if (!mounted || labelToAsset.isEmpty) return;
-      setState(() {
-        final labels = labelToAsset.keys.toList()..sort();
-        globalBodyTypes = ['Any', ...labels];
-        globalBodyTypeAssetMap = labelToAsset;
-      });
-    } catch (e, st) {
-      // Static [bodyTypes] + [getBodyTypeAsset] already cover the UI.
-      if (!isExpectedClientNoise(e)) logNonFatal(e, st);
-    }
+    body_type_assets.ensureGlobalBodyTypesLoaded();
+    if (!mounted || globalBodyTypeAssetMap.isEmpty) return;
+    setState(() {});
   }
   Future<void> fetchCars({
     bool bypassCache = false,

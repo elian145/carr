@@ -86,6 +86,18 @@ void main() {
     });
   });
 
+  group('ensureGlobalBodyTypesLoaded', () {
+    test('builds filter list from bundled png paths', () {
+      globalBodyTypes = ['Any'];
+      globalBodyTypeAssetMap = {};
+      ensureGlobalBodyTypesLoaded();
+      expect(globalBodyTypes, contains('Sedan'));
+      expect(globalBodyTypes, contains('Suv'));
+      expect(globalBodyTypeAssetMap['Sedan'], 'assets/body_types_png/sedan.png');
+      expect(globalBodyTypes.first, 'Any');
+    });
+  });
+
   group('discoverBodyTypeAssetMap', () {
     test('maps pngs and skips dark variants', () {
       final map = discoverBodyTypeAssetMap([

@@ -1,10 +1,45 @@
-/// Dynamically discovered body types from assets (home filter / sell step 2).
+/// Body types for home filter / sell step 2 (populated from [ensureGlobalBodyTypesLoaded]).
 List<String> globalBodyTypes = ['Any'];
 
 /// Maps normalized body-type label → asset path under [assets/body_types_png/].
 Map<String, String> globalBodyTypeAssetMap = {};
 
-/// Builds the label → asset map from Flutter asset keys (not AssetManifest.json).
+/// Light-mode body-type PNGs shipped in [pubspec.yaml] (no runtime manifest lookup).
+const List<String> kBundledBodyTypeAssetPaths = [
+  'assets/body_types_png/ATV.png',
+  'assets/body_types_png/UTV.png',
+  'assets/body_types_png/bigtruck.png',
+  'assets/body_types_png/cabriolet.png',
+  'assets/body_types_png/coupe.png',
+  'assets/body_types_png/cuv.png',
+  'assets/body_types_png/hatchback.png',
+  'assets/body_types_png/micro.png',
+  'assets/body_types_png/minitruck.png',
+  'assets/body_types_png/minivan.png',
+  'assets/body_types_png/motorcycle.png',
+  'assets/body_types_png/pickup.png',
+  'assets/body_types_png/roadster.png',
+  'assets/body_types_png/scooter.png',
+  'assets/body_types_png/sedan.png',
+  'assets/body_types_png/super bike.png',
+  'assets/body_types_png/supercar.png',
+  'assets/body_types_png/suv.png',
+  'assets/body_types_png/truck.png',
+  'assets/body_types_png/van.png',
+  'assets/body_types_png/wagon.png',
+];
+
+/// Populates [globalBodyTypes] and [globalBodyTypeAssetMap] from bundled assets.
+void ensureGlobalBodyTypesLoaded() {
+  if (globalBodyTypeAssetMap.isNotEmpty) return;
+  final labelToAsset = discoverBodyTypeAssetMap(kBundledBodyTypeAssetPaths);
+  if (labelToAsset.isEmpty) return;
+  final labels = labelToAsset.keys.toList()..sort();
+  globalBodyTypes = ['Any', ...labels];
+  globalBodyTypeAssetMap = labelToAsset;
+}
+
+/// Builds the label → asset map from Flutter asset keys.
 ///
 /// Skips `_dark` variants so they are not shown as separate body types.
 Map<String, String> discoverBodyTypeAssetMap(Iterable<String> allAssets) {

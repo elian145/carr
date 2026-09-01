@@ -29,4 +29,12 @@ void main() {
     globalBodyTypeAssetMap = {};
     expect(bodyTypeImageAsset('SUV'), 'assets/body_types_png/suv.png');
   });
+
+  test('ensureGlobalBodyTypesLoaded populates all bundled body types', () {
+    globalBodyTypes = ['Any'];
+    globalBodyTypeAssetMap = {};
+    ensureGlobalBodyTypesLoaded();
+    expect(globalBodyTypes.length, greaterThan(10));
+    expect(globalBodyTypeAssetMap['Scooter'], 'assets/body_types_png/scooter.png');
+  });
 }
