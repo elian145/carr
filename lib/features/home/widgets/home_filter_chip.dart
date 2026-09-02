@@ -4,6 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../l10n/app_localizations.dart';
 import '../home_filter_chips.dart';
 
+/// First Strong Isolate / Pop Directional Isolate — keeps [value] from being
+/// reordered relative to [label] when scripts mix (RTL Arabic + Latin).
+String _chipLabelText(String label, String value) =>
+    '$label: \u2068$value\u2069';
+
 /// Tappable chip for one active home listing filter.
 class HomeFilterChip extends StatelessWidget {
   const HomeFilterChip({
@@ -17,7 +22,7 @@ class HomeFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chipLabel = '${descriptor.label}: ${descriptor.value}';
+    final chipLabel = _chipLabelText(descriptor.label, descriptor.value);
     final color = descriptor.color;
     final languageCode = Localizations.localeOf(context).languageCode;
     final bool useLatinDisplayFont =

@@ -1021,27 +1021,27 @@ class AppLocalizationsKu extends AppLocalizations {
   String get noMessagesYet => 'هێشتا نامەیەک نییە.';
 
   @override
-  String timeDaysAgo(Object count) {
+  String timeDaysAgo(int count) {
     return 'پێش $count ڕۆژ';
   }
 
   @override
-  String timeHoursAgo(Object count) {
+  String timeHoursAgo(int count) {
     return 'پێش $count کاتژمێر';
   }
 
   @override
-  String timeMinutesAgo(Object count) {
+  String timeMinutesAgo(int count) {
     return 'پێش $count خولەک';
   }
 
   @override
-  String timeMonthsAgo(Object count) {
+  String timeMonthsAgo(int count) {
     return 'پێش $count مانگ';
   }
 
   @override
-  String timeYearsAgo(Object count) {
+  String timeYearsAgo(int count) {
     return 'پێش $count ساڵ';
   }
 
@@ -1561,7 +1561,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get yesterday => 'دوێنێ';
 
   @override
-  String daysAgo(Object count) {
+  String daysAgo(int count) {
     return 'پێش $count ڕۆژ';
   }
 

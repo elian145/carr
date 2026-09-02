@@ -2041,32 +2041,32 @@ abstract class AppLocalizations {
   /// No description provided for @timeDaysAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} days ago'**
-  String timeDaysAgo(Object count);
+  /// **'{count, plural, one{1 day ago} other{{count} days ago}}'**
+  String timeDaysAgo(int count);
 
   /// No description provided for @timeHoursAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} hours ago'**
-  String timeHoursAgo(Object count);
+  /// **'{count, plural, one{1 hour ago} other{{count} hours ago}}'**
+  String timeHoursAgo(int count);
 
   /// No description provided for @timeMinutesAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} minutes ago'**
-  String timeMinutesAgo(Object count);
+  /// **'{count, plural, one{1 minute ago} other{{count} minutes ago}}'**
+  String timeMinutesAgo(int count);
 
   /// No description provided for @timeMonthsAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} months ago'**
-  String timeMonthsAgo(Object count);
+  /// **'{count, plural, one{1 month ago} other{{count} months ago}}'**
+  String timeMonthsAgo(int count);
 
   /// No description provided for @timeYearsAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} years ago'**
-  String timeYearsAgo(Object count);
+  /// **'{count, plural, one{1 year ago} other{{count} years ago}}'**
+  String timeYearsAgo(int count);
 
   /// No description provided for @deleteAccountTitle.
   ///
@@ -3049,8 +3049,8 @@ abstract class AppLocalizations {
   /// No description provided for @daysAgo.
   ///
   /// In en, this message translates to:
-  /// **'{count} days ago'**
-  String daysAgo(Object count);
+  /// **'{count, plural, one{1 day ago} other{{count} days ago}}'**
+  String daysAgo(int count);
 
   /// No description provided for @noFiltersApplied.
   ///

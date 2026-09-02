@@ -7,6 +7,7 @@ import '../../shared/i18n/listing_field_labels.dart';
 import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/i18n/region_spec_labels.dart';
+import '../../shared/i18n/sort_api_mapping.dart';
 import 'home_filter_chips.dart';
 import 'home_filters_query.dart';
 import 'widgets/home_filter_chip.dart';
@@ -62,6 +63,7 @@ List<Widget> buildLocalizedHomeFilterChips(
       regionSpecsLabel: (code) =>
           carRegionSpecDisplayLabelLocalized(context, code),
       titleStatusDamagedWithParts: l10n.titleStatusDamagedWithParts,
+      localizeSort: (raw) => localizeSortOption(context, raw),
     ),
   );
   return descriptors

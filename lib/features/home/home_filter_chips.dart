@@ -96,6 +96,7 @@ class HomeFilterChipFormatters {
     required this.plateTypeLabel,
     required this.regionSpecsLabel,
     required this.titleStatusDamagedWithParts,
+    this.localizeSort,
   });
 
   final String Function(String? brand) localizedBrand;
@@ -107,6 +108,8 @@ class HomeFilterChipFormatters {
   final String Function(String raw) plateTypeLabel;
   final String Function(String code) regionSpecsLabel;
   final String Function(String parts) titleStatusDamagedWithParts;
+  /// Maps persisted/English sort labels to the current locale.
+  final String Function(String? raw)? localizeSort;
 }
 
 bool homeFilterChipValueActive(String? value) {
@@ -515,7 +518,8 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
   if (homeFilterSortChipActive(filters.sortByUi)) {
     add(
       labels.sortBy,
-      formatters.translateValue(filters.sortByUi),
+      formatters.localizeSort?.call(filters.sortByUi) ??
+          formatters.translateValue(filters.sortByUi),
       'sortBy',
       Icons.sort,
       Colors.grey,

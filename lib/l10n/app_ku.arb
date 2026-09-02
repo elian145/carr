@@ -347,10 +347,45 @@
   "justNow": "ئێستا",
   "noMessagesYet": "هێشتا نامەیەک نییە.",
   "timeDaysAgo": "پێش {count} ڕۆژ",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeHoursAgo": "پێش {count} کاتژمێر",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeMinutesAgo": "پێش {count} خولەک",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeMonthsAgo": "پێش {count} مانگ",
+  "@timeMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeYearsAgo": "پێش {count} ساڵ",
+  "@timeYearsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "deleteAccountTitle": "سڕینەوەی هەژمار",
   "deleteAccountBody": "هەژمارەکەت و هەموو داتاکەت (ڕێکلام، نامە، دڵخواز) بە تەواوی دەسڕێتەوە. ئەگەر سڕینەوەی تەواو ئەستەم بوو، هەژمارەکە ناچالاک دەکرێت و زانیاری کەسی و میدیای ڕێکلام دەسڕدرێنەوە. ناگەڕێتەوە.",
   "passwordRequiredConfirm": "وشەی نهێنی",
@@ -515,6 +550,13 @@
   "today": "ئەمڕۆ",
   "yesterday": "دوێنێ",
   "daysAgo": "پێش {count} ڕۆژ",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "noFiltersApplied": "هیچ فلتەرێک جێبەجێ نەکراوە",
   "unnamedSearch": "گەڕان بەبێ ناو",
   "applySearch": "جێبەجێکردنی گەڕان",

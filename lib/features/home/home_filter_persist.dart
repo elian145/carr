@@ -57,7 +57,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedPlateCity = parsed.plateCity;
     selectedTitleStatus = parsed.titleStatus;
     selectedDamagedParts = parsed.damagedParts;
-    selectedSortBy = parsed.sortBy;
+    selectedSortBy = _localizedSortSelection(parsed.sortBy);
   }
 
   void _applyHomeFiltersSnapshot(HomeFiltersSnapshot snap) {
@@ -85,7 +85,16 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedPlateCity = snap.plateCity;
     selectedTitleStatus = snap.titleStatus;
     selectedDamagedParts = snap.damagedParts;
-    selectedSortBy = snap.sortByUi;
+    selectedSortBy = _localizedSortSelection(snap.sortByUi);
+  }
+
+  /// Re-localizes a persisted sort label so chips/menus match the active language.
+  String? _localizedSortSelection(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final api = convertSortToApiValue(context, raw);
+    if (api == null) return null;
+    if (!isKnownSortOption(raw) && api == raw) return raw;
+    return localizeSortOption(context, raw);
   }
 
   /// Apply filters from a saved-search map (`min_price`, `cylinder_count`, etc.).

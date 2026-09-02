@@ -90,16 +90,15 @@ String _relativeTime(BuildContext context, DateTime dateTime) {
   final now = DateTime.now();
   final diff = now.difference(dateTime.toLocal());
   final loc = AppLocalizations.of(context)!;
-  String formatNum(int n) => _digitsLocalized(context, n.toString());
   if (diff.isNegative) {
     return loc.justNow;
   }
   if (diff.inDays > 0) {
-    return loc.timeDaysAgo(formatNum(diff.inDays));
+    return loc.timeDaysAgo(diff.inDays);
   } else if (diff.inHours > 0) {
-    return loc.timeHoursAgo(formatNum(diff.inHours));
+    return loc.timeHoursAgo(diff.inHours);
   } else if (diff.inMinutes > 0) {
-    return loc.timeMinutesAgo(formatNum(diff.inMinutes));
+    return loc.timeMinutesAgo(diff.inMinutes);
   }
   return loc.justNow;
 }

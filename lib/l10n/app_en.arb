@@ -345,11 +345,46 @@
   "unknownSender": "Unknown",
   "justNow": "Just now",
   "noMessagesYet": "No messages yet.",
-  "timeDaysAgo": "{count} days ago",
-  "timeHoursAgo": "{count} hours ago",
-  "timeMinutesAgo": "{count} minutes ago",
-  "timeMonthsAgo": "{count} months ago",
-  "timeYearsAgo": "{count} years ago",
+  "timeDaysAgo": "{count, plural, one{1 day ago} other{{count} days ago}}",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "{count, plural, one{1 hour ago} other{{count} hours ago}}",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeMinutesAgo": "{count, plural, one{1 minute ago} other{{count} minutes ago}}",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeMonthsAgo": "{count, plural, one{1 month ago} other{{count} months ago}}",
+  "@timeMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeYearsAgo": "{count, plural, one{1 year ago} other{{count} years ago}}",
+  "@timeYearsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "deleteAccountTitle": "Delete account",
   "deleteAccountBody": "This will permanently delete your account and all your data (listings, messages, favorites). If full deletion is blocked by system constraints, your account is deactivated and personal data and listing media are scrubbed. This cannot be undone.",
   "passwordRequiredConfirm": "Password",
@@ -513,7 +548,14 @@
   "addedToComparison": "Added to comparison ({count}/{max})",
   "today": "Today",
   "yesterday": "Yesterday",
-  "daysAgo": "{count} days ago",
+  "daysAgo": "{count, plural, one{1 day ago} other{{count} days ago}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "noFiltersApplied": "No filters applied",
   "unnamedSearch": "Unnamed Search",
   "applySearch": "Apply Search",

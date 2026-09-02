@@ -347,10 +347,45 @@
   "justNow": "الآن",
   "noMessagesYet": "لا توجد رسائل بعد.",
   "timeDaysAgo": "قبل {count} يوم",
+  "@timeDaysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeHoursAgo": "قبل {count} ساعة",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeMinutesAgo": "قبل {count} دقيقة",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeMonthsAgo": "قبل {count} شهر",
+  "@timeMonthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "timeYearsAgo": "قبل {count} سنة",
+  "@timeYearsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "deleteAccountTitle": "حذف الحساب",
   "deleteAccountBody": "سيتم حذف حسابك وجميع بياناتك (الإعلانات والرسائل والمفضلة) نهائياً. إذا تعذر الحذف الكامل، يتم تعطيل الحساب وإزالة البيانات الشخصية ووسائط الإعلانات. لا يمكن التراجع عن ذلك.",
   "passwordRequiredConfirm": "كلمة المرور",
@@ -515,6 +550,13 @@
   "today": "اليوم",
   "yesterday": "أمس",
   "daysAgo": "منذ {count} أيام",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "noFiltersApplied": "لم يتم تطبيق فلاتر",
   "unnamedSearch": "بحث بدون اسم",
   "applySearch": "تطبيق البحث",

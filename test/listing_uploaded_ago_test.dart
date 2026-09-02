@@ -28,4 +28,28 @@ void main() {
       ),
     );
   });
+
+  testWidgets('listingUploadedAgo uses singular month', (tester) async {
+    final oneMonthAgo = DateTime.now().toUtc().subtract(const Duration(days: 32));
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) {
+            final text = listingUploadedAgo(context, {
+              'created_at': oneMonthAgo.toIso8601String(),
+            });
+            expect(text, '1 month ago');
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+  });
 }

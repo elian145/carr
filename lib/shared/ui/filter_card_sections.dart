@@ -173,7 +173,7 @@ InputDecoration filterFieldDecoration(
     );
   }
 
-  final labelFontSize = compactLabel ? 18.0 : 20.0;
+  final labelFontSize = compactLabel ? 15.0 : 20.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
     fontSize: labelFontSize,
@@ -196,9 +196,9 @@ InputDecoration filterFieldDecoration(
     suffixIcon: suffixIcon,
     contentPadding: EdgeInsets.fromLTRB(
       12,
-      hideLabel ? 12 : 20,
+      hideLabel ? 10 : (compactLabel ? 15 : 20),
       12,
-      hideLabel ? 12 : (compactLabel ? 12 : 14),
+      hideLabel ? 10 : (compactLabel ? 9 : 14),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -263,8 +263,8 @@ InputDecoration filterDropdownFieldDecoration(
   /// When a [FilterSectionHeader] already shows [label], omit the field label.
   bool hideLabel = false,
 }) {
-  final labelFontSize = compactLabel ? 18.0 : 20.0;
-  final floatingFontSize = compactLabel ? 18.0 : 20.0;
+  final labelFontSize = compactLabel ? 15.0 : 20.0;
+  final floatingFontSize = compactLabel ? 15.0 : 20.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
     fontSize: labelFontSize,
@@ -286,9 +286,9 @@ InputDecoration filterDropdownFieldDecoration(
     fillColor: style.fieldFill,
     contentPadding: EdgeInsets.fromLTRB(
       12,
-      hideLabel ? 12 : 20,
+      hideLabel ? 10 : (compactLabel ? 15 : 20),
       12,
-      hideLabel ? 12 : (compactLabel ? 12 : 14),
+      hideLabel ? 10 : (compactLabel ? 9 : 14),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -531,7 +531,7 @@ class FilterDropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedChild = _selectedChild();
     final enabled = onChanged != null;
-    final fieldFontSize = 18.0;
+    final fieldFontSize = narrowMenu ? 16.0 : 18.0;
 
     return InputDecorator(
       decoration: filterDropdownFieldDecoration(
@@ -556,7 +556,7 @@ class FilterDropdownField extends StatelessWidget {
                     color: style.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: fieldFontSize,
-                    height: narrowMenu ? 1.2 : 1.35,
+                    height: narrowMenu ? 1.15 : 1.35,
                     leadingDistribution: TextLeadingDistribution.even,
                   ),
                   maxLines: 1,

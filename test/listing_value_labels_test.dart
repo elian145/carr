@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _localizedApp(Widget child) {
+Widget _localizedApp(Widget child, {Locale locale = const Locale('en')}) {
   return MaterialApp(
     localizationsDelegates: const [
       AppLocalizations.delegate,
@@ -14,7 +14,7 @@ Widget _localizedApp(Widget child) {
       GlobalCupertinoLocalizations.delegate,
     ],
     supportedLocales: AppLocalizations.supportedLocales,
-    locale: const Locale('en'),
+    locale: locale,
     home: child,
   );
 }
@@ -57,6 +57,49 @@ void main() {
                 convertSortToApiValue(context, loc.sort_price_low_high),
                 'price_asc',
               );
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+    });
+
+    testWidgets('maps English labels while locale is Arabic', (tester) async {
+      await tester.pumpWidget(
+        _localizedApp(
+          locale: const Locale('ar'),
+          Builder(
+            builder: (context) {
+              expect(convertSortToApiValue(context, 'Newest'), 'newest');
+              expect(
+                convertSortToApiValue(context, 'Price (High to Low)'),
+                'price_desc',
+              );
+              expect(convertSortToApiValue(context, 'الأحدث'), 'newest');
+              expect(convertSortToApiValue(context, 'newest'), 'newest');
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+    });
+  });
+
+  group('localizeSortOption', () {
+    testWidgets('rewrites English sort labels into Arabic', (tester) async {
+      await tester.pumpWidget(
+        _localizedApp(
+          locale: const Locale('ar'),
+          Builder(
+            builder: (context) {
+              final loc = AppLocalizations.of(context)!;
+              expect(localizeSortOption(context, 'Newest'), loc.sort_newest);
+              expect(localizeSortOption(context, 'newest'), loc.sort_newest);
+              expect(
+                localizeSortOption(context, 'Price (Low to High)'),
+                loc.sort_price_low_high,
+              );
+              expect(localizeSortOption(context, 'unknown-sort'), 'unknown-sort');
               return const SizedBox.shrink();
             },
           ),
