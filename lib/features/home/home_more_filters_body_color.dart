@@ -6,7 +6,10 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
     void Function(void Function()) setStateDialog,
     MoreFiltersDialogStyle style, {
     bool includeAnyOption = true,
+    bool narrowMenu = false,
   }) {
+    final fieldFontSize = 18.0;
+    final swatchSize = narrowMenu ? 20.0 : 24.0;
     final colorOptions = includeAnyOption
         ? getAvailableColors()
         : getAvailableColors().where((c) => c != 'Any').toList();
@@ -16,11 +19,12 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
         selectedColor != 'Any';
 
     return [
-      SizedBox(height: style.fieldGap),
+      SizedBox(height: narrowMenu ? 12 : style.fieldGap),
       InputDecorator(
         decoration: filterDropdownFieldDecoration(
           style,
           AppLocalizations.of(context)!.colorLabel,
+          compactLabel: narrowMenu,
         ),
         // Keep label floated so closed height matches cylinder/search dropdowns.
         isEmpty: false,
@@ -224,47 +228,47 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
               }
             },
             borderRadius: BorderRadius.circular(8),
-            child: SizedBox(
-              height: 24,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      hasColor
-                          ? (_translateValueGlobal(context, selectedColor) ??
-                                selectedColor!)
-                          : (includeAnyOption
-                                ? AppLocalizations.of(context)!.any
-                                : ''),
-                      style: TextStyle(
-                        color: hasColor ? style.onSurface : style.anyOrange,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    hasColor
+                        ? (_translateValueGlobal(context, selectedColor) ??
+                              selectedColor!)
+                        : (includeAnyOption
+                              ? AppLocalizations.of(context)!.any
+                              : ''),
+                    style: TextStyle(
+                      color: hasColor ? style.onSurface : style.anyOrange,
+                      fontWeight: FontWeight.w600,
+                      fontSize: fieldFontSize,
+                      height: narrowMenu ? 1.2 : 1.35,
+                      leadingDistribution: TextLeadingDistribution.even,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  width: swatchSize,
+                  height: swatchSize,
+                  decoration: BoxDecoration(
+                    color: hasColor
+                        ? homeFilterNamedColor(selectedColor!)
+                        : Colors.grey,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: style.onSurface.withValues(alpha: 0.2),
                     ),
                   ),
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: hasColor
-                          ? homeFilterNamedColor(selectedColor!)
-                          : Colors.grey,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: style.onSurface.withValues(alpha: 0.2),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
       ),
-      const SizedBox(height: 12),
+      if (!narrowMenu) const SizedBox(height: 12),
     ];
   }
 }

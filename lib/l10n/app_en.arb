@@ -159,6 +159,7 @@
   "photosOptional": "Photos (optional)",
   "addPhotos": "Add Photos",
   "addMorePhotos": "Add More Photos",
+  "addMoreDamagePhotos": "Add More Damage Photos",
   "addMoreListings": "Add More Listings",
   "defaultSort": "Default",
   "sort_price_low_high": "Price (Low to High)",

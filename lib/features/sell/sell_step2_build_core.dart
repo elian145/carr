@@ -71,7 +71,11 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                 loc.enterMileage,
                 errorText: errMileage ? loc.pleaseEnterMileage : null,
               ),
-              style: TextStyle(color: style.onSurface),
+              style: TextStyle(
+                color: style.onSurface,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
               keyboardType: TextInputType.number,
               inputFormatters: const [
                 ThousandsSeparatorInputFormatter(),
@@ -156,6 +160,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
             style: style,
             label: loc.damagedParts,
             value: selectedDamagedParts,
+            narrowMenu: true,
             errorText: errDamagedParts ? loc.damagedParts : null,
             items: List.generate(20, (i) => (i + 1).toString())
                 .map(
@@ -167,10 +172,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                 .toList(),
             hint: Text(
               loc.tapToSelect,
-              style: TextStyle(
-                color: style.anyOrange,
-                fontWeight: FontWeight.w600,
-              ),
+              style: filterDropdownHintStyle(style),
             ),
             onChanged: (value) {
               setState(() => selectedDamagedParts = value);
@@ -205,6 +207,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
             FilterDropdownField(
               style: style,
               label: loc.cylinderCount,
+              narrowMenu: true,
               value: selectedCylinderCount != null &&
                       getAvailableCylinderCounts()
                           .where((c) => c != 'Any')
@@ -226,10 +229,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                   .toList(),
               hint: Text(
                 loc.tapToSelect,
-                style: TextStyle(
-                  color: style.anyOrange,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: filterDropdownHintStyle(style),
               ),
               onChanged: (value) {
                 setState(() {
@@ -255,7 +255,11 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                                 ? loc.pleaseSelectEngineSize
                                 : null,
                           ),
-                          style: TextStyle(color: style.onSurface),
+                          style: TextStyle(
+                color: style.onSurface,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
@@ -276,6 +280,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                       : FilterDropdownField(
                           style: style,
                           label: loc.engineSizeL,
+                          narrowMenu: true,
                           value: selectedEngineSize != null &&
                                   getAvailableEngineSizes()
                                       .where((e) => e != 'Any')
@@ -298,10 +303,7 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
                               .toList(),
                           hint: Text(
                             loc.tapToSelect,
-                            style: TextStyle(
-                              color: style.anyOrange,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: filterDropdownHintStyle(style),
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -391,9 +393,10 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
         isError: errTransmission,
         scrollHorizontally: true,
         tileWidth: 88,
-        tileImageWidth: 76,
-        tileImageHeight: 76,
+        tileImageWidth: 48,
+        tileImageHeight: 48,
         tileImageBorderRadius: 8,
+        tileImageFit: BoxFit.contain,
         iconForOption: filterTransmissionIcon,
         imageAssetForOption: transmissionTypeImageAsset,
         labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
@@ -419,10 +422,10 @@ mixin _SellStep2BuildCore on _SellStep2Pickers {
         requiredField: true,
         isError: errFuelType,
         scrollHorizontally: true,
-        tileWidth: 80,
-        tileImageWidth: 40,
-        tileImageHeight: 40,
-        tileImageBorderRadius: 6,
+        tileWidth: 100,
+        tileImageWidth: 44,
+        tileImageHeight: 44,
+        tileImageBorderRadius: 8,
         compactImageTile: true,
         iconForOption: filterFuelTypeIcon,
         imageAssetForOption: fuelTypeImageAsset,

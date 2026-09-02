@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../shared/ui/filter_card_sections.dart';
 
-/// Sell flow: light shell field fill (matches fancy-selector gradient end).
-const Color kSellLightShellFieldFill = Color(0xFFFFF1E6);
+/// Sell flow: light shell field fill (matches search filter fields).
+const Color kSellLightShellFieldFill = Colors.white;
 
 Color sellFlowManualFieldFill(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
@@ -12,19 +13,30 @@ Color sellFlowManualFieldFill(BuildContext context) =>
     : kSellLightShellFieldFill;
 
 TextStyle sellFlowManualFieldLabelStyle(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white70)
-    : TextStyle(color: Colors.grey[700]!);
+    TextStyle(
+      color: filterDialogStyle(context).onSurface,
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      height: 1.1,
+    );
 
 TextStyle sellFlowManualFieldHintStyle(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white38)
-    : TextStyle(color: Colors.grey[500]!);
+    TextStyle(
+      color: filterDialogStyle(context).anyOrange,
+      fontWeight: FontWeight.w600,
+      fontSize: 18,
+      height: 1.35,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
 
 TextStyle sellFlowManualFieldTextStyle(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const TextStyle(color: Colors.white)
-    : TextStyle(color: Colors.grey[900]!);
+    TextStyle(
+      color: filterDialogStyle(context).onSurface,
+      fontWeight: FontWeight.w600,
+      fontSize: 18,
+      height: 1.35,
+      leadingDistribution: TextLeadingDistribution.even,
+    );
 
 Widget buildCurrencyIcon(String currency) {
   if (currency == 'IQD') {

@@ -1,62 +1,8 @@
 part of 'sell_flow.dart';
 
 mixin _SellCarPageDraftPersist on _SellCarPageFields {
-  bool _sellPersistFieldNonEmpty(dynamic v) {
-    if (v == null) return false;
-    if (v is String) return v.trim().isNotEmpty;
-    if (v is num) return true;
-    if (v is bool) return v;
-    if (v is Iterable) return v.isNotEmpty;
-    if (v is Map) return v.isNotEmpty;
-    return v.toString().trim().isNotEmpty;
-  }
-
-  /// Highest wizard index that already has saved field data.
-  /// Used so "Back" does not persist an earlier [currentStep] while later
-  /// step fields remain in [carData].
-  int _deepestSellWizardStepHintFromCarData() {
-    final d = carData;
-    int maxIdx = 0;
-    if (_sellPersistFieldNonEmpty(d['brand']) ||
-        _sellPersistFieldNonEmpty(d['model']) ||
-        _sellPersistFieldNonEmpty(d['trim']) ||
-        _sellPersistFieldNonEmpty(d['year'])) {
-      maxIdx = 1;
-    }
-    if (_sellPersistFieldNonEmpty(d['mileage']) ||
-        _sellPersistFieldNonEmpty(d['condition']) ||
-        _sellPersistFieldNonEmpty(d['transmission']) ||
-        _sellPersistFieldNonEmpty(d['fuel_type']) ||
-        _sellPersistFieldNonEmpty(d['body_type']) ||
-        _sellPersistFieldNonEmpty(d['color']) ||
-        _sellPersistFieldNonEmpty(d['drive_type']) ||
-        _sellPersistFieldNonEmpty(d['region_specs']) ||
-        _sellPersistFieldNonEmpty(d['seating']) ||
-        _sellPersistFieldNonEmpty(d['engine_size']) ||
-        _sellPersistFieldNonEmpty(d['cylinder_count']) ||
-        _sellPersistFieldNonEmpty(d['title_status']) ||
-        _sellPersistFieldNonEmpty(d['damaged_parts'])) {
-      maxIdx = math.max(maxIdx, 2);
-    }
-    if (_sellPersistFieldNonEmpty(d['price']) ||
-        _sellPersistFieldNonEmpty(d['city']) ||
-        _sellPersistFieldNonEmpty(d['contact_phone']) ||
-        (d['contact_phones'] is List && (d['contact_phones'] as List).isNotEmpty) ||
-        _sellPersistFieldNonEmpty(d['plate_type']) ||
-        _sellPersistFieldNonEmpty(d['plate_city']) ||
-        _sellPersistFieldNonEmpty(d['description'])) {
-      maxIdx = math.max(maxIdx, SellWizardSteps.pricingContact);
-    }
-    if (d['use_blurred_plates'] is bool) {
-      maxIdx = math.max(maxIdx, SellWizardSteps.plateBlur);
-    }
-    return maxIdx.clamp(0, _SellCarPageFields._kSellStepCount - 1);
-  }
-
   int _effectivePersistedDraftStep() {
-    return math
-        .max(currentStep, _deepestSellWizardStepHintFromCarData())
-        .clamp(0, _SellCarPageFields._kSellStepCount - 1);
+    return currentStep.clamp(0, _SellCarPageFields._kSellStepCount - 1);
   }
 
   void _dismissKeyboard() => _dismissAnyKeyboard(context);
@@ -320,6 +266,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
       _draftResumeToken++;
     });
     await _restoreSellDraftSnapshot();
+    _openedWizardStep = currentStep;
   }
 
   Future<void> _reconcileSellStepWithPrefsAfterDraftOpen() async {
@@ -344,6 +291,11 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         prefsStep ?? 0,
       );
       if (merged == currentStep) return;
+      // User may have tapped Back before this async reconcile finished; do not
+      // yank them away from an earlier step (e.g. photos).
+      if (_openedWizardStep != null && currentStep != _openedWizardStep) {
+        return;
+      }
       setState(() {
         currentStep = merged;
       });

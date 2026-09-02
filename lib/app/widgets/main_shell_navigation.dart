@@ -4,28 +4,44 @@ import '../../theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../navigation/app_page_route.dart';
 import '../../shared/ui/responsive.dart';
 import '../route_registry.dart';
 
-/// Instant main-tab switch using registered app routes (no slide transition).
+/// Main-tab switch using [AppPageRoute] so edge swipe-back can return to the
+/// previous tab instead of replacing the navigator stack.
 void navigateMainShellTab(BuildContext context, String routeName) {
   final currentRoute = ModalRoute.of(context)?.settings.name;
   if (currentRoute == routeName) return;
 
-  final builder = appRouteBuilders[routeName];
-  if (builder == null) {
-    Navigator.pushReplacementNamed(context, routeName);
-    return;
-  }
+  final navigator = Navigator.of(context);
 
-  Navigator.of(context).pushReplacement(
-    PageRouteBuilder(
-      settings: RouteSettings(name: routeName),
-      pageBuilder: (context, _, _) => builder(context),
-      transitionDuration: Duration.zero,
-      reverseTransitionDuration: Duration.zero,
-    ),
-  );
+  var foundTarget = false;
+  navigator.popUntil((route) {
+    if (route.settings.name == routeName) {
+      foundTarget = true;
+      return true;
+    }
+    if (route.isFirst) {
+      return true;
+    }
+    return false;
+  });
+
+  if (!foundTarget && ModalRoute.of(context)?.settings.name != routeName) {
+    final builder = appRouteBuilders[routeName];
+    if (builder == null) {
+      navigator.pushNamed(routeName);
+      return;
+    }
+
+    navigator.push(
+      AppPageRoute<void>(
+        settings: RouteSettings(name: routeName),
+        builder: builder,
+      ),
+    );
+  }
 }
 
 Widget buildFloatingBottomNav(

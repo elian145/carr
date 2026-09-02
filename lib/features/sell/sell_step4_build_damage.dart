@@ -5,9 +5,7 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
     final loc = AppLocalizations.of(context)!;
     final hasDamage = _damageImages.isNotEmpty;
     final countLabel = hasDamage
-        ? loc.addDamagePhotosCount(
-            '${_damageImages.length}/$_kSellMaxDamagePhotos',
-          )
+        ? '${_damageImages.length}/$_kSellMaxDamagePhotos'
         : '';
 
     return [
@@ -151,9 +149,13 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                 onPressed: _isImportingMedia ? null : _pickDamageImages,
                 icon: const Icon(Icons.car_crash_outlined),
                 label: Text(
-                  loc.addDamagePhotosCount(
-                    '${_damageImages.length}/$_kSellMaxDamagePhotos',
-                  ),
+                  hasDamage
+                      ? loc.addMoreDamagePhotos
+                      : loc.addDamagePhotosCount(
+                          '0/$_kSellMaxDamagePhotos',
+                        ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kFilterAccentColor.withValues(alpha: 0.12),

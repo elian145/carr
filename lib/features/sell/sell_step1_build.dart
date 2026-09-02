@@ -30,7 +30,11 @@ mixin _SellStep1Build on _SellStep1Pickers {
                           loc.yearLabel,
                           errorText: errYear ? loc.pleaseSelectYear : null,
                         ),
-                        style: TextStyle(color: style.onSurface),
+                        style: TextStyle(
+                          color: style.onSurface,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                        ),
                         keyboardType: TextInputType.number,
                         onChanged: (value) {
                           setState(() {
@@ -52,6 +56,7 @@ mixin _SellStep1Build on _SellStep1Pickers {
                     : FilterDropdownField(
                         style: style,
                         label: loc.yearLabel,
+                        narrowMenu: true,
                         value: selectedYear != null &&
                                 availableYears.contains(selectedYear)
                             ? selectedYear

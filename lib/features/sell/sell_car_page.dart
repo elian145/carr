@@ -34,6 +34,7 @@ class _SellCarPageState extends _SellCarPageFields
     }
     _pageController = PageController(initialPage: controllerInitialPage);
     if (initialDraft != null) {
+      _openedWizardStep = controllerInitialPage;
       _hideDraftBanner = true;
       _currentDraftId = (initialDraft['draftId'] ?? _newSellDraftId()).toString();
       _applyDraftSnapshot(initialDraft);
@@ -67,7 +68,7 @@ class _SellCarPageState extends _SellCarPageFields
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: currentStep == 0,
       onPopInvokedWithResult: (bool didPop, dynamic result) {
         if (didPop) return;
         _goToPreviousStep();
@@ -266,10 +267,7 @@ class _SellCarPageState extends _SellCarPageFields
         });
         unawaited(_saveDraftCurrentStep());
         unawaited(_saveSellDraftSnapshot());
-        _pageController.nextPage(
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
+        _animateSellWizardToPage(currentStep);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -283,6 +281,18 @@ class _SellCarPageState extends _SellCarPageFields
     }
   }
 
+  void _animateSellWizardToPage(int pageIndex) {
+    if (!_pageController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pageController.hasClients) {
+          _pageController.jumpToPage(pageIndex);
+        }
+      });
+      return;
+    }
+    _pageController.jumpToPage(pageIndex);
+  }
+
   // Method to navigate to previous step
   void _goToPreviousStep() {
     _dismissKeyboard();
@@ -292,10 +302,7 @@ class _SellCarPageState extends _SellCarPageFields
       });
       unawaited(_saveDraftCurrentStep());
       unawaited(_saveSellDraftSnapshot());
-      _pageController.previousPage(
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      _animateSellWizardToPage(currentStep);
     } else if (Navigator.canPop(context)) {
       Navigator.pop(context);
     } else {

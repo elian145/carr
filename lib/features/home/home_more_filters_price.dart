@@ -117,7 +117,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
             controller: _minPriceController,
             style: TextStyle(
               color: style.onSurface,
-              fontSize: 15,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
             decoration: _moreFiltersColorMatchedFieldDecoration(
@@ -126,7 +126,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
               compactLabel: true,
             ).copyWith(
               hintText: loc.any,
-              hintStyle: TextStyle(color: style.anyOrange, fontSize: 15),
+              hintStyle: TextStyle(color: style.anyOrange, fontSize: 18),
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {
@@ -146,7 +146,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
             controller: _maxPriceController,
             style: TextStyle(
               color: style.onSurface,
-              fontSize: 15,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
             decoration: _moreFiltersColorMatchedFieldDecoration(
@@ -155,7 +155,7 @@ mixin _HomePageMoreFiltersPrice on _HomePageMoreFiltersVehicle {
               compactLabel: true,
             ).copyWith(
               hintText: loc.any,
-              hintStyle: TextStyle(color: style.anyOrange, fontSize: 15),
+              hintStyle: TextStyle(color: style.anyOrange, fontSize: 18),
             ),
             keyboardType: TextInputType.number,
             onChanged: (value) {

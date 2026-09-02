@@ -66,8 +66,12 @@ def chat_users_blocked(user_a_id: int, user_b_id: int) -> bool:
 
 def chat_receiver_allowed(me: User, car: Car, receiver: User) -> bool:
     """Buyer may message seller; otherwise an existing thread on this listing is required."""
+    from .listing_visibility import listing_is_public
+
     if receiver.id == car.seller_id and me.id != car.seller_id:
-        return True
+        # First contact is only allowed on public listings (not under review).
+        if listing_is_public(car):
+            return True
     prior = (
         Message.query.filter(
             Message.car_id == car.id,

@@ -161,48 +161,67 @@ InputDecoration filterFieldDecoration(
   String label, {
   Widget? suffixIcon,
   String? errorText,
+  bool compactLabel = true,
+  bool hideLabel = false,
 }) {
+  if (suffixIcon == null && !hideLabel) {
+    return filterDropdownFieldDecoration(
+      style,
+      label,
+      errorText: errorText,
+      compactLabel: compactLabel,
+    );
+  }
+
+  final labelFontSize = compactLabel ? 18.0 : 20.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
+    fontSize: labelFontSize,
+    fontWeight: FontWeight.w600,
     height: 1.1,
   );
-  // Scale long RTL labels (e.g. Kurdish VIN optional) down instead of
-  // ellipsizing inside the field outline.
-  final labelWidget = Text(
-    label,
-    style: labelStyle,
-    maxLines: 1,
-    softWrap: false,
-    overflow: TextOverflow.visible,
-  );
   return InputDecoration(
-    label: FittedBox(
-      fit: BoxFit.scaleDown,
-      alignment: AlignmentDirectional.centerStart,
-      child: labelWidget,
-    ),
     isDense: true,
+    labelText: hideLabel ? null : label,
     errorText: errorText,
     labelStyle: labelStyle,
-    floatingLabelStyle: TextStyle(
-      color: style.onSurface,
-      fontSize: 17,
-      fontWeight: FontWeight.bold,
-      height: 1.1,
-    ),
+    floatingLabelStyle: hideLabel
+        ? null
+        : labelStyle.copyWith(fontSize: labelFontSize),
+    floatingLabelBehavior:
+        hideLabel ? FloatingLabelBehavior.never : FloatingLabelBehavior.always,
+    alignLabelWithHint: !hideLabel,
     filled: true,
     fillColor: style.fieldFill,
     suffixIcon: suffixIcon,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+    contentPadding: EdgeInsets.fromLTRB(
+      12,
+      hideLabel ? 12 : 20,
+      12,
+      hideLabel ? 12 : (compactLabel ? 12 : 14),
+    ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFFE0E0E5)),
+      borderSide: BorderSide(
+        color: errorText != null ? Colors.redAccent : const Color(0xFFE0E0E5),
+      ),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFFE0E0E5)),
+      borderSide: BorderSide(
+        color: errorText != null ? Colors.redAccent : const Color(0xFFE0E0E5),
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: errorText != null ? Colors.redAccent : kFilterAccentColor,
+        width: 1.5,
+      ),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: Colors.redAccent),
     ),
   );
 }
@@ -223,7 +242,7 @@ double filterDropdownMenuWidth(BuildContext context) {
 /// Orange placeholder style for closed filter dropdowns (RTL-safe metrics).
 TextStyle filterDropdownHintStyle(
   MoreFiltersDialogStyle style, {
-  double fontSize = 15,
+  double fontSize = 18,
 }) {
   return TextStyle(
     color: style.anyOrange,
@@ -244,8 +263,8 @@ InputDecoration filterDropdownFieldDecoration(
   /// When a [FilterSectionHeader] already shows [label], omit the field label.
   bool hideLabel = false,
 }) {
-  final labelFontSize = compactLabel ? 13.0 : 20.0;
-  final floatingFontSize = compactLabel ? 13.0 : 20.0;
+  final labelFontSize = compactLabel ? 18.0 : 20.0;
+  final floatingFontSize = compactLabel ? 18.0 : 20.0;
   final labelStyle = TextStyle(
     color: style.onSurface,
     fontSize: labelFontSize,
@@ -267,9 +286,9 @@ InputDecoration filterDropdownFieldDecoration(
     fillColor: style.fieldFill,
     contentPadding: EdgeInsets.fromLTRB(
       12,
-      hideLabel ? 12 : (compactLabel ? 16 : 20),
+      hideLabel ? 12 : 20,
       12,
-      hideLabel ? 12 : (compactLabel ? 8 : 14),
+      hideLabel ? 12 : (compactLabel ? 12 : 14),
     ),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
@@ -512,7 +531,7 @@ class FilterDropdownField extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedChild = _selectedChild();
     final enabled = onChanged != null;
-    final fieldFontSize = narrowMenu ? 15.0 : 18.0;
+    final fieldFontSize = 18.0;
 
     return InputDecorator(
       decoration: filterDropdownFieldDecoration(
@@ -570,7 +589,7 @@ MoreFiltersDialogStyle filterDialogStyle(BuildContext context) {
     anyOrange: kFilterAccentColor,
     fieldFill: isLight ? Colors.white : Colors.black.withValues(alpha: 0.2),
     menuFill: isLight ? Colors.white : const Color(0xFF2A2A2E),
-    fieldGap: 12,
+    fieldGap: 0,
   );
 }
 

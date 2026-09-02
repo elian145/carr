@@ -1403,6 +1403,103 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("toyota", seller_brands)
         self.assertNotIn("honda", seller_brands)
 
+    def test_pending_listings_hidden_from_non_owners(self):
+        """Under-review listings stay off public surfaces; owner can still open them."""
+        with self.app.app_context():
+            dealer = self._User.query.filter_by(public_id="pd").one()
+            pending = self._Car(
+                seller_id=dealer.id,
+                brand="mazda",
+                model="3",
+                year=2018,
+                mileage=20000,
+                engine_type="gas",
+                transmission="auto",
+                drive_type="fwd",
+                condition="used",
+                body_type="sedan",
+                price=9000.0,
+                location="Erbil",
+                is_active=True,
+                status="pending",
+            )
+            live = self._Car(
+                seller_id=dealer.id,
+                brand="kia",
+                model="rio",
+                year=2021,
+                mileage=8000,
+                engine_type="gas",
+                transmission="auto",
+                drive_type="fwd",
+                condition="used",
+                body_type="sedan",
+                price=12000.0,
+                location="Erbil",
+                is_active=True,
+                status="active",
+            )
+            self._db.session.add_all([pending, live])
+            self._db.session.commit()
+            pending_public = pending.public_id
+            live_public = live.public_id
+
+        listed = self.client.get("/api/cars")
+        self.assertEqual(listed.status_code, 200, listed.data)
+        listed_ids = [
+            c.get("id") or c.get("public_id")
+            for c in ((listed.get_json() or {}).get("cars") or [])
+        ]
+        self.assertNotIn(pending_public, listed_ids)
+        self.assertIn(live_public, listed_ids)
+
+        dealer_profile = self.client.get("/api/dealers/pd")
+        self.assertEqual(dealer_profile.status_code, 200, dealer_profile.data)
+        dealer_ids = [
+            c.get("id") or c.get("public_id")
+            for c in ((dealer_profile.get_json() or {}).get("listings") or [])
+        ]
+        self.assertNotIn(pending_public, dealer_ids)
+        self.assertIn(live_public, dealer_ids)
+
+        stranger = self.client.get(
+            f"/api/cars/{pending_public}",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(stranger.status_code, 404, stranger.data)
+
+        owner = self.client.get(
+            f"/api/cars/{pending_public}",
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(owner.status_code, 200, owner.data)
+        self.assertEqual(
+            ((owner.get_json() or {}).get("car") or {}).get("status"),
+            "pending",
+        )
+
+        alias = self.client.get(f"/cars?id={pending_public}")
+        self.assertEqual(alias.status_code, 404, alias.data)
+        alias_owner = self.client.get(
+            f"/cars?id={pending_public}",
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(alias_owner.status_code, 200, alias_owner.data)
+
+        share = self.client.get(f"/listing/{pending_public}?web=1")
+        self.assertEqual(share.status_code, 404, share.data)
+
+        mine = self.client.get(
+            "/api/user/my-listings?status=pending",
+            headers=self._auth(self.dealer_token),
+        )
+        self.assertEqual(mine.status_code, 200, mine.data)
+        mine_ids = [
+            c.get("id") or c.get("public_id")
+            for c in ((mine.get_json() or {}).get("cars") or [])
+        ]
+        self.assertIn(pending_public, mine_ids)
+
     def test_create_car_as_verified_seller(self):
         r = self.client.post(
             "/api/cars",

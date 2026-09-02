@@ -368,8 +368,13 @@ class _RecentlyViewedPageState extends State<RecentlyViewedPage> {
         leading: IconButton(
           tooltip: loc.backAction,
           icon: const Icon(Icons.arrow_back),
-          onPressed: () =>
-              navigateMainShellTab(context, loggedIn ? '/profile' : '/login'),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+              return;
+            }
+            navigateMainShellTab(context, loggedIn ? '/profile' : '/login');
+          },
         ),
         title: Text(title),
         actions: [

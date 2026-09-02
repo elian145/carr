@@ -3,7 +3,7 @@ part of 'sell_flow.dart';
 mixin _SellStep4Build on _SellStep4BuildVideos {
   List<Widget> _sellStep4BuildNavSection() {
     return [
-      const SizedBox(height: 32),
+      const SizedBox(height: 12),
       buildSellWizardNavRow(
         context,
         onPrevious: _isImportingMedia

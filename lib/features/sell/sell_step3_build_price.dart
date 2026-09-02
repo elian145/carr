@@ -36,7 +36,11 @@ mixin _SellStep3BuildPrice on _SellStep3Pickers {
                         fontSize: 16,
                       ),
                     ),
-                    style: TextStyle(color: style.onSurface),
+                    style: TextStyle(
+                      color: style.onSurface,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                    ),
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _dismissKeyboard(),

@@ -605,6 +605,7 @@ def listing_share_landing(listing_id: str):
     """Public listing page for shared URLs: ``https://<host>/listing/<id>`` *is* the listing."""
     from sqlalchemy.orm import joinedload, selectinload
 
+    from ..listing_visibility import listing_is_public
     from ..models import Car
     from ..routes.cars import _with_media_compat
 
@@ -639,7 +640,7 @@ def listing_share_landing(listing_id: str):
             .filter_by(id=int(raw), is_active=True)
             .first()
         )
-    if not car:
+    if not car or not listing_is_public(car):
         nf = "<!DOCTYPE html><html><head><meta charset='utf-8'/><title>Not found</title></head><body><p>Listing not found.</p></body></html>"
         return Response(nf, 404, {"Content-Type": "text/html; charset=utf-8"})
 

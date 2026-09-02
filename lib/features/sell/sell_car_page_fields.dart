@@ -13,6 +13,9 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
   int _draftResumeToken = 0;
   String _currentDraftId = _newSellDraftId();
   bool _skipDraftPersistOnDispose = false;
+  /// Step index when the wizard opened; used so async draft reconcile does not
+  /// override an in-session back navigation to photos.
+  int? _openedWizardStep;
   String? _editListingId;
   final Set<String> _verifiedListingPhones = <String>{};
 

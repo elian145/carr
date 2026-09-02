@@ -33,6 +33,7 @@ import '../features/home/widgets/listing_layout_toggle.dart';
 import '../features/home/widgets/listing_sort_button.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/i18n/sort_api_mapping.dart';
+import '../shared/listings/listing_status.dart';
 import '../theme_provider.dart';
 import '../widgets/dealer_location_map_preview.dart';
 import 'edit_dealer_page.dart';
@@ -94,7 +95,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
             ? Map<String, dynamic>.from(dealerRaw.cast<String, dynamic>())
             : null;
         _listings = listingsRaw is List
-            ? listingMapsFromApiList(listingsRaw)
+            ? publicListingsOnly(listingMapsFromApiList(listingsRaw))
             : <Map<String, dynamic>>[];
       });
     } catch (e) {

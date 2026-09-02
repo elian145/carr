@@ -9,5 +9,14 @@ bool isListingPendingReview(Map<String, dynamic>? listing) {
   return status == 'pending' || status == 'draft' || status == 'hidden';
 }
 
+/// Browse/search/public profiles: hide listings awaiting admin approval.
+bool isListingPubliclyVisible(Map<String, dynamic>? listing) =>
+    !isListingPendingReview(listing);
+
+List<Map<String, dynamic>> publicListingsOnly(
+  Iterable<Map<String, dynamic>> listings,
+) =>
+    [for (final listing in listings) if (isListingPubliclyVisible(listing)) listing];
+
 bool isListingActive(Map<String, dynamic>? listing) =>
     !isListingSold(listing) && !isListingPendingReview(listing);

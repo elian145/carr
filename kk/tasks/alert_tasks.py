@@ -44,8 +44,10 @@ def _send_retention_push(
 
 @celery_app.task(name="kk.tasks.alert_tasks.notify_saved_searches_for_car")
 def notify_saved_searches_for_car(car_id: int) -> dict:
+    from ..listing_visibility import listing_is_public
+
     car = db.session.get(Car, car_id)
-    if not car or not car.is_active:
+    if not car or not car.is_active or not listing_is_public(car):
         return {"matched": 0, "skipped": "inactive_or_missing"}
 
     searches = (
@@ -102,8 +104,10 @@ def notify_price_drop_for_car(car_id: int, old_price: float, new_price: float) -
     if new_price >= old_price:
         return {"notified": 0, "skipped": "not_a_drop"}
 
+    from ..listing_visibility import listing_is_public
+
     car = db.session.get(Car, car_id)
-    if not car or not car.is_active:
+    if not car or not car.is_active or not listing_is_public(car):
         return {"notified": 0, "skipped": "inactive_or_missing"}
 
     rows = (

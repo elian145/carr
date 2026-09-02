@@ -564,15 +564,14 @@ def recently_viewed():
         page = max(1, request.args.get("page", 1, type=int))
         per_page = min(50, max(1, request.args.get("per_page", 20, type=int)))
 
-        q = (
+        from ..listing_visibility import listings_visible_to_viewer_filter
+
+        q = listings_visible_to_viewer_filter(
             db.session.query(Car, user_viewed_listings.c.viewed_at)
             .join(user_viewed_listings, user_viewed_listings.c.car_id == Car.id)
-            .filter(
-                user_viewed_listings.c.user_id == current_user.id,
-                Car.is_active.is_(True),
-            )
-            .order_by(user_viewed_listings.c.viewed_at.desc())
-        )
+            .filter(user_viewed_listings.c.user_id == current_user.id),
+            current_user,
+        ).order_by(user_viewed_listings.c.viewed_at.desc())
         pagination = q.paginate(page=page, per_page=per_page, error_out=False)
 
         cars = []
@@ -1062,11 +1061,10 @@ def dealer_profile(dealer_public_id: str):
         if (dealer.account_type or "").strip().lower() != "dealer":
             return jsonify({"message": "This seller is not a dealer"}), 400
 
+        from ..listing_visibility import public_listings_filter
+
         listings = (
-            Car.query.filter(
-                Car.seller_id == dealer.id,
-                Car.is_active.is_(True),
-            )
+            public_listings_filter(Car.query.filter(Car.seller_id == dealer.id))
             .options(selectinload(Car.images), selectinload(Car.videos))
             .order_by(Car.is_featured.desc(), Car.created_at.desc())
             .all()

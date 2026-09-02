@@ -30,6 +30,10 @@ def record_user_listing_view(user: User, listing_id: str) -> tuple[Car | None, b
     car = _get_car_by_listing_id(listing_id)
     if not car or not car.is_active:
         return None, False
+    from .listing_visibility import listing_visible_to_viewer
+
+    if not listing_visible_to_viewer(car, user):
+        return None, False
 
     exists = db.session.execute(
         user_viewed_listings.select()

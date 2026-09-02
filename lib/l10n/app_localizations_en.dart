@@ -445,6 +445,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addMorePhotos => 'Add More Photos';
 
   @override
+  String get addMoreDamagePhotos => 'Add More Damage Photos';
+
+  @override
   String get addMoreListings => 'Add More Listings';
 
   @override

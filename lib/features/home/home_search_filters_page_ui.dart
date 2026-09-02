@@ -159,6 +159,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           context,
           setStateDialog,
           style,
+          narrowMenu: true,
         ),
       ),
       _searchIconCardSection(

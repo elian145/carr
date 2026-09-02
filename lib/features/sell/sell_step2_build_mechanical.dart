@@ -18,6 +18,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
             FilterDropdownField(
               style: style,
               label: loc.seating,
+              narrowMenu: true,
               value: selectedSeating != null &&
                       getAvailableSeatings()
                           .where((s) => s != 'Any')
@@ -38,10 +39,7 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
                   .toList(),
               hint: Text(
                 loc.tapToSelect,
-                style: TextStyle(
-                  color: style.anyOrange,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: filterDropdownHintStyle(style),
               ),
               onChanged: (value) {
                 setState(() => selectedSeating = value);
@@ -67,8 +65,8 @@ mixin _SellStep2BuildMechanical on _SellStep2BuildAppearance {
         isError: errDrive,
         scrollHorizontally: true,
         tileWidth: 88,
-        tileImageWidth: 76,
-        tileImageHeight: 76,
+        tileImageWidth: 48,
+        tileImageHeight: 48,
         tileImageBorderRadius: 8,
         iconForOption: filterDriveTypeIcon,
         imageAssetForOption: driveTypeImageAsset,

@@ -445,6 +445,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get addMorePhotos => 'إضافة المزيد من الصور';
 
   @override
+  String get addMoreDamagePhotos => 'إضافة المزيد من صور الضرر';
+
+  @override
   String get addMoreListings => 'إضافة المزيد من الإعلانات';
 
   @override

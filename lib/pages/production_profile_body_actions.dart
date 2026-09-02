@@ -129,7 +129,7 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
                   _showAuthRequiredDialog(context);
                   return;
                 }
-                Navigator.pushReplacementNamed(
+                Navigator.pushNamed(
                   context,
                   '/recently-viewed',
                 );

@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy import update as sql_update
 
 from ..auth import get_current_user, log_user_action
+from ..listing_visibility import listing_visible_to_viewer, listings_visible_to_viewer_filter
 from ..models import Car, db, user_favorites
 from ..time_utils import utcnow
 
@@ -24,18 +25,15 @@ def get_favorites():
         per_page = min(max(request.args.get("per_page", 20, type=int) or 20, 1), 50)
 
         # Order by "favorited at" so newest favorites appear first.
-        q = (
+        q = listings_visible_to_viewer_filter(
             db.session.query(
                 Car,
                 user_favorites.c.created_at.label("favorited_at"),
             )
             .join(user_favorites, user_favorites.c.car_id == Car.id)
-            .filter(
-                user_favorites.c.user_id == current_user.id,
-                Car.is_active.is_(True),
-            )
-            .order_by(user_favorites.c.created_at.desc())
-        )
+            .filter(user_favorites.c.user_id == current_user.id),
+            current_user,
+        ).order_by(user_favorites.c.created_at.desc())
         pagination = q.paginate(page=page, per_page=per_page, error_out=False)
 
         cars = []
@@ -82,6 +80,8 @@ def toggle_favorite(car_id):
         if not car and str(car_id).isdigit():
             car = Car.query.filter_by(id=int(car_id), is_active=True).first()
         if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if not listing_visible_to_viewer(car, current_user):
             return jsonify({"message": "Car not found"}), 404
 
         if request.method == "GET":

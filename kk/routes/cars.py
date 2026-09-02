@@ -18,6 +18,11 @@ from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
 from ..listing_search import apply_listing_text_search
+from ..listing_visibility import (
+    MODERATION_LISTING_STATUSES as _MODERATION_LISTING_STATUSES,
+    listing_visible_to_viewer as _listing_visible_to_viewer,
+    public_listings_filter as _public_listings_filter,
+)
 from ..models import Car, ListingReport, User, db, user_favorites, user_viewed_listings
 from ..response_cache import (
     FACETS_TTL_S,
@@ -44,8 +49,6 @@ _ALLOWED_REGION_SPECS = frozenset(
 
 _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
 _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
-_PUBLIC_LISTING_STATUSES = frozenset({"active", "sold"})
-_MODERATION_LISTING_STATUSES = frozenset({"pending", "hidden", "draft"})
 
 
 def _normalize_vin(val) -> str | None:
@@ -57,14 +60,6 @@ def _listing_db_error_response(exc, *, action: str):
     db.session.rollback()
     current_app.logger.exception("%s failed: %s", action, exc)
     return jsonify({"message": f"Failed to {action}"}), 500
-
-
-def _public_listings_filter(query):
-    """Browseable listings only (active + sold). Pending/hidden/draft stay private."""
-    return query.filter(
-        Car.is_active.is_(True),
-        or_(Car.status.is_(None), Car.status.in_(tuple(_PUBLIC_LISTING_STATUSES))),
-    )
 
 
 def _bump_filter_facets_cache() -> None:
@@ -95,18 +90,6 @@ def _distinct_public_values(column, *, limit: int = 200) -> list[str]:
         seen.add(key)
         out.append(val)
     return out
-
-
-def _listing_visible_to_viewer(car, viewer) -> bool:
-    """Public statuses are visible to everyone; pending/hidden only to owner/admin."""
-    status = (car.status or "active").strip().lower()
-    if status in _PUBLIC_LISTING_STATUSES or status == "":
-        return True
-    if viewer is None:
-        return False
-    if getattr(viewer, "is_admin", False):
-        return True
-    return getattr(viewer, "id", None) == getattr(car, "seller_id", None)
 
 
 def _split_prefer_csv(raw: str | None, *, limit: int = 8) -> list[str]:
@@ -699,6 +682,14 @@ def get_cars_alias():
                     .first()
                 )
             if not car:
+                return jsonify({"message": "Car not found"}), 404
+            current_user = None
+            try:
+                verify_jwt_in_request(optional=True)
+                current_user = get_current_user()
+            except Exception:
+                current_user = None
+            if not _listing_visible_to_viewer(car, current_user):
                 return jsonify({"message": "Car not found"}), 404
             d = _with_media_compat(car)
             # legacy client expects numeric id

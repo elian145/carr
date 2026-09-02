@@ -29,9 +29,11 @@ class FilterColorField extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     final style = filterDialogStyle(context);
-    final display = selectedColor == null || selectedColor!.isEmpty
-        ? loc.tapToSelect
-        : labelForColor(context, selectedColor!);
+    final hasColor =
+        selectedColor != null && selectedColor!.isNotEmpty;
+    final display = hasColor
+        ? labelForColor(context, selectedColor!)
+        : loc.tapToSelect;
 
     return FilterCard(
       isError: isError,
@@ -45,45 +47,65 @@ class FilterColorField extends StatelessWidget {
             onSummaryTap: onClear,
           ),
           const SizedBox(height: 12),
-          TextFormField(
-            key: ValueKey<String?>(selectedColor),
-            readOnly: true,
-            style: TextStyle(
-              color: selectedColor != null && selectedColor!.isNotEmpty
-                  ? style.onSurface
-                  : style.anyOrange,
-              fontWeight: FontWeight.w600,
-            ),
-            initialValue: display,
-            decoration: filterFieldDecoration(
+          InputDecorator(
+            decoration: filterDropdownFieldDecoration(
               style,
               loc.colorLabel,
+              compactLabel: true,
+              hideLabel: true,
               errorText: isError ? loc.pleaseSelectColor : null,
-              suffixIcon: Container(
-                width: 24,
-                height: 24,
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: selectedColor != null
-                      ? homeFilterNamedColor(selectedColor!)
-                      : Colors.grey,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.white24, width: 2),
+            ),
+            isEmpty: false,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: () async {
+                  final choice = await showDialog<String>(
+                    context: context,
+                    builder: (dlgContext) => _ColorPickerDialog(
+                      colors: colors,
+                      labelForColor: labelForColor,
+                    ),
+                  );
+                  if (choice != null) {
+                    onColorSelected(choice);
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        display,
+                        style: TextStyle(
+                          color: hasColor ? style.onSurface : style.anyOrange,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                          height: 1.35,
+                          leadingDistribution: TextLeadingDistribution.even,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: hasColor
+                            ? homeFilterNamedColor(selectedColor!)
+                            : Colors.grey,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: style.onSurface.withValues(alpha: 0.2),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            onTap: () async {
-              final choice = await showDialog<String>(
-                context: context,
-                builder: (dlgContext) => _ColorPickerDialog(
-                  colors: colors,
-                  labelForColor: labelForColor,
-                ),
-              );
-              if (choice != null) {
-                onColorSelected(choice);
-              }
-            },
           ),
         ],
       ),

@@ -155,6 +155,10 @@ def record_call_or_share(user: User, listing_id: str, field: MetricField) -> dic
     car = get_car_for_analytics(listing_id)
     if not car or not car.is_active:
         return {"ok": False, "counted": False, "code": "listing_not_found"}
+    from .listing_visibility import listing_visible_to_viewer
+
+    if not listing_visible_to_viewer(car, user):
+        return {"ok": False, "counted": False, "code": "listing_not_found"}
     if car.seller_id == user.id:
         return {"ok": True, "counted": False, "code": "own_listing"}
 
