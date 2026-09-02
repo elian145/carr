@@ -68,55 +68,94 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         car!['is_quick_sell'] == true || car!['is_quick_sell'] == 'true';
     final bool hasModelOrPrice = _displayModelName(context).isNotEmpty ||
         tryParseCurrencyValue(car!['price']) != null;
-    final cityDetail =
-        (listingFirstNonEmpty(car!, ['city', 'location']) ?? '').trim();
-    final uploadedDetail = listingUploadedAgo(context, car!);
-    final bool hasMeta = cityDetail.isNotEmpty || uploadedDetail.isNotEmpty;
-
     // Sheet content from top padding through Specifications.
     double height = 12 + 22;
     if (hasModelOrPrice) height += 4 + _modelPriceRowHeight(context);
-    if (hasMeta) height += 16 + 18;
+    height += _metaBlockHeight(context);
     height += _metaToDividerGap + 1;
-    // Specs title — measure Arabic/Kurdish glyph metrics instead of a fixed box.
-    height += 4 + _specsTitleRowHeight(context) + 2;
+    height += 4 + _specsTitleBlockHeight(context) + 4;
     if (hasQuickSell) height += 44 + 16;
     return height;
   }
 
   static const double _specsTitleFontSize = 28;
-  static const double _specsTitleHeightBuffer = 12;
 
-  double _specsTitleLineHeight(BuildContext context) {
-    const style = TextStyle(
+  TextStyle _specsTitleStyle() {
+    return const TextStyle(
       fontSize: _specsTitleFontSize,
       fontWeight: FontWeight.bold,
-      height: 1.35,
+      height: 1.4,
       leadingDistribution: TextLeadingDistribution.even,
       color: AppColors.brandOrange,
     );
+  }
+
+  double _metaBlockHeight(BuildContext context) {
+    final cityDetail =
+        (listingFirstNonEmpty(car!, ['city', 'location']) ?? '').trim();
+    final uploadedDetail = listingUploadedAgo(context, car!);
+    if (cityDetail.isEmpty && uploadedDetail.isEmpty) return 0;
+
+    const cityLabelStyle = TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w700,
+      height: 1.2,
+    );
+    final textDir = Directionality.of(context);
+
+    double uploadedWidth = 0;
+    double uploadedHeight = 0;
+    if (uploadedDetail.isNotEmpty) {
+      final uploadedPainter = TextPainter(
+        text: TextSpan(
+          text: uploadedDetail,
+          style: cityLabelStyle.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+        textDirection: textDir,
+        textScaler: TextScaler.noScaling,
+        maxLines: 1,
+      )..layout();
+      uploadedWidth = uploadedPainter.width;
+      uploadedHeight = uploadedPainter.height;
+    }
+
+    double cityRowHeight = 0;
+    if (cityDetail.isNotEmpty) {
+      final cityText =
+          '${AppLocalizations.of(context)!.cityLabel}: '
+          '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}';
+      var cityTextMaxWidth = MediaQuery.sizeOf(context).width - 32;
+      cityTextMaxWidth -= 14 + 6;
+      if (uploadedDetail.isNotEmpty) {
+        cityTextMaxWidth -= 8 + uploadedWidth;
+      }
+      final cityPainter = TextPainter(
+        text: TextSpan(text: cityText, style: cityLabelStyle),
+        textDirection: textDir,
+        textScaler: TextScaler.noScaling,
+        maxLines: 2,
+      )..layout(maxWidth: cityTextMaxWidth.clamp(1.0, double.infinity));
+      cityRowHeight = math.max(14.0, cityPainter.height);
+    }
+
+    return 16 + math.max(cityRowHeight, uploadedHeight);
+  }
+
+  double _specsTitleBlockHeight(BuildContext context) {
     final painter = TextPainter(
       text: TextSpan(
         text: AppLocalizations.of(context)!.specificationsLabel,
-        style: style,
+        style: _specsTitleStyle(),
       ),
       textDirection: Directionality.of(context),
-      textScaler: const TextScaler.linear(1.0),
+      textScaler: TextScaler.noScaling,
       maxLines: 1,
-      strutStyle: const StrutStyle(
-        fontSize: _specsTitleFontSize,
-        height: 1.35,
-        leadingDistribution: TextLeadingDistribution.even,
-        forceStrutHeight: true,
-      ),
     )..layout();
-    return painter.size.height.ceilToDouble();
-  }
-
-  double _specsTitleRowHeight(BuildContext context) {
-    // Ceil + small margin: device Arabic fonts can exceed TextPainter by a few px.
-    return (_specsTitleLineHeight(context) + _specsTitleHeightBuffer + 2)
-        .ceilToDouble();
+    // Small buffer for bold ascenders that can exceed TextPainter on some fonts.
+    return painter.height.ceilToDouble() + 6;
   }
 
   Widget _buildCarDetailsTitleHeader(BuildContext context, bool isLightShell) {
@@ -132,7 +171,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       child: Theme(
         data: isLightShell ? Theme.of(context) : AppThemes.darkTheme,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
@@ -333,30 +372,12 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
             // open a gap between Specs and the grid below.
             const Spacer(),
             const SizedBox(height: 4),
-            SizedBox(
-              height: _specsTitleRowHeight(context),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  AppLocalizations.of(context)!.specificationsLabel,
-                  textScaler: TextScaler.noScaling,
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
-                  strutStyle: const StrutStyle(
-                    fontSize: _specsTitleFontSize,
-                    height: 1.35,
-                    leadingDistribution: TextLeadingDistribution.even,
-                    forceStrutHeight: true,
-                  ),
-                  style: const TextStyle(
-                    fontSize: _specsTitleFontSize,
-                    fontWeight: FontWeight.bold,
-                    height: 1.35,
-                    leadingDistribution: TextLeadingDistribution.even,
-                    color: AppColors.brandOrange,
-                  ),
-                ),
-              ),
+            Text(
+              AppLocalizations.of(context)!.specificationsLabel,
+              textScaler: TextScaler.noScaling,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _specsTitleStyle(),
             ),
           ],
         ),

@@ -36,16 +36,16 @@ mixin _HomePageMoreFiltersVehicle on _HomePageFilterBar {
       icon: Icon(
         isDropdown ? Icons.edit : Icons.list,
         color: AppColors.brandOrange,
-        size: 18,
+        size: 24,
       ),
       style: IconButton.styleFrom(
         backgroundColor: style.fieldFill,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        visualDensity: VisualDensity.compact,
-        padding: const EdgeInsets.all(6),
-        minimumSize: const Size(32, 32),
+        visualDensity: VisualDensity.standard,
+        padding: const EdgeInsets.all(8),
+        minimumSize: const Size(40, 40),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
