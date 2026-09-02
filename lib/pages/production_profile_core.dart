@@ -4,7 +4,10 @@ mixin _ProfilePageCore on _ProfilePageBody {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context)!.profileTitle)),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(AppLocalizations.of(context)!.profileTitle),
+      ),
       body: _loading
           ? Stack(
               children: [

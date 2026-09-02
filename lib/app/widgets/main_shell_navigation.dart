@@ -4,44 +4,34 @@ import '../../theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-import '../../navigation/app_page_route.dart';
 import '../../shared/ui/responsive.dart';
 import '../route_registry.dart';
 
-/// Main-tab switch using [AppPageRoute] so edge swipe-back can return to the
-/// previous tab instead of replacing the navigator stack.
+Route<T> _mainShellTabRoute<T>(String routeName, WidgetBuilder builder) {
+  return PageRouteBuilder<T>(
+    settings: RouteSettings(name: routeName),
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+    pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+  );
+}
+
+/// Main-tab switch that keeps bottom-nav destinations as root-level pages.
 void navigateMainShellTab(BuildContext context, String routeName) {
   final currentRoute = ModalRoute.of(context)?.settings.name;
   if (currentRoute == routeName) return;
 
   final navigator = Navigator.of(context);
-
-  var foundTarget = false;
-  navigator.popUntil((route) {
-    if (route.settings.name == routeName) {
-      foundTarget = true;
-      return true;
-    }
-    if (route.isFirst) {
-      return true;
-    }
-    return false;
-  });
-
-  if (!foundTarget && ModalRoute.of(context)?.settings.name != routeName) {
-    final builder = appRouteBuilders[routeName];
-    if (builder == null) {
-      navigator.pushNamed(routeName);
-      return;
-    }
-
-    navigator.push(
-      AppPageRoute<void>(
-        settings: RouteSettings(name: routeName),
-        builder: builder,
-      ),
-    );
+  final builder = appRouteBuilders[routeName];
+  if (builder == null) {
+    navigator.pushNamedAndRemoveUntil(routeName, (route) => false);
+    return;
   }
+
+  navigator.pushAndRemoveUntil<void>(
+    _mainShellTabRoute<void>(routeName, builder),
+    (route) => false,
+  );
 }
 
 Widget buildFloatingBottomNav(
