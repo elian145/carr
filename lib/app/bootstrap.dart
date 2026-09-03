@@ -90,11 +90,13 @@ void _runZonedApp(Widget app) {
         );
       };
 
-      // Load runtime API override early so first screen uses it.
+      // Load runtime API override and saved locale early so the first frame
+      // uses them. Deferred locale load flashed English (and LTR) for ar/ku.
       try {
         final sp = await SharedPreferences.getInstance();
         final override = sp.getString(_apiBaseOverrideKey);
         setRuntimeApiBaseOverride(override);
+        LocaleController.applyFromPrefs(sp);
       } catch (e, st) { logNonFatal(e, st); }
 
       // Minimal pre-run init only (fast): load tokens if available.

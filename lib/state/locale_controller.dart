@@ -8,18 +8,21 @@ class LocaleController {
     null,
   );
 
-  static Future<void> loadSavedLocale() async {
-    final sp = await SharedPreferences.getInstance();
+  /// Apply persisted locale with no extra I/O. Call after SharedPreferences
+  /// is already loaded so the first frame can use ar/ku instead of English.
+  static void applyFromPrefs(SharedPreferences sp) {
     final code = sp.getString('app_locale');
     if (code != null && code.isNotEmpty) {
-      await CarNameTranslations.ensureLoadedForLocale(code);
       currentLocale.value = Locale(code);
-      return;
     }
-    // Follow system language: warm pack for device locale when ar/ku.
-    final deviceCode =
+  }
+
+  static Future<void> loadSavedLocale() async {
+    final sp = await SharedPreferences.getInstance();
+    applyFromPrefs(sp);
+    final code = currentLocale.value?.languageCode ??
         WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    await CarNameTranslations.ensureLoadedForLocale(deviceCode);
+    await CarNameTranslations.ensureLoadedForLocale(code);
   }
 
   static Future<void> setLocale(Locale? locale) async {
