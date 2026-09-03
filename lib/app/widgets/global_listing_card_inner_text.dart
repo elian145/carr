@@ -1,22 +1,22 @@
 part of 'global_listing_card.dart';
 
-/// Price badge metrics scaled to the listing card's text-row width.
+/// Price badge metrics for listing cards.
 ///
-/// Narrow 2-column tiles get a smaller orange pill; wider grid cards grow
-/// toward the full size. [footerHeight] matches padding + type so the row
-/// does not overflow.
+/// Uses a stable pill size instead of shrinking with row width.
+/// [badgeHeight] is fixed so Roboto vs SF Pro metrics cannot change the pill
+/// height. [footerHeight] sizes the row.
 class _ListingPriceBadgeStyle {
   const _ListingPriceBadgeStyle({
     required this.fontSize,
     required this.horizontalPadding,
-    required this.verticalPadding,
+    required this.badgeHeight,
     required this.radius,
     required this.footerHeight,
   });
 
   final double fontSize;
   final double horizontalPadding;
-  final double verticalPadding;
+  final double badgeHeight;
   final double radius;
   final double footerHeight;
 }
@@ -26,41 +26,37 @@ _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required bool hasPrice,
   bool listLayout = false,
 }) {
+  // Only shrink on very narrow tiles; otherwise keep the fuller pill size.
+  final double tight = rowWidth < 130 ? 0.0 : 1.0;
+
   if (listLayout) {
-    // Horizontal list cards: slightly smaller than grid, but still readable.
-    final double t = ((rowWidth - 110) / 70).clamp(0.0, 1.0);
-    final double fontSize = hasPrice ? 12.0 + 2.5 * t : 10.5 + 2.0 * t;
-    final double horizontalPadding = hasPrice ? 5.5 + 3.5 * t : 4.5 + 3.0 * t;
-    final double verticalPadding = 3.0 + 2.0 * t;
-    final double radius = 6.5 + 1.5 * t;
-    final double footerHeight =
-        (verticalPadding * 2 + fontSize + 1.5).clamp(22.0, 28.0);
+    final double fontSize = hasPrice ? 12.5 + 1.0 * tight : 10.5 + 0.5 * tight;
+    final double horizontalPadding =
+        hasPrice ? 6.0 + 1.0 * tight : 5.0 + 0.5 * tight;
+    final double badgeHeight = 22.0 + 2.0 * tight;
+    final double radius = 7.0 + 0.5 * tight;
+    final double footerHeight = 24.0 + 2.0 * tight;
 
     return _ListingPriceBadgeStyle(
       fontSize: fontSize,
       horizontalPadding: horizontalPadding,
-      verticalPadding: verticalPadding,
+      badgeHeight: badgeHeight,
       radius: radius,
       footerHeight: footerHeight,
     );
   }
 
-  // ~148px text width → smallest badge, ~204px → full size.
-  final double t = ((rowWidth - 148) / 56).clamp(0.0, 1.0);
-
-  final double fontSize = hasPrice ? 14.0 + 3.0 * t : 11.5 + 2.5 * t;
+  final double fontSize = hasPrice ? 14.0 + 1.0 * tight : 11.0 + 1.0 * tight;
   final double horizontalPadding =
-      hasPrice ? 6.5 + 4.5 * t : 5.0 + 3.5 * t;
-  final double verticalPadding = 4.0 + 3.0 * t;
-  final double radius = 7.0 + 2.0 * t;
-  // +1.5 slack covers font metric rounding inside the fixed footer slot.
-  final double footerHeight =
-      (verticalPadding * 2 + fontSize + 1.5).clamp(24.0, 34.0);
+      hasPrice ? 7.0 + 1.0 * tight : 5.5 + 1.0 * tight;
+  final double badgeHeight = 24.0 + 2.0 * tight;
+  final double radius = 7.0 + 0.5 * tight;
+  final double footerHeight = 26.0 + 2.0 * tight;
 
   return _ListingPriceBadgeStyle(
     fontSize: fontSize,
     horizontalPadding: horizontalPadding,
-    verticalPadding: verticalPadding,
+    badgeHeight: badgeHeight,
     radius: radius,
     footerHeight: footerHeight,
   );
@@ -544,6 +540,11 @@ Widget _buildGridCarCardInnerText(
         fontSize: priceStyle.fontSize,
         height: 1,
       );
+      final priceStrut = StrutStyle(
+        fontSize: priceStyle.fontSize,
+        height: 1,
+        forceStrutHeight: true,
+      );
       final pricePainter = TextPainter(
         text: TextSpan(text: priceText, style: priceTextStyle),
         textDirection: TextDirection.ltr,
@@ -556,41 +557,34 @@ Widget _buildGridCarCardInnerText(
           priceTextW + priceStyle.horizontalPadding * 2;
       final bool priceNeedsShrink = priceNeeded > maxPriceWidth;
 
+      final Widget priceLabel = Text(
+        priceText,
+        textDirection: TextDirection.ltr,
+        textScaler: const TextScaler.linear(1.0),
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.visible,
+        style: priceTextStyle,
+        strutStyle: priceStrut,
+      );
+
       final Widget priceBadge = Transform.translate(
         offset: Offset(trailingShift, 0),
         child: Container(
           width: priceNeedsShrink ? maxPriceWidth : null,
+          height: priceStyle.badgeHeight,
           padding: EdgeInsets.symmetric(
             horizontal: priceStyle.horizontalPadding,
-            vertical: priceStyle.verticalPadding,
           ),
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             color: priceAccent,
             borderRadius: BorderRadius.circular(priceStyle.radius),
           ),
           // LTR + scaleDown: full amount stays visible; short prices still hug.
           child: priceNeedsShrink
-              ? FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    priceText,
-                    textDirection: TextDirection.ltr,
-                    textScaler: const TextScaler.linear(1.0),
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.visible,
-                    style: priceTextStyle,
-                  ),
-                )
-              : Text(
-                  priceText,
-                  textDirection: TextDirection.ltr,
-                  textScaler: const TextScaler.linear(1.0),
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: priceTextStyle,
-                ),
+              ? FittedBox(fit: BoxFit.scaleDown, child: priceLabel)
+              : priceLabel,
         ),
       );
 
@@ -769,16 +763,22 @@ Widget _buildListCarCardInnerText(
       softWrap: false,
       overflow: TextOverflow.ellipsis,
       style: textStyle,
+      strutStyle: StrutStyle(
+        fontSize: style.fontSize,
+        height: 1,
+        forceStrutHeight: true,
+      ),
     );
 
     return Container(
+      height: style.badgeHeight,
       constraints: maxWidth != null && maxWidth.isFinite
           ? BoxConstraints(maxWidth: maxWidth)
           : null,
       padding: EdgeInsets.symmetric(
         horizontal: style.horizontalPadding,
-        vertical: style.verticalPadding,
       ),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: priceAccent,
         borderRadius: BorderRadius.circular(style.radius),

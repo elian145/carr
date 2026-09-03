@@ -97,7 +97,8 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   adaptive_icon_background: "#000000"
   adaptive_icon_foreground: assets/icon/app_icon.png
-  adaptive_icon_foreground_inset: 0
+  # Keep logo inside Android adaptive safe zone (~66% center); 0 clips "CarNet" on squircle/circle masks
+  adaptive_icon_foreground_inset: 18
 
 # Branded splash (Android + iOS). Regenerate after icon change:
 #   dart run flutter_native_splash:create
