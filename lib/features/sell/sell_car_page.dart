@@ -299,6 +299,9 @@ class _SellCarPageState extends _SellCarPageFields
     if (currentStep > 0) {
       setState(() {
         currentStep--;
+        // Progress segments must retreat with the wizard: drop completed marks
+        // for this step and anything ahead of it.
+        completedSteps.removeWhere((s) => s >= currentStep);
       });
       unawaited(_saveDraftCurrentStep());
       unawaited(_saveSellDraftSnapshot());
@@ -319,6 +322,7 @@ class _SellCarPageState extends _SellCarPageFields
     final clamped = index.clamp(0, _SellCarPageFields._kSellStepCount - 1);
     setState(() {
       currentStep = clamped;
+      completedSteps.removeWhere((s) => s >= currentStep);
     });
     if (_pageController.hasClients) {
       _pageController.jumpToPage(clamped);
