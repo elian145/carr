@@ -15,7 +15,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get navHome => 'ماڵەوە';
 
   @override
-  String get navAdd => 'زۆركردن';
+  String get navAdd => 'زیادکردن';
 
   @override
   String get navChat => 'چات';
@@ -24,7 +24,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get navSaved => 'دڵخواز';
 
   @override
-  String get navDealers => 'نمایشگەکان';
+  String get navDealers => 'نمایشگاکان';
 
   @override
   String get navLogin => 'چوونەژوورەوە';
@@ -33,7 +33,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get navProfile => 'پرۆفایل';
 
   @override
-  String get addListingTitle => 'زۆرکردنی ڕێکلام';
+  String get addListingTitle => 'زیادکردنی ڕیکلام';
 
   @override
   String get favoritesTitle => 'دڵخوازەکان';
@@ -57,13 +57,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get chatConversationTitle => 'گفتوگۆ';
 
   @override
-  String get editListingTitle => 'دەستکاری ڕێکلام';
+  String get editListingTitle => 'دەستکاری ڕیکلام';
 
   @override
-  String get brandLabel => 'بران';
+  String get brandLabel => 'براند';
 
   @override
-  String get anyBrand => 'هەر برانێک';
+  String get anyBrand => 'هەر براندێک';
 
   @override
   String get modelLabel => 'مۆدێل';
@@ -84,25 +84,25 @@ class AppLocalizationsKu extends AppLocalizations {
   String get anyPrice => 'هەر نرخێک';
 
   @override
-  String get mileageLabel => 'کێڵگەی ڕێ';
+  String get mileageLabel => 'ڕۆیشتوو';
 
   @override
   String get anyMileage => 'هەر یەک';
 
   @override
-  String get conditionLabel => 'دۆخ';
+  String get conditionLabel => 'باری ئۆتۆمبێل';
 
   @override
   String get anyCondition => 'هەر یەک';
 
   @override
-  String get transmissionLabel => 'گەڕدێنەر';
+  String get transmissionLabel => 'گێڕ';
 
   @override
-  String get fuelTypeLabel => 'جۆری سووتەمەنی';
+  String get fuelTypeLabel => 'جۆری بەنزین';
 
   @override
-  String get bodyTypeLabel => 'جۆری جەستە';
+  String get bodyTypeLabel => 'جۆری لاشە';
 
   @override
   String get cityLabel => 'شار';
@@ -111,10 +111,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get allCities => 'هەموو شارەکان';
 
   @override
-  String get applyFilters => 'پێوەکراوەکان جێبەجێ بکە';
+  String get applyFilters => 'فلتەرەکان جێبەجێ بکە';
 
   @override
-  String get clearFilters => 'پاککردنەوەی پێوەکراوەکان';
+  String get clearFilters => 'فلتەرەکان پاک بکەرەوە';
 
   @override
   String get submit => 'ناردن';
@@ -126,10 +126,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get any => 'هەر یەک';
 
   @override
-  String get activeFilters => 'پێوەکراوە چالاکەکان:';
+  String get activeFilters => 'فلتەرە چالاکەکان:';
 
   @override
-  String get moreFilters => 'پێوەکراوی زیاتر';
+  String get moreFilters => 'فلتەری زیاتر';
 
   @override
   String get priceRange => 'مەودای نرخ';
@@ -168,28 +168,28 @@ class AppLocalizationsKu extends AppLocalizations {
   String get enterMaxYear => 'زۆرترین ساڵ بنووسە';
 
   @override
-  String get mileageRange => 'مەودای کێڵگەی ڕێ';
+  String get mileageRange => 'مەودای ڕۆیشتوو';
 
   @override
-  String get minMileage => 'کەمترین کێڵگە';
+  String get minMileage => 'کەمترین ڕۆیشتوو';
 
   @override
-  String get maxMileage => 'زۆرترین کێڵگە';
+  String get maxMileage => 'زۆرترین ڕۆیشتوو';
 
   @override
-  String get enterMinMileage => 'کەمترین کێڵگە بنووسە';
+  String get enterMinMileage => 'کەمترین ڕۆیشتوو بنووسە';
 
   @override
-  String get enterMaxMileage => 'زۆرترین کێڵگە بنووسە';
+  String get enterMaxMileage => 'زۆرترین ڕۆیشتوو بنووسە';
 
   @override
-  String get titleStatus => 'دۆخی تايتڵ';
+  String get titleStatus => 'باری بۆیاخ';
 
   @override
-  String get damagedParts => 'پارسە زیانەکان';
+  String get damagedParts => 'پارچە زیانلێکەوتووەکان';
 
   @override
-  String get selectBodyType => 'جۆری جەستە دیاریبکە';
+  String get selectBodyType => 'جۆری لاشە دیاری بکە';
 
   @override
   String get colorLabel => 'ڕەنگ';
@@ -198,31 +198,31 @@ class AppLocalizationsKu extends AppLocalizations {
   String get selectColor => 'ڕەنگ دیاریبکە';
 
   @override
-  String get driveType => 'جۆری هاندان';
+  String get driveType => 'جۆری دەفع';
 
   @override
-  String get regionSpecsLabel => 'تایبەتمەندی ناوچە';
+  String get regionSpecsLabel => 'مواسەفات';
 
   @override
-  String get cylinderCount => 'ژمارەی سیلەندەر';
+  String get cylinderCount => 'پستۆن';
 
   @override
-  String get seating => 'شوێنی نیشتن';
+  String get seating => 'ژمارەی کورسی';
 
   @override
-  String get engineSizeL => 'قەبارەی مۆتۆر (L)';
+  String get engineSizeL => 'قەبارە';
 
   @override
   String get sortBy => 'ڕیزکردن بەپێی';
 
   @override
-  String get selectBrand => 'بران هەڵبژێرە';
+  String get selectBrand => 'براند هەڵبژێرە';
 
   @override
-  String get tapToSelectBrand => 'کرتە بکە بۆ هەڵبژاردنی بران';
+  String get tapToSelectBrand => 'کرتە بکە بۆ هەڵبژاردنی براند';
 
   @override
-  String get trimLabel => 'تریم';
+  String get trimLabel => 'جۆری مواسەفات';
 
   @override
   String get loginRequired => 'چوونەژوورەوە پێویستە';
@@ -252,40 +252,40 @@ class AppLocalizationsKu extends AppLocalizations {
   String get enterPhoneNumber => 'ژماره‌ی ته‌له‌فۆن دابنێ';
 
   @override
-  String get submitListing => 'ناردنی ڕێکلام';
+  String get submitListing => 'ناردنی ڕیکلام';
 
   @override
-  String get specificationsLabel => 'تایبەتمەندییەکان';
+  String get specificationsLabel => 'مواسەفات';
 
   @override
-  String get detail_condition => 'دۆخ';
+  String get detail_condition => 'باری ئۆتۆمبێل';
 
   @override
-  String get detail_fuel => 'سووتەمەنی';
+  String get detail_fuel => 'جۆری بەنزین';
 
   @override
-  String get detail_body => 'جەستە';
+  String get detail_body => 'جۆری لاشە';
 
   @override
   String get detail_color => 'ڕەنگ';
 
   @override
-  String get detail_drive => 'هاندان';
+  String get detail_drive => 'جۆری دەفع';
 
   @override
-  String get detail_cylinders => 'سیلەندەرەکان';
+  String get detail_cylinders => 'پستۆن';
 
   @override
-  String get detail_engine => 'مۆتۆر';
+  String get detail_engine => 'قەبارە';
 
   @override
-  String get detail_seating => 'شوێنی نیشتن';
+  String get detail_seating => 'ژمارەی کورسی';
 
   @override
   String get value_condition_new => 'نوێ';
 
   @override
-  String get value_condition_used => 'کهنە';
+  String get value_condition_used => 'بەکارهاتوو';
 
   @override
   String get value_transmission_automatic => 'ئۆتۆماتیک';
@@ -309,13 +309,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get value_fuel_lpg => 'گاز';
 
   @override
-  String get value_fuel_plugin_hybrid => 'هایبریدی پڵەگ';
+  String get value_fuel_plugin_hybrid => 'پڵەگ-ئین هایبرید';
 
   @override
   String get value_title_clean => 'پاك';
 
   @override
-  String get value_title_damaged => 'زیان';
+  String get value_title_damaged => 'زیانلێکەوتوو';
 
   @override
   String titleStatusDamagedWithParts(String count) {
@@ -323,7 +323,7 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
-  String get damageCrashPhotosSection => 'وێنەی زیان / ڕووداو (ئارەزوومەندانە)';
+  String get damageCrashPhotosSection => 'وێنەی زیان / ڕووداو (هەڵبژاردە)';
 
   @override
   String addDamagePhotosCount(Object count) {
@@ -430,13 +430,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get max => 'زۆرترین';
 
   @override
-  String get whatsappLabel => 'ژمارەی واتساپ (گەورەکەی وڵات)';
+  String get whatsappLabel => 'ژمارەی واتساپ (لەگەڵ کۆدی وڵات)';
 
   @override
   String get whatsappHint => '+9647XXXXXXXX';
 
   @override
-  String get photosOptional => 'وێنەکان (هەلبژاردە)';
+  String get photosOptional => 'وێنەکان (هەڵبژاردە)';
 
   @override
   String get addPhotos => 'وێنە زیاد بکە';
@@ -466,10 +466,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get sort_year_oldest => 'ساڵ (کۆنترین)';
 
   @override
-  String get sort_mileage_low_high => 'کێڵگە (کەم بۆ زۆر)';
+  String get sort_mileage_low_high => 'ڕۆیشتوو (کەم بۆ زۆر)';
 
   @override
-  String get sort_mileage_high_low => 'کێڵگە (زۆر بۆ کەم)';
+  String get sort_mileage_high_low => 'ڕۆیشتوو (زۆر بۆ کەم)';
 
   @override
   String get sort_newest => 'نوێترین';
@@ -496,7 +496,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get chatCarzoOwnListing =>
-      'ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕێکلامی خۆت.';
+      'ناتوانیت پەیام بنێریت بە خۆت لەسەر ڕیکلامی خۆت.';
 
   @override
   String get unableToOpenWhatsApp => 'ناتوانرێت واتساپ بکرێتەوە';
@@ -525,7 +525,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get settingsTitle => 'ڕێکخستنەکان';
 
   @override
-  String get settingsEnablePush => 'کاریگەریکردنی ئاگانامەکان';
+  String get settingsEnablePush => 'چالاککردنی ئاگادارکردنەوەکان';
 
   @override
   String get settingsClearCaches => 'پاککردنەوەی کەش';
@@ -571,28 +571,28 @@ class AppLocalizationsKu extends AppLocalizations {
   String get kurdish => 'کوردی';
 
   @override
-  String get mileageRangeLabel => 'مەودای کێڵگە';
+  String get mileageRangeLabel => 'مەودای ڕۆیشتوو';
 
   @override
-  String get similarListings => 'ڕێکلامی هاوشێوە';
+  String get similarListings => 'ڕیکلامی هاوشێوە';
 
   @override
   String listingUploadPartialFail(Object code) {
-    return 'ڕێکلام دروست کرا، بەڵام بارکردنی وێنە شکستی هێنا ($code).';
+    return 'ڕیکلام دروست کرا، بەڵام بارکردنی وێنە شکستی هێنا ($code).';
   }
 
   @override
   String failedToSubmitListing(Object msg) {
-    return 'ناتوانرێت ڕێکلام بنێدرێت: $msg';
+    return 'ناتوانرێت ڕیکلام بنێردرێت: $msg';
   }
 
   @override
   String get couldNotSubmitListing =>
-      'نەتوانرا ڕێکلام بنێدرێت. تکایە هەوڵ بدەوە.';
+      'نەتوانرا ڕیکلام بنێردرێت. تکایە هەوڵ بدەوە.';
 
   @override
   String get listingVinAlreadyExists =>
-      'ئەم ژمارەی شاسییە پێشتر لە ڕێکلامێکی تر بەکارهاتووە. ژمارەیەکی تر بەکاربهێنە یان ڕێکلامی خۆت دەستکاری بکە.';
+      'ئەم ژمارەی شاسییە پێشتر لە ڕیکلامێکی تر بەکارهاتووە. ژمارەیەکی تر بەکاربهێنە یان ڕیکلامی خۆت دەستکاری بکە.';
 
   @override
   String get errorTitle => 'هەڵە';
@@ -604,13 +604,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get haveAccountLogin => 'هەژمارت هەیە؟ چوونەژوورەوە';
 
   @override
-  String get notLoggedIn => 'تۆ بچوو نەیت';
+  String get notLoggedIn => 'لە ژوورەوە نیت';
 
   @override
   String get loginAction => 'چوونەژوورەوە';
 
   @override
-  String get loggedIn => 'چووەژور';
+  String get loggedIn => 'چوویتە ژوورەوە';
 
   @override
   String get usernameLabel => 'ناوی بەکارهێنەر';
@@ -648,16 +648,16 @@ class AppLocalizationsKu extends AppLocalizations {
   String get saved => 'پاشەکەوت کرا';
 
   @override
-  String get selectDriveType => 'جۆری هاندان هەڵبژێرە';
+  String get selectDriveType => 'جۆری دەفع هەڵبژێرە';
 
   @override
-  String get selectCylinderCount => 'ژمارەی سیلەندەر هەڵبژێرە';
+  String get selectCylinderCount => 'پستۆن هەڵبژێرە';
 
   @override
-  String get selectSeating => 'شوێنی نیشتن هەڵبژێرە';
+  String get selectSeating => 'ژمارەی کورسی هەڵبژێرە';
 
   @override
-  String get selectEngineSize => 'قەبارەی مۆتۆر هەڵبژێرە';
+  String get selectEngineSize => 'قەبارە هەڵبژێرە';
 
   @override
   String get selectCity => 'شار هەڵبژێرە';
@@ -667,7 +667,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get useInternationalFormat =>
-      'فۆرماتی نێودەوڵەتی بەکاربەڕە نموونە +9647XXXXXXX';
+      'بە فۆرماتی نێودەوڵەتی بنووسە، وەک +9647XXXXXXX';
 
   @override
   String get anyOption => 'هەر یەک';
@@ -894,11 +894,11 @@ class AppLocalizationsKu extends AppLocalizations {
   String get noCarsFoundHint => 'فلتەرەکان بگۆڕە یان هەموو ڕێکلامەکان بگەڕێ.';
 
   @override
-  String get descriptionOptionalLabel => 'وەسف (هەلبژاردە)';
+  String get descriptionOptionalLabel => 'وەسف (هەڵبژاردە)';
 
   @override
   String get plateBlurNote =>
-      'تێبینی: تەنها کاتێک پڵێتەکان شار دەکرێن کە دوگمەی Blur Plates دابگرن.';
+      'تێبینی: ڕەقەم تەنها کاتێک دەشاردرێتەوە کە دوگمەی شاردنەوەی ڕەقەم دابگریت.';
 
   @override
   String get invalidField => 'نەگونجاوە';
@@ -907,7 +907,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get currencyLabel => 'دراو';
 
   @override
-  String get engineTypeLabel => 'جۆری مۆتۆر';
+  String get engineTypeLabel => 'جۆری قەبارە';
 
   @override
   String get locationLabel => 'شوێن';
@@ -1137,7 +1137,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get engagementRate => 'ڕێژەی بەشداری';
 
   @override
-  String get fuelEconomyLabel => 'بەکارهێنانی سووتەمەنی';
+  String get fuelEconomyLabel => 'بەکارهێنانی جۆری بەنزین';
 
   @override
   String get comparisonTitle => 'بەراورد';
@@ -1354,7 +1354,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get previousButton => 'پێشوو';
 
   @override
-  String get tapToSelect => 'تەنها بۆ هەڵبژاردن';
+  String get tapToSelect => 'کرتە بکە بۆ هەڵبژاردن';
 
   @override
   String get pleaseFillRequired => 'تکایە تەواو بکە';
@@ -1366,7 +1366,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get pleaseSelectModel => 'تکایە مۆدێلێک هەڵبژێرە';
 
   @override
-  String get pleaseSelectTrim => 'تکایە تریمێک هەڵبژێرە';
+  String get pleaseSelectTrim => 'تکایە جۆری مواسەفات هەڵبژێرە';
 
   @override
   String get pleaseSelectYear => 'تکایە ساڵێک هەڵبژێرە';
@@ -1390,55 +1390,55 @@ class AppLocalizationsKu extends AppLocalizations {
   String get typeManually => 'نووسینی دەستی';
 
   @override
-  String get mileageKmLabel => 'مەودا (كم)';
+  String get mileageKmLabel => 'ڕۆیشتوو (کم)';
 
   @override
-  String get enterMileage => 'مەودا بنووسە';
+  String get enterMileage => 'ڕۆیشتوو بنووسە';
 
   @override
-  String get pleaseEnterMileage => 'تکایە مەودا بنووسە';
+  String get pleaseEnterMileage => 'تکایە ڕۆیشتوو بنووسە';
 
   @override
-  String get invalidMileage => 'مەودای نادروست';
+  String get invalidMileage => 'ڕۆیشتوو نادروستە';
 
   @override
-  String get mileageNegative => 'مەودا ناتوانێت نەرێنی بێت';
+  String get mileageNegative => 'ڕۆیشتوو ناتوانێت نەرێنی بێت';
 
   @override
-  String get pleaseSelectMileage => 'تکایە مەودا هەڵبژێرە';
+  String get pleaseSelectMileage => 'تکایە ڕۆیشتوو هەڵبژێرە';
 
   @override
-  String get confirmMileage => 'دڵنیاکردنەوەی مەودا';
+  String get confirmMileage => 'دڵنیاکردنەوەی ڕۆیشتوو';
 
   @override
-  String get pleaseSelectCondition => 'تکایە دۆخ هەڵبژێرە';
+  String get pleaseSelectCondition => 'تکایە باری ئۆتۆمبێل هەڵبژێرە';
 
   @override
-  String get pleaseSelectTransmission => 'تکایە گێربۆکس هەڵبژێرە';
+  String get pleaseSelectTransmission => 'تکایە گێڕ هەڵبژێرە';
 
   @override
-  String get pleaseSelectFuelType => 'تکایە جۆری سووتەمەنی هەڵبژێرە';
+  String get pleaseSelectFuelType => 'تکایە جۆری بەنزین هەڵبژێرە';
 
   @override
-  String get pleaseSelectBodyType => 'تکایە جۆری بار هەڵبژێرە';
+  String get pleaseSelectBodyType => 'تکایە جۆری لاشە هەڵبژێرە';
 
   @override
   String get pleaseSelectColor => 'تکایە ڕەنگ هەڵبژێرە';
 
   @override
-  String get pleaseSelectDriveType => 'تکایە جۆری درایڤ هەڵبژێرە';
+  String get pleaseSelectDriveType => 'تکایە جۆری دەفع هەڵبژێرە';
 
   @override
-  String get pleaseSelectRegionSpecs => 'تکایە تایبەتمەندی ناوچە هەڵبژێرە';
+  String get pleaseSelectRegionSpecs => 'تکایە مواسەفات هەڵبژێرە';
 
   @override
   String get pleaseSelectSeating => 'تکایە ژمارەی کورسی هەڵبژێرە';
 
   @override
-  String get pleaseSelectEngineSize => 'تکایە قەبارەی ئەنێرژێر هەڵبژێرە';
+  String get pleaseSelectEngineSize => 'تکایە قەبارە هەڵبژێرە';
 
   @override
-  String get pleaseSelectCylinderCount => 'تکایە ژمارەی سیلندەر هەڵبژێرە';
+  String get pleaseSelectCylinderCount => 'تکایە پستۆن هەڵبژێرە';
 
   @override
   String get contactForPrice => 'پەیوەندی بۆ نرخ';
@@ -1457,7 +1457,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get photosRequired => 'وێنەکان (پێویست)';
 
   @override
-  String get videosOptional => 'ڤیدیۆکان (ئارەزوومەندانە)';
+  String get videosOptional => 'ڤیدیۆکان (هەڵبژاردە)';
 
   @override
   String get status => 'دۆخ';
@@ -1472,7 +1472,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get value_transmission_cvt => 'CVT';
 
   @override
-  String get value_condition_certified => 'سەلمانراو';
+  String get value_condition_certified => 'پشتڕاستکراو';
 
   @override
   String get value_trim_base => 'بنەڕەتی';
@@ -1490,7 +1490,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get value_color_white => 'سپی';
 
   @override
-  String get value_color_silver => 'نقره‌یی';
+  String get value_color_silver => 'زیوی';
 
   @override
   String get value_color_gray => 'خۆڵەمێش';
@@ -1623,7 +1623,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get helpSellingSection => 'فرۆشتن';
 
   @override
-  String get helpDealersSection => 'وەکیلەکان';
+  String get helpDealersSection => 'نمایشگاکان';
 
   @override
   String get helpPaymentsSection => 'پارەدان';
@@ -1643,7 +1643,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get helpFaqListingsVerifiedAnswer =>
-      'وەکیلە پەسندکراوەکان لەلایەن تیمەکەمانەوە پێداچوونەوەیان بۆ دەکرێت. هەمیشە پێش پارەدان ئۆتۆمبێلەکە بە چاو بینە.';
+      'نمایشگا پەسەندکراوەکان لەلایەن تیمەکەمانەوە پێداچوونەوەیان بۆ دەکرێت. هەمیشە پێش پارەدان ئۆتۆمبێلەکە بە چاو ببینە.';
 
   @override
   String get helpFaqPostListingQuestion => 'چۆن ڕێکلام دابنێم؟';
@@ -1661,11 +1661,11 @@ class AppLocalizationsKu extends AppLocalizations {
       'ڕێکلامەکەت لە ڕێکلامەکانم یان پەڕەی ڕێکلام (ئامرازەکانی خاوەن) بکەرەوە بۆ دەستکاری یان سڕینەوە.';
 
   @override
-  String get helpFaqRegisterDealerQuestion => 'چۆن وەک وەکیل تۆمار ببم؟';
+  String get helpFaqRegisterDealerQuestion => 'چۆن وەک نمایشگا تۆمار ببم؟';
 
   @override
   String get helpFaqRegisterDealerAnswer =>
-      'تۆمارکردنی وەکیل هەڵبژێرە و وردەکاری نمایشگاکەت بنێرە. پەسندکردن لەوانەیە ١–٢ ڕۆژی کار بخایەنێت.';
+      'تۆمارکردنی نمایشگا هەڵبژێرە و وردەکاری نمایشگاکەت بنێرە. پەسەندکردن لەوانەیە ١–٢ ڕۆژی کار بخایەنێت.';
 
   @override
   String get helpFaqPaymentsQuestion => 'ئایا ئەپ پارەدان دەکات؟';
@@ -1734,10 +1734,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get joinAnd => ' و';
 
   @override
-  String get labelPlateType => 'جۆری پڵەیت';
+  String get labelPlateType => 'جۆری ڕەقەم';
 
   @override
-  String get labelPlateCity => 'شاری پڵەیت';
+  String get labelPlateCity => 'شاری ڕەقەم';
 
   @override
   String get plateTypePrivate => 'تایبەت';
@@ -1803,16 +1803,16 @@ class AppLocalizationsKu extends AppLocalizations {
   String get sellStep4Pricing => 'هەنگاو 4: نرخ';
 
   @override
-  String get sellStep5Plates => 'هەنگاو 5: تابلۆ';
+  String get sellStep5Plates => 'هەنگاو 5: ڕەقەم';
 
   @override
   String get sellStep6Review => 'هەنگاو 6: پێداچوونەوە';
 
   @override
-  String get seats => 'دانیشتن';
+  String get seats => 'کورسی';
 
   @override
-  String get labelCylinders => 'سیلەندەر';
+  String get labelCylinders => 'پستۆن';
 
   @override
   String get labelDealership => 'نمایشگا';
@@ -1836,7 +1836,8 @@ class AppLocalizationsKu extends AppLocalizations {
   String get homeFeedSortingListings => 'ڕیزکردنی ڕیکلامەکان...';
 
   @override
-  String get homeFeedCachedResultsBanner => 'پیشاندانی ئەنجامە کاشکراوەکان';
+  String get homeFeedCachedResultsBanner =>
+      'پیشاندانی ئەنجامە پاشەکەوتکراوەکان';
 
   @override
   String get homeFeedSortedLocally => 'لە ناوخۆدا ڕیزکرا (سێرڤەر بەردەست نییە)';
@@ -1861,7 +1862,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get acceptTermsRequired => 'تکایە مەرج و سیاسەتی تایبەتمەندی قبوڵ بکە';
 
   @override
-  String get videoPlaybackFailed => 'نەتوانرا ئەم ڤیدیۆیە لێ بدرێت.';
+  String get videoPlaybackFailed => 'نەتوانرا ئەم ڤیدیۆیە لێبدرێت.';
 
   @override
   String get photosUploaded => 'وێنەکان بارکران';
@@ -1873,7 +1874,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get commonNo => 'نەخێر';
 
   @override
-  String get missingDealerId => 'ناسنامەی وەکیل ونە';
+  String get missingDealerId => 'ناسنامەی نمایشگا دیار نییە';
 
   @override
   String get markAsAvailable => 'بەردەست بکەرەوە';
@@ -1896,25 +1897,23 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get dealershipDetailsSubmittedYourApplicationIsPendingReview =>
-      'وردەکاری ناوەندی فرۆشتن نێردرا. داواکارییەکەت لە چاوەڕوانی پێداچوونەوەیە.';
+      'وردەکاری نمایشگا نێردرا. داواکارییەکەت لە چاوەڕوانی پێداچوونەوەیە.';
 
   @override
   String get addAPhotoThatHelpsUsVerifyThisDealership =>
-      'وێنەیەک زیاد بکە کە یارمەتیمان بدات ئەم ناوەندی فرۆشتنە پشتڕاست بکەینەوە';
+      'وێنەیەک زیاد بکە کە یارمەتیمان بدات ئەم نمایشگایە پشتڕاست بکەینەوە';
 
   @override
-  String get privateDealershipPhotoUploaded =>
-      'وێنەی نهێنی ناوەندی فرۆشتن بارکرا';
+  String get privateDealershipPhotoUploaded => 'وێنەی تایبەتی نمایشگا بارکرا';
 
   @override
-  String get createDealershipAccount => 'دروستکردنی هەژماری ناوەندی فرۆشتن';
+  String get createDealershipAccount => 'دروستکردنی هەژماری نمایشگا';
 
   @override
   String get finalSetupStep => 'کۆتا هەنگاوی ڕێکخستن';
 
   @override
-  String get buildYourDealershipPresence =>
-      'ناسنامەی ناوەندی فرۆشتنەکەت دروست بکە';
+  String get buildYourDealershipPresence => 'ناسنامەی نمایشگاکەت دروست بکە';
 
   @override
   String
@@ -1933,10 +1932,10 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get theseDetailsWillAppearOnYourPublicDealershipProfile =>
-      'ئەم زانیارییانە لە پڕۆفایلی گشتی ناوەندەکەت دەردەکەون.';
+      'ئەم زانیارییانە لە پڕۆفایلی گشتی نمایشگاکەت دەردەکەون.';
 
   @override
-  String get dealershipName => 'ناوی ناوەندی فرۆشتن';
+  String get dealershipName => 'ناوی نمایشگا';
 
   @override
   String get yourRegisteredOrTradingName => 'ناوی تۆمارکراو یان بازرگانی';
@@ -1949,22 +1948,20 @@ class AppLocalizationsKu extends AppLocalizations {
       'ژمارەیەک کە کڕیاران بتوانن پەیوەندی پێوە بکەن';
 
   @override
-  String get dealershipLocation => 'شوێنی ناوەندی فرۆشتن';
+  String get dealershipLocation => 'شوێنی نمایشگا';
 
   @override
   String get cityDistrictAndStreet => 'شار، گەڕەک و شەقام';
 
   @override
-  String get aboutYourDealershipOptional =>
-      'دەربارەی ناوەندی فرۆشتنەکەت (ئارەزوومەندانە)';
+  String get aboutYourDealershipOptional => 'دەربارەی نمایشگاکەت (هەڵبژاردە)';
 
   @override
   String get describeYourInventoryExperienceAndCustomerService =>
       'ئۆتۆمبێلەکان، ئەزموون و خزمەتگوزارییەکانت باس بکە';
 
   @override
-  String get dealershipVerificationPhoto =>
-      'وێنەی پشتڕاستکردنەوەی ناوەندی فرۆشتن';
+  String get dealershipVerificationPhoto => 'وێنەی پشتڕاستکردنەوەی نمایشگا';
 
   @override
   String
@@ -1980,7 +1977,7 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String
   get uploadOneClearRecentPhotoOfTheDealershipStorefrontCarsForSaleShowroomOrO =>
-      'یەک وێنەی ڕوون و نوێی پێشەوەی ناوەندی فرۆشتن، ئۆتۆمبێلەکانی فرۆشتن، ناوەوە یان ئۆفیس باربکە—هەر شتێک کە یارمەتی تیمەکەمان بدات ڕاستیی بازرگانییەکە پشتڕاست بکاتەوە.';
+      'یەک وێنەی ڕوون و نوێی پێشەوەی نمایشگا، ئۆتۆمبێلەکانی فرۆشتن، ناو نمایشگا یان ئۆفیس باربکە؛ هەر شتێک کە یارمەتی تیمەکەمان بدات بازرگانییەکە پشتڕاست بکاتەوە.';
 
   @override
   String get submitting => 'دەنێردرێت…';
@@ -2077,7 +2074,7 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String
   get thisPhoneNumberIsRegisteredToADealerAccountPleaseUseDealerLoginInstead =>
-      'ئەم ژمارەی تەلەفۆنە بۆ هەژمارێکی وەکیل تۆمارکراوە. تکایە چوونەژوورەوەی وەکیل بەکاربهێنە.';
+      'ئەم ژمارەی تەلەفۆنە بۆ هەژماری نمایشگا تۆمارکراوە. تکایە چوونەژوورەوەی نمایشگا بەکاربهێنە.';
 
   @override
   String get welcomeBack => 'بەخێربێیتەوە';
@@ -2137,7 +2134,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get recentlyViewed => 'دواتر بینراو';
 
   @override
-  String get editDealerPage => 'دەستکاری پەڕەی وەکیل';
+  String get editDealerPage => 'دەستکاری پەڕەی نمایشگا';
 
   @override
   String get guest => 'میوان';
@@ -2242,13 +2239,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get featuredListings => 'ڕیکلامە تایبەتەکان';
 
   @override
-  String get plate => 'پڵەیت';
+  String get plate => 'ڕەقەم';
 
   @override
   String get viewDescription => 'پیشاندانی وەسف';
 
   @override
-  String get licensePlates => 'تابلۆی ئۆتۆمبێل';
+  String get licensePlates => 'ڕەقەم';
 
   @override
   String get draftInProgress => 'ڕەشنووسی لە پێشکەوتن';
@@ -2265,10 +2262,10 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get failedToBlurPlatesPleaseTryAgain =>
-      'شاردنەوەی تابلۆ سەرنەکەوت. دووبارە هەوڵ بدە.';
+      'شاردنەوەی ڕەقەم سەرنەکەوت. دووبارە هەوڵ بدە.';
 
   @override
-  String get platesBlurredSuccessfully => 'تابلۆ بە سەرکەوتوویی شاردرایەوە.';
+  String get platesBlurredSuccessfully => 'ڕەقەم بە سەرکەوتوویی شاردرایەوە.';
 
   @override
   String get inProgress => 'لە پێشکەوتن';
@@ -2293,24 +2290,24 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get specsAppliedYearSetStep2FieldsPreFilled =>
-      'سپێسەکان جێبەجێ کران — ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.';
+      'مواسەفات جێبەجێ کرا؛ ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.';
 
   @override
   String get search => 'گەڕان...';
 
   @override
-  String get loadingVehicleSpecs => 'سپێسی ئۆتۆمبێل بار دەکرێت…';
+  String get loadingVehicleSpecs => 'مواسەفاتی ئۆتۆمبێل بار دەکرێت…';
 
   @override
   String get specDatabaseUnavailableRestartTheAppAfterFlutterPubGet =>
-      'بنکەی زانیاری سپێس بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.';
+      'بنکەی زانیاری مواسەفات بەردەست نییە. دوای flutter pub get ئەپەکە دووبارە بکەرەوە.';
 
   @override
   String get catalogAutoFill => 'پڕکردنەوەی خۆکاری کاتالۆگ';
 
   @override
   String get selectAModelYearToLoadMatchingSpecs =>
-      'ساڵی مۆدێل هەڵبژێرە بۆ بارکردنی سپێسی گونجاو.';
+      'ساڵی مۆدێل هەڵبژێرە بۆ بارکردنی مواسەفاتی گونجاو.';
 
   @override
   String get modelYear => 'ساڵی مۆدێل';
@@ -2319,13 +2316,13 @@ class AppLocalizationsKu extends AppLocalizations {
   String get youCanChangeTheseInStep2 => 'دەتوانیت لە هەنگاوی 2 بیانگۆڕیت.';
 
   @override
-  String get specsAvailableForThisYear => 'سپێس بۆ ئەم ساڵە بەردەستە.';
+  String get specsAvailableForThisYear => 'مواسەفات بۆ ئەم ساڵە بەردەستە.';
 
   @override
-  String get applySpecs => 'جێبەجێکردنی سپێس';
+  String get applySpecs => 'جێبەجێکردنی مواسەفات';
 
   @override
-  String get specifications => 'سپێسەکان';
+  String get specifications => 'مواسەفات';
 
   @override
   String get vinOptional => 'ژمارەی شاسی (ئارەزوومەندانە)';
@@ -2376,11 +2373,11 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get addDetailsAboutTheCarConditionFeaturesOrNotes =>
-      'وردەکاری دەربارەی ئۆتۆمبێلەکە، دۆخ، تایبەتمەندیەکان یان تێبینی زیاد بکە';
+      'وردەکاری دەربارەی ئۆتۆمبێلەکە، باری ئۆتۆمبێل، مواسەفات یان تێبینی زیاد بکە';
 
   @override
   String priceSelectedCurrencyOptional(String selectedCurrency) {
-    return 'نرخ ($selectedCurrency) (ئیختیاری)';
+    return 'نرخ ($selectedCurrency) (هەڵبژاردە)';
   }
 
   @override
@@ -2390,7 +2387,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get invalidPrice => 'نرخی نادروست';
 
   @override
-  String get priceCannotBeNegative => 'نرخ ناتوانێت سالب بێت';
+  String get priceCannotBeNegative => 'نرخ ناتوانێت نەرێنی بێت';
 
   @override
   String get damageCrashPhotos => 'وێنەی زیان / ڕووداو';
@@ -2407,11 +2404,11 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get blurringLicensePlatesInTheBackground =>
-      'تابلۆ لە پاشبنەمادا دەشاردرێتەوە…';
+      'ڕەقەم لە پاشبنەمادا دەشاردرێتەوە…';
 
   @override
   String get plateBlurReadyYouCanChooseLater =>
-      'شاردنەوەی تابلۆ ئامادەیە — دواتر هەڵدەبژێردرێت';
+      'شاردنەوەی ڕەقەم ئامادەیە؛ دەتوانیت دواتر هەڵیبژێریت';
 
   @override
   String get videos => 'ڤیدیۆکان';
@@ -2424,7 +2421,7 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady =>
-      'هێشتا شاردنەوەی تابلۆ لە پاشبنەمادا بەردەوامە. کاتێک ئامادە بوو وێنەکان لێرە دەردەکەون.';
+      'شاردنەوەی ڕەقەم هێشتا لە پاشبنەمادا بەردەوامە. کاتێک ئامادە بوو وێنەکان لێرە دەردەکەون.';
 
   @override
   String get blurredPhotos => 'وێنەی شاردراو';
@@ -2439,7 +2436,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get blurredPhotosAreNotReadyYet => 'وێنەی شاردراو هێشتا ئامادە نییە.';
 
   @override
-  String get blurPlatesNow => 'ئێستا تابلۆ بشارەوە';
+  String get blurPlatesNow => 'ئێستا ڕەقەم بشارەوە';
 
   @override
   String get originalPhotos => 'وێنەی ڕەسەن';
@@ -2449,13 +2446,13 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get chooseWhetherToPublishPhotosWithBlurredPlates =>
-      'هەڵبژێرە ئایا وێنەکان بە تابلۆی شاردراو بڵاوبکرێنەوە';
+      'هەڵبژێرە ئایا وێنەکان بە ڕەقەمی شاردراو بڵاوبکرێنەوە';
 
   @override
-  String get blurPlates => 'تابلۆ بشاردرێتەوە؟';
+  String get blurPlates => 'ڕەقەم بشاردرێتەوە؟';
 
   @override
-  String get yesBlurPlates => 'بەڵێ، تابلۆ بشارەوە';
+  String get yesBlurPlates => 'بەڵێ، ڕەقەم بشارەوە';
 
   @override
   String get noKeepOriginal => 'نەخێر، ڕەسەن بهێڵەوە';
@@ -2464,7 +2461,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get yesUseBlurredPhotos => 'بەڵێ، وێنەی شاردراو بەکاربهێنە';
 
   @override
-  String get hideLicensePlatesOnYourListing => 'تابلۆ لە ڕیکلامەکەتدا بشارەوە';
+  String get hideLicensePlatesOnYourListing => 'ڕەقەم لە ڕیکلامەکەتدا بشارەوە';
 
   @override
   String get noKeepOriginalPhotos => 'نەخێر، وێنەی ڕەسەن بهێڵەوە';
@@ -2475,15 +2472,15 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get pleaseChooseWhetherToBlurPlates =>
-      'تکایە هەڵبژێرە ئایا تابلۆ بشاردرێتەوە';
+      'تکایە هەڵبژێرە ئایا ڕەقەم بشاردرێتەوە';
 
   @override
   String get pleaseWaitForPlateBlurringToFinish =>
-      'تکایە چاوەڕوانی تەواوبوونی شاردنەوەی تابلۆ بە';
+      'تکایە چاوەڕوانی تەواوبوونی شاردنەوەی ڕەقەم بە';
 
   @override
   String get blurPlatesFirstOrChooseToKeepOriginals =>
-      'سەرەتا تابلۆ بشارەوە، یان ڕەسەن بهێڵەوە';
+      'سەرەتا ڕەقەم بشارەوە، یان وێنە ڕەسەنەکان بهێڵەوە';
 
   @override
   String get callSeller => 'پەیوەندی بە فرۆشیار';
@@ -2492,7 +2489,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get privateSeller => 'فرۆشیاری تاک';
 
   @override
-  String get dealer => 'وەکیل';
+  String get dealer => 'نمایشگا';
 
   @override
   String get verified => 'پشتڕاستکراوە';
@@ -2507,10 +2504,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get cannotAddToComparison => 'نەتوانرا زیاد بکرێت بۆ بەراوردن';
 
   @override
-  String get dealershipLogo => 'لۆگۆی ناوەندی فرۆشتن';
+  String get dealershipLogo => 'لۆگۆی نمایشگا';
 
   @override
-  String get coverImage => 'وێنەی کاڤەر';
+  String get coverImage => 'وێنەی سەرەکی';
 
   @override
   String get openingHours => 'کاتەکانی کردنەوە';
@@ -2547,20 +2544,20 @@ class AppLocalizationsKu extends AppLocalizations {
   String get listingIsAvailableAgain => 'ڕیکلام دووبارە بەردەستە';
 
   @override
-  String get setUpYourDealerPage => 'پەڕەی ناوەندی فرۆشتنەکەت ئامادە بکە';
+  String get setUpYourDealerPage => 'پەڕەی نمایشگاکەت ئامادە بکە';
 
   @override
-  String get yourDealershipIsApproved => 'ناوەندی فرۆشتنەکەت پەسەند کرا!';
+  String get yourDealershipIsApproved => 'نمایشگاکەت پەسەند کرا!';
 
   @override
   String
   get yourDealershipIsApprovedFillInTheInformationOnThisPageToFinishSettingUpT =>
-      'ناوەندی فرۆشتنەکەت پەسەند کرا. زانیارییەکانی ئەم پەڕەیە پڕ بکەرەوە بۆ تەواوکردنی پەڕەی ناوەندەکەت کە کڕیاران دەیبینن.';
+      'نمایشگاکەت پەسەند کرا. زانیارییەکانی ئەم پەڕەیە پڕ بکەرەوە بۆ تەواوکردنی پەڕەی نمایشگاکەت کە کڕیاران دەیبینن.';
 
   @override
   String
   get completeYourPublicDealerPageSoBuyersCanRecognizeYourBusinessAndKnowWhenT =>
-      'پەڕەی گشتی ناوەندی فرۆشتنەکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.';
+      'پەڕەی گشتی نمایشگاکەت تەواو بکە بۆ ئەوەی کڕیاران بازرگانییەکەت بناسن و بزانن کەی پەیوەندی بکەن.';
 
   @override
   String get switchToUSD => 'بگۆڕە بۆ USD';
@@ -2569,7 +2566,7 @@ class AppLocalizationsKu extends AppLocalizations {
   String get switchToIQD => 'بگۆڕە بۆ IQD';
 
   @override
-  String get continueAction => 'بەردەوام بە';
+  String get continueAction => 'بەردەوامبوون';
 
   @override
   String get showPassword => 'پیشاندانی وشەی نهێنی';
