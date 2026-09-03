@@ -214,7 +214,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
 
           // Car info overlay at bottom
           Positioned(
-            bottom: MediaQuery.of(context).padding.bottom + 16,
+            bottom: MediaQuery.viewPaddingOf(context).bottom + 16,
             left: 16,
             right: 16,
             child: Column(

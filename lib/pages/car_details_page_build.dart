@@ -27,7 +27,7 @@ mixin _CarDetailsPageBuild on _CarDetailsPageBuildBody {
             Positioned(
               left: 16,
               right: 16,
-              bottom: MediaQuery.of(context).padding.bottom + 12,
+              bottom: MediaQuery.viewPaddingOf(context).bottom + 12,
               child: _buildContactButtonsRow(),
             ),
         ],

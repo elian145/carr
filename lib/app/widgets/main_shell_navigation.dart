@@ -117,10 +117,13 @@ Widget buildFloatingBottomNav(
   return Semantics(
     container: true,
     label: 'Main navigation',
-    child: Padding(
-      padding: EdgeInsets.fromLTRB(compact ? 8 : 12, 0, compact ? 8 : 12, 10),
-      child: SafeArea(
-        top: false,
+    // SafeArea outside decorative padding so the 10dp gap stays above the
+    // Android system navigation bar (edge-to-edge), not under it.
+    child: SafeArea(
+      top: false,
+      maintainBottomViewPadding: true,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(compact ? 8 : 12, 0, compact ? 8 : 12, 10),
         child: Container(
           decoration: BoxDecoration(
             color: solidBackground ? solidFill : null,

@@ -23,6 +23,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                 color: shellBg,
                 child: SafeArea(
                   top: false,
+                  maintainBottomViewPadding: true,
                   child: AppResponsive.isCompactPhone(context)
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

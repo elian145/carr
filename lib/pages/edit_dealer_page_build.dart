@@ -70,6 +70,7 @@ mixin _EditDealerPageBuild on _EditDealerPageBuildBody {
       backgroundColor: isLightShell ? AppThemes.lightAppBackground : null,
       bottomNavigationBar: SafeArea(
         top: false,
+        maintainBottomViewPadding: true,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ClipRRect(

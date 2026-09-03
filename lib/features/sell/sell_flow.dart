@@ -438,17 +438,21 @@ Widget buildSellWizardNavRow(
       ),
     ),
   );
-  if (compact) {
-    return Column(
-      children: [previousButton, const SizedBox(height: 10), nextButton],
-    );
-  }
-  return Row(
-    children: [
-      Expanded(child: previousButton),
-      const SizedBox(width: 16),
-      Expanded(child: nextButton),
-    ],
+  final Widget row = compact
+      ? Column(
+          children: [previousButton, const SizedBox(height: 10), nextButton],
+        )
+      : Row(
+          children: [
+            Expanded(child: previousButton),
+            const SizedBox(width: 16),
+            Expanded(child: nextButton),
+          ],
+        );
+  return SafeArea(
+    top: false,
+    maintainBottomViewPadding: true,
+    child: row,
   );
 }
 
