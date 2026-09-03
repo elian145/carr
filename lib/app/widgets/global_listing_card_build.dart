@@ -8,6 +8,7 @@ Widget buildGlobalCarCard(
   int carouselResetSeed = 0,
   VoidCallback? onCardTap,
   bool allowOwnerManagementOnOpen = false,
+  bool enableImageCarousel = true,
 }) => _buildGlobalCarCard(
   context,
   car,
@@ -15,6 +16,7 @@ Widget buildGlobalCarCard(
   carouselResetSeed: carouselResetSeed,
   onCardTap: onCardTap,
   allowOwnerManagementOnOpen: allowOwnerManagementOnOpen,
+  enableImageCarousel: enableImageCarousel,
 );
 
 Widget _buildGlobalCarCard(
@@ -24,6 +26,7 @@ Widget _buildGlobalCarCard(
   required int carouselResetSeed,
   required VoidCallback? onCardTap,
   required bool allowOwnerManagementOnOpen,
+  required bool enableImageCarousel,
 }) {
   final brand = car['brand'] ?? '';
   final brandId = brandLogoSlug(brand.toString());
@@ -247,6 +250,7 @@ Widget _buildGlobalCarCard(
                                 enableDetailTap: onCardTap == null,
                                 allowOwnerManagementOnOpen:
                                     allowOwnerManagementOnOpen,
+                                enableSwipeCarousel: enableImageCarousel,
                               ),
                               if (showVideoCountBadge)
                                 Positioned(
@@ -383,6 +387,7 @@ Widget _buildGlobalCarCard(
                           enableDetailTap: onCardTap == null,
                           allowOwnerManagementOnOpen:
                               allowOwnerManagementOnOpen,
+                          enableSwipeCarousel: enableImageCarousel,
                         ),
                         if (sold)
                           Center(
@@ -480,9 +485,11 @@ Widget _buildGlobalCarCard(
     cardShell = wrapListingFeaturedGlow(child: cardShell, radius: shellRadius);
   }
 
-  return Semantics(
-    button: true,
-    label: titleForA11y.isEmpty ? locCard.navHome : titleForA11y,
-    child: cardShell,
+  return RepaintBoundary(
+    child: Semantics(
+      button: true,
+      label: titleForA11y.isEmpty ? locCard.navHome : titleForA11y,
+      child: cardShell,
+    ),
   );
 }

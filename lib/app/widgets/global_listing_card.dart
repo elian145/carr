@@ -1,7 +1,6 @@
 import 'dart:async';
 import '../../theme/app_colors.dart';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/brand_logo_filenames.dart';
@@ -25,7 +24,6 @@ import '../../shared/listings/listing_pending_badge.dart';
 import '../../shared/errors/user_error_text.dart';
 import '../../shared/media/media_url.dart';
 import '../../shared/text/pretty_title_case.dart';
-import '../app_api_base.dart';
 import 'listing_network_image.dart';
 
 part 'global_listing_card_inner_text.dart';

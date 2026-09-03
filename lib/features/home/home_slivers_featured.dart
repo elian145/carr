@@ -45,6 +45,7 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
               cardWidth: cardW,
               horizontalPadding: inset,
               verticalPadding: glowPad,
+              pauseListenable: _featuredAutoScrollPaused,
             ),
           ],
         ),

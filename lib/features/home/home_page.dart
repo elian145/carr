@@ -128,6 +128,10 @@ abstract class _HomePageFields extends State<HomePage> {
   bool _isLoadingMore = false;
   bool _loadMoreFailed = false;
 
+  /// Pauses featured auto-advance while the home feed is scrolling (no setState).
+  final ValueNotifier<bool> _featuredAutoScrollPaused = ValueNotifier(false);
+  Timer? _featuredResumeTimer;
+
   /// When the list is empty but a non-default sort is set, auto-fetch once
   /// (no sort/apply UI on the empty state).
   bool _autoFetchedForEmptyWithSort = false;
@@ -513,6 +517,15 @@ class _HomePageState extends _HomePageFields
           pos.minScrollExtent,
           pos.maxScrollExtent,
         );
+        // Pause featured auto-scroll without rebuilding the whole tree.
+        if (!_featuredAutoScrollPaused.value) {
+          _featuredAutoScrollPaused.value = true;
+        }
+        _featuredResumeTimer?.cancel();
+        _featuredResumeTimer = Timer(const Duration(milliseconds: 500), () {
+          if (!mounted) return;
+          _featuredAutoScrollPaused.value = false;
+        });
         // Never persist while loading overlay replaces the feed (short extent).
         if (isLoading || _isLoadingMore) return;
         // Persist continuously, but don't let temporary clamped restore values
@@ -560,6 +573,8 @@ class _HomePageState extends _HomePageFields
   void dispose() {
     if (widget.isSearchFiltersHost) {
       _sortDebounceTimer?.cancel();
+      _featuredResumeTimer?.cancel();
+      _featuredAutoScrollPaused.dispose();
       _minPriceController.dispose();
       _maxPriceController.dispose();
       _minYearController.dispose();
@@ -580,6 +595,8 @@ class _HomePageState extends _HomePageFields
     ListingEvents.deletedListingId.removeListener(_onHomeListingDeleted);
     ConnectivityService.instance.isOnline.removeListener(_onConnectivityChanged);
     _sortDebounceTimer?.cancel();
+    _featuredResumeTimer?.cancel();
+    _featuredAutoScrollPaused.dispose();
     unawaited(_persistFilters());
     _minPriceController.dispose();
     _maxPriceController.dispose();

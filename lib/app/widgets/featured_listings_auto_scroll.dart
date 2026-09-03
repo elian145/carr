@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'featured_listing_card.dart';
@@ -17,6 +18,9 @@ class FeaturedListingsAutoScroll extends StatefulWidget {
     this.separatorWidth = 12,
     this.pageInterval = const Duration(seconds: 4),
     this.pageAnimation = const Duration(milliseconds: 450),
+    /// When true (or when [pauseListenable] reports true), auto-advance stops.
+    this.paused = false,
+    this.pauseListenable,
   });
 
   final List<Map<String, dynamic>> cars;
@@ -27,6 +31,8 @@ class FeaturedListingsAutoScroll extends StatefulWidget {
   final double separatorWidth;
   final Duration pageInterval;
   final Duration pageAnimation;
+  final bool paused;
+  final ValueListenable<bool>? pauseListenable;
 
   @override
   State<FeaturedListingsAutoScroll> createState() =>
@@ -42,8 +48,12 @@ class _FeaturedListingsAutoScrollState extends State<FeaturedListingsAutoScroll>
   bool _userInteracting = false;
   bool _animating = false;
   int _page = 0;
+  bool _externalPaused = false;
 
   int get _realCount => widget.cars.length;
+
+  bool get _isPaused =>
+      widget.paused || _externalPaused || _userInteracting;
 
   int _realIndex(int page) {
     if (_realCount == 0) return 0;
@@ -60,8 +70,14 @@ class _FeaturedListingsAutoScrollState extends State<FeaturedListingsAutoScroll>
   @override
   void initState() {
     super.initState();
+    _externalPaused = widget.pauseListenable?.value ?? false;
+    widget.pauseListenable?.addListener(_onExternalPauseChanged);
     _initController();
     _startAutoScroll();
+  }
+
+  void _onExternalPauseChanged() {
+    _externalPaused = widget.pauseListenable?.value ?? false;
   }
 
   void _initController() {
@@ -72,6 +88,11 @@ class _FeaturedListingsAutoScrollState extends State<FeaturedListingsAutoScroll>
   @override
   void didUpdateWidget(covariant FeaturedListingsAutoScroll oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.pauseListenable != widget.pauseListenable) {
+      oldWidget.pauseListenable?.removeListener(_onExternalPauseChanged);
+      _externalPaused = widget.pauseListenable?.value ?? false;
+      widget.pauseListenable?.addListener(_onExternalPauseChanged);
+    }
     if (oldWidget.cars.length != widget.cars.length) {
       _timer?.cancel();
       _pageController?.dispose();
@@ -83,6 +104,7 @@ class _FeaturedListingsAutoScrollState extends State<FeaturedListingsAutoScroll>
 
   @override
   void dispose() {
+    widget.pauseListenable?.removeListener(_onExternalPauseChanged);
     _timer?.cancel();
     _pageController?.dispose();
     super.dispose();
@@ -97,7 +119,7 @@ class _FeaturedListingsAutoScrollState extends State<FeaturedListingsAutoScroll>
   Future<void> _goNext() async {
     final controller = _pageController;
     if (!mounted || controller == null) return;
-    if (_userInteracting || _animating) return;
+    if (_isPaused || _animating) return;
     if (!controller.hasClients) return;
     if (_realCount < 2) return;
 

@@ -26,6 +26,77 @@ Widget _globalListingCardVideoCountBadge(Map car) {
   );
 }
 
+Widget _globalListingCardPhotoCountBadge(int count) {
+  if (count <= 1) return const SizedBox.shrink();
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: Colors.black54,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.photo_library_outlined, color: Colors.white, size: 14),
+        const SizedBox(width: 4),
+        Text(
+          '$count',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Static first-image tile (no [PageView]) — preferred on mid-range Android feeds.
+Widget _buildGlobalCardStaticImage(
+  BuildContext context,
+  Map car, {
+  required List<ListingCardImageSlot> slots,
+  bool enableDetailTap = true,
+  bool allowOwnerManagementOnOpen = false,
+}) {
+  final first = ListingCardMedia.buildCarouselImage(
+    slots.first,
+    networkBuilder: listingNetworkImage,
+    fit: BoxFit.cover,
+  );
+
+  final carId = (car['id'] ?? '').toString().trim();
+  final Widget image = enableDetailTap && carId.isNotEmpty
+      ? GestureDetector(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/car_detail',
+              arguments: {
+                'carId': carId,
+                if (allowOwnerManagementOnOpen) 'allowOwnerManagement': true,
+              },
+            );
+          },
+          child: first,
+        )
+      : first;
+
+  return Stack(
+    fit: StackFit.expand,
+    children: [
+      image,
+      if (slots.length > 1)
+        Positioned(
+          bottom: 8,
+          right: 8,
+          child: _globalListingCardPhotoCountBadge(slots.length),
+        ),
+    ],
+  );
+}
+
 // Global image carousel for consistency
 Widget _buildGlobalCardImageCarousel(
   BuildContext context,
@@ -33,6 +104,7 @@ Widget _buildGlobalCardImageCarousel(
   int carouselResetSeed = 0,
   bool enableDetailTap = true,
   bool allowOwnerManagementOnOpen = false,
+  bool enableSwipeCarousel = true,
 }) {
   final slots = ListingCardMedia.collectFromCar(
     car,
@@ -44,6 +116,16 @@ Widget _buildGlobalCardImageCarousel(
       color: Colors.grey[900],
       width: double.infinity,
       child: Icon(Icons.directions_car, size: 60, color: Colors.grey[400]),
+    );
+  }
+
+  if (!enableSwipeCarousel || slots.length == 1) {
+    return _buildGlobalCardStaticImage(
+      context,
+      car,
+      slots: slots,
+      enableDetailTap: enableDetailTap,
+      allowOwnerManagementOnOpen: allowOwnerManagementOnOpen,
     );
   }
 

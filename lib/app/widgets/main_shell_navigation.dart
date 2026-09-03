@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../shared/ui/device_performance.dart';
 import '../../shared/ui/responsive.dart';
 import '../route_registry.dart';
 
@@ -40,6 +41,8 @@ Widget buildFloatingBottomNav(
   required ValueChanged<int> onTap,
   bool solidBackground = false,
 }) {
+  // Android: skip live blur — BackdropFilter during scroll is a common mid-GPU hitch.
+  final useSolid = solidBackground || DevicePerformance.preferSolidChrome;
   final brightness = Theme.of(context).brightness;
   final compact = AppResponsive.isCompactPhone(context);
   final isLight = brightness == Brightness.light;
@@ -54,14 +57,14 @@ Widget buildFloatingBottomNav(
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: solidBackground ? solidFill : Colors.transparent,
+        backgroundColor: useSolid ? solidFill : Colors.transparent,
         elevation: 0,
       ),
     ),
     child: BottomNavigationBar(
       key: ValueKey<int>(currentIndex),
       type: BottomNavigationBarType.fixed,
-      backgroundColor: solidBackground ? solidFill : Colors.transparent,
+      backgroundColor: useSolid ? solidFill : Colors.transparent,
       elevation: 0,
       selectedItemColor: AppColors.brandOrange,
       unselectedItemColor: unselectedItemColor,
@@ -107,7 +110,7 @@ Widget buildFloatingBottomNav(
     ),
   );
 
-  final Widget navBody = solidBackground
+  final Widget navBody = useSolid
       ? bar
       : BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
@@ -126,7 +129,7 @@ Widget buildFloatingBottomNav(
         padding: EdgeInsets.fromLTRB(compact ? 8 : 12, 0, compact ? 8 : 12, 10),
         child: Container(
           decoration: BoxDecoration(
-            color: solidBackground ? solidFill : null,
+            color: useSolid ? solidFill : null,
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
               color: isLight

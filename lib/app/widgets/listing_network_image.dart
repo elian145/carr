@@ -325,6 +325,8 @@ class _RetryingListingNetworkImageState
         if (logicalWidth.isFinite && logicalWidth > 0) {
           memCacheWidth = (logicalWidth * dpr).round().clamp(1, 2048).toInt();
         }
+        // Only set memCacheWidth — setting height too forces a fixed decode
+        // aspect and stretches photos that aren't the same ratio as the slot.
         return CachedNetworkImage(
           key: ValueKey('$url#$_attempt'),
           imageUrl: url,

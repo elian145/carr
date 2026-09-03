@@ -18,6 +18,7 @@ import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../features/sell/sell_pending_media_resume.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
+import '../shared/ui/device_performance.dart';
 import '../shared/ui/system_display_lock.dart';
 
 const String _apiBaseOverrideKey = 'api_base_override';
@@ -113,6 +114,7 @@ void _runZonedApp(Widget app) {
       // Embedded brands cover the UI until models load — do not block cold start.
 
       await SystemDisplayLock.init();
+      DevicePerformance.configureImageCache();
       runApp(app);
 
       // Defer heavy initializations to post-frame to avoid blocking first paint.
