@@ -100,6 +100,7 @@ def _render_legal_html(slug: str) -> Response:
     effective = escape(_effective_date())
     terms_url = escape(f"{base}/terms" if base else "/terms")
     privacy_url = escape(f"{base}/privacy" if base else "/privacy")
+    delete_account_url = escape(f"{base}/delete-account" if base else "/delete-account")
     support_mailto = escape(f"mailto:{_support_email()}")
     operator = escape(_operator_name())
     jurisdiction = escape(_jurisdiction())
@@ -111,6 +112,7 @@ def _render_legal_html(slug: str) -> Response:
         .replace("{{EFFECTIVE_DATE}}", effective)
         .replace("{{TERMS_URL}}", terms_url)
         .replace("{{PRIVACY_URL}}", privacy_url)
+        .replace("{{DELETE_ACCOUNT_URL}}", delete_account_url)
         .replace("{{SUPPORT_MAILTO}}", support_mailto)
         .replace("{{OPERATOR_NAME}}", operator)
         .replace("{{OPERATOR_ADDRESS_BLOCK}}", address_block)
@@ -125,3 +127,7 @@ def terms_response() -> Response:
 
 def privacy_response() -> Response:
     return _render_legal_html("privacy")
+
+
+def delete_account_response() -> Response:
+    return _render_legal_html("delete_account")

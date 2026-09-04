@@ -12,6 +12,46 @@ bcrypt = Bcrypt()
 from .time_utils import utcnow
 from .dealer_socials import public_dealership_socials as _public_dealership_socials
 
+
+def _mask_phone_number(raw) -> str | None:
+    """Show only the last 4 digits publicly (e.g. ****4567)."""
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if not text:
+        return None
+    digits = "".join(ch for ch in text if ch.isdigit())
+    if len(digits) < 4:
+        return "****"
+    return f"{'*' * max(4, len(digits) - 4)}{digits[-4:]}"
+
+
+def _listing_contact_phone_list(car) -> list[str]:
+    """Normalized listing contact phones (primary + list), de-duplicated."""
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def _add(val) -> None:
+        if val is None:
+            return
+        text = str(val).strip()
+        if not text:
+            return
+        digits = "".join(ch for ch in text if ch.isdigit())
+        key = digits or text
+        if key in seen:
+            return
+        seen.add(key)
+        out.append(text)
+
+    phones = getattr(car, "contact_phones", None)
+    if isinstance(phones, list):
+        for item in phones:
+            _add(item)
+    _add(getattr(car, "contact_phone", None))
+    return out
+
+
 # Association tables for many-to-many relationships
 user_favorites = db.Table('user_favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
@@ -206,9 +246,11 @@ class User(db.Model):
             'account_type': self.account_type or "user",
             'dealer_status': self.dealer_status or "none",
             'dealership_name': self.dealership_name,
+            # Business phones stay public on dealer profiles (call-to-dealership UX).
+            # Emails stay owner/admin-only — not scraped from every listing embed.
             'dealership_phone': self.dealership_phone,
             'dealership_phones': phones_out,
-            'dealership_emails': emails_out,
+            'has_dealership_email': bool(emails_out),
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,
@@ -229,6 +271,7 @@ class User(db.Model):
                 'contact_verified_phones': contact_verified_out,
                 'dealership_verified_phones': verified_phones_out,
                 'dealership_verified_emails': verified_emails_out,
+                'dealership_emails': emails_out,
                 'last_login': self.last_login.isoformat() if self.last_login else None,
                 'updated_at': self.updated_at.isoformat() if self.updated_at else None
             })
@@ -418,22 +461,20 @@ class DealerProfile(db.Model):
 
     user = db.relationship("User", back_populates="dealer_profile")
 
-    def to_dict(self):
+    def to_dict(self, include_private=False):
         emails = self.dealership_emails or []
         if not isinstance(emails, list):
             emails = []
+        emails_out = [str(x).strip() for x in emails if str(x).strip()]
         verified_emails = self.dealership_verified_emails or []
         if not isinstance(verified_emails, list):
             verified_emails = []
-        return {
+        data = {
             "id": self.public_id,
             "dealership_name": self.dealership_name,
             "dealership_phone": self.dealership_phone,
             "dealership_phones": self.dealership_phones or [],
-            "dealership_emails": [str(x).strip() for x in emails if str(x).strip()],
-            "dealership_verified_emails": [
-                str(x).strip().lower() for x in verified_emails if str(x).strip()
-            ],
+            "has_dealership_email": bool(emails_out),
             "dealership_location": self.dealership_location,
             "dealership_description": self.dealership_description,
             "dealership_cover_picture": self.dealership_cover_picture,
@@ -445,6 +486,12 @@ class DealerProfile(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+        if include_private:
+            data["dealership_emails"] = emails_out
+            data["dealership_verified_emails"] = [
+                str(x).strip().lower() for x in verified_emails if str(x).strip()
+            ]
+        return data
 
 
 class DealerDecision(db.Model):
@@ -566,7 +613,15 @@ class Car(db.Model):
     messages = db.relationship('Message', backref='car', lazy=True)
     
     def to_dict(self, include_private=False):
-        """Convert car to dictionary. id is public_id when set, else numeric id so detail link works."""
+        """Convert car to dictionary. id is public_id when set, else numeric id so detail link works.
+
+        Public payloads omit raw contact phones and VIN — callers use
+        ``GET /api/cars/<id>/contact`` (rate-limited) to reveal phones on intent.
+        Owner/admin views pass ``include_private=True``.
+        """
+        contact_phones = _listing_contact_phone_list(self)
+        vin = getattr(self, "vin", None)
+        vin_text = str(vin).strip() if vin else ""
         data = {
             'id': self.public_id if getattr(self, "public_id", None) else str(self.id),
             'title': getattr(self, "title", None) or f"{self.brand} {self.model} {self.year}".strip(),
@@ -591,7 +646,6 @@ class Car(db.Model):
             'description': self.description,
             'color': self.color,
             'fuel_economy': self.fuel_economy,
-            'vin': getattr(self, "vin", None),
             'engine_size': getattr(self, "engine_size", None),
             'cylinder_count': getattr(self, "cylinder_count", None),
             'cylinders': getattr(self, "cylinder_count", None),  # alias for app
@@ -600,15 +654,9 @@ class Car(db.Model):
             'plateType': getattr(self, "plate_type", None),
             'plate_city': getattr(self, "plate_city", None),
             'plateCity': getattr(self, "plate_city", None),
-            'contact_phone': getattr(self, "contact_phone", None),
-            'contact_phones': (
-                list(getattr(self, "contact_phones", None) or [])
-                if isinstance(getattr(self, "contact_phones", None), list)
-                else (
-                    [getattr(self, "contact_phone")]
-                    if getattr(self, "contact_phone", None)
-                    else []
-                )
+            'has_contact_phone': bool(contact_phones),
+            'contact_phone_masked': (
+                _mask_phone_number(contact_phones[0]) if contact_phones else None
             ),
             'is_active': self.is_active,
             'is_featured': self.is_featured,
@@ -632,13 +680,22 @@ class Car(db.Model):
             'ai_confidence_score': self.ai_confidence_score,
             'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None
         }
-        
+
         if include_private:
             data.update({
+                'vin': vin_text or None,
+                'has_vin': bool(vin_text),
+                'contact_phone': contact_phones[0] if contact_phones else None,
+                'contact_phones': list(contact_phones),
                 'latitude': self.latitude,
-                'longitude': self.longitude
+                'longitude': self.longitude,
             })
-        
+        else:
+            data['vin'] = None
+            data['has_vin'] = bool(vin_text)
+            data['contact_phone'] = None
+            data['contact_phones'] = []
+
         return data
     
     def increment_views(self, commit: bool = False):

@@ -2469,6 +2469,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get callSeller => 'اتصل بالبائع';
 
   @override
+  String get scamSafetyWarningTitle => 'ابقَ آمنًا عند التواصل مع البائعين';
+
+  @override
+  String get scamSafetyWarningBody =>
+      'لا ترسل عربونًا أو تحويلات قبل فحص السيارة بنفسك. تجاهل عروض الشحن وبطاقات الهدايا والصفقات المريبة. قابل البائع في مكان عام وتحقق من الأوراق بنفسك.';
+
+  @override
+  String get scamSafetyWarningContinue => 'فهمت — متابعة';
+
+  @override
   String get privateSeller => 'بائع فردي';
 
   @override

@@ -38,6 +38,8 @@ Tablet screenshots remain optional (7" / 10").
 
 - Privacy: `https://carr-5hrm.onrender.com/privacy`
 - Terms: `https://carr-5hrm.onrender.com/terms`
+- Delete account (web): `https://carr-5hrm.onrender.com/delete-account`
 - Support: from `/api/config/trust` (`SUPPORT_EMAIL`)
 
 See `docs/STORE_SUBMISSION.md` for Data Safety and App Privacy form answers.
+See also `docs/ROLLBACK.md`, `docs/TRUST_SAFETY_PLAYBOOK.md`, `docs/BACKUPS_AND_BILLING.md`.

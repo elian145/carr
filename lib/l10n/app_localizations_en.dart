@@ -2526,6 +2526,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get callSeller => 'Call Seller';
 
   @override
+  String get scamSafetyWarningTitle => 'Stay safe when contacting sellers';
+
+  @override
+  String get scamSafetyWarningBody =>
+      'Never send deposits or wire money before inspecting the vehicle in person. Ignore shipping offers, requests for gift cards, or deals that seem too good to be true. Meet in a public place and verify documents yourself.';
+
+  @override
+  String get scamSafetyWarningContinue => 'I understand — continue';
+
+  @override
   String get privateSeller => 'Private seller';
 
   @override

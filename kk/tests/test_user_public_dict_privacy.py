@@ -58,10 +58,12 @@ def test_public_user_dict_keeps_public_business_fields():
     assert data["id"] == "seller-1"
     assert data["username"] == "seller_user"
     assert data["dealership_name"] == "Best Cars"
-    # Dealership contact details are deliberately public.
+    # Dealership phones stay public (call-the-dealer UX). Map pins stay public
+    # for dealer discovery. Emails are not in public browse payloads.
     assert data["dealership_phone"] == "+9647709999999"
     assert data["dealership_phones"] == ["+9647709999999"]
-    assert data["dealership_emails"] == ["sales@bestcars.example"]
+    assert "dealership_emails" not in data
+    assert data["has_dealership_email"] is True
     assert data["dealership_socials"] == {
         "instagram": "https://www.instagram.com/bestcars",
     }
@@ -74,7 +76,33 @@ def test_private_user_dict_still_exposes_owner_fields():
     assert data["email"] == "seller@example.com"
     assert data["contact_verified_phones"] == ["+9647701234567"]
     assert data["dealership_verified_phones"] == ["+9647709999999"]
+    assert data["dealership_emails"] == ["sales@bestcars.example"]
     assert data["last_login"] is not None
+
+
+def test_public_listing_hides_contact_phones_and_vin():
+    car = Car()
+    car.public_id = "car-2"
+    car.brand = "Toyota"
+    car.model = "Camry"
+    car.year = 2020
+    car.vin = "JTDBR32E720012345"
+    car.contact_phone = "+9647701112233"
+    car.contact_phones = ["+9647701112233", "+9647704445566"]
+    car.seller = _seller()
+
+    public = car.to_dict()
+    assert public["contact_phone"] is None
+    assert public["contact_phones"] == []
+    assert public["has_contact_phone"] is True
+    assert public["contact_phone_masked"] is not None
+    assert public["vin"] is None
+    assert public["has_vin"] is True
+
+    private = car.to_dict(include_private=True)
+    assert private["contact_phone"] == "+9647701112233"
+    assert private["contact_phones"] == ["+9647701112233", "+9647704445566"]
+    assert private["vin"] == "JTDBR32E720012345"
 
 
 def test_placeholder_phone_email_never_returned():

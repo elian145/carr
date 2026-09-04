@@ -50,6 +50,7 @@ import '../../models/online_spec_variant.dart';
 import '../../navigation/app_page_route.dart';
 import '../../pages/listing_image_gallery_page.dart';
 import '../../services/ai_service.dart';
+import '../../services/analytics_service.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/car_service.dart';

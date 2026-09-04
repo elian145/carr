@@ -208,3 +208,52 @@ def track_favorite():
     if not car or not car.is_active:
         return jsonify({"message": "Listing not found"}), 404
     return jsonify({"success": True, "counted": False, "code": "server_bound"}), 200
+
+_ALLOWED_PRODUCT_EVENTS = frozenset(
+    {
+        "signup",
+        "listing_created",
+        "search",
+        "login",
+    }
+)
+
+
+@bp.route("/api/analytics/events", methods=["POST"])
+@rate_limit(max_requests=120, window_minutes=10)
+def track_product_event():
+    """Lightweight product analytics (sign-up, listing created, search, login)."""
+    from flask import current_app
+    from flask_jwt_extended import verify_jwt_in_request
+
+    from ..auth import log_user_action
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    event = str(data.get("event") or data.get("name") or "").strip().lower()
+    if event not in _ALLOWED_PRODUCT_EVENTS:
+        return jsonify({"message": "Unsupported event"}), 400
+
+    meta = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
+    safe_meta = {str(k)[:64]: str(v)[:256] for k, v in list(meta.items())[:20]}
+
+    current_user = None
+    try:
+        verify_jwt_in_request(optional=True)
+        current_user = get_current_user()
+    except Exception:
+        current_user = None
+
+    if current_user:
+        log_user_action(
+            current_user,
+            f"product_{event}",
+            metadata=safe_meta or None,
+        )
+    else:
+        current_app.logger.info(
+            "product_event event=%s meta=%s",
+            event,
+            safe_meta,
+        )
+
+    return jsonify({"success": True}), 200

@@ -23,7 +23,15 @@ from ..listing_visibility import (
     listing_visible_to_viewer as _listing_visible_to_viewer,
     public_listings_filter as _public_listings_filter,
 )
-from ..models import Car, ListingReport, User, db, user_favorites, user_viewed_listings
+from ..models import (
+    Car,
+    ListingReport,
+    User,
+    db,
+    user_favorites,
+    user_viewed_listings,
+    _listing_contact_phone_list,
+)
 from ..response_cache import (
     FACETS_TTL_S,
     cache_get,
@@ -367,8 +375,8 @@ def _resolve_rel(rel: str) -> str:
         return ""
 
 
-def _with_media_compat(car: Car) -> dict:
-    d = car.to_dict()
+def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
+    d = car.to_dict(include_private=include_private)
     # Keep per-image metadata (especially `kind`: listing vs damage). Plain string
     # lists made every photo look like a normal gallery image on the client.
     image_objs: list[dict] = []
@@ -815,13 +823,65 @@ def get_car(car_id: str):
 
         _increment_views_best_effort(car, current_user)
 
-        car_dict = _with_media_compat(car)
+        include_private = bool(
+            current_user
+            and (
+                getattr(current_user, "is_admin", False)
+                or car.seller_id == current_user.id
+            )
+        )
+        car_dict = _with_media_compat(car, include_private=include_private)
         if not car_dict.get("city") and car_dict.get("location"):
             car_dict["city"] = car_dict["location"]
         return jsonify({"car": car_dict}), 200
     except Exception as e:
         current_app.logger.exception("get_car failed: %s", e)
         return jsonify({"message": "Failed to get car"}), 500
+
+
+@bp.route("/api/cars/<car_id>/contact", methods=["GET"])
+@rate_limit(max_requests=30, window_minutes=60)
+def get_car_contact(car_id: str):
+    """Reveal listing contact phones on intent (not embedded in public browse payloads)."""
+    try:
+        car = (
+            Car.query.options(joinedload(Car.seller))
+            .filter_by(public_id=car_id, is_active=True)
+            .first()
+        )
+        if not car and str(car_id).isdigit():
+            car = (
+                Car.query.options(joinedload(Car.seller))
+                .filter_by(id=int(car_id), is_active=True)
+                .first()
+            )
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+
+        current_user = None
+        try:
+            verify_jwt_in_request(optional=True)
+            current_user = get_current_user()
+        except Exception:
+            current_user = None
+
+        if not _listing_visible_to_viewer(car, current_user):
+            return jsonify({"message": "Car not found"}), 404
+
+        phones = _listing_contact_phone_list(car)
+        if current_user:
+            log_user_action(current_user, "reveal_listing_contact", "car", car.public_id)
+
+        return jsonify(
+            {
+                "contact_phone": phones[0] if phones else None,
+                "contact_phones": phones,
+                "has_contact_phone": bool(phones),
+            }
+        ), 200
+    except Exception as e:
+        current_app.logger.exception("get_car_contact failed: %s", e)
+        return jsonify({"message": "Failed to get contact"}), 500
 
 
 @bp.route("/api/cars", methods=["POST"])

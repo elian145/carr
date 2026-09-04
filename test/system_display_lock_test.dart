@@ -8,7 +8,7 @@ void main() {
     SystemDisplayLock.debugStableDevicePixelRatio = null;
   });
 
-  test('lock ignores system text scale', () {
+  test('lock clamps system text scale to 1.3', () {
     final locked = SystemDisplayLock.lock(
       const MediaQueryData(
         size: Size(360, 800),
@@ -16,8 +16,18 @@ void main() {
         textScaler: TextScaler.linear(1.8),
       ),
     );
-    expect(locked.textScaler, TextScaler.noScaling);
+    expect(locked.textScaler.scale(100), closeTo(130, 0.01));
     expect(locked.size, const Size(360, 800));
+  });
+
+  test('lock keeps text scale when already within range', () {
+    final locked = SystemDisplayLock.lock(
+      const MediaQueryData(
+        size: Size(360, 800),
+        textScaler: TextScaler.linear(1.15),
+      ),
+    );
+    expect(locked.textScaler.scale(100), closeTo(115, 0.01));
   });
 
   test('lock restores bottom padding from viewPadding when keyboard is closed', () {
@@ -55,7 +65,7 @@ void main() {
         viewPadding: EdgeInsets.only(top: 18, bottom: 36),
       ),
     );
-    expect(locked.textScaler, TextScaler.noScaling);
+    expect(locked.textScaler.scale(100), closeTo(130, 0.01));
     expect(locked.devicePixelRatio, 3.0);
     expect(locked.size.width, closeTo(360, 0.01));
     expect(locked.size.height, closeTo(800, 0.01));
@@ -96,7 +106,7 @@ void main() {
       ),
     );
 
-    expect(innerScaler, TextScaler.noScaling);
+    expect(innerScaler.scale(100), closeTo(130, 0.01));
     expect(innerSize.width, closeTo(360, 0.5));
     expect(innerSize.height, closeTo(800, 0.5));
     expect(find.byType(FittedBox), findsOneWidget);

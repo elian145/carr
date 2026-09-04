@@ -8,8 +8,53 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
     );
   }
 
+  Future<bool> _confirmScamSafetyWarning() async {
+    if (!mounted) return false;
+    final loc = AppLocalizations.of(context)!;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text(loc.scamSafetyWarningTitle),
+          content: Text(loc.scamSafetyWarningBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(loc.cancelAction),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(loc.scamSafetyWarningContinue),
+            ),
+          ],
+        );
+      },
+    );
+    return result == true;
+  }
+
+  Future<List<String>> _resolveSellerPhones() async {
+    var phones = sellerPhonesForContact(car);
+    if (phones.isNotEmpty) return phones;
+    if (!listingHasContactAvailability(car)) return const [];
+    final listingId = (car != null && listingPrimaryId(car!).isNotEmpty)
+        ? listingPrimaryId(car!)
+        : widget.carId.toString();
+    phones = await ApiService.getCarContactPhones(listingId);
+    if (phones.isEmpty || car == null || !mounted) return phones;
+    setState(() {
+      car = {
+        ...car!,
+        'contact_phone': phones.first,
+        'contact_phones': phones,
+        'has_contact_phone': true,
+      };
+    });
+    return phones;
+  }
+
   Future<String?> _pickSellerPhone({required String title}) async {
-    final phones = sellerPhonesForContact(car);
+    final phones = await _resolveSellerPhones();
     if (phones.isEmpty) return null;
     if (phones.length == 1) return phones.first;
     if (!mounted) return null;
@@ -51,6 +96,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
   }
 
   Future<void> _callSeller() async {
+    if (!await _confirmScamSafetyWarning()) return;
     final String? raw = await _pickSellerPhone(
       title: AppLocalizations.of(context)!.callSeller,
     );
@@ -78,6 +124,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
 
   Future<void> _openWhatsAppToSeller() async {
     if (car == null) return;
+    if (!await _confirmScamSafetyWarning()) return;
     final String? raw = await _pickSellerPhone(
       title: AppLocalizations.of(context)!.chatOnWhatsApp,
     );

@@ -4723,6 +4723,24 @@ abstract class AppLocalizations {
   /// **'Call Seller'**
   String get callSeller;
 
+  /// No description provided for @scamSafetyWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay safe when contacting sellers'**
+  String get scamSafetyWarningTitle;
+
+  /// No description provided for @scamSafetyWarningBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Never send deposits or wire money before inspecting the vehicle in person. Ignore shipping offers, requests for gift cards, or deals that seem too good to be true. Meet in a public place and verify documents yourself.'**
+  String get scamSafetyWarningBody;
+
+  /// No description provided for @scamSafetyWarningContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'I understand — continue'**
+  String get scamSafetyWarningContinue;
+
   /// No description provided for @privateSeller.
   ///
   /// In en, this message translates to:

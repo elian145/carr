@@ -21,6 +21,9 @@ Map<String, dynamic>? sellerMapFromListing(Map<String, dynamic>? car) {
 }
 
 /// All listing contact phones (`contact_phones` / `contact_phone`), else seller.
+///
+/// Public browse payloads omit raw phones; [hasDialableSellerPhone] still
+/// returns true when [has_contact_phone] is set so Call/WhatsApp stay visible.
 List<String> sellerPhonesForContact(Map<String, dynamic>? car) {
   if (car == null) return const [];
   final out = <String>[];
@@ -67,10 +70,31 @@ String? sellerPhoneRawForContact(Map<String, dynamic>? car) {
   return phones.first;
 }
 
+bool listingHasContactAvailability(Map<String, dynamic>? car) {
+  if (car == null) return false;
+  if (car['has_contact_phone'] == true) return true;
+  final masked = (car['contact_phone_masked'] ?? '').toString().trim();
+  return masked.isNotEmpty;
+}
+
 bool hasDialableSellerPhone(Map<String, dynamic>? car) {
-  return sellerPhonesForContact(car).any((raw) {
+  if (sellerPhonesForContact(car).any((raw) {
     return raw.replaceAll(RegExp(r'[^0-9]'), '').isNotEmpty;
-  });
+  })) {
+    return true;
+  }
+  return listingHasContactAvailability(car);
+}
+
+String? sellerPhoneMaskedForDisplay(Map<String, dynamic>? car) {
+  if (car == null) return null;
+  final masked = (car['contact_phone_masked'] ?? '').toString().trim();
+  if (masked.isNotEmpty) return masked;
+  final phones = sellerPhonesForContact(car);
+  if (phones.isEmpty) return null;
+  final digits = phones.first.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.length < 4) return '****';
+  return '${'*' * (digits.length - 4)}${digits.substring(digits.length - 4)}';
 }
 
 Set<String> listingIdentityIds(Map<String, dynamic> car, String routeCarId) {

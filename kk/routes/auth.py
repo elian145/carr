@@ -1579,11 +1579,14 @@ def phone_verify():
         user.phone_verification_expires_at = None
         user.phone_verification_attempts = 0
         user.phone_verification_locked_until = None
+        first_login = user.last_login is None
         user.last_login = now
         db.session.commit()
 
         access_token = _access_token_for_user(user)
         refresh_token = _refresh_token_for_user(user)
+        if first_login:
+            log_user_action(user, "signup")
         log_user_action(user, "login_phone")
         return jsonify({"access_token": access_token, "refresh_token": refresh_token, "user": user.to_dict(include_private=True)}), 200
     except Exception:

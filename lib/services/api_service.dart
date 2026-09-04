@@ -439,6 +439,9 @@ class ApiService {
   static Future<Map<String, dynamic>?> getCarDetail(String carId) =>
       _ApiServiceListings.getCarDetail(carId);
 
+  static Future<List<String>> getCarContactPhones(String carId) =>
+      _ApiServiceListings.getCarContactPhones(carId);
+
   static Future<Map<String, dynamic>> createCar(
     Map<String, dynamic> carData, {
     String? idempotencyKey,

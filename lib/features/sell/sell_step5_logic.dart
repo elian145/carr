@@ -131,6 +131,12 @@ mixin _SellStep5Logic on _SellStep5Fields {
           final carObj = unwrapCarApiPayload(created);
           carId = listingPrimaryId(carObj);
           pendingReview = isListingPendingReview(carObj);
+          unawaited(
+            AnalyticsService.trackProductEvent(
+              'listing_created',
+              metadata: {'listing_id': carId},
+            ),
+          );
         } on ApiException catch (e) {
           parentState?._abortSubmitDraftHandoff();
           _debugLog('Submission failed: ${e.statusCode} - ${e.message}');

@@ -7,7 +7,13 @@ import json
 
 from flask import Blueprint, Response, abort, current_app, jsonify, redirect, request, send_from_directory
 
-from ..legal_pages import default_privacy_url, default_terms_url, privacy_response, terms_response
+from ..legal_pages import (
+    default_privacy_url,
+    default_terms_url,
+    delete_account_response,
+    privacy_response,
+    terms_response,
+)
 from ..config import upload_persistence_mode
 from ..listing_moderation import listing_require_approval
 from urllib.parse import quote
@@ -147,6 +153,66 @@ def terms_of_service():
 def privacy_policy():
     """Public Privacy Policy (required for app stores)."""
     return privacy_response()
+
+
+@bp.route("/delete-account", methods=["GET"])
+def delete_account_page():
+    """Web account-deletion instructions + request form (Play Console requirement)."""
+    return delete_account_response()
+
+
+@bp.route("/api/account-deletion-request", methods=["POST"])
+def account_deletion_request():
+    """Public web form: queue a deletion request for support to verify and process."""
+    from ..security import check_rate_limit
+
+    limited = check_rate_limit(max_requests=5, window_minutes=60, per_ip=True)
+    if limited is not None:
+        return limited
+
+    data = request.get_json(silent=True) or {}
+    if not data and request.form:
+        data = request.form.to_dict()
+
+    phone = str(data.get("phone") or data.get("phone_number") or "").strip()
+    email = str(data.get("email") or "").strip()
+    details = str(data.get("details") or data.get("message") or "").strip()[:1000]
+
+    digits = "".join(ch for ch in phone if ch.isdigit())
+    if len(digits) < 8:
+        return jsonify({"message": "A valid account phone number is required"}), 400
+
+    trust = _trust_config_payload()
+    support_email = trust.get("support_email") or "support@carzo.app"
+    body = (
+        f"Web account deletion request\n"
+        f"Phone: {phone}\n"
+        f"Email: {email or '(none)'}\n"
+        f"Details: {details or '(none)'}\n"
+        f"IP: {request.remote_addr}\n"
+    )
+    logger.info("account_deletion_request phone_suffix=%s email=%s", digits[-4:], bool(email))
+
+    try:
+        from ..email_service import send_email
+
+        send_email(
+            to_email=support_email,
+            subject="CarNet account deletion request",
+            text_body=body,
+            html_body=None,
+        )
+    except Exception:
+        logger.exception("account_deletion_request email failed")
+
+    return jsonify(
+        {
+            "message": (
+                "Request received. We will verify ownership and delete the account. "
+                "For faster deletion, use Profile → Delete account in the app."
+            )
+        }
+    ), 200
 
 
 @bp.route("/health", methods=["GET"])

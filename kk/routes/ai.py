@@ -12,16 +12,30 @@ from ..ai_service import (
 )
 from ..auth import get_current_user, phone_verification_required_response
 from ..media_processing import blur_image_bytes, heic_to_jpeg, process_and_store_image
-from ..security import generate_secure_filename
+from ..security import generate_secure_filename, rate_limit, validate_file_upload
 from ..tasks.image_tasks import process_car_image_file
 from ..config import get_app_env
 from ..time_utils import utcnow
 
 bp = Blueprint("ai", __name__)
 
+_AI_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "heic", "heif"}
+_AI_IMAGE_MAX_MB = 25
+_AI_PROCESS_MAX_FILES = 20
+
+
+def _validate_ai_image_upload(file_storage):
+    """Size + extension + magic-byte checks for AI image routes."""
+    return validate_file_upload(
+        file_storage,
+        allowed_extensions=_AI_IMAGE_EXTENSIONS,
+        max_size_mb=_AI_IMAGE_MAX_MB,
+    )
+
 
 @bp.route("/api/suggest-car-specs", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=20, window_minutes=60, per_ip=False)
 def suggest_car_specs():
     """YMMT → proposed specs via OpenAI (fallback when Car API has no match)."""
     try:
@@ -57,6 +71,7 @@ def suggest_car_specs():
 
 @bp.route("/api/analyze-car-image", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=15, window_minutes=60, per_ip=False)
 def analyze_car_image():
     """
     Vision-based car recognition.
@@ -84,6 +99,10 @@ def analyze_car_image():
         file = request.files["image"]
         if not file.filename:
             return jsonify({"error": "No image file selected"}), 400
+
+        ok, msg = _validate_ai_image_upload(file)
+        if not ok:
+            return jsonify({"error": msg}), 400
 
         filename = generate_secure_filename(file.filename)
         timestamp = utcnow().strftime("%Y%m%d_%H%M%S_%f")
@@ -119,12 +138,18 @@ def analyze_car_image():
 
 @bp.route("/api/blur-image", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=60, window_minutes=60, per_ip=False)
 def blur_image():
     """Accept one image, return blurred image bytes (for client-side local replacement)."""
     try:
         file_storage = request.files.get("image")
         if not file_storage or not file_storage.filename:
             return jsonify({"error": "No image file provided"}), 400
+
+        ok, msg = _validate_ai_image_upload(file_storage)
+        if not ok:
+            return jsonify({"error": msg}), 400
+
         raw_bytes = file_storage.read()
         if not raw_bytes:
             return jsonify({"error": "Empty image"}), 400
@@ -146,6 +171,7 @@ def blur_image():
 
 @bp.route("/api/process-car-images-test", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=10, window_minutes=60, per_ip=False)
 def process_car_images_test():
     """Dev-only sanity endpoint for multipart processing."""
     if get_app_env() == "production":
@@ -161,6 +187,9 @@ def process_car_images_test():
         for fs in files:
             if not fs or not fs.filename:
                 continue
+            ok, msg = _validate_ai_image_upload(fs)
+            if not ok:
+                return jsonify({"error": msg}), 400
             rel, b64 = process_and_store_image(fs, want_b64, skip_blur=False)
             processed.append(rel)
             if want_b64 and b64:
@@ -172,6 +201,7 @@ def process_car_images_test():
 
 @bp.route("/api/process-car-images", methods=["POST"])
 @jwt_required()
+@rate_limit(max_requests=30, window_minutes=60, per_ip=False)
 def process_car_images():
     try:
         current_user = get_current_user()
@@ -182,6 +212,17 @@ def process_car_images():
         files = request.files.getlist("images")
         if not files:
             return jsonify({"error": "No image files provided"}), 400
+        if len(files) > _AI_PROCESS_MAX_FILES:
+            return jsonify(
+                {"error": f"Too many files (max {_AI_PROCESS_MAX_FILES})"}
+            ), 400
+
+        for fs in files:
+            if not fs or not fs.filename:
+                continue
+            ok, msg = _validate_ai_image_upload(fs)
+            if not ok:
+                return jsonify({"error": msg}), 400
 
         want_b64 = request.args.get("inline_base64") == "1"
         # Sellers who keep their original plates still stage photos through this
@@ -239,4 +280,3 @@ def process_car_images():
         return jsonify({"success": True, "processed_images": processed, "processed_images_base64": processed_b64}), 200
     except Exception:
         return jsonify({"error": "Failed to process car images"}), 500
-

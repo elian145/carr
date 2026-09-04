@@ -51,14 +51,19 @@ abstract final class SystemDisplayLock {
     return stableDpr / currentDpr;
   }
 
-  /// Ignore system text scale; restore logical size when Android Display size
-  /// changed the density.
+  /// Respect system text scale up to 1.3× so larger accessibility fonts work
+  /// without blowing up dense marketplace layouts. Also restores logical size
+  /// when Android Display size changed the density.
   ///
   /// Also keeps [MediaQueryData.padding] bottom at least [viewPadding] when the
   /// keyboard is closed so Android edge-to-edge / 3-button nav does not cover
   /// bottom controls (SafeArea and `padding.bottom` callers).
   static MediaQueryData lock(MediaQueryData mq) {
-    var data = mq.copyWith(textScaler: TextScaler.noScaling);
+    final clampedScale = mq.textScaler.clamp(
+      minScaleFactor: 1.0,
+      maxScaleFactor: 1.3,
+    );
+    var data = mq.copyWith(textScaler: clampedScale);
     data = _ensureBottomSystemInset(data);
     final scale = visualScaleOf(mq);
     if ((scale - 1.0).abs() < 0.02) {

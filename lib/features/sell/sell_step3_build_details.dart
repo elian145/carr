@@ -114,6 +114,7 @@ mixin _SellStep3BuildDetails on _SellStep3BuildPrice {
         controller: _descriptionController,
         minLines: 3,
         maxLines: 6,
+        maxLength: 4000,
         decoration: InputDecoration(
           labelText:
               AppLocalizations.of(context)?.descriptionOptionalLabel ??

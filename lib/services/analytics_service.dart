@@ -212,4 +212,26 @@ class AnalyticsService {
       logNonFatal(e, st, 'AnalyticsService.trackFavorite');
     }
   }
+
+  /// Product funnel events (sign-up, listing created, search).
+  static Future<void> trackProductEvent(
+    String event, {
+    Map<String, dynamic>? metadata,
+  }) async {
+    final name = event.trim().toLowerCase();
+    if (name.isEmpty) return;
+    try {
+      await ApiService.makeAuthenticatedRequest(
+        'POST',
+        '/analytics/events',
+        body: {
+          'event': name,
+          if (metadata != null && metadata.isNotEmpty) 'metadata': metadata,
+        },
+      );
+    } catch (e, st) {
+      // Guests may not have a token; still try once without failing the UX.
+      logNonFatal(e, st, 'AnalyticsService.trackProductEvent');
+    }
+  }
 }

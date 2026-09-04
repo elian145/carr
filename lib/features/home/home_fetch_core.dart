@@ -189,7 +189,6 @@ mixin _HomePageFetchCore on _HomePageFields {
     _debugLog(
       '[home-feed] fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
     );
-    // Analytics tracking for search fetch
     // Only show full-screen loading when there is no feed yet. If we already have
     // listings (e.g. memory rehydrate after tab switch), isLoading would replace the
     // grid with SliverFillRemaining, collapse scroll extent, and the scroll listener
@@ -205,6 +204,23 @@ mixin _HomePageFetchCore on _HomePageFields {
     await _resolveHomeInterestForFeed();
     if (!mounted) return;
     Map<String, String> filters = _buildFilters();
+    final hasSearchIntent = filters.keys.any(
+      (k) =>
+          k != 'page' &&
+          k != 'per_page' &&
+          k != 'sort_by' &&
+          (filters[k] ?? '').trim().isNotEmpty,
+    );
+    if (hasSearchIntent) {
+      unawaited(
+        AnalyticsService.trackProductEvent(
+          'search',
+          metadata: {
+            'filter_keys': filters.keys.where((k) => k != 'page' && k != 'per_page').join(','),
+          },
+        ),
+      );
+    }
     // Reset pagination
     _page = 1;
     _hasNext = true;
@@ -449,7 +465,16 @@ mixin _HomePageFetchCore on _HomePageFields {
         if (mounted) {
           setState(() {
             if (more.isNotEmpty) {
-              cars.addAll(_applyDamagedPartsExactFilter(more));
+              final filtered = _applyDamagedPartsExactFilter(more);
+              final existing = <String>{
+                for (final c in cars) listingPrimaryId(c),
+              }..removeWhere((id) => id.isEmpty);
+              for (final c in filtered) {
+                final id = listingPrimaryId(c);
+                if (id.isEmpty || existing.contains(id)) continue;
+                existing.add(id);
+                cars.add(c);
+              }
             }
           });
           _HomePageFields._homeFeedCache = copyListingMapList(cars);

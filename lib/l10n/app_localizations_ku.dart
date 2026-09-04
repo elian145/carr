@@ -2486,6 +2486,17 @@ class AppLocalizationsKu extends AppLocalizations {
   String get callSeller => 'پەیوەندی بە فرۆشیار';
 
   @override
+  String get scamSafetyWarningTitle =>
+      'لە کاتی پەیوەندیکردن بە فرۆشیارەوە وریا بە';
+
+  @override
+  String get scamSafetyWarningBody =>
+      'هیچ پارەیەک مەنێرە پێش ئەوەی ئۆتۆمبێلەکە بە چاوی خۆت ببینیت. پێشنیاری گەیاندن، کارتی دیاری، یان مامەڵەی زۆر هەرزان پشتگوێ بخە. لە شوێنی گشتی کۆببنەوە و بەڵگەنامەکان خۆت پشتڕاست بکەرەوە.';
+
+  @override
+  String get scamSafetyWarningContinue => 'تێگەیشتم — بەردەوام بە';
+
+  @override
   String get privateSeller => 'فرۆشیاری تاک';
 
   @override
