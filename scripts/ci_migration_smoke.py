@@ -62,6 +62,39 @@ def main() -> int:
                 print(f"missing table after upgrade: {table}", file=sys.stderr)
                 return 1
 
+        # C-07: generic model <-> migrated-schema drift check against real
+        # Postgres (see kk/schema_drift.py and PRODUCTION_AUDIT.md C-07).
+        from kk.schema_drift import (
+            KNOWN_NULLABLE_DRIFT,
+            KNOWN_TABLE_EXCEPTIONS,
+            compute_schema_drift,
+        )
+
+        drift = compute_schema_drift(
+            insp,
+            db.metadata,
+            table_exceptions=KNOWN_TABLE_EXCEPTIONS,
+            nullable_exceptions=KNOWN_NULLABLE_DRIFT,
+        )
+        if drift["missing_from_migrations"]:
+            print(
+                "model table(s) with no Alembic migration: "
+                f"{drift['missing_from_migrations']}",
+                file=sys.stderr,
+            )
+            return 1
+        if drift["missing_from_models"]:
+            print(
+                "migration-created table(s) with no ORM model: "
+                f"{drift['missing_from_models']}",
+                file=sys.stderr,
+            )
+            return 1
+        if drift["nullable_mismatches"]:
+            print(f"new nullable drift: {drift['nullable_mismatches']}", file=sys.stderr)
+            return 1
+        print("schema drift check OK (model <-> migrated Postgres schema match)", flush=True)
+
         with db.engine.connect() as conn:
             row = conn.execute(
                 text("SELECT version_num FROM alembic_version LIMIT 1")
