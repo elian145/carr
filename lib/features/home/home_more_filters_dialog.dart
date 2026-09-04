@@ -187,7 +187,7 @@ mixin _HomePageMoreFiltersDialog on _HomePageMoreFiltersSpecs {
               ),
               title: Text(
                 AppLocalizations.of(context)!.moreFilters,
-                style: GoogleFonts.orbitron(
+                style: AppFonts.orbitron(
                   color: AppColors.brandOrange,
                   fontWeight: FontWeight.bold,
                 ),

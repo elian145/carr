@@ -31,7 +31,7 @@ mixin _HomePageSliversFeatured on _HomePageSliversSearchBar {
               ),
               child: Text(
                 AppLocalizations.of(context)!.featuredListings,
-                style: GoogleFonts.orbitron(
+                style: AppFonts.orbitron(
                   color: AppColors.brandOrange,
                   fontWeight: FontWeight.bold,
                   fontSize: 18,

@@ -54,7 +54,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                         Expanded(
                           child: Text(
                             AppLocalizations.of(context)!.selectBodyType,
-                            style: GoogleFonts.orbitron(
+                            style: AppFonts.orbitron(
                               color: AppColors.brandOrange,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
@@ -167,7 +167,7 @@ mixin _HomePageMoreFiltersBodyType on _HomePageMoreFiltersFuel {
                                           bodyTypeName,
                                         ) ??
                                         bodyTypeName,
-                                    style: GoogleFonts.orbitron(
+                                    style: AppFonts.orbitron(
                                       fontSize: 12,
                                       color: isSelected
                                           ? AppColors.brandOrange

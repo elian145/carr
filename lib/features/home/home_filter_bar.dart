@@ -24,7 +24,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             child: InputDecorator(
               decoration: InputDecoration(
                 labelText: AppLocalizations.of(context)!.brandLabel,
-                labelStyle: GoogleFonts.orbitron(
+                labelStyle: AppFonts.orbitron(
                   color: Colors.white,
                   fontSize: labelFontSize,
                   fontWeight: FontWeight.bold,
@@ -66,7 +66,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                   Expanded(
                     child: Text(
                       _homeBrandFilterLabel(filterRowContext),
-                      style: GoogleFonts.orbitron(
+                      style: AppFonts.orbitron(
                         fontSize: valueFontSize,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -88,7 +88,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             isDense: true,
             isExpanded: true,
             dropdownColor: dropdownMenuBg,
-            style: GoogleFonts.orbitron(
+            style: AppFonts.orbitron(
               fontSize: valueFontSize,
               color: dropdownMenuInk,
               fontWeight: FontWeight.bold,
@@ -98,7 +98,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 AppLocalizations.of(context)!.any,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.orbitron(
+                style: AppFonts.orbitron(
                   fontSize: valueFontSize,
                   color: dropdownFieldInk,
                   fontWeight: FontWeight.bold,
@@ -121,7 +121,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                         : m,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.orbitron(
+                    style: AppFonts.orbitron(
                       fontSize: valueFontSize,
                       color: dropdownFieldInk,
                       fontWeight: FontWeight.bold,
@@ -141,7 +141,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 : null,
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.modelLabel,
-              labelStyle: GoogleFonts.orbitron(
+              labelStyle: AppFonts.orbitron(
                 color: Colors.white,
                 fontSize: labelFontSize,
                 fontWeight: FontWeight.bold,
@@ -163,7 +163,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                   AppLocalizations.of(context)!.any,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.orbitron(
+                  style: AppFonts.orbitron(
                     color: isLightShell ? const Color(0xFF757575) : Colors.grey,
                     fontSize: valueFontSize,
                   ),
@@ -188,7 +188,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                           : m,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.orbitron(
+                      style: AppFonts.orbitron(
                         fontSize: valueFontSize,
                         color: dropdownMenuInk,
                       ),
@@ -215,7 +215,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
             isDense: true,
             isExpanded: true,
             dropdownColor: dropdownMenuBg,
-            style: GoogleFonts.orbitron(
+            style: AppFonts.orbitron(
               fontSize: valueFontSize,
               color: dropdownMenuInk,
               fontWeight: FontWeight.bold,
@@ -225,7 +225,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 AppLocalizations.of(context)!.any,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.orbitron(
+                style: AppFonts.orbitron(
                   fontSize: valueFontSize,
                   color: dropdownFieldInk,
                   fontWeight: FontWeight.bold,
@@ -242,7 +242,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                         t,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.orbitron(
+                        style: AppFonts.orbitron(
                           fontSize: valueFontSize,
                           color: dropdownFieldInk,
                           fontWeight: FontWeight.bold,
@@ -265,7 +265,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                 : null,
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.trimLabel,
-              labelStyle: GoogleFonts.orbitron(
+              labelStyle: AppFonts.orbitron(
                 color: Colors.white,
                 fontSize: labelFontSize,
                 fontWeight: FontWeight.bold,
@@ -287,7 +287,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                   AppLocalizations.of(context)!.any,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.orbitron(
+                  style: AppFonts.orbitron(
                     color: isLightShell ? const Color(0xFF757575) : Colors.grey,
                     fontSize: valueFontSize,
                   ),
@@ -306,7 +306,7 @@ mixin _HomePageFilterBar on _HomePageFilterBarBrand {
                           t,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.orbitron(
+                          style: AppFonts.orbitron(
                             fontSize: valueFontSize,
                             color: dropdownMenuInk,
                           ),

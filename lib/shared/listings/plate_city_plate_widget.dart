@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../theme/app_fonts.dart';
 
 import 'plate_city_assets.dart';
 
@@ -60,7 +60,7 @@ class PlateCityPlateWidget extends StatelessWidget {
                       child: Text(
                         cityCode,
                         maxLines: 1,
-                        style: GoogleFonts.barlowCondensed(
+                        style: AppFonts.barlowCondensed(
                           fontWeight: FontWeight.w900,
                           fontSize: 40,
                           height: 1,

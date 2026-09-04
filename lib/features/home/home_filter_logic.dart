@@ -153,7 +153,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                         Expanded(
                           child: Text(
                             title,
-                            style: GoogleFonts.orbitron(
+                            style: AppFonts.orbitron(
                               color: AppColors.brandOrange,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
@@ -215,7 +215,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
                               ),
                               child: Text(
                                 label,
-                                style: GoogleFonts.orbitron(
+                                style: AppFonts.orbitron(
                                   fontSize: 14,
                                   color: isSelected
                                       ? AppColors.brandOrange

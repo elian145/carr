@@ -64,7 +64,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                           maxLines: 1,
                           softWrap: false,
                           overflow: TextOverflow.visible,
-                          style: GoogleFonts.orbitron(
+                          style: AppFonts.orbitron(
                             fontSize: 14,
                             color: cityLabelColor,
                             fontWeight: FontWeight.bold,
@@ -100,7 +100,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                       loc.homeSearchHeading,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.orbitron(
+                                      style: AppFonts.orbitron(
                                         color: AppColors.brandOrange,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 20,
@@ -137,7 +137,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                     value: allKey,
                                     child: Text(
                                       loc.allCities,
-                                      style: GoogleFonts.orbitron(
+                                      style: AppFonts.orbitron(
                                         fontSize: 14,
                                         color: menuItemColor,
                                         fontWeight: FontWeight.bold,
@@ -155,7 +155,7 @@ mixin _HomePageSliversSearchBar on _HomePageSearchFiltersPageUi {
                                                   city,
                                                 ) ??
                                                 city,
-                                            style: GoogleFonts.orbitron(
+                                            style: AppFonts.orbitron(
                                               fontSize: 14,
                                               color: menuItemColor,
                                               fontWeight: FontWeight.bold,

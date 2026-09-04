@@ -81,7 +81,7 @@ mixin _DealersDirectoryPageWidgets on _DealersDirectoryPageLoad {
                         ar: 'ابحث بالاسم أو الموقع',
                         ku: 'گەڕان بە ناو یان شوێن',
                       ),
-                      hintStyle: GoogleFonts.orbitron(
+                      hintStyle: AppFonts.orbitron(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
                         color: isLight

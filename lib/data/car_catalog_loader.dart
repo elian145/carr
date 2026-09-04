@@ -9,6 +9,15 @@ import '../services/api_service.dart';
 import '../services/config.dart';
 import '../shared/debug/app_log.dart';
 
+/// Parses [assets/car_catalog.json] text. Top-level for [compute].
+Map<String, dynamic> parseCarCatalogJsonString(String raw) {
+  final decoded = json.decode(raw);
+  if (decoded is! Map) {
+    throw const FormatException('car_catalog.json root must be a JSON object');
+  }
+  return Map<String, dynamic>.from(decoded);
+}
+
 /// Loads [assets/car_catalog.json] when present, then optionally overlays
 /// active brands/models from `GET /api/catalog/*` when [apiBase] is set.
 ///
@@ -33,7 +42,8 @@ class CarCatalogLoader {
   static Future<void> _loadAssetCatalog() async {
     try {
       final raw = await rootBundle.loadString('assets/car_catalog.json');
-      final data = json.decode(raw) as Map<String, dynamic>;
+      // Large catalog JSON: decode off the UI isolate (same pattern as CarSpecIndex).
+      final data = await compute(parseCarCatalogJsonString, raw);
       final models = data['models'];
       final hasModels = models is Map && models.isNotEmpty;
       if (!hasModels) {

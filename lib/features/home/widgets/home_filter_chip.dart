@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../theme/app_fonts.dart';
 
 import '../../../l10n/app_localizations.dart';
 import '../home_filter_chips.dart';
@@ -28,7 +28,7 @@ class HomeFilterChip extends StatelessWidget {
     final bool useLatinDisplayFont =
         languageCode != 'ar' && languageCode != 'ku';
     final textStyle = (useLatinDisplayFont
-            ? GoogleFonts.orbitron(
+            ? AppFonts.orbitron(
                 fontSize: 10,
                 color: color,
                 fontWeight: FontWeight.bold,

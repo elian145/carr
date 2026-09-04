@@ -26,7 +26,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                         Expanded(
                           child: Text(
                             AppLocalizations.of(context)!.selectBrand,
-                            style: GoogleFonts.orbitron(
+                            style: AppFonts.orbitron(
                               color: AppColors.brandOrange,
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
@@ -112,7 +112,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                                             brand,
                                           )
                                         : brand,
-                                    style: GoogleFonts.orbitron(
+                                    style: AppFonts.orbitron(
                                       fontSize: 10,
                                       color: isSelected
                                           ? AppColors.brandOrange
@@ -168,7 +168,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                     Expanded(
                       child: Text(
                         localizedBrand,
-                        style: GoogleFonts.orbitron(
+                        style: AppFonts.orbitron(
                           color: AppColors.brandOrange,
                           fontWeight: FontWeight.bold,
                           fontSize: 20,
@@ -228,7 +228,7 @@ mixin _HomePageFilterBarBrand on _HomePageFilterLogic {
                                 ),
                                 child: Text(
                                   display,
-                                  style: GoogleFonts.orbitron(
+                                  style: AppFonts.orbitron(
                                     fontSize: 14,
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

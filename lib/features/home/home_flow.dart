@@ -23,18 +23,16 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import '../../theme/app_colors.dart';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart' as services;
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../theme/app_fonts.dart';
 import '../../app/app_api_base.dart' show getApiBase;
 import '../../app/widgets/featured_listings_auto_scroll.dart';
 import '../../app/widgets/global_listing_card.dart';
 import '../../app/widgets/main_shell_navigation.dart' as main_shell_navigation;
-import '../../data/brand_logo_filenames.dart';
 import '../../shared/ui/brand_logo_image.dart';
 import '../../data/car_catalog.dart';
 import '../../data/car_catalog_loader.dart';
@@ -63,7 +61,6 @@ import '../../services/connectivity_service.dart';
 import '../../services/home_interest_service.dart';
 import '../../services/saved_search_service.dart';
 import '../../shared/debug/app_log.dart';
-import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/i18n/digits.dart';
 import '../../shared/i18n/listing_field_labels.dart';
 import '../../shared/i18n/listing_value_labels.dart';

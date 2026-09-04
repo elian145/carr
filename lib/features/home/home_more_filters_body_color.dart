@@ -64,7 +64,7 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
                             children: [
                               Text(
                                 AppLocalizations.of(context)!.selectColor,
-                                style: GoogleFonts.orbitron(
+                                style: AppFonts.orbitron(
                                   color: AppColors.brandOrange,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20,

@@ -107,7 +107,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.orbitron(
+                      style: AppFonts.orbitron(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: titleColor,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../theme/app_fonts.dart';
 import '../../theme/app_colors.dart';
 
 import '../../data/car_name_translations.dart';
@@ -136,7 +136,7 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.searchCars,
-                  style: GoogleFonts.orbitron(
+                  style: AppFonts.orbitron(
                     color: AppColors.brandOrange,
                     fontWeight: FontWeight.bold,
                     fontSize: 24,

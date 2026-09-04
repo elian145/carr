@@ -2,8 +2,8 @@ import 'dart:async';
 import '../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/app_fonts.dart';
 import '../l10n/app_localizations.dart';
 import '../app/listing_shell.dart' show buildFloatingBottomNav, navigateMainShellTab;
 import '../services/api_service.dart';
