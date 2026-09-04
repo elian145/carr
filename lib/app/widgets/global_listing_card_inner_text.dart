@@ -24,27 +24,9 @@ class _ListingPriceBadgeStyle {
 _ListingPriceBadgeStyle _listingPriceBadgeStyle({
   required double rowWidth,
   required bool hasPrice,
-  bool listLayout = false,
 }) {
   // Only shrink on very narrow tiles; otherwise keep the fuller pill size.
   final double tight = rowWidth < 130 ? 0.0 : 1.0;
-
-  if (listLayout) {
-    final double fontSize = hasPrice ? 12.5 + 1.0 * tight : 10.5 + 0.5 * tight;
-    final double horizontalPadding =
-        hasPrice ? 6.0 + 1.0 * tight : 5.0 + 0.5 * tight;
-    final double badgeHeight = 22.0 + 2.0 * tight;
-    final double radius = 7.0 + 0.5 * tight;
-    final double footerHeight = 24.0 + 2.0 * tight;
-
-    return _ListingPriceBadgeStyle(
-      fontSize: fontSize,
-      horizontalPadding: horizontalPadding,
-      badgeHeight: badgeHeight,
-      radius: radius,
-      footerHeight: footerHeight,
-    );
-  }
 
   final double fontSize = hasPrice ? 14.0 + 1.0 * tight : 11.0 + 1.0 * tight;
   final double horizontalPadding =
@@ -748,12 +730,31 @@ Widget _buildListCarCardInnerText(
     double? maxWidth,
     required _ListingPriceBadgeStyle style,
   }) {
+    // Match grid cards: hug the amount. Do not put FittedBox under a maxWidth
+    // alone — FittedBox expands to that max and leaves empty orange padding.
     final textStyle = TextStyle(
       color: Colors.white,
       fontWeight: FontWeight.w800,
       fontSize: style.fontSize,
       height: 1,
     );
+    final priceStrut = StrutStyle(
+      fontSize: style.fontSize,
+      height: 1,
+      forceStrutHeight: true,
+    );
+    final pricePainter = TextPainter(
+      text: TextSpan(text: priceText, style: textStyle),
+      textDirection: TextDirection.ltr,
+      textScaler: TextScaler.noScaling,
+      maxLines: 1,
+    )..layout(minWidth: 0, maxWidth: double.infinity);
+    final priceTextW = pricePainter.width;
+    pricePainter.dispose();
+    final priceNeeded = priceTextW + style.horizontalPadding * 2;
+    final bool bounded =
+        maxWidth != null && maxWidth.isFinite && maxWidth > 0;
+    final bool priceNeedsShrink = bounded && priceNeeded > maxWidth!;
 
     final label = Text(
       priceText,
@@ -761,20 +762,14 @@ Widget _buildListCarCardInnerText(
       textScaler: const TextScaler.linear(1.0),
       maxLines: 1,
       softWrap: false,
-      overflow: TextOverflow.ellipsis,
+      overflow: TextOverflow.visible,
       style: textStyle,
-      strutStyle: StrutStyle(
-        fontSize: style.fontSize,
-        height: 1,
-        forceStrutHeight: true,
-      ),
+      strutStyle: priceStrut,
     );
 
     return Container(
+      width: priceNeedsShrink ? maxWidth : null,
       height: style.badgeHeight,
-      constraints: maxWidth != null && maxWidth.isFinite
-          ? BoxConstraints(maxWidth: maxWidth)
-          : null,
       padding: EdgeInsets.symmetric(
         horizontal: style.horizontalPadding,
       ),
@@ -783,10 +778,9 @@ Widget _buildListCarCardInnerText(
         color: priceAccent,
         borderRadius: BorderRadius.circular(style.radius),
       ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: label,
-      ),
+      child: priceNeedsShrink
+          ? FittedBox(fit: BoxFit.scaleDown, child: label)
+          : label,
     );
   }
 
@@ -1022,13 +1016,13 @@ Widget _buildListCarCardInnerText(
 
   final Widget priceRow = LayoutBuilder(
     builder: (context, constraints) {
+      // Same pill metrics / max width share as 2-column grid cards.
       final priceStyle = _listingPriceBadgeStyle(
         rowWidth: constraints.maxWidth,
         hasPrice: hasPrice,
-        listLayout: true,
       );
       final double maxPriceWidth =
-          constraints.maxWidth * (hasPrice ? 0.64 : 0.48);
+          constraints.maxWidth * (hasPrice ? 0.72 : 0.52);
       return SizedBox(
         height: priceStyle.footerHeight,
         child: Row(
