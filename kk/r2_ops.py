@@ -47,6 +47,20 @@ def r2_public_base_from_config(config: Any) -> str:
     return (config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
 
 
+def r2_chat_configured_from_config(config: Any) -> bool:
+    """C-10: True when the PRIVATE chat-media bucket is fully configured.
+
+    Deliberately does NOT check for a public URL — this bucket must never
+    have one.
+    """
+    return bool(
+        config.get("R2_ACCOUNT_ID")
+        and config.get("R2_CHAT_BUCKET_NAME")
+        and config.get("R2_CHAT_ACCESS_KEY_ID")
+        and config.get("R2_CHAT_SECRET_ACCESS_KEY")
+    )
+
+
 def _cred_payload() -> dict[str, str]:
     c = current_app.config
     return {
@@ -56,6 +70,29 @@ def _cred_payload() -> dict[str, str]:
         "secret_key": (c.get("R2_SECRET_ACCESS_KEY") or "").strip(),
         "region": (os.environ.get("R2_REGION") or "auto").strip() or "auto",
     }
+
+
+def _chat_cred_payload() -> dict[str, str]:
+    """Credentials for the PRIVATE chat-media bucket (C-10).
+
+    Same Cloudflare account as listing media (shared R2_ACCOUNT_ID), but its
+    own bucket name + access key/secret so a scoped API token can be limited
+    to only this bucket.
+    """
+    c = current_app.config
+    return {
+        "account_id": (c.get("R2_ACCOUNT_ID") or "").strip(),
+        "bucket": (c.get("R2_CHAT_BUCKET_NAME") or "").strip(),
+        "access_key": (c.get("R2_CHAT_ACCESS_KEY_ID") or "").strip(),
+        "secret_key": (c.get("R2_CHAT_SECRET_ACCESS_KEY") or "").strip(),
+        "region": (os.environ.get("R2_REGION") or "auto").strip() or "auto",
+    }
+
+
+# Default presigned-GET lifetime for private chat media (C-10). Short-lived by
+# design: long enough for a client to load/play the media once, short enough
+# to bound the exposure window of a leaked URL (proxy log, screenshot, etc.).
+CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS = 600
 
 
 def _run_r2_op(payload: dict[str, Any], *, timeout: float) -> dict[str, Any]:
@@ -116,6 +153,68 @@ def r2_put_bytes(
             os.remove(path)
         except OSError:
             pass
+
+
+def r2_chat_put_bytes(
+    *,
+    key: str,
+    body: bytes,
+    content_type: str = "application/octet-stream",
+    timeout: float = 120,
+) -> None:
+    """Upload bytes to the PRIVATE chat-media R2 bucket (C-10, eventlet-safe).
+
+    Uses the R2_CHAT_* credentials/bucket — never the public listing-media
+    bucket. Callers must store only the returned ``key`` (never a public
+    URL); reads must go through :func:`r2_presign_get`.
+    """
+    if not body:
+        raise RuntimeError("Empty file body")
+    creds = _chat_cred_payload()
+    fd, path = tempfile.mkstemp(prefix="r2_chat_put_", suffix=".bin")
+    try:
+        with os.fdopen(fd, "wb") as fp:
+            fp.write(body)
+        payload = {
+            **creds,
+            "op": "put_object",
+            "key": key,
+            "content_type": content_type,
+            "body_path": path,
+        }
+        _run_r2_op(payload, timeout=timeout)
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def r2_presign_get(
+    *,
+    key: str,
+    expires_in: int = CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS,
+    timeout: float = 30,
+) -> str:
+    """Return a short-lived presigned GET URL for one object (C-10).
+
+    Always targets the PRIVATE chat-media bucket (R2_CHAT_*), never the
+    public listing-media bucket. Callers MUST only invoke this after already
+    confirming the current viewer is authorized to see the message that owns
+    ``key`` — this function performs no authorization of its own.
+    """
+    creds = _chat_cred_payload()
+    payload: dict[str, Any] = {
+        **creds,
+        "op": "presign_get",
+        "key": key,
+        "expires_in": expires_in,
+    }
+    result = _run_r2_op(payload, timeout=timeout)
+    url = (result.get("download_url") or "").strip()
+    if not url:
+        raise RuntimeError("presign_get returned empty download_url")
+    return url
 
 
 def r2_presign_put(

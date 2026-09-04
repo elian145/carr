@@ -6,11 +6,12 @@ Run in a subprocess so the parent process (eventlet/gunicorn) never creates a
 boto3 SSL context — avoids RecursionError from eventlet monkey-patching ssl.
 
 Stdin JSON:
-  op: "put_object" | "presign_put"
+  op: "put_object" | "presign_put" | "presign_get"
   account_id, bucket, access_key, secret_key, region (optional, default auto)
   key, content_type
   put_object: body_path (path to local file)
   presign_put: expires_in (optional), content_length (optional)
+  presign_get: expires_in (optional) — C-10 private chat-media downloads
 
 Stdout: {"ok": true, ...} or {"error": "..."}
 """
@@ -86,6 +87,16 @@ def main() -> None:
                 ExpiresIn=expires_in,
             )
             json.dump({"ok": True, "upload_url": url, "key": key}, sys.stdout)
+            return
+
+        if op == "presign_get":
+            expires_in = int(inp.get("expires_in") or 600)
+            url = client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=expires_in,
+            )
+            json.dump({"ok": True, "download_url": url, "key": key}, sys.stdout)
             return
 
         json.dump({"error": f"unknown op: {op}"}, sys.stdout)

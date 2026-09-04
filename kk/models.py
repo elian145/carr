@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
+import logging
 import uuid
 import os
 
@@ -810,6 +811,79 @@ class ListingAnalytics(db.Model):
     def __repr__(self):
         return f'<ListingAnalytics car_id={self.car_id} views={self.views}>'
 
+_chat_media_logger = logging.getLogger("kk.chat_media")
+
+
+def _chat_media_ref_is_url_or_path(value: str) -> bool:
+    """True when `value` is already directly usable (legacy full public R2
+    URL written before C-10, or a local '/static/...' disk-fallback path) —
+    as opposed to a bare private-bucket object key (new C-10 uploads)."""
+    v = (value or "").strip()
+    return v.startswith("http://") or v.startswith("https://") or v.startswith("/")
+
+
+def _resolve_chat_media_ref(value: str | None) -> str | None:
+    """
+    Resolve one stored chat-attachment reference to something safe to return
+    to the current caller (C-10).
+
+    IMPORTANT — authorization boundary: this function performs NO
+    authorization of its own. Every existing call site (`get_messages`,
+    `_message_for_user`, `deliver_message`, the five REST chat-send
+    responses, admin message views) already establishes that the current
+    caller is allowed to see the owning `Message` *before* calling
+    `to_dict()`. This function must only ever be reached after that check.
+
+    - Legacy full URLs (permanent public R2 URL stored before this change)
+      and local '/static/...' fallback paths are returned unchanged, so
+      existing chat media keeps working without a data migration.
+    - Bare object keys (new uploads, private chat bucket) are exchanged for
+      a short-lived presigned GET URL. On any failure (bucket not
+      configured, R2 unreachable, etc.) this fails CLOSED — it returns
+      ``None`` rather than raising, so a storage hiccup degrades one
+      attachment instead of breaking the whole message payload.
+    """
+    raw = (value or "").strip()
+    if not raw:
+        return None
+    if _chat_media_ref_is_url_or_path(raw):
+        return raw
+    try:
+        from .r2_ops import r2_presign_get
+
+        return r2_presign_get(key=raw)
+    except Exception:
+        _chat_media_logger.warning(
+            "chat media presign failed (key length=%d, not logged)", len(raw)
+        )
+        return None
+
+
+def _resolve_chat_attachments_list(items):
+    """Resolve every attachment's `url` in a stored `attachments` JSON list.
+
+    Preserves all other fields on each item. Drops an item entirely only if
+    its reference fails to resolve (fail-closed per attachment, not per
+    message). Non-list input (e.g. ``None``) is passed through unchanged.
+    """
+    if not isinstance(items, list):
+        return items
+    resolved: list[dict] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        url = _resolve_chat_media_ref(item.get("url"))
+        if url is None:
+            continue
+        merged = dict(item)
+        merged["url"] = url
+        # Stable reference for the edit "keep attachments" flow, which
+        # cannot match a freshly-presigned `url` back to the stored key.
+        merged["key"] = item.get("url")
+        resolved.append(merged)
+    return resolved
+
+
 class Message(db.Model):
     __tablename__ = 'message'
     
@@ -882,8 +956,20 @@ class Message(db.Model):
             'reply_to_message': self._reply_preview(),
             'content': "This message was deleted" if self.is_deleted else self.content,
             'message_type': self.message_type,
-            'attachment_url': None if self.is_deleted else self.attachment_url,
-            'attachments': [] if self.is_deleted else self.attachments,
+            # C-10: `attachment_url`/`attachments` may store either a legacy
+            # permanent URL (pre-C-10 data), a local '/static/...' fallback
+            # path, or a bare private-bucket object key (new uploads). Bare
+            # keys are resolved to a short-lived presigned GET URL here —
+            # this MUST only run after the caller already confirmed the
+            # current viewer is authorized to see this message (every
+            # existing call site of `to_dict()` already does this; see
+            # `_resolve_chat_media_ref`).
+            'attachment_url': None if self.is_deleted else _resolve_chat_media_ref(self.attachment_url),
+            # Stable reference (bare key or legacy URL) for the edit
+            # "keep attachments" round-trip — ignored by clients that don't
+            # know about it yet (see kk/routes/chat.py:edit_chat_message).
+            'attachment_key': None if self.is_deleted else self.attachment_url,
+            'attachments': [] if self.is_deleted else _resolve_chat_attachments_list(self.attachments),
             'listing_preview': None if self.is_deleted else self.listing_preview,
             'is_read': self.is_read,
             'is_deleted': self.is_deleted,

@@ -66,28 +66,41 @@ def _first_car_image_rel_path(car: Car | None) -> str | None:
 
 
 def _upload_chat_attachment(file_storage, *, allowed_extensions: set[str], subdir: str, content_types: dict[str, str]) -> str:
+    """Store one chat attachment and return a stable reference for the DB.
+
+    C-10: chat media lives in a PRIVATE R2 bucket (R2_CHAT_*), never the
+    public listing-media bucket. This returns a bare object key (e.g.
+    "chat_uploads/<hex>.jpg") — NOT a URL. A public URL is never constructed
+    for chat media. Readers must resolve the key to a short-lived presigned
+    GET URL only after confirming the requester is authorized to see the
+    owning message (see Message.to_dict() / _resolve_chat_media_ref()).
+
+    Falls back to local disk (unchanged pre-C-10 behavior, still returned as
+    a "/static/..." path) only when the private chat bucket isn't configured
+    (e.g. local dev without R2_CHAT_* set).
+    """
     ext = os.path.splitext(file_storage.filename or "")[1].lower()
     if ext not in allowed_extensions:
         raise ValueError("Unsupported attachment format")
 
-    r2_bucket = current_app.config.get("R2_BUCKET_NAME")
+    r2_chat_bucket = current_app.config.get("R2_CHAT_BUCKET_NAME")
     r2_account = current_app.config.get("R2_ACCOUNT_ID")
-    r2_key = current_app.config.get("R2_ACCESS_KEY_ID")
-    r2_secret = current_app.config.get("R2_SECRET_ACCESS_KEY")
-    r2_public = (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
+    r2_chat_key = current_app.config.get("R2_CHAT_ACCESS_KEY_ID")
+    r2_chat_secret = current_app.config.get("R2_CHAT_SECRET_ACCESS_KEY")
 
-    if r2_bucket and r2_account and r2_key and r2_secret and r2_public:
-        from ..r2_ops import r2_put_bytes
+    if r2_chat_bucket and r2_account and r2_chat_key and r2_chat_secret:
+        from ..r2_ops import r2_chat_put_bytes
 
         obj_key = f"{subdir}/{secrets.token_hex(16)}{ext}"
         file_storage.seek(0)
         body = file_storage.read()
-        r2_put_bytes(
+        r2_chat_put_bytes(
             key=obj_key,
             body=body,
             content_type=content_types.get(ext, "application/octet-stream"),
         )
-        return f"{r2_public}/{obj_key}"
+        # Bare key only — no public URL exists for this bucket.
+        return obj_key
 
     upload_dir = os.path.join(current_app.root_path, "static", subdir)
     os.makedirs(upload_dir, exist_ok=True)
@@ -850,19 +863,25 @@ def edit_chat_message(message_id: str):
         if len(content) > 4000:
             return jsonify({"message": "content too long"}), 400
 
-        # Current attachments that may be edited (removals only).
+        # Current attachments that may be edited (removals only), preserved
+        # in their original order — this ordered list is the ONLY source of
+        # truth for real stored keys/legacy URLs.
         existing_items: list[dict] = []
         if isinstance(msg.attachments, list):
             existing_items.extend([x for x in msg.attachments if isinstance(x, dict)])
         if not existing_items and msg.attachment_url and msg.message_type in ("image", "video", "audio"):
             existing_items.append({"type": msg.message_type, "url": msg.attachment_url})
 
-        existing_url_to_type: dict[str, str] = {}
+        existing_normalized: list[dict] = []
         for item in existing_items:
             url = str(item.get("url") or "").strip()
+            if not url:
+                continue
             typ = str(item.get("type") or "").strip().lower()
-            if url:
-                existing_url_to_type[url] = typ if typ in ("image", "video", "audio") else "image"
+            existing_normalized.append({
+                "type": typ if typ in ("image", "video", "audio") else "image",
+                "url": url,
+            })
 
         keep_raw = data.get("attachments", None)
         keep_items: list[dict] | None = None
@@ -871,17 +890,45 @@ def edit_chat_message(message_id: str):
                 return jsonify({"message": "attachments must be a list"}), 400
             if len(keep_raw) > 10:
                 return jsonify({"message": "You can keep up to 10 attachments"}), 400
+            if len(keep_raw) > len(existing_normalized):
+                return jsonify({"message": "Invalid attachment sequence"}), 400
+
+            # C-10: for chat media in the private bucket, the client only
+            # ever sees a short-lived PRESIGNED `url` (never the stable
+            # stored key), so the submitted `url`/`key` value is NEVER
+            # trustworthy for matching and is deliberately ignored here.
+            # Instead: the Flutter composer only ever *removes* items from
+            # the attachment list it was shown (never reorders or adds
+            # new ones — see `_editingKeepAttachments`), so the submission
+            # is always an order-preserving SUBSEQUENCE of this message's
+            # OWN existing attachments. We recover the real stored
+            # key/type by walking `existing_normalized` in order and
+            # matching each submitted item to the next not-yet-consumed
+            # existing item of the same type (or the next item at all, if
+            # no/invalid type was submitted). This can only ever resolve to
+            # a key that already legitimately belonged to THIS message —
+            # a client can never inject a foreign or guessed key this way,
+            # regardless of what `url`/`key`/`type` values it submits.
             keep_items = []
+            cursor = 0
             for raw in keep_raw:
                 if not isinstance(raw, dict):
                     return jsonify({"message": "Invalid attachment entry"}), 400
-                url = str(raw.get("url") or "").strip()
-                if not url or url not in existing_url_to_type:
-                    return jsonify({"message": "Invalid attachment url"}), 400
-                typ = str(raw.get("type") or "").strip().lower()
-                if typ not in ("image", "video", "audio"):
-                    typ = existing_url_to_type.get(url) or "image"
-                keep_items.append({"type": typ, "url": url})
+                want_type = str(raw.get("type") or "").strip().lower()
+                if want_type not in ("image", "video", "audio"):
+                    want_type = None  # wildcard: match the next remaining item regardless of type
+
+                match_index = None
+                for i in range(cursor, len(existing_normalized)):
+                    if want_type is None or existing_normalized[i]["type"] == want_type:
+                        match_index = i
+                        break
+                if match_index is None:
+                    return jsonify({"message": "Invalid attachment sequence"}), 400
+
+                matched = existing_normalized[match_index]
+                keep_items.append({"type": matched["type"], "url": matched["url"]})
+                cursor = match_index + 1
 
         msg.content = content
         if keep_items is not None:
@@ -898,7 +945,7 @@ def edit_chat_message(message_id: str):
                 msg.message_type = "media_group"
         else:
             # Backwards-compatible behavior: plain text messages still require content.
-            if not content and not existing_url_to_type:
+            if not content and not existing_normalized:
                 return jsonify({"message": "content required"}), 400
 
         msg.edited_at = utcnow()

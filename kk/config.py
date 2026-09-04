@@ -42,6 +42,7 @@ def validate_required_secrets(env: str | None = None) -> None:
     if (os.environ.get("JWT_SECRET_KEY") or "").strip() == _DEV_JWT_SECRET_FALLBACK:
         raise RuntimeError("JWT_SECRET_KEY is set to an insecure dev fallback; set a strong production secret.")
     validate_upload_persistence(env_name)
+    validate_chat_media_persistence(env_name)
     validate_redis_required(env_name)
 
 
@@ -65,6 +66,49 @@ def _r2_credentials_present() -> bool:
 
 def _r2_public_url_present() -> bool:
     return bool((os.environ.get("R2_PUBLIC_URL") or "").strip())
+
+
+def _r2_chat_credentials_present() -> bool:
+    """True when the PRIVATE chat-media R2 bucket (C-10) is fully configured."""
+    return bool(
+        (os.environ.get("R2_ACCOUNT_ID") or "").strip()
+        and (os.environ.get("R2_CHAT_BUCKET_NAME") or "").strip()
+        and (os.environ.get("R2_CHAT_ACCESS_KEY_ID") or "").strip()
+        and (os.environ.get("R2_CHAT_SECRET_ACCESS_KEY") or "").strip()
+    )
+
+
+def _r2_chat_credentials_partial() -> bool:
+    """True when some but not all chat-media R2 vars are set (misconfiguration).
+
+    A partial configuration would silently fall back to the unauthenticated
+    local-disk path for new chat uploads while looking configured — this is
+    exactly the failure mode C-10 exists to prevent, so it must fail loudly
+    in production instead.
+    """
+    chat_specific = (
+        (os.environ.get("R2_CHAT_BUCKET_NAME") or "").strip(),
+        (os.environ.get("R2_CHAT_ACCESS_KEY_ID") or "").strip(),
+        (os.environ.get("R2_CHAT_SECRET_ACCESS_KEY") or "").strip(),
+    )
+    if not any(chat_specific):
+        return False
+    return not _r2_chat_credentials_present()
+
+
+def chat_media_storage_mode() -> str:
+    """
+    Report how new chat media will be stored (C-10).
+
+    - ``r2_private``: dedicated private R2 bucket configured (R2_CHAT_*)
+    - ``r2_chat_incomplete``: some R2_CHAT_* vars set but not all
+    - ``disk``: local fallback under kk/static/chat_* (NOT private/authorized)
+    """
+    if _r2_chat_credentials_present():
+        return "r2_private"
+    if _r2_chat_credentials_partial():
+        return "r2_chat_incomplete"
+    return "disk"
 
 
 def _persistent_upload_folder_configured() -> bool:
@@ -124,6 +168,51 @@ def validate_upload_persistence(env: str | None = None) -> None:
         "R2_SECRET_ACCESS_KEY, R2_PUBLIC_URL) or set UPLOAD_FOLDER to an absolute "
         "persistent path (e.g. /data/uploads). "
         "See kk/docs/UPLOAD_PERSISTENCE.md."
+    )
+
+
+def validate_chat_media_persistence(env: str | None = None) -> None:
+    """
+    Fail fast in production unless the PRIVATE chat-media R2 bucket (C-10)
+    is fully configured.
+
+    Chat media has no safe non-R2 fallback: the local-disk fallback used
+    when R2_CHAT_* isn't set is served WITHOUT authentication (see the
+    static-file route in kk/routes/misc.py), so anything less than a
+    complete R2_CHAT_* configuration would leave new chat uploads publicly
+    reachable in production — exactly what C-10 exists to prevent. Both a
+    *partial* R2_CHAT_* configuration and a *fully absent* one are
+    therefore rejected; only a fully-configured private bucket boots
+    production.
+
+    Escape hatch: ALLOW_EPHEMERAL_UPLOADS=1 (shared with the listing-media
+    escape hatch; emergency only, not for store launch).
+    """
+    env_name = (env or get_app_env()).strip().lower()
+    if env_name in ("development", "testing", "test"):
+        return
+    if _env_flag("ALLOW_EPHEMERAL_UPLOADS"):
+        return
+    mode = chat_media_storage_mode()
+    if mode == "r2_private":
+        return
+    if mode == "r2_chat_incomplete":
+        raise RuntimeError(
+            "Chat-media R2 configuration is incomplete (C-10): "
+            "R2_ACCOUNT_ID, R2_CHAT_BUCKET_NAME, R2_CHAT_ACCESS_KEY_ID, and "
+            "R2_CHAT_SECRET_ACCESS_KEY must all be set together for private "
+            "chat-media storage. A partial configuration would silently "
+            "fall back to the unauthenticated local-disk path for new chat "
+            "uploads."
+        )
+    # mode == "disk": no R2_CHAT_* configured at all.
+    raise RuntimeError(
+        "Chat-media R2 configuration is missing (C-10): R2_ACCOUNT_ID, "
+        "R2_CHAT_BUCKET_NAME, R2_CHAT_ACCESS_KEY_ID, and "
+        "R2_CHAT_SECRET_ACCESS_KEY must all be set in production for "
+        "private chat-media storage. Without them, new chat uploads would "
+        "silently fall back to the unauthenticated local-disk path — "
+        "exactly what C-10 is designed to prevent."
     )
 
 
@@ -261,6 +350,16 @@ class Config:
     R2_SECRET_ACCESS_KEY = os.environ.get('R2_SECRET_ACCESS_KEY') or os.environ.get('AWS_SECRET_ACCESS_KEY')
     R2_BUCKET_NAME = os.environ.get('R2_BUCKET_NAME', '').strip()
     R2_PUBLIC_URL = (os.environ.get('R2_PUBLIC_URL') or '').strip()  # e.g. https://pub-xxx.r2.dev
+
+    # Cloudflare R2 — PRIVATE chat-media bucket (C-10). Never a public URL.
+    # Shares R2_ACCOUNT_ID with the listing-media bucket above; uses its own
+    # bucket name + credentials so a scoped API token can be limited to only
+    # this bucket. There is intentionally no R2_CHAT_PUBLIC_URL — chat objects
+    # are only ever reachable via short-lived presigned GET URLs generated by
+    # the backend after an authorization check (see Message.to_dict()).
+    R2_CHAT_BUCKET_NAME = os.environ.get('R2_CHAT_BUCKET_NAME', '').strip()
+    R2_CHAT_ACCESS_KEY_ID = os.environ.get('R2_CHAT_ACCESS_KEY_ID', '').strip()
+    R2_CHAT_SECRET_ACCESS_KEY = os.environ.get('R2_CHAT_SECRET_ACCESS_KEY', '').strip()
     
     # Firebase Configuration (for push notifications)
     FIREBASE_SERVER_KEY = os.environ.get('FIREBASE_SERVER_KEY')
