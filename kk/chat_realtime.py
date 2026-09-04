@@ -18,7 +18,8 @@ import logging
 from sqlalchemy import and_, or_
 
 from .extensions import socketio
-from .models import BlockedUser, Car, Message, User, db
+from .models import BlockedUser, Car, Message, Notification, User, db
+from .push import send_push
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +188,92 @@ def emit_message_to_participants(
                 User, message.receiver_id
             )
     emit_to_user_rooms(event_name, payload, resolved_sender, resolved_receiver)
+
+
+def deliver_message(msg: Message, *, sender: User, receiver: User) -> None:
+    """
+    Best-effort post-commit delivery for an already-durably-committed chat ``Message``.
+
+    Callers MUST invoke this only after ``msg`` has been added, committed, and
+    refreshed. Every side effect here (Socket.IO emit, ``Notification`` row,
+    FCM push) is independently failure-isolated:
+
+    - No side effect here may raise out of this function.
+    - No side effect here may roll back or otherwise affect the already-committed
+      ``Message`` row.
+    - A failure in one side effect (e.g. Notification commit) must not prevent
+      the other side effects (Socket.IO emit, push) from being attempted, and
+      must not leave the SQLAlchemy session broken for the caller.
+    """
+    payload = msg.to_dict()
+
+    # 1) Socket.IO: notify both participants. `emit_message_to_participants`
+    # already wraps `socketio.emit` in a try/except per room; guard again here
+    # so any unexpected error in payload handling can never escape.
+    try:
+        emit_message_to_participants(
+            "new_message",
+            payload,
+            message=msg,
+            sender=sender,
+            receiver=receiver,
+        )
+    except Exception:
+        logger.exception(
+            "deliver_message: socket delivery failed for message %s", msg.public_id
+        )
+
+    # 2) Database Notification row for the receiver — independent, post-commit,
+    # own commit boundary. On failure, roll back only this pending Notification
+    # insert (never the already-committed Message) and leave the session usable.
+    try:
+        car = msg.car
+        notif = Notification(
+            user_id=receiver.id,
+            title="New message",
+            message=(msg.content or "")[:200],
+            notification_type="message",
+            is_read=False,
+            data={
+                "car_id": car.public_id if car else None,
+                "sender_id": sender.public_id,
+            },
+        )
+        db.session.add(notif)
+        db.session.commit()
+    except Exception:
+        logger.exception(
+            "deliver_message: notification create failed for message %s", msg.public_id
+        )
+        try:
+            db.session.rollback()
+        except Exception:
+            logger.exception(
+                "deliver_message: session rollback after notification failure also failed"
+            )
+
+    # 3) FCM push — best-effort. `send_push` itself never raises, but guard the
+    # surrounding token lookup/refresh too.
+    try:
+        db.session.refresh(receiver)
+        fcm_token = getattr(receiver, "firebase_token", None)
+        if fcm_token:
+            sender_name = f"{sender.first_name} {sender.last_name}".strip() or "Someone"
+            car = msg.car
+            send_push(
+                fcm_token,
+                title=f"New message from {sender_name}",
+                body=(msg.content or "")[:200],
+                data={
+                    "car_id": car.public_id if car else None,
+                    "sender_id": sender.public_id,
+                    "type": "chat_message",
+                },
+            )
+    except Exception:
+        logger.exception(
+            "deliver_message: push send failed for message %s", msg.public_id
+        )
 
 
 def mark_messages_read_for_viewer(car: Car, viewer: User) -> dict:

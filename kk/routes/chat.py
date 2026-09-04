@@ -13,6 +13,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
 from ..chat_realtime import (
+    deliver_message,
     emit_message_to_participants,
     mark_messages_read_for_viewer,
     resolve_allowed_chat_receiver,
@@ -452,20 +453,10 @@ def send_message(conversation_id: str):
 
         _count_buyer_message_metric(car, me)
 
-        # Best-effort FCM push to receiver's device.
-        try:
-            db.session.refresh(receiver)
-            fcm_token = getattr(receiver, "firebase_token", None)
-            if fcm_token:
-                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
-                send_push(
-                    fcm_token,
-                    title=f"New message from {sender_name}",
-                    body=content[:200],
-                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
-                )
-        except Exception:
-            pass
+        # Message is durably committed above; delivery side effects (Socket.IO,
+        # Notification row, FCM push) are best-effort and independently
+        # failure-isolated — they can never turn this successful send into a 500.
+        deliver_message(msg, sender=me, receiver=receiver)
 
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
@@ -545,6 +536,12 @@ def send_image_message(conversation_id: str):
         db.session.commit()
         db.session.refresh(msg)
         _count_buyer_message_metric(car, me)
+
+        # Message is durably committed above; delivery side effects (Socket.IO,
+        # Notification row, FCM push) are best-effort and independently
+        # failure-isolated — they can never turn this successful send into a 500.
+        deliver_message(msg, sender=me, receiver=receiver)
+
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
@@ -623,6 +620,12 @@ def send_video_message(conversation_id: str):
         db.session.commit()
         db.session.refresh(msg)
         _count_buyer_message_metric(car, me)
+
+        # Message is durably committed above; delivery side effects (Socket.IO,
+        # Notification row, FCM push) are best-effort and independently
+        # failure-isolated — they can never turn this successful send into a 500.
+        deliver_message(msg, sender=me, receiver=receiver)
+
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
         db.session.rollback()
@@ -705,19 +708,10 @@ def send_audio_message(conversation_id: str):
         db.session.refresh(msg)
         _count_buyer_message_metric(car, me)
 
-        try:
-            db.session.refresh(receiver)
-            fcm_token = getattr(receiver, "firebase_token", None)
-            if fcm_token:
-                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
-                send_push(
-                    fcm_token,
-                    title=f"New message from {sender_name}",
-                    body=content[:200],
-                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
-                )
-        except Exception:
-            pass
+        # Message is durably committed above; delivery side effects (Socket.IO,
+        # Notification row, FCM push) are best-effort and independently
+        # failure-isolated — they can never turn this successful send into a 500.
+        deliver_message(msg, sender=me, receiver=receiver)
 
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except Exception:
@@ -814,19 +808,10 @@ def send_media_group_message(conversation_id: str):
         db.session.refresh(msg)
         _count_buyer_message_metric(car, me)
 
-        try:
-            db.session.refresh(receiver)
-            fcm_token = getattr(receiver, "firebase_token", None)
-            if fcm_token:
-                sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
-                send_push(
-                    fcm_token,
-                    title=f"New message from {sender_name}",
-                    body=content[:200],
-                    data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
-                )
-        except Exception:
-            pass
+        # Message is durably committed above; delivery side effects (Socket.IO,
+        # Notification row, FCM push) are best-effort and independently
+        # failure-isolated — they can never turn this successful send into a 500.
+        deliver_message(msg, sender=me, receiver=receiver)
 
         return jsonify({"success": True, "message": msg.to_dict()}), 201
     except RequestEntityTooLarge:
