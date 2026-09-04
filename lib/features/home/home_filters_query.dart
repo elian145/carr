@@ -7,6 +7,7 @@ class HomeFiltersSnapshot {
     this.brand,
     this.model,
     this.trim,
+    this.keyword,
     this.minPrice,
     this.maxPrice,
     this.minYear,
@@ -34,6 +35,11 @@ class HomeFiltersSnapshot {
   final String? brand;
   final String? model;
   final String? trim;
+
+  /// Free-text keyword typed in the search filters field, sent to the
+  /// backend as `q` (Postgres full-text search with an ILIKE fallback). Not
+  /// yet part of saved-search alert matching (see C-03 audit follow-ups).
+  final String? keyword;
   final String? minPrice;
   final String? maxPrice;
   final String? minYear;
@@ -66,6 +72,7 @@ class HomeFiltersSnapshot {
       _has(brand) ||
       _has(model) ||
       _has(trim) ||
+      _has(keyword?.trim()) ||
       _has(minPrice) ||
       _has(maxPrice) ||
       _has(minYear) ||
@@ -93,6 +100,7 @@ class HomeFiltersSnapshot {
     String? brand,
     String? model,
     String? trim,
+    String? keyword,
     String? minPrice,
     String? maxPrice,
     String? minYear,
@@ -118,6 +126,7 @@ class HomeFiltersSnapshot {
     bool clearBrand = false,
     bool clearModel = false,
     bool clearTrim = false,
+    bool clearKeyword = false,
     bool clearMinPrice = false,
     bool clearMaxPrice = false,
     bool clearMinYear = false,
@@ -145,6 +154,7 @@ class HomeFiltersSnapshot {
       brand: clearBrand ? null : (brand ?? this.brand),
       model: clearModel ? null : (model ?? this.model),
       trim: clearTrim ? null : (trim ?? this.trim),
+      keyword: clearKeyword ? null : (keyword ?? this.keyword),
       minPrice: clearMinPrice ? null : (minPrice ?? this.minPrice),
       maxPrice: clearMaxPrice ? null : (maxPrice ?? this.maxPrice),
       minYear: clearMinYear ? null : (minYear ?? this.minYear),
@@ -189,6 +199,9 @@ Map<String, String> homeFiltersToApiQuery(
   put('brand', homeFilterDecodeSingle(filters.brand));
   put('model', filters.model);
   put('trim', filters.trim);
+  // Free-text keyword: backend param is `q` (see kk/routes/cars.py). Trim
+  // before sending so a whitespace-only keyword never reaches the API.
+  put('q', filters.keyword?.trim());
   put('min_price', filters.minPrice);
   put('max_price', filters.maxPrice);
   put('min_year', filters.minYear);

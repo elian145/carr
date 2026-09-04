@@ -54,6 +54,94 @@ void main() {
       );
       expect(q.containsKey('sort_by'), isFalse);
     });
+
+    test('emits q for a non-empty free-text keyword', () {
+      const f = HomeFiltersSnapshot(keyword: 'Land Cruiser');
+      final q = homeFiltersToApiQuery(f);
+      expect(q['q'], 'Land Cruiser');
+    });
+
+    test('trims leading/trailing whitespace from q', () {
+      const f = HomeFiltersSnapshot(keyword: '  toyota  ');
+      final q = homeFiltersToApiQuery(f);
+      expect(q['q'], 'toyota');
+    });
+
+    test('omits q for an empty keyword', () {
+      const f = HomeFiltersSnapshot(keyword: '');
+      final q = homeFiltersToApiQuery(f);
+      expect(q.containsKey('q'), isFalse);
+    });
+
+    test('omits q for a whitespace-only keyword', () {
+      const f = HomeFiltersSnapshot(keyword: '   ');
+      final q = homeFiltersToApiQuery(f);
+      expect(q.containsKey('q'), isFalse);
+    });
+
+    test('omits q when keyword is null (default)', () {
+      const f = HomeFiltersSnapshot();
+      final q = homeFiltersToApiQuery(f);
+      expect(q.containsKey('q'), isFalse);
+    });
+
+    test('combines q with brand/model/year/price and other filters', () {
+      const f = HomeFiltersSnapshot(
+        keyword: 'sunroof',
+        brand: 'Toyota',
+        model: 'Camry',
+        minPrice: '5000',
+        maxPrice: '20000',
+        minYear: '2015',
+        maxYear: '2022',
+        condition: 'Used',
+      );
+      final q = homeFiltersToApiQuery(f, apiSortValue: 'relevance');
+      expect(q['q'], 'sunroof');
+      expect(q['brand'], 'Toyota');
+      expect(q['model'], 'Camry');
+      expect(q['min_price'], '5000');
+      expect(q['max_price'], '20000');
+      expect(q['min_year'], '2015');
+      expect(q['max_year'], '2022');
+      expect(q['condition'], 'used');
+      expect(q['sort_by'], 'relevance');
+    });
+
+    test('special-character-only keyword is trimmed but still sent as-is', () {
+      // Trimming only strips surrounding whitespace, not punctuation; the
+      // backend's normalize_search_query / ILIKE fallback are responsible
+      // for sanitizing special characters, not the Flutter query builder.
+      const f = HomeFiltersSnapshot(keyword: '  !!! ??? ');
+      final q = homeFiltersToApiQuery(f);
+      expect(q['q'], '!!! ???');
+    });
+  });
+
+  group('HomeFiltersSnapshot.keyword', () {
+    test('hasActiveFilters is true when only keyword is set', () {
+      const f = HomeFiltersSnapshot(keyword: 'toyota');
+      expect(f.hasActiveFilters, isTrue);
+    });
+
+    test('hasActiveFilters is false for a whitespace-only keyword', () {
+      const f = HomeFiltersSnapshot(keyword: '   ');
+      expect(f.hasActiveFilters, isFalse);
+    });
+
+    test('copyWith updates keyword without touching other fields', () {
+      const f = HomeFiltersSnapshot(brand: 'Toyota', keyword: 'old');
+      final updated = f.copyWith(keyword: 'new');
+      expect(updated.keyword, 'new');
+      expect(updated.brand, 'Toyota');
+    });
+
+    test('copyWith clearKeyword removes the keyword', () {
+      const f = HomeFiltersSnapshot(brand: 'Toyota', keyword: 'old');
+      final updated = f.copyWith(clearKeyword: true);
+      expect(updated.keyword, isNull);
+      expect(updated.brand, 'Toyota');
+    });
   });
 
   group('applyDamagedPartsListingFilter', () {

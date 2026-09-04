@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required, verify_jwt_in_request
 from ..security import rate_limit
 from collections import Counter
 
-from sqlalchemy import case, or_, select, update, func
+from sqlalchemy import case, desc, or_, select, update, func
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
@@ -211,7 +211,11 @@ def _apply_interest_ordering(
 def _order_cars_query(query, sort_by: str, *, rank_expr=None):
     """Apply list ordering for GET /api/cars."""
     if sort_by in ("relevance", "rank") and rank_expr is not None:
-        return query.order_by(rank_expr.desc(), Car.is_featured.desc(), Car.created_at.desc())
+        # `rank_expr` is a raw `sqlalchemy.text(...)` TextClause (see
+        # listing_search.apply_listing_text_search); TextClause has no
+        # `.desc()` method (AttributeError). Use the `desc()` function, which
+        # wraps any clause in a proper descending UnaryExpression instead.
+        return query.order_by(desc(rank_expr), Car.is_featured.desc(), Car.created_at.desc())
     if sort_by == "newest":
         return query.order_by(Car.is_featured.desc(), Car.created_at.desc())
     if sort_by == "price_asc":

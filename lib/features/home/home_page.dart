@@ -83,6 +83,7 @@ abstract class _HomePageFields extends State<HomePage> {
         brand: homeFilterDecodeSingle(selectedBrand),
         model: selectedModel,
         trim: selectedTrim,
+        keyword: _searchFiltersKeywordController.text,
         minPrice: selectedMinPrice,
         maxPrice: selectedMaxPrice,
         minYear: selectedMinYear,
