@@ -177,6 +177,84 @@ def _hash_phone_verification_code(phone_digits: str, code: str) -> str:
     return hmac.new(key, msg=msg, digestmod=hashlib.sha256).hexdigest()
 
 
+# --- OTP policy -------------------------------------------------------------
+# These mirror the values already used by phone/start and phone/verify, so the
+# signup path enforces the same policy as the rest of the OTP surface.
+_OTP_MAX_ATTEMPTS = 5
+_OTP_LOCKOUT_MINUTES = 15
+_OTP_RESEND_COOLDOWN_SECONDS = 60
+
+
+class OtpError(Exception):
+    """An OTP could not be consumed. Carries a client-safe response payload."""
+
+    def __init__(self, message: str, code: str, status: int):
+        super().__init__(message)
+        self.message = message
+        self.code = code
+        self.status = status
+
+    def response(self):
+        return jsonify({"message": self.message, "code": self.code}), self.status
+
+
+def _consume_phone_otp(user: User, phone_digits: str, code: str) -> None:
+    """
+    Verify a phone OTP for ``user`` and clear it on success.
+
+    Enforced server-side, regardless of what the client sends:
+      * lockout for `_OTP_LOCKOUT_MINUTES` after `_OTP_MAX_ATTEMPTS` wrong codes,
+      * expiry via `phone_verification_expires_at`,
+      * constant-time comparison against the HMAC-stored code.
+
+    Failed attempts are committed before raising so the counter survives the
+    caller's error handling. Raises `OtpError`, whose message never reveals
+    whether the code was wrong, expired, or never issued.
+    """
+    from ..time_utils import utcnow
+
+    now = utcnow()
+
+    locked_until = getattr(user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        raise OtpError("Too many attempts. Please try again later.", "otp_locked", 429)
+
+    code_hash = getattr(user, "phone_verification_code_hash", None)
+    expires_at = getattr(user, "phone_verification_expires_at", None)
+    if not code_hash or not expires_at or expires_at <= now:
+        # Expired or never issued: drop stale material so the client must re-request.
+        user.phone_verification_code_hash = None
+        user.phone_verification_expires_at = None
+        db.session.commit()
+        raise OtpError("Invalid or expired verification code.", "otp_invalid", 400)
+
+    if len(code) != 6 or not code.isdigit():
+        raise OtpError("Invalid or expired verification code.", "otp_invalid", 400)
+
+    expected = _hash_phone_verification_code(phone_digits, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
+        user.phone_verification_attempts = attempts
+        if attempts >= _OTP_MAX_ATTEMPTS:
+            user.phone_verification_locked_until = now + timedelta(
+                minutes=_OTP_LOCKOUT_MINUTES
+            )
+            user.phone_verification_code_hash = None
+            user.phone_verification_expires_at = None
+            user.phone_verification_attempts = 0
+            db.session.commit()
+            raise OtpError(
+                "Too many attempts. Please try again later.", "otp_locked", 429
+            )
+        db.session.commit()
+        raise OtpError("Invalid or expired verification code.", "otp_invalid", 400)
+
+    user.phone_verification_code_hash = None
+    user.phone_verification_expires_at = None
+    user.phone_verification_attempts = 0
+    user.phone_verification_locked_until = None
+
+
 def _redis_client():
     url = (os.environ.get("REDIS_URL") or "").strip()
     if not url:
@@ -1309,7 +1387,11 @@ def send_phone_verification():
                     dealership_location=dealership_location or None,
                 )
             except ValueError as e:
-                return jsonify({"message": str(e)}), 400
+                # Only surface the known validation cases; never echo str(e) blindly.
+                current_app.logger.info("send-verification validation error: %s", str(e))
+                if "username" in str(e).lower():
+                    return jsonify({"message": "Username already exists"}), 400
+                return jsonify({"message": "Invalid input"}), 400
             except IntegrityError:
                 db.session.rollback()
                 return jsonify({"message": "Account already exists. Please log in."}), 400
@@ -1325,7 +1407,7 @@ def send_phone_verification():
             return jsonify({"message": "Too many attempts. Please try again later."}), 429
 
         last_sent = getattr(user, "phone_verification_last_sent_at", None)
-        if last_sent and (now - last_sent).total_seconds() < 60:
+        if last_sent and (now - last_sent).total_seconds() < _OTP_RESEND_COOLDOWN_SECONDS:
             return jsonify({"message": "Please wait before requesting another code"}), 429
 
         verification_code = f"{secrets.randbelow(1_000_000):06d}"
@@ -1356,9 +1438,10 @@ def send_phone_verification():
             )
             # Legacy client expects 200 with sent: false and error (and optional dev_code in dev).
             payload = {"sent": False, "error": err_msg, "message": err_msg}
-            if sms_detail:
-                payload["detail"] = sms_detail
-            if current_app.config.get("DEBUG") or (os.environ.get("APP_ENV") or "").strip().lower() == "development":
+            if _is_dev_environment():
+                # Provider error text is an internal detail; dev/debug only.
+                if sms_detail:
+                    payload["detail"] = sms_detail
                 payload["dev_code"] = verification_code
             return jsonify(payload), 200
 
@@ -1368,10 +1451,7 @@ def send_phone_verification():
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("send_phone_verification failed: %s", e)
-        msg = "Failed to send verification code"
-        if current_app.config.get("DEBUG") or (os.environ.get("APP_ENV") or "").strip().lower() == "development":
-            msg = f"{msg}: {str(e)}"
-        return jsonify({"message": msg}), 500
+        return jsonify({"message": "Failed to send verification code"}), 500
 
 
 # --- Phone OTP auth endpoints ---
@@ -1447,7 +1527,7 @@ def phone_start():
             return jsonify({"message": "Too many attempts. Please try again later."}), 429
 
         last_sent = getattr(user, "phone_verification_last_sent_at", None)
-        if last_sent and (now - last_sent).total_seconds() < 60:
+        if last_sent and (now - last_sent).total_seconds() < _OTP_RESEND_COOLDOWN_SECONDS:
             return jsonify({"message": "Please wait before requesting another code"}), 429
 
         verification_code = f"{secrets.randbelow(1_000_000):06d}"
@@ -1478,7 +1558,8 @@ def phone_start():
                 "message": "Failed to send verification code",
                 "code": "sms_send_failed",
             }
-            if sms_detail:
+            if sms_detail and _is_dev_environment():
+                # Provider error text is an internal detail; dev/debug only.
                 payload["detail"] = sms_detail
             return jsonify(payload), 500
 
@@ -1598,8 +1679,16 @@ def phone_verify():
 def compat_signup():
     """
     Compatibility signup endpoint for mobile client.
-    Supports legacy phone flow: when otp_code + phone are sent, verify OTP and complete signup (update user, return tokens).
+
+    Phone + OTP are mandatory: the client must first request a code via
+    /api/auth/send_otp (or /api/auth/phone/start), then post it here as
+    `otp_code`. There is deliberately no branch that creates an authenticated
+    account without a verified code.
     """
+    # Bound before the try so the error handlers can log them even if request
+    # parsing itself fails.
+    raw_username = ""
+    phone_digits = ""
     try:
         data = request.get_json(silent=True) or {}
         data = validate_input_sanitization(data)
@@ -1617,96 +1706,25 @@ def compat_signup():
 
         phone_digits = _normalize_phone(raw_phone)
 
-        # Legacy phone signup: user already received OTP via send_otp; verify code and complete account.
-        if otp_code and phone_digits:
-            user = User.query.filter_by(phone_number=phone_digits).first()
-            if not user:
-                return jsonify({"message": "User not found. Request a new code."}), 404
-            if not password:
-                return jsonify({"message": "Password is required"}), 400
-            if is_dealer_requested:
-                if not dealership_name:
-                    return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
-                if not dealership_phone:
-                    return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
-                if not dealership_location:
-                    return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
-            is_valid, msg = validate_password(password)
-            if not is_valid:
-                return jsonify({"message": msg}), 400
-            from ..time_utils import utcnow
-            now = utcnow()
-            code_hash = getattr(user, "phone_verification_code_hash", None)
-            expires_at = getattr(user, "phone_verification_expires_at", None)
-            if not code_hash or not expires_at or expires_at <= now:
-                user.phone_verification_code_hash = None
-                user.phone_verification_expires_at = None
-                db.session.commit()
-                return jsonify({"message": "Invalid or expired code. Request a new one."}), 400
-            if len(otp_code) != 6 or not otp_code.isdigit():
-                return jsonify({"message": "Invalid verification code"}), 400
-            expected = _hash_phone_verification_code(phone_digits, otp_code)
-            if not hmac.compare_digest(code_hash, expected):
-                return jsonify({"message": "Invalid or expired verification code"}), 400
-            if is_dealer_requested:
-                new_u = _generate_unique_username("dealer")
-                for _ in range(12):
-                    existing = User.query.filter(func.lower(User.username) == new_u.lower()).first()
-                    if existing is None or existing.id == user.id:
-                        break
-                    new_u = _generate_unique_username("dealer")
-                user.username = new_u
-            else:
-                username = (
-                    raw_username
-                    or getattr(user, "username", "")
-                    or f"user_{secrets.token_hex(3)}"
-                ).strip().lower()
-                if username and username != (getattr(user, "username") or ""):
-                    existing = User.query.filter(func.lower(User.username) == username.lower()).first()
-                    if existing and existing.id != user.id:
-                        return jsonify({"message": "Username already exists"}), 400
-                    user.username = username
-            user.first_name = first_name or user.first_name or "User"
-            user.last_name = last_name or user.last_name or ""
-            user.set_password(password)
-            user.is_verified = True
-            user.phone_verified = True
-            _apply_dealer_profile(
-                user,
-                is_dealer_requested=is_dealer_requested,
-                dealership_name=dealership_name or None,
-                dealership_phone=dealership_phone or None,
-                dealership_location=dealership_location or None,
-            )
-            user.phone_verification_code_hash = None
-            user.phone_verification_expires_at = None
-            user.phone_verification_attempts = 0
-            user.phone_verification_locked_until = None
-            db.session.commit()
-            log_user_action(user, "phone_verified")
-            access_token = _access_token_for_user(user)
-            refresh_token = _refresh_token_for_user(user)
-            return jsonify({
-                "message": "Signup successful",
-                "token": access_token,
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "user": user.to_dict(include_private=True),
-            }), 201
-
+        # A verified phone is the only way to reach an authenticated account here.
+        # Never invent a phone number, and never fall through to a password-only path.
         if not phone_digits:
-            phone_digits = f"070{secrets.randbelow(10**8):08d}"
-        if is_dealer_requested:
-            username = _generate_unique_username("dealer")
-            while User.query.filter(func.lower(User.username) == username.lower()).first():
-                username = _generate_unique_username("dealer")
-        else:
-            username = (
-                raw_username
-                or phone_digits
-                or f"user_{secrets.token_hex(3)}"
-            ).lower()
+            return jsonify({
+                "message": "Phone number is required",
+                "code": "phone_required",
+            }), 400
+        if not otp_code:
+            return jsonify({
+                "message": "Verification code is required. Request a code and try again.",
+                "code": "otp_required",
+            }), 400
+
+        user = User.query.filter_by(phone_number=phone_digits).first()
+        if not user:
+            return jsonify({
+                "message": "User not found. Request a new code.",
+                "code": "user_not_found",
+            }), 404
         if not password:
             return jsonify({"message": "Password is required"}), 400
         if is_dealer_requested:
@@ -1716,30 +1734,38 @@ def compat_signup():
                 return jsonify({"message": "Dealership phone is required for dealer accounts"}), 400
             if not dealership_location:
                 return jsonify({"message": "Dealership location is required for dealer accounts"}), 400
-        is_valid, message = validate_password(password)
+        is_valid, msg = validate_password(password)
         if not is_valid:
-            return jsonify({"message": message}), 400
+            return jsonify({"message": msg}), 400
 
-        existing_phone = User.query.filter_by(phone_number=phone_digits).first()
-        if existing_phone:
-            return jsonify({"message": "Phone number already exists"}), 400
+        # Enforces lockout, expiry and constant-time comparison, and clears the
+        # code on success. Raises OtpError, handled below.
+        _consume_phone_otp(user, phone_digits, otp_code)
 
-        existing_username = User.query.filter(func.lower(User.username) == username.lower()).first()
-        if existing_username:
-            return jsonify({"message": "Username already exists"}), 400
-
-        user = User(
-            username=username,
-            phone_number=phone_digits,
-            first_name=first_name,
-            last_name=last_name,
-            # Signup is phone-only; keep email NULL (empty string would collide on UNIQUE).
-            email=None,
-            is_active=True,
-            public_id=secrets.token_hex(8),
-            account_type="user",
-            dealer_status="none",
-        )
+        if is_dealer_requested:
+            new_u = _generate_unique_username("dealer")
+            for _ in range(12):
+                existing = User.query.filter(func.lower(User.username) == new_u.lower()).first()
+                if existing is None or existing.id == user.id:
+                    break
+                new_u = _generate_unique_username("dealer")
+            user.username = new_u
+        else:
+            username = (
+                raw_username
+                or getattr(user, "username", "")
+                or f"user_{secrets.token_hex(3)}"
+            ).strip().lower()
+            if username and username != (getattr(user, "username") or ""):
+                existing = User.query.filter(func.lower(User.username) == username.lower()).first()
+                if existing and existing.id != user.id:
+                    return jsonify({"message": "Username already exists"}), 400
+                user.username = username
+        user.first_name = first_name or user.first_name or "User"
+        user.last_name = last_name or user.last_name or ""
+        user.set_password(password)
+        user.is_verified = True
+        user.phone_verified = True
         _apply_dealer_profile(
             user,
             is_dealer_requested=is_dealer_requested,
@@ -1747,24 +1773,22 @@ def compat_signup():
             dealership_phone=dealership_phone or None,
             dealership_location=dealership_location or None,
         )
-        user.set_password(password)
-        db.session.add(user)
         db.session.commit()
-
+        log_user_action(user, "phone_verified")
         access_token = _access_token_for_user(user)
         refresh_token = _refresh_token_for_user(user)
-        return (
-            jsonify(
-                {
-                    "message": "Signup successful",
-                    "token": access_token,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "user": user.to_dict(include_private=True),
-                }
-            ),
-            201,
-        )
+        return jsonify({
+            "message": "Signup successful",
+            "token": access_token,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": user.to_dict(include_private=True),
+        }), 201
+
+    except OtpError as e:
+        # _consume_phone_otp already committed the attempt counter; do not roll back.
+        return e.response()
+
     except IntegrityError:
         db.session.rollback()
         # Unique constraint collisions, schema issues, etc. Return a safe message.
@@ -1788,9 +1812,12 @@ def compat_signup():
                 "phone_digits": (phone_digits or "")[:32],
             },
         )
-        # During active testing, always surface the underlying error message so
-        # the mobile client can display it and we can debug quickly.
-        return jsonify({"message": f"Signup failed: {str(e)}"}), 500
+        # The exception text may carry SQL, schema or driver internals. It is
+        # logged above with a request id; the client only ever sees this.
+        return jsonify({
+            "message": "Signup failed. Please try again.",
+            "code": "signup_failed",
+        }), 500
 
 
 @bp.route("/api/auth/me", methods=["GET"])

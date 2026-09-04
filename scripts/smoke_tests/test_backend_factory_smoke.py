@@ -1240,15 +1240,36 @@ class BackendFactorySmokeTest(unittest.TestCase):
         body = r.get_json() or {}
         self.assertEqual(body.get("code"), "phone_verification_required")
 
+    def _request_signup_otp(self, phone: str) -> str:
+        """Drive /api/auth/send_otp and return the code the provider was handed."""
+        from unittest.mock import patch
+
+        captured = {}
+
+        def capture_sms(phone_digits, code):
+            captured["code"] = code
+            return True, None
+
+        with patch(
+            "kk.sms_service.send_verification_sms_result", side_effect=capture_sms
+        ):
+            sent = self.client.post("/api/auth/send_otp", json={"phone": phone})
+        self.assertEqual(sent.status_code, 200, sent.data)
+        self.assertTrue(captured.get("code"), sent.data)
+        return captured["code"]
+
     def test_phone_signup_and_login_without_email(self):
         u = f"p_{uuid.uuid4().hex[:8]}"
         phone = f"070{uuid.uuid4().int % 10**7:07d}"
+        # C-01: signup only completes against a code this server issued.
+        otp = self._request_signup_otp(phone)
         signup = self.client.post(
             "/api/auth/signup",
             json={
                 "username": u,
                 "email": f"{u}@example.com",  # ignored — signup is phone-only
                 "phone": phone,
+                "otp_code": otp,
                 "password": "Aa123456!",
                 "first_name": "P",
                 "last_name": "S",
@@ -1270,6 +1291,68 @@ class BackendFactorySmokeTest(unittest.TestCase):
             json={"username": f"{u}@example.com", "password": "Aa123456!"},
         )
         self.assertEqual(email_login.status_code, 401, email_login.data)
+
+    def test_signup_without_otp_issues_no_token(self):
+        """C-01 (AT-01): the password-only branch used to return 201 + a JWT."""
+        before = 0
+        with self.app.app_context():
+            before = self._User.query.count()
+
+        signup = self.client.post(
+            "/api/auth/signup",
+            json={
+                "username": f"noauth_{uuid.uuid4().hex[:8]}",
+                "password": "Aa123456!",
+                "first_name": "No",
+                "last_name": "Otp",
+            },
+        )
+        self.assertEqual(signup.status_code, 400, signup.data)
+        body = signup.get_json() or {}
+        self.assertEqual(body.get("code"), "phone_required")
+        self.assertNotIn("access_token", body)
+        self.assertNotIn("token", body)
+
+        # It must not have invented a phone number and persisted an account.
+        with self.app.app_context():
+            self.assertEqual(self._User.query.count(), before)
+            self.assertEqual(
+                self._User.query.filter(
+                    self._User.phone_number.like("070%"),
+                    self._User.is_verified.is_(False),
+                    self._User.username.like("noauth_%"),
+                ).count(),
+                0,
+            )
+
+    def test_signup_wrong_otp_locks_out_and_never_leaks_exceptions(self):
+        """C-01: server-side attempt lockout, and no raw exception text."""
+        from kk.routes.auth import _OTP_MAX_ATTEMPTS
+
+        phone = f"070{uuid.uuid4().int % 10**7:07d}"
+        otp = self._request_signup_otp(phone)
+
+        for _ in range(_OTP_MAX_ATTEMPTS - 1):
+            wrong = self.client.post(
+                "/api/auth/signup",
+                json={"phone": phone, "otp_code": "000000", "password": "Aa123456!"},
+            )
+            self.assertEqual(wrong.status_code, 400, wrong.data)
+
+        tripped = self.client.post(
+            "/api/auth/signup",
+            json={"phone": phone, "otp_code": "000000", "password": "Aa123456!"},
+        )
+        self.assertEqual(tripped.status_code, 429, tripped.data)
+        self.assertEqual((tripped.get_json() or {}).get("code"), "otp_locked")
+
+        # Even the correct code is refused while the account is locked.
+        locked = self.client.post(
+            "/api/auth/signup",
+            json={"phone": phone, "otp_code": otp, "password": "Aa123456!"},
+        )
+        self.assertEqual(locked.status_code, 429, locked.data)
+        self.assertNotIn("access_token", locked.get_json() or {})
 
     def test_auth_me_returns_bare_user(self):
         me = self.client.get("/api/auth/me", headers=self._auth(self.viewer_token))
