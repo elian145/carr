@@ -3,7 +3,7 @@ part of 'home_flow.dart';
 enum _HomePageMode { feed, searchFilters }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key})
+  const HomePage({super.key, this.embedInShell = false})
       : _mode = _HomePageMode.feed,
         initialSearchFilters = null;
 
@@ -11,10 +11,13 @@ class HomePage extends StatefulWidget {
   const HomePage.searchFilters({
     super.key,
     this.initialSearchFilters,
-  }) : _mode = _HomePageMode.searchFilters;
+  })  : _mode = _HomePageMode.searchFilters,
+        embedInShell = false;
 
   final _HomePageMode _mode;
   final HomeFiltersSnapshot? initialSearchFilters;
+  /// When true, [MainShell] owns the bottom nav — omit it here.
+  final bool embedInShell;
 
   bool get isSearchFiltersHost => _mode == _HomePageMode.searchFilters;
 
@@ -381,6 +384,12 @@ class _HomePageState extends _HomePageFields
   @override
   void initState() {
     super.initState();
+    if (!widget.isSearchFiltersHost) {
+      HomeTabActions.onScrollToTop = () {
+        if (!mounted) return;
+        _scrollHomeToTopAndResetCardImages();
+      };
+    }
     final seededOffset = _HomeFeedScrollPersistence.initialOffset;
     _homeScrollController = ScrollController(
       initialScrollOffset: seededOffset > 0 ? seededOffset : 0,
@@ -571,6 +580,9 @@ class _HomePageState extends _HomePageFields
   }
   @override
   void dispose() {
+    if (!widget.isSearchFiltersHost) {
+      HomeTabActions.onScrollToTop = null;
+    }
     if (widget.isSearchFiltersHost) {
       _sortDebounceTimer?.cancel();
       _featuredResumeTimer?.cancel();

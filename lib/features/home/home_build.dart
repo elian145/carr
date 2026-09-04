@@ -103,30 +103,32 @@ mixin _HomePageBuild on _HomePageSlivers {
       ),
       // Pull-to-refresh is already provided inside the main content via internal scrollables
       extendBody: true,
-      bottomNavigationBar: buildFloatingBottomNav(
-        context,
-        currentIndex: 0,
-        onTap: (idx) {
-          if (idx != 0) {
-            // Persist exact offset before route replacement to avoid stale restores.
-            _persistCurrentHomeOffsetNow();
-          }
-          switch (idx) {
-            case 0:
-              _scrollHomeToTopAndResetCardImages();
-              break;
-            case 1:
-              _switchMainTabNoAnimation(context, '/sell');
-              break;
-            case 2:
-              _switchMainTabNoAnimation(context, '/dealers');
-              break;
-            case 3:
-              _switchMainTabNoAnimation(context, '/profile');
-              break;
-          }
-        },
-      ),
+      bottomNavigationBar: widget.embedInShell
+          ? null
+          : buildFloatingBottomNav(
+              context,
+              currentIndex: 0,
+              onTap: (idx) {
+                if (idx != 0) {
+                  // Persist exact offset before route replacement to avoid stale restores.
+                  _persistCurrentHomeOffsetNow();
+                }
+                switch (idx) {
+                  case 0:
+                    _scrollHomeToTopAndResetCardImages();
+                    break;
+                  case 1:
+                    _switchMainTabNoAnimation(context, '/sell');
+                    break;
+                  case 2:
+                    _switchMainTabNoAnimation(context, '/dealers');
+                    break;
+                  case 3:
+                    _switchMainTabNoAnimation(context, '/profile');
+                    break;
+                }
+              },
+            ),
       body: SafeArea(
         top: false,
         bottom: false,

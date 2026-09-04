@@ -1,7 +1,10 @@
 part of 'production_account_pages.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, this.embedInShell = false});
+
+  /// When true, [MainShell] owns the bottom nav — omit it here.
+  final bool embedInShell;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();

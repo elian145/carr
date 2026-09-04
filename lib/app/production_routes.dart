@@ -5,7 +5,6 @@ import '../pages/forgot_password_page.dart';
 import '../pages/change_password_page.dart';
 import '../features/chat/chat_pages.dart' as carzo_chat;
 import '../pages/dealer_profile_page.dart';
-import '../pages/dealers_directory_page.dart';
 import '../pages/dealer_onboarding_page.dart';
 import '../pages/edit_dealer_page.dart';
 import '../pages/edit_listing_page.dart' as modern_edit;
@@ -19,11 +18,12 @@ import '../pages/tiktok_scroll_page.dart';
 import '../pages/verify_email_page.dart';
 import '../shared/navigation/route_args.dart';
 import 'carzo_shared.dart';
+import 'widgets/main_shell.dart';
 import '../l10n/app_localizations.dart';
 
 Map<String, WidgetBuilder> buildProductionRoutes() {
   return {
-    '/': (context) => HomePage(),
+    '/': (context) => const MainShell(initialIndex: 0),
     '/sell': (context) {
       final args = ModalRoute.of(context)?.settings.arguments;
       final initialDraftSnapshot = args is Map
@@ -61,7 +61,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
     '/settings': (context) => SettingsPage(),
     '/favorites': (context) =>
         AuthGuard(allowWhenLoggedOut: true, child: FavoritesPage()),
-    '/dealers': (context) => const DealersDirectoryPage(),
+    '/dealers': (context) => const MainShell(initialIndex: 2),
     '/chat': (context) => AuthGuard(child: ChatListPage()),
     '/notifications': (context) =>
         AuthGuard(child: const carzo_chat.NotificationsPage()),
@@ -69,8 +69,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
     '/signup': (context) => LoginPage(initialDealerMode: true),
     '/dealer-onboarding': (context) =>
         AuthGuard(child: const DealerOnboardingPage()),
-    '/profile': (context) =>
-        AuthGuard(allowWhenLoggedOut: true, child: ProfilePage()),
+    '/profile': (context) => const MainShell(initialIndex: 3),
     '/edit-profile': (context) => AuthGuard(child: EditProfilePage()),
     '/car_detail': (context) {
       final args = readRouteArgs(context);

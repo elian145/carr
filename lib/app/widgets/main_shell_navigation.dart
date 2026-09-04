@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/ui/device_performance.dart';
 import '../../shared/ui/responsive.dart';
-import '../route_registry.dart';
+import 'main_shell.dart';
 
-Route<T> _mainShellTabRoute<T>(String routeName, WidgetBuilder builder) {
+Route<T> _zeroAnimRoute<T>(String routeName, WidgetBuilder builder) {
   return PageRouteBuilder<T>(
     settings: RouteSettings(name: routeName),
     transitionDuration: Duration.zero,
@@ -17,20 +17,60 @@ Route<T> _mainShellTabRoute<T>(String routeName, WidgetBuilder builder) {
   );
 }
 
-/// Main-tab switch that keeps bottom-nav destinations as root-level pages.
-void navigateMainShellTab(BuildContext context, String routeName) {
-  final currentRoute = ModalRoute.of(context)?.settings.name;
-  if (currentRoute == routeName) return;
+int? _shellTabIndexForRoute(String routeName) {
+  switch (routeName) {
+    case '/' || '/home':
+      return 0;
+    case '/dealers':
+      return 2;
+    case '/profile':
+      return 3;
+    default:
+      return null;
+  }
+}
 
-  final navigator = Navigator.of(context);
-  final builder = appRouteBuilders[routeName];
-  if (builder == null) {
-    navigator.pushNamedAndRemoveUntil(routeName, (route) => false);
+/// Switch main tabs. Home/Dealers/Profile stay alive under [MainShell]; Sell is pushed.
+void navigateMainShellTab(BuildContext context, String routeName) {
+  if (routeName == '/sell') {
+    Navigator.of(context).pushNamed('/sell');
     return;
   }
 
-  navigator.pushAndRemoveUntil<void>(
-    _mainShellTabRoute<void>(routeName, builder),
+  if (routeName == '/login') {
+    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    return;
+  }
+
+  final tabIndex = _shellTabIndexForRoute(routeName);
+  if (tabIndex == null) {
+    Navigator.of(context).pushNamedAndRemoveUntil(routeName, (route) => false);
+    return;
+  }
+
+  final shellInTree = MainShell.of(context);
+  if (shellInTree != null) {
+    shellInTree.selectTab(tabIndex);
+    return;
+  }
+
+  // Overlay (Sell, Login, …): pop back to the shell root when possible.
+  final nav = Navigator.of(context);
+  final attached = MainShell.attached;
+  if (attached != null && attached.mounted) {
+    attached.selectTab(tabIndex);
+    if (nav.canPop()) {
+      nav.popUntil((route) => route.isFirst);
+    }
+    return;
+  }
+
+  // No shell on the stack — install one at the requested tab.
+  nav.pushAndRemoveUntil<void>(
+    _zeroAnimRoute<void>(
+      '/',
+      (_) => MainShell(initialIndex: tabIndex),
+    ),
     (route) => false,
   );
 }
@@ -83,7 +123,7 @@ Widget buildFloatingBottomNav(
       ),
       showSelectedLabels: true,
       showUnselectedLabels: !compact,
-      currentIndex: currentIndex,
+      currentIndex: currentIndex.clamp(0, 3),
       onTap: onTap,
       items: [
         BottomNavigationBarItem(

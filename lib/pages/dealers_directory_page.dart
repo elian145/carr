@@ -20,7 +20,10 @@ part 'dealers_directory_page_core.dart';
 
 /// Browse and search approved dealerships (public API).
 class DealersDirectoryPage extends StatefulWidget {
-  const DealersDirectoryPage({super.key});
+  const DealersDirectoryPage({super.key, this.embedInShell = false});
+
+  /// When true, [MainShell] owns the bottom nav — omit it here.
+  final bool embedInShell;
 
   @override
   State<DealersDirectoryPage> createState() => _DealersDirectoryPageState();

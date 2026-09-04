@@ -10,25 +10,27 @@ mixin _DealersDirectoryPageCore on _DealersDirectoryPageWidgets {
         title: Text(loc?.navDealers ?? 'Dealerships'),
       ),
       extendBody: true,
-      bottomNavigationBar: buildFloatingBottomNav(
-        context,
-        currentIndex: 2,
-        onTap: (idx) {
-          switch (idx) {
-            case 0:
-              navigateMainShellTab(context, '/');
-              break;
-            case 1:
-              navigateMainShellTab(context, '/sell');
-              break;
-            case 2:
-              break;
-            case 3:
-              navigateMainShellTab(context, '/profile');
-              break;
-          }
-        },
-      ),
+      bottomNavigationBar: widget.embedInShell
+          ? null
+          : buildFloatingBottomNav(
+              context,
+              currentIndex: 2,
+              onTap: (idx) {
+                switch (idx) {
+                  case 0:
+                    navigateMainShellTab(context, '/');
+                    break;
+                  case 1:
+                    navigateMainShellTab(context, '/sell');
+                    break;
+                  case 2:
+                    break;
+                  case 3:
+                    navigateMainShellTab(context, '/profile');
+                    break;
+                }
+              },
+            ),
       body: Stack(
         fit: StackFit.expand,
         children: [
