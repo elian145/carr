@@ -35,6 +35,21 @@ class AuthService extends ChangeNotifier {
   bool _isLoading = false;
   Future<void>? _initFuture;
 
+  // Bounded, self-contained recovery for a transient (non-401)
+  // `_loadUserProfile()` failure. Without this, a single transient
+  // network/5xx hiccup on `/auth/me` could permanently strand a session in
+  // `ApiService.isAuthenticated == true` + `AuthService.isAuthenticated ==
+  // false`, which leaves every `AuthGuard`-protected page spinning forever
+  // (nothing else ever retries `/auth/me`). See `_scheduleProfileRetry`.
+  static const int _maxProfileRetryAttempts = 3;
+  static const List<Duration> _profileRetryDelays = <Duration>[
+    Duration(seconds: 2),
+    Duration(seconds: 5),
+    Duration(seconds: 10),
+  ];
+  int _profileRetryAttempts = 0;
+  bool _profileRetryScheduled = false;
+
   // Getters
   bool get isAuthenticated => _isAuthenticated;
   Map<String, dynamic>? get currentUser => _currentUser;
@@ -108,6 +123,7 @@ class AuthService extends ChangeNotifier {
       }
       _currentUser = profileFromResponse(response);
       _isAuthenticated = true;
+      _profileRetryAttempts = 0;
       notifyListeners();
     } catch (e, st) {
       logNonFatal(e, st, 'AuthService._loadUserProfile');
@@ -117,11 +133,54 @@ class AuthService extends ChangeNotifier {
       // 401s already clear tokens (and this session) via onApiTokensCleared,
       // triggered from inside ApiService. A transient network/5xx failure here
       // must not log the user out — the token is still valid, so keep the
-      // existing session and let the next successful call repopulate it.
+      // existing session and let a bounded retry (or the next successful
+      // call) repopulate it, instead of permanently stranding
+      // ApiService.isAuthenticated == true / AuthService.isAuthenticated ==
+      // false.
       if (e is ApiException && e.statusCode == 401) {
         await _clearAuthState();
+      } else {
+        _scheduleProfileRetry(tokenAtStart);
       }
     }
+  }
+
+  /// Bounded, self-contained recovery for a transient `_loadUserProfile()`
+  /// failure (non-401: network error, timeout, 5xx, etc.).
+  ///
+  /// Re-runs the exact same authenticated `/auth/me` fetch used everywhere
+  /// else in this class — it never marks the session authenticated without
+  /// a successful profile response, and a genuine 401 encountered on retry
+  /// still clears auth state via the normal path above. Callers (e.g.
+  /// `AuthGuard`) never need to know this exists: on success,
+  /// `_loadUserProfile()` already calls `notifyListeners()`, which is
+  /// exactly what un-sticks a `Provider.of<AuthService>(context)` gate.
+  ///
+  /// - Bounded: at most [_maxProfileRetryAttempts] attempts per failure
+  ///   streak (reset to 0 on any successful load or auth-state clear).
+  /// - No retry storm: only one retry ever in flight at a time
+  ///   (`_profileRetryScheduled`), with short, spaced-out delays.
+  /// - Non-blocking: fire-and-forget — never awaited by `_loadUserProfile()`
+  ///   or its callers, so it can never block app initialization, login, or
+  ///   any UI interaction.
+  void _scheduleProfileRetry(String tokenAtFailureTime) {
+    if (_profileRetryScheduled) return;
+    if (_profileRetryAttempts >= _maxProfileRetryAttempts) return;
+    final delay = _profileRetryDelays[_profileRetryAttempts.clamp(
+      0,
+      _profileRetryDelays.length - 1,
+    )];
+    _profileRetryAttempts++;
+    _profileRetryScheduled = true;
+    Future.delayed(delay, () async {
+      _profileRetryScheduled = false;
+      // Already resolved (recovered via another call, logged out, or
+      // switched accounts) by the time this fires — nothing to do.
+      if (_isAuthenticated) return;
+      if (!ApiService.isAuthenticated) return;
+      if (ApiService.accessToken != tokenAtFailureTime) return;
+      await _loadUserProfile();
+    });
   }
 
   // Login user
@@ -504,6 +563,7 @@ class AuthService extends ChangeNotifier {
   Future<void> _clearAuthState() async {
     _isAuthenticated = false;
     _currentUser = null;
+    _profileRetryAttempts = 0;
     await ApiService.clearTokens();
     notifyListeners();
   }
@@ -543,6 +603,8 @@ class AuthService extends ChangeNotifier {
     _isAuthenticated = false;
     _currentUser = null;
     _isLoading = false;
+    _profileRetryAttempts = 0;
+    _profileRetryScheduled = false;
     notifyListeners();
   }
 
