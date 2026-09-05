@@ -54,6 +54,9 @@ jobs:
       - name: Build APK (debug, dev flavor)
         run: flutter build apk --debug --no-pub --flavor dev
 
+      - name: Regenerate Flutter build config (fix dev-dependency plugin registrant mismatch)
+        run: flutter build apk --config-only --release --no-pub --flavor prod
+
       - name: Build App Bundle (prod release, unsigned fallback signing)
         env:
           ALLOW_DEBUG_RELEASE_SIGNING: "true"
