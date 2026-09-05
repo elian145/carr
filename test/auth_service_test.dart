@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
+import 'package:car_listing_app/shared/auth/token_store.dart';
 
 import 'fake_api_server.dart';
 
@@ -624,6 +625,132 @@ void main() {
       await staleFuture;
       expect(AuthService().isAuthenticated, isTrue);
       expect(AuthService().currentUser?['username'], 'new_user');
+    },
+  );
+
+  // --------------------------------------------------------------------
+  // Regression tests: startup-ordering fix. `AuthService.initialize()`
+  // (and therefore `AuthGuard`, gated on `isLoading`/`isAuthenticated`)
+  // must not wait for WebSocket connect or push-token sync — those run in
+  // the background after the authentication decision is already final.
+  // Firebase/PushNotificationService.initialize() and connectivity/locale
+  // setup are not referenced by `AuthService` at all (see bootstrap.dart
+  // for the ordering change), which every test in this file already
+  // demonstrates implicitly: none of them ever initialize Firebase, yet
+  // `AuthService().initialize()` still completes and authenticates.
+  // --------------------------------------------------------------------
+
+  test(
+    'N: isLoading/isAuthenticated are decided as soon as the profile fetch '
+    'resolves, without waiting for the background push-token sync it '
+    'kicks off next',
+    () async {
+      final originalClient = ApiService.boundTestHttpClient;
+      addTearDown(() => ApiService.testHttpClient = originalClient);
+
+      SharedPreferences.setMockInitialValues({'push_enabled': true});
+      await TokenStore.savePushToken('gated_push_token');
+      addTearDown(() => TokenStore.savePushToken(null));
+
+      final pushGate = Completer<void>();
+      var meCalls = 0;
+      var pushCalls = 0;
+      ApiService.testHttpClient = MockClient((request) async {
+        if (request.url.path == '/api/auth/me') {
+          meCalls++;
+          return _jsonResponse(200, {'id': 1, 'username': 'testuser'});
+        }
+        if (request.url.path == '/api/users/push_token') {
+          pushCalls++;
+          // Simulate a slow backend for push-token registration — this
+          // must never be able to delay the auth decision above it.
+          await pushGate.future;
+          return _jsonResponse(200, {'message': 'ok'});
+        }
+        return _jsonResponse(200, <String, dynamic>{});
+      });
+      addTearDown(() {
+        if (!pushGate.isCompleted) pushGate.complete();
+      });
+
+      await ApiService.setTokens(
+        accessToken: 'startup_token',
+        refreshToken: 'startup_refresh',
+      );
+
+      // initialize() must return promptly: it must NOT be waiting on the
+      // still-pending (gated) push-token sync it triggers in the
+      // background. A regression here would hang until pushGate resolves.
+      await AuthService().initialize().timeout(const Duration(seconds: 5));
+
+      expect(AuthService().isLoading, isFalse);
+      expect(AuthService().isAuthenticated, isTrue);
+      expect(AuthService().currentUser?['username'], 'testuser');
+      expect(meCalls, 1);
+
+      // The background push-token sync starts shortly after (proving it
+      // still runs for an authenticated session), but reaching the mock
+      // HTTP layer takes a few more microtask turns (SharedPreferences,
+      // TokenStore reads) than `initialize()` itself waited for above —
+      // which is exactly the point: those turns happened *after*
+      // `initialize()` had already returned, not before.
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(pushCalls, 1);
+      // Still gated/pending; still hasn't disturbed the auth decision.
+      expect(AuthService().isAuthenticated, isTrue);
+
+      pushGate.complete();
+      await Future.delayed(const Duration(milliseconds: 50));
+    },
+  );
+
+  test(
+    'O: the background WebSocket connect + push-token sync run to '
+    'completion after auth succeeds, and a failure there is swallowed '
+    '(no unhandled Future error) without disturbing authentication state',
+    () async {
+      final originalClient = ApiService.boundTestHttpClient;
+      addTearDown(() => ApiService.testHttpClient = originalClient);
+
+      SharedPreferences.setMockInitialValues({'push_enabled': true});
+      await TokenStore.savePushToken('failing_push_token');
+      addTearDown(() => TokenStore.savePushToken(null));
+
+      var meCalls = 0;
+      var pushCalls = 0;
+      ApiService.testHttpClient = MockClient((request) async {
+        if (request.url.path == '/api/auth/me') {
+          meCalls++;
+          return _jsonResponse(200, {'id': 1, 'username': 'testuser'});
+        }
+        if (request.url.path == '/api/users/push_token') {
+          pushCalls++;
+          return _jsonResponse(500, {'message': 'push backend down'});
+        }
+        return _jsonResponse(200, <String, dynamic>{});
+      });
+
+      await ApiService.setTokens(
+        accessToken: 'bg_failure_token',
+        refreshToken: 'bg_failure_refresh',
+      );
+
+      await AuthService().initialize();
+
+      expect(AuthService().isLoading, isFalse);
+      expect(AuthService().isAuthenticated, isTrue);
+      expect(meCalls, 1);
+
+      // Give the background follow-up (deliberately not awaited by
+      // initialize()) a moment to run — and fail.
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(pushCalls, 1);
+      // A failed background push-token sync must not clear/disturb the
+      // already-decided authentication state, and must not surface as an
+      // unhandled Future error (a regression here would fail this test via
+      // the test framework's uncaught-error reporting, not an assertion).
+      expect(AuthService().isAuthenticated, isTrue);
     },
   );
 }

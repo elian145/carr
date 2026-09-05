@@ -119,6 +119,23 @@ void _runZonedApp(Widget app) {
 
       // Defer heavy initializations to post-frame to avoid blocking first paint.
       Future.microtask(() async {
+        // Authentication starts immediately and is intentionally NOT
+        // awaited here first: Firebase/FCM setup (which can sit behind a
+        // native notification-permission dialog), connectivity checks, and
+        // locale/asset loading have no bearing on whether the user is
+        // logged in, so none of them may gate `/auth/me`. Protected pages
+        // are gated by AuthService's own isLoading/isAuthenticated (see
+        // AuthGuard + AuthService._initializeOnce), which now resolves as
+        // soon as the profile fetch itself is decided — independent of the
+        // unrelated startup work below.
+        Future<void> initAuth() async {
+          try {
+            await AuthService().initialize();
+          } catch (e, st) { logNonFatal(e, st); }
+        }
+
+        final authInit = initAuth();
+
         try {
           await PushNotificationService.initialize();
         } catch (e, st) { logNonFatal(e, st); }
@@ -128,9 +145,12 @@ void _runZonedApp(Widget app) {
         try {
           await LocaleController.loadSavedLocale();
         } catch (e, st) { logNonFatal(e, st); }
-        try {
-          await AuthService().initialize();
-        } catch (e, st) { logNonFatal(e, st); }
+
+        // These two read auth/token state, so they still wait for the
+        // authentication decision above — but that decision (and therefore
+        // AuthGuard releasing) no longer waits for any of the unrelated
+        // startup work this ran concurrently with.
+        await authInit;
         // Finish media upload if the app was killed mid-submit.
         try {
           await SellPendingMediaResume.tryResume();

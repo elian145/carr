@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
 import 'push_notification_service.dart';
@@ -122,19 +124,59 @@ class AuthService extends ChangeNotifier {
   Future<void> _initializeOnce() async {
     _setLoading(true);
 
+    // Whether the WebSocket + push-token sync follow-up below should run
+    // at all — only when a token was actually present at the start of this
+    // attempt (matches the previous, always-sequential behavior's own
+    // condition), and not when initialization hit an unexpected error and
+    // had to clear auth state.
+    var shouldConnectRealtimeServices = false;
+
     try {
       await ApiService.initializeTokens();
 
       if (ApiService.isAuthenticated) {
+        shouldConnectRealtimeServices = true;
         await _loadUserProfile();
-        await WebSocketService.connect();
-        await PushNotificationService.syncTokenWithBackend();
       }
     } catch (e, st) {
       logNonFatal(e, st, 'AuthService.initialize');
       await _clearAuthState();
+      shouldConnectRealtimeServices = false;
     } finally {
+      // The authentication decision (isLoading/isAuthenticated) is final
+      // as of here — `AuthGuard` only needs `_loadUserProfile()`'s result
+      // (success, definitive 401 clear, or a scheduled bounded retry — all
+      // already decided above). WebSocket + push-token sync are not part
+      // of that decision, so they must not delay releasing this gate; they
+      // continue in the background immediately after.
       _setLoading(false);
+    }
+
+    if (shouldConnectRealtimeServices) {
+      unawaited(_connectRealtimeServicesInBackground());
+    }
+  }
+
+  /// Runs the (non-authentication-deciding) realtime/notification follow-up
+  /// after `_initializeOnce()` has already released its loading gate.
+  ///
+  /// Deliberately fire-and-forget from the caller's perspective — each step
+  /// is individually try/caught so a failure here can never surface as an
+  /// unhandled Future error, exactly like every other non-blocking path in
+  /// this class (see `_scheduleProfileRetry`). This preserves the previous
+  /// behavior (both calls still happen for an authenticated session) while
+  /// no longer making protected pages wait for a socket handshake or a push
+  /// token registration request neither of which `AuthGuard` needs.
+  Future<void> _connectRealtimeServicesInBackground() async {
+    try {
+      await WebSocketService.connect();
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService._connectRealtimeServicesInBackground.socket');
+    }
+    try {
+      await PushNotificationService.syncTokenWithBackend();
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService._connectRealtimeServicesInBackground.push');
     }
   }
 
