@@ -1093,13 +1093,12 @@ def dealer_profile(dealer_public_id: str):
             dealer_data["account_type"] = "dealer"
             dealer_data["dealer_status"] = "approved"
         # Public contact uses verified dealership emails only (not account login email).
+        # dealer.to_dict()/dealer_profile.to_dict() intentionally omit raw
+        # dealership_emails from their public (include_private=False) shape, so the
+        # curated public list must be sourced from the verified-emails attribute
+        # directly rather than read back out of dealer_data.
         dealer_data.pop("email", None)
-        emails = dealer_data.get("dealership_emails")
-        if not isinstance(emails, list):
-            emails = []
-        dealer_data["dealership_emails"] = [
-            str(x).strip() for x in emails if str(x).strip()
-        ]
+        dealer_data["dealership_emails"] = _verified_dealer_emails(dealer)
         dealer_data.pop("dealership_verified_emails", None)
         socials = dealer_data.get("dealership_socials")
         if not socials:

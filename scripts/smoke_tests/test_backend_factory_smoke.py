@@ -189,9 +189,17 @@ class BackendFactorySmokeTest(unittest.TestCase):
         def capture_sms(phone, code):
             captured["phone"] = phone
             captured["code"] = code
-            return True
+            return True, None
 
-        with patch("kk.sms_service.send_verification_sms", side_effect=capture_sms):
+        # kk/routes/user.py does `from ..sms_service import send_verification_sms_result`
+        # *inside* the route function body (a fresh, per-call import, not a
+        # module-level one), so kk.routes.user never holds this name as a
+        # persistent attribute to patch. Each call re-reads the current value
+        # of kk.sms_service.send_verification_sms_result at call time, so that
+        # origin module is the correct (and only working) patch target here.
+        with patch(
+            "kk.sms_service.send_verification_sms_result", side_effect=capture_sms
+        ):
             sent = self.client.post(
                 "/api/user/dealer-phone/send-verification",
                 json={"phone_number": new_phone},
