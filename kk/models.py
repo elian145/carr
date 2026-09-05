@@ -137,6 +137,13 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
+    # H-01/H-02: tokens issued (JWT `iat`) strictly before this cutoff are
+    # treated as revoked by check_if_token_revoked(), even though their JTI
+    # was never individually blacklisted. Set on password change/reset so
+    # every access/refresh token issued before that moment stops working
+    # immediately, without needing a per-user JTI ledger. Left NULL for
+    # accounts that have never changed/reset their password.
+    tokens_invalid_before = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     cars = db.relationship('Car', backref='seller', lazy=True, cascade='all, delete-orphan')

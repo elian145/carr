@@ -5,7 +5,7 @@ import hmac
 import os
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 from flask import Blueprint, current_app, jsonify, request
@@ -475,22 +475,57 @@ def init_jwt_callbacks(jwt) -> None:
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
-        """Check if token is blacklisted"""
+        """Check if a token is blacklisted, or belongs to a now-inactive
+        (banned/deactivated) user, or was issued before the user's most
+        recent password change/reset (H-01/H-02).
+
+        This is the single chokepoint every @jwt_required() route passes
+        through, including the handful of routes that don't separately
+        call get_current_user() -- so the is_active/cutoff checks below
+        close those routes automatically, with no per-route changes.
+        """
         jti = str(jwt_payload.get("jti") or "")
-        if not jti:
+
+        if jti:
+            # Prefer Redis in production (O(1) lookup, no DB query per request).
+            r = _redis_client()
+            if r is not None:
+                try:
+                    if r.exists(f"bl:jti:{jti}"):
+                        return True
+                except Exception:
+                    # If Redis is down/misconfigured, fall back to DB.
+                    r = None
+            if r is None:
+                token = TokenBlacklist.query.filter_by(jti=jti).first()
+                if token is not None:
+                    return True
+
+        # H-01/H-02: even when this specific JTI was never individually
+        # blacklisted, reject it if the user is now inactive, or if it was
+        # issued (JWT `iat`) strictly before the user's tokens_invalid_before
+        # cutoff. Resolve the same way get_current_user() does.
+        user = _resolve_user_by_jwt_identity(jwt_payload.get("sub"))
+        if user is None:
+            # Unknown identity: not this loader's job -- get_current_user()/
+            # the route itself already treats a missing user as
+            # unauthenticated. Preserve existing behavior here.
             return False
 
-        # Prefer Redis in production (O(1) lookup, no DB query per request).
-        r = _redis_client()
-        if r is not None:
-            try:
-                return bool(r.exists(f"bl:jti:{jti}"))
-            except Exception:
-                # If Redis is down/misconfigured, fall back to DB.
-                pass
+        if not user.is_active:
+            return True
 
-        token = TokenBlacklist.query.filter_by(jti=jti).first()
-        return token is not None
+        cutoff = user.tokens_invalid_before
+        if cutoff is not None:
+            iat = jwt_payload.get("iat")
+            if iat is not None:
+                issued_at = datetime.fromtimestamp(int(iat), tz=timezone.utc).replace(
+                    tzinfo=None
+                )
+                if issued_at < cutoff:
+                    return True
+
+        return False
 
     @jwt.revoked_token_loader
     def revoked_token_callback(jwt_header, jwt_payload):
@@ -815,8 +850,20 @@ def change_password():
             return jsonify({"message": message}), 400
 
         from ..time_utils import utcnow
+        # Floor to whole seconds: JWT `iat` is an integer unix timestamp, so
+        # a token minted in this same wall-clock second (even a moment
+        # *after* this change, e.g. a fresh post-change login racing this
+        # request) would otherwise compare as "before" a microsecond-precise
+        # cutoff and be spuriously revoked. Flooring means any token from an
+        # earlier second is still correctly revoked, and the only accepted
+        # trade-off is a <1s grace window right at the boundary -- see
+        # test_token_revocation.py tests E/L.
+        now = utcnow().replace(microsecond=0)
         current_user.set_password(new_pass)
-        current_user.updated_at = utcnow()
+        current_user.updated_at = now
+        # H-01: revoke every access/refresh token issued before this moment
+        # (same commit as the password update -- no separate transaction).
+        current_user.tokens_invalid_before = now
         db.session.commit()
         log_user_action(current_user, "password_change")
         return jsonify({"message": "Password changed successfully"}), 200
@@ -1208,7 +1255,14 @@ def reset_password():
         except Exception:
             pass
 
+        from ..time_utils import utcnow
+
         user.set_password(new_password)
+        # H-01: revoke every access/refresh token issued before this moment
+        # (same commit as the password update and reset-token consumption --
+        # no separate transaction). Floored to whole seconds -- see
+        # change_password() for why.
+        user.tokens_invalid_before = utcnow().replace(microsecond=0)
 
         reset_token = PasswordReset.query.filter_by(token=token).first()
         if reset_token:
