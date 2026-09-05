@@ -420,7 +420,7 @@ workflows:
             "$KEYSTORE_PATH" "$CM_KEYSTORE_PASSWORD" "$CM_KEY_ALIAS" "$CM_KEY_PASSWORD" \
             > "$CM_BUILD_DIR/android/signing.properties"
       - name: Analyze
-        script: flutter analyze --no-fatal-warnings --no-fatal-infos
+        script: flutter analyze --no-fatal-warnings --no-fatal-infos --no-pub
       - name: Tests
         script: bash scripts/flutter_test_ci.sh --no-pub
       - name: Publish preflight (static + deployed)
