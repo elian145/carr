@@ -180,49 +180,148 @@ class TestR2OpsChatBucketSelection:
         assert captured["access_key"] == FAKE_CHAT_BUCKET_CONFIG["R2_CHAT_ACCESS_KEY_ID"]
         assert captured["op"] == "put_object"
 
-    def test_r2_presign_get_uses_chat_bucket_and_get_op(self, monkeypatch):
+    # -- Fix B: in-process presigning is now the default path -------------
+    #
+    # `_get_chat_boto3_client`/`generate_presigned_url` are pure local
+    # signing operations that succeed with any syntactically valid
+    # credentials (no real network call, no real Cloudflare account
+    # needed) — so these exercise the REAL in-process path with the fake
+    # chat-bucket config, the same way section C already exercises the
+    # real subprocess script with dummy credentials.
+
+    def _reset_chat_client_cache(self, monkeypatch):
+        # Prevent this test from reusing a client cached by a previous test
+        # (or from the previous test polluting this one).
+        monkeypatch.setattr("kk.r2_ops._chat_boto3_client_cache", None)
+
+    def test_r2_presign_get_uses_chat_bucket_and_key_inprocess(self, monkeypatch):
         from kk import r2_ops
 
         monkeypatch.setattr(r2_ops, "current_app", self._app())
-        captured = {}
+        self._reset_chat_client_cache(monkeypatch)
 
-        def _fake_run(payload, *, timeout):
-            captured.update(payload)
-            return {"ok": True, "download_url": "https://example.test/signed"}
-
-        monkeypatch.setattr(r2_ops, "_run_r2_op", _fake_run)
         url = r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
 
-        assert captured["bucket"] == FAKE_CHAT_BUCKET_CONFIG["R2_CHAT_BUCKET_NAME"]
-        assert captured["op"] == "presign_get"
-        assert url == "https://example.test/signed"
+        assert FAKE_CHAT_BUCKET_CONFIG["R2_CHAT_BUCKET_NAME"] in url
+        assert "chat_uploads/abc.jpg" in url
+        # Never the public listing-media bucket.
+        assert SENTINEL_PUBLIC_CONFIG["R2_BUCKET_NAME"] not in url
 
     def test_r2_presign_get_default_expiry_is_bounded_short_lived(self, monkeypatch):
-        """C-10 requires a short, bounded default expiry (~10 minutes)."""
+        """C-10 requires a short, bounded default expiry (~10 minutes),
+        proven against the real in-process signing path (Fix B)."""
+        from kk import r2_ops
+        from urllib.parse import parse_qs, urlparse
+
+        monkeypatch.setattr(r2_ops, "current_app", self._app())
+        self._reset_chat_client_cache(monkeypatch)
+
+        url = r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
+
+        # boto3/S3 presigned URLs carry the expiry in the `X-Amz-Expires`
+        # query parameter.
+        query = parse_qs(urlparse(url).query)
+        expires = int(query["X-Amz-Expires"][0])
+        assert expires == r2_ops.CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS
+        # Bounded: short-lived (<= 15 min) and not absurdly short (>= 1 min).
+        assert 60 <= expires <= 900
+
+    # -- Fix B: subprocess fallback ----------------------------------------
+
+    def test_r2_presign_get_falls_back_to_subprocess_when_inprocess_signing_fails(
+        self, monkeypatch
+    ):
+        """If in-process signing fails for any reason (including a
+        RecursionError under eventlet's SSL monkey-patch), r2_presign_get()
+        must transparently fall back to the original subprocess path and
+        still return a usable URL."""
         from kk import r2_ops
 
         monkeypatch.setattr(r2_ops, "current_app", self._app())
+        monkeypatch.setattr(
+            r2_ops, "_r2_presign_get_inprocess", lambda *, key, expires_in: None
+        )
         captured = {}
 
         def _fake_run(payload, *, timeout):
             captured.update(payload)
-            return {"ok": True, "download_url": "https://example.test/signed"}
+            return {"ok": True, "download_url": "https://example.test/signed-by-subprocess"}
 
         monkeypatch.setattr(r2_ops, "_run_r2_op", _fake_run)
-        r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
 
+        url = r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
+
+        assert url == "https://example.test/signed-by-subprocess"
+        assert captured["bucket"] == FAKE_CHAT_BUCKET_CONFIG["R2_CHAT_BUCKET_NAME"]
+        assert captured["op"] == "presign_get"
         assert captured["expires_in"] == r2_ops.CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS
-        # Bounded: short-lived (<= 15 min) and not absurdly short (>= 1 min).
-        assert 60 <= captured["expires_in"] <= 900
 
     def test_r2_presign_get_raises_on_empty_download_url(self, monkeypatch):
+        """Fail-closed: if in-process signing is unavailable AND the
+        subprocess fallback returns an empty URL, r2_presign_get() must
+        still raise rather than return something unusable."""
         from kk import r2_ops
 
         monkeypatch.setattr(r2_ops, "current_app", self._app())
+        monkeypatch.setattr(
+            r2_ops, "_r2_presign_get_inprocess", lambda *, key, expires_in: None
+        )
         monkeypatch.setattr(r2_ops, "_run_r2_op", lambda payload, *, timeout: {"ok": True, "download_url": ""})
 
         with pytest.raises(RuntimeError):
             r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
+
+    def test_r2_presign_get_raises_when_both_inprocess_and_subprocess_fail(
+        self, monkeypatch
+    ):
+        """Fail-closed: if BOTH the in-process attempt AND the subprocess
+        fallback fail, r2_presign_get() must still raise. This is what lets
+        `_resolve_chat_media_ref()` in models.py drop the one attachment
+        instead of exposing a broken/missing URL."""
+        from kk import r2_ops
+
+        monkeypatch.setattr(r2_ops, "current_app", self._app())
+        monkeypatch.setattr(
+            r2_ops, "_r2_presign_get_inprocess", lambda *, key, expires_in: None
+        )
+        monkeypatch.setattr(
+            r2_ops, "_run_r2_op", MagicMock(side_effect=RuntimeError("R2 unreachable"))
+        )
+
+        with pytest.raises(RuntimeError):
+            r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
+
+    def test_inprocess_presign_failure_does_not_leak_credentials_in_logs_or_exception(
+        self, monkeypatch, caplog
+    ):
+        """When the in-process attempt fails and falls back, neither the
+        logged warning nor any propagated exception may contain the chat
+        bucket's access key / secret key."""
+        from kk import r2_ops
+
+        monkeypatch.setattr(r2_ops, "current_app", self._app())
+
+        def _boom(creds):
+            raise RuntimeError("simulated boto3 client construction failure")
+
+        monkeypatch.setattr(r2_ops, "_get_chat_boto3_client", _boom)
+
+        captured = {}
+
+        def _fake_run(payload, *, timeout):
+            captured.update(payload)
+            return {"ok": True, "download_url": "https://example.test/signed"}
+
+        monkeypatch.setattr(r2_ops, "_run_r2_op", _fake_run)
+
+        caplog.set_level("WARNING")
+        url = r2_ops.r2_presign_get(key="chat_uploads/abc.jpg")
+
+        assert url == "https://example.test/signed"
+        access_key = FAKE_CHAT_BUCKET_CONFIG["R2_CHAT_ACCESS_KEY_ID"]
+        secret_key = FAKE_CHAT_BUCKET_CONFIG["R2_CHAT_SECRET_ACCESS_KEY"]
+        assert access_key not in caplog.text
+        assert secret_key not in caplog.text
 
     def test_r2_chat_configured_from_config_true_only_when_all_four_present(self):
         from kk.r2_ops import r2_chat_configured_from_config
@@ -887,6 +986,53 @@ class TestC10EndToEndAuthorization:
         # must be exactly 4 (one `to_dict()` call, shared by the socket/push
         # delivery and the HTTP response).
         assert presign_mock.call_count == 4
+
+    def test_history_load_presigns_once_per_attachment_and_stays_authorized(
+        self, app_ctx, client, seller_ctx, buyer_ctx, stranger_ctx, _mock_r2_chat_ops
+    ):
+        """Fix B (in-process R2 GET presigning in kk/r2_ops.py) changes only
+        HOW a presigned URL is produced, never HOW MANY times
+        r2_presign_get() is called for a history page, nor WHO is allowed to
+        trigger it. Loading a history page containing two single-attachment
+        image messages must call r2_presign_get() exactly twice, and an
+        unrelated user must still trigger zero presign calls and see none of
+        this conversation's messages."""
+        seller_username, seller_public = seller_ctx
+        buyer_username, buyer_public = buyer_ctx
+        stranger_username, _stranger_public = stranger_ctx
+        car_public = _make_car(app_ctx, seller_public)
+        seller_token = _login(client, seller_username)
+        buyer_token = _login(client, buyer_username)
+        stranger_token = _login(client, stranger_username)
+
+        client.post(
+            f"/api/chat/{car_public}/send",
+            headers=_auth(buyer_token),
+            json={"content": "hi", "receiver_id": seller_public},
+        )
+        with patch("kk.chat_realtime.send_push"):
+            _send_image(client, seller_token, car_public, buyer_public, name="one.jpg")
+            _send_image(client, seller_token, car_public, buyer_public, name="two.jpg")
+
+        _put_mock, presign_mock = _mock_r2_chat_ops
+        presign_mock.reset_mock()
+
+        list_resp = _get_messages(client, seller_token, car_public)
+        assert list_resp.status_code == 200
+        messages = list_resp.get_json()["messages"]
+        assert len(messages) == 3  # 1 text message + 2 single-image messages
+        # Two single-attachment messages on this page => exactly 2 presign
+        # calls, regardless of whether presigning happened in-process or via
+        # the subprocess fallback.
+        assert presign_mock.call_count == 2
+
+        # Authorization is unaffected by Fix B: an unrelated user still
+        # triggers zero presign calls and sees none of these messages.
+        presign_mock.reset_mock()
+        stranger_resp = _get_messages(client, stranger_token, car_public)
+        assert stranger_resp.status_code == 200
+        assert stranger_resp.get_json()["messages"] == []
+        presign_mock.assert_not_called()
 
     def test_c02_delivery_still_emits_exactly_once_with_media(
         self, app_ctx, client, seller_ctx, buyer_ctx

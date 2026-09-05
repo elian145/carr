@@ -4,6 +4,19 @@ Eventlet-safe Cloudflare R2 helpers.
 boto3 client creation recurses forever under eventlet's SSL monkey-patch
 (RecursionError in ssl.SSLContext.options). Run S3 ops in a clean subprocess
 (same pattern as OTPIQ / Roboflow).
+
+C-10 perf (Fix B): ``r2_presign_get`` is the one operation on the hot path —
+it is called once per chat-media attachment on every history load
+(``get_messages`` -> ``Message.to_dict()``). Generating a presigned GET URL
+is a pure local HMAC signature computation (no network round-trip), so for
+*that* operation only we now attempt it in-process first, using one lazily
+created, reused ``boto3`` client, and fall back to the existing subprocess
+implementation on any failure — including a ``RecursionError`` if this
+process happens to be running under eventlet's SSL monkey-patch (production
+does not enable eventlet by default; see ``gunicorn.conf.py`` /
+``kk/app_factory.py``, but this fallback makes the in-process attempt safe
+even if that ever changes). Uploads (``put_object``) and presigned PUT URLs
+are unaffected and still always go through the subprocess.
 """
 from __future__ import annotations
 
@@ -93,6 +106,15 @@ def _chat_cred_payload() -> dict[str, str]:
 # design: long enough for a client to load/play the media once, short enough
 # to bound the exposure window of a leaked URL (proxy log, screenshot, etc.).
 CHAT_PRESIGN_GET_DEFAULT_EXPIRES_SECONDS = 600
+
+# Lazily created, reused boto3 S3-compatible client for the PRIVATE chat
+# bucket (C-10 perf, Fix B). Keyed by the exact credential tuple used to
+# build it so a credential/config change (e.g. across tests, or a future
+# credential rotation without a process restart) transparently rebuilds it
+# instead of silently reusing a stale client. Benign to race across threads
+# under gthread workers: at worst two threads each build one and the last
+# write wins — both clients are equally valid and stateless for signing.
+_chat_boto3_client_cache: tuple[tuple[str, str, str, str, str], Any] | None = None
 
 
 def _run_r2_op(payload: dict[str, Any], *, timeout: float) -> dict[str, Any]:
@@ -190,6 +212,79 @@ def r2_chat_put_bytes(
             pass
 
 
+def _get_chat_boto3_client(creds: dict[str, str]):
+    """Lazily create and reuse one boto3 S3-compatible client scoped to the
+    PRIVATE chat-media bucket credentials (C-10 perf, Fix B).
+
+    Client construction itself does not hit the network, so this is safe to
+    do in-process except under eventlet's SSL monkey-patch (see module
+    docstring) — callers must be prepared to catch any exception here and
+    fall back to the subprocess implementation.
+    """
+    global _chat_boto3_client_cache
+    cache_key = (
+        creds["account_id"],
+        creds["bucket"],
+        creds["access_key"],
+        creds["secret_key"],
+        creds["region"],
+    )
+    cached = _chat_boto3_client_cache
+    if cached is not None and cached[0] == cache_key:
+        return cached[1]
+
+    import boto3
+    from botocore.config import Config
+
+    endpoint = f"https://{creds['account_id']}.r2.cloudflarestorage.com"
+    client = boto3.client(
+        "s3",
+        region_name=creds["region"],
+        endpoint_url=endpoint,
+        aws_access_key_id=creds["access_key"],
+        aws_secret_access_key=creds["secret_key"],
+        config=Config(signature_version="s3v4"),
+    )
+    _chat_boto3_client_cache = (cache_key, client)
+    return client
+
+
+def _r2_presign_get_inprocess(*, key: str, expires_in: int) -> str | None:
+    """Attempt to presign ``key`` directly in this process (C-10 perf, Fix B).
+
+    Presigned-GET generation is a pure local HMAC signature computation — no
+    network call is made here, only a signature over already-known
+    credentials/bucket/key/expiry.
+
+    Returns the URL on success, or ``None`` on ANY failure — including a
+    ``RecursionError`` under eventlet's SSL monkey-patch, or missing/partial
+    chat-bucket configuration — so the caller can transparently fall back to
+    the existing subprocess implementation. Never raises, and never includes
+    credentials in the exception it swallows or the warning it logs.
+    """
+    try:
+        creds = _chat_cred_payload()
+        bucket = creds["bucket"]
+        if not (creds["account_id"] and bucket and creds["access_key"] and creds["secret_key"]):
+            return None
+        client = _get_chat_boto3_client(creds)
+        url = client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": key},
+            ExpiresIn=expires_in,
+        )
+        return (url or "").strip() or None
+    except Exception:
+        # Deliberately broad: ANY failure here (including RecursionError)
+        # must fall back to the subprocess path rather than propagate.
+        logger.warning(
+            "in-process R2 chat presign_get failed (key length=%d, not "
+            "logged); falling back to subprocess",
+            len(key),
+        )
+        return None
+
+
 def r2_presign_get(
     *,
     key: str,
@@ -202,7 +297,18 @@ def r2_presign_get(
     public listing-media bucket. Callers MUST only invoke this after already
     confirming the current viewer is authorized to see the message that owns
     ``key`` — this function performs no authorization of its own.
+
+    Perf (Fix B): presigning is attempted in-process first (see
+    :func:`_r2_presign_get_inprocess`) to avoid spawning a subprocess per
+    attachment on every chat-history load. Any failure there transparently
+    falls back to the original subprocess-based implementation below, which
+    is unchanged and remains the sole implementation for every other R2
+    operation (uploads, presigned PUT).
     """
+    inprocess_url = _r2_presign_get_inprocess(key=key, expires_in=expires_in)
+    if inprocess_url:
+        return inprocess_url
+
     creds = _chat_cred_payload()
     payload: dict[str, Any] = {
         **creds,
