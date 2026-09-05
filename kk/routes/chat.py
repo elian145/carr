@@ -469,9 +469,12 @@ def send_message(conversation_id: str):
         # Message is durably committed above; delivery side effects (Socket.IO,
         # Notification row, FCM push) are best-effort and independently
         # failure-isolated — they can never turn this successful send into a 500.
-        deliver_message(msg, sender=me, receiver=receiver)
+        # Reuse the payload deliver_message() already serialized (C-10 perf:
+        # avoids re-presigning the same attachment(s) a second time for the
+        # HTTP response).
+        payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": msg.to_dict()}), 201
+        return jsonify({"success": True, "message": payload}), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send message"}), 500
@@ -553,9 +556,12 @@ def send_image_message(conversation_id: str):
         # Message is durably committed above; delivery side effects (Socket.IO,
         # Notification row, FCM push) are best-effort and independently
         # failure-isolated — they can never turn this successful send into a 500.
-        deliver_message(msg, sender=me, receiver=receiver)
+        # Reuse the payload deliver_message() already serialized (C-10 perf:
+        # avoids re-presigning the same attachment a second time for the
+        # HTTP response).
+        payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": msg.to_dict()}), 201
+        return jsonify({"success": True, "message": payload}), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send image message"}), 500
@@ -637,9 +643,12 @@ def send_video_message(conversation_id: str):
         # Message is durably committed above; delivery side effects (Socket.IO,
         # Notification row, FCM push) are best-effort and independently
         # failure-isolated — they can never turn this successful send into a 500.
-        deliver_message(msg, sender=me, receiver=receiver)
+        # Reuse the payload deliver_message() already serialized (C-10 perf:
+        # avoids re-presigning the same attachment a second time for the
+        # HTTP response).
+        payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": msg.to_dict()}), 201
+        return jsonify({"success": True, "message": payload}), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send video message"}), 500
@@ -724,9 +733,12 @@ def send_audio_message(conversation_id: str):
         # Message is durably committed above; delivery side effects (Socket.IO,
         # Notification row, FCM push) are best-effort and independently
         # failure-isolated — they can never turn this successful send into a 500.
-        deliver_message(msg, sender=me, receiver=receiver)
+        # Reuse the payload deliver_message() already serialized (C-10 perf:
+        # avoids re-presigning the same attachment a second time for the
+        # HTTP response).
+        payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": msg.to_dict()}), 201
+        return jsonify({"success": True, "message": payload}), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send audio message"}), 500
@@ -824,9 +836,12 @@ def send_media_group_message(conversation_id: str):
         # Message is durably committed above; delivery side effects (Socket.IO,
         # Notification row, FCM push) are best-effort and independently
         # failure-isolated — they can never turn this successful send into a 500.
-        deliver_message(msg, sender=me, receiver=receiver)
+        # Reuse the payload deliver_message() already serialized (C-10 perf:
+        # avoids re-presigning every attachment a second time for the HTTP
+        # response).
+        payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": msg.to_dict()}), 201
+        return jsonify({"success": True, "message": payload}), 201
     except RequestEntityTooLarge:
         db.session.rollback()
         max_mb = _max_upload_mb()

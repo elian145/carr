@@ -190,7 +190,7 @@ def emit_message_to_participants(
     emit_to_user_rooms(event_name, payload, resolved_sender, resolved_receiver)
 
 
-def deliver_message(msg: Message, *, sender: User, receiver: User) -> None:
+def deliver_message(msg: Message, *, sender: User, receiver: User) -> dict:
     """
     Best-effort post-commit delivery for an already-durably-committed chat ``Message``.
 
@@ -204,6 +204,13 @@ def deliver_message(msg: Message, *, sender: User, receiver: User) -> None:
     - A failure in one side effect (e.g. Notification commit) must not prevent
       the other side effects (Socket.IO emit, push) from being attempted, and
       must not leave the SQLAlchemy session broken for the caller.
+
+    Returns the serialized ``msg.to_dict()`` payload built here (the same one
+    emitted over Socket.IO), so REST callers can reuse it for their HTTP
+    response instead of calling ``msg.to_dict()`` again. This matters for
+    chat media (C-10): each private-bucket attachment's ``to_dict()`` call
+    generates a fresh presigned GET URL via an R2 subprocess call, so calling
+    it twice would presign the same attachment twice for no reason.
     """
     payload = msg.to_dict()
 
@@ -274,6 +281,8 @@ def deliver_message(msg: Message, *, sender: User, receiver: User) -> None:
         logger.exception(
             "deliver_message: push send failed for message %s", msg.public_id
         )
+
+    return payload
 
 
 def mark_messages_read_for_viewer(car: Car, viewer: User) -> dict:

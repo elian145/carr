@@ -810,6 +810,84 @@ class TestC10EndToEndAuthorization:
         body = resp.get_json()
         assert SENTINEL_PUBLIC_CONFIG["R2_PUBLIC_URL"] not in json.dumps(body)
 
+    def test_sending_image_presigns_the_attachment_exactly_once(
+        self, app_ctx, client, seller_ctx, buyer_ctx, _mock_r2_chat_ops
+    ):
+        """Perf regression guard: the REST response and the Socket.IO/push
+        delivery must share ONE serialized payload (`deliver_message()`'s
+        return value), so a single-attachment send presigns that attachment
+        exactly once — not once for the socket emit and again for the HTTP
+        response."""
+        seller_username, seller_public = seller_ctx
+        buyer_username, buyer_public = buyer_ctx
+        car_public = _make_car(app_ctx, seller_public)
+        seller_token = _login(client, seller_username)
+        buyer_token = _login(client, buyer_username)
+
+        client.post(
+            f"/api/chat/{car_public}/send",
+            headers=_auth(buyer_token),
+            json={"content": "hi", "receiver_id": seller_public},
+        )
+
+        _put_mock, presign_mock = _mock_r2_chat_ops
+        presign_mock.reset_mock()
+
+        with patch("kk.chat_realtime.send_push"):
+            resp = _send_image(client, seller_token, car_public, buyer_public)
+        assert resp.status_code == 201, resp.data
+        assert resp.get_json()["message"]["attachment_url"].startswith(
+            "https://fake-r2-presigned.example.test/chat_uploads/"
+        )
+
+        # Exactly one presign call for the one attachment on this message —
+        # not two (one for the socket/push payload, one again for the HTTP
+        # response body).
+        presign_mock.assert_called_once()
+
+    def test_sending_media_group_presigns_each_attachment_exactly_once(
+        self, app_ctx, client, seller_ctx, buyer_ctx, _mock_r2_chat_ops
+    ):
+        seller_username, seller_public = seller_ctx
+        buyer_username, buyer_public = buyer_ctx
+        car_public = _make_car(app_ctx, seller_public)
+        seller_token = _login(client, seller_username)
+        buyer_token = _login(client, buyer_username)
+
+        client.post(
+            f"/api/chat/{car_public}/send",
+            headers=_auth(buyer_token),
+            json={"content": "hi", "receiver_id": seller_public},
+        )
+
+        _put_mock, presign_mock = _mock_r2_chat_ops
+        presign_mock.reset_mock()
+
+        files = [
+            (io.BytesIO(b"fake-jpeg-1"), "a.jpg"),
+            (io.BytesIO(b"fake-jpeg-2"), "b.jpg"),
+            (io.BytesIO(b"fake-jpeg-3"), "c.jpg"),
+        ]
+        with patch("kk.chat_realtime.send_push"):
+            resp = client.post(
+                f"/api/chat/{car_public}/send_media_group",
+                headers=_auth(seller_token),
+                data={"receiver_id": buyer_public, "attachments": files},
+                content_type="multipart/form-data",
+            )
+        assert resp.status_code == 201, resp.data
+        assert len(resp.get_json()["message"]["attachments"]) == 3
+
+        # One `to_dict()` call on a 3-attachment media_group message presigns
+        # 4 times: `attachment_url` (mirrors attachments[0], resolved
+        # separately) + all 3 `attachments` list items — this is pre-existing
+        # `to_dict()` behavior, unrelated to this fix. What THIS fix
+        # eliminates is calling `to_dict()` a SECOND time for the HTTP
+        # response: before the fix this would be 4 × 2 = 8; after the fix it
+        # must be exactly 4 (one `to_dict()` call, shared by the socket/push
+        # delivery and the HTTP response).
+        assert presign_mock.call_count == 4
+
     def test_c02_delivery_still_emits_exactly_once_with_media(
         self, app_ctx, client, seller_ctx, buyer_ctx
     ):

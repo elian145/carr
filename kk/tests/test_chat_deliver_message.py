@@ -172,6 +172,33 @@ def test_deliver_message_exactly_one_notification_row_and_one_push_call():
         assert emit_mock.call_count == 1
 
 
+def test_deliver_message_returns_the_payload_it_serialized_exactly_once():
+    """C-10 perf fix: `deliver_message()` must return the same serialized
+    payload it built internally (and emitted over Socket.IO) so REST callers
+    can reuse it for their HTTP response instead of calling `msg.to_dict()`
+    a second time. For chat media, each `to_dict()` call re-presigns every
+    private-bucket attachment via an R2 subprocess call, so calling it twice
+    per send would presign the same attachment(s) twice for no reason.
+    """
+    msg = _make_msg()
+    expected_payload = {"id": msg.public_id, "content": msg.content}
+    to_dict_mock = MagicMock(return_value=expected_payload)
+    msg.to_dict = to_dict_mock
+    sender = _make_sender()
+    receiver = _make_receiver()
+
+    p_emit, p_notif, p_db, p_push = _patched()
+    with p_emit, p_notif, p_db, p_push:
+        result = chat_realtime.deliver_message(msg, sender=sender, receiver=receiver)
+
+    # `to_dict()` (and therefore any attachment presigning inside it) must
+    # only ever run ONCE per delivery, regardless of how many collaborators
+    # (socket emit, push body, HTTP response reuse) need the payload.
+    to_dict_mock.assert_called_once()
+    assert result == expected_payload
+    assert result is to_dict_mock.return_value
+
+
 def test_deliver_message_handles_message_without_car():
     """Group/attachment messages may not always have a resolvable car; must not crash."""
     msg = _make_msg(car_public_id=None)
