@@ -372,6 +372,8 @@ workflows:
     scripts:
       - name: Flutter pub get
         script: flutter pub get
+      - name: Regenerate Flutter build config (fix dev-dependency plugin registrant mismatch)
+        script: flutter build apk --config-only --release --flavor "$FLAVOR"
       - name: Inject Android Google Maps key (CI)
         script: |
           if [ -n "$ANDROID_GOOGLE_MAPS_API_KEY" ]; then
