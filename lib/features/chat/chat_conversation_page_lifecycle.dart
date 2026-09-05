@@ -22,7 +22,13 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
         _carImageUrl = fromPreview;
       }
     }
-    _pendingInitialListingContext = _listingPreview != null;
+    // Only prefill the composer with a ready-to-send listing card when the
+    // caller explicitly opted in (the contact-seller/interested-in-listing
+    // flow). `initialListingPreview` alone is not sufficient: it is also
+    // supplied purely for display metadata (e.g. ChatListPage's cached car
+    // title/image), which must NOT prefill the composer.
+    _pendingInitialListingContext =
+        widget.prefillComposerWithListing && _listingPreview != null;
     final initialDraft = widget.initialDraft?.trim() ?? '';
     if (initialDraft.isNotEmpty) {
       _messageController.text = initialDraft;

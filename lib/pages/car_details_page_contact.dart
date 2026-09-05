@@ -287,6 +287,12 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
               'trim': car!['trim'],
               'year': car!['year'],
             },
+            // The user explicitly tapped "contact seller / interested in
+            // this listing", so the composer should show the listing card
+            // ready to send (unlike ChatListPage, which only supplies
+            // listing metadata for header display — see
+            // ChatConversationPage.prefillComposerWithListing).
+            prefillComposerWithListing: true,
         ),
       ),
     );
