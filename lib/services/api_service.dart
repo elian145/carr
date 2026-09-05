@@ -51,6 +51,15 @@ class ApiService {
   /// Back-compat alias used by API parts.
   static Duration get _defaultTimeout => requestTimeout();
 
+  /// Public alias for the warm-path timeout. Used by [AuthService]'s bounded
+  /// profile-retry (`_scheduleProfileRetry`) so an automatic retry attempt
+  /// fails fast instead of silently inheriting the much longer cold-start
+  /// budget via [requestTimeout] (which always returns [_coldTimeout] until
+  /// a request has actually succeeded — exactly the state a failing retry
+  /// loop is stuck in). Exposed as a getter (not a duplicated constant) so
+  /// it can never drift from the real warm timeout.
+  static Duration get warmRequestTimeout => _warmTimeout;
+
   static void _markRequestSuccess() {
     _lastSuccessfulRequestAt = DateTime.now();
   }
@@ -333,8 +342,17 @@ class ApiService {
     String code,
   ) => _ApiServiceAuth.verifyPhone(phoneNumber, code);
 
-  static Future<Map<String, dynamic>> getProfile() =>
-      _ApiServiceAuth.getProfile();
+  /// [timeout], when provided, bounds the *entire* call (including any
+  /// internal adaptive/cold-start retry inside `_getWithAdaptiveTimeout`)
+  /// rather than replacing the adaptive timeout outright — this is what lets
+  /// [AuthService]'s bounded profile-retry fail fast on a fixed budget
+  /// instead of potentially inheriting the 55s cold-start window on every
+  /// retry attempt. Callers that omit [timeout] keep the existing adaptive
+  /// timeout behavior unchanged.
+  static Future<Map<String, dynamic>> getProfile({Duration? timeout}) {
+    final future = _ApiServiceAuth.getProfile();
+    return timeout == null ? future : future.timeout(timeout);
+  }
 
   static Future<Map<String, dynamic>> getDealerProfile(String dealerPublicId) =>
       _ApiServiceAuth.getDealerProfile(dealerPublicId);

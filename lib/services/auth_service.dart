@@ -42,13 +42,72 @@ class AuthService extends ChangeNotifier {
   // false`, which leaves every `AuthGuard`-protected page spinning forever
   // (nothing else ever retries `/auth/me`). See `_scheduleProfileRetry`.
   static const int _maxProfileRetryAttempts = 3;
-  static const List<Duration> _profileRetryDelays = <Duration>[
+  static const List<Duration> _defaultProfileRetryDelays = <Duration>[
     Duration(seconds: 2),
     Duration(seconds: 5),
     Duration(seconds: 10),
   ];
+
+  /// Test-only override for [_profileRetryDelays] so tests can prove the
+  /// retry count/guards are correctly bounded without real multi-second
+  /// waits. Always `null` in production. Reset by [resetTestSession].
+  @visibleForTesting
+  static List<Duration>? debugProfileRetryDelaysOverride;
+
+  static List<Duration> get _profileRetryDelays =>
+      debugProfileRetryDelaysOverride ?? _defaultProfileRetryDelays;
+
   int _profileRetryAttempts = 0;
   bool _profileRetryScheduled = false;
+
+  // Single-flight guard for the real, underlying `/auth/me` HTTP request.
+  //
+  // `Future.timeout()` (used below and inside `ApiService.getProfile`) does
+  // NOT cancel the request it wraps: the real HTTP call keeps running in
+  // the background even after a caller "gives up" on it. Without this
+  // guard, a slow/hanging backend could let the bounded automatic retry
+  // (`_scheduleProfileRetry`) fire additional, genuinely overlapping
+  // `/auth/me` requests while an earlier one is still in flight — wasted
+  // load on an already-struggling backend, though not a security issue
+  // (see `_fetchProfileSingleFlight` for why auth state stays safe).
+  //
+  // This tracks the *raw* fetch (deliberately called with no per-call
+  // timeout) so every caller — the initial load and every retry — shares
+  // the exact same underlying request instead of starting a new one. Each
+  // caller then applies its own timeout bound *on top of* the shared
+  // Future in `_loadUserProfile`; wrapping a Future in `.timeout()` never
+  // mutates or cancels it, so multiple callers can independently "give up"
+  // on the same shared request without affecting each other or starting a
+  // second real HTTP call. The slot is cleared only when the real
+  // underlying request itself finishes (success or error) — never merely
+  // because some caller's own timeout fired early.
+  //
+  // [_inFlightProfileFetchToken] guards the existing token-identity
+  // invariant: a request is only ever shared with a caller whose own
+  // token matches the token the in-flight request was actually started
+  // for. This prevents a logout/login (or account switch) from adopting a
+  // still-pending request that was authenticated as a *different* user —
+  // the stale request, if any, is simply left to resolve and clear itself
+  // in the background, unobserved, exactly as it already was before this
+  // guard existed; a fresh request is started for the new token instead.
+  Future<Map<String, dynamic>>? _inFlightProfileFetch;
+  String? _inFlightProfileFetchToken;
+
+  Future<Map<String, dynamic>> _fetchProfileSingleFlight(String tokenAtStart) {
+    final inFlight = _inFlightProfileFetch;
+    if (inFlight != null && _inFlightProfileFetchToken == tokenAtStart) {
+      return inFlight;
+    }
+    final future = ApiService.getProfile();
+    _inFlightProfileFetch = future;
+    _inFlightProfileFetchToken = tokenAtStart;
+    return future.whenComplete(() {
+      if (identical(_inFlightProfileFetch, future)) {
+        _inFlightProfileFetch = null;
+        _inFlightProfileFetchToken = null;
+      }
+    });
+  }
 
   // Getters
   bool get isAuthenticated => _isAuthenticated;
@@ -111,13 +170,28 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Load user profile
-  Future<void> _loadUserProfile() async {
+  // Load user profile.
+  //
+  // [timeout], when provided, bounds this specific attempt instead of the
+  // normal adaptive (warm/cold-start) timeout — used only by the automatic
+  // retry path (see `_scheduleProfileRetry`) so a retry fails fast rather
+  // than potentially inheriting the much longer cold-start budget. The
+  // initial load (app init, login, activateSession, refreshProfile, ...)
+  // never passes this, so it keeps the existing adaptive-timeout behavior.
+  Future<void> _loadUserProfile({Duration? timeout}) async {
     final tokenAtStart = ApiService.accessToken;
     if (tokenAtStart == null || tokenAtStart.isEmpty) return;
 
     try {
-      final response = await ApiService.getProfile();
+      // Reuse a still-pending real request instead of starting a second,
+      // overlapping one (see `_fetchProfileSingleFlight`). The per-call
+      // [timeout] is applied locally on top of the shared Future, so it
+      // only bounds *this* caller's wait — it never cancels the shared
+      // request or affects any other caller awaiting the same Future.
+      final sharedFetch = _fetchProfileSingleFlight(tokenAtStart);
+      final response = timeout == null
+          ? await sharedFetch
+          : await sharedFetch.timeout(timeout);
       if (ApiService.accessToken != tokenAtStart) {
         return;
       }
@@ -179,7 +253,11 @@ class AuthService extends ChangeNotifier {
       if (_isAuthenticated) return;
       if (!ApiService.isAuthenticated) return;
       if (ApiService.accessToken != tokenAtFailureTime) return;
-      await _loadUserProfile();
+      // Bounded warm-path timeout, not the adaptive one: on a cold-start
+      // backend every attempt would otherwise reuse ApiService's ~55s
+      // cold-start budget, so 3 retries could cost minutes instead of
+      // seconds before this class gives up.
+      await _loadUserProfile(timeout: ApiService.warmRequestTimeout);
     });
   }
 
@@ -564,6 +642,19 @@ class AuthService extends ChangeNotifier {
     _isAuthenticated = false;
     _currentUser = null;
     _profileRetryAttempts = 0;
+    // A pending retry timer from the just-cleared session (if any) will
+    // still fire harmlessly later (guarded by its own isAuthenticated/token
+    // checks), but resetting this now lets a *new* session's own failure
+    // schedule its own retry immediately instead of waiting for the old
+    // timer to expire first.
+    _profileRetryScheduled = false;
+    // Stop treating any still-pending request as shareable. It is not
+    // cancelled (can't be — see `_fetchProfileSingleFlight`) and keeps
+    // running harmlessly in the background, but a future call (even one
+    // that happens to reuse the same token, e.g. re-login) will now start
+    // a fresh request instead of ever adopting this one's eventual result.
+    _inFlightProfileFetch = null;
+    _inFlightProfileFetchToken = null;
     await ApiService.clearTokens();
     notifyListeners();
   }
@@ -605,6 +696,9 @@ class AuthService extends ChangeNotifier {
     _isLoading = false;
     _profileRetryAttempts = 0;
     _profileRetryScheduled = false;
+    _inFlightProfileFetch = null;
+    _inFlightProfileFetchToken = null;
+    debugProfileRetryDelaysOverride = null;
     notifyListeners();
   }
 
