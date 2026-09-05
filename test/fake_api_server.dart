@@ -19,6 +19,14 @@ class FakeApiServer {
   /// When true, GET/sync saved-searches return an empty list (empty-state tests).
   static bool emptySavedSearches = false;
 
+  /// Counts plain `GET /api/cars/<id>` requests (car-detail fetches).
+  ///
+  /// Used by chat-navigation tests (Fix A) to prove `ChatConversationPage`
+  /// does/does not fall back to `ApiService.getCar()` depending on whether a
+  /// usable `initialListingPreview` was forwarded from `ChatListPage`. Reset
+  /// this to 0 at the start of a test that relies on it.
+  static int carDetailFetchCount = 0;
+
   /// When set, protected routes reject requests whose Authorization header
   /// is not `Bearer <token>`.
   static void expectBearer(String? token) {
@@ -53,6 +61,7 @@ class FakeApiServer {
     _client = null;
     _expectedBearer = null;
     emptySavedSearches = false;
+    carDetailFetchCount = 0;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -156,6 +165,9 @@ class FakeApiServer {
       }
       if (segments.length > 1 && segments[1] == 'report' && method == 'POST') {
         return _json(201, {'message': 'Report submitted. Thank you.'});
+      }
+      if (method == 'GET' && segments.length == 1) {
+        carDetailFetchCount++;
       }
       return _json(200, {'car': _sampleCar(id)});
     }

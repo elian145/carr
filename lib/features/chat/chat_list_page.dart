@@ -215,13 +215,23 @@ class _ChatListPageState extends State<ChatListPage>
                               '')
                           .toString();
                   final receiverId = (other['id'] ?? '').toString();
+                  final listingMeta = listingMetaFromChatRow(c);
                   final carTitle = localizedListingTitle(
                     context,
-                    listingMetaFromChatRow(c),
+                    listingMeta,
                   );
-                  final carImageUrl = resolveListingImageUrl(
-                    (c['car_image_url'] ?? c['image_url'] ?? '').toString(),
-                  );
+                  final carImageRel = (c['car_image_url'] ?? c['image_url'] ?? '')
+                      .toString()
+                      .trim();
+                  final carImageUrl = resolveListingImageUrl(carImageRel);
+                  // Forward the listing metadata this row already has as
+                  // `initialListingPreview` so ChatConversationPage does not
+                  // need a second sequential GET /api/cars/<id> just to
+                  // display the title/image while chat history loads.
+                  final listingPreview = <String, dynamic>{
+                    ...listingMeta,
+                    if (carImageRel.isNotEmpty) 'image_url': carImageRel,
+                  };
                   final preview = _chatLastMessagePreview(context, last);
                   final ts = _rawChatListTimestamp(last, c);
                   DateTime? dt;
@@ -296,6 +306,8 @@ class _ChatListPageState extends State<ChatListPage>
                                   if (carTitle.isNotEmpty) 'carTitle': carTitle,
                                   if (carImageUrl.isNotEmpty)
                                     'carImageUrl': carImageUrl,
+                                  if (listingPreview.isNotEmpty)
+                                    'listingPreview': listingPreview,
                                 },
                               );
                               if (mounted) _loadChats();
