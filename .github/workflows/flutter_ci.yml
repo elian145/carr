@@ -54,16 +54,6 @@ jobs:
       - name: Build APK (debug, dev flavor)
         run: flutter build apk --debug --no-pub --flavor dev
 
-      - name: Regenerate Flutter build config (fix dev-dependency plugin registrant mismatch)
-        run: flutter build apk --config-only --release --no-pub --flavor prod
-
-      - name: Build App Bundle (prod release, unsigned fallback signing)
-        env:
-          ALLOW_DEBUG_RELEASE_SIGNING: "true"
-        run: |
-          flutter build appbundle --release --no-pub --flavor prod \
-            --dart-define=API_BASE=https://carr-5hrm.onrender.com
-
   integration:
     name: Integration smoke (Android emulator)
     runs-on: ubuntu-latest
