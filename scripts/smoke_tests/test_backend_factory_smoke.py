@@ -2410,6 +2410,254 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertFalse((_REPO_ROOT / "kk" / "legacy" / "app.py").is_file())
         self.assertFalse((_REPO_ROOT / "kk" / "admin_routes.py").is_file())
 
+    # ------------------------------------------------------------------
+    # C-11: price stored as Numeric(12, 2), not Float.
+    # ------------------------------------------------------------------
+
+    def _make_car(self, seller, **overrides):
+        defaults = dict(
+            brand="pricetest",
+            model="numeric",
+            year=2021,
+            mileage=100,
+            engine_type="gas",
+            transmission="auto",
+            drive_type="fwd",
+            condition="used",
+            body_type="sedan",
+            location="Erbil",
+            is_active=True,
+        )
+        defaults.update(overrides)
+        car = self._Car(seller_id=seller.id, **defaults)
+        self._db.session.add(car)
+        self._db.session.commit()
+        return car
+
+    def test_price_numeric_exact_values_no_float_noise(self):
+        """C-11 (A): Car.price is Numeric(12, 2) and round-trips exactly."""
+        from decimal import Decimal
+
+        candidates = [Decimal("14200000.00"), Decimal("0.01"), Decimal("999999.99")]
+        car_ids = []
+        with self.app.app_context():
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            for price in candidates:
+                car = self._make_car(seller, model=f"exact-{price}", price=price)
+                car_ids.append(car.id)
+
+            # Force a fresh read from the DB (not the in-memory Python object)
+            # so this genuinely exercises the column's round-trip, not just
+            # the value we assigned in Python.
+            self._db.session.expire_all()
+            for car_id, expected in zip(car_ids, candidates):
+                fetched = self._Car.query.get(car_id)
+                self.assertIsInstance(fetched.price, Decimal)
+                self.assertEqual(
+                    fetched.price,
+                    expected,
+                    f"expected exact {expected}, got {fetched.price} (float noise?)",
+                )
+
+    def test_price_json_response_is_number_not_string(self):
+        """C-11 (B): API JSON price stays a JSON number, e.g. 25000.0 (never a string), and never 500s."""
+        create = self.client.post(
+            "/api/cars",
+            headers=self._auth(self.seller_token),
+            json={
+                "brand": "pricetest",
+                "model": "jsonnumber",
+                "year": 2021,
+                "mileage": 500,
+                "price": 999999.99,
+                "location": "Erbil",
+            },
+        )
+        self.assertEqual(create.status_code, 201, create.data)
+        created_car = (create.get_json() or {}).get("car") or {}
+        created_price = created_car.get("price")
+        self.assertIsInstance(created_price, (int, float))
+        self.assertNotIsInstance(created_price, str)
+        self.assertEqual(created_price, 999999.99)
+        car_public = created_car.get("public_id") or created_car.get("id")
+        self.assertTrue(car_public)
+
+        fetched = self.client.get(f"/api/cars/{car_public}")
+        self.assertEqual(fetched.status_code, 200, fetched.data)
+        fetched_price = ((fetched.get_json() or {}).get("car") or {}).get("price")
+        self.assertIsInstance(fetched_price, (int, float))
+        self.assertNotIsInstance(fetched_price, str)
+        self.assertEqual(fetched_price, 999999.99)
+
+        listed = self.client.get("/api/cars?brand=pricetest&per_page=50")
+        self.assertEqual(listed.status_code, 200, listed.data)
+        rows = (listed.get_json() or {}).get("cars") or []
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertIsInstance(row.get("price"), (int, float))
+            self.assertNotIsInstance(row.get("price"), str)
+
+        facets = self.client.get("/api/filters/facets")
+        self.assertEqual(facets.status_code, 200, facets.data)
+        facets_body = facets.get_json() or {}
+        for key in ("price_min", "price_max"):
+            if key in facets_body and facets_body[key] is not None:
+                self.assertIsInstance(facets_body[key], (int, float))
+                self.assertNotIsInstance(facets_body[key], str)
+
+    def test_price_max_boundary_inclusive(self):
+        """C-11 (C) / AT-12: price_max filter must include a listing priced exactly at the boundary."""
+        from decimal import Decimal
+
+        with self.app.app_context():
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            car = self._make_car(
+                seller,
+                brand="pricetestboundary",
+                model="boundary",
+                price=Decimal("14200000.00"),
+            )
+            car_public = car.public_id
+
+        r = self.client.get("/api/cars?brand=pricetestboundary&price_max=14200000")
+        self.assertEqual(r.status_code, 200, r.data)
+        ids = [
+            c.get("id") or c.get("public_id")
+            for c in (r.get_json() or {}).get("cars") or []
+        ]
+        self.assertIn(car_public, ids)
+
+    def test_favorite_price_snapshot_and_price_drop_use_exact_decimal(self):
+        """C-11 (E, F): favorite price snapshot and price-drop rewrite stay exact Decimal."""
+        from decimal import Decimal
+
+        from kk.models import user_favorites as ufav_table
+
+        with self.app.app_context():
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            car = self._make_car(
+                seller,
+                brand="pricedroptest",
+                model="drop",
+                price=Decimal("12345.67"),
+            )
+            car_public = car.public_id
+            car_id = car.id
+
+        fav = self.client.post(
+            f"/api/cars/{car_public}/favorite",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(fav.status_code, 200, fav.data)
+        self.assertTrue((fav.get_json() or {}).get("is_favorited"))
+
+        def _snapshot():
+            with self.app.app_context():
+                viewer = self._User.query.filter_by(public_id=self.viewer_public).first()
+                row = self._db.session.execute(
+                    ufav_table.select().where(
+                        ufav_table.c.user_id == viewer.id,
+                        ufav_table.c.car_id == car_id,
+                    )
+                ).first()
+                self.assertIsNotNone(row)
+                return row.price_at_favorite
+
+        snapshot = _snapshot()
+        self.assertIsInstance(snapshot, Decimal)
+        self.assertEqual(snapshot, Decimal("12345.67"))
+
+        # Price drop: seller lowers the price via the real update endpoint
+        # (exercises old_price/new_price comparison + dispatch wiring).
+        update = self.client.put(
+            f"/api/cars/{car_public}",
+            headers=self._auth(self.seller_token),
+            json={"price": 11000.00},
+        )
+        self.assertEqual(update.status_code, 200, update.data)
+        updated_price = ((update.get_json() or {}).get("car") or {}).get("price")
+        self.assertEqual(updated_price, 11000.0)
+
+        # The test broker is an in-process "memory://" transport with no
+        # worker consuming it, so `.delay()` enqueues but never runs the
+        # task inline here (unlike production, where a Celery worker
+        # consumes it, or the real sync-fallback path when the broker is
+        # truly unreachable). Call `.run(...)` (the plain undecorated
+        # function Celery stores the task body as) rather than the task
+        # object itself: calling the task object goes through
+        # FlaskContextTask.__call__, which spins up a separate
+        # process-singleton Flask app/engine (see kk/tasks/celery_app.py) —
+        # unnecessary here and it would leak a second sqlite connection.
+        # `.run()` executes the exact same task body inside our own
+        # already-open `self.app` context.
+        from kk.tasks.alert_tasks import notify_price_drop_for_car
+
+        with self.app.app_context():
+            notify_price_drop_for_car.run(car_id, 12345.67, 11000.0)
+
+        dropped_snapshot = _snapshot()
+        self.assertIsInstance(dropped_snapshot, Decimal)
+        self.assertEqual(dropped_snapshot, Decimal("11000.00"))
+
+    def test_price_sorting_and_filtering_still_work(self):
+        """C-11 (G): price_asc/price_desc sort and min/max price filters are unaffected by the type change."""
+        from decimal import Decimal
+
+        with self.app.app_context():
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            cheap = self._make_car(
+                seller, brand="pricesorttest", model="cheap", price=Decimal("5000.00")
+            )
+            mid = self._make_car(
+                seller, brand="pricesorttest", model="mid", price=Decimal("15000.00")
+            )
+            costly = self._make_car(
+                seller, brand="pricesorttest", model="costly", price=Decimal("45000.00")
+            )
+            cheap_public, mid_public, costly_public = (
+                cheap.public_id,
+                mid.public_id,
+                costly.public_id,
+            )
+
+        asc = self.client.get("/api/cars?brand=pricesorttest&sort_by=price_asc&per_page=10")
+        self.assertEqual(asc.status_code, 200, asc.data)
+        asc_ids = [
+            c.get("id") or c.get("public_id") for c in (asc.get_json() or {}).get("cars") or []
+        ]
+        self.assertEqual(
+            [i for i in asc_ids if i in (cheap_public, mid_public, costly_public)],
+            [cheap_public, mid_public, costly_public],
+        )
+
+        desc = self.client.get("/api/cars?brand=pricesorttest&sort_by=price_desc&per_page=10")
+        self.assertEqual(desc.status_code, 200, desc.data)
+        desc_ids = [
+            c.get("id") or c.get("public_id") for c in (desc.get_json() or {}).get("cars") or []
+        ]
+        self.assertEqual(
+            [i for i in desc_ids if i in (cheap_public, mid_public, costly_public)],
+            [costly_public, mid_public, cheap_public],
+        )
+
+        ranged = self.client.get(
+            "/api/cars?brand=pricesorttest&min_price=10000&max_price=20000&per_page=10"
+        )
+        self.assertEqual(ranged.status_code, 200, ranged.data)
+        ranged_ids = [
+            c.get("id") or c.get("public_id")
+            for c in (ranged.get_json() or {}).get("cars") or []
+        ]
+        self.assertIn(mid_public, ranged_ids)
+        self.assertNotIn(cheap_public, ranged_ids)
+        self.assertNotIn(costly_public, ranged_ids)
+
+        admin_sorted = self.client.get(
+            "/api/admin/cars?sort=price_asc&per_page=50",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(admin_sorted.status_code, 200, admin_sorted.data)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

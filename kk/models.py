@@ -58,7 +58,9 @@ user_favorites = db.Table('user_favorites',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('car_id', db.Integer, db.ForeignKey('car.id'), primary_key=True),
     db.Column('created_at', db.DateTime, default=utcnow),
-    db.Column('price_at_favorite', db.Float, nullable=True),
+    # C-11: exact money storage (was Float). Nullable — only set once a car
+    # is favorited (see kk/routes/favorites.py).
+    db.Column('price_at_favorite', db.Numeric(12, 2), nullable=True),
 )
 
 user_viewed_listings = db.Table('user_viewed_listings',
@@ -549,7 +551,9 @@ class Car(db.Model):
     status = db.Column(db.String(20), nullable=False, default='active', index=True)
     
     # Pricing and location
-    price = db.Column(db.Float, nullable=False, index=True)
+    # C-11: exact money storage (was Float/IEEE-754 double, which cannot
+    # represent common decimal values exactly and drifts on round-trips).
+    price = db.Column(db.Numeric(12, 2), nullable=False, index=True)
     currency = db.Column(db.String(3), default='USD')
     location = db.Column(db.String(100), nullable=False, index=True)
     seating = db.Column(db.Integer, nullable=False, default=5)
@@ -621,7 +625,10 @@ class Car(db.Model):
             'title_status': getattr(self, "title_status", None),
             'damaged_parts': self.damaged_parts,
             'status': getattr(self, "status", None),
-            'price': self.price,
+            # C-11: price is stored as Numeric/Decimal; cast to float so the
+            # JSON wire type stays a number (e.g. 25000.0), not a string.
+            # jsonify() cannot serialize decimal.Decimal directly.
+            'price': float(self.price) if self.price is not None else None,
             'currency': self.currency,
             'location': self.location,
             'seating': getattr(self, "seating", None),
@@ -779,7 +786,8 @@ class ListingAnalytics(db.Model):
             'brand': self.car.brand if self.car else '',
             'model': self.car.model if self.car else '',
             'year': self.car.year if self.car else 0,
-            'price': self.car.price if self.car else 0,
+            # C-11: cast Decimal -> float for JSON serialization (see Car.to_dict).
+            'price': float(self.car.price) if self.car and self.car.price is not None else 0,
             'image_url': first_image_rel_path(self.car),
             'views': self.views,
             'messages': self.messages,

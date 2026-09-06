@@ -4,6 +4,7 @@ Background (or inline) tasks for saved-search and price-drop push notifications.
 from __future__ import annotations
 
 import logging
+from decimal import Decimal, InvalidOperation
 
 from ..listing_filters import car_matches_filters, summarize_filters
 from ..models import Car, Notification, SavedSearch, SavedSearchAlert, User, db, user_favorites
@@ -142,13 +143,21 @@ def notify_price_drop_for_car(car_id: int, old_price: float, new_price: float) -
         notified += 1
 
         try:
+            # C-11: `new_price` is a plain float (Celery task args must stay
+            # JSON-simple); convert via str() -> Decimal rather than binding
+            # the raw float onto the Numeric(12, 2) column, to avoid a
+            # float8->numeric assignment-cast round-trip.
+            try:
+                new_price_decimal = Decimal(str(new_price)).quantize(Decimal("0.01"))
+            except InvalidOperation:
+                new_price_decimal = Decimal(str(new_price))
             db.session.execute(
                 sql_update(user_favorites)
                 .where(
                     user_favorites.c.user_id == user_id,
                     user_favorites.c.car_id == car.id,
                 )
-                .values(price_at_favorite=new_price)
+                .values(price_at_favorite=new_price_decimal)
             )
             db.session.commit()
         except Exception:

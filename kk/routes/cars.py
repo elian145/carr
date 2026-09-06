@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 from datetime import datetime
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required, verify_jwt_in_request
@@ -62,6 +63,27 @@ _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
 def _normalize_vin(val) -> str | None:
     v = (val if isinstance(val, str) else str(val or "")).strip().upper()
     return v if v else None
+
+
+def _price_to_decimal(val, default: Decimal | None = None) -> Decimal | None:
+    """Parse a JSON price value into an exact 2-decimal-place Decimal (C-11).
+
+    Goes through ``str(val)`` rather than binding a raw Python ``float`` onto
+    the ``Numeric(12, 2)`` column: PostgreSQL applies an implicit
+    float8->numeric assignment cast for bare floats, which can reintroduce
+    IEEE-754 binary noise (e.g. 12000.000000000002). Parsing the value's
+    string form into ``Decimal`` first avoids that round-trip entirely.
+    """
+    if val is None or val == "":
+        return default
+    try:
+        d = Decimal(str(val))
+    except (InvalidOperation, ValueError, TypeError):
+        return default
+    try:
+        return d.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except InvalidOperation:
+        return default
 
 
 def _listing_db_error_response(exc, *, action: str):
@@ -969,7 +991,9 @@ def create_car():
         drive_type = _s(raw.get("drive_type"), "fwd")
         condition = _s(raw.get("condition"), "used")
         body_type = _s(raw.get("body_type"), "sedan")
-        price = _f(raw.get("price"), 0.0)
+        # C-11: parse into Decimal (not float) before it ever reaches the
+        # Numeric(12, 2) column — see _price_to_decimal.
+        price = _price_to_decimal(raw.get("price"), Decimal("0.00"))
         location = _s(raw.get("location"), "")
         description = _s(raw.get("description"), None) or None
         color = _s(raw.get("color"), "white")
@@ -1157,7 +1181,12 @@ def update_car(car_id: str):
         if "mileage" in data:
             data["mileage"] = _i(data.get("mileage"), car.mileage or 0)
         if "price" in data:
-            data["price"] = _f(data.get("price"), car.price or 0.0)
+            # C-11: parse into Decimal (not float) before assigning onto the
+            # Numeric(12, 2) column — see _price_to_decimal.
+            data["price"] = _price_to_decimal(
+                data.get("price"),
+                car.price if car.price is not None else Decimal("0.00"),
+            )
         if "condition" in data:
             data["condition"] = _s(data.get("condition"), car.condition or "used").lower()
         if "transmission" in data:
@@ -1310,7 +1339,9 @@ def update_car(car_id: str):
                 "brand": car.brand,
                 "model": car.model,
                 "year": car.year,
-                "price": car.price,
+                # C-11: cast Decimal -> float; jsonify() cannot serialize
+                # decimal.Decimal directly (see Car.to_dict).
+                "price": float(car.price) if car.price is not None else None,
             }
         return jsonify(
             {"message": "Car listing updated successfully", "car": car_payload}

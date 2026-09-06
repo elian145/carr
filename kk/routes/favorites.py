@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import update as sql_update
@@ -100,7 +102,15 @@ def toggle_favorite(car_id):
                     user_favorites.c.user_id == current_user.id,
                     user_favorites.c.car_id == car.id,
                 )
-                .values(price_at_favorite=float(car.price or 0), created_at=utcnow())
+                # C-11: `car.price` is already an exact Decimal from the ORM;
+                # do not round-trip it through float before persisting into
+                # the Numeric(12, 2) price_at_favorite column.
+                .values(
+                    price_at_favorite=car.price
+                    if car.price is not None
+                    else Decimal("0.00"),
+                    created_at=utcnow(),
+                )
             )
             action = "added"
 
