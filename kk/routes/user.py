@@ -1091,9 +1091,13 @@ def dealer_profile(dealer_public_id: str):
             "featured_listings": sum(1 for c in listing_dicts if c.get("is_featured") is True),
         }
 
-        dealer_data = dealer.to_dict()
+        # H-05: this is the intentional public dealer-location feature (map +
+        # "Open in Google Maps"), so include_map_location=True is required
+        # here — unlike the generic public User.to_dict()/DealerProfile.to_dict()
+        # shape embedded in listing/favorites seller payloads.
+        dealer_data = dealer.to_dict(include_map_location=True)
         if dealer.dealer_profile:
-            dealer_data.update(dealer.dealer_profile.to_dict())
+            dealer_data.update(dealer.dealer_profile.to_dict(include_map_location=True))
             dealer_data["id"] = dealer.public_id
             dealer_data["account_type"] = "dealer"
         # Public contact uses verified dealership emails only (not account login email).

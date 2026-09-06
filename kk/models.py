@@ -204,7 +204,7 @@ class User(db.Model):
         refresh_token = create_refresh_token(identity=self.public_id)
         return access_token, refresh_token
     
-    def to_dict(self, include_private=False):
+    def to_dict(self, include_private=False, include_map_location=False):
         """Convert user to dictionary"""
         phones = getattr(self, "dealership_phones", None)
         if isinstance(phones, list):
@@ -264,8 +264,6 @@ class User(db.Model):
             'dealership_location': self.dealership_location,
             'dealership_description': self.dealership_description,
             'dealership_cover_picture': self.dealership_cover_picture,
-            'dealership_latitude': self.dealership_latitude,
-            'dealership_longitude': self.dealership_longitude,
             'dealership_opening_hours': self.dealership_opening_hours,
             'dealership_socials': _public_dealership_socials(
                 getattr(self, "dealership_socials", None)
@@ -273,6 +271,15 @@ class User(db.Model):
             'is_featured_dealer': bool(getattr(self, "is_featured_dealer", False)),
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+        # H-05: exact GPS only for the owner/admin (include_private) or the
+        # explicit public dealer-profile map feature (include_map_location).
+        # Not part of the generic public shape — do not add it to the base
+        # `data` above, since that dict is embedded in every listing's
+        # `seller` object (car/favorites feeds) where a map pin is not needed.
+        if include_private or include_map_location:
+            data['dealership_latitude'] = self.dealership_latitude
+            data['dealership_longitude'] = self.dealership_longitude
 
         if include_private:
             data.update({
@@ -445,7 +452,7 @@ class DealerProfile(db.Model):
 
     user = db.relationship("User", back_populates="dealer_profile")
 
-    def to_dict(self, include_private=False):
+    def to_dict(self, include_private=False, include_map_location=False):
         emails = self.dealership_emails or []
         if not isinstance(emails, list):
             emails = []
@@ -462,14 +469,17 @@ class DealerProfile(db.Model):
             "dealership_location": self.dealership_location,
             "dealership_description": self.dealership_description,
             "dealership_cover_picture": self.dealership_cover_picture,
-            "dealership_latitude": self.dealership_latitude,
-            "dealership_longitude": self.dealership_longitude,
             "dealership_opening_hours": self.dealership_opening_hours,
             "dealership_socials": _public_dealership_socials(self.dealership_socials),
             "is_featured_dealer": bool(self.is_featured),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+        # H-05: same rule as User.to_dict() — exact GPS only for owner/admin
+        # or the explicit public dealer-profile map feature.
+        if include_private or include_map_location:
+            data["dealership_latitude"] = self.dealership_latitude
+            data["dealership_longitude"] = self.dealership_longitude
         if include_private:
             data["dealership_emails"] = emails_out
             data["dealership_verified_emails"] = [
