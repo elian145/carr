@@ -1055,11 +1055,16 @@ def dealer_profile(dealer_public_id: str):
             return jsonify({"message": "Dealer id is required"}), 400
 
         dealer = User.query.filter_by(public_id=pid).first()
-        if not dealer:
+        if (
+            not dealer
+            or (dealer.account_type or "").strip().lower() != "dealer"
+            or (dealer.dealer_status or "").strip().lower() != "approved"
+            or not dealer.is_active
+        ):
+            # Same 404 for missing, unapproved, pending, rejected, and
+            # deactivated dealers -- never distinguish "exists but not
+            # public yet" from "doesn't exist" on this public route.
             return jsonify({"message": "Dealer not found"}), 404
-
-        if (dealer.account_type or "").strip().lower() != "dealer":
-            return jsonify({"message": "This seller is not a dealer"}), 400
 
         from ..listing_visibility import public_listings_filter
 
@@ -1091,7 +1096,6 @@ def dealer_profile(dealer_public_id: str):
             dealer_data.update(dealer.dealer_profile.to_dict())
             dealer_data["id"] = dealer.public_id
             dealer_data["account_type"] = "dealer"
-            dealer_data["dealer_status"] = "approved"
         # Public contact uses verified dealership emails only (not account login email).
         # dealer.to_dict()/dealer_profile.to_dict() intentionally omit raw
         # dealership_emails from their public (include_private=False) shape, so the

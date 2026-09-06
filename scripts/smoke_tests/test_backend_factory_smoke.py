@@ -812,6 +812,186 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("listings", body)
         self.assertIn("stats", body)
 
+    def test_dealer_profile_hides_pending_dealer(self):
+        """H-04: a dealer whose application is still pending must not be
+        publicly visible via the dealer-profile route (404, not their data)."""
+        with self.app.app_context():
+            dealer = self._User(
+                username="dealer_h04_pending",
+                phone_number="07000000101",
+                first_name="P",
+                last_name="D",
+                email="dealer_h04_pending@test.example",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                account_type="user",
+                dealer_status="pending",
+                dealership_name="Pending Dealer Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_pending",
+            )
+            dealer.set_password("Aa123456")
+            self._db.session.add(dealer)
+            self._db.session.commit()
+            dealer_public = dealer.public_id
+
+        r = self.client.get(f"/api/dealers/{dealer_public}")
+        self.assertEqual(r.status_code, 404, r.data)
+        body = r.get_json() or {}
+        self.assertNotIn("Pending Dealer Motors", str(body))
+
+    def test_dealer_profile_hides_rejected_dealer(self):
+        """H-04: a dealer whose application was rejected must not be
+        publicly visible via the dealer-profile route."""
+        with self.app.app_context():
+            dealer = self._User(
+                username="dealer_h04_rejected",
+                phone_number="07000000102",
+                first_name="R",
+                last_name="D",
+                email="dealer_h04_rejected@test.example",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                account_type="user",
+                dealer_status="rejected",
+                dealership_name="Rejected Dealer Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_rejected",
+            )
+            dealer.set_password("Aa123456")
+            self._db.session.add(dealer)
+            self._db.session.commit()
+            dealer_public = dealer.public_id
+
+        r = self.client.get(f"/api/dealers/{dealer_public}")
+        self.assertEqual(r.status_code, 404, r.data)
+        body = r.get_json() or {}
+        self.assertNotIn("Rejected Dealer Motors", str(body))
+
+    def test_dealer_profile_hides_inactive_approved_dealer(self):
+        """H-04: an approved dealer whose account has been deactivated
+        (admin suspension) must not remain publicly visible."""
+        with self.app.app_context():
+            dealer = self._User(
+                username="dealer_h04_inactive",
+                phone_number="07000000103",
+                first_name="I",
+                last_name="D",
+                email="dealer_h04_inactive@test.example",
+                is_active=False,
+                is_verified=True,
+                phone_verified=True,
+                account_type="dealer",
+                dealer_status="approved",
+                dealership_name="Suspended Dealer Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_inactive",
+            )
+            dealer.set_password("Aa123456")
+            self._db.session.add(dealer)
+            self._db.session.commit()
+            dealer_public = dealer.public_id
+
+        r = self.client.get(f"/api/dealers/{dealer_public}")
+        self.assertEqual(r.status_code, 404, r.data)
+        body = r.get_json() or {}
+        self.assertNotIn("Suspended Dealer Motors", str(body))
+
+    def test_dealer_profile_unknown_id_matches_unapproved_response(self):
+        """A nonexistent dealer id and an unapproved dealer id must be
+        indistinguishable (both 404 'Dealer not found'), so the endpoint
+        can't be used to enumerate pending/rejected/suspended accounts."""
+        r = self.client.get("/api/dealers/pd_h04_does_not_exist")
+        self.assertEqual(r.status_code, 404, r.data)
+        body = r.get_json() or {}
+        self.assertEqual(body.get("message"), "Dealer not found")
+
+    def test_public_dealers_list_excludes_unapproved_and_inactive(self):
+        """H-04: GET /api/dealers must only ever return approved + active
+        dealers, even when pending/rejected/inactive dealer rows exist."""
+        with self.app.app_context():
+            approved = self._User(
+                username="dealer_h04_list_ok",
+                phone_number="07000000104",
+                first_name="A",
+                last_name="D",
+                email="dealer_h04_list_ok@test.example",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                account_type="dealer",
+                dealer_status="approved",
+                dealership_name="Visible Dealer Directory Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_list_ok",
+            )
+            approved.set_password("Aa123456")
+
+            pending = self._User(
+                username="dealer_h04_list_pending",
+                phone_number="07000000105",
+                first_name="P",
+                last_name="D",
+                email="dealer_h04_list_pending@test.example",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                account_type="user",
+                dealer_status="pending",
+                dealership_name="Hidden Pending Directory Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_list_pending",
+            )
+            pending.set_password("Aa123456")
+
+            rejected = self._User(
+                username="dealer_h04_list_rejected",
+                phone_number="07000000106",
+                first_name="R",
+                last_name="D",
+                email="dealer_h04_list_rejected@test.example",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                account_type="user",
+                dealer_status="rejected",
+                dealership_name="Hidden Rejected Directory Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_list_rejected",
+            )
+            rejected.set_password("Aa123456")
+
+            inactive = self._User(
+                username="dealer_h04_list_inactive",
+                phone_number="07000000107",
+                first_name="I",
+                last_name="D",
+                email="dealer_h04_list_inactive@test.example",
+                is_active=False,
+                is_verified=True,
+                phone_verified=True,
+                account_type="dealer",
+                dealer_status="approved",
+                dealership_name="Hidden Inactive Directory Motors",
+                dealership_location="Erbil",
+                public_id="pd_h04_list_inactive",
+            )
+            inactive.set_password("Aa123456")
+
+            self._db.session.add_all([approved, pending, rejected, inactive])
+            self._db.session.commit()
+
+        r = self.client.get("/api/dealers?page=1&per_page=50")
+        self.assertEqual(r.status_code, 200, r.data)
+        body = r.get_json() or {}
+        names = {d.get("dealership_name") for d in (body.get("dealers") or [])}
+        self.assertIn("Visible Dealer Directory Motors", names)
+        self.assertNotIn("Hidden Pending Directory Motors", names)
+        self.assertNotIn("Hidden Rejected Directory Motors", names)
+        self.assertNotIn("Hidden Inactive Directory Motors", names)
+
     def test_verify_email_with_token(self):
         with self.app.app_context():
             from kk.auth import create_email_verification_token
