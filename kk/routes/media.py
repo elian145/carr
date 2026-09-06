@@ -40,6 +40,33 @@ def _r2_ready_for_public_object_urls() -> bool:
     return _r2_configured() and bool(_r2_public_base())
 
 
+def _presigned_upload_enabled() -> bool:
+    """H-03: gate for the direct-to-R2 presigned-PUT upload flow.
+
+    ``r2_sign_upload()`` hands an authenticated client a presigned PUT URL
+    and never sees the uploaded bytes itself — unlike every other upload
+    path in this file (``/api/cars/<id>/images``, ``/api/cars/<id>/videos``,
+    ``/api/process-car-images``), it cannot run the magic-byte check in
+    ``kk/security.py::sniff_bytes`` because the server never receives the
+    file body.
+
+    As of the H-03 follow-up audit, ``signR2ImageUpload()`` in the Flutter
+    client (``lib/services/api/api_listings.dart``) has **no caller** — the
+    shipped app always uploads listing media via the validated multipart
+    endpoints above. This flow is therefore disabled by default in every
+    environment (including production) until either (a) a caller is added
+    *and* attach-time content validation is implemented for it, or (b) it is
+    removed outright. Re-enable only via the explicit env var below, and
+    only after re-reviewing this decision.
+    """
+    return (os.environ.get("R2_PRESIGNED_UPLOAD_ENABLED") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
 def _video_content_type_for_ext(ext: str) -> str:
     ext = (ext or "").lower()
     if not ext.startswith("."):
@@ -411,6 +438,14 @@ def r2_sign_upload():
             return verify_err
     except Exception:
         return jsonify({"message": "Unauthorized"}), 401
+
+    # H-03: disabled by default everywhere (see _presigned_upload_enabled
+    # docstring) — this path bypasses the magic-byte content validation that
+    # every other upload endpoint performs, and currently has no caller in
+    # the shipped app. 404 (not 503) so the endpoint's existence isn't
+    # distinguishable from "not configured" vs. "deliberately unavailable".
+    if not _presigned_upload_enabled():
+        return jsonify({"message": "Not found"}), 404
 
     if not _r2_configured():
         return jsonify({"message": "R2 storage is not configured"}), 503

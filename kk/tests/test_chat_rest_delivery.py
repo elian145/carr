@@ -193,13 +193,21 @@ def _send_text(client, token, car_id, receiver_id, content="hello there"):
     )
 
 
+# H-03: chat attachment uploads now magic-byte-sniff the actual body against
+# the claimed extension (see kk/security.py::sniff_bytes), so these fixtures
+# use real container signatures rather than arbitrary placeholder bytes.
+_FAKE_JPEG_BYTES = b"\xff\xd8\xff\xe0fake-jpeg-bytes"
+_FAKE_MP4_BYTES = b"\x00\x00\x00\x18ftypmp42fake-mp4-bytes"
+_FAKE_M4A_BYTES = b"\x00\x00\x00\x18ftypM4A fake-m4a-bytes"
+
+
 def _send_image(client, token, car_id, receiver_id):
     return client.post(
         f"/api/chat/{car_id}/send_image",
         headers=_auth(token),
         data={
             "receiver_id": receiver_id,
-            "file": (io.BytesIO(b"fake-jpeg-bytes"), "photo.jpg"),
+            "file": (io.BytesIO(_FAKE_JPEG_BYTES), "photo.jpg"),
         },
         content_type="multipart/form-data",
     )
@@ -211,7 +219,7 @@ def _send_video(client, token, car_id, receiver_id):
         headers=_auth(token),
         data={
             "receiver_id": receiver_id,
-            "file": (io.BytesIO(b"fake-mp4-bytes"), "clip.mp4"),
+            "file": (io.BytesIO(_FAKE_MP4_BYTES), "clip.mp4"),
         },
         content_type="multipart/form-data",
     )
@@ -223,7 +231,7 @@ def _send_audio(client, token, car_id, receiver_id):
         headers=_auth(token),
         data={
             "receiver_id": receiver_id,
-            "file": (io.BytesIO(b"fake-m4a-bytes"), "voice.m4a"),
+            "file": (io.BytesIO(_FAKE_M4A_BYTES), "voice.m4a"),
         },
         content_type="multipart/form-data",
     )
@@ -236,8 +244,8 @@ def _send_media_group(client, token, car_id, receiver_id):
         data={
             "receiver_id": receiver_id,
             "attachments": [
-                (io.BytesIO(b"fake-jpeg-bytes"), "a.jpg"),
-                (io.BytesIO(b"fake-jpeg-bytes"), "b.jpg"),
+                (io.BytesIO(_FAKE_JPEG_BYTES), "a.jpg"),
+                (io.BytesIO(_FAKE_JPEG_BYTES), "b.jpg"),
             ],
         },
         content_type="multipart/form-data",

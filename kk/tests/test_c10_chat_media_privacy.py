@@ -484,7 +484,9 @@ class TestResolveChatAttachmentsList:
 
 
 class TestUploadChatAttachmentPrivateBucket:
-    def _file(self, name="photo.jpg", content=b"fake-jpeg-bytes"):
+    # H-03: real JPEG magic bytes (0xFFD8FF) so _upload_chat_attachment()'s
+    # content-sniffing check (added post-C-10) doesn't reject this fixture.
+    def _file(self, name="photo.jpg", content=b"\xff\xd8\xff\xe0fake-jpeg-bytes"):
         from werkzeug.datastructures import FileStorage
 
         return FileStorage(stream=io.BytesIO(content), filename=name)
@@ -695,7 +697,14 @@ def _make_car(app_ctx, seller_public_id: str) -> str:
         return car.public_id
 
 
-def _send_image(client, token, car_id, receiver_id, content=b"fake-jpeg-bytes", name="photo.jpg"):
+def _send_image(
+    client,
+    token,
+    car_id,
+    receiver_id,
+    content=b"\xff\xd8\xff\xe0fake-jpeg-bytes",  # H-03: real JPEG magic bytes
+    name="photo.jpg",
+):
     return client.post(
         f"/api/chat/{car_id}/send_image",
         headers=_auth(token),
@@ -962,10 +971,12 @@ class TestC10EndToEndAuthorization:
         _put_mock, presign_mock = _mock_r2_chat_ops
         presign_mock.reset_mock()
 
+        # H-03: real JPEG magic bytes (0xFFD8FF) so the content-sniffing
+        # check added post-C-10 doesn't reject these fixtures.
         files = [
-            (io.BytesIO(b"fake-jpeg-1"), "a.jpg"),
-            (io.BytesIO(b"fake-jpeg-2"), "b.jpg"),
-            (io.BytesIO(b"fake-jpeg-3"), "c.jpg"),
+            (io.BytesIO(b"\xff\xd8\xff\xe0fake-jpeg-1"), "a.jpg"),
+            (io.BytesIO(b"\xff\xd8\xff\xe0fake-jpeg-2"), "b.jpg"),
+            (io.BytesIO(b"\xff\xd8\xff\xe0fake-jpeg-3"), "c.jpg"),
         ]
         with patch("kk.chat_realtime.send_push"):
             resp = client.post(
@@ -1180,10 +1191,12 @@ class TestEditChatMessagePositionalAttachmentMatching:
             json={"content": "hi", "receiver_id": seller_public},
         )
 
+        # H-03: real JPEG magic bytes (0xFFD8FF) so the content-sniffing
+        # check added post-C-10 doesn't reject these fixtures.
         files = [
-            (io.BytesIO(b"fake-jpeg-1"), "a.jpg"),
-            (io.BytesIO(b"fake-jpeg-2"), "b.jpg"),
-            (io.BytesIO(b"fake-jpeg-3"), "c.jpg"),
+            (io.BytesIO(b"\xff\xd8\xff\xe0fake-jpeg-1"), "a.jpg"),
+            (io.BytesIO(b"\xff\xd8\xff\xe0fake-jpeg-2"), "b.jpg"),
+            (io.BytesIO(b"\xff\xd8\xff\xe0fake-jpeg-3"), "c.jpg"),
         ]
         send_resp = client.post(
             f"/api/chat/{car_public}/send_media_group",

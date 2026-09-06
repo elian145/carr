@@ -210,6 +210,164 @@ def validate_input_sanitization(data):
         return _clean_str(data, secret=False)
     return data
 
+def _is_jpeg(h: bytes) -> bool:
+    return len(h) >= 3 and h[:3] == b"\xff\xd8\xff"
+
+
+def _is_png(h: bytes) -> bool:
+    return len(h) >= 8 and h[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def _is_gif(h: bytes) -> bool:
+    return len(h) >= 6 and (h[:6] == b"GIF87a" or h[:6] == b"GIF89a")
+
+
+def _is_webp(h: bytes) -> bool:
+    return len(h) >= 12 and h[:4] == b"RIFF" and h[8:12] == b"WEBP"
+
+
+def _ftyp_brand(h: bytes) -> str:
+    # ISO-BMFF brand in ftyp box: size(4) + 'ftyp'(4) + major_brand(4)
+    if len(h) >= 12 and h[4:8] == b"ftyp":
+        try:
+            return h[8:12].decode("ascii", errors="ignore")
+        except Exception:
+            return ""
+    return ""
+
+
+def _is_heic_or_heif(h: bytes) -> bool:
+    b = _ftyp_brand(h)
+    return b in ("heic", "heix", "hevc", "hevx", "mif1", "msf1", "heif")
+
+
+def _is_mp4(h: bytes) -> bool:
+    b = _ftyp_brand(h)
+    return b in ("isom", "iso2", "mp41", "mp42", "avc1", "dash")
+
+
+def _is_mov(h: bytes) -> bool:
+    return _ftyp_brand(h) == "qt  "
+
+
+def _is_avi(h: bytes) -> bool:
+    return len(h) >= 12 and h[:4] == b"RIFF" and h[8:12] == b"AVI "
+
+
+def _is_ebml(h: bytes) -> bool:
+    # WebM/MKV are EBML containers.
+    return len(h) >= 4 and h[:4] == b"\x1a\x45\xdf\xa3"
+
+
+def _is_wav(h: bytes) -> bool:
+    return len(h) >= 12 and h[:4] == b"RIFF" and h[8:12] == b"WAVE"
+
+
+def _is_ogg(h: bytes) -> bool:
+    return len(h) >= 4 and h[:4] == b"OggS"
+
+
+def _is_mp3(h: bytes) -> bool:
+    if len(h) >= 3 and h[:3] == b"ID3":
+        return True
+    # Raw MPEG audio frame sync: 11 set bits (0xFFE.....) covers layers used by mp3.
+    return len(h) >= 2 and h[0] == 0xFF and (h[1] & 0xE0) == 0xE0
+
+
+def _is_amr(h: bytes) -> bool:
+    # AMR-NB: "#!AMR\n"; AMR-WB: "#!AMR-WB\n".
+    return len(h) >= 5 and h[:5] == b"#!AMR"
+
+
+def _is_m4a_or_aac(h: bytes) -> bool:
+    brand = _ftyp_brand(h)
+    if brand in ("M4A ", "M4B ", "mp42", "isom", "iso2", "mp41"):
+        return True
+    # Raw ADTS AAC frame sync (12 set bits: 0xFFF...).
+    return len(h) >= 2 and h[0] == 0xFF and (h[1] & 0xF6) == 0xF0
+
+
+def _is_3gp(h: bytes) -> bool:
+    brand = _ftyp_brand(h)
+    return brand.startswith("3gp") or brand.startswith("3g2")
+
+
+def sniff_bytes(header: bytes, ext: str) -> bool:
+    """
+    Return True if ``header`` (the first bytes of a file) matches the
+    expected magic-byte signature for ``ext``.
+
+    ``ext`` may be given with or without a leading dot (e.g. ``"jpg"`` or
+    ``".jpg"``) and is compared case-insensitively.
+
+    Extracted from ``validate_file_upload_security()`` (H-03 follow-up) so
+    upload paths that never go through a Werkzeug ``FileStorage`` — e.g.
+    chat attachments, which read the whole body into memory before handing
+    it to R2 — can reuse the exact same signature checks used by the
+    already-validated listing-media multipart uploads.
+
+    Behavior-preserving for every extension the original inline check
+    covered (image + video): unrecognized extensions default to ``True``
+    (not rejected — size/extension checks elsewhere still apply), and image
+    extensions fall back to "any known image signature" to tolerate mobile
+    pipelines that transcode HEIC -> JPEG bytes but keep the original
+    filename extension.
+
+    Adds new coverage (not previously checked anywhere) for the audio
+    extensions accepted by chat voice messages: m4a/aac, mp3, wav, ogg,
+    amr, 3gp. webm audio reuses the existing EBML (WebM/MKV) container
+    check, since it's the same container format as webm video.
+    """
+    ext = (ext or "").strip().lower().lstrip(".")
+
+    ok = True
+    is_any_known_image = (
+        _is_jpeg(header)
+        or _is_png(header)
+        or _is_gif(header)
+        or _is_webp(header)
+        or _is_heic_or_heif(header)
+    )
+    if ext in ("jpg", "jpeg"):
+        ok = _is_jpeg(header)
+    elif ext == "png":
+        ok = _is_png(header)
+    elif ext == "gif":
+        ok = _is_gif(header)
+    elif ext == "webp":
+        ok = _is_webp(header)
+    elif ext in ("heic", "heif"):
+        ok = _is_heic_or_heif(header)
+    elif ext == "mp4":
+        ok = _is_mp4(header)
+    elif ext == "mov":
+        ok = _is_mov(header)
+    elif ext == "avi":
+        ok = _is_avi(header)
+    elif ext in ("mkv", "webm"):
+        ok = _is_ebml(header)
+    elif ext == "wav":
+        ok = _is_wav(header)
+    elif ext == "ogg":
+        ok = _is_ogg(header)
+    elif ext == "mp3":
+        ok = _is_mp3(header)
+    elif ext == "amr":
+        ok = _is_amr(header)
+    elif ext in ("m4a", "aac"):
+        ok = _is_m4a_or_aac(header)
+    elif ext == "3gp":
+        ok = _is_3gp(header)
+
+    # Mobile/OS pipelines sometimes transcode images but keep the original
+    # file extension (e.g. HEIC -> JPEG bytes). Accept any known image
+    # binary for image extensions while still rejecting non-image payloads.
+    if not ok and ext in ("jpg", "jpeg", "png", "gif", "webp", "heic", "heif"):
+        ok = is_any_known_image
+
+    return ok
+
+
 def validate_file_upload_security(file, allowed_extensions=None, max_size_mb=10):
     """
     Enhanced file upload security validation
@@ -258,79 +416,7 @@ def validate_file_upload_security(file, allowed_extensions=None, max_size_mb=10)
                 except Exception:
                     pass
 
-        def _is_jpeg(h: bytes) -> bool:
-            return len(h) >= 3 and h[:3] == b"\xff\xd8\xff"
-
-        def _is_png(h: bytes) -> bool:
-            return len(h) >= 8 and h[:8] == b"\x89PNG\r\n\x1a\n"
-
-        def _is_gif(h: bytes) -> bool:
-            return len(h) >= 6 and (h[:6] == b"GIF87a" or h[:6] == b"GIF89a")
-
-        def _is_webp(h: bytes) -> bool:
-            return len(h) >= 12 and h[:4] == b"RIFF" and h[8:12] == b"WEBP"
-
-        def _ftyp_brand(h: bytes) -> str:
-            # ISO-BMFF brand in ftyp box: size(4) + 'ftyp'(4) + major_brand(4)
-            if len(h) >= 12 and h[4:8] == b"ftyp":
-                try:
-                    return h[8:12].decode("ascii", errors="ignore")
-                except Exception:
-                    return ""
-            return ""
-
-        def _is_heic_or_heif(h: bytes) -> bool:
-            b = _ftyp_brand(h)
-            return b in ("heic", "heix", "hevc", "hevx", "mif1", "msf1", "heif")
-
-        def _is_mp4(h: bytes) -> bool:
-            b = _ftyp_brand(h)
-            return b in ("isom", "iso2", "mp41", "mp42", "avc1", "dash")
-
-        def _is_mov(h: bytes) -> bool:
-            return _ftyp_brand(h) == "qt  "
-
-        def _is_avi(h: bytes) -> bool:
-            return len(h) >= 12 and h[:4] == b"RIFF" and h[8:12] == b"AVI "
-
-        def _is_ebml(h: bytes) -> bool:
-            # WebM/MKV are EBML containers.
-            return len(h) >= 4 and h[:4] == b"\x1a\x45\xdf\xa3"
-
-        ok = True
-        is_any_known_image = (
-            _is_jpeg(header)
-            or _is_png(header)
-            or _is_gif(header)
-            or _is_webp(header)
-            or _is_heic_or_heif(header)
-        )
-        if ext in ("jpg", "jpeg"):
-            ok = _is_jpeg(header)
-        elif ext == "png":
-            ok = _is_png(header)
-        elif ext == "gif":
-            ok = _is_gif(header)
-        elif ext == "webp":
-            ok = _is_webp(header)
-        elif ext in ("heic", "heif"):
-            ok = _is_heic_or_heif(header)
-        elif ext == "mp4":
-            ok = _is_mp4(header)
-        elif ext == "mov":
-            ok = _is_mov(header)
-        elif ext == "avi":
-            ok = _is_avi(header)
-        elif ext in ("mkv", "webm"):
-            ok = _is_ebml(header)
-
-        # Mobile/OS pipelines sometimes transcode images but keep the original
-        # file extension (e.g. HEIC -> JPEG bytes). Accept any known image
-        # binary for image extensions while still rejecting non-image payloads.
-        if not ok and ext in ("jpg", "jpeg", "png", "gif", "webp", "heic", "heif"):
-            ok = is_any_known_image
-
-        if not ok:
+        if not sniff_bytes(header, ext):
             return False, "File content does not match its extension"
     except Exception:
         # Do not block uploads if sniffing fails unexpectedly; size/ext checks still apply.

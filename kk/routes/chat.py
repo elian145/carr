@@ -20,7 +20,7 @@ from ..chat_realtime import (
 )
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
-from ..security import rate_limit, validate_input_sanitization
+from ..security import rate_limit, sniff_bytes, validate_input_sanitization
 from ..time_utils import utcnow
 from .media import _pick_primary_listing_url
 
@@ -78,10 +78,37 @@ def _upload_chat_attachment(file_storage, *, allowed_extensions: set[str], subdi
     Falls back to local disk (unchanged pre-C-10 behavior, still returned as
     a "/static/..." path) only when the private chat bucket isn't configured
     (e.g. local dev without R2_CHAT_* set).
+
+    H-03: unlike the listing-media multipart uploads (`/api/cars/<id>/images`,
+    `/api/cars/<id>/videos`), this path previously stored whatever bytes were
+    submitted under the claimed extension with no content check at all. It
+    now magic-byte-sniffs the actual body against the extension (via the
+    same `sniff_bytes()` used by `validate_file_upload_security()`) before
+    ever writing to R2 or local disk, so a file renamed to `.jpg`/`.mp4`/
+    `.m4a` etc. whose content does not match is rejected up front.
     """
     ext = os.path.splitext(file_storage.filename or "")[1].lower()
     if ext not in allowed_extensions:
         raise ValueError("Unsupported attachment format")
+
+    try:
+        pos = file_storage.tell()
+    except Exception:
+        pos = 0
+    try:
+        file_storage.seek(0)
+        header = file_storage.read(32) or b""
+    finally:
+        try:
+            file_storage.seek(pos)
+        except Exception:
+            try:
+                file_storage.seek(0)
+            except Exception:
+                pass
+
+    if not sniff_bytes(header, ext):
+        raise ValueError("File content does not match its extension")
 
     r2_chat_bucket = current_app.config.get("R2_CHAT_BUCKET_NAME")
     r2_account = current_app.config.get("R2_ACCOUNT_ID")
