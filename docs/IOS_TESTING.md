@@ -101,9 +101,12 @@ Sideloadly is for quick UI/API testing only, **not push**.
 
 Auth tokens are stored in the iOS **Keychain** via `flutter_secure_storage` (accessibility: first unlock, this device only). The Sideloadly IPA must **not** include `keychain-access-groups` — Codemagic strips that entitlement before packaging because free-account Sideloadly signing often rejects it.
 
-If Keychain write/read fails on a sideloaded build, `TokenStore` mirrors tokens into `SharedPreferences` so you stay signed in after force-quit/relaunch. That prefs mirror is weaker than Keychain and is cleared when Keychain works again. Uninstalling the app still clears the session.
+**H-07 (security hardening):** the plaintext `SharedPreferences` fallback described below is now gated behind the compile-time dart-define `ALLOW_INSECURE_TOKEN_FALLBACK` (safe default: `false`). It is **not** inferred from debug/release mode or platform — only an explicit `--dart-define=ALLOW_INSECURE_TOKEN_FALLBACK=true` enables it. The `iOS (IPA for Sideloadly)` Codemagic workflow (`codemagic.yaml`) sets this explicitly. No other workflow (TestFlight, Android release, Android dev) sets it.
 
-TestFlight / App Store builds should use Keychain normally; no prefs fallback is needed when Keychain succeeds.
+- **With the flag set (Sideloadly only):** if Keychain write/read fails on a sideloaded build, `TokenStore` mirrors tokens into `SharedPreferences` so you stay signed in after force-quit/relaunch. That prefs mirror is weaker than Keychain and is cleared when Keychain works again. Uninstalling the app still clears the session.
+- **With the flag unset (TestFlight / App Store / Play Store / all other builds):** Keychain / `EncryptedSharedPreferences` is the only durable token store. If a secure-storage write fails, the token is **not** written anywhere in plaintext — the current in-memory session keeps working, but the token won't survive a relaunch. If a secure-storage read fails (or returns empty) at startup, any leftover plaintext fallback keys from an older app version or a flag-enabled build are purged and are **never** treated as a valid credential — the user simply sees the normal login screen, never a crash.
+
+If you build your own Sideloadly IPA outside of the provided Codemagic workflow, remember to pass `--dart-define=ALLOW_INSECURE_TOKEN_FALLBACK=true` yourself, otherwise a broken Keychain will require re-login after every force-quit instead of persisting the session.
 
 ---
 

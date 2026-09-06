@@ -104,6 +104,7 @@ workflows:
           bash scripts/ios_ci_prepare_unsigned.sh
           flutter build ios --release --no-codesign \
             --dart-define=SIDELOAD_BUILD=true \
+            --dart-define=ALLOW_INSECURE_TOKEN_FALLBACK=true \
             --dart-define=API_BASE="$API_BASE" \
             --dart-define=LISTING_SHARE_WEB_BASE="${LISTING_SHARE_WEB_BASE:-$API_BASE}" \
             --dart-define=LISTING_SHARE_URL_PATH="${LISTING_SHARE_URL_PATH:-listing}" \

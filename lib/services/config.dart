@@ -70,6 +70,26 @@ const bool kAllowInsecureHttpInRelease = bool.fromEnvironment(
   defaultValue: false,
 );
 
+/// H-07: gate for [TokenStore]'s legacy plaintext-`SharedPreferences` token
+/// fallback (M-19). SAFE DEFAULT: false.
+///
+/// Official App Store / Play Store / TestFlight / normal production builds
+/// must NOT set this dart-define — secure storage (Keychain /
+/// EncryptedSharedPreferences) remains the only durable token store there,
+/// and a secure-storage failure is treated as "not authenticated" rather
+/// than silently degrading to plaintext.
+///
+/// Only the `iOS (IPA for Sideloadly)` Codemagic workflow explicitly passes
+/// `--dart-define=ALLOW_INSECURE_TOKEN_FALLBACK=true`, to preserve the
+/// existing M-19 session-persistence behavior for unentitled sideloaded
+/// builds where Keychain writes are expected to fail (see
+/// docs/IOS_TESTING.md). This flag is the sole authority: enablement must
+/// never be inferred from `kDebugMode`/`kReleaseMode` or `Platform.isIOS`.
+const bool kAllowInsecureTokenFallback = bool.fromEnvironment(
+  'ALLOW_INSECURE_TOKEN_FALLBACK',
+  defaultValue: false,
+);
+
 String? _runtimeApiBaseOverride;
 
 /// Allow changing API base at runtime (for sideload/local dev scenarios).
