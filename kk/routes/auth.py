@@ -1234,7 +1234,11 @@ def reset_password():
 
         # Per-account limit (in addition to IP decorator) to slow SMS code guessing.
         try:
-            from ..security import _redis_client
+            from ..security import (
+                _allow_inmemory_rate_limits,
+                _rate_limit_unavailable_response,
+                _redis_client,
+            )
 
             r = _redis_client()
             if r is not None:
@@ -1252,8 +1256,18 @@ def reset_password():
                         ),
                         429,
                     )
+            elif not _allow_inmemory_rate_limits():
+                # H-06: Redis is required for this per-account guard in
+                # production -- fail closed instead of silently skipping it.
+                return _rate_limit_unavailable_response()
         except Exception:
-            pass
+            # H-06: a Redis error (timeout, connection drop, etc.) must not
+            # silently disable this brute-force guard in production. In
+            # development/testing (or with the explicit
+            # ALLOW_INMEMORY_RATE_LIMITS escape hatch), preserve the prior
+            # best-effort behavior of allowing the request through.
+            if not _allow_inmemory_rate_limits():
+                return _rate_limit_unavailable_response()
 
         from ..time_utils import utcnow
 

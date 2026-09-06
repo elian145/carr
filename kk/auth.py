@@ -298,7 +298,13 @@ def rate_limit_check(user_id, action, limit=10, window_minutes=60):
         return recent_actions < limit
     except Exception as e:
         current_app.logger.error(f"Error checking rate limit: {str(e)}")
-        return True  # Allow action if check fails
+        # H-06: do not silently allow unlimited actions when the DB check
+        # itself fails. Preserve the previous lenient behavior only in
+        # development/testing (or the explicit ALLOW_INMEMORY_RATE_LIMITS
+        # escape hatch); fail closed (deny) everywhere else.
+        from .security import _allow_inmemory_rate_limits
+
+        return _allow_inmemory_rate_limits()
 
 def generate_secure_filename(filename):
     """Generate secure filename for uploads"""
