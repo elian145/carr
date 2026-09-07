@@ -1232,6 +1232,123 @@ def _d06_fk_report_status_index_smoke(app) -> int:
     return 0
 
 
+# D-08: value used to prove a real >200, <=2048 character profile_picture
+# round-trips exactly through real PostgreSQL (which, unlike SQLite,
+# actually enforces VARCHAR(n) at the engine level -- this is the only
+# environment where the pre-fix VARCHAR(200) could ever reject/truncate a
+# realistic value).
+_D08_LONG_VALUE = "https://pub-" + ("a" * 220) + ".r2.dev/profile_pictures/x.jpg"
+
+
+def _d08_profile_picture_width_smoke(app) -> int:
+    """D-08: verify ``user.profile_picture`` is ``VARCHAR(2048)`` on real
+    PostgreSQL, and that a >200-char value actually INSERTs and UPDATEs
+    successfully and round-trips exactly (same length, same content) --
+    the concrete failure mode this migration fixes, since PostgreSQL (not
+    SQLite) is the environment that actually rejects an over-length
+    ``VARCHAR(n)`` write. Also asserts ``user.dealership_cover_picture``
+    is untouched at 200 -- that column is a separate, NOT-in-scope D-08
+    risk and this migration must not have widened it too.
+    """
+    import secrets
+
+    from sqlalchemy import inspect, text
+
+    from kk.extensions import db
+    from kk.models import User
+
+    with app.app_context():
+        insp = inspect(db.engine)
+        columns = {c["name"]: c for c in insp.get_columns("user")}
+
+        col = columns.get("profile_picture")
+        if col is None:
+            print("D-08: user.profile_picture column missing", file=sys.stderr)
+            return 1
+        col_len = getattr(col["type"], "length", None)
+        if col_len != 2048:
+            print(f"D-08: user.profile_picture length is {col_len}, expected 2048", file=sys.stderr)
+            return 1
+        print(f"D-08: user.profile_picture is {col['type']} (length=2048) OK", flush=True)
+
+        cover_col = columns.get("dealership_cover_picture")
+        cover_len = getattr(cover_col["type"], "length", None) if cover_col is not None else None
+        if cover_len != 200:
+            print(
+                f"D-08: user.dealership_cover_picture length is {cover_len}, "
+                "expected untouched at 200 (out of D-08 scope)",
+                file=sys.stderr,
+            )
+            return 1
+        print("D-08: user.dealership_cover_picture correctly untouched at 200", flush=True)
+
+    long_value = _D08_LONG_VALUE
+    if not (200 < len(long_value) <= 2048):
+        print("D-08: smoke test constant is not actually >200 and <=2048 chars", file=sys.stderr)
+        return 1
+
+    suffix = secrets.token_hex(6)
+    public_id = f"d08smoke{suffix}"
+    seeded = False
+    try:
+        with app.app_context():
+            user = User(
+                username=f"d08_smoke_{suffix}",
+                phone_number=f"07566{suffix[:6]}",
+                first_name="D08",
+                last_name="Smoke",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=public_id,
+                profile_picture=long_value,
+            )
+            user.set_password("Aa123456")
+            db.session.add(user)
+            db.session.commit()
+            seeded = True
+            user_id = user.id
+
+            # Force a real round-trip from the database, not just the
+            # in-session Python object.
+            db.session.expire_all()
+            reloaded = db.session.get(User, user_id)
+            if reloaded is None or reloaded.profile_picture != long_value:
+                print("D-08: >200-char profile_picture did not round-trip exactly after INSERT", file=sys.stderr)
+                return 1
+            if len(reloaded.profile_picture) != len(long_value):
+                print("D-08: profile_picture length changed after INSERT round-trip", file=sys.stderr)
+                return 1
+            print(f"D-08: INSERT round-trip of a {len(long_value)}-char value OK", flush=True)
+
+            # Also prove UPDATE (not just INSERT) round-trips a >200-char
+            # value -- covers the real upload route's overwrite-on-reupload
+            # behavior.
+            long_value_2 = long_value[:-4] + "9999"
+            reloaded.profile_picture = long_value_2
+            db.session.commit()
+            db.session.expire_all()
+            reloaded2 = db.session.get(User, user_id)
+            if reloaded2 is None or reloaded2.profile_picture != long_value_2:
+                print("D-08: >200-char profile_picture did not round-trip exactly after UPDATE", file=sys.stderr)
+                return 1
+            print(f"D-08: UPDATE round-trip of a {len(long_value_2)}-char value OK", flush=True)
+    finally:
+        # Self-cleaning: remove the row this smoke seeded, regardless of
+        # outcome, so re-running it against the same database is safe.
+        if seeded:
+            with app.app_context():
+                db.session.rollback()
+                db.session.execute(
+                    text('DELETE FROM "user" WHERE public_id = :pid'),
+                    {"pid": public_id},
+                )
+                db.session.commit()
+
+    print("D-08: profile_picture width OK", flush=True)
+    return 0
+
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     if str(_REPO_ROOT) not in sys.path:
@@ -1342,6 +1459,10 @@ def main() -> int:
     d07_status = _d07_view_history_upsert_smoke(app)
     if d07_status != 0:
         return d07_status
+
+    d08_status = _d08_profile_picture_width_smoke(app)
+    if d08_status != 0:
+        return d08_status
 
     print("migration smoke OK", flush=True)
     return 0

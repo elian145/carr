@@ -81,7 +81,10 @@ class User(db.Model):
     phone_number = db.Column(db.String(20), unique=True, nullable=False, index=True)  # Made required and unique
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
-    profile_picture = db.Column(db.String(200), nullable=True)
+    # D-08: widened from String(200) to match the R2/CDN URL width already
+    # used by car_image.image_url / car_video.video_url / thumbnail_url
+    # (see migrations d9e0f1a2b3c4 / b4e8a1c2d3f4 and o1p2q3r4s5t6).
+    profile_picture = db.Column(db.String(2048), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
     # Phone OTP completed. Gated actions (listings, media, chat) require this —
     # email verification alone must not unlock them (see phone_verification_error_payload).
