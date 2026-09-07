@@ -8,9 +8,67 @@ import time
 from functools import wraps
 from flask import request, jsonify, current_app
 from flask_jwt_extended import get_jwt_identity, get_jwt
+from sqlalchemy import func, update
 from .models import User, UserAction, db
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename as _secure_filename
+
+# D-04: the only User columns `atomic_increment_attempts()` is allowed to
+# touch. Keeps a caller from ever passing an attacker-influenced or
+# otherwise arbitrary column name into a dynamic UPDATE.
+_ATTEMPT_COUNTER_FIELDS = frozenset(
+    {
+        "phone_verification_attempts",
+        "dealer_email_verification_attempts",
+        "email_change_attempts",
+    }
+)
+
+
+def atomic_increment_attempts(user: User, field_name: str) -> int:
+    """
+    Atomically increment a User attempt-counter column and return the
+    resulting value.
+
+    D-04: replaces the previous Python-side
+    ``attempts = int(getattr(user, field, 0) or 0) + 1; user.field = attempts``
+    read-modify-write, which could lose an increment when two requests
+    against the same account raced (e.g. concurrent wrong-OTP submissions
+    partially bypassing the attempt/lockout threshold).
+
+    Uses a single SQL UPDATE expression --
+    ``SET field = COALESCE(field, 0) + 1 WHERE id = :id`` -- so the
+    increment itself can never be lost to a race, then reloads only that
+    one attribute (`db.session.refresh(..., attribute_names=[field_name])`)
+    within the *same, not-yet-committed* transaction. That refresh is a
+    plain read-your-own-write and always sees this statement's own result
+    regardless of isolation level, so it is enough to obtain the true
+    post-increment value the caller's lockout-threshold check depends on --
+    no ``RETURNING`` (Postgres-only concern for older SQLite libraries,
+    unnecessary here) and no row lock beyond the implicit one any UPDATE
+    already takes for the rest of its own transaction.
+
+    Does NOT commit and does NOT itself decide any lockout behavior --
+    callers keep their existing threshold/lockout/reset logic and existing
+    single `db.session.commit()` exactly as before; only how ``attempts``
+    is computed changes.
+
+    Raises ``ValueError`` for any ``field_name`` outside the fixed
+    allow-list of known attempt-counter columns, so this helper can never
+    be turned into a generic "UPDATE any column" primitive.
+    """
+    if field_name not in _ATTEMPT_COUNTER_FIELDS:
+        raise ValueError(f"atomic_increment_attempts: unsupported field {field_name!r}")
+
+    column = getattr(User, field_name)
+    db.session.execute(
+        update(User)
+        .where(User.id == user.id)
+        .values(**{field_name: func.coalesce(column, 0) + 1})
+    )
+    db.session.refresh(user, attribute_names=[field_name])
+    return int(getattr(user, field_name) or 0)
+
 
 def _client_ip() -> str:
     """

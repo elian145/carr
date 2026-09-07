@@ -24,7 +24,7 @@ from ..models import (
     db,
     user_viewed_listings,
 )
-from ..security import generate_secure_filename, validate_file_upload
+from ..security import atomic_increment_attempts, generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
 from ..time_utils import utcnow
 from ..dealer_socials import clean_dealership_socials, public_dealership_socials
@@ -664,8 +664,7 @@ def update_profile():
                     digestmod=hashlib.sha256,
                 ).hexdigest()
                 if not hmac.compare_digest(code_hash, expected):
-                    attempts = int(getattr(current_user, "phone_verification_attempts", 0) or 0) + 1
-                    current_user.phone_verification_attempts = attempts
+                    attempts = atomic_increment_attempts(current_user, "phone_verification_attempts")
                     if attempts >= 5:
                         current_user.phone_verification_locked_until = now + timedelta(minutes=15)
                         current_user.phone_verification_code_hash = None
@@ -1233,8 +1232,7 @@ def verify_dealer_phone():
 
     expected = _hash_dealer_phone_code(phone_digits, code)
     if not hmac.compare_digest(code_hash, expected):
-        attempts = int(getattr(current_user, "phone_verification_attempts", 0) or 0) + 1
-        current_user.phone_verification_attempts = attempts
+        attempts = atomic_increment_attempts(current_user, "phone_verification_attempts")
         if attempts >= 5:
             current_user.phone_verification_locked_until = now + timedelta(minutes=15)
             current_user.phone_verification_code_hash = None
@@ -1371,10 +1369,9 @@ def verify_dealer_email():
 
     expected = _hash_dealer_email_code(email, code)
     if not hmac.compare_digest(code_hash, expected):
-        attempts = int(
-            getattr(current_user, "dealer_email_verification_attempts", 0) or 0
-        ) + 1
-        current_user.dealer_email_verification_attempts = attempts
+        attempts = atomic_increment_attempts(
+            current_user, "dealer_email_verification_attempts"
+        )
         if attempts >= 5:
             current_user.dealer_email_verification_locked_until = now + timedelta(
                 minutes=15
@@ -1502,8 +1499,7 @@ def verify_account_email_change():
 
     expected = _hash_account_email_change_code(email, code)
     if not hmac.compare_digest(code_hash, expected):
-        attempts = int(getattr(current_user, "email_change_attempts", 0) or 0) + 1
-        current_user.email_change_attempts = attempts
+        attempts = atomic_increment_attempts(current_user, "email_change_attempts")
         if attempts >= 5:
             current_user.email_change_locked_until = now + timedelta(minutes=15)
             current_user.pending_email = None
@@ -1642,8 +1638,7 @@ def verify_contact_phone():
 
     expected = _hash_contact_phone_code(phone_digits, code)
     if not hmac.compare_digest(code_hash, expected):
-        attempts = int(getattr(current_user, "phone_verification_attempts", 0) or 0) + 1
-        current_user.phone_verification_attempts = attempts
+        attempts = atomic_increment_attempts(current_user, "phone_verification_attempts")
         if attempts >= 5:
             current_user.phone_verification_locked_until = now + timedelta(minutes=15)
             current_user.phone_verification_code_hash = None

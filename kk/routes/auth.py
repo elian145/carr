@@ -42,7 +42,12 @@ from ..models import (
     User,
     db,
 )
-from ..security import check_rate_limit, rate_limit, validate_input_sanitization
+from ..security import (
+    atomic_increment_attempts,
+    check_rate_limit,
+    rate_limit,
+    validate_input_sanitization,
+)
 
 bp = Blueprint("auth", __name__)
 
@@ -230,8 +235,7 @@ def _consume_phone_otp(user: User, phone_digits: str, code: str) -> None:
 
     expected = _hash_phone_verification_code(phone_digits, code)
     if not hmac.compare_digest(code_hash, expected):
-        attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
-        user.phone_verification_attempts = attempts
+        attempts = atomic_increment_attempts(user, "phone_verification_attempts")
         if attempts >= _OTP_MAX_ATTEMPTS:
             user.phone_verification_locked_until = now + timedelta(
                 minutes=_OTP_LOCKOUT_MINUTES
@@ -980,8 +984,7 @@ def _verify_delete_account_code(user: User, code: str) -> str | None:
     phone_digits = _normalize_phone(getattr(user, "phone_number", "") or "")
     expected = _hash_delete_account_code(phone_digits, code)
     if not hmac.compare_digest(code_hash, expected):
-        attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
-        user.phone_verification_attempts = attempts
+        attempts = atomic_increment_attempts(user, "phone_verification_attempts")
         if attempts >= 5:
             user.phone_verification_locked_until = now + timedelta(minutes=15)
             user.phone_verification_code_hash = None
@@ -1379,8 +1382,7 @@ def verify_phone():
 
         expected = _hash_phone_verification_code(phone_digits, verification_code)
         if not hmac.compare_digest(code_hash, expected):
-            attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
-            user.phone_verification_attempts = attempts
+            attempts = atomic_increment_attempts(user, "phone_verification_attempts")
             if attempts >= 5:
                 user.phone_verification_locked_until = now + timedelta(minutes=15)
                 user.phone_verification_code_hash = None
@@ -1696,8 +1698,7 @@ def phone_verify():
 
         expected = _hash_phone_verification_code(phone_digits, code)
         if not hmac.compare_digest(code_hash, expected):
-            attempts = int(getattr(user, "phone_verification_attempts", 0) or 0) + 1
-            user.phone_verification_attempts = attempts
+            attempts = atomic_increment_attempts(user, "phone_verification_attempts")
             if attempts >= 5:
                 user.phone_verification_locked_until = now + timedelta(minutes=15)
                 user.phone_verification_code_hash = None

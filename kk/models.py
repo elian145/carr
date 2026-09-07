@@ -738,15 +738,6 @@ class Car(db.Model):
 
         return data
     
-    def increment_views(self, commit: bool = False):
-        """Increment view count (caller controls commit)."""
-        try:
-            self.views_count = int(self.views_count or 0) + 1
-        except Exception:
-            self.views_count = 1
-        if commit:
-            db.session.commit()
-    
     def __repr__(self):
         return f'<Car {self.brand} {self.model} {self.year}>'
 
@@ -854,31 +845,6 @@ class ListingAnalytics(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_updated': self.updated_at.isoformat() if self.updated_at else None,
         }
-    
-    def increment_views(self):
-        self.views += 1
-        self.updated_at = utcnow()
-        db.session.commit()
-    
-    def increment_messages(self):
-        self.messages += 1
-        self.updated_at = utcnow()
-        db.session.commit()
-    
-    def increment_calls(self):
-        self.calls += 1
-        self.updated_at = utcnow()
-        db.session.commit()
-    
-    def increment_shares(self):
-        self.shares += 1
-        self.updated_at = utcnow()
-        db.session.commit()
-    
-    def increment_favorites(self):
-        self.favorites += 1
-        self.updated_at = utcnow()
-        db.session.commit()
     
     def __repr__(self):
         return f'<ListingAnalytics car_id={self.car_id} views={self.views}>'

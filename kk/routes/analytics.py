@@ -5,7 +5,9 @@ from flask_jwt_extended import jwt_required
 
 from ..auth import get_current_user
 from ..listing_metrics import (
+    _bulk_create_missing_analytics,
     get_car_for_analytics,
+    get_or_create_analytics,
     record_call_or_share,
     record_trusted_view,
 )
@@ -17,16 +19,6 @@ bp = Blueprint("analytics", __name__)
 
 def _get_car_by_listing_id(listing_id: str):
     return get_car_for_analytics(listing_id)
-
-
-def _get_or_create_analytics(car: Car) -> ListingAnalytics:
-    a = ListingAnalytics.query.filter_by(car_id=car.id).first()
-    if a:
-        return a
-    a = ListingAnalytics(car_id=car.id)
-    db.session.add(a)
-    db.session.commit()
-    return a
 
 
 def _listing_id_from_body() -> str:
@@ -51,12 +43,14 @@ def get_listings_analytics():
         analytics = ListingAnalytics.query.filter(ListingAnalytics.car_id.in_(car_ids)).all()
         existing = {a.car_id for a in analytics}
 
-        created_any = False
-        for c in user_cars:
-            if c.id not in existing:
-                db.session.add(ListingAnalytics(car_id=c.id))
-                created_any = True
-        if created_any:
+        # D-04: build the missing-id list in Python from the already-fetched
+        # `existing` set (no extra SELECT per car), then create all of them
+        # in one dialect-appropriate INSERT ... ON CONFLICT DO NOTHING
+        # statement instead of N per-row get-or-create calls -- preserves
+        # the O(1) round-trip shape and the single conditional commit below.
+        missing_ids = [c.id for c in user_cars if c.id not in existing]
+        if missing_ids:
+            _bulk_create_missing_analytics(missing_ids)
             db.session.commit()
 
         analytics = ListingAnalytics.query.filter(ListingAnalytics.car_id.in_(car_ids)).all()
@@ -78,7 +72,9 @@ def get_listing_analytics(listing_id: str):
         if not car or car.seller_id != current_user.id:
             return jsonify({"message": "Listing not found"}), 404
 
-        a = _get_or_create_analytics(car)
+        a, created = get_or_create_analytics(car)
+        if created:
+            db.session.commit()
         return jsonify(a.to_dict()), 200
     except Exception:
         return jsonify({"message": "Failed to get analytics"}), 500

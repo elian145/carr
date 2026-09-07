@@ -104,6 +104,96 @@ def get_car_for_analytics(listing_id: str) -> Car | None:
     return None
 
 
+def _conflict_safe_insert(model):
+    """
+    Return the dialect-appropriate conflict-aware ``insert()`` construct for
+    ``model`` (Postgres or SQLite ``INSERT ... ON CONFLICT``).
+
+    D-04: shared by ``get_or_create_analytics()`` and
+    ``_bulk_create_missing_analytics()`` so the dialect-detection logic
+    exists exactly once. Mirrors the existing
+    ``bind.dialect.name == "sqlite"`` idiom already used elsewhere in this
+    codebase (e.g. ``kk/app_factory.py``, ``kk/routes/auth.py``). Only
+    Postgres (production/CI) and SQLite (local/dev/tests) are ever used by
+    this project (see ``kk/config.py``), so any other dialect fails loudly
+    instead of silently guessing which conflict syntax to emit.
+    """
+    bind = db.session.get_bind()
+    dialect_name = getattr(getattr(bind, "dialect", None), "name", "") or ""
+    if dialect_name == "postgresql":
+        from sqlalchemy.dialects.postgresql import insert as _insert
+    elif dialect_name == "sqlite":
+        from sqlalchemy.dialects.sqlite import insert as _insert
+    else:
+        raise RuntimeError(
+            f"_conflict_safe_insert: unsupported database dialect {dialect_name!r}"
+        )
+    return _insert(model)
+
+
+def get_or_create_analytics(car: Car) -> tuple[ListingAnalytics, bool]:
+    """
+    Return ``(row, created)`` for ``car``'s ListingAnalytics, creating it if
+    missing.
+
+    D-04: replaces the previous SELECT-then-INSERT (two requests racing to
+    create the same missing row could both pass the SELECT and then hit the
+    ``listing_analytics.car_id`` unique index as an uncaught
+    ``IntegrityError``, dropping a metric bump and surfacing a 500). Uses a
+    single ``INSERT ... ON CONFLICT (car_id) DO NOTHING`` instead: the
+    database itself serializes the race, so the losing side's insert is a
+    silent no-op rather than an exception, and both sides then reliably
+    re-read the one resulting row. Only that exact conflict resolves
+    silently here -- any other database error still propagates normally.
+
+    Does not commit; the caller commits (only when ``created`` is True, to
+    preserve the previous "only write when something actually changed"
+    behavior) together with whatever else it does in the same transaction.
+    """
+    existing = ListingAnalytics.query.filter_by(car_id=car.id).first()
+    if existing is not None:
+        return existing, False
+
+    stmt = (
+        _conflict_safe_insert(ListingAnalytics)
+        .values(car_id=car.id)
+        .on_conflict_do_nothing(index_elements=["car_id"])
+    )
+    db.session.execute(stmt)
+
+    row = ListingAnalytics.query.filter_by(car_id=car.id).first()
+    if row is None:
+        # Unreachable in practice: the unique index on car_id guarantees
+        # either our insert or a concurrent winner's insert has landed.
+        raise RuntimeError(
+            f"ListingAnalytics row missing for car_id={car.id} after upsert"
+        )
+    return row, True
+
+
+def _bulk_create_missing_analytics(missing_car_ids: list[int]) -> None:
+    """
+    Insert ListingAnalytics rows for every id in ``missing_car_ids`` in a
+    single statement.
+
+    D-04: for callers (``get_listings_analytics()``) that already know --
+    from a previously-fetched ``existing`` set -- exactly which car_ids are
+    missing. Deliberately has no per-id existence check (that would
+    reintroduce the N extra SELECT round trips the caller's pre-fetched set
+    exists to avoid); one multi-row
+    ``INSERT ... ON CONFLICT (car_id) DO NOTHING`` covers the whole batch in
+    one round trip, same as a single-row call. Does not commit.
+    """
+    if not missing_car_ids:
+        return
+    stmt = (
+        _conflict_safe_insert(ListingAnalytics)
+        .values([{"car_id": cid} for cid in missing_car_ids])
+        .on_conflict_do_nothing(index_elements=["car_id"])
+    )
+    db.session.execute(stmt)
+
+
 def bump_listing_metric(car: Car, field: MetricField) -> None:
     """Atomically increment a ListingAnalytics counter (creates row if needed)."""
     if field not in _ALLOWED_FIELDS:
@@ -111,11 +201,7 @@ def bump_listing_metric(car: Car, field: MetricField) -> None:
     if not car or not getattr(car, "id", None):
         return
 
-    a = ListingAnalytics.query.filter_by(car_id=car.id).first()
-    if not a:
-        a = ListingAnalytics(car_id=car.id)
-        db.session.add(a)
-        db.session.flush()
+    get_or_create_analytics(car)
 
     col = getattr(ListingAnalytics, field)
     db.session.execute(

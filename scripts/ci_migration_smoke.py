@@ -413,6 +413,358 @@ def _d01_fk_ondelete_smoke(app) -> int:
     return 0
 
 
+# D-04: atomic SQL counters -- real-PostgreSQL concurrency proofs.
+#
+# Deliberately separate from the SQLite functional tests in
+# kk/tests/test_d04_atomic_counters.py: those prove the *logic* is correct;
+# these prove the *concurrency* guarantee actually holds under real
+# PostgreSQL MVCC/row-locking, not SQLite. Each check uses its own
+# threading.Thread per "concurrent request", each with an independent
+# Flask app context (and therefore an independent scoped session/DB
+# connection) -- ORM objects are never shared across threads; each thread
+# re-loads its own row by id.
+_D04_THREAD_JOIN_TIMEOUT_S = 30
+
+
+def _d04_atomic_increment_primitive_smoke(app) -> int:
+    """
+    D-04 / A1: 20 concurrent PostgreSQL transactions each independently
+    load the same User and call `atomic_increment_attempts()`. The final
+    counter value must equal exactly 20 -- no lost updates, no unhandled
+    database exceptions -- proving the atomic-UPDATE primitive itself
+    (not yet any surrounding lockout logic) is race-free.
+    """
+    import threading
+    import uuid
+
+    from kk.extensions import db
+    from kk.models import User
+    from kk.security import atomic_increment_attempts
+
+    suffix = uuid.uuid4().hex[:8]
+    print(f"D-04: seeding atomic-increment-primitive smoke user (suffix={suffix})...", flush=True)
+
+    with app.app_context():
+        user = User(
+            username=f"d04_prim_{suffix}",
+            phone_number=f"07561{suffix[:6]}",
+            first_name="D04",
+            last_name="Primitive",
+            is_active=True,
+            is_verified=True,
+            phone_verified=True,
+            public_id=f"d04prim{suffix}",
+            phone_verification_attempts=0,
+        )
+        user.set_password("Aa123456")
+        db.session.add(user)
+        db.session.commit()
+        user_id = user.id
+
+    n = 20
+    barrier = threading.Barrier(n)
+    errors: list[BaseException | None] = [None] * n
+
+    def _worker(slot: int) -> None:
+        try:
+            barrier.wait(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+            with app.app_context():
+                thread_user = db.session.get(User, user_id)
+                atomic_increment_attempts(thread_user, "phone_verification_attempts")
+                db.session.commit()
+        except BaseException as exc:  # noqa: BLE001 - captured for the main thread to report
+            errors[slot] = exc
+
+    threads = [threading.Thread(target=_worker, args=(i,)) for i in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+
+    failed = [(i, e) for i, e in enumerate(errors) if e is not None]
+    if failed:
+        for i, e in failed:
+            print(f"D-04: primitive smoke thread {i} raised: {e!r}", file=sys.stderr)
+        return 1
+
+    with app.app_context():
+        final = db.session.get(User, user_id).phone_verification_attempts
+    if final != n:
+        print(
+            f"D-04: atomic_increment_attempts lost updates under concurrency: "
+            f"expected {n}, got {final}",
+            file=sys.stderr,
+        )
+        return 1
+    print(f"D-04: atomic_increment_attempts primitive OK ({n} concurrent increments -> {final})", flush=True)
+    return 0
+
+
+def _d04_otp_lockout_concurrency_smoke(app) -> int:
+    """
+    D-04 / A2: exercise the actual `_consume_phone_otp()` business-logic
+    function (threshold + lockout, not just the raw counter) under real
+    concurrency, in two scenarios:
+
+      A2a. N = _OTP_MAX_ATTEMPTS - 1 concurrent wrong-code attempts must
+           record exactly N attempts (not fewer -- proves no lost
+           increment lets an attacker keep extra "free" guesses) and must
+           not lock the account.
+      A2b. N = _OTP_MAX_ATTEMPTS concurrent wrong-code attempts must
+           produce exactly one "otp_locked" (429) result and N-1
+           "otp_invalid" (400) results, with the same lockout/reset state
+           the sequential test in kk/tests/test_signup_otp_required.py
+           already proves for the non-concurrent case.
+
+    Assertions are on aggregate outcome (counts / final DB state), never
+    on which specific thread got which result, so they do not depend on
+    thread-scheduling order -- only on the atomicity already proven by
+    `_d04_atomic_increment_primitive_smoke`.
+    """
+    import threading
+    import uuid
+    from collections import Counter
+    from datetime import timedelta
+
+    from kk.extensions import db
+    from kk.models import User
+    from kk.routes.auth import (
+        _OTP_MAX_ATTEMPTS,
+        OtpError,
+        _consume_phone_otp,
+        _hash_phone_verification_code,
+    )
+    from kk.time_utils import utcnow
+
+    def _seed_user(tag: str) -> tuple[int, str]:
+        suffix = uuid.uuid4().hex[:8]
+        phone = f"07562{suffix[:6]}"
+        with app.app_context():
+            user = User(
+                username=f"d04_{tag}_{suffix}",
+                phone_number=phone,
+                first_name="D04",
+                last_name="Otp",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=f"d04{tag}{suffix}",
+                phone_verification_attempts=0,
+                phone_verification_code_hash=_hash_phone_verification_code(
+                    phone, "123456"
+                ),
+                phone_verification_expires_at=utcnow() + timedelta(minutes=10),
+            )
+            user.set_password("Aa123456")
+            db.session.add(user)
+            db.session.commit()
+            return user.id, phone
+
+    def _run_concurrent_wrong_attempts(n: int, tag: str) -> tuple[int, str, list]:
+        user_id, phone = _seed_user(tag)
+        barrier = threading.Barrier(n)
+        # (code, status) per thread, or an exception repr on unexpected failure.
+        results: list[object] = [None] * n
+
+        def _worker(slot: int) -> None:
+            try:
+                barrier.wait(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+                with app.app_context():
+                    thread_user = db.session.get(User, user_id)
+                    try:
+                        _consume_phone_otp(thread_user, phone, "000000")
+                        results[slot] = ("no_error", 0)
+                    except OtpError as exc:
+                        results[slot] = (exc.code, exc.status)
+            except BaseException as exc:  # noqa: BLE001
+                results[slot] = ("unexpected_exception", repr(exc))
+
+        threads = [threading.Thread(target=_worker, args=(i,)) for i in range(n)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+
+        return user_id, phone, results
+
+    # --- A2a: below threshold -----------------------------------------
+    n_below = _OTP_MAX_ATTEMPTS - 1
+    print(f"D-04: OTP lockout smoke -- {n_below} concurrent wrong attempts (below threshold)...", flush=True)
+    user_id, _phone, results = _run_concurrent_wrong_attempts(n_below, "below")
+
+    unexpected = [r for r in results if not isinstance(r, tuple) or r[0] == "unexpected_exception"]
+    if unexpected:
+        print(f"D-04: unexpected thread failures (below-threshold): {unexpected}", file=sys.stderr)
+        return 1
+
+    outcome_counts = Counter(r[0] for r in results)
+    if outcome_counts.get("otp_invalid", 0) != n_below or "otp_locked" in outcome_counts:
+        print(
+            f"D-04: below-threshold concurrent attempts gave unexpected outcomes: {dict(outcome_counts)} "
+            f"(expected exactly {n_below} otp_invalid, zero otp_locked)",
+            file=sys.stderr,
+        )
+        return 1
+
+    with app.app_context():
+        u = db.session.get(User, user_id)
+        if u.phone_verification_attempts != n_below:
+            print(
+                f"D-04: below-threshold final attempts={u.phone_verification_attempts}, "
+                f"expected exactly {n_below} (a lower value means a lost increment)",
+                file=sys.stderr,
+            )
+            return 1
+        if u.phone_verification_locked_until is not None:
+            print("D-04: below-threshold attempts unexpectedly locked the account", file=sys.stderr)
+            return 1
+    print(f"D-04: below-threshold OK (exactly {n_below} recorded, no lockout)", flush=True)
+
+    # --- A2b: at threshold ----------------------------------------------
+    n_at = _OTP_MAX_ATTEMPTS
+    print(f"D-04: OTP lockout smoke -- {n_at} concurrent wrong attempts (at threshold)...", flush=True)
+    user_id, _phone, results = _run_concurrent_wrong_attempts(n_at, "at")
+
+    unexpected = [r for r in results if not isinstance(r, tuple) or r[0] == "unexpected_exception"]
+    if unexpected:
+        print(f"D-04: unexpected thread failures (at-threshold): {unexpected}", file=sys.stderr)
+        return 1
+
+    outcome_counts = Counter(r[0] for r in results)
+    if outcome_counts.get("otp_locked", 0) != 1 or outcome_counts.get("otp_invalid", 0) != n_at - 1:
+        print(
+            f"D-04: at-threshold concurrent attempts gave unexpected outcomes: {dict(outcome_counts)} "
+            f"(expected exactly 1 otp_locked and {n_at - 1} otp_invalid)",
+            file=sys.stderr,
+        )
+        return 1
+    locked_status = next(status for (code, status) in results if code == "otp_locked")
+    if locked_status != 429:
+        print(f"D-04: otp_locked result had status {locked_status}, expected 429", file=sys.stderr)
+        return 1
+
+    with app.app_context():
+        u = db.session.get(User, user_id)
+        if u.phone_verification_attempts != 0:
+            print(
+                f"D-04: at-threshold final attempts={u.phone_verification_attempts}, expected 0 (reset)",
+                file=sys.stderr,
+            )
+            return 1
+        if u.phone_verification_locked_until is None or u.phone_verification_locked_until <= utcnow():
+            print("D-04: at-threshold lockout was not set to a future time", file=sys.stderr)
+            return 1
+        if u.phone_verification_code_hash is not None or u.phone_verification_expires_at is not None:
+            print("D-04: at-threshold lockout did not clear the OTP code/expiry", file=sys.stderr)
+            return 1
+    print(
+        f"D-04: at-threshold OK (exactly 1 otp_locked + {n_at - 1} otp_invalid, "
+        "lockout/reset state matches existing semantics)",
+        flush=True,
+    )
+    return 0
+
+
+def _d04_analytics_concurrency_smoke(app) -> int:
+    """
+    D-04 / analytics: seed one Car with no ListingAnalytics row, then have
+    20 concurrent PostgreSQL threads each independently call
+    `bump_listing_metric(car, "views")`. Must end with exactly one
+    ListingAnalytics row and views == 20 -- proving the
+    INSERT ... ON CONFLICT DO NOTHING get-or-create fix closes the race
+    without any thread leaking an IntegrityError.
+    """
+    import threading
+    import uuid
+
+    from kk.extensions import db
+    from kk.listing_metrics import bump_listing_metric
+    from kk.models import Car, ListingAnalytics, User
+
+    suffix = uuid.uuid4().hex[:8]
+    print(f"D-04: seeding analytics-concurrency smoke car (suffix={suffix})...", flush=True)
+
+    with app.app_context():
+        seller = User(
+            username=f"d04_an_seller_{suffix}",
+            phone_number=f"07563{suffix[:6]}",
+            first_name="D04",
+            last_name="Seller",
+            is_active=True,
+            is_verified=True,
+            phone_verified=True,
+            public_id=f"d04anseller{suffix}",
+        )
+        seller.set_password("Aa123456")
+        db.session.add(seller)
+        db.session.flush()
+        car = Car(
+            seller_id=seller.id,
+            public_id=f"d04ancar{suffix}",
+            brand="d04smoke",
+            model="analytics",
+            year=2020,
+            mileage=1,
+            engine_type="gas",
+            transmission="auto",
+            drive_type="fwd",
+            condition="used",
+            body_type="sedan",
+            price=1000,
+            location="Erbil",
+            is_active=True,
+        )
+        db.session.add(car)
+        db.session.commit()
+        car_id = car.id
+
+        if ListingAnalytics.query.filter_by(car_id=car_id).first() is not None:
+            print("D-04: freshly-seeded car unexpectedly already has a ListingAnalytics row", file=sys.stderr)
+            return 1
+
+    n = 20
+    barrier = threading.Barrier(n)
+    errors: list[BaseException | None] = [None] * n
+
+    def _worker(slot: int) -> None:
+        try:
+            barrier.wait(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+            with app.app_context():
+                thread_car = db.session.get(Car, car_id)
+                bump_listing_metric(thread_car, "views")
+        except BaseException as exc:  # noqa: BLE001
+            errors[slot] = exc
+
+    threads = [threading.Thread(target=_worker, args=(i,)) for i in range(n)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+
+    failed = [(i, e) for i, e in enumerate(errors) if e is not None]
+    if failed:
+        for i, e in failed:
+            print(f"D-04: analytics smoke thread {i} raised: {e!r}", file=sys.stderr)
+        return 1
+
+    with app.app_context():
+        rows = ListingAnalytics.query.filter_by(car_id=car_id).all()
+        if len(rows) != 1:
+            print(
+                f"D-04: expected exactly 1 ListingAnalytics row for car_id={car_id}, found {len(rows)}",
+                file=sys.stderr,
+            )
+            return 1
+        if rows[0].views != n:
+            print(
+                f"D-04: expected views == {n} after {n} concurrent bumps, got {rows[0].views}",
+                file=sys.stderr,
+            )
+            return 1
+    print(f"D-04: analytics get-or-create + increment OK (1 row, views == {n})", flush=True)
+    return 0
+
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     if str(_REPO_ROOT) not in sys.path:
@@ -499,6 +851,18 @@ def main() -> int:
     d01_status = _d01_fk_ondelete_smoke(app)
     if d01_status != 0:
         return d01_status
+
+    d04_primitive_status = _d04_atomic_increment_primitive_smoke(app)
+    if d04_primitive_status != 0:
+        return d04_primitive_status
+
+    d04_otp_status = _d04_otp_lockout_concurrency_smoke(app)
+    if d04_otp_status != 0:
+        return d04_otp_status
+
+    d04_analytics_status = _d04_analytics_concurrency_smoke(app)
+    if d04_analytics_status != 0:
+        return d04_analytics_status
 
     print("migration smoke OK", flush=True)
     return 0
