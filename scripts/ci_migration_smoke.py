@@ -984,6 +984,182 @@ def _d04_analytics_concurrency_smoke(app) -> int:
     return 0
 
 
+def _d07_view_history_upsert_smoke(app) -> int:
+    """
+    D-07: seed one viewer + one car with no ``user_viewed_listings`` row,
+    then have 20 concurrent PostgreSQL threads each independently call
+    ``record_user_listing_view()`` for the exact same ``(user_id, car_id)``
+    pair. Must end with exactly one row, no thread raising an
+    ``IntegrityError`` (or anything else), and ``viewed_at`` populated --
+    proving the ``INSERT ... ON CONFLICT (user_id, car_id) DO NOTHING``
+    fix closes the TOCTOU race documented under D-07. Also asserts exactly
+    one of the 20 threads observed ``is_first_view=True`` -- the contract
+    the route layer depends on to know whether to bump the view counter.
+
+    Deliberately separate from the SQLite functional tests in
+    ``kk/tests/test_d07_view_history_upsert.py``: those prove the *logic*
+    is correct (including by directly simulating the race window); this
+    proves the *concurrency* guarantee actually holds under real
+    PostgreSQL MVCC/row-locking, not SQLite. Mirrors the established D-04
+    real-thread pattern (``_d04_analytics_concurrency_smoke``): each
+    "concurrent request" is a real ``threading.Thread`` with its own Flask
+    app context (its own scoped session/DB connection) synchronized on a
+    ``threading.Barrier`` so all 20 calls hit the database at effectively
+    the same instant.
+    """
+    import threading
+    import uuid
+
+    from sqlalchemy import text
+
+    from kk.extensions import db
+    from kk.models import Car, User, user_viewed_listings
+    from kk.view_history import record_user_listing_view
+
+    suffix = uuid.uuid4().hex[:8]
+    print(f"D-07: seeding view-history-upsert smoke user/car (suffix={suffix})...", flush=True)
+
+    try:
+        with app.app_context():
+            seller = User(
+                username=f"d07_seller_{suffix}",
+                phone_number=f"07564{suffix[:6]}",
+                first_name="D07",
+                last_name="Seller",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=f"d07seller{suffix}",
+            )
+            seller.set_password("Aa123456")
+            db.session.add(seller)
+            db.session.flush()
+
+            viewer = User(
+                username=f"d07_viewer_{suffix}",
+                phone_number=f"07565{suffix[:6]}",
+                first_name="D07",
+                last_name="Viewer",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=f"d07viewer{suffix}",
+            )
+            viewer.set_password("Aa123456")
+            db.session.add(viewer)
+            db.session.flush()
+
+            car = Car(
+                seller_id=seller.id,
+                public_id=f"d07car{suffix}",
+                brand="d07smoke",
+                model="viewhistory",
+                year=2020,
+                mileage=1,
+                engine_type="gas",
+                transmission="auto",
+                drive_type="fwd",
+                condition="used",
+                body_type="sedan",
+                price=1000,
+                location="Erbil",
+                is_active=True,
+            )
+            db.session.add(car)
+            db.session.commit()
+            viewer_id = viewer.id
+            car_id = car.id
+            car_public_id = car.public_id
+
+            existing = db.session.execute(
+                user_viewed_listings.select().where(
+                    user_viewed_listings.c.user_id == viewer_id,
+                    user_viewed_listings.c.car_id == car_id,
+                )
+            ).first()
+            if existing is not None:
+                print("D-07: freshly-seeded pair unexpectedly already has a view-history row", file=sys.stderr)
+                return 1
+
+        n = 20
+        barrier = threading.Barrier(n)
+        errors: list[BaseException | None] = [None] * n
+        first_view_results: list[bool | None] = [None] * n
+
+        def _worker(slot: int) -> None:
+            try:
+                barrier.wait(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+                with app.app_context():
+                    thread_viewer = db.session.get(User, viewer_id)
+                    _car, is_first = record_user_listing_view(thread_viewer, car_public_id)
+                    first_view_results[slot] = is_first
+            except BaseException as exc:  # noqa: BLE001
+                errors[slot] = exc
+
+        threads = [threading.Thread(target=_worker, args=(i,)) for i in range(n)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=_D04_THREAD_JOIN_TIMEOUT_S)
+
+        failed = [(i, e) for i, e in enumerate(errors) if e is not None]
+        if failed:
+            for i, e in failed:
+                print(f"D-07: view-history smoke thread {i} raised: {e!r}", file=sys.stderr)
+            return 1
+
+        with app.app_context():
+            rows = db.session.execute(
+                user_viewed_listings.select().where(
+                    user_viewed_listings.c.user_id == viewer_id,
+                    user_viewed_listings.c.car_id == car_id,
+                )
+            ).fetchall()
+            if len(rows) != 1:
+                print(
+                    f"D-07: expected exactly 1 user_viewed_listings row for "
+                    f"(viewer_id={viewer_id}, car_id={car_id}), found {len(rows)}",
+                    file=sys.stderr,
+                )
+                return 1
+            if rows[0].viewed_at is None:
+                print("D-07: user_viewed_listings.viewed_at is NULL after concurrent upsert", file=sys.stderr)
+                return 1
+            print(
+                f"D-07: exactly 1 user_viewed_listings row after {n} concurrent calls, "
+                f"viewed_at={rows[0].viewed_at} OK",
+                flush=True,
+            )
+
+        true_count = sum(1 for v in first_view_results if v is True)
+        false_count = sum(1 for v in first_view_results if v is False)
+        if true_count != 1 or false_count != n - 1:
+            print(
+                f"D-07: expected exactly 1 is_first_view=True and {n - 1} False across "
+                f"{n} concurrent callers, got {true_count} True / {false_count} False",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"D-07: is_first_view contract OK (1 True, {n - 1} False across {n} concurrent callers)", flush=True)
+        return 0
+    finally:
+        # Self-cleaning: remove every row this smoke seeded, regardless of
+        # outcome, so re-running it against the same database is safe.
+        with app.app_context():
+            db.session.rollback()
+            db.session.execute(
+                text("DELETE FROM user_viewed_listings WHERE car_id IN "
+                     "(SELECT id FROM car WHERE public_id = :pid)"),
+                {"pid": f"d07car{suffix}"},
+            )
+            db.session.execute(text("DELETE FROM car WHERE public_id = :pid"), {"pid": f"d07car{suffix}"})
+            db.session.execute(
+                text("DELETE FROM \"user\" WHERE public_id IN (:v, :s)"),
+                {"v": f"d07viewer{suffix}", "s": f"d07seller{suffix}"},
+            )
+            db.session.commit()
+
+
 # D-06: FK/report-status indexes -- exact index names this migration must
 # create. Deliberately excludes token_blacklist.expires_at (investigated,
 # zero query usage anywhere in the codebase -- see PRODUCTION_AUDIT.md D-06
@@ -1152,6 +1328,10 @@ def main() -> int:
     d06_status = _d06_fk_report_status_index_smoke(app)
     if d06_status != 0:
         return d06_status
+
+    d07_status = _d07_view_history_upsert_smoke(app)
+    if d07_status != 0:
+        return d07_status
 
     print("migration smoke OK", flush=True)
     return 0
