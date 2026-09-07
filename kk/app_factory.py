@@ -33,6 +33,69 @@ def _normalize_database_url(url: str) -> str:
     return u
 
 
+def _apply_psycopg_driver(database_url: str) -> str:
+    """
+    Rewrite a ``postgresql://`` URL to use the psycopg (v3) driver explicitly
+    (``kk/requirements.txt`` has ``psycopg[binary]``, not ``psycopg2``).
+
+    D-03 note: a bare ``postgres://`` scheme (no "ql" -- the legacy
+    Heroku-style shorthand) is deliberately NOT rewritten here. If
+    ``DATABASE_URL`` is ever that literal scheme, this function is a no-op
+    and Flask-SQLAlchemy's ``db.init_app()`` will raise
+    ``sqlalchemy.exc.NoSuchModuleError`` at boot -- this is a known, tracked
+    gap (see the D-03 investigation notes / ``PRODUCTION_AUDIT.md``), not
+    something this change fixes. Confirmed production ``DATABASE_URL`` uses
+    ``postgresql://``, so this does not currently apply.
+    """
+    if database_url.startswith("postgresql://") and not database_url.startswith(
+        "postgresql+psycopg"
+    ):
+        return "postgresql+psycopg" + database_url[len("postgresql"):]
+    return database_url
+
+
+def _production_postgres_engine_options(
+    env_name: str, uri_lower: str, existing_options: dict | None = None
+) -> dict | None:
+    """
+    D-03: decide the SQLAlchemy engine options for production Postgres.
+
+    Returns the dict that should become ``app.config["SQLALCHEMY_ENGINE_OPTIONS"]``,
+    or ``None`` when this env/URL combination should not receive Postgres pool
+    tuning at all (non-production, or a URL that doesn't resolve to the
+    ``postgresql`` dialect -- e.g. SQLite, or the bare ``postgres://`` gap
+    noted in ``_apply_psycopg_driver``).
+
+    Deliberately ``NullPool`` (not a tuned ``QueuePool``): production
+    ``DATABASE_URL`` points at Neon's **pooled** endpoint (hostname contains
+    ``-pooler``), which already runs PgBouncer (transaction mode) in front of
+    Postgres -- see https://neon.com/docs/connect/connection-pooling. Neon
+    explicitly recommends the pooled endpoint for exactly this app's
+    "open a connection per request, close it immediately" pattern, so a
+    second, SQLAlchemy-level pool on top would add nothing.
+
+    ``NullPool`` also sidesteps a real, previously-observed production
+    incident: SQLAlchemy's ``QueuePool`` uses a ``threading.Condition``
+    internally, and this app hit ``"cannot notify on un-acquired lock"``
+    errors on Render under it (commit ``547ca35``). Gunicorn now defaults to
+    ``gthread`` with eventlet disabled unless explicitly opted in (commits
+    ``856a7bd`` / ``c617878``), which plausibly removes the original trigger
+    -- but that has never been re-verified, so ``QueuePool`` is not being
+    reintroduced here. Do not change this without a staging soak test.
+
+    ``pool_pre_ping=True`` is close to a no-op under ``NullPool`` (there is
+    no idle pooled connection for it to validate) but is kept for now as
+    defense-in-depth against Neon's own pooler returning a dead backend --
+    do not remove it as part of an unrelated change.
+    """
+    if env_name != "production" or not (uri_lower or "").startswith("postgresql"):
+        return None
+    engine_opts = dict(existing_options or {})
+    engine_opts.setdefault("poolclass", NullPool)
+    engine_opts.setdefault("pool_pre_ping", True)
+    return engine_opts
+
+
 def _transient_db_operational_error(exc: Exception) -> bool:
     from sqlalchemy.exc import OperationalError
 
@@ -216,8 +279,7 @@ def create_app():
     if database_url:
         database_url = _normalize_database_url(database_url)
         # Use psycopg (v3) driver for postgresql:// URLs (we have psycopg, not psycopg2)
-        if database_url.startswith("postgresql://") and not database_url.startswith("postgresql+psycopg"):
-            database_url = "postgresql+psycopg" + database_url[len("postgresql"):]
+        database_url = _apply_psycopg_driver(database_url)
         app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     elif env_db:
         db_path = env_db
@@ -238,15 +300,17 @@ def create_app():
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 
-    # For production Postgres (psycopg v3), disable SQLAlchemy's QueuePool and
-    # use NullPool instead to avoid threading.Condition notify() issues like
-    # "cannot notify on un-acquired lock" on some PaaS platforms.
+    # D-03: for production Postgres (Neon's pooled "-pooler" endpoint), use
+    # NullPool + pool_pre_ping instead of SQLAlchemy's own QueuePool.
+    # See _production_postgres_engine_options() docstring for the full
+    # reasoning (Neon already pools upstream; QueuePool caused a real
+    # incident on this exact Render/eventlet history).
     uri_lower = (app.config.get("SQLALCHEMY_DATABASE_URI") or "").strip().lower()
-    if env_name == "production" and uri_lower.startswith("postgresql"):
-        engine_opts = dict(app.config.get("SQLALCHEMY_ENGINE_OPTIONS") or {})
-        engine_opts.setdefault("poolclass", NullPool)
-        engine_opts.setdefault("pool_pre_ping", True)
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_opts
+    pg_engine_opts = _production_postgres_engine_options(
+        env_name, uri_lower, app.config.get("SQLALCHEMY_ENGINE_OPTIONS")
+    )
+    if pg_engine_opts is not None:
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = pg_engine_opts
 
     db.init_app(app)
 

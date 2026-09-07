@@ -98,6 +98,19 @@ changes are needed.
 
 - **Redis** (`REDIS_URL`): Required in production for rate limiting (and used as the default Socket.IO / Celery broker). The API will refuse to start without a reachable Redis unless you set an explicit escape hatch (`ALLOW_INMEMORY_RATE_LIMITS=1`) — do not use that for real traffic.
 
+## Database connection pooling (D-03)
+
+Production `DATABASE_URL` points at Neon's **pooled** endpoint (hostname contains `-pooler`). For production Postgres, SQLAlchemy is configured with `poolclass=NullPool` plus `pool_pre_ping=True` (`kk/app_factory.py`, `_production_postgres_engine_options`) — **intentionally**, not because pooling was overlooked. Do not "fix" this by switching to `QueuePool` or adding `pool_size`/`max_overflow` without re-reading the reasoning below and soak-testing in staging first.
+
+Why `NullPool`, not a tuned `QueuePool`:
+
+- **Neon already pools upstream.** The `-pooler` endpoint runs PgBouncer (transaction mode) in front of Postgres, specifically designed for "open a connection per request, close it immediately" traffic — exactly this app's pattern. See [Neon: Connection pooling](https://neon.com/docs/connect/connection-pooling). Layering SQLAlchemy's own `QueuePool` on top of an already-pooled endpoint adds a second, redundant pooling layer for no real benefit.
+- **`QueuePool` caused a real production incident here.** SQLAlchemy's `QueuePool` uses a `threading.Condition` internally; this app previously hit `"cannot notify on un-acquired lock"` errors on Render under it (commit `547ca35`, "DB: use NullPool for production Postgres to avoid threading notify lock errors"). Gunicorn now defaults to `gthread` with eventlet disabled unless explicitly opted in (commits `856a7bd` / `c617878`), which plausibly removed the original trigger (eventlet's `threading` monkey-patching) — but this has **never been re-verified** against the current `gthread`-only setup, so `QueuePool` is not being reintroduced on that assumption alone.
+- **`pool_pre_ping=True` is kept, close to a no-op.** Under `NullPool` there is no idle pooled connection for pre-ping to validate (every checkout is already a fresh connection), so this mostly adds one redundant round-trip. It is kept for now as defense-in-depth against Neon's own pooler occasionally handing back a dead backend — do not remove it as an unrelated cleanup.
+- **Known, tracked, NOT fixed by this task:** `start_render.sh` runs `flask db upgrade` through this same pooled `DATABASE_URL`. Neon recommends the **direct** (non-`-pooler`) endpoint for schema migrations, since transaction-mode pooling doesn't support all session-level features some migration tooling relies on. Splitting a separate direct `DIRECT_URL` for migrations is a real improvement but out of scope here.
+
+Regression coverage: `kk/tests/test_d03_engine_pool.py` asserts a production `postgresql://` URL (including a Neon `-pooler` hostname) activates `NullPool` + `pool_pre_ping=True`, that non-production environments and SQLite URLs do not, and pins the known (not-fixed-here) gap where a bare `postgres://` scheme — no "ql" — never triggers this configuration at all.
+
 ## Quick check
 
 1. Set `APP_ENV=production` and all required env vars.
