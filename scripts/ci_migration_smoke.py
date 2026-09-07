@@ -996,6 +996,16 @@ def _d07_view_history_upsert_smoke(app) -> int:
     one of the 20 threads observed ``is_first_view=True`` -- the contract
     the route layer depends on to know whether to bump the view counter.
 
+    This exact assertion is what caught a real bug: an earlier version of
+    ``record_user_listing_view()`` determined ``is_first_view`` from
+    ``result.rowcount`` on the INSERT, which passed every local SQLite
+    test but reported 0/False for all 20 concurrent PostgreSQL callers
+    here (Backend CI #994), even though exactly one of them had actually
+    inserted the row. The fix uses ``.returning(...)`` on the INSERT
+    instead (a row comes back iff *this* call did the insert) -- this
+    smoke's "exactly 1 True / 19 False" assertion is the regression guard
+    for that specific defect and must not be weakened or removed.
+
     Deliberately separate from the SQLite functional tests in
     ``kk/tests/test_d07_view_history_upsert.py``: those prove the *logic*
     is correct (including by directly simulating the race window); this

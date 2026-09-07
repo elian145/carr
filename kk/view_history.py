@@ -46,23 +46,34 @@ def record_user_listing_view(user: User, listing_id: str) -> tuple[Car | None, b
     itself the conflict target: the database, not a Python check, resolves
     which side "wins" -- there is no window between a check and a write.
 
-    ``result.rowcount`` on this exact statement shape (a single-row
-    ``INSERT ... ON CONFLICT ... DO NOTHING``) is standard, dialect-
-    independent DBAPI behavior: 1 if our own row was actually inserted, 0
-    if a conflict occurred and nothing was written -- both SQLite and
-    PostgreSQL report the number of rows the statement itself affected,
-    and ``DO NOTHING`` affects zero rows on conflict. This is deliberately
-    *not* ``ON CONFLICT ... DO UPDATE``: that variant's rowcount is 1
-    whether it inserted or updated, which would make insert-vs-conflict
-    ambiguous again without falling back to a PostgreSQL-only trick (e.g.
-    ``RETURNING (xmax = 0)``) that has no SQLite equivalent -- exactly the
-    kind of dialect-inconsistent assumption this fix avoids.
+    Insert-vs-conflict is detected with ``.returning(...)`` on the INSERT
+    itself, NOT ``result.rowcount``. A real PostgreSQL concurrency smoke
+    (``scripts/ci_migration_smoke.py::_d07_view_history_upsert_smoke``)
+    proved ``rowcount`` unreliable here: under 20 real concurrent
+    PostgreSQL callers it reported 0 for every single call, including the
+    one call that actually inserted the row (SQLite alone never surfaced
+    this -- its ``rowcount`` behaved exactly as expected in isolation,
+    which is exactly the "don't assume dialect parity" trap this rewrite
+    exists to avoid). ``RETURNING`` combined with ``ON CONFLICT DO
+    NOTHING`` is standard, documented behavior on both dialects and does
+    not depend on DBAPI/driver rowcount bookkeeping at all: PostgreSQL has
+    emitted no row for a DO-NOTHING conflict under RETURNING since 9.5,
+    and SQLite (3.35+; this project's SQLite is 3.35+ everywhere it runs)
+    behaves identically -- verified directly here by executing both the
+    successful-insert and the conflict case against a real SQLite
+    connection. If ``.first()`` on the INSERT's result returns a row, our
+    own call performed the insert (``is_first_view = True``); if it
+    returns ``None``, some other caller's insert already committed (or
+    committed as we raced) and we lost nothing but the redundant write
+    (``is_first_view = False``).
 
-    If the row already existed (``rowcount == 0``), a second, plain
+    If the row already existed (no row returned), a second, plain
     ``UPDATE`` refreshes ``viewed_at`` so it is always current on every
     view, matching the pre-fix behavior exactly. This second statement
     cannot raise -- an ``UPDATE`` violates no uniqueness constraint -- so
-    it introduces no new race no matter how many callers reach it at once.
+    it introduces no new race no matter how many callers reach it at once,
+    and it is never itself used to detect the race (only to apply the
+    already-safely-determined "not first view" side effect).
     """
     car = _get_car_by_listing_id(listing_id)
     if not car or not car.is_active:
@@ -79,9 +90,10 @@ def record_user_listing_view(user: User, listing_id: str) -> tuple[Car | None, b
         _conflict_safe_insert(user_viewed_listings)
         .values(user_id=user.id, car_id=car.id, viewed_at=now)
         .on_conflict_do_nothing(index_elements=["user_id", "car_id"])
+        .returning(user_viewed_listings.c.user_id)
     )
-    result = db.session.execute(insert_stmt)
-    is_first_view = (result.rowcount or 0) > 0
+    inserted_row = db.session.execute(insert_stmt).first()
+    is_first_view = inserted_row is not None
 
     if not is_first_view:
         db.session.execute(

@@ -12,6 +12,17 @@ concurrent requests for the same ``(user_id, car_id)`` could both observe
 followed by a plain ``UPDATE`` to refresh ``viewed_at`` only when the
 INSERT did not happen.
 
+Insert-vs-conflict detection uses ``.returning(...)`` on the INSERT
+statement itself (a row is returned iff our own call performed the
+insert), NOT ``result.rowcount``. An earlier version of this fix used
+``rowcount`` and passed every local SQLite test, but Backend CI's real
+PostgreSQL concurrency smoke caught it being unreliable under real
+concurrent PostgreSQL (it reported 0/no-insert for every one of 20
+concurrent callers, including the one that actually inserted the row).
+``RETURNING`` + ``ON CONFLICT DO NOTHING`` is standard, documented,
+driver-independent behavior on both dialects and does not have that
+failure mode.
+
 These are single-threaded, SQLite-backed tests: per the established D-04
 testing philosophy (see ``kk/tests/test_d04_atomic_counters.py``'s module
 docstring), they prove the *logic* is correct -- including by directly
@@ -214,6 +225,13 @@ class TestRecordUserListingViewUpsert:
             assert row2.viewed_at != row1.viewed_at
 
     def test_exactly_one_row_after_repeated_calls(self, app_ctx):
+        """
+        Repeated sequential calls: the first must report True, and every
+        subsequent call must report False -- proving the existing
+        sequential contract (first view = True, later views = False)
+        still holds exactly as before under the new RETURNING-based
+        detection, not just that a row exists.
+        """
         app, _client, db = app_ctx
         from kk.models import User
         from kk.view_history import record_user_listing_view
@@ -224,10 +242,17 @@ class TestRecordUserListingViewUpsert:
 
         with app.app_context():
             viewer = db.session.get(User, viewer_id)
+            results = []
             for _ in range(5):
-                record_user_listing_view(viewer, str(car_id))
+                car, is_first = record_user_listing_view(viewer, str(car_id))
                 db.session.commit()
+                results.append(is_first)
+                # Exact existing return contract: (car, is_first_view).
+                assert car is not None
+                assert car.id == car_id
+                assert isinstance(is_first, bool)
 
+            assert results == [True, False, False, False, False]
             assert _row_count(db, viewer_id, car_id) == 1
 
     def test_other_users_and_cars_are_not_modified(self, app_ctx):
