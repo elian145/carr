@@ -6,6 +6,8 @@ Create Date: 2026-05-17
 
 """
 
+from __future__ import annotations
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -14,6 +16,17 @@ revision = "w1x2y3z4a5b6"
 down_revision = "v8k9m0n1p2q3"
 branch_labels = None
 depends_on = None
+
+
+# D-02: read-only introspection helper. A conservative "not present" default
+# on inspection failure only controls whether we *attempt* the operation
+# below; it must never be used to swallow an error raised by op.add_column /
+# op.drop_column themselves (see PRODUCTION_AUDIT.md D-02).
+def _columns(conn, table: str) -> set[str]:
+    try:
+        return {c["name"] for c in sa.inspect(conn).get_columns(table)}
+    except Exception:
+        return set()
 
 
 def upgrade():
@@ -55,20 +68,18 @@ def upgrade():
     )
     op.create_index("ix_saved_search_alert_car_id", "saved_search_alert", ["car_id"], unique=False)
 
-    try:
+    conn = op.get_bind()
+    if "price_at_favorite" not in _columns(conn, "user_favorites"):
         op.add_column(
             "user_favorites",
             sa.Column("price_at_favorite", sa.Float(), nullable=True),
         )
-    except Exception:
-        pass
 
 
 def downgrade():
-    try:
+    conn = op.get_bind()
+    if "price_at_favorite" in _columns(conn, "user_favorites"):
         op.drop_column("user_favorites", "price_at_favorite")
-    except Exception:
-        pass
     op.drop_index("ix_saved_search_alert_car_id", table_name="saved_search_alert")
     op.drop_index("ix_saved_search_alert_saved_search_id", table_name="saved_search_alert")
     op.drop_table("saved_search_alert")

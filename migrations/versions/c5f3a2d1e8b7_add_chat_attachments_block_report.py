@@ -6,6 +6,8 @@ Create Date: 2026-03-27
 
 """
 
+from __future__ import annotations
+
 from alembic import op
 import sqlalchemy as sa
 
@@ -16,15 +18,41 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    # Add attachment_url to message table.
+# D-02: these three read-only introspection helpers may legitimately return a
+# conservative default ("not present") if the DB can't be inspected for some
+# reason -- that only affects whether we *attempt* an operation, never
+# whether a genuine failure from the operation itself is reported. They must
+# not be used to swallow errors from op.* calls (see PRODUCTION_AUDIT.md D-02).
+def _has_table(conn, name: str) -> bool:
     try:
-        op.add_column("message", sa.Column("attachment_url", sa.Text(), nullable=True))
+        return bool(sa.inspect(conn).has_table(name))
     except Exception:
-        pass
+        return False
+
+
+def _columns(conn, table: str) -> set[str]:
+    try:
+        return {c["name"] for c in sa.inspect(conn).get_columns(table)}
+    except Exception:
+        return set()
+
+
+def _index_names(conn, table: str) -> set[str]:
+    try:
+        return {ix["name"] for ix in sa.inspect(conn).get_indexes(table)}
+    except Exception:
+        return set()
+
+
+def upgrade():
+    conn = op.get_bind()
+
+    # Add attachment_url to message table.
+    if "attachment_url" not in _columns(conn, "message"):
+        op.add_column("message", sa.Column("attachment_url", sa.Text(), nullable=True))
 
     # Create blocked_user table.
-    try:
+    if not _has_table(conn, "blocked_user"):
         op.create_table(
             "blocked_user",
             sa.Column("id", sa.Integer(), primary_key=True),
@@ -33,13 +61,14 @@ def upgrade():
             sa.Column("created_at", sa.DateTime()),
             sa.UniqueConstraint("blocker_id", "blocked_id", name="uq_blocked_user"),
         )
+    blocked_user_indexes = _index_names(conn, "blocked_user")
+    if "ix_blocked_user_blocker_id" not in blocked_user_indexes:
         op.create_index("ix_blocked_user_blocker_id", "blocked_user", ["blocker_id"])
+    if "ix_blocked_user_blocked_id" not in blocked_user_indexes:
         op.create_index("ix_blocked_user_blocked_id", "blocked_user", ["blocked_id"])
-    except Exception:
-        pass
 
     # Create user_report table.
-    try:
+    if not _has_table(conn, "user_report"):
         op.create_table(
             "user_report",
             sa.Column("id", sa.Integer(), primary_key=True),
@@ -50,22 +79,18 @@ def upgrade():
             sa.Column("status", sa.String(20), server_default="pending"),
             sa.Column("created_at", sa.DateTime()),
         )
+    user_report_indexes = _index_names(conn, "user_report")
+    if "ix_user_report_reporter_id" not in user_report_indexes:
         op.create_index("ix_user_report_reporter_id", "user_report", ["reporter_id"])
+    if "ix_user_report_reported_id" not in user_report_indexes:
         op.create_index("ix_user_report_reported_id", "user_report", ["reported_id"])
-    except Exception:
-        pass
 
 
 def downgrade():
-    try:
+    conn = op.get_bind()
+    if _has_table(conn, "user_report"):
         op.drop_table("user_report")
-    except Exception:
-        pass
-    try:
+    if _has_table(conn, "blocked_user"):
         op.drop_table("blocked_user")
-    except Exception:
-        pass
-    try:
+    if "attachment_url" in _columns(conn, "message"):
         op.drop_column("message", "attachment_url")
-    except Exception:
-        pass
