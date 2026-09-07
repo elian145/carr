@@ -37,12 +37,9 @@ from ..models import (
     DealerApplication,
     DealerDecision,
     EmailVerification,
-    ListingReport,
-    Message,
     PasswordReset,
     TokenBlacklist,
     User,
-    UserReport,
     db,
 )
 from ..security import check_rate_limit, rate_limit, validate_input_sanitization
@@ -881,7 +878,8 @@ def _scrub_user_listings_on_delete(user_id: int) -> None:
         car.status = "hidden"
         car.description = None
         car.vin = None
-        car.location = None
+        # `location` is NOT NULL — do not assign None (that 500s the
+        # anonymize fallback). The listing is already hidden from browse.
         for img in list(car.images or []):
             db.session.delete(img)
         for vid in list(car.videos or []):
@@ -1043,25 +1041,15 @@ def delete_account():
         current_user.favorites = []
         current_user.viewed_listings = []
 
-        if "message" in table_names:
-            Message.query.filter(
-                (Message.sender_id == user_id) | (Message.receiver_id == user_id),
-            ).delete(synchronize_session=False)
+        # D-01: do NOT bulk-delete Message / UserReport / ListingReport here.
+        # Conversation history and trust & safety reports must survive account
+        # deletion (SET NULL on the user/listing FKs). Group-A child rows
+        # (blocks, tokens, saved searches) are still cleaned explicitly.
 
         if "blocked_user" in table_names:
             BlockedUser.query.filter(
                 (BlockedUser.blocker_id == user_id) | (BlockedUser.blocked_id == user_id),
             ).delete(synchronize_session=False)
-
-        if "user_report" in table_names:
-            UserReport.query.filter(
-                (UserReport.reporter_id == user_id) | (UserReport.reported_id == user_id),
-            ).delete(synchronize_session=False)
-
-        if "listing_report" in table_names:
-            ListingReport.query.filter_by(reporter_id=user_id).delete(
-                synchronize_session=False
-            )
 
         if "token_blacklist" in table_names:
             TokenBlacklist.query.filter_by(user_id=user_id).delete()
@@ -1079,6 +1067,24 @@ def delete_account():
         log_user_action(current_user, "account_deleted")
 
         try:
+            # Chat-list grouping fix: stamp every message this user sent or
+            # received with their own (about-to-be-gone) id, *before* the
+            # DB's `ON DELETE SET NULL` on sender_id/receiver_id fires below.
+            # `deleted_counterpart_marker` has no FK, so it survives the
+            # delete untouched; kk/routes/chat.py::list_chats() uses it to
+            # keep collapsing this user's messages into one conversation row
+            # per car, without merging them with some *other* deleted
+            # user's messages about the same car.
+            if "message" in table_names:
+                from ..models import Message as _ChatMessage
+
+                _ChatMessage.query.filter(
+                    (_ChatMessage.sender_id == user_id)
+                    | (_ChatMessage.receiver_id == user_id),
+                ).update(
+                    {"deleted_counterpart_marker": user_id}, synchronize_session=False
+                )
+
             db.session.delete(current_user)
             db.session.commit()
             return jsonify({"message": "Account deleted successfully"}), 200
@@ -1096,24 +1102,11 @@ def delete_account():
             # Re-apply association clears after rollback
             current_user.favorites = []
             current_user.viewed_listings = []
-            if "message" in table_names:
-                Message.query.filter(
-                    (Message.sender_id == user_id) | (Message.receiver_id == user_id),
-                ).delete(synchronize_session=False)
             if "blocked_user" in table_names:
                 BlockedUser.query.filter(
                     (BlockedUser.blocker_id == user_id)
                     | (BlockedUser.blocked_id == user_id),
                 ).delete(synchronize_session=False)
-            if "user_report" in table_names:
-                UserReport.query.filter(
-                    (UserReport.reporter_id == user_id)
-                    | (UserReport.reported_id == user_id),
-                ).delete(synchronize_session=False)
-            if "listing_report" in table_names:
-                ListingReport.query.filter_by(reporter_id=user_id).delete(
-                    synchronize_session=False
-                )
             if "saved_search" in table_names:
                 from ..models import SavedSearch
 

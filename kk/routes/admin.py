@@ -2016,7 +2016,7 @@ def purge_car(car_id: str):
             return denied
         from ..favorites_cleanup import remove_listing_from_all_favorites
         from ..view_history import remove_listing_from_all_view_history
-        from ..models import ListingAnalytics, ListingReport, SavedSearchAlert
+        from ..models import ListingAnalytics, SavedSearchAlert
 
         admin_user = get_current_user()
         car = _find_car(car_id)
@@ -2027,7 +2027,7 @@ def purge_car(car_id: str):
 
         remove_listing_from_all_favorites(car_pk)
         remove_listing_from_all_view_history(car_pk)
-        ListingReport.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
+        # D-01: ListingReport rows survive a purged listing (car_id SET NULL).
         ListingAnalytics.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
         SavedSearchAlert.query.filter_by(car_id=car_pk).delete(synchronize_session=False)
         Message.query.filter_by(car_id=car_pk).delete(synchronize_session=False)

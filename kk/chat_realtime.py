@@ -182,11 +182,19 @@ def emit_message_to_participants(
     resolved_receiver = receiver
     if message is not None:
         if resolved_sender is None:
-            resolved_sender = message.sender or db.session.get(User, message.sender_id)
+            if message.sender_id is None:
+                resolved_sender = None
+            else:
+                resolved_sender = message.sender or db.session.get(
+                    User, message.sender_id
+                )
         if resolved_receiver is None:
-            resolved_receiver = message.receiver or db.session.get(
-                User, message.receiver_id
-            )
+            if message.receiver_id is None:
+                resolved_receiver = None
+            else:
+                resolved_receiver = message.receiver or db.session.get(
+                    User, message.receiver_id
+                )
     emit_to_user_rooms(event_name, payload, resolved_sender, resolved_receiver)
 
 

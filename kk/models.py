@@ -55,8 +55,8 @@ def _listing_contact_phone_list(car) -> list[str]:
 
 # Association tables for many-to-many relationships
 user_favorites = db.Table('user_favorites',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('car_id', db.Integer, db.ForeignKey('car.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('car_id', db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), primary_key=True),
     db.Column('created_at', db.DateTime, default=utcnow),
     # C-11: exact money storage (was Float). Nullable — only set once a car
     # is favorited (see kk/routes/favorites.py).
@@ -64,8 +64,8 @@ user_favorites = db.Table('user_favorites',
 )
 
 user_viewed_listings = db.Table('user_viewed_listings',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('car_id', db.Integer, db.ForeignKey('car.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), primary_key=True),
+    db.Column('car_id', db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), primary_key=True),
     db.Column('viewed_at', db.DateTime, default=utcnow)
 )
 
@@ -148,7 +148,29 @@ class User(db.Model):
     tokens_invalid_before = db.Column(db.DateTime, nullable=True)
     
     # Relationships
-    cars = db.relationship('Car', backref='seller', lazy=True, cascade='all, delete-orphan')
+    #
+    # D-01: `cars`, `dealer_application`, and `dealer_profile` intentionally do
+    # NOT use `cascade='all, delete-orphan'`. That ORM cascade would make
+    # SQLAlchemy issue explicit `DELETE` statements for the child rows
+    # *before* attempting to delete the User — bypassing whatever the
+    # database-level `ondelete=` policy says (RESTRICT/SET NULL only fire
+    # when the DB itself processes a parent delete while children still
+    # exist; they never apply if the ORM proactively deletes the children
+    # itself). Per the D-01 product decision, listings/dealer records must
+    # survive account deletion (car.seller_id=RESTRICT,
+    # dealer_application.user_id/dealer_profile.user_id=SET NULL), so these
+    # three relationships use the default-equivalent 'save-update, merge'
+    # cascade instead — see kk/routes/auth.py::delete_account().
+    cars = db.relationship(
+        'Car',
+        backref='seller',
+        lazy=True,
+        cascade='save-update, merge',
+        # Let the DB enforce RESTRICT. Without this the ORM would emit
+        # UPDATE car SET seller_id=NULL before deleting the user, which
+        # fails the NOT NULL column and never reaches the FK policy.
+        passive_deletes=True,
+    )
     sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender', lazy=True)
     received_messages = db.relationship('Message', foreign_keys='Message.receiver_id', backref='receiver', lazy=True)
     notifications = db.relationship('Notification', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -160,13 +182,13 @@ class User(db.Model):
         foreign_keys='DealerApplication.user_id',
         back_populates='user',
         uselist=False,
-        cascade='all, delete-orphan',
+        cascade='save-update, merge',
     )
     dealer_profile = db.relationship(
         'DealerProfile',
         back_populates='user',
         uselist=False,
-        cascade='all, delete-orphan',
+        cascade='save-update, merge',
     )
     
     # Firebase token for push notifications
@@ -372,7 +394,11 @@ class DealerApplication(db.Model):
     public_id = db.Column(
         db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    # D-01: SET NULL, not CASCADE — application/review history is preserved
+    # after the owning account is deleted (see kk/routes/auth.py::delete_account()).
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), unique=True, nullable=True
+    )
     status = db.Column(db.String(20), nullable=False, default="draft", index=True)
     dealership_name = db.Column(db.String(120), nullable=False)
     dealership_phone = db.Column(db.String(20), nullable=False)
@@ -433,7 +459,12 @@ class DealerProfile(db.Model):
     public_id = db.Column(
         db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True, nullable=False)
+    # D-01: SET NULL, not CASCADE — the public dealer profile record is
+    # preserved after the owning account is deleted (see
+    # kk/routes/auth.py::delete_account()).
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), unique=True, nullable=True
+    )
     dealership_name = db.Column(db.String(120), nullable=False)
     dealership_phone = db.Column(db.String(20), nullable=False)
     dealership_phones = db.Column(db.JSON, nullable=True)
@@ -498,9 +529,14 @@ class DealerDecision(db.Model):
         db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
     application_id = db.Column(
-        db.Integer, db.ForeignKey("dealer_application.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("dealer_application.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
-    reviewer_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    # D-01: SET NULL — the decision record (snapshot/reason) is preserved even
+    # if the reviewing identity is later removed; already null-safe in to_dict().
+    reviewer_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
     decision = db.Column(db.String(20), nullable=False)
     reason = db.Column(db.Text, nullable=True)
     application_snapshot = db.Column(db.JSON, nullable=False, default=dict)
@@ -541,7 +577,12 @@ class Car(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
-    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # D-01: RESTRICT (explicit) — account deletion must never destroy or
+    # orphan a seller's listings. The DB blocks deleting a `user` row while
+    # any `car` row still references it; kk/routes/auth.py::delete_account()
+    # relies on exactly this to fall back to anonymizing the account instead
+    # of hard-deleting it. See also `User.cars`' cascade note above.
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='RESTRICT'), nullable=False)
     
     # Basic car information
     title = db.Column(db.String(200), nullable=False, default='')  # Some legacy DBs require NOT NULL
@@ -713,7 +754,7 @@ class CarImage(db.Model):
     __tablename__ = 'car_image'
     
     id = db.Column(db.Integer, primary_key=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
     # Full R2/CDN HTTPS URLs exceed VARCHAR(200); keep aligned with car_video.video_url.
     image_url = db.Column(db.String(2048), nullable=False)
     is_primary = db.Column(db.Boolean, default=False)
@@ -745,7 +786,7 @@ class CarVideo(db.Model):
     __tablename__ = 'car_video'
     
     id = db.Column(db.Integer, primary_key=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
     # Full R2/CDN URLs can exceed 200 chars
     video_url = db.Column(db.String(2048), nullable=False)
     thumbnail_url = db.Column(db.String(2048), nullable=True)
@@ -769,7 +810,9 @@ class ListingAnalytics(db.Model):
     __tablename__ = 'listing_analytics'
     
     id = db.Column(db.Integer, primary_key=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, unique=True, index=True)
+    car_id = db.Column(
+        db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, unique=True, index=True
+    )
     views = db.Column(db.Integer, default=0)
     messages = db.Column(db.Integer, default=0)
     calls = db.Column(db.Integer, default=0)
@@ -779,7 +822,11 @@ class ListingAnalytics(db.Model):
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     
     # Relationship
-    car = db.relationship('Car', backref='analytics')
+    car = db.relationship(
+        'Car',
+        backref=db.backref('analytics', passive_deletes=True),
+        passive_deletes=True,
+    )
     
     def to_dict(self):
         # Get image URL using the same logic as the my_listings endpoint
@@ -914,10 +961,28 @@ class Message(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=True, index=True)
-    reply_to_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=True, index=True)
+    # D-01: SET NULL, not CASCADE — deleting a User must preserve
+    # conversation history for the other party (see delete_account()).
+    # nullable=True is required for SET NULL; callers already handle (or
+    # have been updated to handle, see kk/routes/chat.py::list_chats() and
+    # kk/chat_realtime.py::emit_message_to_participants()) a NULL sender or
+    # receiver as a deleted/anonymized user.
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True, index=True)
+    receiver_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='SET NULL'), nullable=True, index=True)
+    reply_to_id = db.Column(db.Integer, db.ForeignKey('message.id', ondelete='SET NULL'), nullable=True, index=True)
+    # D-01 follow-up (chat list dedup fix): deliberately NOT a ForeignKey —
+    # this must survive forever, even after the referenced user row is gone,
+    # and must never itself be nulled/cascaded. `delete_account()` stamps
+    # this with the doomed user's own id, on every message row where they
+    # were sender or receiver, *immediately before* deleting them (i.e.
+    # before the DB's `ON DELETE SET NULL` on sender_id/receiver_id fires).
+    # `list_chats()` uses it purely to keep collapsing every message from
+    # the *same* deleted counterpart into one conversation row, while still
+    # keeping two different deleted counterparts (e.g. two buyers who each
+    # messaged about the same car, then both deleted their accounts)
+    # separate. Never exposed via to_dict()/API responses.
+    deleted_counterpart_marker = db.Column(db.Integer, nullable=True)
     content = db.Column(db.Text, nullable=False)
     message_type = db.Column(db.String(20), default='text')  # text, image, file
     attachment_url = db.Column(db.Text, nullable=True)
@@ -1014,7 +1079,7 @@ class Notification(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     title = db.Column(db.String(200), nullable=False)
     message = db.Column(db.Text, nullable=False)
     notification_type = db.Column(db.String(50), nullable=False)  # message, listing, favorite, etc.
@@ -1055,7 +1120,10 @@ class ScheduledNotification(db.Model):
     )  # pending | sending | sent | cancelled | failed
     result = db.Column(db.JSON, nullable=True)
     error_message = db.Column(db.Text, nullable=True)
-    created_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+    # D-01: SET NULL — this is an admin broadcast audit record; preserve the
+    # scheduled/sent notification history even if the creating admin identity
+    # is later removed.
+    created_by_user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
     sent_at = db.Column(db.DateTime, nullable=True)
@@ -1086,7 +1154,7 @@ class UserAction(db.Model):
     __tablename__ = 'user_action'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     action_type = db.Column(db.String(50), nullable=False)  # view_listing, contact_seller, edit_listing, etc.
     target_type = db.Column(db.String(50), nullable=True)  # car, user, message, etc.
     target_id = db.Column(db.String(50), nullable=True)
@@ -1110,7 +1178,7 @@ class PasswordReset(db.Model):
     __tablename__ = 'password_reset'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     token = db.Column(db.String(100), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
@@ -1126,7 +1194,7 @@ class EmailVerification(db.Model):
     __tablename__ = 'email_verification'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False)
     token = db.Column(db.String(100), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_used = db.Column(db.Boolean, default=False)
@@ -1143,7 +1211,7 @@ class SavedSearch(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()), index=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False, default='')
     filters = db.Column(db.JSON, nullable=False, default=dict)
     notify = db.Column(db.Boolean, default=True, nullable=False)
@@ -1173,8 +1241,10 @@ class SavedSearchAlert(db.Model):
     __tablename__ = 'saved_search_alert'
 
     id = db.Column(db.Integer, primary_key=True)
-    saved_search_id = db.Column(db.Integer, db.ForeignKey('saved_search.id'), nullable=False, index=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
+    saved_search_id = db.Column(
+        db.Integer, db.ForeignKey('saved_search.id', ondelete='CASCADE'), nullable=False, index=True
+    )
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=utcnow)
 
     __table_args__ = (
@@ -1189,8 +1259,8 @@ class BlockedUser(db.Model):
     __tablename__ = 'blocked_user'
 
     id = db.Column(db.Integer, primary_key=True)
-    blocker_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    blocked_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    blocker_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
+    blocked_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=utcnow)
 
     __table_args__ = (
@@ -1205,8 +1275,11 @@ class UserReport(db.Model):
     __tablename__ = 'user_report'
 
     id = db.Column(db.Integer, primary_key=True)
-    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    reported_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    # D-01: SET NULL, not CASCADE — trust & safety report metadata/history is
+    # preserved even if the reporter or the reported user's account is later
+    # deleted (see delete_account()). Already null-safe in to_admin_dict().
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True, index=True)
+    reported_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True, index=True)
     reason = db.Column(db.String(200), nullable=False)
     details = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='pending')  # pending, reviewed, resolved, dismissed
@@ -1248,8 +1321,12 @@ class ListingReport(db.Model):
     __tablename__ = 'listing_report'
 
     id = db.Column(db.Integer, primary_key=True)
-    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
-    car_id = db.Column(db.Integer, db.ForeignKey('car.id'), nullable=False, index=True)
+    # D-01: SET NULL, not CASCADE — listing report metadata/history is
+    # preserved even if the reporter's account or the reported listing is
+    # later deleted/purged (see delete_account(), admin.purge_car()).
+    # Already null-safe in to_admin_dict().
+    reporter_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='SET NULL'), nullable=True, index=True)
     reason = db.Column(db.String(200), nullable=False)
     details = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='pending')  # pending, reviewed, resolved, dismissed
@@ -1303,7 +1380,7 @@ class TokenBlacklist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, unique=True, index=True)  # JWT ID
     token_type = db.Column(db.String(10), nullable=False)  # 'access' or 'refresh'
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=True)
     revoked_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     expires_at = db.Column(db.DateTime, nullable=False)
     
@@ -1378,7 +1455,9 @@ class CatalogVehicleModel(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    brand_id = db.Column(db.Integer, db.ForeignKey("catalog_brand.id"), nullable=False, index=True)
+    brand_id = db.Column(
+        db.Integer, db.ForeignKey("catalog_brand.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     name = db.Column(db.String(120), nullable=False, index=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     sort_order = db.Column(db.Integer, default=0, nullable=False)
@@ -1422,7 +1501,10 @@ class CatalogTrim(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     model_id = db.Column(
-        db.Integer, db.ForeignKey("catalog_vehicle_model.id"), nullable=False, index=True
+        db.Integer,
+        db.ForeignKey("catalog_vehicle_model.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     name = db.Column(db.String(120), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)

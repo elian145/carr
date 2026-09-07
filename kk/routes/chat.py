@@ -285,12 +285,32 @@ def list_chats():
             other_id = m.receiver_id if m.sender_id == me.id else m.sender_id
             if other_id in blocked_ids:
                 continue
-            key = (m.car_id or 0, int(other_id))
+            # D-01: a deleted counterpart leaves sender_id/receiver_id NULL.
+            # `deleted_counterpart_marker` is stamped, per message, with the
+            # former counterpart's own id by delete_account() *before* the
+            # DB's ON DELETE SET NULL fires (see kk/models.py::Message and
+            # kk/routes/auth.py::delete_account()). It has no FK, so it
+            # survives and lets every message from the *same* deleted
+            # counterpart keep collapsing into one conversation row here,
+            # while two different deleted counterparts who each messaged
+            # about the same listing still get separate rows. Rows written
+            # before this marker existed have nothing to key on — fall back
+            # to one row per message for those (conservative: never merges
+            # two unrelated deleted-user conversations, even if it can't
+            # collapse a legacy one either). Never call int(None) either way.
+            if other_id is None:
+                if m.deleted_counterpart_marker is not None:
+                    key = (m.car_id or 0, f"deleted-user:{m.deleted_counterpart_marker}")
+                else:
+                    key = (m.car_id or 0, f"deleted:{m.id}")
+            else:
+                key = (m.car_id or 0, int(other_id))
             if key in seen:
                 continue
             seen.add(key)
             conversation_rows.append((m, other_id))
-            other_ids.add(int(other_id))
+            if other_id is not None:
+                other_ids.add(int(other_id))
             if m.car_id:
                 car_ids.add(int(m.car_id))
 
@@ -327,9 +347,13 @@ def list_chats():
 
         chats = []
         for m, other_id in conversation_rows:
-            other = users_by_id.get(int(other_id))
+            other = users_by_id.get(int(other_id)) if other_id is not None else None
             car = cars_by_id.get(int(m.car_id)) if m.car_id else None
-            unread = unread_by_key.get((int(m.car_id or 0), int(other_id)), 0) if m.car_id else 0
+            unread = (
+                unread_by_key.get((int(m.car_id or 0), int(other_id)), 0)
+                if m.car_id and other_id is not None
+                else 0
+            )
 
             car_title = None
             car_image_url = None
@@ -338,6 +362,16 @@ def list_chats():
                 if not car_title.strip():
                     car_title = f"{car.brand} {car.model} {car.year}".strip()
                 car_image_url = _first_car_image_rel_path(car)
+
+            if other is None and other_id is None:
+                other_user = {"id": None, "name": "Deleted User"}
+            else:
+                other_user = {
+                    "id": other.public_id if other else None,
+                    "name": (
+                        f"{other.first_name} {other.last_name}".strip() if other else None
+                    ),
+                }
 
             chats.append(
                 {
@@ -349,10 +383,7 @@ def list_chats():
                     "car_trim": getattr(car, "trim", None) if car else None,
                     "car_year": car.year if car else None,
                     "car_image_url": car_image_url,
-                    "other_user": {
-                        "id": other.public_id if other else None,
-                        "name": (f"{other.first_name} {other.last_name}".strip() if other else None),
-                    },
+                    "other_user": other_user,
                     "last_message": {
                         "id": m.public_id,
                         "content": m.content,

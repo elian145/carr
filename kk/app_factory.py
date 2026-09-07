@@ -249,6 +249,20 @@ def create_app():
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_opts
 
     db.init_app(app)
+
+    # D-01: SQLite ignores ON DELETE / ON UPDATE unless PRAGMA foreign_keys=ON
+    # is set on every new connection. Without this, RESTRICT/CASCADE/SET NULL
+    # are silently no-ops in tests and local sqlite.
+    with app.app_context():
+        if db.engine.dialect.name == "sqlite":
+            from sqlalchemy import event
+
+            @event.listens_for(db.engine, "connect")
+            def _sqlite_enable_foreign_keys(dbapi_connection, _connection_record):
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
+
     # Migrations live at repo root (migrations/), not inside kk/
     repo_root = os.path.dirname(app.root_path)
     migrations_dir = os.path.join(repo_root, "migrations")
