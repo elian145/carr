@@ -984,6 +984,68 @@ def _d04_analytics_concurrency_smoke(app) -> int:
     return 0
 
 
+# D-06: FK/report-status indexes -- exact index names this migration must
+# create. Deliberately excludes token_blacklist.expires_at (investigated,
+# zero query usage anywhere in the codebase -- see PRODUCTION_AUDIT.md D-06
+# remediation detail).
+_D06_EXPECTED_INDEXES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    ("notification", "ix_notification_user_id", ("user_id",)),
+    ("user_action", "ix_user_action_user_id", ("user_id",)),
+    ("password_reset", "ix_password_reset_user_id", ("user_id",)),
+    ("email_verification", "ix_email_verification_user_id", ("user_id",)),
+    ("user_report", "ix_user_report_status", ("status",)),
+)
+
+
+def _d06_fk_report_status_index_smoke(app) -> int:
+    """D-06: verify the five new indexes exist on real PostgreSQL.
+
+    Simpler than the C-11/D-01/D-05 smokes above: this migration is pure
+    index-only DDL with no data/column changes, so there is nothing to
+    seed/round-trip -- the chain is already at head (``main()`` runs
+    ``flask db upgrade`` before calling any smoke function), so this just
+    inspects the real Postgres catalog and asserts each expected index
+    exists with the correct column(s), and that the deliberately-excluded
+    ``token_blacklist.expires_at`` was NOT given an index.
+    """
+    from sqlalchemy import inspect
+
+    from kk.extensions import db
+
+    with app.app_context():
+        insp = inspect(db.engine)
+
+        for table, name, cols in _D06_EXPECTED_INDEXES:
+            indexes = {ix["name"]: ix for ix in insp.get_indexes(table)}
+            if name not in indexes:
+                print(f"D-06: expected index missing after migration: {name} on {table}", file=sys.stderr)
+                return 1
+            actual_cols = tuple(indexes[name]["column_names"])
+            if actual_cols != cols:
+                print(
+                    f"D-06: {name} covers {actual_cols}, expected {cols}",
+                    file=sys.stderr,
+                )
+                return 1
+            print(f"D-06: {name} on {table}{list(cols)} OK", flush=True)
+
+        token_blacklist_indexes = {ix["name"] for ix in insp.get_indexes("token_blacklist")}
+        if "ix_token_blacklist_expires_at" in token_blacklist_indexes:
+            print(
+                "D-06: token_blacklist.expires_at was indexed but should NOT be "
+                "(zero query usage -- see PRODUCTION_AUDIT.md D-06 remediation detail)",
+                file=sys.stderr,
+            )
+            return 1
+        if "ix_token_blacklist_jti" not in token_blacklist_indexes:
+            print("D-06: pre-existing ix_token_blacklist_jti is missing (unrelated regression)", file=sys.stderr)
+            return 1
+        print("D-06: token_blacklist.expires_at correctly left unindexed; jti index untouched", flush=True)
+
+    print("D-06: FK/report-status indexes OK", flush=True)
+    return 0
+
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     if str(_REPO_ROOT) not in sys.path:
@@ -1086,6 +1148,10 @@ def main() -> int:
     d04_analytics_status = _d04_analytics_concurrency_smoke(app)
     if d04_analytics_status != 0:
         return d04_analytics_status
+
+    d06_status = _d06_fk_report_status_index_smoke(app)
+    if d06_status != 0:
+        return d06_status
 
     print("migration smoke OK", flush=True)
     return 0
