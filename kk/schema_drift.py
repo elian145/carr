@@ -16,20 +16,22 @@ from __future__ import annotations
 # comment explaining why the table is deliberately model-less.
 KNOWN_TABLE_EXCEPTIONS: frozenset[str] = frozenset()
 
-# Pre-existing nullable drift between kk/models.py and the migration that
-# created the column: the model declares nullable=False (enforced only at
-# the ORM layer via a Python-side default=...) but the migration created the
-# column as nullable=True with no server_default/backfill-then-constrain
-# step. Tracked as D-05 in PRODUCTION_AUDIT.md; out of scope for the C-07
-# PendingSignup cleanup this test was added for. Listed here explicitly so
-# genuinely NEW drift still fails this check.
-KNOWN_NULLABLE_DRIFT: frozenset[tuple[str, str]] = frozenset(
-    {
-        ("user", "account_type"),
-        ("user", "dealer_status"),
-        ("saved_search", "filters"),
-    }
-)
+# Nullable drift between kk/models.py and the migration that created the
+# column, tolerated only until it is actually fixed at the database level.
+#
+# D-05 (PRODUCTION_AUDIT.md) previously tracked exactly three such columns
+# here -- ("user", "account_type"), ("user", "dealer_status"), and
+# ("saved_search", "filters") -- all declared nullable=False in the model
+# but created nullable=True in their respective migrations with no
+# server_default/backfill-then-constrain step. D-05 closed this gap in
+# migrations/versions/3f945e50c327_d05_nullability_hardening.py (defensive
+# backfill + `ALTER COLUMN ... SET NOT NULL` on both dialects), so all three
+# have been removed from this set: the database now genuinely matches the
+# model for those columns, and this set is empty again. Add an entry here
+# ONLY for a new, deliberately-deferred nullable mismatch -- never to
+# silence a mismatch you haven't investigated -- so genuinely new drift
+# still fails this check.
+KNOWN_NULLABLE_DRIFT: frozenset[tuple[str, str]] = frozenset()
 
 
 def compute_schema_drift(inspector, metadata, *, table_exceptions=None, nullable_exceptions=None):

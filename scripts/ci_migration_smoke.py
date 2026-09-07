@@ -413,6 +413,225 @@ def _d01_fk_ondelete_smoke(app) -> int:
     return 0
 
 
+# D-05: nullability hardening -- revision immediately before
+# migrations/versions/3f945e50c327_d05_nullability_hardening.py.
+_D05_PRE_REVISION = "d7e6c32b1689"
+
+
+def _d05_nullability_hardening_smoke(app) -> int:
+    """D-05: prove the nullability-hardening migration against real PostgreSQL.
+
+    Mirrors ``_c11_price_numeric_round_trip``'s downgrade / reseed / re-upgrade
+    shape and complements ``kk/tests/test_d05_nullability_backfill.py``
+    (SQLite): downgrades one revision to widen `user.account_type`,
+    `user.dealer_status`, and `saved_search.filters` back to nullable, seeds
+    both a "dirty" (explicit NULL, via raw SQL so no ORM/Core default can
+    mask it) and a "clean" (explicit non-default value) row for each, then
+    re-applies the migration and asserts:
+      - the dirty rows were backfilled to the documented defaults,
+      - the clean rows were left completely untouched,
+      - all three columns are actually NOT NULL in Postgres afterwards,
+      - PostgreSQL itself now rejects a raw NULL insert/update (not just the
+        ORM).
+    Self-cleaning: the seeded rows are deleted before returning, regardless
+    of outcome, so re-running this smoke against the same database is safe.
+    """
+    import uuid
+
+    from sqlalchemy import inspect, text
+    from sqlalchemy.exc import IntegrityError
+
+    from kk.extensions import db
+
+    suffix = uuid.uuid4().hex[:8]
+    dirty_username = f"d05_dirty_{suffix}"
+    clean_username = f"d05_clean_{suffix}"
+    dirty_user_id: int | None = None
+    clean_user_id: int | None = None
+
+    print(f"D-05: downgrading to {_D05_PRE_REVISION} to reseed NULLs...", flush=True)
+    _run([sys.executable, "-m", "flask", "db", "downgrade", _D05_PRE_REVISION])
+
+    try:
+        with app.app_context():
+            dirty_user_id = db.session.execute(
+                text(
+                    "INSERT INTO \"user\" "
+                    "(public_id, username, password_hash, phone_number, first_name, last_name, "
+                    " account_type, dealer_status) "
+                    "VALUES (:pid, :username, 'x', :phone, 'D05', 'Dirty', NULL, NULL) "
+                    "RETURNING id"
+                ),
+                {"pid": f"d05dirty{suffix}", "username": dirty_username, "phone": f"07562{suffix[:6]}"},
+            ).scalar()
+            clean_user_id = db.session.execute(
+                text(
+                    "INSERT INTO \"user\" "
+                    "(public_id, username, password_hash, phone_number, first_name, last_name, "
+                    " account_type, dealer_status) "
+                    "VALUES (:pid, :username, 'x', :phone, 'D05', 'Clean', 'dealer', 'approved') "
+                    "RETURNING id"
+                ),
+                {"pid": f"d05clean{suffix}", "username": clean_username, "phone": f"07563{suffix[:6]}"},
+            ).scalar()
+
+            dirty_search_id = db.session.execute(
+                text(
+                    "INSERT INTO saved_search (public_id, user_id, name, filters, notify, auto_saved) "
+                    "VALUES (:pid, :uid, 'Dirty search', NULL, true, false) RETURNING id"
+                ),
+                {"pid": f"d05dirtysearch{suffix}", "uid": clean_user_id},
+            ).scalar()
+            clean_search_id = db.session.execute(
+                text(
+                    "INSERT INTO saved_search (public_id, user_id, name, filters, notify, auto_saved) "
+                    "VALUES (:pid, :uid, 'Clean search', CAST(:filters AS json), true, false) RETURNING id"
+                ),
+                {
+                    "pid": f"d05cleansearch{suffix}",
+                    "uid": clean_user_id,
+                    "filters": '{"brand": "toyota"}',
+                },
+            ).scalar()
+            db.session.commit()
+
+            # Sanity: prove the dirty rows are genuinely NULL pre-migration.
+            row = db.session.execute(
+                text("SELECT account_type, dealer_status FROM \"user\" WHERE id = :id"),
+                {"id": dirty_user_id},
+            ).fetchone()
+            if row is None or row[0] is not None or row[1] is not None:
+                print(f"D-05: dirty user seed did not land as NULL: {row!r}", file=sys.stderr)
+                return 1
+            row = db.session.execute(
+                text("SELECT filters FROM saved_search WHERE id = :id"), {"id": dirty_search_id}
+            ).fetchone()
+            if row is None or row[0] is not None:
+                print(f"D-05: dirty saved_search seed did not land as NULL: {row!r}", file=sys.stderr)
+                return 1
+
+        print("D-05: re-upgrading to head to apply the NOT NULL hardening...", flush=True)
+        _run([sys.executable, "-m", "flask", "db", "upgrade"])
+
+        with app.app_context():
+            db.session.expire_all()
+
+            row = db.session.execute(
+                text("SELECT account_type, dealer_status FROM \"user\" WHERE id = :id"),
+                {"id": dirty_user_id},
+            ).fetchone()
+            if row is None or row[0] != "user" or row[1] != "none":
+                print(f"D-05: dirty user row not backfilled correctly: {row!r}", file=sys.stderr)
+                return 1
+            print("D-05: user.account_type/dealer_status backfill OK (NULL -> 'user'/'none')", flush=True)
+
+            row = db.session.execute(
+                text("SELECT account_type, dealer_status FROM \"user\" WHERE id = :id"),
+                {"id": clean_user_id},
+            ).fetchone()
+            if row is None or row[0] != "dealer" or row[1] != "approved":
+                print(f"D-05: clean user row was clobbered by backfill: {row!r}", file=sys.stderr)
+                return 1
+            print("D-05: pre-existing non-NULL user values preserved OK", flush=True)
+
+            row = db.session.execute(
+                text("SELECT filters FROM saved_search WHERE id = :id"), {"id": dirty_search_id}
+            ).fetchone()
+            if row is None or row[0] != {}:
+                print(f"D-05: dirty saved_search row not backfilled correctly: {row!r}", file=sys.stderr)
+                return 1
+            print("D-05: saved_search.filters backfill OK (NULL -> {})", flush=True)
+
+            row = db.session.execute(
+                text("SELECT filters FROM saved_search WHERE id = :id"), {"id": clean_search_id}
+            ).fetchone()
+            if row is None or row[0] != {"brand": "toyota"}:
+                print(f"D-05: clean saved_search row was clobbered by backfill: {row!r}", file=sys.stderr)
+                return 1
+            print("D-05: pre-existing non-NULL saved_search.filters preserved OK", flush=True)
+
+            insp = inspect(db.engine)
+            user_cols = {c["name"]: c for c in insp.get_columns("user")}
+            search_cols = {c["name"]: c for c in insp.get_columns("saved_search")}
+            checks = (
+                ("user.account_type", user_cols.get("account_type")),
+                ("user.dealer_status", user_cols.get("dealer_status")),
+                ("saved_search.filters", search_cols.get("filters")),
+            )
+            for label, col in checks:
+                if col is None:
+                    print(f"D-05: column missing: {label}", file=sys.stderr)
+                    return 1
+                if col["nullable"]:
+                    print(f"D-05: {label} is still nullable in Postgres after migration", file=sys.stderr)
+                    return 1
+                print(f"D-05: {label} is NOT NULL in Postgres OK", flush=True)
+
+            # PostgreSQL itself (not just the ORM/model) must now reject NULL.
+            for label, stmt, params in (
+                (
+                    "user.account_type",
+                    text(
+                        "INSERT INTO \"user\" "
+                        "(public_id, username, password_hash, phone_number, first_name, last_name, "
+                        " account_type, dealer_status) "
+                        "VALUES (:pid, :username, 'x', :phone, 'D05', 'Reject', NULL, 'none')"
+                    ),
+                    {
+                        "pid": f"d05reject1{suffix}",
+                        "username": f"d05_reject1_{suffix}",
+                        "phone": f"07564{suffix[:6]}",
+                    },
+                ),
+                (
+                    "user.dealer_status",
+                    text(
+                        "INSERT INTO \"user\" "
+                        "(public_id, username, password_hash, phone_number, first_name, last_name, "
+                        " account_type, dealer_status) "
+                        "VALUES (:pid, :username, 'x', :phone, 'D05', 'Reject', 'user', NULL)"
+                    ),
+                    {
+                        "pid": f"d05reject2{suffix}",
+                        "username": f"d05_reject2_{suffix}",
+                        "phone": f"07565{suffix[:6]}",
+                    },
+                ),
+                (
+                    "saved_search.filters",
+                    text(
+                        "INSERT INTO saved_search (public_id, user_id, name, filters, notify, auto_saved) "
+                        "VALUES (:pid, :uid, 'Reject search', NULL, true, false)"
+                    ),
+                    {"pid": f"d05reject3{suffix}", "uid": clean_user_id},
+                ),
+            ):
+                try:
+                    db.session.execute(stmt, params)
+                    db.session.commit()
+                except IntegrityError:
+                    db.session.rollback()
+                    print(f"D-05: {label} correctly rejects NULL at the database level OK", flush=True)
+                else:
+                    print(f"D-05: {label} accepted a NULL insert -- NOT NULL not enforced", file=sys.stderr)
+                    return 1
+
+        print("D-05: nullability hardening migration OK", flush=True)
+        return 0
+    finally:
+        # Self-cleaning: remove every row this smoke seeded, regardless of
+        # outcome, so re-running it against the same database is safe.
+        with app.app_context():
+            db.session.rollback()
+            db.session.execute(
+                text("DELETE FROM saved_search WHERE public_id LIKE :pat"), {"pat": f"d05%{suffix}"}
+            )
+            db.session.execute(
+                text("DELETE FROM \"user\" WHERE public_id LIKE :pat"), {"pat": f"d05%{suffix}"}
+            )
+            db.session.commit()
+
+
 # D-04: atomic SQL counters -- real-PostgreSQL concurrency proofs.
 #
 # Deliberately separate from the SQLite functional tests in
@@ -851,6 +1070,10 @@ def main() -> int:
     d01_status = _d01_fk_ondelete_smoke(app)
     if d01_status != 0:
         return d01_status
+
+    d05_status = _d05_nullability_hardening_smoke(app)
+    if d05_status != 0:
+        return d05_status
 
     d04_primitive_status = _d04_atomic_increment_primitive_smoke(app)
     if d04_primitive_status != 0:
