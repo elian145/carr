@@ -1538,15 +1538,33 @@ def report_car(car_id: str):
             reason = reason[:200]
         details = str(data.get("details") or "").strip()[:2000] or None
 
-        db.session.add(
-            ListingReport(
+        # D-10: uq_listing_report_reporter_car (reporter_id, car_id) means a
+        # repeat report for the same listing by the same reporter would
+        # otherwise raise an uncaught IntegrityError (-> 500). Use the same
+        # dialect-appropriate conflict-safe insert helper as D-04/D-07
+        # (INSERT ... ON CONFLICT DO NOTHING ... RETURNING id) so the
+        # database itself resolves the conflict with no exception, and
+        # detect "was this a new report" via the RETURNING result -- never
+        # result.rowcount (proven unreliable for ON CONFLICT DO NOTHING on
+        # real PostgreSQL, see kk/view_history.py::record_user_listing_view).
+        from ..listing_metrics import _conflict_safe_insert
+
+        insert_stmt = (
+            _conflict_safe_insert(ListingReport)
+            .values(
                 reporter_id=current_user.id,
                 car_id=car.id,
                 reason=reason,
                 details=details,
             )
+            .on_conflict_do_nothing(index_elements=["reporter_id", "car_id"])
+            .returning(ListingReport.id)
         )
+        inserted_row = db.session.execute(insert_stmt).first()
         db.session.commit()
+
+        if inserted_row is None:
+            return jsonify({"message": "You have already reported this listing."}), 200
         return jsonify({"message": "Report submitted. Thank you."}), 201
     except Exception:
         db.session.rollback()

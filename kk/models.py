@@ -1289,6 +1289,19 @@ class UserReport(db.Model):
 class ListingReport(db.Model):
     __tablename__ = 'listing_report'
 
+    # D-10: prevent the same reporter from filing more than one report
+    # against the same listing. NULL reporter_id/car_id (post-D-01 SET
+    # NULL, after the reporter's account or the listing is deleted) are
+    # never restricted by this constraint -- standard SQL never treats two
+    # NULLs as equal for uniqueness purposes on either SQLite or
+    # PostgreSQL, so historical SET-NULL'd rows can never collide with each
+    # other or with anything else here. See
+    # migrations/versions/7ae553c40b45_d_10_dedupe_historical_duplicate_and_.py
+    # for the one-time historical cleanup this constraint required.
+    __table_args__ = (
+        db.UniqueConstraint("reporter_id", "car_id", name="uq_listing_report_reporter_car"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     # D-01: SET NULL, not CASCADE — listing report metadata/history is
     # preserved even if the reporter's account or the reported listing is

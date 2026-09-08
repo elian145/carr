@@ -25,6 +25,24 @@ def _run(cmd: list[str]) -> None:
     subprocess.run(cmd, cwd=_REPO_ROOT, check=True, env=os.environ.copy())
 
 
+def _run_expect_failure(cmd: list[str]) -> subprocess.CompletedProcess:
+    """Like ``_run``, but asserts the command FAILS (non-zero exit) instead
+    of succeeding. Used by D-10's fail-closed migration path, where the
+    whole point of the smoke assertion is that `flask db upgrade` must
+    itself raise/roll back."""
+    print("+", " ".join(cmd), "(expected to fail)", flush=True)
+    result = subprocess.run(
+        cmd, cwd=_REPO_ROOT, env=os.environ.copy(), capture_output=True, text=True
+    )
+    print(result.stdout, flush=True)
+    print(result.stderr, file=sys.stderr, flush=True)
+    if result.returncode == 0:
+        raise AssertionError(
+            f"expected `{' '.join(cmd)}` to fail, but it succeeded (exit 0)"
+        )
+    return result
+
+
 # C-11: revision immediately before "price Float -> Numeric(12, 2)".
 _C11_PRE_REVISION = "d2e3f4a5b6c7"
 _C11_EXPECTED_INDEXES = ("ix_car_price", "ix_car_active_brand_price", "ix_car_active_year_price")
@@ -1349,6 +1367,373 @@ def _d08_profile_picture_width_smoke(app) -> int:
     return 0
 
 
+# D-10: dedupe historical duplicate and add unique constraint on
+# listing_report(reporter_id, car_id) -- revision immediately before
+# migrations/versions/7ae553c40b45_d_10_dedupe_historical_duplicate_and_.py.
+_D10_PRE_REVISION = "o1p2q3r4s5t6"
+_D10_UNIQUE_CONSTRAINT_NAME = "uq_listing_report_reporter_car"
+
+
+def _d10_force_listing_report_ids_above(conn, minimum: int) -> int:
+    """
+    Deterministically advance the real PostgreSQL sequence backing
+    ``listing_report.id`` so the *next* row inserted is guaranteed to get
+    an id strictly greater than both ``minimum`` and the table's current
+    ``MAX(id)`` -- collision-safe even if an earlier smoke run, or
+    unrelated concurrent activity, already pushed the sequence/table
+    state further than ``minimum`` alone would assume. This is what makes
+    the ``id > 2`` assertions below deterministic rather than merely
+    "usually true" -- this smoke must never depend on ids 1/2 simply
+    being unused by luck.
+
+    ``pg_get_serial_sequence()`` returns the sequence name; it is cast to
+    ``regclass`` explicitly before being passed to ``setval()`` so
+    PostgreSQL resolves it as an object identifier (not a bare string
+    compared against ``regclass``'s own text representation).
+    ``is_called=false`` means the *next* ``nextval()`` call (i.e. the next
+    INSERT) returns ``target`` itself, not ``target + 1``.
+    """
+    from sqlalchemy import text
+
+    seq_name = conn.execute(
+        text("SELECT pg_get_serial_sequence('listing_report', 'id')")
+    ).scalar()
+    if not seq_name:
+        raise RuntimeError(
+            "D-10 smoke: could not resolve the sequence backing listing_report.id"
+        )
+
+    current_max = conn.execute(
+        text("SELECT COALESCE(MAX(id), 0) FROM listing_report")
+    ).scalar()
+
+    target = max(minimum, current_max) + 1
+    conn.execute(
+        text("SELECT setval(CAST(:seq AS regclass), :target, false)"),
+        {"seq": seq_name, "target": target},
+    )
+    return target
+
+
+def _d10_jwt_for(app, user_id: int) -> str:
+    from flask_jwt_extended import create_access_token
+
+    with app.app_context():
+        return create_access_token(identity=str(user_id))
+
+
+def _d10_listing_report_dedup_smoke(app) -> int:
+    """
+    D-10: prove the dedupe-and-constrain migration against real
+    PostgreSQL, in two phases. Complements
+    ``kk/tests/test_d10_listing_report_duplicates.py`` (SQLite): those
+    prove the migration's *logic* is correct (including the exact known
+    id=1/id=2 production identity check); this proves the dialect-specific
+    DDL (``pg_get_serial_sequence``/``setval``/``create_unique_constraint``)
+    and the ``ON CONFLICT DO NOTHING ... RETURNING`` upsert actually work
+    against real PostgreSQL, with deterministic (never luck-dependent)
+    ids for every seeded row.
+
+    Phase 1 (success path): downgrades one revision, seeds exactly ONE
+    (non-duplicate) listing_report row with a sequence-advanced id (never
+    1 or 2), re-upgrades (must succeed: the known-duplicate cleanup is a
+    no-op since id=2 isn't 26/162, the residual-duplicate scan passes,
+    and the unique constraint is created), then proves: a raw duplicate
+    INSERT for that same (reporter_id, car_id) pair is rejected by
+    PostgreSQL itself, and ``report_car()`` returns 200 for a repeat
+    report of that same pair but 201 for a fresh pair.
+
+    Phase 2 (fail-closed path): downgrades again, seeds TWO rows for one
+    unrelated (reporter_id, car_id) pair (also sequence-advanced, never
+    1/2), and asserts the re-upgrade FAILS -- and that both duplicate rows
+    and ``alembic_version`` are completely unchanged afterward (real
+    transactional rollback on real PostgreSQL, not just "stopped before
+    doing anything"). It then manually deletes the duplicate (this
+    smoke's own cleanup, not the migration's) and proves the upgrade
+    succeeds cleanly on retry.
+
+    Self-cleaning: every row this smoke seeds is deleted in a ``finally``
+    block, so re-running it against the same database is safe.
+    """
+    import uuid
+
+    from sqlalchemy import inspect, text
+    from sqlalchemy.exc import IntegrityError
+
+    from kk.extensions import db
+    from kk.models import Car, User
+
+    suffix = uuid.uuid4().hex[:8]
+    print(f"D-10: seeding listing_report dedupe smoke (suffix={suffix})...", flush=True)
+
+    def _user(tag: str, phone_prefix: str) -> User:
+        u = User(
+            username=f"d10_{tag}_{suffix}",
+            phone_number=f"{phone_prefix}{suffix[:6]}",
+            first_name="D10",
+            last_name="Smoke",
+            is_active=True,
+            is_verified=True,
+            phone_verified=True,
+            public_id=f"d10{tag}{suffix}",
+        )
+        u.set_password("Aa123456")
+        return u
+
+    def _car(seller_id: int, tag: str) -> Car:
+        return Car(
+            seller_id=seller_id,
+            public_id=f"d10car{tag}{suffix}",
+            brand="d10smoke",
+            model="dedupe",
+            year=2020,
+            mileage=1,
+            engine_type="gas",
+            transmission="auto",
+            drive_type="fwd",
+            condition="used",
+            body_type="sedan",
+            price=1000,
+            location="Erbil",
+            is_active=True,
+        )
+
+    def _insert_listing_report(reporter_id: int, car_id: int, reason: str) -> int:
+        return db.session.execute(
+            text(
+                "INSERT INTO listing_report (reporter_id, car_id, reason, status, created_at) "
+                "VALUES (:rid, :cid, :reason, 'pending', now()) RETURNING id"
+            ),
+            {"rid": reporter_id, "cid": car_id, "reason": reason},
+        ).scalar()
+
+    try:
+        # ==================== Phase 1: success path ====================
+        print(f"D-10: downgrading to {_D10_PRE_REVISION} for phase 1...", flush=True)
+        _run([sys.executable, "-m", "flask", "db", "downgrade", _D10_PRE_REVISION])
+
+        with app.app_context():
+            reporter1 = _user("p1reporter", "07571")
+            seller1 = _user("p1seller", "07572")
+            db.session.add_all([reporter1, seller1])
+            db.session.flush()
+            car1a = _car(seller1.id, "p1a")
+            car1b = _car(seller1.id, "p1b")
+            db.session.add_all([car1a, car1b])
+            db.session.commit()
+            reporter1_id = reporter1.id
+            car1a_id = car1a.id
+            car1a_public = car1a.public_id
+            car1b_public = car1b.public_id
+
+            target1 = _d10_force_listing_report_ids_above(db.session, 100_000)
+            seeded_id = _insert_listing_report(reporter1_id, car1a_id, "phase1 seed")
+            db.session.commit()
+            if seeded_id != target1:
+                print(
+                    f"D-10: phase 1 seeded listing_report.id={seeded_id}, expected exactly {target1}",
+                    file=sys.stderr,
+                )
+                return 1
+            if seeded_id <= 2:
+                print(f"D-10: phase 1 seeded listing_report.id={seeded_id} is not > 2", file=sys.stderr)
+                return 1
+            print(f"D-10: phase 1 seeded listing_report.id={seeded_id} (deterministic, > 2) OK", flush=True)
+
+        print("D-10: upgrading to head (phase 1 must succeed)...", flush=True)
+        _run([sys.executable, "-m", "flask", "db", "upgrade"])
+
+        with app.app_context():
+            db.session.expire_all()
+            insp = inspect(db.engine)
+            names = {uc["name"] for uc in insp.get_unique_constraints("listing_report")}
+            if _D10_UNIQUE_CONSTRAINT_NAME not in names:
+                print(
+                    f"D-10: {_D10_UNIQUE_CONSTRAINT_NAME} missing after phase 1 upgrade",
+                    file=sys.stderr,
+                )
+                return 1
+            print(f"D-10: {_D10_UNIQUE_CONSTRAINT_NAME} exists after phase 1 upgrade OK", flush=True)
+
+            try:
+                db.session.execute(
+                    text(
+                        "INSERT INTO listing_report (reporter_id, car_id, reason, status, created_at) "
+                        "VALUES (:rid, :cid, 'dup probe', 'pending', now())"
+                    ),
+                    {"rid": reporter1_id, "cid": car1a_id},
+                )
+                db.session.commit()
+                print(
+                    "D-10: duplicate raw INSERT unexpectedly succeeded after phase 1 upgrade",
+                    file=sys.stderr,
+                )
+                return 1
+            except IntegrityError:
+                db.session.rollback()
+                print("D-10: duplicate raw INSERT correctly rejected by PostgreSQL OK", flush=True)
+
+        token1 = _d10_jwt_for(app, reporter1_id)
+        with app.test_client() as client:
+            r_dup = client.post(
+                f"/api/cars/{car1a_public}/report",
+                json={"reason": "route dup probe"},
+                headers={"Authorization": f"Bearer {token1}"},
+            )
+            if r_dup.status_code != 200:
+                print(
+                    f"D-10: report_car() on already-reported pair returned {r_dup.status_code}, expected 200",
+                    file=sys.stderr,
+                )
+                return 1
+            print("D-10: report_car() repeat-report -> 200 OK", flush=True)
+
+            r_new = client.post(
+                f"/api/cars/{car1b_public}/report",
+                json={"reason": "route new probe"},
+                headers={"Authorization": f"Bearer {token1}"},
+            )
+            if r_new.status_code != 201:
+                print(
+                    f"D-10: report_car() on a fresh pair returned {r_new.status_code}, expected 201",
+                    file=sys.stderr,
+                )
+                return 1
+            print("D-10: report_car() new-report -> 201 OK", flush=True)
+
+        # ==================== Phase 2: fail-closed path ====================
+        print(f"D-10: downgrading to {_D10_PRE_REVISION} for phase 2...", flush=True)
+        _run([sys.executable, "-m", "flask", "db", "downgrade", _D10_PRE_REVISION])
+
+        with app.app_context():
+            reporter2 = _user("p2reporter", "07573")
+            seller2 = _user("p2seller", "07574")
+            db.session.add_all([reporter2, seller2])
+            db.session.flush()
+            car2 = _car(seller2.id, "p2")
+            db.session.add(car2)
+            db.session.commit()
+            reporter2_id = reporter2.id
+            car2_id = car2.id
+
+            target2 = _d10_force_listing_report_ids_above(db.session, 200_000)
+            dup_id_1 = _insert_listing_report(reporter2_id, car2_id, "phase2 seed a")
+            dup_id_2 = _insert_listing_report(reporter2_id, car2_id, "phase2 seed b")
+            db.session.commit()
+            if dup_id_1 != target2:
+                print(
+                    f"D-10: phase 2 first seeded id={dup_id_1}, expected exactly {target2}",
+                    file=sys.stderr,
+                )
+                return 1
+            if dup_id_1 <= 2 or dup_id_2 <= 2:
+                print(
+                    f"D-10: phase 2 seeded ids are not both > 2: {dup_id_1}, {dup_id_2}",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                f"D-10: phase 2 seeded duplicate ids={dup_id_1},{dup_id_2} (deterministic, > 2) OK",
+                flush=True,
+            )
+
+        result = _run_expect_failure([sys.executable, "-m", "flask", "db", "upgrade"])
+        combined_output = (result.stdout or "") + (result.stderr or "")
+        if "unexpected duplicate" not in combined_output.lower():
+            print(
+                "D-10: phase 2 upgrade failed, but not with the expected "
+                "'unexpected duplicate' error message",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            "D-10: phase 2 upgrade correctly FAILED (unexpected duplicate group rejected) OK",
+            flush=True,
+        )
+
+        with app.app_context():
+            db.session.expire_all()
+            remaining = db.session.execute(
+                text("SELECT COUNT(*) FROM listing_report WHERE id IN (:a, :b)"),
+                {"a": dup_id_1, "b": dup_id_2},
+            ).scalar()
+            if remaining != 2:
+                print(
+                    f"D-10: phase 2 duplicate rows did not survive the rolled-back "
+                    f"migration ({remaining}/2 remain)",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                "D-10: both phase 2 duplicate rows survived the failed migration "
+                "(real transactional rollback) OK",
+                flush=True,
+            )
+
+            insp = inspect(db.engine)
+            names = {uc["name"] for uc in insp.get_unique_constraints("listing_report")}
+            if _D10_UNIQUE_CONSTRAINT_NAME in names:
+                print(
+                    f"D-10: {_D10_UNIQUE_CONSTRAINT_NAME} unexpectedly exists after a "
+                    "failed migration",
+                    file=sys.stderr,
+                )
+                return 1
+
+            version = db.session.execute(
+                text("SELECT version_num FROM alembic_version LIMIT 1")
+            ).scalar()
+            if version != _D10_PRE_REVISION:
+                print(
+                    f"D-10: alembic_version advanced to {version!r} despite the "
+                    "failed migration",
+                    file=sys.stderr,
+                )
+                return 1
+            print(f"D-10: alembic_version correctly still at {_D10_PRE_REVISION!r} OK", flush=True)
+
+            # Manual cleanup of the *unexpected* duplicate -- this smoke's
+            # own test data, not something the migration itself may ever
+            # delete -- so the next upgrade can be proven to succeed.
+            db.session.execute(text("DELETE FROM listing_report WHERE id = :id"), {"id": dup_id_2})
+            db.session.commit()
+
+        print("D-10: re-upgrading to head after manual cleanup (must now succeed)...", flush=True)
+        _run([sys.executable, "-m", "flask", "db", "upgrade"])
+
+        with app.app_context():
+            db.session.expire_all()
+            insp = inspect(db.engine)
+            names = {uc["name"] for uc in insp.get_unique_constraints("listing_report")}
+            if _D10_UNIQUE_CONSTRAINT_NAME not in names:
+                print(
+                    f"D-10: {_D10_UNIQUE_CONSTRAINT_NAME} missing after phase 2 re-upgrade",
+                    file=sys.stderr,
+                )
+                return 1
+        print(f"D-10: {_D10_UNIQUE_CONSTRAINT_NAME} exists after phase 2 re-upgrade OK", flush=True)
+
+        print("D-10: listing_report dedupe + unique constraint smoke OK", flush=True)
+        return 0
+    finally:
+        with app.app_context():
+            db.session.rollback()
+            db.session.execute(
+                text(
+                    "DELETE FROM listing_report WHERE car_id IN "
+                    "(SELECT id FROM car WHERE public_id LIKE :pat)"
+                ),
+                {"pat": f"d10car%{suffix}"},
+            )
+            db.session.execute(
+                text("DELETE FROM car WHERE public_id LIKE :pat"), {"pat": f"d10car%{suffix}"}
+            )
+            db.session.execute(
+                text("DELETE FROM \"user\" WHERE public_id LIKE :pat"), {"pat": f"d10%{suffix}"}
+            )
+            db.session.commit()
+
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     if str(_REPO_ROOT) not in sys.path:
@@ -1463,6 +1848,10 @@ def main() -> int:
     d08_status = _d08_profile_picture_width_smoke(app)
     if d08_status != 0:
         return d08_status
+
+    d10_status = _d10_listing_report_dedup_smoke(app)
+    if d10_status != 0:
+        return d10_status
 
     print("migration smoke OK", flush=True)
     return 0
