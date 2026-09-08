@@ -11,7 +11,7 @@ import secrets
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required
 from sqlalchemy import or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
 from ..models import (
@@ -574,8 +574,17 @@ def recently_viewed():
 
         from ..listing_visibility import listings_visible_to_viewer_filter
 
+        # BE-02: eager-load the relationships `_with_media_compat()` /
+        # `Car.to_dict()` below actually read (images/videos/seller) so the
+        # loop doesn't lazy-load one extra SELECT per relationship per row
+        # (N+1), mirroring the existing `/api/cars` pattern (`kk/routes/cars.py`).
         q = listings_visible_to_viewer_filter(
             db.session.query(Car, user_viewed_listings.c.viewed_at)
+            .options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
             .join(user_viewed_listings, user_viewed_listings.c.car_id == Car.id)
             .filter(user_viewed_listings.c.user_id == current_user.id),
             current_user,

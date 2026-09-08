@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
+from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user
 from ..listing_metrics import (
@@ -53,7 +54,16 @@ def get_listings_analytics():
             _bulk_create_missing_analytics(missing_ids)
             db.session.commit()
 
-        analytics = ListingAnalytics.query.filter(ListingAnalytics.car_id.in_(car_ids)).all()
+        # BE-02: eager-load `car` + `car.images` -- the only relationships
+        # `ListingAnalytics.to_dict()` actually reads (via its
+        # `first_image_rel_path()` helper) -- so this loop doesn't
+        # lazy-load one extra SELECT per row (N+1). `videos`/`seller` are
+        # intentionally NOT eager-loaded here: to_dict() never accesses them.
+        analytics = (
+            ListingAnalytics.query.filter(ListingAnalytics.car_id.in_(car_ids))
+            .options(joinedload(ListingAnalytics.car).selectinload(Car.images))
+            .all()
+        )
         return jsonify([a.to_dict() for a in analytics]), 200
     except Exception:
         return jsonify({"message": "Failed to get analytics"}), 500

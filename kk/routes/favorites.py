@@ -5,6 +5,7 @@ from decimal import Decimal
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import update as sql_update
+from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action
 from ..listing_visibility import listing_visible_to_viewer, listings_visible_to_viewer_filter
@@ -27,10 +28,19 @@ def get_favorites():
         per_page = min(max(request.args.get("per_page", 20, type=int) or 20, 1), 50)
 
         # Order by "favorited at" so newest favorites appear first.
+        # BE-02: eager-load the relationships `Car.to_dict()` below actually
+        # reads (images/videos/seller) so the loop doesn't lazy-load one
+        # extra SELECT per relationship per row (N+1), mirroring the
+        # existing `/api/cars` pattern (`kk/routes/cars.py`).
         q = listings_visible_to_viewer_filter(
             db.session.query(
                 Car,
                 user_favorites.c.created_at.label("favorited_at"),
+            )
+            .options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
             )
             .join(user_favorites, user_favorites.c.car_id == Car.id)
             .filter(user_favorites.c.user_id == current_user.id),
