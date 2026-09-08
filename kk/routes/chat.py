@@ -1269,11 +1269,18 @@ def list_blocked_users():
             return jsonify({"message": "Unauthorized"}), 401
 
         blocks = BlockedUser.query.filter_by(blocker_id=me.id).all()
-        blocked_ids = []
-        for b in blocks:
-            u = db.session.get(User, b.blocked_id)
-            if u:
-                blocked_ids.append(u.public_id)
+        blocked_id_ints = [b.blocked_id for b in blocks]
+        # BE-17: batch-fetch instead of one User lookup per block (N+1);
+        # mirrors the users_by_id pattern already used in list_chats().
+        public_id_by_user_id = {
+            u.id: u.public_id
+            for u in User.query.filter(User.id.in_(blocked_id_ints)).all()
+        } if blocked_id_ints else {}
+        blocked_ids = [
+            public_id_by_user_id[b.blocked_id]
+            for b in blocks
+            if b.blocked_id in public_id_by_user_id
+        ]
         return jsonify({"blocked_users": blocked_ids}), 200
     except Exception:
         return jsonify({"message": "Failed to load blocked users"}), 500
