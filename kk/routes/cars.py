@@ -318,6 +318,22 @@ def _split_multi_filter(val: str | None) -> list[str]:
     ]
 
 
+def _like_escape(value: str) -> str:
+    """Escape ``\\``, ``%`` and ``_`` so ``value`` is matched literally when
+    substituted into an ``ILIKE`` pattern (BE-15).
+
+    Callers must pass ``escape="\\\\"`` to ``.ilike()`` alongside the escaped
+    value, e.g. ``Car.brand.ilike(f"%{_like_escape(brand)}%", escape="\\\\")``.
+    Backslash is escaped first so a literal backslash in ``value`` isn't
+    mistaken for (part of) an escape sequence introduced by this function.
+    """
+    return (
+        value.replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+
+
 def _client_ip() -> str:
     xff = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
     return xff or (request.remote_addr or "anon")
@@ -597,12 +613,12 @@ def get_cars():
         brands = _split_multi_filter(brand)
         if brands:
             query = query.filter(
-                or_(*[Car.brand.ilike(f"%{b}%") for b in brands])
+                or_(*[Car.brand.ilike(f"%{_like_escape(b)}%", escape="\\") for b in brands])
             )
         if model:
-            query = query.filter(Car.model.ilike(f"%{model}%"))
+            query = query.filter(Car.model.ilike(f"%{_like_escape(model)}%", escape="\\"))
         if trim:
-            query = query.filter(Car.trim.ilike(f"%{trim}%"))
+            query = query.filter(Car.trim.ilike(f"%{_like_escape(trim)}%", escape="\\"))
         if year_min:
             query = query.filter(Car.year >= year_min)
         if year_max:
@@ -616,7 +632,7 @@ def get_cars():
         if max_mileage is not None:
             query = query.filter(Car.mileage <= max_mileage)
         if location:
-            query = query.filter(Car.location.ilike(f"%{location}%"))
+            query = query.filter(Car.location.ilike(f"%{_like_escape(location)}%", escape="\\"))
         if condition:
             query = query.filter(Car.condition == condition)
         body_types = _split_multi_filter(body_type)
@@ -646,7 +662,7 @@ def get_cars():
         if engine_size is not None:
             query = query.filter(Car.engine_size == engine_size)
         if color:
-            query = query.filter(Car.color.ilike(f"%{color}%"))
+            query = query.filter(Car.color.ilike(f"%{_like_escape(color)}%", escape="\\"))
         if title_status:
             query = query.filter(Car.title_status == title_status)
         if region_specs:
@@ -654,7 +670,7 @@ def get_cars():
         if plate_type:
             query = query.filter(Car.plate_type == plate_type)
         if plate_city:
-            query = query.filter(Car.plate_city.ilike(f"%{plate_city}%"))
+            query = query.filter(Car.plate_city.ilike(f"%{_like_escape(plate_city)}%", escape="\\"))
 
         sort_by = (request.args.get("sort_by") or "").strip().lower()
         if search_rank is not None and sort_by in ("", "relevance", "rank"):
@@ -761,10 +777,10 @@ def get_cars_alias():
         brands = _split_multi_filter(brand)
         if brands:
             query = query.filter(
-                or_(*[Car.brand.ilike(f"%{b}%") for b in brands])
+                or_(*[Car.brand.ilike(f"%{_like_escape(b)}%", escape="\\") for b in brands])
             )
         if model:
-            query = query.filter(Car.model.ilike(f"%{model}%"))
+            query = query.filter(Car.model.ilike(f"%{_like_escape(model)}%", escape="\\"))
         if year_min:
             query = query.filter(Car.year >= year_min)
         if year_max:
@@ -774,7 +790,7 @@ def get_cars_alias():
         if price_max:
             query = query.filter(Car.price <= price_max)
         if location:
-            query = query.filter(Car.location.ilike(f"%{location}%"))
+            query = query.filter(Car.location.ilike(f"%{_like_escape(location)}%", escape="\\"))
         if condition:
             query = query.filter(Car.condition == condition)
         body_types = _split_multi_filter(body_type)
