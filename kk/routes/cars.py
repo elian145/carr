@@ -634,14 +634,14 @@ def get_cars():
         if location:
             query = query.filter(Car.location.ilike(f"%{_like_escape(location)}%", escape="\\"))
         if condition:
-            query = query.filter(Car.condition == condition)
+            query = query.filter(func.lower(Car.condition) == condition.strip().lower())
         body_types = _split_multi_filter(body_type)
         if body_types:
             query = query.filter(
                 or_(*[func.lower(Car.body_type) == bt.lower() for bt in body_types])
             )
         if transmission:
-            query = query.filter(Car.transmission == transmission)
+            query = query.filter(func.lower(Car.transmission) == transmission.strip().lower())
         drive_types = _split_multi_filter(drive_type)
         if drive_types:
             query = query.filter(
@@ -792,14 +792,14 @@ def get_cars_alias():
         if location:
             query = query.filter(Car.location.ilike(f"%{_like_escape(location)}%", escape="\\"))
         if condition:
-            query = query.filter(Car.condition == condition)
+            query = query.filter(func.lower(Car.condition) == condition.strip().lower())
         body_types = _split_multi_filter(body_type)
         if body_types:
             query = query.filter(
                 or_(*[func.lower(Car.body_type) == bt.lower() for bt in body_types])
             )
         if transmission:
-            query = query.filter(Car.transmission == transmission)
+            query = query.filter(func.lower(Car.transmission) == transmission.strip().lower())
         drive_types = _split_multi_filter(drive_type)
         if drive_types:
             query = query.filter(
