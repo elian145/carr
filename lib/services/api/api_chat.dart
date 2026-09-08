@@ -10,6 +10,12 @@ abstract final class _ApiServiceChat {
       String? receiverId,
       Map<String, dynamic>? listingPreview,
       String? replyToMessageId,
+      // BE-18: caller generates this once per logical send (see
+      // OutgoingChatSendService); the underlying `_makeAuthenticatedRequest` ->
+      // `_sendWithAdaptiveTimeout` timeout retry and 401-refresh retry reuse the
+      // same `requestHeaders` map, so passing it here is enough for every
+      // automatic retry of this call to carry the identical key.
+      String? idempotencyKey,
     }) async {
       final payload = <String, dynamic>{'content': content};
       if (receiverId != null && receiverId.trim().isNotEmpty) {
@@ -21,10 +27,14 @@ abstract final class _ApiServiceChat {
       if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
         payload['reply_to_message_id'] = replyToMessageId.trim();
       }
+      final key = idempotencyKey?.trim();
       return await ApiService._makeAuthenticatedRequest(
         'POST',
         '/chat/$conversationId/send',
         body: payload,
+        headers: (key == null || key.isEmpty)
+            ? null
+            : {'Idempotency-Key': key},
       );
     }
 
@@ -109,6 +119,7 @@ abstract final class _ApiServiceChat {
       String? receiverId,
       String? caption,
       String? replyToMessageId,
+      String? idempotencyKey,
     }) async {
       return _sendChatAttachment(
         conversationId: conversationId,
@@ -118,6 +129,7 @@ abstract final class _ApiServiceChat {
         receiverId: receiverId,
         caption: caption,
         replyToMessageId: replyToMessageId,
+        idempotencyKey: idempotencyKey,
       );
     }
 
@@ -127,6 +139,7 @@ abstract final class _ApiServiceChat {
       String? receiverId,
       String? caption,
       String? replyToMessageId,
+      String? idempotencyKey,
     }) async {
       return _sendChatAttachment(
         conversationId: conversationId,
@@ -136,6 +149,7 @@ abstract final class _ApiServiceChat {
         receiverId: receiverId,
         caption: caption,
         replyToMessageId: replyToMessageId,
+        idempotencyKey: idempotencyKey,
       );
     }
 
@@ -144,6 +158,7 @@ abstract final class _ApiServiceChat {
       required XFile audioFile,
       String? receiverId,
       String? replyToMessageId,
+      String? idempotencyKey,
     }) async {
       return _sendChatAttachment(
         conversationId: conversationId,
@@ -152,6 +167,7 @@ abstract final class _ApiServiceChat {
         file: audioFile,
         receiverId: receiverId,
         replyToMessageId: replyToMessageId,
+        idempotencyKey: idempotencyKey,
       );
     }
 
@@ -162,15 +178,20 @@ abstract final class _ApiServiceChat {
       String? caption,
       String? replyToMessageId,
       Map<String, dynamic>? listingPreview,
+      String? idempotencyKey,
     }) async {
       if (files.isEmpty) {
         throw Exception('No attachments selected');
       }
       final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/send_media_group');
+      final idemKey = idempotencyKey?.trim();
 
       Future<http.Response> makeRequest() async {
         final req = http.MultipartRequest('POST', url);
         req.headers.addAll(ApiService._getHeaders());
+        if (idemKey != null && idemKey.isNotEmpty) {
+          req.headers['Idempotency-Key'] = idemKey;
+        }
         for (final file in files) {
           req.files.add(
             await http.MultipartFile.fromPath('attachments', file.path),
@@ -216,12 +237,17 @@ abstract final class _ApiServiceChat {
       String? receiverId,
       String? caption,
       String? replyToMessageId,
+      String? idempotencyKey,
     }) async {
       final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/$endpointSuffix');
+      final idemKey = idempotencyKey?.trim();
 
       Future<http.Response> makeRequest() async {
         final req = http.MultipartRequest('POST', url);
         req.headers.addAll(ApiService._getHeaders());
+        if (idemKey != null && idemKey.isNotEmpty) {
+          req.headers['Idempotency-Key'] = idemKey;
+        }
         req.files.add(await http.MultipartFile.fromPath(fieldName, file.path));
         if (receiverId != null && receiverId.trim().isNotEmpty) {
           req.fields['receiver_id'] = receiverId.trim();

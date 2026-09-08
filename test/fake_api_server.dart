@@ -27,6 +27,13 @@ class FakeApiServer {
   /// this to 0 at the start of a test that relies on it.
   static int carDetailFetchCount = 0;
 
+  /// BE-18: records the `Idempotency-Key` header (or null if absent) seen on
+  /// every `POST /api/chat/<id>/send*` request, in call order. Used to prove
+  /// the same key is threaded through from `ApiService`/`OutgoingChatSendService`
+  /// down to the actual HTTP request. Reset at the start of a test that relies
+  /// on it.
+  static final List<String?> chatSendIdempotencyKeys = [];
+
   /// When set, protected routes reject requests whose Authorization header
   /// is not `Bearer <token>`.
   static void expectBearer(String? token) {
@@ -62,6 +69,7 @@ class FakeApiServer {
     _expectedBearer = null;
     emptySavedSearches = false;
     carDetailFetchCount = 0;
+    chatSendIdempotencyKeys.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -211,6 +219,12 @@ class FakeApiServer {
         return _json(200, <dynamic>[]);
       }
       if (path.contains('/send') && method == 'POST') {
+        // BE-18: record whatever Idempotency-Key header this request carried
+        // (case as sent by ApiService — no normalization applied here).
+        chatSendIdempotencyKeys.add(
+          request.headers['Idempotency-Key'] ??
+              request.headers['idempotency-key'],
+        );
         var content = 'stub';
         try {
           if (request.body.isNotEmpty) {

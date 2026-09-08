@@ -637,12 +637,14 @@ class ApiService {
     String? receiverId,
     Map<String, dynamic>? listingPreview,
     String? replyToMessageId,
+    String? idempotencyKey,
   }) => _ApiServiceChat.sendChatMessageByConversation(
     conversationId: conversationId,
     content: content,
     receiverId: receiverId,
     listingPreview: listingPreview,
     replyToMessageId: replyToMessageId,
+    idempotencyKey: idempotencyKey,
   );
 
   static Future<int> getUnreadChatCount() =>
@@ -664,12 +666,14 @@ class ApiService {
     String? receiverId,
     String? caption,
     String? replyToMessageId,
+    String? idempotencyKey,
   }) => _ApiServiceChat.sendChatImage(
     conversationId: conversationId,
     imageFile: imageFile,
     receiverId: receiverId,
     caption: caption,
     replyToMessageId: replyToMessageId,
+    idempotencyKey: idempotencyKey,
   );
 
   static Future<Map<String, dynamic>> sendChatVideo({
@@ -678,12 +682,14 @@ class ApiService {
     String? receiverId,
     String? caption,
     String? replyToMessageId,
+    String? idempotencyKey,
   }) => _ApiServiceChat.sendChatVideo(
     conversationId: conversationId,
     videoFile: videoFile,
     receiverId: receiverId,
     caption: caption,
     replyToMessageId: replyToMessageId,
+    idempotencyKey: idempotencyKey,
   );
 
   static Future<Map<String, dynamic>> sendChatAudio({
@@ -691,11 +697,13 @@ class ApiService {
     required XFile audioFile,
     String? receiverId,
     String? replyToMessageId,
+    String? idempotencyKey,
   }) => _ApiServiceChat.sendChatAudio(
     conversationId: conversationId,
     audioFile: audioFile,
     receiverId: receiverId,
     replyToMessageId: replyToMessageId,
+    idempotencyKey: idempotencyKey,
   );
 
   static Future<Map<String, dynamic>> sendChatMediaGroup({
@@ -705,6 +713,7 @@ class ApiService {
     String? caption,
     String? replyToMessageId,
     Map<String, dynamic>? listingPreview,
+    String? idempotencyKey,
   }) => _ApiServiceChat.sendChatMediaGroup(
     conversationId: conversationId,
     files: files,
@@ -712,6 +721,7 @@ class ApiService {
     caption: caption,
     replyToMessageId: replyToMessageId,
     listingPreview: listingPreview,
+    idempotencyKey: idempotencyKey,
   );
 
   static Future<Map<String, dynamic>> editChatMessage({

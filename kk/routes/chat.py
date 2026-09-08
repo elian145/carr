@@ -18,6 +18,7 @@ from ..chat_realtime import (
     mark_messages_read_for_viewer,
     resolve_allowed_chat_receiver,
 )
+from ..idempotency import remember_response, replay_response
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, sniff_bytes, validate_input_sanitization
@@ -34,6 +35,15 @@ _CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
 
 def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
     return resolve_allowed_chat_receiver(me, car, receiver_public)
+
+
+def _get_idempotency_key() -> str:
+    """Optional client-supplied retry key (BE-18). Mirrors kk/routes/cars.py::create_car."""
+    return (
+        request.headers.get("Idempotency-Key")
+        or request.headers.get("X-Idempotency-Key")
+        or ""
+    ).strip()
 
 
 def _count_buyer_message_metric(car: Car, sender: User) -> None:
@@ -484,6 +494,19 @@ def send_message(conversation_id: str):
         if verify_err:
             return verify_err
 
+        # BE-18: replay a completed send for this key instead of re-inserting
+        # a duplicate Message (client retries — timeout, 401-refresh retry, etc.).
+        idem_key = _get_idempotency_key()
+        if idem_key:
+            replayed = replay_response(
+                scope="chat_send",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+            )
+            if replayed is not None:
+                status, body = replayed
+                return jsonify(body), status
+
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()
         listing_preview = data.get("listing_preview")
@@ -532,7 +555,16 @@ def send_message(conversation_id: str):
         # HTTP response).
         payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": payload}), 201
+        response_body = {"success": True, "message": payload}
+        if idem_key:
+            remember_response(
+                scope="chat_send",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+                status=201,
+                body=response_body,
+            )
+        return jsonify(response_body), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send message"}), 500
@@ -548,6 +580,19 @@ def send_image_message(conversation_id: str):
         verify_err = phone_verification_required_response(me)
         if verify_err:
             return verify_err
+
+        # BE-18: replay a completed send for this key before touching R2/DB
+        # (a retry must not re-upload the file or re-insert a Message).
+        idem_key = _get_idempotency_key()
+        if idem_key:
+            replayed = replay_response(
+                scope="chat_send_image",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+            )
+            if replayed is not None:
+                status, body = replayed
+                return jsonify(body), status
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -619,7 +664,16 @@ def send_image_message(conversation_id: str):
         # HTTP response).
         payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": payload}), 201
+        response_body = {"success": True, "message": payload}
+        if idem_key:
+            remember_response(
+                scope="chat_send_image",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+                status=201,
+                body=response_body,
+            )
+        return jsonify(response_body), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send image message"}), 500
@@ -635,6 +689,19 @@ def send_video_message(conversation_id: str):
         verify_err = phone_verification_required_response(me)
         if verify_err:
             return verify_err
+
+        # BE-18: replay a completed send for this key before touching R2/DB
+        # (a retry must not re-upload the file or re-insert a Message).
+        idem_key = _get_idempotency_key()
+        if idem_key:
+            replayed = replay_response(
+                scope="chat_send_video",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+            )
+            if replayed is not None:
+                status, body = replayed
+                return jsonify(body), status
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -706,7 +773,16 @@ def send_video_message(conversation_id: str):
         # HTTP response).
         payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": payload}), 201
+        response_body = {"success": True, "message": payload}
+        if idem_key:
+            remember_response(
+                scope="chat_send_video",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+                status=201,
+                body=response_body,
+            )
+        return jsonify(response_body), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send video message"}), 500
@@ -722,6 +798,19 @@ def send_audio_message(conversation_id: str):
         verify_err = phone_verification_required_response(me)
         if verify_err:
             return verify_err
+
+        # BE-18: replay a completed send for this key before touching R2/DB
+        # (a retry must not re-upload the file or re-insert a Message).
+        idem_key = _get_idempotency_key()
+        if idem_key:
+            replayed = replay_response(
+                scope="chat_send_audio",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+            )
+            if replayed is not None:
+                status, body = replayed
+                return jsonify(body), status
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -796,7 +885,16 @@ def send_audio_message(conversation_id: str):
         # HTTP response).
         payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": payload}), 201
+        response_body = {"success": True, "message": payload}
+        if idem_key:
+            remember_response(
+                scope="chat_send_audio",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+                status=201,
+                body=response_body,
+            )
+        return jsonify(response_body), 201
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to send audio message"}), 500
@@ -812,6 +910,19 @@ def send_media_group_message(conversation_id: str):
         verify_err = phone_verification_required_response(me)
         if verify_err:
             return verify_err
+
+        # BE-18: replay a completed send for this key before touching R2/DB
+        # (a retry must not re-upload the attachments or re-insert a Message).
+        idem_key = _get_idempotency_key()
+        if idem_key:
+            replayed = replay_response(
+                scope="chat_send_media_group",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+            )
+            if replayed is not None:
+                status, body = replayed
+                return jsonify(body), status
 
         car = _get_car_by_any_id(str(conversation_id))
         if not car:
@@ -899,7 +1010,16 @@ def send_media_group_message(conversation_id: str):
         # response).
         payload = deliver_message(msg, sender=me, receiver=receiver)
 
-        return jsonify({"success": True, "message": payload}), 201
+        response_body = {"success": True, "message": payload}
+        if idem_key:
+            remember_response(
+                scope="chat_send_media_group",
+                actor_id=str(me.public_id),
+                idem_key=idem_key,
+                status=201,
+                body=response_body,
+            )
+        return jsonify(response_body), 201
     except RequestEntityTooLarge:
         db.session.rollback()
         max_mb = _max_upload_mb()

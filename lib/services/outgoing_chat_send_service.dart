@@ -1,8 +1,32 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:image_picker/image_picker.dart';
 
 import 'api_service.dart';
+
+/// BE-18: one key per logical send attempt (one call to a `start*Send`
+/// method below), reused for every automatic transport-level retry of that
+/// same HTTP request (timeout retry in `_sendWithAdaptiveTimeout`, 401
+/// token-refresh retry) because it is generated once here and then baked
+/// into the `Idempotency-Key` header for the entire lifetime of that single
+/// `ApiService.sendChatXxx(...)` call. A brand-new user action (pressing
+/// Send again after a failure, recording a new voice note, picking new
+/// photos) always calls `start*Send` again, which generates a fresh key —
+/// so distinct messages never share a key.
+///
+/// No `uuid` package dependency is added for this: `uuid` is only a
+/// transitive dependency today (not declared in pubspec.yaml), and a
+/// microsecond timestamp plus a cryptographically-irrelevant random suffix
+/// is already unique enough for a short-TTL, per-actor-scoped idempotency
+/// key (see kk/idempotency.py).
+final Random _idemKeyRandom = Random();
+
+String _newChatIdempotencyKey() {
+  final ts = DateTime.now().microsecondsSinceEpoch;
+  final rnd = _idemKeyRandom.nextInt(0x7fffffff);
+  return 'chat-send-$ts-$rnd';
+}
 
 enum OutgoingChatSendKind { mediaGroup, textMessage, audio }
 
@@ -138,6 +162,9 @@ class OutgoingChatSendService {
     required List<XFile> restoreFiles,
     String? restoreCaption,
   }) async {
+    // BE-18: one key for this whole logical send attempt (including any
+    // automatic transport retry of the same HTTP call below).
+    final idempotencyKey = _newChatIdempotencyKey();
     try {
       final response = await ApiService.sendChatMediaGroup(
         conversationId: conversationId,
@@ -146,6 +173,7 @@ class OutgoingChatSendService {
         caption: caption,
         replyToMessageId: replyToMessageId,
         listingPreview: listingPreview,
+        idempotencyKey: idempotencyKey,
       );
       final msg = response['message'];
       if (msg is Map<String, dynamic>) {
@@ -209,6 +237,11 @@ class OutgoingChatSendService {
     String? replyToMessageId,
     required XFile restoreFile,
   }) async {
+    // BE-18: one key for this whole logical send attempt. The 404 fallback
+    // below (older backend without /send_audio) is still the same logical
+    // send, just a different endpoint, so it intentionally reuses the same
+    // key rather than generating a new one.
+    final idempotencyKey = _newChatIdempotencyKey();
     try {
       Map<String, dynamic> response;
       try {
@@ -217,6 +250,7 @@ class OutgoingChatSendService {
           audioFile: audioFile,
           receiverId: receiverId,
           replyToMessageId: replyToMessageId,
+          idempotencyKey: idempotencyKey,
         );
       } on ApiException catch (e) {
         // Older APIs expose voice via send_media_group only.
@@ -226,6 +260,7 @@ class OutgoingChatSendService {
           files: [audioFile],
           receiverId: receiverId,
           replyToMessageId: replyToMessageId,
+          idempotencyKey: idempotencyKey,
         );
       }
       final msg = response['message'];
@@ -282,6 +317,11 @@ class OutgoingChatSendService {
     Map<String, dynamic>? listingPreview,
     String? replyToMessageId,
   }) async {
+    // BE-18: one key for this whole logical send attempt (this is the path
+    // exercised by the automatic timeout retry in `_sendWithAdaptiveTimeout`
+    // — the same key rides along on that retry because it is baked into the
+    // headers for this single `sendChatMessageByConversation` call below).
+    final idempotencyKey = _newChatIdempotencyKey();
     try {
       final response = await ApiService.sendChatMessageByConversation(
         conversationId: conversationId,
@@ -289,6 +329,7 @@ class OutgoingChatSendService {
         receiverId: receiverId,
         listingPreview: listingPreview,
         replyToMessageId: replyToMessageId,
+        idempotencyKey: idempotencyKey,
       );
       final msg = response['message'];
       if (msg is Map<String, dynamic>) {
