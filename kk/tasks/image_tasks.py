@@ -35,12 +35,23 @@ def _process_image_path(
     out_bytes = blur_image_bytes(raw_bytes, ".jpg", skip_blur=skip_blur)
 
     # Downscale/compress
+    #
+    # L-03: normalize EXIF orientation into the pixels (ImageOps.exif_transpose)
+    # *before* stripping metadata, then save with exif=b"" so no source EXIF --
+    # GPS, camera/device model, timestamps, or the orientation tag itself -- is
+    # ever written to the stored JPEG. exif_transpose() is a no-op when there is
+    # no orientation tag (e.g. the plate-blur/OpenCV branch above already
+    # produces EXIF-free bytes), so it is safe to always apply here regardless
+    # of which branch of blur_image_bytes() produced ``out_bytes``. Kept
+    # consistent with kk/media_processing.py::process_and_store_image(), which
+    # this function duplicates.
     try:
         from io import BytesIO
 
-        from PIL import Image
+        from PIL import Image, ImageOps
 
         im = Image.open(BytesIO(out_bytes))
+        im = ImageOps.exif_transpose(im)
         if im.mode not in ("RGB", "L"):
             im = im.convert("RGB")
         max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "1200") or "1200")
@@ -49,7 +60,7 @@ def _process_image_path(
 
         buf = BytesIO()
         quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "80") or "80")
-        im.save(buf, format="JPEG", quality=quality, optimize=True)
+        im.save(buf, format="JPEG", quality=quality, optimize=True, exif=b"")
         out_bytes = buf.getvalue()
     except Exception:
         pass
@@ -63,11 +74,14 @@ def _process_image_path(
     b64 = None
     if inline_base64:
         try:
+            # L-03: same orientation-normalize-then-strip-EXIF guarantee as the
+            # main save above (kept consistent with media_processing.py).
             from io import BytesIO
 
-            from PIL import Image
+            from PIL import Image, ImageOps
 
             im2 = Image.open(BytesIO(out_bytes))
+            im2 = ImageOps.exif_transpose(im2)
             if im2.mode not in ("RGB", "L"):
                 im2 = im2.convert("RGB")
             prev_dim = int(os.getenv("INLINE_PREVIEW_MAX_DIM", "420") or "420")
@@ -75,7 +89,7 @@ def _process_image_path(
                 im2.thumbnail((prev_dim, prev_dim), Image.Resampling.LANCZOS)
             buf2 = BytesIO()
             prev_q = int(os.getenv("INLINE_PREVIEW_JPEG_QUALITY", "60") or "60")
-            im2.save(buf2, format="JPEG", quality=prev_q, optimize=True)
+            im2.save(buf2, format="JPEG", quality=prev_q, optimize=True, exif=b"")
             encoded = base64.b64encode(buf2.getvalue()).decode("utf-8")
             b64 = f"data:image/jpeg;base64,{encoded}"
         except Exception:

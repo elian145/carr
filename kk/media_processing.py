@@ -158,17 +158,24 @@ def persist_jpeg_bytes(
 
 
 def heic_to_jpeg(raw_bytes: bytes) -> Tuple[bytes, bool]:
-    """Convert HEIC/HEIF bytes to JPEG. Returns (jpeg_bytes, True) on success."""
+    """Convert HEIC/HEIF bytes to JPEG. Returns (jpeg_bytes, True) on success.
+
+    L-03: orientation is normalized into the pixels (``ImageOps.exif_transpose``)
+    before saving, and the JPEG is saved with ``exif=b""`` so no source EXIF
+    (GPS, camera/device model, timestamps, orientation tag) survives the
+    HEIC->JPEG conversion.
+    """
     try:
         import pillow_heif  # type: ignore  # noqa: F401
-        from PIL import Image
+        from PIL import Image, ImageOps
 
         pillow_heif.register_heif_opener()
         im = Image.open(BytesIO(raw_bytes))
+        im = ImageOps.exif_transpose(im)
         if im.mode not in ("RGB", "L"):
             im = im.convert("RGB")
         out = BytesIO()
-        im.save(out, format="JPEG", quality=92, optimize=True)
+        im.save(out, format="JPEG", quality=92, optimize=True, exif=b"")
         return out.getvalue(), True
     except Exception:
         return raw_bytes, False
@@ -247,10 +254,19 @@ def process_and_store_image(
                 pass
 
         # Downscale/compress (best-effort).
+        #
+        # L-03: normalize EXIF orientation into the pixels (ImageOps.exif_transpose)
+        # *before* stripping metadata, then save with exif=b"" so no source EXIF --
+        # GPS, camera/device model, timestamps, or the orientation tag itself -- is
+        # ever written to the stored JPEG. exif_transpose() is a no-op when there is
+        # no orientation tag (e.g. the plate-blur/OpenCV branch above already
+        # produces EXIF-free bytes), so it is safe to always apply here regardless
+        # of which branch of blur_image_bytes() produced ``out_bytes``.
         try:
-            from PIL import Image
+            from PIL import Image, ImageOps
 
             im = Image.open(BytesIO(out_bytes))
+            im = ImageOps.exif_transpose(im)
             if im.mode not in ("RGB", "L"):
                 im = im.convert("RGB")
             max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "1200") or "1200")
@@ -258,7 +274,7 @@ def process_and_store_image(
                 im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
             buf = BytesIO()
             quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "80") or "80")
-            im.save(buf, format="JPEG", quality=quality, optimize=True)
+            im.save(buf, format="JPEG", quality=quality, optimize=True, exif=b"")
             out_bytes = buf.getvalue()
         except Exception:
             pass
@@ -273,9 +289,15 @@ def process_and_store_image(
 
         if inline_base64:
             try:
-                from PIL import Image
+                # L-03: same orientation-normalize-then-strip-EXIF guarantee as the
+                # main save above. ``out_bytes`` here has already been through that
+                # save (so it already carries no EXIF/orientation tag today), but
+                # applying both explicitly keeps this call site self-contained and
+                # correct even if the calling order above ever changes.
+                from PIL import Image, ImageOps
 
                 im2 = Image.open(BytesIO(out_bytes))
+                im2 = ImageOps.exif_transpose(im2)
                 if im2.mode not in ("RGB", "L"):
                     im2 = im2.convert("RGB")
                 prev_dim = int(os.getenv("INLINE_PREVIEW_MAX_DIM", "420") or "420")
@@ -283,7 +305,7 @@ def process_and_store_image(
                     im2.thumbnail((prev_dim, prev_dim), Image.Resampling.LANCZOS)
                 buf2 = BytesIO()
                 prev_q = int(os.getenv("INLINE_PREVIEW_JPEG_QUALITY", "60") or "60")
-                im2.save(buf2, format="JPEG", quality=prev_q, optimize=True)
+                im2.save(buf2, format="JPEG", quality=prev_q, optimize=True, exif=b"")
                 encoded = base64.b64encode(buf2.getvalue()).decode("utf-8")
                 b64 = f"data:image/jpeg;base64,{encoded}"
             except Exception:
