@@ -160,6 +160,14 @@ def _hash_contact_phone_code(phone_digits: str, code: str) -> str:
 DEALERSHIP_EMAIL_MAX = 5
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
+# BE-01: hard cap on the number of listings returned by the public dealer
+# profile page (`GET /api/dealers/<dealer_public_id>`). Bounds worst-case
+# query-result size / serialization cost for a single request; not real
+# pagination -- the current Flutter dealer profile screen expects the
+# complete listings array in one response and has no load-more support, so
+# raising this later requires a client-side pagination change too.
+_DEALER_PROFILE_LISTINGS_CAP = 200
+
 
 def _normalize_dealer_email(value) -> str:
     return ("" if value is None else str(value)).strip().lower()
@@ -1067,10 +1075,21 @@ def dealer_profile(dealer_public_id: str):
 
         from ..listing_visibility import public_listings_filter
 
+        # BE-01: the base (unfiltered-by-limit) query is reused for both the
+        # real COUNT(*) used for stats.total_listings and the capped,
+        # eager-loaded, ordered query actually returned to the client, so
+        # both share the exact same public-visibility rules.
+        dealer_listings_base_query = public_listings_filter(
+            Car.query.filter(Car.seller_id == dealer.id)
+        )
+        total_listings_count = dealer_listings_base_query.count()
+
         listings = (
-            public_listings_filter(Car.query.filter(Car.seller_id == dealer.id))
-            .options(selectinload(Car.images), selectinload(Car.videos))
+            dealer_listings_base_query.options(
+                selectinload(Car.images), selectinload(Car.videos)
+            )
             .order_by(Car.is_featured.desc(), Car.created_at.desc())
+            .limit(_DEALER_PROFILE_LISTINGS_CAP)
             .all()
         )
 
@@ -1086,7 +1105,7 @@ def dealer_profile(dealer_public_id: str):
             listing_dicts.append(item)
 
         stats = {
-            "total_listings": len(listing_dicts),
+            "total_listings": total_listings_count,
             "featured_listings": sum(1 for c in listing_dicts if c.get("is_featured") is True),
         }
 
