@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
     "lint": "eslint .",
-    "test:unit": "node scripts/test_verify_admin_jwt.mjs",
+    "test:unit": "node scripts/test_verify_admin_jwt.mjs && node scripts/test_csp_env.mjs",
     "test:e2e": "playwright test",
     "test": "npm run test:unit && npm run test:e2e"
   },

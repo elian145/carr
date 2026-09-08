@@ -16,11 +16,20 @@ function securityHeaders(res: NextResponse): NextResponse {
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()",
   );
+  const isProd =
+    (process.env.NODE_ENV || "").trim() === "production" ||
+    (process.env.APP_ENV || "").trim().toLowerCase() === "production";
+  // L-02: 'unsafe-eval' has no known production requirement (no app code or
+  // dependency calls eval/new Function) — it is only needed by Next.js
+  // dev-server Fast Refresh/HMR, so it is omitted outside development.
+  const scriptSrc = isProd
+    ? "script-src 'self' 'unsafe-inline'"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
   res.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
