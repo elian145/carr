@@ -1177,6 +1177,7 @@ def update_user_report(report_id: int):
         denied = _deny("reports")
         if denied:
             return denied
+        admin_user = get_current_user()
         report = UserReport.query.get(report_id)
         if not report:
             return jsonify({"message": "Report not found"}), 404
@@ -1185,8 +1186,21 @@ def update_user_report(report_id: int):
         if status not in _VALID_REPORT_STATUSES:
             return jsonify({"message": "Invalid status"}), 400
         admin_notes = (data.get("admin_notes") or "").strip()[:2000] or None
+        previous_status = report.status
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_update_user_report",
+                target_type="user_report",
+                target_id=str(report_id),
+                metadata={
+                    "previous_status": previous_status,
+                    "new_status": status,
+                    "admin_notes_provided": admin_notes is not None,
+                },
+            )
         return jsonify({"report": report.to_admin_dict()}), 200
     except Exception as e:
         db.session.rollback()
@@ -1202,6 +1216,7 @@ def update_listing_report(report_id: int):
         denied = _deny("reports")
         if denied:
             return denied
+        admin_user = get_current_user()
         report = (
             ListingReport.query.options(
                 joinedload(ListingReport.reporter),
@@ -1217,8 +1232,21 @@ def update_listing_report(report_id: int):
         if status not in _VALID_REPORT_STATUSES:
             return jsonify({"message": "Invalid status"}), 400
         admin_notes = (data.get("admin_notes") or "").strip()[:2000] or None
+        previous_status = report.status
         _apply_report_status(report, status, admin_notes)
         db.session.commit()
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_update_listing_report",
+                target_type="listing_report",
+                target_id=str(report_id),
+                metadata={
+                    "previous_status": previous_status,
+                    "new_status": status,
+                    "admin_notes_provided": admin_notes is not None,
+                },
+            )
         return jsonify({"report": report.to_admin_dict()}), 200
     except Exception as e:
         db.session.rollback()
