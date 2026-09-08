@@ -703,27 +703,6 @@ def validate_jwt_payload(jwt_payload):
     
     return True, "JWT payload is valid"
 
-def secure_headers():
-    """
-    Add security headers to responses
-    """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            response = f(*args, **kwargs)
-            
-            if hasattr(response, 'headers'):
-                # Add security headers
-                response.headers['X-Content-Type-Options'] = 'nosniff'
-                response.headers['X-Frame-Options'] = 'DENY'
-                response.headers['X-XSS-Protection'] = '1; mode=block'
-                response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-                response.headers['Content-Security-Policy'] = "default-src 'self'"
-            
-            return response
-        return decorated_function
-    return decorator
-
 def validate_csrf_token():
     """
     Intentionally unavailable.
@@ -765,48 +744,6 @@ def audit_log(action_type, target_type=None, target_id=None, metadata=None):
                         log_user_action(user, action_type, target_type, target_id, metadata)
             except Exception as e:
                 current_app.logger.error(f"Failed to create audit log: {str(e)}")
-            
-            return f(*args, **kwargs)
-        return decorated_function
-    return decorator
-
-def validate_ownership(resource_type, resource_id_field='id'):
-    """
-    Validate that the current user owns the resource
-    """
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            try:
-                current_user_id = get_jwt_identity()
-                if not current_user_id:
-                    return jsonify({'message': 'Authentication required'}), 401
-                
-                user = User.query.filter_by(public_id=current_user_id).first()
-                if not user:
-                    return jsonify({'message': 'User not found'}), 404
-                
-                # Get resource ID from kwargs
-                resource_id = kwargs.get(resource_id_field)
-                if not resource_id:
-                    return jsonify({'message': 'Resource ID required'}), 400
-                
-                # Check ownership based on resource type
-                if resource_type == 'car':
-                    from .models import Car
-                    resource = Car.query.filter_by(public_id=resource_id).first()
-                    if not resource:
-                        return jsonify({'message': 'Car not found'}), 404
-                    if resource.seller_id != user.id and not user.is_admin:
-                        return jsonify({'message': 'Not authorized to access this resource'}), 403
-                
-                # Add user to kwargs for use in the decorated function
-                kwargs['current_user'] = user
-                kwargs['resource'] = resource
-                
-            except Exception as e:
-                current_app.logger.error(f"Ownership validation error: {str(e)}")
-                return jsonify({'message': 'Authorization check failed'}), 500
             
             return f(*args, **kwargs)
         return decorated_function
