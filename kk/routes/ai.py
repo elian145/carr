@@ -12,7 +12,12 @@ from ..ai_service import (
 )
 from ..auth import get_current_user, phone_verification_required_response
 from ..media_processing import blur_image_bytes, heic_to_jpeg, process_and_store_image
-from ..security import generate_secure_filename, rate_limit, validate_file_upload
+from ..security import (
+    check_global_daily_budget,
+    generate_secure_filename,
+    rate_limit,
+    validate_file_upload,
+)
 from ..tasks.image_tasks import process_car_image_file
 from ..config import get_app_env
 from ..time_utils import utcnow
@@ -22,6 +27,24 @@ bp = Blueprint("ai", __name__)
 _AI_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "heic", "heif"}
 _AI_IMAGE_MAX_MB = 25
 _AI_PROCESS_MAX_FILES = 20
+
+# BE-19: the existing @rate_limit(...) below only bounds requests per
+# *individual authenticated user* (20/hour each) -- it does not bound
+# aggregate OpenAI cost exposure across many accounts. This adds a GLOBAL
+# (cross-user) daily cap on top of it. A request-count cap is used here as
+# a cost-exposure proxy, not literal USD accounting.
+_AI_SPECS_DEFAULT_MAX_CALLS_PER_DAY = 200
+
+
+def _ai_specs_max_calls_per_day() -> int:
+    raw = (os.environ.get("AI_SPECS_MAX_CALLS_PER_DAY") or "").strip()
+    if not raw:
+        return _AI_SPECS_DEFAULT_MAX_CALLS_PER_DAY
+    try:
+        n = int(raw)
+        return n if n > 0 else _AI_SPECS_DEFAULT_MAX_CALLS_PER_DAY
+    except (TypeError, ValueError):
+        return _AI_SPECS_DEFAULT_MAX_CALLS_PER_DAY
 
 
 def _validate_ai_image_upload(file_storage):
@@ -58,6 +81,15 @@ def suggest_car_specs():
             return jsonify({"error": "brand, model, and trim are required"}), 400
         if year < 1900 or year > 2035:
             return jsonify({"error": "year out of range"}), 400
+
+        # BE-19: global (cross-user) daily budget, claimed BEFORE the
+        # OpenAI-backed call. Independent of, and in addition to, the
+        # per-user @rate_limit(...) decorator above -- does not replace it.
+        budget_denied = check_global_daily_budget(
+            "ai_specs", _ai_specs_max_calls_per_day(), window_minutes=1440
+        )
+        if budget_denied is not None:
+            return budget_denied
 
         specs = suggest_car_specs_from_ymm(
             year, brand, model, trim, market_hint=market

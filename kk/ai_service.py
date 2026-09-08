@@ -236,6 +236,22 @@ def _coerce_specs_dict(data: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+# BE-19: defense-in-depth output cap for suggest_car_specs_from_ymm's OpenAI
+# call. The expected JSON payload (a handful of short enum fields plus a
+# <=500-char `notes` string, per _coerce_specs_dict) comfortably fits in a
+# few hundred tokens; 800 leaves generous headroom while still bounding the
+# worst-case cost/size of any single permitted call.
+#
+# Uses `max_completion_tokens` (NOT the legacy `max_tokens`): OPENAI_MODEL is
+# an existing, operator-configurable env var with no allowlist, and OpenAI's
+# o-series/reasoning models and the GPT-5 family reject `max_tokens` outright
+# (HTTP 400 "Unsupported parameter"), while `max_completion_tokens` is
+# accepted by every current Chat Completions model family, including the
+# `gpt-4o-mini` default -- so this does not introduce a new incompatibility
+# for any realistic OPENAI_MODEL override.
+_SPECS_MAX_OUTPUT_TOKENS = 800
+
+
 def suggest_car_specs_from_ymm(
     year: int,
     brand: str,
@@ -287,6 +303,7 @@ def suggest_car_specs_from_ymm(
                 "model": model,
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},
+                "max_completion_tokens": _SPECS_MAX_OUTPUT_TOKENS,
                 "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},

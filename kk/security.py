@@ -4,6 +4,7 @@ Security utilities and middleware for the car listing app
 
 import os
 import re
+import threading
 import time
 from functools import wraps
 from flask import request, jsonify, current_app
@@ -214,6 +215,136 @@ def rate_limit(max_requests=10, window_minutes=60, per_ip=True):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+# Fallback in-process storage (dev/test only) for check_global_daily_budget:
+# key -> (count, window_start_epoch_seconds). Mirrors `rate_limit_storage`
+# above (not safe across processes/replicas) but uses a fixed-window counter
+# (reset once `window_s` has elapsed since `window_start`) to mirror the
+# Redis INCR + EXPIRE-on-first-increment semantics used in production.
+#
+# Unlike `rate_limit_storage` (left untouched), this compound
+# read-check-increment-write sequence is explicitly protected by
+# `_global_budget_storage_lock` below -- not the GIL -- because a lost
+# update here would let concurrent threads jointly exceed `max_calls` in a
+# single process (the GIL only guarantees individual bytecode atomicity,
+# not atomicity across the multi-statement sequence below).
+_global_budget_storage: dict[str, tuple[int, float]] = {}
+_global_budget_storage_lock = threading.Lock()
+
+
+def check_global_daily_budget(name: str, max_calls: int, window_minutes: int = 1440):
+    """
+    BE-19: atomically claim one unit of a GLOBAL (cross-user) daily budget
+    for an expensive/external-cost operation identified by ``name``.
+
+    This is deliberately separate from ``check_rate_limit``/``rate_limit``
+    above, which throttle request *frequency* per-user or per-IP. This
+    bounds the aggregate number of calls to something with a real external
+    cost (e.g. an LLM API) across ALL users combined, for a single shared
+    window -- so N accounts each under their own per-user rate limit still
+    cannot drive unbounded aggregate spend.
+
+    Returns ``None`` when the call is permitted -- in which case one unit of
+    budget has ALREADY been claimed for this call. Returns a Flask
+    ``(response, status)`` tuple when the call must be rejected, either
+    because the daily budget is exhausted or because the backend is
+    unavailable and must fail closed (see below); callers should return
+    this value as-is.
+
+    Counting semantics (intentional): the unit is claimed BEFORE the
+    caller performs the actual expensive work, and is never refunded if
+    that work later fails (e.g. the upstream API errors out). For a
+    spend-protection circuit breaker, conservative/no-refund counting under
+    concurrency is preferred over risking overshoot past the configured
+    cap -- a slightly early trip is an acceptable cost of guaranteeing the
+    cap is never exceeded.
+
+    Concurrency: uses the same single atomic ``INCR`` (+ ``EXPIRE`` only on
+    the first increment) primitive as ``check_rate_limit`` -- never a
+    read-then-write/GET-then-SET sequence -- so concurrent requests racing
+    against the same window can never jointly exceed ``max_calls`` by more
+    than the one increment each already performed atomically. The dev/test
+    in-process fallback (see below) is likewise concurrency-safe: its
+    compound read/window-check/increment/write is done under an explicit
+    ``_global_budget_storage_lock`` (a real ``threading.Lock``, not the
+    GIL) covering the whole sequence, not just the individual dict ops.
+
+    Fail-closed semantics (H-06, matching ``check_rate_limit`` /
+    ``reset_password``'s inline per-account guard): if Redis is unavailable
+    or raises, production requests are rejected (503) unless the explicit
+    ``ALLOW_INMEMORY_RATE_LIMITS`` escape hatch (or a development/testing
+    ``APP_ENV``) is set, via the existing ``_allow_inmemory_rate_limits()``
+    helper -- in which case an in-process fallback counter is used instead
+    (not safe across multiple processes/replicas; dev/test only).
+
+    Unlike ``check_rate_limit``, this does NOT unconditionally bypass
+    enforcement just because ``current_app.config['TESTING']`` is set --
+    callers that need a genuine, testable spend cap (e.g. BE-19) must be
+    able to exercise real enforcement under pytest.
+    """
+    window_s = max(1, int(window_minutes * 60))
+    key = f"budget:{name}:{window_s}"
+    allow_memory = _allow_inmemory_rate_limits()
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            n = r.incr(key)
+            if n == 1:
+                r.expire(key, window_s)
+            if n > int(max_calls):
+                ttl = r.ttl(key)
+                retry_after = max(0, int(ttl) if ttl is not None else window_s)
+                return _budget_exhausted_response(max_calls, window_minutes, retry_after)
+            return None
+        except Exception:
+            # Production without escape hatch: do not silently weaken the
+            # budget cap via an in-process (per-worker, resettable-on-deploy)
+            # counter.
+            if not allow_memory:
+                return _rate_limit_unavailable_response()
+    elif not allow_memory:
+        return _rate_limit_unavailable_response()
+
+    # Dev/test in-process fallback only (matches `rate_limit_storage` above).
+    # Fixed-window counter: reset once `window_s` has elapsed since the
+    # window started, mirroring Redis EXPIRE-on-first-increment. The entire
+    # read -> window-check -> increment -> write sequence is done under a
+    # single lock acquisition so concurrent threads in this process can
+    # never jointly exceed `max_calls` via a lost update.
+    with _global_budget_storage_lock:
+        now = time.time()
+        count, window_start = _global_budget_storage.get(key, (0, now))
+        if now - window_start >= window_s:
+            count, window_start = 0, now
+        count += 1
+        _global_budget_storage[key] = (count, window_start)
+        exceeded = count > int(max_calls)
+
+    if exceeded:
+        retry_after = max(1, int(window_s - (now - window_start)))
+        return _budget_exhausted_response(max_calls, window_minutes, retry_after)
+    return None
+
+
+def _budget_exhausted_response(max_calls: int, window_minutes: int, retry_after: int):
+    return (
+        jsonify(
+            {
+                "error": (
+                    f"This AI feature has reached its shared daily budget "
+                    f"({max_calls} calls per {window_minutes} minutes). "
+                    "Please try again later."
+                ),
+                "code": "ai_budget_exhausted",
+                "configured": True,
+                "retry_after": max(0, int(retry_after)),
+            }
+        ),
+        503,
+    )
+
 
 def validate_input_sanitization(data):
     """
