@@ -1734,6 +1734,189 @@ def _d10_listing_report_dedup_smoke(app) -> int:
             db.session.commit()
 
 
+_BE03_THREAD_JOIN_TIMEOUT_S = 30
+
+
+def _be03_scheduled_notification_claim_smoke(app) -> int:
+    """
+    BE-03: real-thread, real-Postgres concurrency proof that
+    ``process_due_scheduled_notifications()`` (kk/notification_broadcast.py)
+    never double-sends a scheduled notification.
+
+    Seeds N due, ``pending`` ``ScheduledNotification`` rows targeting one
+    recipient user, then has W concurrent threads -- each with its own
+    Flask app context (its own scoped session/DB connection), synchronized
+    on a ``threading.Barrier`` so they all call
+    ``process_due_scheduled_notifications(limit=...)`` at essentially the
+    same instant -- race for the same batch of due rows. Asserts, in
+    aggregate across all threads' returned results:
+
+      - every seeded row was claimed/broadcast exactly once in total
+        (never 0, never 2+) across all W threads combined;
+      - the final DB state has every seeded row in status "sent" (never
+        stuck in "sending", never reprocessed);
+      - exactly one ``Notification`` row exists per seeded scheduled
+        notification (no duplicate delivery).
+
+    This is the real-concurrency counterpart to the SQLite, thread-free
+    unit tests in
+    ``kk/tests/test_be03_scheduled_notification_atomic_claim.py``,
+    mirroring the established D-04 real-thread pattern
+    (``_d04_otp_lockout_concurrency_smoke`` / ``_d04_analytics_concurrency_smoke``).
+    All seeded rows (``ScheduledNotification``, ``Notification``, ``User``)
+    are deleted in a ``finally`` block regardless of outcome.
+    """
+    import threading
+    import uuid
+    from collections import Counter
+    from datetime import timedelta
+
+    from sqlalchemy import bindparam, text
+
+    from kk.extensions import db
+    from kk.models import Notification, ScheduledNotification, User
+    from kk.notification_broadcast import process_due_scheduled_notifications
+    from kk.time_utils import utcnow
+
+    suffix = uuid.uuid4().hex[:8]
+    n_rows = 8
+    n_workers = 4
+    print(
+        f"BE-03: seeding scheduled-notification claim smoke data "
+        f"(suffix={suffix}, rows={n_rows}, workers={n_workers})...",
+        flush=True,
+    )
+
+    row_ids: list[int] = []
+    recipient_id: int | None = None
+    try:
+        with app.app_context():
+            recipient = User(
+                username=f"be03_{suffix}",
+                phone_number=f"07564{suffix[:6]}",
+                first_name="Be03",
+                last_name="Smoke",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=f"be03{suffix}",
+            )
+            recipient.set_password("Aa123456")
+            db.session.add(recipient)
+            db.session.flush()
+            recipient_id = recipient.id
+
+            for i in range(n_rows):
+                row = ScheduledNotification(
+                    title=f"BE-03 smoke {suffix} #{i}",
+                    message="concurrency smoke",
+                    audience="user",
+                    target_user_public_id=recipient.public_id,
+                    notification_type="admin",
+                    send_push=False,
+                    scheduled_at=utcnow() - timedelta(minutes=5),
+                    status="pending",
+                    created_at=utcnow(),
+                    updated_at=utcnow(),
+                )
+                db.session.add(row)
+                db.session.flush()
+                row_ids.append(row.id)
+            db.session.commit()
+
+        barrier = threading.Barrier(n_workers)
+        thread_results: list[dict | None] = [None] * n_workers
+        errors: list[BaseException | None] = [None] * n_workers
+
+        def _worker(slot: int) -> None:
+            try:
+                barrier.wait(timeout=_BE03_THREAD_JOIN_TIMEOUT_S)
+                with app.app_context():
+                    thread_results[slot] = process_due_scheduled_notifications(limit=n_rows * 2)
+            except BaseException as exc:  # noqa: BLE001
+                errors[slot] = exc
+
+        threads = [threading.Thread(target=_worker, args=(i,)) for i in range(n_workers)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=_BE03_THREAD_JOIN_TIMEOUT_S)
+
+        failed = [(i, e) for i, e in enumerate(errors) if e is not None]
+        if failed:
+            for i, e in failed:
+                print(f"BE-03: claim smoke thread {i} raised: {e!r}", file=sys.stderr)
+            return 1
+
+        # Aggregate every "sent" result across all threads and count how
+        # many times each seeded row id was actually broadcast in total.
+        sent_counts: Counter[int] = Counter()
+        for result in thread_results:
+            if not result:
+                continue
+            for entry in result.get("results", []):
+                if entry.get("status") == "sent" and entry.get("id") in row_ids:
+                    sent_counts[entry["id"]] += 1
+
+        double_sent = [rid for rid in row_ids if sent_counts.get(rid, 0) > 1]
+        never_sent = [rid for rid in row_ids if sent_counts.get(rid, 0) == 0]
+        if double_sent:
+            print(
+                f"BE-03: rows claimed/broadcast MORE THAN ONCE under concurrency: {double_sent}",
+                file=sys.stderr,
+            )
+            return 1
+        if never_sent:
+            print(
+                f"BE-03: rows never claimed/broadcast by any worker: {never_sent}",
+                file=sys.stderr,
+            )
+            return 1
+
+        with app.app_context():
+            rows = ScheduledNotification.query.filter(ScheduledNotification.id.in_(row_ids)).all()
+            not_sent = [r.id for r in rows if r.status != "sent"]
+            if not_sent:
+                print(
+                    f"BE-03: rows not left in status='sent' after processing: {not_sent}",
+                    file=sys.stderr,
+                )
+                return 1
+
+            notif_count = Notification.query.filter_by(user_id=recipient_id).count()
+            if notif_count != n_rows:
+                print(
+                    f"BE-03: expected exactly {n_rows} Notification rows (one per scheduled "
+                    f"notification, no duplicates), found {notif_count}",
+                    file=sys.stderr,
+                )
+                return 1
+
+        print(
+            f"BE-03: atomic claim OK under concurrency "
+            f"({n_rows} due rows, {n_workers} racing workers, each row claimed exactly once)",
+            flush=True,
+        )
+        return 0
+    finally:
+        with app.app_context():
+            db.session.rollback()
+            if recipient_id is not None:
+                db.session.execute(
+                    text("DELETE FROM notification WHERE user_id = :uid"), {"uid": recipient_id}
+                )
+            if row_ids:
+                db.session.execute(
+                    text("DELETE FROM scheduled_notification WHERE id IN :ids").bindparams(
+                        bindparam("ids", expanding=True)
+                    ),
+                    {"ids": row_ids},
+                )
+            if recipient_id is not None:
+                db.session.execute(text("DELETE FROM \"user\" WHERE id = :uid"), {"uid": recipient_id})
+            db.session.commit()
+
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     if str(_REPO_ROOT) not in sys.path:
@@ -1852,6 +2035,10 @@ def main() -> int:
     d10_status = _d10_listing_report_dedup_smoke(app)
     if d10_status != 0:
         return d10_status
+
+    be03_status = _be03_scheduled_notification_claim_smoke(app)
+    if be03_status != 0:
+        return be03_status
 
     print("migration smoke OK", flush=True)
     return 0

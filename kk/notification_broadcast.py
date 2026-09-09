@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import or_
+from sqlalchemy import or_, update
 
 from .models import Notification, ScheduledNotification, User, db
 from .push import fcm_is_configured, send_push
@@ -219,9 +219,31 @@ def process_due_scheduled_notifications(*, limit: int = 20) -> dict[str, Any]:
     failed = 0
     results = []
     for row in due:
-        row.status = "sending"
-        row.updated_at = utcnow()
+        # BE-03: atomically claim this row before broadcasting. The plain
+        # SELECT above can return the same row to two concurrent callers
+        # (two beat workers, overlapping "lazy delivery" requests, etc.).
+        # Only the caller whose conditional UPDATE actually flips exactly
+        # one row from "pending" -> "sending" is allowed to proceed; if the
+        # row was already claimed by someone else between our SELECT and
+        # this UPDATE, rowcount is 0 and we skip it without broadcasting.
+        claim_ts = utcnow()
+        claim = db.session.execute(
+            update(ScheduledNotification)
+            .where(
+                ScheduledNotification.id == row.id,
+                ScheduledNotification.status == "pending",
+            )
+            .values(status="sending", updated_at=claim_ts)
+        )
         db.session.commit()
+        if claim.rowcount != 1:
+            logger.info(
+                "scheduled notification %s already claimed by another worker; skipping",
+                row.id,
+            )
+            continue
+        row.status = "sending"
+        row.updated_at = claim_ts
         try:
             out = execute_broadcast(
                 title=row.title,
