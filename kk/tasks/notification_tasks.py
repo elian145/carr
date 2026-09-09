@@ -25,13 +25,16 @@ def send_immediate_broadcast_task(row_id: int):
 
     ``row_id`` refers to a ScheduledNotification row created by
     ``create_immediate_broadcast_row()`` (``scheduled_at=utcnow()``) or
-    claimed ahead of time by ``claim_due_scheduled_notifications()`` (the
+    merely *listed* (never claimed) by ``list_due_pending_ids()`` (the
     manual "process due" admin action). Either way, the actual claim
     (BE-03's atomic conditional UPDATE) happens inside
     ``process_scheduled_notification_by_id()``, so this task is safe to
     enqueue even if beat's own periodic sweep (or another enqueue of this
     same task) is racing to process the same row -- only one of them will
-    win the claim and actually broadcast.
+    win the claim and actually broadcast. The HTTP request that enqueued
+    this task must NEVER have already flipped the row to "sending" itself
+    -- doing so would make this task's own claim attempt always find
+    rowcount 0 and silently skip it, permanently stranding the row.
     """
     from ..notification_broadcast import process_scheduled_notification_by_id
 

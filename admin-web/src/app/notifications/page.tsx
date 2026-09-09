@@ -179,11 +179,11 @@ export default function NotificationsPage() {
   async function handleProcessDue() {
     setSchedBusy(true);
     try {
-      // BE-04: this claims due rows and queues them on Celery -- it no
-      // longer sends synchronously, so report what was queued, not
+      // BE-04: this only lists due rows and queues them on Celery -- it
+      // does not claim/send them itself, so report what was queued, not
       // sent/failed completion counts that don't exist yet.
       const r = await processScheduledNotifications();
-      toast.success(`Queued ${r.queued} of ${r.claimed} due notification(s) for processing`);
+      toast.success(`Queued ${r.queued} of ${r.due} due notification(s) for processing`);
       scheduled.reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Process failed");

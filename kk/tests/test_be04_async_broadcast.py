@@ -157,12 +157,12 @@ def _clear_scheduled_notifications(app, db, ScheduledNotification):
     """Reset the scheduled_notification table.
 
     The app_ctx fixture is module-scoped (shared DB across every test in
-    this file, matching test_be03's convention), but claim_due_scheduled_notifications()
-    -- used by the "process due" endpoint tests below -- claims *every*
-    due row in the table, not just the one row a given test created. Earlier
+    this file, matching test_be03's convention), but list_due_pending_ids()
+    -- used by the "process due" endpoint tests below -- lists *every* due
+    row in the table, not just the one row a given test created. Earlier
     tests in this file deliberately leave their own "send now" rows in
     "pending" (their whole point is proving the enqueue never actually ran
-    the task), which would otherwise leak into these batch-claim
+    the task), which would otherwise leak into these listing/count
     assertions. Called only by the tests that need an exact, isolated
     count of due rows.
     """
@@ -392,12 +392,16 @@ def test_get_scheduled_does_not_process_due_rows(app_ctx, monkeypatch):
 
 # ---------------------------------------------------------------------------
 # G, H: POST /notifications/scheduled/process claims due rows (cheap,
-# inline) and enqueues one task per claimed row -- it must never call
-# execute_broadcast() itself.
+# inline) and enqueues one task per due row -- it must never call
+# execute_broadcast() itself, and it must NOT claim/mutate row state
+# itself: only the Celery task that actually fans out may perform the
+# pending -> sending transition (see list_due_pending_ids()'s docstring
+# for the bug this fixes -- an earlier version pre-claimed here, which
+# made every row it "claimed" permanently unreachable by the task).
 # ---------------------------------------------------------------------------
 
 
-def test_process_endpoint_claims_and_enqueues_without_inline_fan_out(app_ctx, monkeypatch):
+def test_process_endpoint_lists_and_enqueues_without_claiming_or_inline_fan_out(app_ctx, monkeypatch):
     app, client, db, User, ScheduledNotification, Notification = app_ctx
     _clear_scheduled_notifications(app, db, ScheduledNotification)
     admin_id, _ap, admin_name = _make_user(app, db, User, tag="processdue", is_admin=True)
@@ -427,22 +431,90 @@ def test_process_endpoint_claims_and_enqueues_without_inline_fan_out(app_ctx, mo
         assert Notification.query.filter_by(user_id=recipient_id).count() == 0
 
     body = resp.get_json()
-    assert body["claimed"] == 1
+    assert body["due"] == 1
     assert body["queued"] == 1
+    assert "claimed" not in body, "must not report a claim -- the HTTP request never claims"
     assert "sent" not in body, "must not report fake completion counts"
     assert "failed" not in body, "must not report fake completion counts"
 
-    # The row was claimed (pending -> sending) inline, but not finished.
+    # Critical: the HTTP request must NOT have claimed/mutated the row.
+    # Only the (mocked-out, in this test) Celery task may transition it.
     with app.app_context():
         row = db.session.get(ScheduledNotification, row_id)
-        assert row.status == "sending"
+        assert row.status == "pending", (
+            "the process-due endpoint must leave due rows pending -- "
+            "claiming here would make them unreachable by the task it "
+            "hands off to (both use the same pending-only claim primitive)"
+        )
 
-    # H: the claimed row was enqueued with the correct id and BE-12 options.
+    # H: the row was enqueued with the correct id and BE-12 options.
     fake_apply_async.assert_called_once()
     _, kwargs = fake_apply_async.call_args
     assert kwargs["kwargs"] == {"row_id": row_id}
     assert kwargs["ignore_result"] is True
     assert kwargs["retry"] is False
+
+
+def test_process_endpoint_task_actually_completes_the_broadcast_when_run(app_ctx, monkeypatch):
+    """The critical end-to-end link that a mocked apply_async cannot prove:
+    capture the row id POST /scheduled/process queues, then actually run
+    the REAL Celery task body (not a mock) and prove execute_broadcast()
+    is reached exactly once and the row ends up "sent". This is the exact
+    regression test for the pre-claim bug (the HTTP endpoint used to flip
+    the row to "sending" itself, so when this real task body ran, its own
+    claim attempt always found rowcount 0 and execute_broadcast() was
+    silently, permanently unreachable).
+    """
+    app, client, db, User, ScheduledNotification, Notification = app_ctx
+    _clear_scheduled_notifications(app, db, ScheduledNotification)
+    admin_id, _ap, admin_name = _make_user(app, db, User, tag="processduereal", is_admin=True)
+    recipient_id, recipient_pub, _rn = _make_user(
+        app, db, User, tag="processduerealrecipient"
+    )
+    row_id = _make_due_row(
+        app, db, ScheduledNotification, target_user_public_id=recipient_pub, tag="processduereal"
+    )
+
+    import kk.notification_broadcast as notification_broadcast
+
+    real_execute_broadcast = notification_broadcast.execute_broadcast
+    spy_execute_broadcast = mock.Mock(wraps=real_execute_broadcast)
+    monkeypatch.setattr(notification_broadcast, "execute_broadcast", spy_execute_broadcast)
+
+    # The enqueue itself is still mocked (no real broker in this test
+    # process) -- only the *enqueue call* is faked; the task body invoked
+    # below is the real, undecorated production function.
+    fake_apply_async = mock.Mock(return_value=mock.Mock(id="fake-task-id"))
+    monkeypatch.setattr(send_immediate_broadcast_task, "apply_async", fake_apply_async)
+
+    token = _login(client, admin_name)
+    resp = client.post("/api/admin/notifications/scheduled/process", headers=_auth(token))
+    assert resp.status_code == 200, resp.data
+    body = resp.get_json()
+    assert body["due"] == 1
+    assert body["queued"] == 1
+
+    with app.app_context():
+        row = db.session.get(ScheduledNotification, row_id)
+        assert row.status == "pending", "must still be pending right after the HTTP call"
+
+    fake_apply_async.assert_called_once()
+    _, kwargs = fake_apply_async.call_args
+    assert kwargs["kwargs"] == {"row_id": row_id}
+
+    # Now actually run the real Celery task body synchronously -- exactly
+    # what a real worker consuming the queued message would execute.
+    # FlaskContextTask normally pushes the app context in __call__() before
+    # invoking run(); calling .run() directly here requires we push the
+    # context ourselves, which the `with app.app_context()` below does.
+    with app.app_context():
+        send_immediate_broadcast_task.run(row_id)
+
+    spy_execute_broadcast.assert_called_once()
+    with app.app_context():
+        row = db.session.get(ScheduledNotification, row_id)
+        assert row.status == "sent"
+        assert Notification.query.filter_by(user_id=recipient_id).count() == 1
 
 
 def test_process_endpoint_enqueue_failure_has_no_inline_fallback(app_ctx, monkeypatch):
@@ -469,74 +541,96 @@ def test_process_endpoint_enqueue_failure_has_no_inline_fallback(app_ctx, monkey
     assert resp.status_code == 200, resp.data
 
     body = resp.get_json()
-    assert body["claimed"] == 1
+    assert body["due"] == 1
     assert body["queued"] == 0
     assert body["enqueue_errors"] == 1
 
     inline_run.assert_not_called()
     with app.app_context():
         assert Notification.query.filter_by(user_id=recipient_id).count() == 0
-        # BE-04 explicitly defers stuck-"sending" recovery: the row stays
-        # claimed even though its enqueue failed. Documented, not fixed here.
+        # The row was never claimed by the HTTP request, so an enqueue
+        # failure leaves it exactly where beat (or a later manual retry)
+        # can still find and process it -- unlike the old pre-claim
+        # design, this is not a stranding scenario.
         row = db.session.get(ScheduledNotification, row_id)
-        assert row.status == "sending"
+        assert row.status == "pending"
 
 
 # ---------------------------------------------------------------------------
-# I: concurrent claim attempts across the two new BE-04 entry points
-# (claim_due_scheduled_notifications, used by the manual "process due"
-# endpoint, and process_scheduled_notification_by_id, used by
-# send_immediate_broadcast_task) must never double-broadcast the same row.
+# I: list_due_pending_ids() (used by the manual "process due" endpoint) is
+# read-only and must NOT change row state. The claim itself only happens
+# inside process_scheduled_notification_by_id() (used by
+# send_immediate_broadcast_task); racing two invocations of THAT for the
+# same row -- e.g. a duplicate enqueue, or beat's own sweep picking up the
+# same still-pending row the manual endpoint also listed and enqueued --
+# must never double-broadcast it.
 # ---------------------------------------------------------------------------
 
 
-def test_concurrent_claim_across_process_due_and_immediate_task_yields_one_broadcast(app_ctx):
+def test_list_due_pending_ids_does_not_claim_or_mutate_rows(app_ctx):
     app, client, db, User, ScheduledNotification, Notification = app_ctx
     _clear_scheduled_notifications(app, db, ScheduledNotification)
-    _admin_id, _ap, _an = _make_user(app, db, User, tag="raceowner", is_admin=True)
+    recipient_id, recipient_pub, _rn = _make_user(app, db, User, tag="listonlyrecipient")
+    row_id = _make_due_row(
+        app, db, ScheduledNotification, target_user_public_id=recipient_pub, tag="listonly"
+    )
+
+    from kk.notification_broadcast import list_due_pending_ids
+
+    with app.app_context():
+        due_ids = list_due_pending_ids(limit=20)
+        assert due_ids == [row_id]
+
+        # Read-only: the row must still be "pending" after being listed,
+        # and listing it again must return the same id (nothing claimed
+        # it, so it stays visible/listable).
+        row = db.session.get(ScheduledNotification, row_id)
+        assert row.status == "pending"
+        assert list_due_pending_ids(limit=20) == [row_id]
+        assert Notification.query.filter_by(user_id=recipient_id).count() == 0
+
+
+def test_concurrent_task_invocations_for_same_listed_row_yield_exactly_one_broadcast(app_ctx):
+    """Simulates the real race this design accepts: the manual endpoint
+    lists a due row and enqueues send_immediate_broadcast_task for it, but
+    before that task runs, something else (a duplicate enqueue of the same
+    task, or Celery beat's own periodic sweep) also ends up processing the
+    same still-pending row. Both paths funnel through
+    process_scheduled_notification_by_id() -> the identical BE-03 claim
+    primitive, so only one may actually broadcast.
+    """
+    app, client, db, User, ScheduledNotification, Notification = app_ctx
+    _clear_scheduled_notifications(app, db, ScheduledNotification)
     recipient_id, recipient_pub, _rn = _make_user(app, db, User, tag="racerecipient")
     row_id = _make_due_row(
         app, db, ScheduledNotification, target_user_public_id=recipient_pub, tag="race"
     )
 
     from kk.notification_broadcast import (
-        claim_due_scheduled_notifications,
-        execute_broadcast,
+        list_due_pending_ids,
         process_scheduled_notification_by_id,
     )
-    from kk.time_utils import utcnow
 
     with app.app_context():
-        # Caller A: the manual "process due" claim step wins first.
-        claimed_ids = claim_due_scheduled_notifications(limit=20)
-        assert claimed_ids == [row_id]
+        # The manual endpoint's read-only listing step -- must not claim.
+        due_ids = list_due_pending_ids(limit=20)
+        assert due_ids == [row_id]
+        row = db.session.get(ScheduledNotification, row_id)
+        assert row.status == "pending"
 
-        # Caller B: a racing send_immediate_broadcast_task invocation for
-        # the same row (e.g. a duplicate enqueue, or beat's own sweep)
-        # must see it already claimed ("sending", not "pending") and do
-        # nothing.
+        # Caller A: the task enqueued for this row (or beat's own sweep)
+        # wins the race and actually claims + broadcasts it.
+        outcome_a = process_scheduled_notification_by_id(row_id)
+        assert outcome_a is not None
+        assert outcome_a["status"] == "sent"
+
+        # Caller B: a second invocation for the exact same row id (a
+        # duplicate enqueue, or beat racing the same task) must find it
+        # already claimed/finished and do nothing.
         outcome_b = process_scheduled_notification_by_id(row_id)
         assert outcome_b is None
-        assert Notification.query.filter_by(user_id=recipient_id).count() == 0
-
-        # Caller A now finishes the job it already won the claim for --
-        # exactly what send_immediate_broadcast_task would do next for a
-        # row claimed via claim_due_scheduled_notifications().
-        row = db.session.get(ScheduledNotification, row_id)
-        assert row.status == "sending"
-        out = execute_broadcast(
-            title=row.title,
-            message=row.message,
-            audience=row.audience,
-            target_user_id=row.target_user_public_id,
-            notification_type=row.notification_type,
-            send_push_flag=bool(row.send_push),
-            source="admin_scheduled",
-        )
-        row.status = "sent"
-        row.sent_at = utcnow()
-        row.result = out
-        db.session.commit()
 
         # Exactly one broadcast happened overall.
         assert Notification.query.filter_by(user_id=recipient_id).count() == 1
+        row = db.session.get(ScheduledNotification, row_id)
+        assert row.status == "sent"

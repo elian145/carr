@@ -381,22 +381,41 @@ def _claim_and_send_scheduled_notification(row: ScheduledNotification) -> dict[s
         return {"id": row.id, "status": "failed", "error": str(e)}
 
 
-def claim_due_scheduled_notifications(*, limit: int = 20) -> list[int]:
-    """Atomically claim up to ``limit`` due, pending ScheduledNotification
-    rows (``pending`` -> ``sending``) WITHOUT sending them (BE-04).
+def list_due_pending_ids(*, limit: int = 20) -> list[int]:
+    """Read-only lookup of up to ``limit`` due, pending ScheduledNotification
+    row ids -- does NOT claim them (BE-04).
 
-    Used by ``POST /api/admin/notifications/scheduled/process``: claiming
-    is cheap, DB-only work that is safe to run inline on the request
-    thread; the actual broadcast (DB writes + FCM sends) is handed off to
-    Celery per claimed row so this endpoint stays fast and never calls
-    execute_broadcast() itself. Uses the exact same BE-03 claim primitive
-    (_try_claim_pending_row()) as process_due_scheduled_notifications(),
-    so it cannot double-claim a row beat or another caller already has.
+    Used by ``POST /api/admin/notifications/scheduled/process``: this is a
+    plain ``SELECT`` (no ``UPDATE``, no state change, no commit) so the
+    HTTP request thread stays fast and never touches row state itself. It
+    then enqueues one ``send_immediate_broadcast_task`` per id returned
+    here; each task performs its own authoritative BE-03 atomic
+    ``pending -> sending`` claim (via ``process_scheduled_notification_by_id()``
+    -> ``_claim_and_send_scheduled_notification()`` -> ``_try_claim_pending_row()``)
+    immediately before it calls execute_broadcast() -- exactly like the
+    send-now path and beat's own periodic sweep already do.
 
-    Returns the ids of the rows this call successfully claimed.
+    IMPORTANT: an earlier version of this function claimed rows here
+    (``pending -> sending``) before enqueueing. That was a bug: the task
+    it handed off to also tries to claim the same row via the identical
+    ``_try_claim_pending_row()`` primitive, and finds it already
+    ``"sending"`` -- rowcount 0 -- so it always returns without ever
+    calling execute_broadcast(), permanently stranding the row in
+    "sending". Only the execution context that is actually about to fan
+    out (the Celery task) may perform the ``pending -> sending``
+    transition; this function must stay read-only.
+
+    A row returned here can still legitimately be claimed by a race --
+    Celery beat's own sweep, or another concurrent enqueue of the same
+    task -- before the task enqueued here runs; that is expected and safe:
+    BE-03's atomic claim guarantees exactly one of them proceeds.
+
+    Returns the ids of due, pending rows found (a snapshot, not a
+    guarantee -- by the time a caller acts on these ids, another caller
+    may have already claimed some of them).
     """
     due = _due_pending_query(limit=limit).all()
-    return [row.id for row in due if _try_claim_pending_row(row)]
+    return [row.id for row in due]
 
 
 def process_scheduled_notification_by_id(row_id: int) -> dict[str, Any] | None:

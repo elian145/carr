@@ -242,11 +242,14 @@ export async function cancelScheduledNotification(
 }
 
 export async function processScheduledNotifications(): Promise<{
-  // BE-04: this claims due rows and queues them on Celery; it no longer
-  // sends synchronously, so there are no sent/failed completion counts --
-  // only how many were claimed and how many of those were successfully
-  // handed off to the worker queue.
-  claimed: number;
+  // BE-04: this only lists due rows and queues them on Celery -- it does
+  // NOT claim/mutate them itself (the worker task performs the actual
+  // pending -> sending claim right before sending), so there are no
+  // sent/failed completion counts. `due` is a snapshot of how many
+  // pending rows were found (not a guarantee -- beat or another caller
+  // may claim some of them first); `queued` is how many of those were
+  // successfully handed off to the worker queue.
+  due: number;
   queued: number;
   enqueue_errors?: number;
 }> {

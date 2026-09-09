@@ -1682,18 +1682,34 @@ def cancel_scheduled_notification(item_id: int):
 @bp.route("/notifications/scheduled/process", methods=["POST"])
 @admin_required
 def process_scheduled_notifications():
-    """Claim due scheduled notifications and queue them on Celery.
+    """List due scheduled notifications and queue them on Celery.
 
     BE-04: this used to call process_due_scheduled_notifications() inline,
     running execute_broadcast() (DB writes + FCM sends) synchronously on
-    the request thread for up to 50 due rows. It now only performs the
-    cheap BE-03 atomic claim (pending -> sending) inline -- DB-only,
-    sub-second work -- and enqueues one send_immediate_broadcast_task per
-    claimed row so the actual broadcast always runs in the Celery worker.
-    The response reports how many rows were claimed/queued, not how many
-    were actually sent -- that work has not happened by the time this
+    the request thread for up to 50 due rows. It now only performs a
+    read-only lookup of due, pending row ids (list_due_pending_ids()) --
+    it does NOT claim/mutate those rows itself -- and enqueues one
+    send_immediate_broadcast_task per id so the actual broadcast always
+    runs in the Celery worker.
+
+    An earlier version of this route pre-claimed rows here
+    (pending -> sending) before enqueueing. That was a bug: the task it
+    handed off to also performs the same BE-03 atomic claim before
+    broadcasting, found the row already "sending", and always skipped it
+    -- permanently stranding every "claimed" row without ever running
+    execute_broadcast(). Only the execution context actually about to
+    fan out (the Celery task, via _claim_and_send_scheduled_notification())
+    may perform the pending -> sending transition; this route must not.
+
+    The response reports "due" (a snapshot of how many pending rows were
+    found -- not a guarantee, since beat or another caller may claim some
+    of them before the enqueued task runs) and "queued" (how many of
+    those ids were successfully handed off to Celery), not sent/failed
+    completion counts -- that work has not happened by the time this
     responds. If a row's own enqueue fails (broker unavailable), it stays
-    claimed ("sending"); there is no synchronous fallback (BE-12 pattern).
+    "pending" -- beat's own periodic sweep, or a later manual retry of
+    this action, will still pick it up; there is no synchronous fallback
+    (BE-12 pattern).
     """
     try:
         denied = _deny("notifications.broadcast")
@@ -1701,13 +1717,13 @@ def process_scheduled_notifications():
             return denied
         from celery.exceptions import OperationalError
 
-        from ..notification_broadcast import claim_due_scheduled_notifications
+        from ..notification_broadcast import list_due_pending_ids
         from ..tasks.notification_tasks import send_immediate_broadcast_task
 
-        claimed_ids = claim_due_scheduled_notifications(limit=50)
+        due_ids = list_due_pending_ids(limit=50)
         queued = 0
         enqueue_errors = 0
-        for row_id in claimed_ids:
+        for row_id in due_ids:
             try:
                 send_immediate_broadcast_task.apply_async(
                     kwargs={"row_id": row_id},
@@ -1719,7 +1735,7 @@ def process_scheduled_notifications():
                 enqueue_errors += 1
                 logger.warning(
                     "process-due enqueue failed for scheduled_notification %s "
-                    "(broker unavailable): %s",
+                    "(broker unavailable); row stays pending: %s",
                     row_id,
                     exc,
                 )
@@ -1734,7 +1750,7 @@ def process_scheduled_notifications():
         return (
             jsonify(
                 {
-                    "claimed": len(claimed_ids),
+                    "due": len(due_ids),
                     "queued": queued,
                     "enqueue_errors": enqueue_errors,
                 }
