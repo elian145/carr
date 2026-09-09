@@ -68,52 +68,6 @@ services:
       - key: JWT_SECRET_KEY
         sync: false
 
-  # Celery worker (BE-13). Executes async image/alert/notification tasks enqueued
-  # by carr and by carr-beat's schedule. Needs the SAME secrets as carr because
-  # get_celery_flask_app() builds a full Flask app (create_app()) the first time
-  # a task body runs, which validates SECRET_KEY/JWT_SECRET_KEY/DATABASE_URL/R2/
-  # chat-R2/Redis exactly like the web service does at boot.
-  - type: worker
-    runtime: python
-    name: carr-worker
-    numInstances: 1
-    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
-    # BE-13: explicit low concurrency + child recycling/RSS cap. Render's default
-    # `multiprocessing.cpu_count()`-based concurrency (observed: 16) reflects the
-    # *host* machine's core count, not this instance's 512 MB allocation -- each
-    # prefork child rebuilds the full Flask app (SQLAlchemy/Migrate/JWT/Mail/
-    # SocketIO) and, for image tasks, loads OpenCV/NumPy/Pillow/boto3, so 16
-    # children reliably exceeded 512 MB and got OOM-killed by Render.
-    startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000
-    envVars:
-      - key: APP_ENV
-        value: production
-      # Copy the SAME values as the carr service (cannot auto-sync secrets).
-      - key: SECRET_KEY
-        sync: false
-      - key: JWT_SECRET_KEY
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: R2_ACCOUNT_ID
-        sync: false
-      - key: R2_BUCKET_NAME
-        sync: false
-      - key: R2_ACCESS_KEY_ID
-        sync: false
-      - key: R2_SECRET_ACCESS_KEY
-        sync: false
-      - key: R2_PUBLIC_URL
-        sync: false
-      - key: R2_CHAT_BUCKET_NAME
-        sync: false
-      - key: R2_CHAT_ACCESS_KEY_ID
-        sync: false
-      - key: R2_CHAT_SECRET_ACCESS_KEY
-        sync: false
-
   # Celery worker, Frankfurt (BE-13 region fix). carr-redis lives in Frankfurt;
   # Render's internal Key Value/Redis hostname is only reachable from services
   # in the SAME region, so the Oregon-region carr-worker above cannot resolve
@@ -160,25 +114,6 @@ services:
       - key: R2_CHAT_ACCESS_KEY_ID
         sync: false
       - key: R2_CHAT_SECRET_ACCESS_KEY
-        sync: false
-
-  # Celery beat (BE-13). Long-running scheduler daemon — only PUBLISHES the
-  # periodic task message (process_due_scheduled_notifications, every 60s);
-  # it never executes task bodies, so it does not need DATABASE_URL,
-  # SECRET_KEY, JWT_SECRET_KEY, R2, or Firebase credentials.
-  # MUST remain exactly one instance (no scaling block) — a second beat
-  # instance would double-enqueue the periodic schedule.
-  - type: worker
-    runtime: python
-    name: carr-beat
-    numInstances: 1
-    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
-    startCommand: celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
-    envVars:
-      - key: APP_ENV
-        value: production
-      # Copy the SAME value as the carr service (cannot auto-sync secrets).
-      - key: REDIS_URL
         sync: false
 
   # Celery beat, Frankfurt (BE-13 region fix). Same reasoning as carr-worker-fra

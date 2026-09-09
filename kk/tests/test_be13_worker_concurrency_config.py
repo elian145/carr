@@ -1,6 +1,5 @@
-"""BE-13: verify the carr-worker start command sets a memory-safe concurrency,
-and (BE-13 region fix) that the Frankfurt duplicate services exist with the
-correct region and identical commands to their Oregon counterparts.
+"""BE-13: verify the Celery worker/beat Render config is memory-safe and
+region-correct after the completed Oregon -> Frankfurt migration.
 
 Production evidence (concurrency): with no explicit ``--concurrency``, Celery
 defaulted to ``multiprocessing.cpu_count()`` (observed: 16) on a 512 MB Render
@@ -8,11 +7,15 @@ instance -- far more prefork children than the instance can hold, since each
 child rebuilds the full Flask app and, for image tasks, loads OpenCV/NumPy/
 Pillow/boto3.
 
-Production evidence (region): carr-redis lives in Frankfurt while carr-worker
-and carr-beat were created in Oregon; Render's internal Redis hostname is only
-reachable within the same region, so carr-worker-fra / carr-beat-fra were
-added as new, region-pinned services (region is immutable on an existing
-Render service, so the originals could not be edited in place).
+Production evidence (region): carr-redis lives in Frankfurt. carr-worker and
+carr-beat were originally created in Oregon; Render's internal Redis hostname
+is only reachable within the same region, so carr-worker-fra / carr-beat-fra
+were added as new, region-pinned services (region is immutable on an existing
+Render service, so the originals could not be edited in place). Production
+has since been verified end-to-end (Beat -> Redis -> Frankfurt worker -> task
+succeeded), and the old Oregon carr-worker / carr-beat blocks have been
+removed from render.yaml -- carr-worker-fra / carr-beat-fra are now the only
+Celery services.
 
 This is a static config check (parses ``render.yaml`` / ``Procfile``); it does
 not invoke Celery, Render's API, or run any task.
@@ -48,11 +51,12 @@ def _render_yaml_service_block(text: str, service_name: str) -> str:
     """
     Isolate one service's YAML block by its exact ``name:`` value.
 
-    Anchored so ``carr-worker`` does not also match as a text-prefix of
-    ``carr-worker-fra`` (a plain ``\\b`` word boundary is not enough here,
-    since ``-`` is already a non-word character and would satisfy ``\\b``
-    right at the start of the ``-fra`` suffix). Requiring the name to be
-    followed by end-of-line makes the match exact.
+    Anchored so ``carr-worker-fra``'s ``-fra`` suffix (or any other
+    hyphenated suffix) can never accidentally match a *different*,
+    shorter service name as a text-prefix (a plain ``\\b`` word boundary
+    is not enough here, since ``-`` is already a non-word character and
+    would satisfy ``\\b`` right at the start of a ``-fra``-style suffix).
+    Requiring the name to be followed by end-of-line makes the match exact.
     """
     escaped = re.escape(service_name)
     pattern = rf"name:\s*{escaped}[ \t]*\r?\n(.*?)(?=\n[ \t]*-\s*type:|\Z)"
@@ -73,28 +77,10 @@ def _render_yaml_region(block: str) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Oregon (original) services -- commands must be exactly as fixed by BE-13.
+# Procfile -- generic (non-region-specific) worker/beat entries. Unaffected
+# by the Render region migration; commands must still be exactly as fixed by
+# BE-13.
 # ---------------------------------------------------------------------------
-
-
-def test_render_yaml_carr_worker_start_command_has_memory_safe_flags():
-    text = _read("render.yaml")
-    block = _render_yaml_service_block(text, "carr-worker")
-    start_cmd = _render_yaml_start_command(block)
-
-    assert start_cmd == _EXPECTED_WORKER_COMMAND, f"unexpected carr-worker startCommand: {start_cmd!r}"
-    for flag in _EXPECTED_WORKER_FLAGS:
-        assert flag in start_cmd, f"missing {flag!r} in carr-worker startCommand: {start_cmd!r}"
-
-
-def test_render_yaml_carr_beat_start_command_is_unchanged():
-    text = _read("render.yaml")
-    block = _render_yaml_service_block(text, "carr-beat")
-    start_cmd = _render_yaml_start_command(block)
-
-    assert start_cmd == _EXPECTED_BEAT_COMMAND, (
-        f"carr-beat startCommand must remain unchanged (BE-13 only touches the worker): {start_cmd!r}"
-    )
 
 
 def test_procfile_worker_line_has_memory_safe_flags():
@@ -122,9 +108,8 @@ def test_procfile_beat_line_is_unchanged():
 
 
 # ---------------------------------------------------------------------------
-# Frankfurt (BE-13 region fix) services -- must exist, be pinned to
-# region: frankfurt, and run the exact same command as their Oregon
-# counterparts (region is the only intended behavioral difference).
+# render.yaml -- carr-worker-fra / carr-beat-fra are now the only Celery
+# services (the Oregon carr-worker / carr-beat blocks have been removed).
 # ---------------------------------------------------------------------------
 
 
@@ -150,26 +135,22 @@ def test_render_yaml_carr_beat_fra_is_pinned_to_frankfurt():
     )
 
 
-def test_render_yaml_carr_worker_fra_command_matches_carr_worker():
+def test_render_yaml_carr_worker_fra_start_command_has_memory_safe_flags():
     text = _read("render.yaml")
-    worker_cmd = _render_yaml_start_command(_render_yaml_service_block(text, "carr-worker"))
-    worker_fra_cmd = _render_yaml_start_command(_render_yaml_service_block(text, "carr-worker-fra"))
+    block = _render_yaml_service_block(text, "carr-worker-fra")
+    start_cmd = _render_yaml_start_command(block)
 
-    assert worker_fra_cmd == worker_cmd == _EXPECTED_WORKER_COMMAND, (
-        "carr-worker-fra must run the exact same command as carr-worker "
-        f"(carr-worker={worker_cmd!r}, carr-worker-fra={worker_fra_cmd!r})"
-    )
+    assert start_cmd == _EXPECTED_WORKER_COMMAND, f"unexpected carr-worker-fra startCommand: {start_cmd!r}"
+    for flag in _EXPECTED_WORKER_FLAGS:
+        assert flag in start_cmd, f"missing {flag!r} in carr-worker-fra startCommand: {start_cmd!r}"
 
 
-def test_render_yaml_carr_beat_fra_command_matches_carr_beat():
+def test_render_yaml_carr_beat_fra_start_command_is_exact():
     text = _read("render.yaml")
-    beat_cmd = _render_yaml_start_command(_render_yaml_service_block(text, "carr-beat"))
-    beat_fra_cmd = _render_yaml_start_command(_render_yaml_service_block(text, "carr-beat-fra"))
+    block = _render_yaml_service_block(text, "carr-beat-fra")
+    start_cmd = _render_yaml_start_command(block)
 
-    assert beat_fra_cmd == beat_cmd == _EXPECTED_BEAT_COMMAND, (
-        "carr-beat-fra must run the exact same command as carr-beat "
-        f"(carr-beat={beat_cmd!r}, carr-beat-fra={beat_fra_cmd!r})"
-    )
+    assert start_cmd == _EXPECTED_BEAT_COMMAND, f"unexpected carr-beat-fra startCommand: {start_cmd!r}"
 
 
 def _render_yaml_top_level_service_names(text: str) -> list[str]:
@@ -185,7 +166,7 @@ def _render_yaml_top_level_service_names(text: str) -> list[str]:
 
 
 def test_render_yaml_carr_and_carr_admin_are_not_duplicated():
-    """BE-13's region fix must not touch/duplicate carr or carr-admin."""
+    """The Celery region migration must not touch/duplicate carr or carr-admin."""
     names = _render_yaml_top_level_service_names(_read("render.yaml"))
 
     assert names.count("carr") == 1, f"expected exactly one service literally named 'carr', got names={names!r}"
@@ -194,21 +175,23 @@ def test_render_yaml_carr_and_carr_admin_are_not_duplicated():
     )
 
 
-def test_render_yaml_defines_exactly_the_expected_six_services():
+def test_render_yaml_defines_exactly_the_expected_four_services():
     """
-    BE-13 region fix adds exactly two new services (carr-worker-fra,
-    carr-beat-fra) and must not add/remove/duplicate anything else.
+    After the completed Oregon -> Frankfurt migration, render.yaml must
+    define exactly these four Blueprint services -- the old Oregon
+    carr-worker / carr-beat blocks have been intentionally removed.
     """
     names = _render_yaml_top_level_service_names(_read("render.yaml"))
 
     assert names == [
         "carr",
         "carr-admin",
-        "carr-worker",
         "carr-worker-fra",
-        "carr-beat",
         "carr-beat-fra",
     ], f"unexpected render.yaml service list/order: {names!r}"
+
+    assert "carr-worker" not in names, "the old Oregon carr-worker block must not be present"
+    assert "carr-beat" not in names, "the old Oregon carr-beat block must not be present"
 
 
 def test_render_yaml_has_no_redis_service_definition():
