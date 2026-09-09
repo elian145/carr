@@ -114,6 +114,54 @@ services:
       - key: R2_CHAT_SECRET_ACCESS_KEY
         sync: false
 
+  # Celery worker, Frankfurt (BE-13 region fix). carr-redis lives in Frankfurt;
+  # Render's internal Key Value/Redis hostname is only reachable from services
+  # in the SAME region, so the Oregon-region carr-worker above cannot resolve
+  # it. Region is immutable on an existing Render service, so this is a NEW
+  # service (not an in-place edit of carr-worker) pinned to region: frankfurt.
+  # Identical to carr-worker in every other respect (build/start command, env
+  # var keys). Deploy this, copy the sync:false secret VALUES into it via the
+  # Render Dashboard (not auto-synced from carr-worker), verify it connects to
+  # carr-redis and processes a real task, THEN delete the old carr-worker
+  # service in the Dashboard -- removing its block from this file does not
+  # delete it automatically. Do not run both against production long-term
+  # (duplicate task processing).
+  - type: worker
+    runtime: python
+    name: carr-worker-fra
+    region: frankfurt
+    numInstances: 1
+    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
+    startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Copy the SAME values as the carr service (cannot auto-sync secrets).
+      - key: SECRET_KEY
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: R2_CHAT_BUCKET_NAME
+        sync: false
+      - key: R2_CHAT_ACCESS_KEY_ID
+        sync: false
+      - key: R2_CHAT_SECRET_ACCESS_KEY
+        sync: false
+
   # Celery beat (BE-13). Long-running scheduler daemon — only PUBLISHES the
   # periodic task message (process_due_scheduled_notifications, every 60s);
   # it never executes task bodies, so it does not need DATABASE_URL,
@@ -123,6 +171,32 @@ services:
   - type: worker
     runtime: python
     name: carr-beat
+    numInstances: 1
+    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
+    startCommand: celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
+    envVars:
+      - key: APP_ENV
+        value: production
+      # Copy the SAME value as the carr service (cannot auto-sync secrets).
+      - key: REDIS_URL
+        sync: false
+
+  # Celery beat, Frankfurt (BE-13 region fix). Same reasoning as carr-worker-fra
+  # above: carr-redis is in Frankfurt, and Render's internal Redis hostname is
+  # only reachable within the same region, so the Oregon-region carr-beat
+  # above cannot resolve it (meaning process_due_scheduled_notifications is
+  # likely never actually being enqueued in production today). Region is
+  # immutable on an existing service, so this is a NEW service, not an
+  # in-place edit of carr-beat. Identical to carr-beat otherwise. Deploy,
+  # copy the REDIS_URL secret value into it via the Render Dashboard, verify
+  # it publishes the periodic schedule, THEN delete the old carr-beat service
+  # in the Dashboard. MUST remain exactly one Frankfurt beat instance once
+  # cut over — never run carr-beat and carr-beat-fra as beat schedulers at the
+  # same time long-term (a second beat instance double-enqueues the schedule).
+  - type: worker
+    runtime: python
+    name: carr-beat-fra
+    region: frankfurt
     numInstances: 1
     buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
     startCommand: celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
