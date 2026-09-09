@@ -1469,16 +1469,32 @@ def bulk_update_car_status():
 @bp.route("/notifications/broadcast", methods=["POST"])
 @admin_required
 def broadcast_notification():
-    """Create in-app notifications now, or schedule for later via scheduled_at."""
+    """Create in-app notifications now (queued via Celery), or schedule for
+    later via scheduled_at.
+
+    BE-04: the "send now" path used to call execute_broadcast() inline,
+    running the full recipient fan-out (DB writes + FCM sends, up to 5,000
+    recipients) synchronously on the request thread. It now durably
+    persists the broadcast as a ScheduledNotification row
+    (scheduled_at=utcnow()) and enqueues send_immediate_broadcast_task to
+    do the actual work in the Celery worker -- mirroring how a
+    scheduled_at broadcast already worked. If the Celery enqueue itself
+    fails (broker unavailable), the row stays "pending" and is still
+    picked up by beat's periodic sweep or the "process due" admin action;
+    there is no synchronous fallback (BE-12 pattern).
+    """
     try:
         denied = _deny("notifications.broadcast")
         if denied:
             return denied
+        from celery.exceptions import OperationalError
+
         from ..notification_broadcast import (
+            create_immediate_broadcast_row,
             create_scheduled_notification,
-            execute_broadcast,
             parse_scheduled_at,
         )
+        from ..tasks.notification_tasks import send_immediate_broadcast_task
 
         admin_user = get_current_user()
         data = request.get_json(silent=True) or {}
@@ -1525,28 +1541,66 @@ def broadcast_notification():
                 201,
             )
 
-        result = execute_broadcast(
+        row = create_immediate_broadcast_row(
             title=title,
             message=message,
             audience=audience,
             target_user_id=target_user_id,
             notification_type=notification_type,
             send_push_flag=send_push_flag,
+            created_by_user_id=admin_user.id if admin_user else None,
         )
+
+        try:
+            send_immediate_broadcast_task.apply_async(
+                kwargs={"row_id": row.id},
+                ignore_result=True,
+                retry=False,
+            )
+        except OperationalError as exc:
+            # Broker/backend unreachable. Expected failure mode -- log and
+            # continue; the row above is already durably committed
+            # "pending", so it is still picked up by beat's periodic sweep
+            # or the "process due" admin action. Never fall back to
+            # running the broadcast inline here.
+            logger.warning(
+                "immediate broadcast enqueue failed for scheduled_notification %s "
+                "(broker unavailable): %s",
+                row.id,
+                exc,
+            )
+        except Exception as exc:  # pragma: no cover - defensive last resort only
+            logger.exception(
+                "immediate broadcast enqueue failed unexpectedly for "
+                "scheduled_notification %s: %s",
+                row.id,
+                exc,
+            )
+
         if admin_user:
             log_user_action(
                 admin_user,
                 "admin_broadcast_notification",
-                target_type="notification",
+                target_type="scheduled_notification",
+                target_id=str(row.id),
                 metadata={
                     "title": title,
                     "audience": audience,
-                    "created": result.get("created"),
-                    "pushed": result.get("pushed"),
                     "send_push": send_push_flag,
+                    "immediate": True,
                 },
             )
-        return jsonify({**result, "scheduled": False}), 200
+        return (
+            jsonify(
+                {
+                    "message": "Notification queued for delivery",
+                    "scheduled": False,
+                    "queued": True,
+                    "scheduled_notification": row.to_admin_dict(),
+                }
+            ),
+            202,
+        )
     except ValueError as e:
         return jsonify({"message": str(e)}), 400
     except Exception as e:
@@ -1558,18 +1612,19 @@ def broadcast_notification():
 @bp.route("/notifications/scheduled", methods=["GET"])
 @admin_required
 def list_scheduled_notifications():
-    """List scheduled broadcasts. Also processes any due items (beat fallback)."""
+    """List scheduled broadcasts (list-only; does not process due items).
+
+    BE-04: this route used to call process_due_scheduled_notifications()
+    inline on every request as a "lazy delivery" fallback for when beat
+    might not be running -- silently swallowing any failure from it. Now
+    that BE-13 confirms a real worker/beat pair consumes this queue in
+    production, that inline fan-out (and its exception-swallowing) has
+    been removed; this endpoint only reads and paginates existing rows.
+    """
     try:
         denied = _deny("notifications.read")
         if denied:
             return denied
-        from ..notification_broadcast import process_due_scheduled_notifications
-
-        # Lazy delivery if Celery beat is not running
-        try:
-            process_due_scheduled_notifications(limit=10)
-        except Exception as e:
-            logger.warning("lazy process due scheduled notifications failed: %s", e)
 
         status = (request.args.get("status") or "all").strip().lower()
         page = request.args.get("page", 1, type=int)
@@ -1627,15 +1682,65 @@ def cancel_scheduled_notification(item_id: int):
 @bp.route("/notifications/scheduled/process", methods=["POST"])
 @admin_required
 def process_scheduled_notifications():
-    """Manually process due scheduled notifications (ops / no-beat fallback)."""
+    """Claim due scheduled notifications and queue them on Celery.
+
+    BE-04: this used to call process_due_scheduled_notifications() inline,
+    running execute_broadcast() (DB writes + FCM sends) synchronously on
+    the request thread for up to 50 due rows. It now only performs the
+    cheap BE-03 atomic claim (pending -> sending) inline -- DB-only,
+    sub-second work -- and enqueues one send_immediate_broadcast_task per
+    claimed row so the actual broadcast always runs in the Celery worker.
+    The response reports how many rows were claimed/queued, not how many
+    were actually sent -- that work has not happened by the time this
+    responds. If a row's own enqueue fails (broker unavailable), it stays
+    claimed ("sending"); there is no synchronous fallback (BE-12 pattern).
+    """
     try:
         denied = _deny("notifications.broadcast")
         if denied:
             return denied
-        from ..notification_broadcast import process_due_scheduled_notifications
+        from celery.exceptions import OperationalError
 
-        result = process_due_scheduled_notifications(limit=50)
-        return jsonify(result), 200
+        from ..notification_broadcast import claim_due_scheduled_notifications
+        from ..tasks.notification_tasks import send_immediate_broadcast_task
+
+        claimed_ids = claim_due_scheduled_notifications(limit=50)
+        queued = 0
+        enqueue_errors = 0
+        for row_id in claimed_ids:
+            try:
+                send_immediate_broadcast_task.apply_async(
+                    kwargs={"row_id": row_id},
+                    ignore_result=True,
+                    retry=False,
+                )
+                queued += 1
+            except OperationalError as exc:
+                enqueue_errors += 1
+                logger.warning(
+                    "process-due enqueue failed for scheduled_notification %s "
+                    "(broker unavailable): %s",
+                    row_id,
+                    exc,
+                )
+            except Exception as exc:  # pragma: no cover - defensive last resort only
+                enqueue_errors += 1
+                logger.exception(
+                    "process-due enqueue failed unexpectedly for "
+                    "scheduled_notification %s: %s",
+                    row_id,
+                    exc,
+                )
+        return (
+            jsonify(
+                {
+                    "claimed": len(claimed_ids),
+                    "queued": queued,
+                    "enqueue_errors": enqueue_errors,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         logger.error("admin process_scheduled_notifications error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to process scheduled notifications"}), 500

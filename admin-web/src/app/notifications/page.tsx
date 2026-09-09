@@ -6,7 +6,6 @@ import { DataTable, Td, Th } from "@/components/DataTable";
 import { Pagination } from "@/components/Pagination";
 import { FilterSelect } from "@/components/FilterSelect";
 import { AsyncPageBody, useAsyncData } from "@/components/AsyncPage";
-import { refreshNavBadges } from "@/components/NavBadges";
 import { useConfirm } from "@/context/ConfirmContext";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
@@ -136,20 +135,17 @@ export default function NotificationsPage() {
         send_push: sendPush,
         scheduled_at: scheduledIso,
       });
-      if (result.scheduled) {
-        toast.success(result.message || "Notification scheduled");
-        scheduled.reload();
-      } else {
-        toast.success(
-          `${result.message}${
-            result.push_configured
-              ? ` · ${result.pushed} push delivered`
-              : " · push not configured on server"
-          }`,
-        );
-        reload();
-        refreshNavBadges();
-      }
+      // BE-04: "send now" is queued for async delivery by the Celery
+      // worker, not completed synchronously -- there is no real
+      // created/pushed count yet, so don't imply it already happened.
+      // Both branches create a durable ScheduledNotification row, so
+      // refreshing the scheduled list is enough to show the result of
+      // either action (a future-dated "pending" row, or an
+      // immediate one that will flip pending -> sending -> sent shortly).
+      toast.success(
+        result.message || (result.scheduled ? "Notification scheduled" : "Notification queued for delivery"),
+      );
+      scheduled.reload();
       setTitle("");
       setMessage("");
       setTargetUserId("");
@@ -183,11 +179,12 @@ export default function NotificationsPage() {
   async function handleProcessDue() {
     setSchedBusy(true);
     try {
+      // BE-04: this claims due rows and queues them on Celery -- it no
+      // longer sends synchronously, so report what was queued, not
+      // sent/failed completion counts that don't exist yet.
       const r = await processScheduledNotifications();
-      toast.success(`Processed ${r.processed} · sent ${r.sent} · failed ${r.failed}`);
+      toast.success(`Queued ${r.queued} of ${r.claimed} due notification(s) for processing`);
       scheduled.reload();
-      reload();
-      refreshNavBadges();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Process failed");
     } finally {
@@ -351,7 +348,9 @@ export default function NotificationsPage() {
                 <div>
                   <h2 className="text-sm font-medium">Scheduled</h2>
                   <p className="mt-1 text-xs text-surface-muted">
-                    Due items send via Celery beat, or when this list refreshes / Process due.
+                    Due items are sent by the Celery worker (checked automatically every minute).
+                    &quot;Process due now&quot; queues any due items immediately instead of waiting
+                    for the next check.
                   </p>
                 </div>
                 {canBroadcast ? (

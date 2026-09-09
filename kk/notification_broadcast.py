@@ -158,17 +158,20 @@ def parse_scheduled_at(raw) -> datetime:
     return dt
 
 
-def create_scheduled_notification(
+def _validate_broadcast_request(
     *,
     title: str,
     message: str,
-    scheduled_at: datetime,
-    audience: str = "all",
-    target_user_id: str | None = None,
-    notification_type: str = "admin",
-    send_push_flag: bool = True,
-    created_by_user_id: int | None = None,
-) -> ScheduledNotification:
+    audience: str,
+    target_user_id: str | None,
+) -> tuple[str, str, str, str | None]:
+    """Shared validation for create_scheduled_notification() and
+    create_immediate_broadcast_row() (BE-04): non-empty title/message, a
+    200-char title cap, and a resolvable audience/target_user_id. Returns
+    the cleaned (title, message, audience, target_user_id). Raises
+    ValueError on any validation failure -- identical rules, identical
+    error messages, for both scheduled and immediate broadcasts.
+    """
     title = (title or "").strip()
     message = (message or "").strip()
     if not title or not message:
@@ -181,6 +184,23 @@ def create_scheduled_notification(
     _, err = resolve_recipients(audience=audience, target_user_id=target_user_id)
     if err:
         raise ValueError(err)
+    return title, message, audience, target_user_id
+
+
+def create_scheduled_notification(
+    *,
+    title: str,
+    message: str,
+    scheduled_at: datetime,
+    audience: str = "all",
+    target_user_id: str | None = None,
+    notification_type: str = "admin",
+    send_push_flag: bool = True,
+    created_by_user_id: int | None = None,
+) -> ScheduledNotification:
+    title, message, audience, target_user_id = _validate_broadcast_request(
+        title=title, message=message, audience=audience, target_user_id=target_user_id
+    )
 
     if scheduled_at <= utcnow():
         raise ValueError("scheduled_at must be in the future")
@@ -203,71 +223,226 @@ def create_scheduled_notification(
     return row
 
 
-def process_due_scheduled_notifications(*, limit: int = 20) -> dict[str, Any]:
-    """Send pending scheduled notifications that are due. Safe to call often."""
+def create_immediate_broadcast_row(
+    *,
+    title: str,
+    message: str,
+    audience: str = "all",
+    target_user_id: str | None = None,
+    notification_type: str = "admin",
+    send_push_flag: bool = True,
+    created_by_user_id: int | None = None,
+) -> ScheduledNotification:
+    """Durably record a "send now" broadcast as a due ScheduledNotification
+    row (BE-04).
+
+    This intentionally does NOT reuse create_scheduled_notification()'s
+    future-only ``scheduled_at`` validation (``scheduled_at`` must be
+    strictly greater than ``utcnow()``) -- an immediate broadcast is due
+    *now*, by definition, so calling that function with ``scheduled_at =
+    utcnow()`` would always fail its own check. Rather than loosen that
+    existing, already-relied-upon rule, this is a separate, dedicated
+    creation path that shares the exact same title/message/audience
+    validation via ``_validate_broadcast_request()`` but sets
+    ``scheduled_at = utcnow()`` directly.
+
+    The caller (the admin HTTP route) is expected to commit this row --
+    which happens here -- *before* attempting to enqueue
+    ``send_immediate_broadcast_task``, so the broadcast is never lost even
+    if the Celery enqueue itself fails: the row stays ``"pending"`` and is
+    still visible/claimable via the existing beat schedule or the
+    "process due" admin action.
+    """
+    title, message, audience, target_user_id = _validate_broadcast_request(
+        title=title, message=message, audience=audience, target_user_id=target_user_id
+    )
+
     now = utcnow()
-    due = (
+    row = ScheduledNotification(
+        title=title,
+        message=message,
+        audience=audience,
+        target_user_public_id=target_user_id,
+        notification_type=(notification_type or "admin").strip() or "admin",
+        send_push=bool(send_push_flag),
+        scheduled_at=now,
+        status="pending",
+        created_by_user_id=created_by_user_id,
+        created_at=now,
+        updated_at=now,
+    )
+    db.session.add(row)
+    db.session.commit()
+    return row
+
+
+def _due_pending_query(*, limit: int):
+    """Shared due-query used by every BE-03/BE-04 claim entry point:
+    pending rows whose scheduled_at is now-or-earlier, oldest first."""
+    now = utcnow()
+    return (
         ScheduledNotification.query.filter(
             ScheduledNotification.status == "pending",
             ScheduledNotification.scheduled_at <= now,
         )
         .order_by(ScheduledNotification.scheduled_at.asc())
         .limit(limit)
-        .all()
     )
+
+
+def _try_claim_pending_row(row: ScheduledNotification) -> bool:
+    """BE-03 atomic claim primitive: a single conditional SQL
+    ``UPDATE scheduled_notification SET status='sending', updated_at=...
+    WHERE id = :id AND status = 'pending'``. The plain SELECT that found
+    this row can race with any other concurrent caller (another beat tick,
+    the manual "process due" endpoint, a concurrent immediate-send task,
+    two Gunicorn workers, etc.) -- only the caller whose UPDATE actually
+    flips exactly one row from "pending" to "sending" (``rowcount == 1``)
+    is allowed to proceed; a ``rowcount == 0`` result means another caller
+    already claimed it between the SELECT and this UPDATE.
+
+    On a successful claim, syncs ``row``'s in-memory ``status``/
+    ``updated_at`` to match what was just written (the raw Core ``UPDATE``
+    does not otherwise update the already-loaded ORM instance).
+
+    Returns True if this call won the claim, False otherwise. Semantics
+    are unchanged from the original BE-03 implementation -- this is an
+    extraction, not a behavior change.
+    """
+    claim_ts = utcnow()
+    claim = db.session.execute(
+        update(ScheduledNotification)
+        .where(
+            ScheduledNotification.id == row.id,
+            ScheduledNotification.status == "pending",
+        )
+        .values(status="sending", updated_at=claim_ts)
+    )
+    db.session.commit()
+    if claim.rowcount != 1:
+        logger.info(
+            "scheduled notification %s already claimed by another worker; skipping",
+            row.id,
+        )
+        return False
+    row.status = "sending"
+    row.updated_at = claim_ts
+    return True
+
+
+def _claim_and_send_scheduled_notification(row: ScheduledNotification) -> dict[str, Any] | None:
+    """Atomically claim one due ScheduledNotification row and broadcast it.
+
+    Shared by process_due_scheduled_notifications() (batch sweep, used by
+    Celery beat and the "process due" admin action) and
+    process_scheduled_notification_by_id() (single-row lookup, used by
+    send_immediate_broadcast_task for BE-04 "send now" broadcasts). Both
+    entry points share identical BE-03 claim semantics via
+    _try_claim_pending_row() -- neither can double-send a row the other
+    has already claimed.
+
+    Returns None if the row was already claimed by another caller
+    (nothing to report); otherwise a result dict with
+    ``{"id", "status": "sent"|"failed", ...}``.
+    """
+    if not _try_claim_pending_row(row):
+        return None
+
+    try:
+        out = execute_broadcast(
+            title=row.title,
+            message=row.message,
+            audience=row.audience,
+            target_user_id=row.target_user_public_id,
+            notification_type=row.notification_type,
+            send_push_flag=bool(row.send_push),
+            source="admin_scheduled",
+        )
+        row.status = "sent"
+        row.sent_at = utcnow()
+        row.result = out
+        row.error_message = None
+        row.updated_at = utcnow()
+        db.session.commit()
+        return {"id": row.id, "status": "sent", **out}
+    except Exception as e:
+        logger.error("scheduled notification %s failed: %s", row.id, e, exc_info=True)
+        # BE-04 hardening: an exception here may have left the session's
+        # transaction aborted (e.g. a DB error inside execute_broadcast()'s
+        # own commit). Roll back first so this failure-state write below
+        # cannot itself be rejected by the DB for being issued inside an
+        # already-aborted transaction, which would otherwise leave the row
+        # stuck in "sending" instead of recording "failed".
+        db.session.rollback()
+        row.status = "failed"
+        row.error_message = str(e)[:500]
+        row.updated_at = utcnow()
+        db.session.commit()
+        return {"id": row.id, "status": "failed", "error": str(e)}
+
+
+def claim_due_scheduled_notifications(*, limit: int = 20) -> list[int]:
+    """Atomically claim up to ``limit`` due, pending ScheduledNotification
+    rows (``pending`` -> ``sending``) WITHOUT sending them (BE-04).
+
+    Used by ``POST /api/admin/notifications/scheduled/process``: claiming
+    is cheap, DB-only work that is safe to run inline on the request
+    thread; the actual broadcast (DB writes + FCM sends) is handed off to
+    Celery per claimed row so this endpoint stays fast and never calls
+    execute_broadcast() itself. Uses the exact same BE-03 claim primitive
+    (_try_claim_pending_row()) as process_due_scheduled_notifications(),
+    so it cannot double-claim a row beat or another caller already has.
+
+    Returns the ids of the rows this call successfully claimed.
+    """
+    due = _due_pending_query(limit=limit).all()
+    return [row.id for row in due if _try_claim_pending_row(row)]
+
+
+def process_scheduled_notification_by_id(row_id: int) -> dict[str, Any] | None:
+    """Claim-and-send a single ScheduledNotification row by primary key
+    (BE-04).
+
+    Used by ``send_immediate_broadcast_task`` so a "send now" broadcast is
+    attempted on the very next worker cycle regardless of how many other
+    due rows are queued, instead of waiting for
+    process_due_scheduled_notifications()'s own batch sweep (which orders
+    by ``scheduled_at`` ascending and, under a large backlog, could leave a
+    freshly-created row past a bounded ``limit``). Reuses the identical
+    BE-03 atomic-claim primitive as the batch sweep.
+
+    Returns None if the row does not exist, or was already claimed by
+    another caller (e.g. beat's own periodic sweep won the race) --
+    nothing to report in either case. Otherwise returns the same result
+    dict shape as _claim_and_send_scheduled_notification().
+    """
+    row = db.session.get(ScheduledNotification, row_id)
+    if row is None:
+        logger.warning("scheduled notification %s not found; nothing to send", row_id)
+        return None
+    return _claim_and_send_scheduled_notification(row)
+
+
+def process_due_scheduled_notifications(*, limit: int = 20) -> dict[str, Any]:
+    """Send pending scheduled notifications that are due. Safe to call often.
+
+    BE-04: the per-row claim + execute_broadcast() + state-update logic
+    previously inlined here now lives in _claim_and_send_scheduled_notification()
+    (a pure extraction -- same claim SQL, same try/except, same commits,
+    same "processed"/"sent"/"failed"/"results" shape). This function's own
+    observable behavior is unchanged.
+    """
+    due = _due_pending_query(limit=limit).all()
     sent = 0
     failed = 0
     results = []
     for row in due:
-        # BE-03: atomically claim this row before broadcasting. The plain
-        # SELECT above can return the same row to two concurrent callers
-        # (two beat workers, overlapping "lazy delivery" requests, etc.).
-        # Only the caller whose conditional UPDATE actually flips exactly
-        # one row from "pending" -> "sending" is allowed to proceed; if the
-        # row was already claimed by someone else between our SELECT and
-        # this UPDATE, rowcount is 0 and we skip it without broadcasting.
-        claim_ts = utcnow()
-        claim = db.session.execute(
-            update(ScheduledNotification)
-            .where(
-                ScheduledNotification.id == row.id,
-                ScheduledNotification.status == "pending",
-            )
-            .values(status="sending", updated_at=claim_ts)
-        )
-        db.session.commit()
-        if claim.rowcount != 1:
-            logger.info(
-                "scheduled notification %s already claimed by another worker; skipping",
-                row.id,
-            )
+        outcome = _claim_and_send_scheduled_notification(row)
+        if outcome is None:
             continue
-        row.status = "sending"
-        row.updated_at = claim_ts
-        try:
-            out = execute_broadcast(
-                title=row.title,
-                message=row.message,
-                audience=row.audience,
-                target_user_id=row.target_user_public_id,
-                notification_type=row.notification_type,
-                send_push_flag=bool(row.send_push),
-                source="admin_scheduled",
-            )
-            row.status = "sent"
-            row.sent_at = utcnow()
-            row.result = out
-            row.error_message = None
-            row.updated_at = utcnow()
-            db.session.commit()
+        if outcome["status"] == "sent":
             sent += 1
-            results.append({"id": row.id, "status": "sent", **out})
-        except Exception as e:
-            logger.error("scheduled notification %s failed: %s", row.id, e, exc_info=True)
-            row.status = "failed"
-            row.error_message = str(e)[:500]
-            row.updated_at = utcnow()
-            db.session.commit()
+        else:
             failed += 1
-            results.append({"id": row.id, "status": "failed", "error": str(e)})
+        results.append(outcome)
     return {"processed": len(due), "sent": sent, "failed": failed, "results": results}

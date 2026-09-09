@@ -188,11 +188,14 @@ export async function broadcastNotification(payload: {
   scheduled_at?: string;
 }): Promise<{
   message: string;
-  created?: number;
-  pushed?: number;
-  push_configured?: boolean;
-  audience?: string;
-  scheduled?: boolean;
+  scheduled: boolean;
+  // BE-04: "send now" broadcasts are queued (processed asynchronously by
+  // the Celery worker), not completed synchronously -- there is no
+  // created/pushed count in the response because that work hasn't
+  // happened yet. `queued` is only set for the immediate (non-scheduled)
+  // branch; `scheduled_notification` is returned for both branches so the
+  // UI can show the durable row either way.
+  queued?: boolean;
   scheduled_notification?: ScheduledNotificationItem;
 }> {
   return apiRequest("/api/admin/notifications/broadcast", {
@@ -239,9 +242,13 @@ export async function cancelScheduledNotification(
 }
 
 export async function processScheduledNotifications(): Promise<{
-  processed: number;
-  sent: number;
-  failed: number;
+  // BE-04: this claims due rows and queues them on Celery; it no longer
+  // sends synchronously, so there are no sent/failed completion counts --
+  // only how many were claimed and how many of those were successfully
+  // handed off to the worker queue.
+  claimed: number;
+  queued: number;
+  enqueue_errors?: number;
 }> {
   return apiRequest("/api/admin/notifications/scheduled/process", {
     method: "POST",
