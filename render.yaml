@@ -19,7 +19,8 @@
 #
 # Also provision separately in the Render dashboard (not in this minimal blueprint):
 #   - Redis instance → set REDIS_URL on the web service (required at boot)
-#   - Background Worker running: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info
+#   - Background Worker running: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000
+#     (BE-13: explicit concurrency/recycling for 512 MB instances; see carr-worker below.)
 #   - Background Worker/cron for beat if you use scheduled notifications:
 #       celery -A kk.tasks.celery_app.celery_app beat --loglevel=info
 #
@@ -77,7 +78,13 @@ services:
     name: carr-worker
     numInstances: 1
     buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
-    startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info
+    # BE-13: explicit low concurrency + child recycling/RSS cap. Render's default
+    # `multiprocessing.cpu_count()`-based concurrency (observed: 16) reflects the
+    # *host* machine's core count, not this instance's 512 MB allocation -- each
+    # prefork child rebuilds the full Flask app (SQLAlchemy/Migrate/JWT/Mail/
+    # SocketIO) and, for image tasks, loads OpenCV/NumPy/Pillow/boto3, so 16
+    # children reliably exceeded 512 MB and got OOM-killed by Render.
+    startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000
     envVars:
       - key: APP_ENV
         value: production

@@ -123,9 +123,11 @@ Notes:
 If you enable async image jobs (e.g. `?async=1`), run a worker:
 
 - Procfile entry:
-  - `worker: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info`
+  - `worker: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000`
 
 Workers reuse one Flask app per process (`FlaskContextTask` / `get_celery_flask_app`) so tasks do not call `create_app()` on every job.
+
+BE-13: on a 512 MB Render instance, Celery's default concurrency (`multiprocessing.cpu_count()`) can reflect the *host* machine's core count rather than this instance's actual allocation, spawning far more prefork children than 512 MB can hold (each child rebuilds the full Flask app and, for image tasks, loads OpenCV/NumPy/Pillow/boto3). Keep `--concurrency` low (2) and `--max-tasks-per-child`/`--max-memory-per-child` set so child processes are recycled instead of the whole instance being OOM-killed.
 
 Minimum env:
 - `REDIS_URL=redis://...` (recommended; memory broker is dev-only)
@@ -171,8 +173,8 @@ Do **not** commit real secrets; use a secret manager or CI-provided env vars.
 
 3. **Optional worker**
    - Add a **Background Worker** with start command:  
-     `celery -A kk.tasks.celery_app.celery_app worker --loglevel=info`  
-     and the same env vars (including `REDIS_URL`).
+     `celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000`
+     and the same env vars (including `REDIS_URL`). On a 512 MB instance, keep `--concurrency` low (see BE-13 note above) to avoid OOM.
 
 4. **Cloudflare**
    - If you put Render behind Cloudflare, enable WebSockets and use timeouts ≥ 65s for `/socket.io/`.
