@@ -284,6 +284,7 @@ def deliver_message(msg: Message, *, sender: User, receiver: User) -> dict:
                     "sender_id": sender.public_id,
                     "type": "chat_message",
                 },
+                user_id=receiver.id,
             )
     except Exception:
         logger.exception(

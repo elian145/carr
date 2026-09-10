@@ -1372,6 +1372,7 @@ def push_test():
         title="CarNet test",
         body="If you see this, push notifications are working.",
         data={"type": "push_test"},
+        user_id=me.id,
     )
     if not ok:
         hint = fcm_send_error_hint(last_fcm_send_error())

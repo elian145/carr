@@ -122,6 +122,7 @@ def execute_broadcast(
                 title=title,
                 body=message,
                 data={"type": notification_type, **notif_data},
+                user_id=user.id,
             ):
                 pushed += 1
         if created % 200 == 0:

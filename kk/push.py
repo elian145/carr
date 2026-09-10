@@ -214,10 +214,117 @@ def _ensure_firebase():
         return None
 
 
-def send_push(token: str, *, title: str, body: str, data: dict | None = None) -> bool:
+def _fcm_permanent_token_error_types() -> tuple[type, ...]:
+    """The real firebase-admin SDK exception classes that mean "this exact
+    token is permanently, definitively invalid" (BE-05).
+
+    Lazily imported and fail-closed: if firebase-admin can't be imported for
+    any reason, this returns an empty tuple, so ``_is_permanent_token_error``
+    below returns False and no token is ever cleared. Deliberately narrow --
+    ``QuotaExceededError`` (transient/rate-limit), ``ThirdPartyAuthError``
+    (server APNs/credential misconfiguration, not a token problem), network
+    errors, and any unrecognized/future exception type are all excluded on
+    purpose.
+    """
+    try:
+        from firebase_admin import messaging  # type: ignore
+
+        return (messaging.UnregisteredError, messaging.SenderIdMismatchError)
+    except Exception:
+        return ()
+
+
+def _is_permanent_token_error(exc: BaseException) -> bool:
+    """True only for FCM's own definitive permanent invalid-token errors."""
+    types_ = _fcm_permanent_token_error_types()
+    return bool(types_) and isinstance(exc, types_)
+
+
+def _is_third_party_auth_error(exc: BaseException) -> bool:
+    """True for the existing APNs/credential-misconfiguration error class
+    (unrelated to any single token; every send may fail until the server's
+    Firebase credentials/APNs key are fixed)."""
+    try:
+        from firebase_admin import messaging  # type: ignore
+
+        return isinstance(exc, messaging.ThirdPartyAuthError)
+    except Exception:
+        return False
+
+
+def _clear_invalidated_token(user_id: int, token: str) -> None:
+    """BE-05: race-safe cleanup for a permanently invalid FCM token.
+
+    Uses a single conditional ``UPDATE user SET firebase_token = NULL
+    WHERE id = :user_id AND firebase_token = :token`` -- clearing the token
+    ONLY if it still holds the exact value that FCM just rejected. If the
+    user has since logged out, refreshed to a new token, or otherwise
+    changed it, this affects 0 rows and is a safe no-op: the newer token is
+    never touched.
+
+    Runs on a short-lived, independent database connection/transaction of
+    its own (``db.engine.begin()``), not the caller's ``db.session``. This
+    is deliberate: callers like ``execute_broadcast()`` may have other,
+    unrelated, not-yet-committed work pending on their own session (e.g.
+    ``Notification`` rows queued earlier in a batched commit loop), and a
+    failure/rollback here must never be able to touch that unrelated work.
+    A cleanup failure is logged and swallowed -- it must never break the
+    surrounding push/broadcast flow.
+    """
+    try:
+        from sqlalchemy import update as sql_update
+
+        from .models import User, db
+
+        stmt = (
+            sql_update(User)
+            .where(User.id == user_id, User.firebase_token == token)
+            .values(firebase_token=None)
+        )
+        engine = db.session.get_bind()
+        with engine.begin() as connection:
+            result = connection.execute(stmt)
+        cleared = bool(result.rowcount)
+    except Exception:
+        logger.exception(
+            "BE-05: failed to clear permanently invalidated FCM token for user_id=%s",
+            user_id,
+        )
+        return
+
+    if cleared:
+        logger.info(
+            "BE-05: permanently invalid FCM token cleared for user_id=%s (prefix %s…)",
+            user_id,
+            token[:12] if token else "?",
+        )
+    else:
+        logger.info(
+            "BE-05: permanently-invalid FCM token for user_id=%s already changed/cleared; no-op",
+            user_id,
+        )
+
+
+def send_push(
+    token: str,
+    *,
+    title: str,
+    body: str,
+    data: dict | None = None,
+    user_id: int | None = None,
+) -> bool:
     """Send an FCM push notification to a single device token.
 
     Returns True on success, False on failure or when FCM is not configured.
+
+    BE-05: pass ``user_id`` (the owner of ``token``) so that, if and only if
+    FCM returns a definitive, permanent invalid-token error (see
+    ``_is_permanent_token_error``), the stored token is cleared via a
+    race-safe conditional UPDATE (see ``_clear_invalidated_token``).
+    Transient errors, server-credential errors, network/timeout errors, and
+    any unrecognized exception type never clear the token (fail closed). If
+    ``user_id`` is omitted, no cleanup is attempted -- this function's
+    send/log/return-False behavior is otherwise unchanged for every caller.
     """
     global _last_send_error
     _last_send_error = None
@@ -251,8 +358,11 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
         return True
     except Exception as exc:
         _last_send_error = exc
-        exc_name = type(exc).__name__
-        if exc_name == "ThirdPartyAuthError":
+
+        if user_id is not None and token and _is_permanent_token_error(exc):
+            _clear_invalidated_token(user_id, token)
+
+        if _is_third_party_auth_error(exc):
             logger.warning(
                 "FCM/APNs auth failed (token=%s…): %s. "
                 "Re-upload the APNs .p8 key in Firebase → Project settings → Cloud Messaging → "
@@ -264,7 +374,7 @@ def send_push(token: str, *, title: str, body: str, data: dict | None = None) ->
             logger.warning(
                 "FCM send failed (token=%s…): %s: %s",
                 token[:12] if token else "?",
-                exc_name,
+                type(exc).__name__,
                 exc,
             )
         return False

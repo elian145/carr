@@ -913,6 +913,7 @@ def dealers_approve(user_public_id: str):
                     title=notification.title,
                     body=notification.message,
                     data=push_data,
+                    user_id=target.id,
                 )
             except Exception:
                 logger.exception(

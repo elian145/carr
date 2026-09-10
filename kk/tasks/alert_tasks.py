@@ -26,7 +26,7 @@ def _send_retention_push(
 ) -> None:
     token = getattr(user, "firebase_token", None)
     if token:
-        send_push(token, title=title, body=body, data=data or {})
+        send_push(token, title=title, body=body, data=data or {}, user_id=user.id)
 
     try:
         notif = Notification(

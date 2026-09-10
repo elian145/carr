@@ -354,6 +354,7 @@ def register_socketio_handlers(socketio) -> None:
                     title=f"New message from {sender_name}",
                     body=content[:200],
                     data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
+                    user_id=receiver.id,
                 )
                 if not ok:
                     logger.info(
