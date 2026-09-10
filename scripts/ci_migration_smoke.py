@@ -1917,6 +1917,181 @@ def _be03_scheduled_notification_claim_smoke(app) -> int:
             db.session.commit()
 
 
+_BE11_THREAD_JOIN_TIMEOUT_S = 30
+
+
+def _be11_listing_view_claim_smoke(app) -> int:
+    """
+    BE-11: real-thread, real-Postgres concurrency proof that
+    ``claim_listing_view_once()`` (kk/listing_metrics.py) grants exactly one
+    ``True`` result for a given ``(user_id, car_id)`` pair no matter how
+    many callers race for it simultaneously, and that the DB's own
+    ``UNIQUE(user_id, car_id)`` constraint on ``listing_view_claim`` -- not
+    any Python-side check -- is what enforces this.
+
+    Seeds one seller, one non-seller viewer, and one car, then has W
+    concurrent threads -- each with its own Flask app context (its own
+    scoped session/DB connection), synchronized on a ``threading.Barrier``
+    so they all call ``claim_listing_view_once(viewer_id, car_id)`` at
+    essentially the same instant -- race for the same claim. Asserts:
+
+      - exactly one thread's call returned ``True`` (won the claim);
+      - every other thread's call returned ``False``;
+      - exactly one ``listing_view_claim`` row exists for this
+        ``(user_id, car_id)`` pair (no duplicate row slipped through, and
+        no thread raised an uncaught ``IntegrityError`` instead of cleanly
+        returning ``False``).
+
+    This is the real-concurrency counterpart to the SQLite, thread-free
+    unit tests in ``kk/tests/test_be11_analytics_view_dedup.py``, mirroring
+    the established D-04/BE-03 real-thread pattern
+    (``_d04_analytics_concurrency_smoke`` / ``_be03_scheduled_notification_claim_smoke``).
+    All seeded rows (``ListingViewClaim``, ``Car``, ``User``) are deleted in
+    a ``finally`` block regardless of outcome.
+    """
+    import threading
+    import uuid
+
+    from sqlalchemy import text
+
+    from kk.extensions import db
+    from kk.listing_metrics import claim_listing_view_once
+    from kk.models import Car, ListingViewClaim, User
+
+    suffix = uuid.uuid4().hex[:8]
+    n_workers = 20
+    print(
+        f"BE-11: seeding listing-view-claim concurrency smoke data "
+        f"(suffix={suffix}, workers={n_workers})...",
+        flush=True,
+    )
+
+    seller_id: int | None = None
+    viewer_id: int | None = None
+    car_id: int | None = None
+    try:
+        with app.app_context():
+            seller = User(
+                username=f"be11_seller_{suffix}",
+                phone_number=f"07566{suffix[:6]}",
+                first_name="Be11",
+                last_name="Seller",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=f"be11seller{suffix}",
+            )
+            seller.set_password("Aa123456")
+            db.session.add(seller)
+            db.session.flush()
+            seller_id = seller.id
+
+            viewer = User(
+                username=f"be11_viewer_{suffix}",
+                phone_number=f"07567{suffix[:6]}",
+                first_name="Be11",
+                last_name="Viewer",
+                is_active=True,
+                is_verified=True,
+                phone_verified=True,
+                public_id=f"be11viewer{suffix}",
+            )
+            viewer.set_password("Aa123456")
+            db.session.add(viewer)
+            db.session.flush()
+            viewer_id = viewer.id
+
+            car = Car(
+                seller_id=seller.id,
+                public_id=f"be11car{suffix}",
+                brand="be11smoke",
+                model="viewclaim",
+                year=2020,
+                mileage=1,
+                engine_type="gas",
+                transmission="auto",
+                drive_type="fwd",
+                condition="used",
+                body_type="sedan",
+                price=1000,
+                location="Erbil",
+                is_active=True,
+            )
+            db.session.add(car)
+            db.session.commit()
+            car_id = car.id
+
+        barrier = threading.Barrier(n_workers)
+        results: list[bool | None] = [None] * n_workers
+        errors: list[BaseException | None] = [None] * n_workers
+
+        def _worker(slot: int) -> None:
+            try:
+                barrier.wait(timeout=_BE11_THREAD_JOIN_TIMEOUT_S)
+                with app.app_context():
+                    results[slot] = claim_listing_view_once(viewer_id, car_id)
+            except BaseException as exc:  # noqa: BLE001
+                errors[slot] = exc
+
+        threads = [threading.Thread(target=_worker, args=(i,)) for i in range(n_workers)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=_BE11_THREAD_JOIN_TIMEOUT_S)
+
+        failed = [(i, e) for i, e in enumerate(errors) if e is not None]
+        if failed:
+            for i, e in failed:
+                print(f"BE-11: claim smoke thread {i} raised: {e!r}", file=sys.stderr)
+            return 1
+
+        true_count = sum(1 for r in results if r is True)
+        false_count = sum(1 for r in results if r is False)
+        if true_count != 1 or false_count != n_workers - 1:
+            print(
+                f"BE-11: expected exactly 1 True and {n_workers - 1} False across "
+                f"{n_workers} racing workers, got results={results}",
+                file=sys.stderr,
+            )
+            return 1
+
+        with app.app_context():
+            claim_rows = ListingViewClaim.query.filter_by(
+                user_id=viewer_id, car_id=car_id
+            ).all()
+            if len(claim_rows) != 1:
+                print(
+                    f"BE-11: expected exactly 1 listing_view_claim row for "
+                    f"(user_id={viewer_id}, car_id={car_id}), found {len(claim_rows)}",
+                    file=sys.stderr,
+                )
+                return 1
+
+        print(
+            f"BE-11: atomic claim OK under concurrency "
+            f"({n_workers} racing workers, exactly one winner, exactly one claim row)",
+            flush=True,
+        )
+        return 0
+    finally:
+        with app.app_context():
+            db.session.rollback()
+            if viewer_id is not None and car_id is not None:
+                db.session.execute(
+                    text(
+                        "DELETE FROM listing_view_claim WHERE user_id = :uid AND car_id = :cid"
+                    ),
+                    {"uid": viewer_id, "cid": car_id},
+                )
+            if car_id is not None:
+                db.session.execute(text("DELETE FROM car WHERE id = :cid"), {"cid": car_id})
+            if viewer_id is not None:
+                db.session.execute(text("DELETE FROM \"user\" WHERE id = :uid"), {"uid": viewer_id})
+            if seller_id is not None:
+                db.session.execute(text("DELETE FROM \"user\" WHERE id = :uid"), {"uid": seller_id})
+            db.session.commit()
+
+
 def main() -> int:
     os.chdir(_REPO_ROOT)
     if str(_REPO_ROOT) not in sys.path:
@@ -2039,6 +2214,10 @@ def main() -> int:
     be03_status = _be03_scheduled_notification_claim_smoke(app)
     if be03_status != 0:
         return be03_status
+
+    be11_status = _be11_listing_view_claim_smoke(app)
+    if be11_status != 0:
+        return be11_status
 
     print("migration smoke OK", flush=True)
     return 0

@@ -852,6 +852,54 @@ class ListingAnalytics(db.Model):
     def __repr__(self):
         return f'<ListingAnalytics car_id={self.car_id} views={self.views}>'
 
+
+class ListingViewClaim(db.Model):
+    """
+    BE-11: durable, DB-backed, permanent per-(user, listing) claim that gates
+    exactly one ``ListingAnalytics.views`` increment per user per listing,
+    ever.
+
+    Deliberately independent of both:
+    - ``user_viewed_listings`` (recently-viewed history; shared by the
+      detail-page GET's best-effort view-count bump and the "recently
+      viewed" feature) -- reusing that table's dedup state as the analytics
+      gate was the root cause of BE-11 (the GET and the analytics
+      track-view call raced for the same shared flag, so only one of
+      ``Car.views_count`` / ``ListingAnalytics.views`` ever incremented per
+      real view).
+    - ``claim_unique_engagement()`` (Redis-preferred / in-process-fallback,
+      TTL-based dedupe used only by calls/shares' 24h best-effort
+      anti-gaming dedupe) -- unsuitable here because a "views: once ever"
+      claim must survive Redis restarts/eviction/outages and must be
+      correct across all Gunicorn worker processes, which a TTL-based
+      cache cannot guarantee.
+
+    A row existing here means "this user's view of this listing has already
+    been counted toward ``ListingAnalytics.views``"; nothing else reads or
+    writes this table. The database's own unique constraint on
+    ``(user_id, car_id)`` -- not a Python-side existence check -- is what
+    makes the claim atomic under concurrency (see
+    ``kk.listing_metrics.claim_listing_view_once()``).
+    """
+
+    __tablename__ = 'listing_view_claim'
+
+    id = db.Column(db.Integer, primary_key=True)
+    # Group-A dependent data (see migration c05b6c97708d): a claim has no
+    # independent value once its user or listing is gone, so both foreign
+    # keys cascade-delete, matching user_viewed_listings/user_favorites.
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), nullable=False, index=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
+    claimed_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'car_id', name='uq_listing_view_claim_user_car'),
+    )
+
+    def __repr__(self):
+        return f'<ListingViewClaim user_id={self.user_id} car_id={self.car_id}>'
+
+
 _chat_media_logger = logging.getLogger("kk.chat_media")
 
 

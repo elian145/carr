@@ -16,7 +16,7 @@ from typing import Literal
 
 from sqlalchemy import update
 
-from .models import Car, ListingAnalytics, User, db
+from .models import Car, ListingAnalytics, ListingViewClaim, User, db
 from .time_utils import utcnow
 
 logger = logging.getLogger(__name__)
@@ -212,22 +212,91 @@ def bump_listing_metric(car: Car, field: MetricField) -> None:
     db.session.commit()
 
 
+def claim_listing_view_once(user_id: int, car_id: int) -> bool:
+    """
+    BE-11: atomically claim "this user's view of this listing has been
+    counted toward ``ListingAnalytics.views``" -- exactly once, forever.
+
+    Returns ``True`` the first time this ``(user_id, car_id)`` pair is
+    claimed, ``False`` on every subsequent call (including calls that race
+    each other concurrently -- see below).
+
+    Backed entirely by ``ListingViewClaim``'s ``UNIQUE(user_id, car_id)``
+    constraint via a single ``INSERT ... ON CONFLICT DO NOTHING ...
+    RETURNING`` statement -- there is deliberately no Python-side "does a
+    row already exist" check beforehand (a SELECT-then-INSERT would leave a
+    window where two concurrent callers for the same pair both observe "no
+    row yet" and both attempt the insert; only one can ever land once the
+    unique constraint is enforced, but a naive check-then-act could still
+    have returned ``True`` to both callers before either insert happened).
+    The database's uniqueness constraint -- not this function's control
+    flow -- is what makes the claim correct under real concurrency, exactly
+    like ``record_user_listing_view()``'s own upsert (``kk/view_history.py``)
+    and ``get_or_create_analytics()``'s upsert (this module) already do
+    (D-04/D-07). Uses ``.returning(...)`` rather than ``result.rowcount`` to
+    detect insert-vs-conflict, for the same reason documented in
+    ``record_user_listing_view()``: rowcount is not reliable for this
+    purpose under real concurrent PostgreSQL callers.
+
+    Deliberately independent of ``record_user_listing_view()`` /
+    ``user_viewed_listings`` (recently-viewed history -- shared, before
+    BE-11's fix, with the detail-page GET's best-effort ``Car.views_count``
+    bump) and of ``claim_unique_engagement()`` (Redis-preferred /
+    in-process-fallback, TTL-based dedupe used only by calls/shares' 24h
+    best-effort anti-gaming dedupe -- unsuitable for a permanent claim
+    because it cannot survive a Redis restart/eviction/outage and is not
+    concurrency-safe across worker processes on its in-memory fallback
+    path). See ``ListingViewClaim`` (``kk/models.py``) for the full
+    rationale.
+
+    Commits internally (self-contained, like ``record_user_listing_view()``):
+    a conflict (``False``) has no pending change to commit either way, and a
+    successful claim (``True``) is durably persisted the moment this
+    function returns, independent of whatever the caller does next. No
+    exception is caught/swallowed here -- a real DB failure propagates to
+    the caller unchanged, exactly like every other write path in this
+    module.
+    """
+    stmt = (
+        _conflict_safe_insert(ListingViewClaim)
+        .values(user_id=int(user_id), car_id=int(car_id), claimed_at=utcnow())
+        .on_conflict_do_nothing(index_elements=["user_id", "car_id"])
+        .returning(ListingViewClaim.id)
+    )
+    inserted = db.session.execute(stmt).first()
+    db.session.commit()
+    return inserted is not None
+
+
 def record_trusted_view(user: User, listing_id: str) -> dict:
     """
     Record recently-viewed + increment analytics views at most once per user.
 
     Seller viewing their own listing does not bump the seller-facing view metric.
+
+    BE-11: the recently-viewed side effect (``record_user_listing_view()``,
+    which drives the "recently viewed" feature and is also independently
+    consumed by the detail-page GET's best-effort ``Car.views_count`` bump)
+    and the analytics-count gate (``claim_listing_view_once()``, brand new,
+    used for nothing else) are two deliberately separate dedup mechanisms.
+    ``record_user_listing_view()`` is still called, unchanged, for its own
+    purpose -- its ``is_first_view`` return value is no longer used to
+    decide whether to bump ``ListingAnalytics.views``. This is what allows
+    ``GET`` detail (which only ever touches ``user_viewed_listings`` /
+    ``Car.views_count``) and ``POST /api/analytics/track/view`` (which now
+    only ever touches ``listing_view_claim`` / ``ListingAnalytics.views``)
+    to no longer steal each other's dedup state, in either call order.
     """
     from .view_history import record_user_listing_view
 
-    car, is_first = record_user_listing_view(user, listing_id)
+    car, _is_first_recently_viewed = record_user_listing_view(user, listing_id)
     if not car:
         return {"ok": False, "counted": False, "code": "listing_not_found"}
 
     if car.seller_id == user.id:
         return {"ok": True, "counted": False, "code": "own_listing"}
 
-    if not is_first:
+    if not claim_listing_view_once(user.id, car.id):
         return {"ok": True, "counted": False, "code": "already_viewed"}
 
     bump_listing_metric(car, "views")
