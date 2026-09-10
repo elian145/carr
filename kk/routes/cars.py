@@ -59,6 +59,16 @@ _ALLOWED_REGION_SPECS = frozenset(
 _ALLOWED_PLATE_TYPES = frozenset({"private", "temporary", "commercial", "taxi"})
 _ALLOWED_LISTING_STATUSES = frozenset({"active", "sold"})
 
+# BE-06: hard cap on the number of listings returned by the legacy
+# `GET /api/my_listings` compat endpoint (`compat_my_listings()`). Bounds
+# worst-case query-result size / serialization cost for a single request;
+# not real pagination -- this legacy endpoint's Flutter/analytics caller
+# strictly expects a bare JSON array response and has no pagination
+# support, so adding page/per_page params would be a client-incompatible
+# behavior change. Mirrors the `_DEALER_PROFILE_LISTINGS_CAP` precedent in
+# `kk/routes/user.py` (BE-01).
+_MY_LISTINGS_COMPAT_CAP = 200
+
 
 def _normalize_vin(val) -> str | None:
     v = (val if isinstance(val, str) else str(val or "")).strip().upper()
@@ -1508,9 +1518,19 @@ def compat_my_listings():
         if not current_user:
             return jsonify({"message": "Unauthorized"}), 401
 
+        # BE-06: cap the result set (see `_MY_LISTINGS_COMPAT_CAP`) and
+        # eager-load images/videos/seller so the loop below doesn't issue
+        # one extra SELECT per relationship per row (N+1), mirroring the
+        # existing `/api/user/recently-viewed` / dealer-profile pattern.
         cars = (
             Car.query.filter_by(seller_id=current_user.id, is_active=True)
+            .options(
+                selectinload(Car.images),
+                selectinload(Car.videos),
+                joinedload(Car.seller),
+            )
             .order_by(Car.created_at.desc())
+            .limit(_MY_LISTINGS_COMPAT_CAP)
             .all()
         )
         result = []
