@@ -207,10 +207,25 @@ def sync_saved_searches():
         if not isinstance(items, list):
             return jsonify({"message": "items must be a list"}), 400
 
-        existing = {
-            s.public_id: s
-            for s in SavedSearch.query.filter_by(user_id=current_user.id).all()
-        }
+        # BE-08: load the user's existing SavedSearch rows exactly once (as
+        # before) and derive BOTH lookup structures we need from that single
+        # in-memory list -- a public_id -> row map (unchanged) and a filter
+        # fingerprint -> row map (new). The fingerprint map uses the EXACT
+        # same `_filters_fingerprint()` semantics as `_find_by_filters()`, so
+        # matching behavior is unchanged; we just stop re-querying the DB for
+        # it on every sync item. "First matching row wins" is preserved by
+        # only ever populating a fingerprint slot the first time it's seen
+        # (via `setdefault`), mirroring the row order `_find_by_filters()`
+        # would have iterated in.
+        existing_rows = SavedSearch.query.filter_by(user_id=current_user.id).all()
+        existing = {s.public_id: s for s in existing_rows}
+
+        fingerprint_lookup: dict[str, SavedSearch] = {}
+        for row in existing_rows:
+            fingerprint_lookup.setdefault(_filters_fingerprint(row.filters or {}), row)
+
+        # Running count replaces the old per-new-item COUNT(*) query.
+        current_count = len(existing_rows)
 
         for raw in items[:_MAX_SAVED_SEARCHES]:
             if not isinstance(raw, dict):
@@ -222,19 +237,31 @@ def sync_saved_searches():
             if notify is None:
                 notify = True
             auto_saved = _to_bool(raw.get("auto_saved"))
+            target_fp = _filters_fingerprint(filters)
 
             row = existing.get(public_id) if public_id else None
             if not row:
-                row = _find_by_filters(current_user.id, filters)
+                # In-memory fingerprint match -- no DB round trip. A stale or
+                # nonexistent client-supplied public_id naturally falls
+                # through to here, same as before.
+                row = fingerprint_lookup.get(target_fp)
             if row:
+                old_fp = _filters_fingerprint(row.filters or {})
                 row.name = name[:200]
                 row.filters = filters
                 row.notify = bool(notify)
                 row.auto_saved = auto_saved
                 row.updated_at = utcnow()
                 existing[row.public_id] = row
+                # Keep the fingerprint map in sync as the loop progresses so
+                # a later item in this same request can still match this
+                # row by its (possibly just-changed) filters -- same
+                # same-request dedup guarantee the old re-query provided.
+                if old_fp != target_fp and fingerprint_lookup.get(old_fp) is row:
+                    del fingerprint_lookup[old_fp]
+                fingerprint_lookup.setdefault(target_fp, row)
             else:
-                if SavedSearch.query.filter_by(user_id=current_user.id).count() >= _MAX_SAVED_SEARCHES:
+                if current_count >= _MAX_SAVED_SEARCHES:
                     continue
                 row = SavedSearch(
                     user_id=current_user.id,
@@ -247,6 +274,8 @@ def sync_saved_searches():
                     row.public_id = public_id
                 db.session.add(row)
                 existing[row.public_id] = row
+                fingerprint_lookup[target_fp] = row
+                current_count += 1
 
         db.session.commit()
         rows = (
