@@ -13,12 +13,45 @@ from .user import _to_bool
 bp = Blueprint("saved_searches", __name__)
 
 _MAX_SAVED_SEARCHES = 50
+_MAX_FILTER_KEYS = 30
+_MAX_FILTER_KEY_LEN = 64
+_MAX_FILTER_VALUE_LEN = 500
 
 
 def _clean_filters(raw) -> dict:
-    if isinstance(raw, dict):
-        return {str(k): v for k, v in raw.items() if v is not None and str(v).strip() != ""}
-    return {}
+    if not isinstance(raw, dict):
+        return {}
+
+    cleaned: dict = {}
+    for k, v in raw.items():
+        if len(cleaned) >= _MAX_FILTER_KEYS:
+            break
+
+        if v is None:
+            continue
+
+        key = str(k)
+        if len(key) > _MAX_FILTER_KEY_LEN:
+            continue
+
+        if isinstance(v, (dict, list)):
+            continue
+
+        if isinstance(v, str):
+            if v.strip() == "":
+                continue
+            cleaned[key] = v[:_MAX_FILTER_VALUE_LEN]
+            continue
+
+        # Non-string scalars (int, float, bool, ...): keep original type but
+        # guard against pathologically huge numeric string representations.
+        if str(v).strip() == "":
+            continue
+        if len(str(v)) > _MAX_FILTER_VALUE_LEN:
+            continue
+        cleaned[key] = v
+
+    return cleaned
 
 
 def _filters_fingerprint(filters: dict) -> str:
