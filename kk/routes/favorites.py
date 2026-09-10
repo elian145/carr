@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy import update as sql_update
 from sqlalchemy.orm import joinedload, selectinload
@@ -134,6 +134,8 @@ def toggle_favorite(car_id):
 
         return jsonify({"message": f"Car {action} from favorites", "is_favorited": action == "added"}), 200
 
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("toggle_favorite failed: %s", e)
         return jsonify({"message": "Failed to toggle favorite"}), 500
 

@@ -37,6 +37,16 @@ def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> U
     return resolve_allowed_chat_receiver(me, car, receiver_public)
 
 
+def _log_route_exception(action: str, exc: BaseException) -> None:
+    """BE-10: log an otherwise-swallowed exception at a route boundary.
+
+    Logging only -- this never rolls back or changes the response. Callers
+    keep whatever `db.session.rollback()` they already had (or lack) and
+    return the exact same value they returned before this helper existed.
+    """
+    current_app.logger.exception("chat.%s failed: %s", action, exc)
+
+
 def _get_idempotency_key() -> str:
     """Optional client-supplied retry key (BE-18). Mirrors kk/routes/cars.py::create_car."""
     return (
@@ -406,7 +416,8 @@ def list_chats():
             )
 
         return jsonify(chats), 200
-    except Exception:
+    except Exception as e:
+        _log_route_exception("list_chats", e)
         return jsonify({"message": "Failed to load chats"}), 500
 
 
@@ -479,7 +490,8 @@ def get_messages(conversation_id: str):
             "total": total,
             "has_more": (page * per_page) < total,
         }), 200
-    except Exception:
+    except Exception as e:
+        _log_route_exception("get_messages", e)
         return jsonify({"message": "Failed to load messages"}), 500
 
 
@@ -565,8 +577,9 @@ def send_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("send_message", e)
         return jsonify({"message": "Failed to send message"}), 500
 
 
@@ -674,8 +687,9 @@ def send_image_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("send_image_message", e)
         return jsonify({"message": "Failed to send image message"}), 500
 
 
@@ -783,8 +797,9 @@ def send_video_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("send_video_message", e)
         return jsonify({"message": "Failed to send video message"}), 500
 
 
@@ -895,8 +910,9 @@ def send_audio_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("send_audio_message", e)
         return jsonify({"message": "Failed to send audio message"}), 500
 
 
@@ -1030,8 +1046,9 @@ def send_media_group_message(conversation_id: str):
                 }
             ), 413
         return jsonify({"message": "Selected files are too large."}), 413
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("send_media_group_message", e)
         return jsonify({"message": "Failed to send media group"}), 500
 
 
@@ -1147,8 +1164,9 @@ def edit_chat_message(message_id: str):
         payload = msg.to_dict()
         _emit_message_update(msg, "message_updated", payload)
         return jsonify({"success": True, "message": payload}), 200
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("edit_chat_message", e)
         return jsonify({"message": "Failed to edit message"}), 500
 
 
@@ -1179,8 +1197,9 @@ def delete_chat_message(message_id: str):
         payload = msg.to_dict()
         _emit_message_update(msg, "message_deleted", payload)
         return jsonify({"success": True, "message": payload}), 200
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("delete_chat_message", e)
         return jsonify({"message": "Failed to delete message"}), 500
 
 
@@ -1198,7 +1217,8 @@ def unread_count():
             .scalar()
         )
         return jsonify({"unread_count": int(n or 0)}), 200
-    except Exception:
+    except Exception as e:
+        _log_route_exception("unread_count", e)
         return jsonify({"message": "Failed to load unread count"}), 500
 
 
@@ -1226,8 +1246,9 @@ def block_user(user_id: str):
         db.session.add(BlockedUser(blocker_id=me.id, blocked_id=target.id))
         db.session.commit()
         return jsonify({"message": "User blocked"}), 201
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("block_user", e)
         return jsonify({"message": "Failed to block user"}), 500
 
 
@@ -1251,8 +1272,9 @@ def unblock_user(user_id: str):
         db.session.delete(b)
         db.session.commit()
         return jsonify({"message": "User unblocked"}), 200
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("unblock_user", e)
         return jsonify({"message": "Failed to unblock user"}), 500
 
 
@@ -1288,8 +1310,9 @@ def report_user(user_id: str):
         ))
         db.session.commit()
         return jsonify({"message": "Report submitted. Thank you."}), 201
-    except Exception:
+    except Exception as e:
         db.session.rollback()
+        _log_route_exception("report_user", e)
         return jsonify({"message": "Failed to submit report"}), 500
 
 
@@ -1403,6 +1426,7 @@ def list_blocked_users():
             if b.blocked_id in public_id_by_user_id
         ]
         return jsonify({"blocked_users": blocked_ids}), 200
-    except Exception:
+    except Exception as e:
+        _log_route_exception("list_blocked_users", e)
         return jsonify({"message": "Failed to load blocked users"}), 500
 

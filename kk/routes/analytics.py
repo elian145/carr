@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -65,7 +65,9 @@ def get_listings_analytics():
             .all()
         )
         return jsonify([a.to_dict() for a in analytics]), 200
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("get_listings_analytics failed: %s", e)
         return jsonify({"message": "Failed to get analytics"}), 500
 
 
@@ -86,7 +88,9 @@ def get_listing_analytics(listing_id: str):
         if created:
             db.session.commit()
         return jsonify(a.to_dict()), 200
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("get_listing_analytics failed: %s", e)
         return jsonify({"message": "Failed to get analytics"}), 500
 
 

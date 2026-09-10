@@ -823,7 +823,9 @@ def upload_profile_picture():
 
         return jsonify({"message": "Profile picture uploaded successfully", "profile_picture": current_user.profile_picture}), 200
 
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("upload_profile_picture failed: %s", e)
         return jsonify({"message": "Failed to upload profile picture"}), 500
 
 

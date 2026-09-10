@@ -1397,8 +1397,8 @@ def delete_car(car_id: str):
         _bump_filter_facets_cache()
         log_user_action(current_user, "delete_listing", "car", car.public_id)
         return jsonify({"message": "Car listing deleted successfully"}), 200
-    except Exception:
-        return jsonify({"message": "Failed to delete car listing"}), 500
+    except Exception as e:
+        return _listing_db_error_response(e, action="delete car listing")
 
 
 @bp.route("/api/cars/<car_id>/mark-sold", methods=["POST"])

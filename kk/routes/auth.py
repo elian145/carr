@@ -820,7 +820,9 @@ def logout():
 
         return jsonify({"message": "Logout successful"}), 200
 
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("logout failed: %s", e)
         return jsonify({"message": "Logout failed"}), 500
 
 
@@ -868,7 +870,9 @@ def change_password():
         db.session.commit()
         log_user_action(current_user, "password_change")
         return jsonify({"message": "Password changed successfully"}), 200
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("change_password failed: %s", e)
         return jsonify({"message": "Failed to change password"}), 500
 
 
@@ -1335,7 +1339,9 @@ def verify_email():
         db.session.commit()
         log_user_action(user, "email_verified")
         return jsonify({"message": "Email verified successfully"}), 200
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("verify_email failed: %s", e)
         return jsonify({"message": "Email verification failed"}), 500
 
 
@@ -1401,7 +1407,9 @@ def verify_phone():
         log_user_action(user, "phone_verified")
         return jsonify({"message": "Phone number verified successfully"}), 200
 
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("verify_phone failed: %s", e)
         return jsonify({"message": "Phone verification failed"}), 500
 
 
@@ -1732,7 +1740,9 @@ def phone_verify():
             log_user_action(user, "signup")
         log_user_action(user, "login_phone")
         return jsonify({"access_token": access_token, "refresh_token": refresh_token, "user": user.to_dict(include_private=True)}), 200
-    except Exception:
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.exception("phone_verify failed: %s", e)
         return jsonify({"message": "Phone verification failed"}), 500
 
 
