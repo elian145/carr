@@ -14,13 +14,13 @@
 
 This is not a scaffold — it is a substantial, largely well-engineered codebase (~3 MB of Dart across 436 files, ~600 KB of Python across the `kk/` Flask app, 42 Alembic migrations, a Next.js admin dashboard, and a real CI/CD setup). Many things are done properly and are called out with evidence in §11.
 
-However, there were **11 CRITICAL blockers** at audit time (2026-09-04), three of which are architectural rather than bugs. **1 of the 11 (C-01) has since been closed** — see the table below and §3 for full detail; the other 10 are unaffected by this closure:
+However, there were **11 CRITICAL blockers** at audit time (2026-09-04), three of which are architectural rather than bugs. **2 of the 11 (C-01, C-03) have since been closed** — see the table below and §3 for full detail; the other 9 are unaffected by this closure:
 
 | # | Blocker | One-line |
 |---|---|---|
 | C-01 | Auth bypass — ✅ **CLOSED** | *(Was:* `POST /api/auth/signup` mints valid JWTs with **no OTP verification and a randomly invented phone number**.*)* Valid at audit time; fixed by commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text") — see §3 for full detail. |
 | C-02 | Chat broken | REST image/video sends emit **no socket event and no push** — the recipient never learns a message arrived |
-| C-03 | Search unreachable | Backend has full-text search; the Flutter app **never sends the `q` parameter**. There is no keyword search in the product |
+| C-03 | Search unreachable — ✅ **CLOSED** | *(Was:* Backend has full-text search; the Flutter app **never sends the `q` parameter**. There is no keyword search in the product.*)* Valid at audit time; core `q` wiring fixed by commit `16ac4eb` ("fix: wire free-text car search"); keyword filter chip, session persistence, and saved-search passthrough/matching completed by commit `8ae3572` ("fix: complete keyword search filter flow") — see §3 for full detail. |
 | C-04 | Reviews missing | Reviews/ratings **do not exist** in backend, database, or app |
 | C-05 | Payments missing | No payment integration of any kind; "featured listings" are an admin-only free flag |
 | C-06 | Cannot ship Android | Release AAB **cannot be built** — signing keystore absent and Gradle hard-fails `prodRelease` |
@@ -30,7 +30,7 @@ However, there were **11 CRITICAL blockers** at audit time (2026-09-04), three o
 | C-10 | Chat media public | Chat attachments are world-readable URLs with **no access control** |
 | C-11 | Money as float | Prices stored as SQL `Float`, not `Numeric`/integer cents |
 
-**Do not tell stakeholders the app is complete.** The core browse/sell/chat loop works and is defensible. Keyword search, reviews, and monetization are absent, and the app cannot currently be signed for the Play Store.
+**Do not tell stakeholders the app is complete.** The core browse/sell/chat loop works and is defensible. Reviews and monetization are absent (keyword search is now wired — see C-03, §3), and the app cannot currently be signed for the Play Store.
 
 **Estimated effort to production:** 4–7 weeks of focused work for Phases 1–2, assuming reviews and payments are descoped from v1 (see §14 Phase 1 decision gate).
 
@@ -88,7 +88,7 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 | 7 | Authorization | **COMPLETE** | Verified: `_resolve_car_for_user` ownership, `_get_owned_search`, notification `user_id` scoping, 43 `_deny(permission)` RBAC calls in admin. No IDOR found on mutations |
 | 8 | User accounts | **PARTIALLY COMPLETE** | Signup/login/reset/delete all present; tokens survive password change (H-01) and account ban (H-02) |
 | 9 | Car listings | **COMPLETE** | Create (idempotency-keyed) → moderation `pending` → visibility filter → edit/delete/mark-sold, all ownership-checked. `kk/listing_visibility.py:37-42` applied consistently |
-| 10 | Search | **MISSING** | Backend FTS at `kk/routes/cars.py:547` is never called by the app (C-03) |
+| 10 | Search | **COMPLETE** *(was MISSING at audit time — C-03, since closed; see §3)* | Backend FTS at `kk/routes/cars.py` is now wired end-to-end: Flutter sends `q` (`homeFiltersToApiQuery`), the backend runs Postgres full-text search with relevance ranking (ILIKE fallback on SQLite), and a keyword filter chip, session persistence, and saved-search passthrough/matching were added (commit `8ae3572`). Recent-searches history (MI-04) and localized brand/model-name catalog matching remain separate, non-blocking enhancements |
 | 11 | Filters | **PARTIALLY COMPLETE** | ~20 filters map correctly via `homeFiltersToApiQuery`; `damaged_parts` re-filtered client-side; `contactPhone` filter is dead |
 | 12 | Favorites | **PARTIALLY COMPLETE** | Full path works; optimistic on cards but not on the Favorites page; N+1 queries; toggle race (M-05) |
 | 13 | Profiles | **PARTIALLY COMPLETE** | User + dealer profiles work; public dealer route misses the approval check (H-04); exact GPS exposed (H-05) |
@@ -189,8 +189,9 @@ Verified per endpoint:
 
 ---
 
-### C-03 — Keyword search is unreachable from the app
+### C-03 — Keyword search is unreachable from the app — ✅ CLOSED
 
+- **Status:** ✅ **CLOSED.** Valid and CRITICAL at audit time (2026-09-04). The core defect (the Flutter app never sending `q`) was already fixed by commit `16ac4eb` ("fix: wire free-text car search") together with the backend full-text search implementation added by commit `60cce2c` ("Fix M-13: Add Postgres tsvector full-text search for listings via q= parameter."). A follow-up investigation found the core search worked end-to-end but several secondary gaps remained (no active-filter chip, no session-persistence entry, no saved-search passthrough/matching); those were closed by commit `8ae3572` ("fix: complete keyword search filter flow"). The **Problem**, **Why it matters**, **Recommended solution**, and **How to test** entries directly below describe the gap **as it existed at audit time** and are preserved unedited as the historical record; see **Closure verification (post-audit)** at the end of this entry for the current, fixed state.
 - **Severity:** CRITICAL · **Feature:** Search
 - **Files:** backend `kk/routes/cars.py:547`, `kk/listing_search.py:50-78`; frontend `lib/features/home/home_filters_query.dart`, `lib/features/home/home_search_filters_keyword.dart`
 - **Problem:** The backend implements real search — Postgres `websearch_to_tsquery` against a `search_vector` column with an ILIKE fallback for SQLite:
@@ -213,6 +214,13 @@ lib/shared/vin/open_vin_search.dart:7       Uri.https('www.google.com', ...)  �
 - **Recommended solution:** Add `q` to `homeFiltersToApiQuery`, wire the keyword field to it with a 300–500 ms debounce, and render backend results alongside catalog suggestions. Also confirm the `a9b8c7d6e5f4_add_car_search_vector` migration's trigger is live on the production Postgres instance. Persist recent searches in `SharedPreferences`.
 - **Change scope:** **Frontend** (primarily) + backend verification of the FTS trigger.
 - **How to test:** Type a free-text query; assert the outbound request is `/api/cars?q=...`; assert results include listings whose description (not just make/model) matches. Add `test/home_search_query_test.dart` asserting `q` is present in the built query map.
+- **Closure verification (post-audit):** The core defect described above — the Flutter app never sending `q` — was already fixed prior to this closeout by commit `16ac4eb` ("fix: wire free-text car search"), wiring `q` into `homeFiltersToApiQuery` (`lib/features/home/home_filters_query.dart`), paired with the backend full-text search implementation added by commit `60cce2c` ("Fix M-13: Add Postgres tsvector full-text search for listings via q= parameter.", `kk/listing_search.py::apply_listing_text_search`): Postgres `websearch_to_tsquery` against `search_vector` with relevance ranking (`kk/routes/cars.py`'s `_order_cars_query` defaults to a relevance sort whenever a query is present and no explicit `sort_by` is given), with an ILIKE fallback across `title/brand/model/trim/location/description/color` for SQLite. A follow-up re-investigation confirmed this core path worked end-to-end but found three secondary gaps, all closed by commit `8ae3572` ("fix: complete keyword search filter flow"):
+  - **Keyword filter chip:** added to the active-filters chip row (`buildHomeFilterChipDescriptors`/`clearHomeFilterChip`, `lib/features/home/home_filter_chips.dart`), clearable through the existing `clearHomeFilterChip` mechanism, with a new `keywordLabel` string localized in **English, Arabic, and Kurdish** (`lib/l10n/app_en.arb`, `app_ar.arb`, `app_ku.arb`).
+  - **Session persistence:** keyword now follows the **existing** home-filter session-persistence architecture (`homeFilterHomePersistMap`, `HomeFilterParsedFields`, `lib/features/home/home_filter_persistence.dart`) and is correctly restored into the search field's `TextEditingController`, exactly like every other home filter. This architecture is **session-only by design for every home filter** (`_HomeFilterSessionPersistence`, `lib/features/home/home_flow.dart` — explicitly not backed by `SharedPreferences`), so keyword, like all other filters, **does not survive a cold app start**. This is not treated as a remaining C-03 blocker, since it is pre-existing, architecture-wide behavior and not something specific to keyword search; no new persistence mechanism was introduced. Adding cold-start persistence for home filters (including keyword), if ever desired, is tracked as a separate, unscoped future enhancement — see §14 Phase 4.
+  - **Saved-search passthrough/matching:** `homeFiltersToSavedSearchJson` (`lib/features/home/home_filters_query.dart`) now preserves the keyword as `q`, and `car_matches_filters` (`kk/listing_filters.py`, via a new `_text_search_matches()` helper) now evaluates `q` against the same primary searchable fields as the live backend search (title, brand, model, trim, location, description, color), using an AND-of-tokens / OR-across-fields substring approximation of `websearch_to_tsquery`. The A-04 trim/fuel_type/engine_type matching fixes (see §1) were confirmed unaffected — the `q` check is an independent, separately AND-ed condition added after the existing checks, not a modification of them.
+  - Verified via the repository test suite (no production/staging runtime check performed): `pytest kk/tests -q` — **591 passed**, including 20 new tests in `kk/tests/test_c03_saved_search_keyword.py` covering `q` matching, multi-token AND semantics, combination with other filters, and explicit no-regression checks against A-04. `flutter test test/home_filters_query_test.dart test/home_filter_chips_test.dart test/home_filter_persistence_test.dart` — **56 passed**, including the new keyword-chip/persistence/saved-search-JSON cases added; `flutter analyze` showed zero issues introduced by this work (pre-existing issue count unchanged).
+  - Recent-searches history (MI-04) and localized (Arabic/Kurdish) brand/model **catalog-name** matching (as distinct from free-text search over listing text, which is already script-agnostic) remain separate, non-blocking enhancements and were explicitly out of scope for this closure. Verifying the `a9b8c7d6e5f4_add_car_search_vector` trigger is live on the production Postgres instance also remains unconfirmed (requires production access) and is not itself a code blocker.
+  - Implementation commit: `8ae3572f277319970dc9ad435aaf847a05d2d210` ("fix: complete keyword search filter flow").
 
 ---
 
@@ -370,7 +378,7 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 |---|---|---|---|
 | C-04 | CRITICAL | Reviews / ratings | Absent from all layers |
 | C-05 | CRITICAL | Payments | Absent; promotion is admin-only and free |
-| C-03 | CRITICAL | Keyword search | Backend exists, frontend never calls it |
+| C-03 | CRITICAL | Keyword search — ✅ **CLOSED** | *(Was: Backend exists, frontend never calls it.)* Now wired end-to-end (commits `16ac4eb`, `60cce2c`, `8ae3572`) — see §3 |
 | MI-01 | HIGH | Blocked-users management UI | `ApiService.getBlockedUsers()` exists (`lib/services/api/api_admin.dart:79`) but **no screen calls it** — users can block but never unblock |
 | MI-02 | HIGH | Featured-listing expiry | No `featured_until` column, no un-feature job. Promotions are permanent |
 | MI-03 | HIGH | Localized backend messages | No `language`/`locale` column on `User`; all API errors, push bodies, emails, and SMS are English-only |
@@ -638,7 +646,7 @@ Stated deliberately, because the audit is otherwise negative and these should no
 |---|---|---|
 | MT-01 | `POST /api/auth/signup` with only username+password against staging | C-01 — ✅ fixed and covered by 27 passing automated regression tests (`kk/tests/test_signup_otp_required.py`, commit `0dd5817`); this manual staging attempt is no longer needed to *discover* the bug (it is expected to correctly fail with `400 {"code": "phone_required"}`, not issue tokens) but remains a reasonable pre-launch sanity check |
 | MT-02 | Send image via REST while recipient's socket is open | Confirm C-02 |
-| MT-03 | Free-text search "Land Cruiser 2018" and inspect the outbound request | Confirm C-03 |
+| MT-03 | Free-text search "Land Cruiser 2018" and inspect the outbound request | C-03 — ✅ fixed and covered by automated tests (`test/home_filters_query_test.dart`, `kk/tests/test_c03_saved_search_keyword.py`, commits `16ac4eb`, `8ae3572`); this manual staging attempt is no longer needed to *discover* the gap (the outbound request is expected to include `q=Land+Cruiser+2018` and return relevance-ranked results) but remains a reasonable pre-launch sanity check |
 | MT-04 | Signed prod AAB install → chat, maps, image crop, push, deep links | Validate R8 with minimal ProGuard rules |
 | MT-05 | `adb shell pm get-app-links com.carzo.app`; tap an HTTPS listing link on both platforms | Verify deep links on device |
 | MT-06 | Send a push, tap it from foreground / background / killed | Push deep-link coverage |
@@ -661,7 +669,7 @@ Stated deliberately, because the audit is otherwise negative and these should no
 |---|---|---|---|
 | AT-01 | Signup without OTP issues no token | Backend | C-01 ✅ done (`kk/tests/test_signup_otp_required.py`, 27 tests, commit `0dd5817`) |
 | AT-02 | REST send (all 5 endpoints) emits socket + push + notification | Backend | C-02 |
-| AT-03 | Search query map includes `q` | Flutter | C-03 |
+| AT-03 | Search query map includes `q` | Flutter | C-03 ✅ done (`test/home_filters_query_test.dart`, commits `16ac4eb`, `8ae3572`) |
 | AT-04 | Model↔migration drift check on SQLite **and** Postgres | CI | C-07, D-05 |
 | AT-05 | 401 → refresh → retry, including single-flight under concurrency | Flutter | token regressions |
 | AT-06 | Sell wizard E2E: form → POST → media upload → pending status | Integration | sell flow |
@@ -686,7 +694,7 @@ Three product decisions determine the size of Phase 1. Answer them first.
 
 1. **Reviews (C-04)** — build for v1, or descope? Full-stack, ~1–2 weeks.
 2. **Payments / paid promotion (C-05)** — build for v1, or descope? If building, it must be IAP (StoreKit + Play Billing) with server-side receipt validation, ~2–3 weeks, and it changes store review.
-3. **Search (C-03)** — this one is not optional. The backend is already built; wiring it is roughly 2–3 days.
+3. **Search (C-03)** — ✅ Done. Was not optional; the backend was already built and wiring it took roughly the estimated time — see §3 for full detail (commits `16ac4eb`, `60cce2c`, `8ae3572`).
 
 Also settle: `LISTING_REQUIRE_APPROVAL` for launch, and whether the Docker path is supported or Render-only (affects C-08 priority).
 
@@ -704,7 +712,7 @@ Nothing ships until every item here is closed.
 | 4 | C-06 | Create the upload keystore + `signing.properties`; wire Codemagic secrets; fix the GitHub CI AAB step; verify the App Links SHA | Config | 1 d |
 | 5 | C-07 | Add the `pending_signup` migration (or delete the model); fix nullability drift; gate `create_all`/`legacy_schema` out of production | DB | 1 d |
 | 6 | C-08 | `COPY tools/…` in the Dockerfile (or drop Docker as a supported path) | Config | 0.5 d |
-| 7 | C-03 | Wire `q` into `homeFiltersToApiQuery` with debounce; verify the FTS trigger on prod Postgres | Frontend | 2–3 d |
+| 7 | C-03 | ✅ Done — `q` wired into `homeFiltersToApiQuery`; keyword filter chip, session persistence, and saved-search passthrough/matching added (commits `16ac4eb`, `60cce2c`, `8ae3572`; see §3 detail). Debounced live-search UX and verifying the FTS trigger on prod Postgres remain optional/unconfirmed, not blockers | Frontend | 2–3 d |
 | 8 | C-11 | Migrate price to `Numeric(12,2)` / integer cents with backfill | DB + BE + FE | 2 d |
 | 9 | H-01, H-02 | Revoke all JTIs on password change, password reset, and ban (token-version claim) | Backend | 1 d |
 | 10 | C-09 | Fix/quarantine the 43 failing tests; add `pytest` to CI; remove the `--skip-host` fallback; delete `analyze.txt` | Test + config | 2–3 d |
@@ -769,7 +777,7 @@ Tests: AT-05 → AT-16.
 
 ### PHASE 4 — LOW (polish)
 
-L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-10 → MI-12, P-05, P-06, A-05, A-06. Plus: pin the 6 unpinned Python dependencies, evaluate `video_thumbnail`, remove unused `mobile_scanner`/`geocoding`, consolidate `.env.example`, document `ROBOFLOW_*` and `FEATURE_FLAG_*`, fix the dead `ios-codemagic.yaml` trigger, reconcile `CHANGELOG.md` text-scale claims, add tablet screenshots.
+L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-10 → MI-12, P-05, P-06, A-05, A-06. Plus: pin the 6 unpinned Python dependencies, evaluate `video_thumbnail`, remove unused `mobile_scanner`/`geocoding`, consolidate `.env.example`, document `ROBOFLOW_*` and `FEATURE_FLAG_*`, fix the dead `ios-codemagic.yaml` trigger, reconcile `CHANGELOG.md` text-scale claims, add tablet screenshots. Plus: persist home filters (including the free-text keyword added by C-03) across a cold app start, if ever desired — the current session-only architecture (`_HomeFilterSessionPersistence`, `lib/features/home/home_flow.dart`) is intentional for every filter, not a defect; this would be a new, separate enhancement, not part of C-03 (see §3 closure).
 
 ---
 
@@ -793,7 +801,7 @@ L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-
 
 **Executed during this audit:** `flutter test` (275/43/318), `flutter analyze` (60 issues, 0 errors), `python -m pytest kk/tests -q` (53 passed), full Alembic upgrade on in-memory SQLite (42 revisions, clean), live HTTP probes of `carr-5hrm.onrender.com` (`/health`, `/health/push`, `/.well-known/assetlinks.json`, `/.well-known/apple-app-site-association`), `git ls-files` secret scan, `flutter pub outdated`.
 
-**Independently re-verified by reading the source (not taken on trust):** C-01 (`kk/routes/auth.py:1698-1766` at audit time — that line range no longer identifies the relevant code since the branch was deleted by the fix; now `kk/routes/auth.py::compat_signup`, commit `0dd5817`, closed — see §3), C-02 (`emit_message_to_participants` appears exactly once in `kk/routes/chat.py`, at line 209), C-03 (only two `q` parameters in all of `lib/`, both unrelated), C-04 (no review model/route/UI), C-07 (`pending_signup` grep across all migrations), C-08 (`Dockerfile:18-23` vs `.dockerignore:27` vs `kk/r2_ops.py:29`).
+**Independently re-verified by reading the source (not taken on trust):** C-01 (`kk/routes/auth.py:1698-1766` at audit time — that line range no longer identifies the relevant code since the branch was deleted by the fix; now `kk/routes/auth.py::compat_signup`, commit `0dd5817`, closed — see §3), C-02 (`emit_message_to_participants` appears exactly once in `kk/routes/chat.py`, at line 209), C-03 (only two `q` parameters in all of `lib/` at audit time, both unrelated — since closed; `q` is now wired via `homeFiltersToApiQuery`/`homeFiltersToSavedSearchJson`, commits `16ac4eb`, `8ae3572`; see §3), C-04 (no review model/route/UI), C-07 (`pending_signup` grep across all migrations), C-08 (`Dockerfile:18-23` vs `.dockerignore:27` vs `kk/r2_ops.py:29`).
 
 **Marked UNKNOWN — requires a device, a Mac, or production access:** iOS archive viability; R8 runtime behaviour with minimal ProGuard rules; device deep-link tap-through; end-to-end push delivery; whether Render actually has Redis + Celery worker + beat provisioned; Google/Firebase API key restrictions; bcrypt work factor at runtime; Wi-Fi-without-internet behaviour; whether GitHub CI is currently green on `main`.
 
