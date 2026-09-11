@@ -428,10 +428,17 @@ class TestLegitimateVocabularyRoundTrip:
                 public_id=f"car-match-{uuid.uuid4().hex[:10]}",
                 brand="toyota",
                 model="corolla",
-                trim="lx",
+                # A-04 fix: trim="base" and fuel_type="gas" must now match
+                # literally (car_matches_filters() no longer treats "base"
+                # as a no-filter sentinel, and fuel_type is matched
+                # case-insensitively exactly against car.fuel_type, mirroring
+                # kk/routes/cars.py's `Car.fuel_type.ilike(ft)` with no `%`
+                # wildcards -- see kk/tests/test_a04_filter_matcher_parity.py).
+                trim="base",
                 year=2020,
                 mileage=50000,
                 engine_type="gas",
+                fuel_type="gas",
                 transmission="auto",
                 drive_type="fwd",
                 condition="used",

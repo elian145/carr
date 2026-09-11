@@ -71,7 +71,13 @@ def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
         return False
 
     trim = _norm_str(filters.get("trim"))
-    if trim and trim not in ("base", "any") and not _ilike_match(getattr(car, "trim", None), trim):
+    # A-04: "any" is the only sentinel meaning "no trim filter". "Base" is a
+    # real, selectable trim (lib/features/home/home_page.dart trims list) and
+    # the default trim assigned to listings with no explicit trim
+    # (lib/features/sell/sell_listing_payload.dart) -- it must be matched
+    # like any other trim value, exactly like kk/routes/cars.py's
+    # `Car.trim.ilike(f"%{trim}%", ...)`, which has no "base" special-case.
+    if trim and trim != "any" and not _ilike_match(getattr(car, "trim", None), trim):
         return False
 
     year_min = _safe_int(filters.get("min_year") or filters.get("year_min"))
@@ -118,10 +124,29 @@ def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
         if not any(_ilike_match(car.drive_type, dt) for dt in drive_types):
             return False
 
-    fuel_types = _multi_values(filters.get("fuel_type") or filters.get("engine_type"))
+    # A-04: fuel_type and engine_type are separate filter/column concepts in
+    # kk/routes/cars.py -- they must NOT be aliased with an `or` fallback.
+    # Mirrors the exact current SQL semantics (cars.py's `get_cars()`), which
+    # this fix intentionally preserves as-is (including its asymmetry
+    # between the two fields) rather than changing:
+    #   - fuel_type: comma-separated multi-value, case-insensitive EXACT
+    #     match (`Car.fuel_type.ilike(ft)` with no `%` wildcards) against
+    #     `car.fuel_type` only.
+    #   - engine_type: single-value, case-SENSITIVE exact match
+    #     (`Car.engine_type == engine_type`, no lowercasing/splitting)
+    #     against `car.engine_type` only.
+    # If both are supplied, both conditions must independently pass (SQL
+    # applies both `if engine_type:` / `if fuel_type:` filters as separate,
+    # AND-ed `query.filter(...)` calls).
+    fuel_types = _multi_values(filters.get("fuel_type"))
     if fuel_types:
-        ft = _norm_str(getattr(car, "fuel_type", None) or car.engine_type)
-        if not any(_ilike_match(ft, fuel) for fuel in fuel_types):
+        car_fuel_type = _norm_str(getattr(car, "fuel_type", None))
+        if car_fuel_type not in fuel_types:
+            return False
+
+    engine_type = filters.get("engine_type")
+    if engine_type:
+        if str(getattr(car, "engine_type", None) or "") != str(engine_type):
             return False
 
     color = _norm_str(filters.get("color"))
