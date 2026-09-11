@@ -21,6 +21,7 @@ class HomeFilterParsedFields {
     this.brand,
     this.model,
     this.trim,
+    this.keyword,
     this.minPrice,
     this.maxPrice,
     this.minYear,
@@ -48,6 +49,7 @@ class HomeFilterParsedFields {
   final String? brand;
   final String? model;
   final String? trim;
+  final String? keyword;
   final String? minPrice;
   final String? maxPrice;
   final String? minYear;
@@ -76,6 +78,7 @@ class HomeFilterParsedFields {
       brand: homeFilterNormalizeStr(map['brand']),
       model: homeFilterNormalizeStr(map['model']),
       trim: homeFilterNormalizeStr(map['trim']),
+      keyword: homeFilterNormalizeStr(map['q']),
       minPrice: homeFilterNormalizeStr(map['min_price']),
       maxPrice: homeFilterNormalizeStr(map['max_price']),
       minYear: homeFilterNormalizeStr(map['min_year']),
@@ -118,6 +121,7 @@ Map<String, dynamic> homePersistMapToSavedSearchKeys(
     'brand': map['brand'],
     'model': map['model'],
     'trim': map['trim'],
+    'q': map['keyword'],
     'min_price': map['price_min'],
     'max_price': map['price_max'],
     'min_year': map['year_min'],
@@ -149,6 +153,7 @@ Map<String, dynamic> homeFilterHomePersistMap(HomeFiltersSnapshot filters) {
     'brand': filters.brand,
     'model': filters.model,
     'trim': filters.trim,
+    'keyword': filters.keyword?.trim(),
     'price_min': filters.minPrice,
     'price_max': filters.maxPrice,
     'year_min': filters.minYear,

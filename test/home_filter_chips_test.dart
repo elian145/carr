@@ -11,6 +11,7 @@ void main() {
     brand: 'Brand',
     model: 'Model',
     trim: 'Trim',
+    keyword: 'Search',
     price: 'Price',
     year: 'Year',
     mileage: 'Mileage',
@@ -105,6 +106,50 @@ void main() {
       );
       expect(chips, isEmpty);
     });
+
+    test('includes a keyword chip when a free-text keyword is active', () {
+      const filters = HomeFiltersSnapshot(keyword: 'Land Cruiser 2018');
+      final chips = buildHomeFilterChipDescriptors(
+        filters: filters,
+        labels: labels,
+        formatters: formatters,
+      );
+      expect(chips.single.filterType, 'keyword');
+      expect(chips.single.value, 'Land Cruiser 2018');
+      expect(chips.single.label, 'Search');
+    });
+
+    test('trims the keyword value shown on the chip', () {
+      const filters = HomeFiltersSnapshot(keyword: '  toyota  ');
+      final chips = buildHomeFilterChipDescriptors(
+        filters: filters,
+        labels: labels,
+        formatters: formatters,
+      );
+      expect(chips.single.filterType, 'keyword');
+      expect(chips.single.value, 'toyota');
+    });
+
+    test('omits the keyword chip when keyword is null', () {
+      const filters = HomeFiltersSnapshot(brand: 'Toyota');
+      final chips = buildHomeFilterChipDescriptors(
+        filters: filters,
+        labels: labels,
+        formatters: formatters,
+      );
+      expect(chips.any((c) => c.filterType == 'keyword'), isFalse);
+    });
+
+    test('omits the keyword chip when keyword is empty or whitespace-only',
+        () {
+      const filters = HomeFiltersSnapshot(keyword: '   ');
+      final chips = buildHomeFilterChipDescriptors(
+        filters: filters,
+        labels: labels,
+        formatters: formatters,
+      );
+      expect(chips, isEmpty);
+    });
   });
 
   group('clearHomeFilterChip', () {
@@ -127,6 +172,16 @@ void main() {
       final cleared = clearHomeFilterChip(filters, 'price');
       expect(cleared.minPrice, isNull);
       expect(cleared.maxPrice, isNull);
+    });
+
+    test('clearing keyword removes it without touching other filters', () {
+      const filters = HomeFiltersSnapshot(
+        keyword: 'Land Cruiser',
+        brand: 'Toyota',
+      );
+      final cleared = clearHomeFilterChip(filters, 'keyword');
+      expect(cleared.keyword, isNull);
+      expect(cleared.brand, 'Toyota');
     });
   });
 

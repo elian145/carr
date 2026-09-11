@@ -225,6 +225,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get trimLabel => 'الفئة';
 
   @override
+  String get keywordLabel => 'بحث';
+
+  @override
   String get loginRequired => 'مطلوب تسجيل الدخول';
 
   @override

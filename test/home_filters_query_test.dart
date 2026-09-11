@@ -118,6 +118,61 @@ void main() {
     });
   });
 
+  group('homeFiltersToSavedSearchJson', () {
+    test('includes q for a non-empty free-text keyword', () {
+      const f = HomeFiltersSnapshot(keyword: 'Land Cruiser');
+      final json = homeFiltersToSavedSearchJson(f);
+      expect(json['q'], 'Land Cruiser');
+    });
+
+    test('trims leading/trailing whitespace from q', () {
+      const f = HomeFiltersSnapshot(keyword: '  toyota  ');
+      final json = homeFiltersToSavedSearchJson(f);
+      expect(json['q'], 'toyota');
+    });
+
+    test('omits q for an empty keyword', () {
+      const f = HomeFiltersSnapshot(keyword: '');
+      final json = homeFiltersToSavedSearchJson(f);
+      expect(json.containsKey('q'), isFalse);
+    });
+
+    test('omits q for a whitespace-only keyword', () {
+      const f = HomeFiltersSnapshot(keyword: '   ');
+      final json = homeFiltersToSavedSearchJson(f);
+      expect(json.containsKey('q'), isFalse);
+    });
+
+    test('omits q when keyword is null (default)', () {
+      const f = HomeFiltersSnapshot(brand: 'Toyota');
+      final json = homeFiltersToSavedSearchJson(f);
+      expect(json.containsKey('q'), isFalse);
+    });
+
+    test('combines q with brand/model/year/price and other filters', () {
+      const f = HomeFiltersSnapshot(
+        keyword: 'sunroof',
+        brand: 'Toyota',
+        model: 'Camry',
+        minPrice: '5000',
+        maxPrice: '20000',
+        minYear: '2015',
+        maxYear: '2022',
+        condition: 'Used',
+      );
+      final json = homeFiltersToSavedSearchJson(f, apiSortValue: 'relevance');
+      expect(json['q'], 'sunroof');
+      expect(json['brand'], 'Toyota');
+      expect(json['model'], 'Camry');
+      expect(json['min_price'], '5000');
+      expect(json['max_price'], '20000');
+      expect(json['min_year'], '2015');
+      expect(json['max_year'], '2022');
+      expect(json['condition'], 'used');
+      expect(json['sort_by'], 'relevance');
+    });
+  });
+
   group('HomeFiltersSnapshot.keyword', () {
     test('hasActiveFilters is true when only keyword is set', () {
       const f = HomeFiltersSnapshot(keyword: 'toyota');

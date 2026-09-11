@@ -225,6 +225,9 @@ class AppLocalizationsKu extends AppLocalizations {
   String get trimLabel => 'جۆری مواسەفات';
 
   @override
+  String get keywordLabel => 'گەڕان';
+
+  @override
   String get loginRequired => 'چوونەژوورەوە پێویستە';
 
   @override

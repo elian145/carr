@@ -5,7 +5,22 @@ from __future__ import annotations
 
 from typing import Any
 
+from .listing_search import normalize_search_query
 from .models import Car
+
+# Same field set as the `search_vector` column / ILIKE fallback built by
+# kk/listing_search.py (and the migration that maintains it) -- keep these
+# in sync so saved-search alert matching evaluates `q` against the same
+# "primary searchable listing fields" as the live /api/cars search.
+_TEXT_SEARCH_FIELDS = (
+    "title",
+    "brand",
+    "model",
+    "trim",
+    "location",
+    "description",
+    "color",
+)
 
 _ALLOWED_REGION_SPECS = frozenset(
     {"us", "gcc", "iraq", "canada", "eu", "cn", "korea", "ru", "iran"}
@@ -56,6 +71,31 @@ def _multi_values(val) -> list[str]:
     ]
 
 
+def _text_search_matches(car: Car, raw_q: Any) -> bool:
+    """C-03 follow-up: evaluate a saved-search free-text `q` against `car`.
+
+    Uses the exact same normalization as the live search (`normalize_search_
+    query`, kk/listing_search.py) and the same primary searchable fields as
+    the `search_vector` column / ILIKE fallback it maintains. Splits the
+    normalized query into whitespace-separated tokens and requires every
+    token to appear (case-insensitively, as a substring) in at least one of
+    those fields -- an AND-of-tokens / OR-across-fields approximation of
+    Postgres `websearch_to_tsquery` (which ANDs tokens across the combined,
+    lexeme-based vector). A literal substring check cannot exactly reproduce
+    tsvector lexeme matching (e.g. stemming) without duplicating a real
+    lexer, but this keeps saved-search alerts consistent with the same
+    fields and the same AND semantics as the live query for the common case.
+    """
+    term = normalize_search_query(str(raw_q) if raw_q is not None else "")
+    if not term:
+        return True
+    tokens = [t for t in term.lower().split(" ") if t]
+    if not tokens:
+        return True
+    fields = [str(getattr(car, f, None) or "").lower() for f in _TEXT_SEARCH_FIELDS]
+    return all(any(token in field for field in fields) for token in tokens)
+
+
 def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
     """Return True if car satisfies all non-empty filters."""
     if not filters or not isinstance(filters, dict):
@@ -78,6 +118,11 @@ def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
     # like any other trim value, exactly like kk/routes/cars.py's
     # `Car.trim.ilike(f"%{trim}%", ...)`, which has no "base" special-case.
     if trim and trim != "any" and not _ilike_match(getattr(car, "trim", None), trim):
+        return False
+
+    # C-03 follow-up: free-text keyword search, sent by the app as `q` (see
+    # kk/routes/cars.py, homeFiltersToApiQuery / homeFiltersToSavedSearchJson).
+    if not _text_search_matches(car, filters.get("q")):
         return False
 
     year_min = _safe_int(filters.get("min_year") or filters.get("year_min"))

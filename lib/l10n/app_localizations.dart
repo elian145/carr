@@ -532,6 +532,12 @@ abstract class AppLocalizations {
   /// **'Trim'**
   String get trimLabel;
 
+  /// No description provided for @keywordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get keywordLabel;
+
   /// No description provided for @loginRequired.
   ///
   /// In en, this message translates to:

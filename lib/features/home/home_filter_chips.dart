@@ -29,6 +29,7 @@ class HomeFilterChipLabels {
     required this.brand,
     required this.model,
     required this.trim,
+    required this.keyword,
     required this.price,
     required this.year,
     required this.mileage,
@@ -58,6 +59,7 @@ class HomeFilterChipLabels {
   final String brand;
   final String model;
   final String trim;
+  final String keyword;
   final String price;
   final String year;
   final String mileage;
@@ -192,6 +194,8 @@ HomeFiltersSnapshot clearHomeFilterChip(
       return filters.copyWith(clearModel: true, clearTrim: true);
     case 'trim':
       return filters.copyWith(clearTrim: true);
+    case 'keyword':
+      return filters.copyWith(clearKeyword: true);
     case 'price':
       return filters.copyWith(clearMinPrice: true, clearMaxPrice: true);
     case 'year':
@@ -323,6 +327,11 @@ List<HomeFilterChipDescriptor> buildHomeFilterChipDescriptors({
 
   if (homeFilterChipValueActive(filters.trim)) {
     add(labels.trim, filters.trim!, 'trim', Icons.settings, brandOrange);
+  }
+
+  final keywordValue = filters.keyword?.trim();
+  if (keywordValue != null && keywordValue.isNotEmpty) {
+    add(labels.keyword, keywordValue, 'keyword', Icons.search, brandOrange);
   }
 
   if (filters.minPrice != null || filters.maxPrice != null) {

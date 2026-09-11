@@ -37,8 +37,9 @@ class HomeFiltersSnapshot {
   final String? trim;
 
   /// Free-text keyword typed in the search filters field, sent to the
-  /// backend as `q` (Postgres full-text search with an ILIKE fallback). Not
-  /// yet part of saved-search alert matching (see C-03 audit follow-ups).
+  /// backend as `q` (Postgres full-text search with an ILIKE fallback), and
+  /// also included as `q` in saved-search alert filters (see
+  /// `homeFiltersToSavedSearchJson` and `kk/listing_filters.py`).
   final String? keyword;
   final String? minPrice;
   final String? maxPrice;
@@ -293,6 +294,10 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
   put('brand', homeFilterDecodeSingle(filters.brand));
   put('model', filters.model);
   put('trim', filters.trim);
+  // Free-text keyword: backend/matcher param is `q` (see kk/routes/cars.py
+  // and kk/listing_filters.py). Trim so a whitespace-only keyword is never
+  // saved as an active saved-search condition.
+  put('q', filters.keyword?.trim());
   put('min_price', filters.minPrice);
   put('max_price', filters.maxPrice);
   put('min_year', filters.minYear);

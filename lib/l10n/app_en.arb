@@ -71,6 +71,7 @@
   "selectBrand": "Select Brand",
   "tapToSelectBrand": "Tap to select a brand",
   "trimLabel": "Trim",
+  "keywordLabel": "Search",
   "loginRequired": "Login Required",
   "authenticationRequired": "Authentication Required",
   "requiredField": "Required",

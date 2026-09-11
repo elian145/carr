@@ -36,6 +36,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedBrand = homeFilterDecodeSingle(parsed.brand);
     selectedModel = parsed.model;
     selectedTrim = parsed.trim;
+    _searchFiltersKeywordController.text = parsed.keyword ?? '';
     selectedMinPrice = parsed.minPrice;
     selectedMaxPrice = parsed.maxPrice;
     selectedMinYear = parsed.minYear;
@@ -64,6 +65,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedBrand = homeFilterDecodeSingle(snap.brand);
     selectedModel = snap.model;
     selectedTrim = snap.trim;
+    _searchFiltersKeywordController.text = snap.keyword ?? '';
     selectedMinPrice = snap.minPrice;
     selectedMaxPrice = snap.maxPrice;
     selectedMinYear = snap.minYear;

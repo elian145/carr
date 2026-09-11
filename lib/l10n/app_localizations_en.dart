@@ -225,6 +225,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trimLabel => 'Trim';
 
   @override
+  String get keywordLabel => 'Search';
+
+  @override
   String get loginRequired => 'Login Required';
 
   @override

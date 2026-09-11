@@ -25,6 +25,7 @@ List<Widget> buildLocalizedHomeFilterChips(
       brand: l10n.brandLabel,
       model: l10n.modelLabel,
       trim: l10n.trimLabel,
+      keyword: l10n.keywordLabel,
       price: l10n.priceLabel,
       year: l10n.yearLabel,
       mileage: l10n.mileageLabel,
