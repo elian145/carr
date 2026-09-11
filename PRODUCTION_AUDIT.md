@@ -753,7 +753,7 @@ Security & correctness: M-01 (tighten `dev_code` gating), M-02 (uniform forgot-p
 
 Database: D-06 → D-09 (FK indexes, upsert races, `profile_picture` width, placeholder backfill cleanup). *(D-05 nullability drift resolved — see §6.)*
 
-Backend/API: BE-07, BE-08 (bound saved-search payloads + fingerprint column), BE-09 (standardize response envelopes), BE-10 (narrow exception handling; add rollback and logging), BE-11 (unify the two view metrics), BE-12 (Celery fail-closed), BE-14 (remove no-op analytics endpoints). *(A-04 filter-matching correctness bugs resolved — see §1.)*
+Backend/API: BE-07, BE-08 (bound saved-search payloads + fingerprint column), BE-09 (standardize response envelopes), BE-10 (narrow exception handling; add rollback and logging), BE-11 (unify the two view metrics), BE-12 (Celery fail-closed). *(A-04 filter-matching correctness bugs resolved — see §1. BE-14 closed as intentional-by-design, no action required — see §8.)*
 
 Flutter/UX: F-04 → F-11 (`mounted` guards, AuthGuard timeout, cancellation, push diagnostics, `use_build_context_synchronously`, dead code, offline queue), B-03 → B-08, U-02 (directional icons), U-03 (ICU plurals for ar/ku), U-04 (bundle an Arabic fallback font), U-05 (migrate `_tr()` helpers to ARB), U-06 (`maxLines` overflow), U-08 (real search entry point).
 
