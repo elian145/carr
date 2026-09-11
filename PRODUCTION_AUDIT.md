@@ -14,11 +14,11 @@
 
 This is not a scaffold — it is a substantial, largely well-engineered codebase (~3 MB of Dart across 436 files, ~600 KB of Python across the `kk/` Flask app, 42 Alembic migrations, a Next.js admin dashboard, and a real CI/CD setup). Many things are done properly and are called out with evidence in §11.
 
-However, there are **11 CRITICAL blockers**, three of which are architectural rather than bugs:
+However, there were **11 CRITICAL blockers** at audit time (2026-09-04), three of which are architectural rather than bugs. **1 of the 11 (C-01) has since been closed** — see the table below and §3 for full detail; the other 10 are unaffected by this closure:
 
 | # | Blocker | One-line |
 |---|---|---|
-| C-01 | Auth bypass | `POST /api/auth/signup` mints valid JWTs with **no OTP verification and a randomly invented phone number** |
+| C-01 | Auth bypass — ✅ **CLOSED** | *(Was:* `POST /api/auth/signup` mints valid JWTs with **no OTP verification and a randomly invented phone number**.*)* Valid at audit time; fixed by commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text") — see §3 for full detail. |
 | C-02 | Chat broken | REST image/video sends emit **no socket event and no push** — the recipient never learns a message arrived |
 | C-03 | Search unreachable | Backend has full-text search; the Flutter app **never sends the `q` parameter**. There is no keyword search in the product |
 | C-04 | Reviews missing | Reviews/ratings **do not exist** in backend, database, or app |
@@ -84,7 +84,7 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 | 3 | API endpoints | **PARTIALLY COMPLETE** | ~120 endpoints; inconsistent response shapes (§8 B-09); some unbounded |
 | 4 | Database models | **PARTIALLY COMPLETE** | 29 models, good indexes; float money (C-11), no ON DELETE policies |
 | 5 | Database migrations | **BROKEN** | Single clean head verified by running the chain, **but** `pending_signup` never created (C-07); 3 migrations swallow failures |
-| 6 | Authentication | **UNSAFE** | Bcrypt, JWT blocklist, refresh rotation, HMAC-stored OTPs — all good. Undermined by C-01 signup bypass |
+| 6 | Authentication | **SAFE** *(was UNSAFE at audit time — undermined by the C-01 signup bypass, since closed; see §3)* | Bcrypt, JWT blocklist, refresh rotation, HMAC-stored OTPs — all good. C-01's signup bypass is fixed (commit `0dd5817`): `compat_signup()` can no longer create an account without a verified phone OTP |
 | 7 | Authorization | **COMPLETE** | Verified: `_resolve_car_for_user` ownership, `_get_owned_search`, notification `user_id` scoping, 43 `_deny(permission)` RBAC calls in admin. No IDOR found on mutations |
 | 8 | User accounts | **PARTIALLY COMPLETE** | Signup/login/reset/delete all present; tokens survive password change (H-01) and account ban (H-02) |
 | 9 | Car listings | **COMPLETE** | Create (idempotency-keyed) → moderation `pending` → visibility filter → edit/delete/mark-sold, all ownership-checked. `kk/listing_visibility.py:37-42` applied consistently |
@@ -111,7 +111,7 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 | 30 | Loading states | **PARTIALLY COMPLETE** | Skeletons on home/favorites/my-listings; bare spinners elsewhere |
 | 31 | Empty states | **COMPLETE** | `EmptyStatePanel` used consistently across all list screens |
 | 32 | Offline handling | **PARTIALLY COMPLETE** | Global `ConnectivityBanner`, disk cache + stale-while-revalidate. Wi-Fi-without-internet reads as online; car detail shows "not found" when offline |
-| 33 | Security | **UNSAFE** | Strong foundations (see §11) with critical holes C-01, C-10 |
+| 33 | Security | **UNSAFE** | Strong foundations (see §11). C-01 (signup bypass) is closed — see §3; C-10 remains an open critical hole |
 | 34 | Performance | **PARTIALLY COMPLETE** | Good browse indexes and eager loading on `/api/cars`; N+1 on favorites/recently-viewed/analytics; unbounded dealer listings |
 | 35 | API validation | **PARTIALLY COMPLETE** | Field allowlists on car update (no mass assignment), pagination clamps. Unbounded saved-search JSON; some `.all()` |
 | 36 | Database integrity | **PARTIALLY COMPLETE** | Good composite PKs and dedupe constraints; no ON DELETE policies; orphan rows possible |
@@ -130,8 +130,9 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 
 ## 3. CRITICAL FINDINGS (C-01 … C-11)
 
-### C-01 — Signup creates authenticated accounts with no phone verification
+### C-01 — Signup creates authenticated accounts with no phone verification — ✅ CLOSED
 
+- **Status:** ✅ **CLOSED.** Valid and CRITICAL at audit time (2026-09-04); remediated by commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text"). The **Problem**, **Why it matters**, **Recommended solution**, and **How to test** entries directly below describe the vulnerability **as it existed at audit time** and are preserved unedited as the historical record; see **Closure verification (post-audit)** at the end of this entry for the current, fixed state.
 - **Severity:** CRITICAL · **Feature:** Authentication
 - **File:** `kk/routes/auth.py`, lines **1698–1766** · **Function:** `compat_signup()` (route `POST /api/auth/signup`, line 1596)
 - **Problem:** `compat_signup` has two branches. The OTP branch (1620–1697) correctly verifies a code. Execution then falls through to a second branch that requires **only a password**. If no phone is supplied it **invents one**:
@@ -160,6 +161,7 @@ return jsonify({"message": "Signup successful", "token": access_token,
 - **Recommended solution:** Delete the non-OTP branch (1698–1766) and return `410 Gone` like `/register`, so `/api/auth/signup` only completes an already-verified `phone/start` → `phone/verify` flow. Add OTP attempt-lockout to the OTP branch (line 1648 increments nothing). Replace the line-1793 message with a generic `"Signup failed"` and log server-side.
 - **Change scope:** **Backend** (+ verify the Flutter signup screen only uses the OTP path).
 - **How to test:** `curl -X POST $API/api/auth/signup -H 'Content-Type: application/json' -d '{"username":"attacker1","password":"Passw0rd!x"}'` — must return `4xx`, not `201` with tokens. Add a regression test in `kk/tests/test_signup_requires_otp.py` asserting no token is issued without a verified code.
+- **Closure verification (post-audit):** Implemented in commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text"): the non-OTP branch was deleted entirely — `compat_signup()` (`kk/routes/auth.py`) no longer constructs a `User` or calls `db.session.add()`, so it can only complete an account whose phone was already proven via the existing `phone/start` → `phone/verify` flow. Missing phone now returns `400 {"code": "phone_required"}`; missing OTP code returns `400 {"code": "otp_required"}`; no matching user returns `404 {"code": "user_not_found"}`. A new helper, `_consume_phone_otp()`, enforces a 5-attempt/15-minute lockout, server-side expiry, and HMAC-bound constant-time comparison (`hmac.compare_digest`) — closing the audit's own note that the OTP branch "increments nothing" toward a lockout. The line-1793 leaked-exception-text response was replaced with a generic `{"message": "Signup failed. Please try again.", "code": "signup_failed"}`, with the real exception now only reaching `current_app.logger.exception(...)`. The sibling `/api/auth/register` already returned `410 Gone`, consistent with this fix's own recommendation. Live-call-path tracing confirmed the Flutter app signs up exclusively via `/auth/phone/start` → `/auth/phone/verify` (`lib/services/api/api_auth.dart`) — a separate, already-hardened route unaffected by and unrelated to this bug — and that `signupLegacy()` (the client method targeting `/auth/signup`) has zero call sites anywhere in `lib/`, so no Flutter change was required. Verified via the repository test suite (no production/staging runtime check performed, and none required — this is a pure server-side control fully exercised by automated tests): dedicated tests (`kk/tests/test_signup_otp_required.py`) — 27 passed, plus 2 added cases in `scripts/smoke_tests/test_backend_factory_smoke.py`; per the commit message, 16 of the 27 dedicated tests fail against the pre-fix code, confirming they genuinely detect the original vulnerability. No source, test, or migration change was made as part of this documentation closeout.
 
 ---
 
@@ -462,7 +464,7 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 
 | ID | Sev | Issue | File · Lines | Fix scope |
 |---|---|---|---|---|
-| C-01 | CRITICAL | Signup bypasses phone verification | `kk/routes/auth.py:1698-1766` | Backend |
+| C-01 | CRITICAL | ✅ **CLOSED.** *(Was: Signup bypasses phone verification.)* Valid at audit time; fixed by commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text") — `compat_signup()` no longer contains the vulnerable non-OTP branch, requires an existing user found by verified phone, and enforces lockout/expiry/constant-time OTP comparison via `_consume_phone_otp()`; the leaked-exception-text response was also replaced with a generic message. Verified via the repository test suite (no production/staging runtime check performed): dedicated tests (`kk/tests/test_signup_otp_required.py`) — 27 passed. See §3 for full detail. | `kk/routes/auth.py::compat_signup`, `kk/routes/auth.py::_consume_phone_otp` | Backend |
 | C-10 | CRITICAL | Chat attachments world-readable | `kk/routes/chat.py:67-97` | Backend + infra |
 | H-01 | HIGH | **Tokens survive password change/reset.** `change_password` (`:713-744`) and `reset_password` (`:1089-1143`) set the new hash but never blacklist existing JTIs. A stolen token stays valid up to 60 min (access) / 30 days (refresh) — so the standard "change your password" incident response does not evict the attacker | `kk/routes/auth.py` | Backend |
 | H-02 | HIGH | **Banned users keep working tokens.** Deactivation sets `is_active=False` but does not revoke JTIs. Refresh is blocked (`:590-591`), but the existing access token works on any route that skips `get_current_user()` | `kk/routes/admin.py:1616-1646` | Backend |
@@ -634,7 +636,7 @@ Stated deliberately, because the audit is otherwise negative and these should no
 
 | # | Test | Why |
 |---|---|---|
-| MT-01 | `POST /api/auth/signup` with only username+password against staging | Confirm C-01 and its fix |
+| MT-01 | `POST /api/auth/signup` with only username+password against staging | C-01 — ✅ fixed and covered by 27 passing automated regression tests (`kk/tests/test_signup_otp_required.py`, commit `0dd5817`); this manual staging attempt is no longer needed to *discover* the bug (it is expected to correctly fail with `400 {"code": "phone_required"}`, not issue tokens) but remains a reasonable pre-launch sanity check |
 | MT-02 | Send image via REST while recipient's socket is open | Confirm C-02 |
 | MT-03 | Free-text search "Land Cruiser 2018" and inspect the outbound request | Confirm C-03 |
 | MT-04 | Signed prod AAB install → chat, maps, image crop, push, deep links | Validate R8 with minimal ProGuard rules |
@@ -657,7 +659,7 @@ Stated deliberately, because the audit is otherwise negative and these should no
 
 | # | Test | Layer | Catches |
 |---|---|---|---|
-| AT-01 | Signup without OTP issues no token | Backend | C-01 |
+| AT-01 | Signup without OTP issues no token | Backend | C-01 ✅ done (`kk/tests/test_signup_otp_required.py`, 27 tests, commit `0dd5817`) |
 | AT-02 | REST send (all 5 endpoints) emits socket + push + notification | Backend | C-02 |
 | AT-03 | Search query map includes `q` | Flutter | C-03 |
 | AT-04 | Model↔migration drift check on SQLite **and** Postgres | CI | C-07, D-05 |
@@ -696,7 +698,7 @@ Nothing ships until every item here is closed.
 
 | Order | ID | Task | Scope | Est. |
 |---|---|---|---|---|
-| 1 | C-01 | Delete the non-OTP signup branch; add OTP lockout; stop leaking exception text | Backend | 0.5 d |
+| 1 | C-01 | ✅ Done — non-OTP signup branch deleted, OTP lockout added, exception text no longer leaked (commit `0dd5817`; see §3 detail) | Backend | 0.5 d |
 | 2 | C-02 | Extract a shared `deliver_message()` (emit + push + notification) and call it from all 5 REST send endpoints | Backend | 1 d |
 | 3 | C-10 | Private bucket + participant-scoped presigned GET for chat media; magic-byte validation; per-file size cap | Backend + infra | 2 d |
 | 4 | C-06 | Create the upload keystore + `signing.properties`; wire Codemagic secrets; fix the GitHub CI AAB step; verify the App Links SHA | Config | 1 d |
@@ -777,7 +779,7 @@ L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-
 
 **Gate 2 — Manual device QA:** all 18 MT items, on at least one low-end Android (API 24–26), one modern Android (14/15), and one iPhone; each in `en`, `ar`, and `ku`.
 
-**Gate 3 — Security re-review:** re-verify C-01, C-10, H-01…H-07; attempt signup without OTP; attempt cross-user chat-media access; attempt IDOR on listing edit; confirm rate limits fail closed with Redis stopped.
+**Gate 3 — Security re-review:** C-01 already re-verified and closed (27 passing automated regression tests, commit `0dd5817`; see §3) — still re-verify C-10, H-01…H-07; attempt signup without OTP as a staging sanity check (expected to fail with `phone_required`/`otp_required`, not issue tokens); attempt cross-user chat-media access; attempt IDOR on listing edit; confirm rate limits fail closed with Redis stopped.
 
 **Gate 4 — Load/soak:** 100 concurrent browse requests (assert query counts, no N+1); 50 concurrent uploads; two-worker Socket.IO delivery; 24 h soak watching connection-pool exhaustion and memory.
 
@@ -791,7 +793,7 @@ L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-
 
 **Executed during this audit:** `flutter test` (275/43/318), `flutter analyze` (60 issues, 0 errors), `python -m pytest kk/tests -q` (53 passed), full Alembic upgrade on in-memory SQLite (42 revisions, clean), live HTTP probes of `carr-5hrm.onrender.com` (`/health`, `/health/push`, `/.well-known/assetlinks.json`, `/.well-known/apple-app-site-association`), `git ls-files` secret scan, `flutter pub outdated`.
 
-**Independently re-verified by reading the source (not taken on trust):** C-01 (`kk/routes/auth.py:1698-1766`), C-02 (`emit_message_to_participants` appears exactly once in `kk/routes/chat.py`, at line 209), C-03 (only two `q` parameters in all of `lib/`, both unrelated), C-04 (no review model/route/UI), C-07 (`pending_signup` grep across all migrations), C-08 (`Dockerfile:18-23` vs `.dockerignore:27` vs `kk/r2_ops.py:29`).
+**Independently re-verified by reading the source (not taken on trust):** C-01 (`kk/routes/auth.py:1698-1766` at audit time — that line range no longer identifies the relevant code since the branch was deleted by the fix; now `kk/routes/auth.py::compat_signup`, commit `0dd5817`, closed — see §3), C-02 (`emit_message_to_participants` appears exactly once in `kk/routes/chat.py`, at line 209), C-03 (only two `q` parameters in all of `lib/`, both unrelated), C-04 (no review model/route/UI), C-07 (`pending_signup` grep across all migrations), C-08 (`Dockerfile:18-23` vs `.dockerignore:27` vs `kk/r2_ops.py:29`).
 
 **Marked UNKNOWN — requires a device, a Mac, or production access:** iOS archive viability; R8 runtime behaviour with minimal ProGuard rules; device deep-link tap-through; end-to-end push delivery; whether Render actually has Redis + Celery worker + beat provisioned; Google/Firebase API key restrictions; bcrypt work factor at runtime; Wi-Fi-without-internet behaviour; whether GitHub CI is currently green on `main`.
 
