@@ -1178,16 +1178,18 @@ def forgot_password():
 
         sms_sent = bool(send_password_reset_sms(dest_phone, token))
         if not sms_sent:
+            # M-02: do NOT return a distinct status/body for SMS-delivery
+            # failure -- a response that differs only for existing accounts
+            # (e.g. a prior 503/"sms_send_failed") lets an attacker enumerate
+            # accounts during any SMS provider outage/misconfiguration. Log
+            # for ops visibility (no OTP/token/password values) and fall
+            # through to the exact same generic 200 response used below for
+            # the unknown-phone and successful-send cases.
             current_app.logger.warning(
-                "[FORGOT-PASSWORD] SMS send failed for phone=%s*** (provider config/number format?)",
+                "[FORGOT-PASSWORD] SMS send failed for phone=%s*** (provider config/number "
+                "format?); responding with generic success to avoid account-existence leak.",
                 str(dest_phone)[:4],
             )
-            # Prefer clear failure over a fake "code sent" UX. Slight account
-            # existence signal is acceptable vs users stuck on a dead reset flow.
-            return jsonify({
-                "message": "Unable to send reset code right now. Please try again later.",
-                "code": "sms_send_failed",
-            }), 503
 
         # Dev convenience for local testing only (M-01: SMS_PROVIDER is not
         # part of this gate). Never expose reset tokens in production.
