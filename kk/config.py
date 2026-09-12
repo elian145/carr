@@ -50,6 +50,35 @@ def _env_flag(name: str) -> bool:
     return (os.environ.get(name) or "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def dev_debug_response_fields_enabled() -> bool:
+    """
+    Whether dev-only fields (e.g. the ``dev_code`` OTP/reset-token echo) may be
+    included in API responses.
+
+    M-01: this is the ONLY mechanism that may gate ``dev_code`` inclusion.
+    Requires BOTH, independently:
+
+      1. ``get_app_env()`` is ``"development"`` or ``"testing"`` — never
+         derived from ``app.config['DEBUG']`` alone, and never true when
+         ``APP_ENV``/``FLASK_ENV`` is unset (``get_app_env()`` itself already
+         defaults unset to ``"production"``).
+      2. ``ALLOW_DEV_CODE_IN_RESPONSE=1`` is explicitly set — so that merely
+         misconfiguring ``APP_ENV=development`` on a real deploy is NOT, by
+         itself, enough to leak an OTP/reset token. The flag can never
+         override a production environment: if ``get_app_env()`` is
+         ``"production"`` (including when APP_ENV is unset), this returns
+         False regardless of the flag.
+
+    Deliberately does NOT consult ``SMS_PROVIDER``/email-provider config —
+    delivery-transport selection is orthogonal to this security gate, and the
+    same rule must apply identically to SMS- and email-based dev_code
+    responses. Never set ``ALLOW_DEV_CODE_IN_RESPONSE`` in production.
+    """
+    if get_app_env() not in ("development", "testing"):
+        return False
+    return _env_flag("ALLOW_DEV_CODE_IN_RESPONSE")
+
+
 def _r2_credentials_present() -> bool:
     account = (os.environ.get("R2_ACCOUNT_ID") or "").strip()
     bucket = (os.environ.get("R2_BUCKET_NAME") or "").strip()

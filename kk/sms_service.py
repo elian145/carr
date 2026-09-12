@@ -14,6 +14,8 @@ from typing import Any, Optional
 
 import requests
 
+from .config import get_app_env
+
 logger = logging.getLogger(__name__)
 
 OTPIQ_API_URL = "https://api.otpiq.com/api/sms"
@@ -21,7 +23,15 @@ _otpiq_script_path: Optional[str] = None
 
 
 def _app_env() -> str:
-    return (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "development").strip().lower()
+    """
+    M-01: delegate to the single shared environment resolver instead of an
+    independently-defaulted copy. ``get_app_env()`` defaults unset
+    APP_ENV/FLASK_ENV to ``"production"`` (fail-safe) — this helper
+    previously defaulted to ``"development"`` (fail-open), which meant the
+    "console SMS is not allowed in production" guard below could silently
+    fail to fire on a deploy that simply forgot to set APP_ENV.
+    """
+    return get_app_env()
 
 
 def _get_otpiq_script_path() -> Optional[str]:

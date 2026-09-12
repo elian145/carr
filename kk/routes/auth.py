@@ -42,6 +42,7 @@ from ..models import (
     User,
     db,
 )
+from ..config import dev_debug_response_fields_enabled
 from ..security import (
     atomic_increment_attempts,
     check_rate_limit,
@@ -122,14 +123,6 @@ def _to_bool(value) -> bool:
     if value is None:
         return False
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _is_dev_environment() -> bool:
-    """True only for local/dev runs, where OTP codes may be echoed to the client."""
-    if current_app.config.get("DEBUG"):
-        return True
-    env = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
-    return env == "development"
 
 
 def _apply_dealer_profile(
@@ -954,12 +947,12 @@ def delete_account_send_code():
                 sms_detail or "unknown",
             )
             payload = {"sent": False, "message": "Failed to send confirmation code"}
-            if _is_dev_environment():
+            if dev_debug_response_fields_enabled():
                 payload["dev_code"] = code
             return jsonify(payload), 502
 
         payload = {"sent": True, "message": "Confirmation code sent"}
-        if _is_dev_environment():
+        if dev_debug_response_fields_enabled():
             payload["dev_code"] = code
         return jsonify(payload), 200
     except Exception as e:
@@ -1196,11 +1189,9 @@ def forgot_password():
                 "code": "sms_send_failed",
             }), 503
 
-        # Dev convenience for local testing with SMS_PROVIDER=console.
-        # Never expose reset tokens in production.
-        env_name = (os.environ.get("APP_ENV") or os.environ.get("FLASK_ENV") or "").strip().lower()
-        sms_provider = (os.environ.get("SMS_PROVIDER") or "console").strip().lower()
-        if env_name in ("development", "testing") and sms_provider == "console":
+        # Dev convenience for local testing only (M-01: SMS_PROVIDER is not
+        # part of this gate). Never expose reset tokens in production.
+        if dev_debug_response_fields_enabled():
             return jsonify(
                 {"message": "If the account exists, a reset code has been sent", "dev_code": token}
             ), 200
@@ -1509,7 +1500,7 @@ def send_phone_verification():
             )
             # Legacy client expects 200 with sent: false and error (and optional dev_code in dev).
             payload = {"sent": False, "error": err_msg, "message": err_msg}
-            if _is_dev_environment():
+            if dev_debug_response_fields_enabled():
                 # Provider error text is an internal detail; dev/debug only.
                 if sms_detail:
                     payload["detail"] = sms_detail
@@ -1629,16 +1620,14 @@ def phone_start():
                 "message": "Failed to send verification code",
                 "code": "sms_send_failed",
             }
-            if sms_detail and _is_dev_environment():
+            if sms_detail and dev_debug_response_fields_enabled():
                 # Provider error text is an internal detail; dev/debug only.
                 payload["detail"] = sms_detail
             return jsonify(payload), 500
 
-        # Dev convenience: when using console SMS provider, return the OTP in development/testing only.
+        # Dev convenience only (M-01: SMS_PROVIDER is not part of this gate).
         # Never include the OTP in production responses.
-        env_name = (os.environ.get("APP_ENV") or "").strip().lower()
-        sms_provider = (os.environ.get("SMS_PROVIDER") or "console").strip().lower()
-        if env_name in ("development", "testing") and sms_provider == "console":
+        if dev_debug_response_fields_enabled():
             return jsonify({"message": "OTP sent", "dev_code": verification_code}), 200
         return jsonify({"message": "OTP sent"}), 200
     except Exception:

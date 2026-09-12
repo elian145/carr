@@ -14,6 +14,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
+from ..config import dev_debug_response_fields_enabled
 from ..models import (
     Car,
     DealerApplication,
@@ -238,12 +239,6 @@ def _verified_dealer_emails(user: User) -> list[str]:
         if email and email not in output:
             output.append(email)
     return output
-
-
-def _is_dev_email_payload() -> bool:
-    return bool(current_app.config.get("DEBUG")) or (
-        os.environ.get("APP_ENV") or ""
-    ).strip().lower() == "development"
 
 
 def _verified_dealer_phone_digits(user: User) -> list[str]:
@@ -1204,16 +1199,12 @@ def send_dealer_phone_verification():
         }
         if sms_detail:
             payload["detail"] = sms_detail
-        if current_app.config.get("DEBUG") or (
-            os.environ.get("APP_ENV") or ""
-        ).strip().lower() == "development":
+        if dev_debug_response_fields_enabled():
             payload["dev_code"] = code
         return jsonify(payload), 502
 
     payload = {"message": "Verification code sent", "sent": True}
-    if current_app.config.get("DEBUG") or (
-        os.environ.get("APP_ENV") or ""
-    ).strip().lower() == "development":
+    if dev_debug_response_fields_enabled():
         payload["dev_code"] = code
     return jsonify(payload), 200
 
@@ -1329,7 +1320,7 @@ def send_dealer_email_verification():
 
     mail_sent = send_dealer_email_verification_code(email, code)
     if not mail_sent:
-        if _is_dev_email_payload():
+        if dev_debug_response_fields_enabled():
             # Keep the OTP so local clients can verify with `dev_code`.
             payload = {
                 "message": "Verification code ready (email not configured)",
@@ -1351,7 +1342,7 @@ def send_dealer_email_verification():
         ), 502
 
     payload = {"message": "Verification code sent", "sent": True}
-    if _is_dev_email_payload():
+    if dev_debug_response_fields_enabled():
         payload["dev_code"] = code
     return jsonify(payload), 200
 
@@ -1467,7 +1458,7 @@ def send_account_email_change_code():
 
     mail_sent = _send_code(email, code)
     if not mail_sent:
-        if _is_dev_email_payload():
+        if dev_debug_response_fields_enabled():
             # Keep the OTP so local clients can verify with `dev_code`.
             payload = {
                 "message": "Verification code ready (email not configured)",
@@ -1490,7 +1481,7 @@ def send_account_email_change_code():
         ), 502
 
     payload = {"message": "Verification code sent", "sent": True}
-    if _is_dev_email_payload():
+    if dev_debug_response_fields_enabled():
         payload["dev_code"] = code
     return jsonify(payload), 200
 
@@ -1614,16 +1605,12 @@ def send_contact_phone_verification():
         }
         if sms_detail:
             payload["detail"] = sms_detail
-        if current_app.config.get("DEBUG") or (
-            os.environ.get("APP_ENV") or ""
-        ).strip().lower() == "development":
+        if dev_debug_response_fields_enabled():
             payload["dev_code"] = code
         return jsonify(payload), 502
 
     payload = {"message": "Verification code sent", "sent": True}
-    if current_app.config.get("DEBUG") or (
-        os.environ.get("APP_ENV") or ""
-    ).strip().lower() == "development":
+    if dev_debug_response_fields_enabled():
         payload["dev_code"] = code
     return jsonify(payload), 200
 

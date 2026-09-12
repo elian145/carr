@@ -48,6 +48,7 @@ def app_ctx():
     )
     os.environ["APP_ENV"] = "testing"
     os.environ["SMS_PROVIDER"] = "console"
+    os.environ["ALLOW_DEV_CODE_IN_RESPONSE"] = "1"  # M-01: required to read dev_code below
     os.environ.pop("REDIS_URL", None)  # force the DB-fallback blocklist path
     os.environ["DB_PATH"] = os.path.join(tmp.name, "h01h02.db")
 
@@ -66,6 +67,10 @@ def app_ctx():
         db.session.remove()
         db.engine.dispose()
     tmp.cleanup()
+    # Avoid leaking this dev-only flag into other test modules that run
+    # later in the same pytest process and don't expect dev_code/detail
+    # fields to be present.
+    os.environ.pop("ALLOW_DEV_CODE_IN_RESPONSE", None)
 
 
 @pytest.fixture

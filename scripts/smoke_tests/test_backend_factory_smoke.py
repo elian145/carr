@@ -26,6 +26,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory(prefix="carlist_backend_smoke_")
         os.environ["APP_ENV"] = "testing"
         os.environ["SMS_PROVIDER"] = "console"
+        os.environ["ALLOW_DEV_CODE_IN_RESPONSE"] = "1"  # M-01: required to read dev_code
         os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
         os.environ["DB_PATH"] = os.path.join(self._tmp.name, "t.db")
 
@@ -152,6 +153,9 @@ class BackendFactorySmokeTest(unittest.TestCase):
                     pass
         finally:
             self._tmp.cleanup()
+            # Avoid leaking this dev-only flag into other test modules that
+            # might run later in the same process.
+            os.environ.pop("ALLOW_DEV_CODE_IN_RESPONSE", None)
 
     def _login(self, username: str, password: str, account_scope: str | None = None) -> str:
         payload = {"username": username, "password": password}
