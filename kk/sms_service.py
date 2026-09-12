@@ -226,7 +226,10 @@ class SMSService:
         print(f"EXPIRES: 1 hour")
         print(f"{'=' * 50}\n")
 
-        logger.info(f"Password reset code for {phone_number}: {reset_code}")
+        # M-03: do not route the plaintext OTP through the `logging` module —
+        # the print() above already gives local developers full visibility
+        # without exposing the code to log aggregation/CI logs/Sentry
+        # breadcrumbs. Intentionally no logger.info() call here.
         return True, ""
 
     def _send_via_otpiq(
@@ -381,7 +384,10 @@ class SMSService:
         print(f"EXPIRES: 10 minutes")
         print(f"{'=' * 50}\n")
 
-        logger.info(f"Phone verification code for {phone_number}: {verification_code}")
+        # M-03: do not route the plaintext OTP through the `logging` module —
+        # the print() above already gives local developers full visibility
+        # without exposing the code to log aggregation/CI logs/Sentry
+        # breadcrumbs. Intentionally no logger.info() call here.
         return True, ""
 
 
