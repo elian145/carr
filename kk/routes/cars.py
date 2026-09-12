@@ -707,8 +707,7 @@ def get_cars():
             200,
         )
     except Exception as e:
-        current_app.logger.exception("get_cars failed: %s", e)
-        return jsonify({"message": f"Failed to get cars: {str(e)}"}), 500
+        return _listing_db_error_response(e, action="get cars")
 
 
 @bp.route("/cars", methods=["GET"])
@@ -830,8 +829,7 @@ def get_cars_alias():
             cars.append(d)
         return jsonify(cars), 200
     except Exception as e:
-        current_app.logger.exception("get_cars_alias failed: %s", e)
-        return jsonify({"message": f"Failed to get cars: {str(e)}"}), 500
+        return _listing_db_error_response(e, action="get cars")
 
 
 @bp.route("/api/cars/<car_id>", methods=["GET"])
