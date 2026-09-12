@@ -12,6 +12,7 @@ from sqlalchemy.pool import NullPool
 from .config import config, get_app_env, validate_required_secrets
 from .extensions import db, jwt, mail, migrate, socketio
 from .legacy_schema import ensure_minimal_schema_compat
+from .models import bcrypt
 from .logging_utils import configure_logging, install_api_error_handlers, install_request_id_and_access_log
 from .monitoring import init_monitoring
 from .routes import register_blueprints
@@ -333,6 +334,11 @@ def create_app():
     migrate.init_app(app, db, directory=migrations_dir)
     jwt.init_app(app)
     mail.init_app(app)
+    # M-05: wire the shared Flask-Bcrypt singleton (kk/models.py::bcrypt) into
+    # this app so BCRYPT_LOG_ROUNDS/BCRYPT_HASH_PREFIX/BCRYPT_HANDLE_LONG_PASSWORDS
+    # are actually read from app.config, instead of silently falling back to
+    # Flask-Bcrypt's own hardcoded defaults.
+    bcrypt.init_app(app)
 
     cors_origins = _parse_cors_origins()
     sio_mq = _socketio_message_queue_url(env_name)
