@@ -32,6 +32,29 @@ _CHAT_VIDEO_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 _CHAT_AUDIO_EXTENSIONS = {".m4a", ".aac", ".mp3", ".wav", ".ogg", ".webm", ".amr", ".3gp"}
 _CHAT_ATTACHMENT_EXTENSIONS = _CHAT_IMAGE_EXTENSIONS | _CHAT_VIDEO_EXTENSIONS
 
+# M-07: per-file size caps for chat attachments. These are independent of
+# (and stricter than) the global MAX_CONTENT_LENGTH request-body cap in
+# kk/config.py, which stays at 250MB so a full 10-attachment grouped
+# message still fits. Values are chosen from actual client behavior /
+# existing app precedent rather than invented:
+#   - image: chat photos are picker-resized to 1200x1200 @ JPEG quality 80
+#     client-side (lib/features/chat/chat_conversation_media.dart) before
+#     upload -- realistic output is well under 1MB; 8MB matches the
+#     existing dealer-photo cap elsewhere in this app (kk/routes/user.py).
+#   - video: no client-side duration/size cap exists on the chat picker
+#     path today, so this reuses the app's own existing precedent for "one
+#     video file, same extensions, same app" -- kk/routes/media.py's
+#     upload_car_videos() cap (also paired with a 5-minute client picker
+#     convention used for listing videos).
+#   - audio: the ONLY producer of chat audio is the in-app voice recorder
+#     (AudioEncoder.aacLc, 128kbps, hard-capped at 300s client-side) --
+#     theoretical max ~4.8MB. 10MB matches
+#     kk.security.validate_file_upload_security()'s own existing default,
+#     giving ~2x headroom over that computed ceiling.
+_CHAT_IMAGE_MAX_MB = 8
+_CHAT_VIDEO_MAX_MB = 100
+_CHAT_AUDIO_MAX_MB = 10
+
 
 def _resolve_chat_receiver(me: User, car: Car, receiver_public: str | None) -> User | None:
     return resolve_allowed_chat_receiver(me, car, receiver_public)
@@ -83,6 +106,80 @@ def _first_car_image_rel_path(car: Car | None) -> str | None:
     if norm.startswith("car_photos/"):
         return f"uploads/{norm}"
     return norm
+
+
+def _file_size_bytes(file_storage) -> int:
+    """Return an uploaded file's size without permanently consuming its
+    stream position.
+
+    Mirrors the exact seek/tell/seek idiom already used by
+    kk/security.py::validate_file_upload_security() for the same purpose,
+    reused here instead of a new mechanism.
+    """
+    try:
+        pos = file_storage.tell()
+    except Exception:
+        pos = 0
+    file_storage.seek(0, 2)
+    size = file_storage.tell()
+    try:
+        file_storage.seek(pos)
+    except Exception:
+        try:
+            file_storage.seek(0)
+        except Exception:
+            pass
+    return size
+
+
+def _chat_attachment_max_mb(ext: str) -> int | None:
+    """Per-file size cap (MB) for a chat attachment, by extension.
+
+    Returns None for an extension that isn't a recognized chat attachment
+    type at all -- the existing extension allow-list checks at each call
+    site remain the sole source of truth for rejecting unsupported formats
+    (unchanged "Unsupported ... format" behavior); this only supplies a
+    size cap for formats that are otherwise already allowed.
+    """
+    if ext in _CHAT_IMAGE_EXTENSIONS:
+        return _CHAT_IMAGE_MAX_MB
+    if ext in _CHAT_VIDEO_EXTENSIONS:
+        return _CHAT_VIDEO_MAX_MB
+    if ext in _CHAT_AUDIO_EXTENSIONS:
+        return _CHAT_AUDIO_MAX_MB
+    return None
+
+
+def _chat_attachment_type_label(ext: str) -> str:
+    if ext in _CHAT_IMAGE_EXTENSIONS:
+        return "Image"
+    if ext in _CHAT_VIDEO_EXTENSIONS:
+        return "Video"
+    if ext in _CHAT_AUDIO_EXTENSIONS:
+        return "Audio file"
+    return "File"
+
+
+def _chat_attachment_size_error(file_storage) -> tuple[dict, int] | None:
+    """M-07: reject a chat attachment that exceeds its type's per-file size
+    cap, BEFORE any magic-byte sniff, R2 upload, or local persistence.
+
+    Returns a ``(body, 413)`` tuple to return immediately if the file is
+    oversized, or ``None`` if it's within its cap (or of an unrecognized
+    extension -- that case is left to the existing extension allow-list
+    checks, unchanged).
+    """
+    ext = os.path.splitext(file_storage.filename or "")[1].lower()
+    max_mb = _chat_attachment_max_mb(ext)
+    if max_mb is None:
+        return None
+    if _file_size_bytes(file_storage) > max_mb * 1024 * 1024:
+        label = _chat_attachment_type_label(ext)
+        return (
+            {"message": f"{label} is too large. Maximum size is {max_mb}MB."},
+            413,
+        )
+    return None
 
 
 def _upload_chat_attachment(file_storage, *, allowed_extensions: set[str], subdir: str, content_types: dict[str, str]) -> str:
@@ -619,6 +716,11 @@ def send_image_message(conversation_id: str):
         if not file or not file.filename:
             return jsonify({"message": "No image file provided"}), 400
 
+        size_error = _chat_attachment_size_error(file)
+        if size_error is not None:
+            body, status = size_error
+            return jsonify(body), status
+
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
         ).strip()
@@ -687,6 +789,14 @@ def send_image_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
+    except RequestEntityTooLarge:
+        db.session.rollback()
+        max_mb = _max_upload_mb()
+        if max_mb > 0:
+            return jsonify(
+                {"message": f"Selected image is too large. Maximum upload size is {max_mb}MB."}
+            ), 413
+        return jsonify({"message": "Selected image is too large."}), 413
     except Exception as e:
         db.session.rollback()
         _log_route_exception("send_image_message", e)
@@ -728,6 +838,11 @@ def send_video_message(conversation_id: str):
                 break
         if not file or not file.filename:
             return jsonify({"message": "No video file provided"}), 400
+
+        size_error = _chat_attachment_size_error(file)
+        if size_error is not None:
+            body, status = size_error
+            return jsonify(body), status
 
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
@@ -797,6 +912,14 @@ def send_video_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
+    except RequestEntityTooLarge:
+        db.session.rollback()
+        max_mb = _max_upload_mb()
+        if max_mb > 0:
+            return jsonify(
+                {"message": f"Selected video is too large. Maximum upload size is {max_mb}MB."}
+            ), 413
+        return jsonify({"message": "Selected video is too large."}), 413
     except Exception as e:
         db.session.rollback()
         _log_route_exception("send_video_message", e)
@@ -838,6 +961,11 @@ def send_audio_message(conversation_id: str):
                 break
         if not file or not file.filename:
             return jsonify({"message": "No audio file provided"}), 400
+
+        size_error = _chat_attachment_size_error(file)
+        if size_error is not None:
+            body, status = size_error
+            return jsonify(body), status
 
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
@@ -910,6 +1038,14 @@ def send_audio_message(conversation_id: str):
                 body=response_body,
             )
         return jsonify(response_body), 201
+    except RequestEntityTooLarge:
+        db.session.rollback()
+        max_mb = _max_upload_mb()
+        if max_mb > 0:
+            return jsonify(
+                {"message": f"Selected audio file is too large. Maximum upload size is {max_mb}MB."}
+            ), 413
+        return jsonify({"message": "Selected audio file is too large."}), 413
     except Exception as e:
         db.session.rollback()
         _log_route_exception("send_audio_message", e)
@@ -954,6 +1090,17 @@ def send_media_group_message(conversation_id: str):
             return jsonify({"message": "No attachments provided"}), 400
         if len(files) > 10:
             return jsonify({"message": "You can send up to 10 attachments at once"}), 400
+
+        # M-07: validate every attachment's per-type size cap BEFORE
+        # uploading/persisting ANY of them (not just the ones before the
+        # first oversized one) -- an all-or-nothing pre-flight pass so a
+        # request with one oversized file among several valid ones never
+        # partially persists the valid ones to R2/local disk first.
+        for candidate in files:
+            size_error = _chat_attachment_size_error(candidate)
+            if size_error is not None:
+                body, status = size_error
+                return jsonify(body), status
 
         receiver_public = (
             request.form.get("receiver_id") or request.form.get("receiverId") or ""
