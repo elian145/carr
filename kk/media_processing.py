@@ -5,6 +5,8 @@ import hashlib
 import hmac
 import logging
 import os
+from dataclasses import dataclass
+from enum import Enum
 from io import BytesIO
 from typing import Tuple
 
@@ -29,6 +31,65 @@ class DecompressionBombRejected(Exception):
     not attached to any API-facing message; callers should surface a
     generic, non-leaking rejection message instead.
     """
+
+
+class PlateBlurStatus(str, Enum):
+    """M-08: definitive outcome of one plate-blur attempt.
+
+    This is the small internal "result object" the persistence layer
+    (``process_and_store_image()`` / ``kk.tasks.image_tasks._process_image_path()``)
+    uses to distinguish a confirmed-safe outcome from every kind of failure,
+    instead of inferring success/failure purely from exceptions or from the
+    presence/absence of a swallowed error.
+    """
+
+    BLURRED_SUCCESS = "blurred_success"  # plate(s) detected and blurred
+    NO_PLATES = "no_plates"  # detection ran successfully; genuinely no plates found
+    SKIPPED = "skipped"  # skip_blur honored (fail-open mode only; see plate_blur_require_success_enabled())
+    NOT_CONFIGURED = "not_configured"  # PLATE_BLUR_ENABLED=0, or detector missing ROBOFLOW_API_KEY/project/version
+    DETECTION_FAILED = "detection_failed"  # Roboflow request failed (network/API/timeout/quota/bad response)
+    PROCESSING_FAILED = "processing_failed"  # image could not be decoded, or detected boxes were unusable
+    ENCODING_FAILED = "encoding_failed"  # re-encoding the blurred image failed
+    OTHER_FAILURE = "other_failure"  # any unexpected/ambiguous outcome -- fails closed, never treated as safe
+
+
+# M-08: the ONLY statuses that may ever be persisted/returned when
+# PLATE_BLUR_REQUIRE_SUCCESS=1 is enabled. Every other status --
+# including any future/unknown status string this process doesn't
+# recognize -- is rejected. See `_map_blur_meta_status()`.
+_PLATE_BLUR_CONFIRMED_SAFE = frozenset(
+    {PlateBlurStatus.BLURRED_SUCCESS, PlateBlurStatus.NO_PLATES}
+)
+
+
+@dataclass(frozen=True)
+class PlateBlurOutcome:
+    """Result of one `_run_plate_blur()` attempt."""
+
+    status: PlateBlurStatus
+    out_bytes: bytes
+    detail: str = ""  # short, non-secret, internal status token -- server-log-only, never client-facing
+
+
+class PlateBlurRequiredRejected(Exception):
+    """M-08: raised when ``PLATE_BLUR_REQUIRE_SUCCESS`` is enabled and the
+    plate-blur pipeline could not confirm ``BLURRED_SUCCESS`` or ``NO_PLATES``.
+
+    Callers (route handlers) must treat this as a hard rejection of the
+    individual file -- the original, unconfirmed bytes must never be
+    persisted (R2/local disk) or returned to a caller as if nothing had gone
+    wrong. ``status``/``detail`` are internal, non-secret tokens intended for
+    server-side logging only; callers should surface a generic, non-leaking
+    rejection message instead (mirroring the ``DecompressionBombRejected``
+    convention above).
+    """
+
+    def __init__(self, status: PlateBlurStatus, detail: str = ""):
+        self.status = status
+        self.detail = detail
+        super().__init__(
+            f"plate blur required but not confirmed safe (status={status.value})"
+        )
 
 
 def _r2_configured() -> bool:
@@ -203,30 +264,156 @@ def heic_to_jpeg(raw_bytes: bytes) -> Tuple[bytes, bool]:
         return raw_bytes, False
 
 
-def blur_image_bytes(raw_bytes: bytes, ext: str, *, skip_blur: bool = False) -> bytes:
-    """Run license-plate blur on in-memory image bytes; return blurred bytes (or original on failure)."""
-    if skip_blur:
-        return raw_bytes
+def plate_blur_require_success_enabled() -> bool:
+    """
+    M-08: whether a listing photo must be confirmed ``BLURRED_SUCCESS`` or
+    ``NO_PLATES`` before it may be persisted or returned; every other
+    outcome (missing/unconfigured Roboflow key, Roboflow network/API/
+    timeout/quota failure, decode/processing/encoding failure, or any
+    unrecognized/ambiguous status) is a hard rejection instead of the
+    original fail-open "return the unblurred bytes" behavior.
 
-    out_bytes = raw_bytes
+    Off (``0``) by default -- this preserves the pre-M-08 fail-open
+    behavior byte-for-byte unless an operator explicitly opts in. This is a
+    plain environment-variable read (checked at call time, like the sibling
+    ``PLATE_BLUR_ENABLED``/``PLATE_BLUR_EXPAND``/``PLATE_BLUR_KEEP_ORIGINAL``
+    flags in this module), intentionally NOT gated by ``get_app_env()``:
+    unlike M-01's ``dev_debug_response_fields_enabled()`` (where the unsafe
+    direction is "accidentally ON in production"), the unsafe direction here
+    is the opposite -- accidentally OFF in production -- so tying this to
+    APP_ENV would not add safety and would only make production silently
+    diverge from the exact behavior exercised in dev/CI. Because it is a
+    plain env var (not ``app.config``), a Celery worker/beat process reads
+    the identical value from its own process environment, so async image
+    processing (``kk/tasks/image_tasks.py``) automatically obeys the same
+    policy as the synchronous request path with no separate wiring --
+    operators must set it consistently across the web *and* worker services
+    (see ``kk/env_example.txt``).
+    """
+    return (os.getenv("PLATE_BLUR_REQUIRE_SUCCESS", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    ))
+
+
+# M-08: maps `blur_license_plates()`'s free-form `meta["status"]` string
+# (kk/license_plate_blur.py) onto the small, definitive `PlateBlurStatus`
+# enum the persistence layer gates on. Deliberately a data-only mapping --
+# `license_plate_blur.py` itself is NOT modified, so its existing, already
+# separately-tested detection/blur internals are untouched by M-08.
+_BLUR_META_STATUS_MAP = {
+    "blurred": PlateBlurStatus.BLURRED_SUCCESS,
+    "no_plates": PlateBlurStatus.NO_PLATES,
+    "not_configured": PlateBlurStatus.NOT_CONFIGURED,
+    "detect_failed": PlateBlurStatus.DETECTION_FAILED,
+    "bad_response": PlateBlurStatus.DETECTION_FAILED,
+    "decode_failed": PlateBlurStatus.PROCESSING_FAILED,
+    # M-08: boxes WERE detected (a plate may be present) but every candidate
+    # ROI was too small to safely blur -- this is not a confirmed-safe "no
+    # plates" result, so it must fail closed exactly like a processing error.
+    "no_valid_rois": PlateBlurStatus.PROCESSING_FAILED,
+    "opencv_missing": PlateBlurStatus.OTHER_FAILURE,
+    "encode_failed": PlateBlurStatus.ENCODING_FAILED,
+    "error": PlateBlurStatus.OTHER_FAILURE,
+}
+
+
+def _map_blur_meta_status(raw_status) -> PlateBlurStatus:
+    # M-08 item 6: any status this process doesn't explicitly recognize as
+    # confirmed-safe is ambiguous by definition -- fail closed, never persist.
+    return _BLUR_META_STATUS_MAP.get(str(raw_status or ""), PlateBlurStatus.OTHER_FAILURE)
+
+
+def _run_plate_blur(
+    raw_bytes: bytes, ext: str, *, skip_requested: bool, force_attempt: bool
+) -> PlateBlurOutcome:
+    """
+    Execute the plate-blur pipeline once and return a definitive
+    ``PlateBlurOutcome`` -- the single choke point ``blur_image_bytes()``
+    (and therefore every persistence path that calls it) uses to know
+    whether the operation was BLURRED_SUCCESS / NO_PLATES / NOT_CONFIGURED /
+    DETECTION_FAILED / PROCESSING_FAILED / ENCODING_FAILED / OTHER_FAILURE.
+
+    ``force_attempt``: M-08 -- when the caller is enforcing
+    ``PLATE_BLUR_REQUIRE_SUCCESS``, an ordinary client-controlled
+    ``skip_blur=1`` request parameter must not be able to bypass the
+    requirement, so detection still actually runs even if the caller asked
+    to skip it. ``skip_requested`` is honored as an outright skip only when
+    ``force_attempt`` is False (i.e. in the default fail-open mode), which
+    preserves the exact original ``skip_blur`` product behavior for every
+    deployment that has not explicitly opted into M-08 enforcement.
+    """
+    if skip_requested and not force_attempt:
+        return PlateBlurOutcome(PlateBlurStatus.SKIPPED, raw_bytes, "skip_blur requested")
+
+    enabled = (os.getenv("PLATE_BLUR_ENABLED", "1").strip() != "0")
+    if not enabled:
+        return PlateBlurOutcome(PlateBlurStatus.NOT_CONFIGURED, raw_bytes, "PLATE_BLUR_ENABLED=0")
+
     try:
-        enabled = (os.getenv("PLATE_BLUR_ENABLED", "1").strip() != "0")
-        if enabled:
-            from .license_plate_blur import blur_license_plates, get_plate_detector
+        from .license_plate_blur import blur_license_plates, get_plate_detector
 
-            detector = get_plate_detector()
-            if detector.is_configured():
-                expand = float(os.getenv("PLATE_BLUR_EXPAND", "0") or "0")
-                out_bytes, _meta = blur_license_plates(
-                    image_bytes=raw_bytes,
-                    output_ext=ext,
-                    detector=detector,
-                    expand_ratio=expand,
-                )
-    except Exception:
-        # Best-effort: never fail the upload on blur issues.
-        out_bytes = raw_bytes
-    return out_bytes
+        detector = get_plate_detector()
+        if not detector.is_configured():
+            return PlateBlurOutcome(
+                PlateBlurStatus.NOT_CONFIGURED,
+                raw_bytes,
+                "detector not configured (ROBOFLOW_API_KEY/project/version/endpoint)",
+            )
+
+        expand = float(os.getenv("PLATE_BLUR_EXPAND", "0") or "0")
+        out_bytes, meta = blur_license_plates(
+            image_bytes=raw_bytes,
+            output_ext=ext,
+            detector=detector,
+            expand_ratio=expand,
+        )
+    except Exception as e:
+        # M-08 item 6: anything that escapes blur_license_plates() itself
+        # (it already has its own broad catch-all, so this should be rare)
+        # is unknown/ambiguous -- fail closed, never conflate with a
+        # confirmed "no plates" result. Log only the exception type, never
+        # its message (which could echo request/network internals).
+        logger.warning(
+            "Plate blur pipeline raised unexpectedly (%s); treating as OTHER_FAILURE",
+            type(e).__name__,
+        )
+        return PlateBlurOutcome(
+            PlateBlurStatus.OTHER_FAILURE, raw_bytes, f"unexpected {type(e).__name__}"
+        )
+
+    status = _map_blur_meta_status(meta.get("status"))
+    return PlateBlurOutcome(status, out_bytes, str(meta.get("status") or "unknown"))
+
+
+def blur_image_bytes(raw_bytes: bytes, ext: str, *, skip_blur: bool = False) -> bytes:
+    """Run license-plate blur on in-memory image bytes; return blurred bytes.
+
+    M-08: when ``plate_blur_require_success_enabled()`` is False (the
+    default), this preserves the original fail-open behavior byte-for-byte
+    -- any detector/network/processing failure, or an explicit
+    ``skip_blur=True``, returns the original bytes unchanged and never
+    raises. When ``PLATE_BLUR_REQUIRE_SUCCESS=1`` is set, this instead
+    raises ``PlateBlurRequiredRejected`` for any outcome other than a
+    confirmed ``BLURRED_SUCCESS`` or ``NO_PLATES`` -- including
+    ``skip_blur=True``, which is no longer honored as a way to bypass the
+    requirement (see ``_run_plate_blur()``'s ``force_attempt`` docstring and
+    ``PRODUCTION_AUDIT.md`` M-08 for the rationale).
+    """
+    require_success = plate_blur_require_success_enabled()
+    outcome = _run_plate_blur(
+        raw_bytes, ext, skip_requested=skip_blur, force_attempt=require_success
+    )
+    if require_success and outcome.status not in _PLATE_BLUR_CONFIRMED_SAFE:
+        logger.warning(
+            "M-08: rejecting upload -- plate blur not confirmed safe (status=%s, detail=%s)",
+            outcome.status.value,
+            outcome.detail,
+        )
+        raise PlateBlurRequiredRejected(outcome.status, outcome.detail)
+    return outcome.out_bytes
 
 
 def process_and_store_image(

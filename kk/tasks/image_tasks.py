@@ -37,7 +37,17 @@ def _process_image_path(
     with open(temp_abs, "rb") as fp:
         raw_bytes = fp.read()
 
-    # Optional: blur plates (fallback to original on any failure).
+    # Optional: blur plates (fallback to original on any failure, unless
+    # M-08's PLATE_BLUR_REQUIRE_SUCCESS=1 is set -- in that case
+    # blur_image_bytes() raises kk.media_processing.PlateBlurRequiredRejected
+    # instead of returning unconfirmed bytes. It is a plain env var read
+    # inside blur_image_bytes() itself, so this Celery worker process obeys
+    # the exact same policy as the synchronous request path with no extra
+    # wiring here; the raise propagates out of this function (and out of
+    # the `process_car_image_file` task below) before persist_jpeg_bytes()
+    # is ever reached, so a rejected image is never persisted via the async
+    # path either -- mirroring the M-06 DecompressionBombRejected handling
+    # immediately below.
     out_bytes = blur_image_bytes(raw_bytes, ".jpg", skip_blur=skip_blur)
 
     # Downscale/compress

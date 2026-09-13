@@ -75,6 +75,17 @@ PLATE_BLUR_ENABLED=1
 PLATE_BLUR_EXPAND=0
 # If 1, also saves an "original_*" copy next to the blurred image
 PLATE_BLUR_KEEP_ORIGINAL=0
+# M-08: fail-CLOSED plate blur. Default 0 (fail-open, original pre-M-08
+# behavior: an unconfigured/failed blur silently persists the unblurred
+# image). Set to 1 in production once ROBOFLOW_API_KEY is reliably
+# configured to instead REJECT the upload (no persistence) unless the
+# blur pipeline confirms either a successful blur or a genuine "no plates
+# detected" result. Must be set identically on the web service AND on any
+# Celery worker/beat processing images asynchronously (it is a plain
+# process env var, not a database/app.config setting). When enabled, the
+# per-request skip_blur=1 opt-out no longer bypasses this requirement --
+# see PRODUCTION_AUDIT.md M-08.
+PLATE_BLUR_REQUIRE_SUCCESS=0
 
 # Trust & support (mobile Help / Terms / Contact)
 SUPPORT_EMAIL=support@carzo.app

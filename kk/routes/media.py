@@ -11,6 +11,7 @@ from werkzeug.utils import safe_join
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..media_processing import (
     DecompressionBombRejected,
+    PlateBlurRequiredRejected,
     media_key_owner_prefix_matches,
     media_owner_tag,
     process_and_store_image,
@@ -631,6 +632,14 @@ def upload_car_images(car_id: str):
                 # above) -- never persist or return the original bytes, and
                 # never leak the underlying PIL exception text to the client.
                 skip_reasons.append("Image is too large or complex to process safely")
+                continue
+            except PlateBlurRequiredRejected:
+                # M-08: PLATE_BLUR_REQUIRE_SUCCESS is enabled and this file's
+                # plate-blur outcome was not confirmed safe (unconfigured,
+                # Roboflow failure, or a processing/encoding failure). Skip
+                # just this one file -- never persist the unconfirmed bytes,
+                # and never leak the internal status/reason to the client.
+                skip_reasons.append("Image could not be verified as safe to publish")
                 continue
             listing_n = _count_listing_images(car)
             is_primary = upload_kind == "listing" and listing_n == 0
