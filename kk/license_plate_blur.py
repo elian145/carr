@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import requests
+from PIL.Image import DecompressionBombError
 
 logger = logging.getLogger(__name__)
 
@@ -284,6 +285,15 @@ def _normalize_image_bytes_for_inference(image_bytes: bytes, output_ext: str) ->
 			save_kwargs.update({"quality": 92, "method": 4})
 		im2.save(out, format=fmt, **save_kwargs)
 		return out.getvalue(), {"normalize_status": "normalized", "normalize_format": fmt}
+	except DecompressionBombError:
+		# M-06: never swallow Pillow's decompression-bomb guard here -- doing
+		# so would let the caller (blur_license_plates) forward the original,
+		# bomb-flagged bytes straight to cv2.imdecode(), which has no
+		# equivalent pixel-count guard of its own. Re-raise so the caller's
+		# own catch-all handles it exactly like any other normalize failure
+		# (falls back to the original bytes with an error status) -- it just
+		# never hands the bomb bytes to OpenCV.
+		raise
 	except Exception as e:
 		# If anything goes wrong, fall back to original bytes
 		return image_bytes, {"normalize_status": "normalize_failed", "normalize_error": _public_error(str(e))}

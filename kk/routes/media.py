@@ -10,6 +10,7 @@ from werkzeug.utils import safe_join
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..media_processing import (
+    DecompressionBombRejected,
     media_key_owner_prefix_matches,
     media_owner_tag,
     process_and_store_image,
@@ -103,6 +104,12 @@ _ALLOWED_VIDEO_CONTENT_TYPES = frozenset(
 _R2_IMAGE_MAX_BYTES = 25 * 1024 * 1024
 _R2_VIDEO_MAX_BYTES = 200 * 1024 * 1024
 MAX_DAMAGE_PHOTOS = 10
+# M-06: cumulative-per-car cap on listing (non-damage) photos, mirroring the
+# existing Flutter client cap (`_kSellMaxPhotos` in
+# lib/features/sell/sell_step4_logic.dart) and the existing MAX_DAMAGE_PHOTOS
+# precedent. Enforced server-side so it cannot be bypassed by a modified
+# client or a direct API call.
+MAX_LISTING_PHOTOS = 20
 
 
 def _normalize_signed_content_type(raw: str, *, asset: str, default_ct: str) -> str | None:
@@ -236,6 +243,29 @@ def _damage_photo_limit_error(existing: int, incoming: int):
             {
                 "message": (
                     f"You can add up to {MAX_DAMAGE_PHOTOS} damage photos per listing."
+                )
+            }
+        ),
+        400,
+    )
+
+
+def _listing_photo_limit_error(existing: int, incoming: int):
+    """M-06: reject the whole request (all-or-nothing) once a cumulative
+    per-car cap of ``MAX_LISTING_PHOTOS`` listing photos would be exceeded.
+
+    Mirrors ``_damage_photo_limit_error`` exactly (same all-or-nothing
+    semantics, same response shape) so a request that would push a car over
+    the cap is rejected outright rather than partially accepted -- matching
+    the API's existing established convention for the damage-photo cap.
+    """
+    if existing + incoming <= MAX_LISTING_PHOTOS:
+        return None
+    return (
+        jsonify(
+            {
+                "message": (
+                    f"You can add up to {MAX_LISTING_PHOTOS} photos per listing."
                 )
             }
         ),
@@ -562,6 +592,17 @@ def upload_car_images(car_id: str):
             )
             if limit_err:
                 return limit_err
+        else:
+            # M-06: cumulative-per-car cap on listing photos. All-or-nothing,
+            # same convention as the damage-photo cap above -- a request that
+            # would push this car over MAX_LISTING_PHOTOS is rejected outright
+            # rather than partially accepted.
+            limit_err = _listing_photo_limit_error(
+                _count_listing_images(car),
+                len(incoming_files),
+            )
+            if limit_err:
+                return limit_err
 
         for fs in incoming_files:
             if not fs or not fs.filename:
@@ -577,12 +618,20 @@ def upload_car_images(car_id: str):
                 skip_reasons.append(msg or "Invalid file")
                 continue
 
-            rel_path, _b64 = process_and_store_image(
-                fs,
-                inline_base64=False,
-                skip_blur=skip_blur,
-                owner_public_id=current_user.public_id,
-            )
+            try:
+                rel_path, _b64 = process_and_store_image(
+                    fs,
+                    inline_base64=False,
+                    skip_blur=skip_blur,
+                    owner_public_id=current_user.public_id,
+                )
+            except DecompressionBombRejected:
+                # M-06: Pillow's decompression-bomb guard rejected this file.
+                # Skip just this one file (same convention as an invalid file
+                # above) -- never persist or return the original bytes, and
+                # never leak the underlying PIL exception text to the client.
+                skip_reasons.append("Image is too large or complex to process safely")
+                continue
             listing_n = _count_listing_images(car)
             is_primary = upload_kind == "listing" and listing_n == 0
             car_image = CarImage(
@@ -690,6 +739,16 @@ def attach_car_images(car_id: str):
         if attach_kind == "damage":
             limit_err = _damage_photo_limit_error(
                 _count_images_of_kind(car, "damage"),
+                len(paths),
+            )
+            if limit_err:
+                return limit_err
+        else:
+            # M-06: same cumulative-per-car, all-or-nothing cap as
+            # upload_car_images() -- attaching already-staged images must not
+            # be a way to bypass the listing-photo cap.
+            limit_err = _listing_photo_limit_error(
+                _count_listing_images(car),
                 len(paths),
             )
             if limit_err:

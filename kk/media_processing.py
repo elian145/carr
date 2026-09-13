@@ -9,12 +9,26 @@ from io import BytesIO
 from typing import Tuple
 
 from flask import current_app
+from PIL.Image import DecompressionBombError
 
 from .config import get_app_env
 from .security import generate_secure_filename
 from .time_utils import utcnow
 
 logger = logging.getLogger(__name__)
+
+
+class DecompressionBombRejected(Exception):
+    """Raised when Pillow's built-in decompression-bomb guard
+    (``PIL.Image.DecompressionBombError``) rejects an image.
+
+    M-06: callers (route handlers) must treat this as a hard rejection of the
+    individual file -- the original, bomb-flagged bytes must never be
+    persisted (R2/local disk) or returned to a caller as if they had been
+    processed normally. The underlying PIL exception text is intentionally
+    not attached to any API-facing message; callers should surface a
+    generic, non-leaking rejection message instead.
+    """
 
 
 def _r2_configured() -> bool:
@@ -177,6 +191,14 @@ def heic_to_jpeg(raw_bytes: bytes) -> Tuple[bytes, bool]:
         out = BytesIO()
         im.save(out, format="JPEG", quality=92, optimize=True, exif=b"")
         return out.getvalue(), True
+    except DecompressionBombError as e:
+        # M-06: Pillow's own decompression-bomb guard tripped -- do not
+        # swallow this into the generic fallback below, which would silently
+        # return the original, unprocessed, bomb-flagged bytes as if nothing
+        # had gone wrong.
+        raise DecompressionBombRejected(
+            "heic_to_jpeg: image rejected by decompression-bomb guard"
+        ) from e
     except Exception:
         return raw_bytes, False
 
@@ -276,6 +298,16 @@ def process_and_store_image(
             quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "80") or "80")
             im.save(buf, format="JPEG", quality=quality, optimize=True, exif=b"")
             out_bytes = buf.getvalue()
+        except DecompressionBombError as e:
+            # M-06: this is the last line of defense before persistence --
+            # never fall through to persisting the original, unprocessed,
+            # bomb-flagged ``out_bytes`` (which can happen either because
+            # skip_blur was requested, or because blur_image_bytes() itself
+            # already failed open and returned the original bytes). Reject
+            # the whole file instead.
+            raise DecompressionBombRejected(
+                "process_and_store_image: image rejected by decompression-bomb guard"
+            ) from e
         except Exception:
             pass
 

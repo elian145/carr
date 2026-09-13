@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 import os
 
+from PIL.Image import DecompressionBombError
+
 from ..time_utils import utcnow
 from .celery_app import celery_app
 
@@ -19,7 +21,11 @@ def _process_image_path(
     Process an image already saved to disk at temp_abs.
     Returns {rel_path, base64?}.
     """
-    from kk.media_processing import blur_image_bytes, persist_jpeg_bytes
+    from kk.media_processing import (
+        DecompressionBombRejected,
+        blur_image_bytes,
+        persist_jpeg_bytes,
+    )
     from kk.security import generate_secure_filename
 
     filename = generate_secure_filename(original_filename or "upload.jpg")
@@ -45,6 +51,13 @@ def _process_image_path(
     # of which branch of blur_image_bytes() produced ``out_bytes``. Kept
     # consistent with kk/media_processing.py::process_and_store_image(), which
     # this function duplicates.
+    #
+    # M-06 follow-up: this duplicate downscale step must reject a
+    # decompression-bomb image the same way process_and_store_image() does --
+    # PIL.Image.DecompressionBombError must never be swallowed here, because
+    # doing so would leave ``out_bytes`` as the original, un-downscaled,
+    # bomb-flagged bytes, which the unconditional persist_jpeg_bytes() call
+    # right below would then persist to R2/local disk.
     try:
         from io import BytesIO
 
@@ -62,6 +75,15 @@ def _process_image_path(
         quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "80") or "80")
         im.save(buf, format="JPEG", quality=quality, optimize=True, exif=b"")
         out_bytes = buf.getvalue()
+    except DecompressionBombError as e:
+        # M-06 follow-up: reuse the exact same rejection mechanism as
+        # process_and_store_image() -- raise, do not fall through. This
+        # propagates out of _process_image_path() (and out of the Celery
+        # task body) before persist_jpeg_bytes() is ever reached; the
+        # caller's `finally:` temp-file cleanup still runs regardless.
+        raise DecompressionBombRejected(
+            "_process_image_path: image rejected by decompression-bomb guard"
+        ) from e
     except Exception:
         pass
 
