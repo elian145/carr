@@ -2,6 +2,8 @@
 Security utilities and middleware for the car listing app
 """
 
+import hashlib
+import hmac
 import os
 import re
 import threading
@@ -215,6 +217,206 @@ def rate_limit(max_requests=10, window_minutes=60, per_ip=True):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+
+# ---------------------------------------------------------------------------
+# M-09: account-keyed failed-login throttle
+# ---------------------------------------------------------------------------
+#
+# The pre-existing `@rate_limit(..., per_ip=True)` decorator above only ever
+# bounds requests FROM one source IP. It does nothing to bound failed
+# password attempts AGAINST one account when an attacker spreads the same
+# attack across many source IPs (distributed password spraying) -- each IP
+# gets its own fresh 10-requests/15-minute budget, so the account itself is
+# never protected.
+#
+# This adds a SEPARATE, account-keyed counter that is incremented only on a
+# *failed password check* (never on malformed requests, unknown accounts, or
+# successful logins -- see `kk/routes/auth.py::login`) and, once
+# `_ACCOUNT_LOGIN_MAX_FAILURES` failures land inside one
+# `_ACCOUNT_LOGIN_WINDOW_MINUTES` window, temporarily blocks further password
+# verification for that SPECIFIC account for `_ACCOUNT_LOGIN_LOCK_MINUTES`. A
+# short, finite, self-expiring throttle -- deliberately NOT a permanent
+# lockout, so this mechanism cannot itself be weaponized into a
+# denial-of-service against the legitimate account owner.
+#
+# Values mirror the existing, already-audited OTP lockout policy
+# (`kk/routes/auth.py::_OTP_MAX_ATTEMPTS` / `_OTP_LOCKOUT_MINUTES`, both 5 /
+# 15) for consistency across the codebase's failed-authentication policies:
+#   - 5 failures gives a legitimate user real headroom for a couple of
+#     typos, while still sharply bounding an attacker's guesses per account
+#     regardless of how many source IPs they rotate through.
+#   - 15 minutes makes online guessing impractical (5 guesses/15 min -> at
+#     most a few hundred guesses/day per account) while staying short enough
+#     that a genuinely locked-out user regains access on their own, with no
+#     support ticket required.
+_ACCOUNT_LOGIN_MAX_FAILURES = 5
+_ACCOUNT_LOGIN_WINDOW_MINUTES = 15
+_ACCOUNT_LOGIN_LOCK_MINUTES = 15
+
+# Dev/test-only in-process fallback (mirrors `rate_limit_storage` /
+# `_global_budget_storage` below -- NOT safe across processes/replicas,
+# gated by the same `_allow_inmemory_rate_limits()` escape hatch as the rest
+# of this module). Keyed by the already-hashed `acct_fail:`/`acct_lock:`
+# strings, never by the raw identifier.
+_account_login_failure_storage: dict[str, list[float]] = {}
+_account_login_lock_storage: dict[str, float] = {}
+_account_login_storage_lock = threading.Lock()
+
+
+def _account_login_throttle_disabled() -> bool:
+    """Same testing/TESTING no-op condition as `check_rate_limit`, so the
+    account throttle never pollutes state across the many existing tests
+    that log in repeatedly against shared test users, and so dedicated M-09
+    tests can opt back in explicitly (mirroring
+    `test_be19_ai_spend_cap.py::test_existing_per_user_rate_limit_still_enforced_independently`)."""
+    env = (os.environ.get("APP_ENV") or "").strip().lower()
+    return env == "testing" or bool(current_app.config.get("TESTING"))
+
+
+def account_login_throttle_key(canonical_identifier: str) -> str:
+    """
+    Non-reversible Redis/in-memory key material for one logical account's
+    login-failure state.
+
+    Never stores the raw phone number / email / username: HMACs
+    ``canonical_identifier`` (already scope-prefixed and resolved to the
+    account's own canonical stored value by the caller -- see
+    ``kk/routes/auth.py::_account_login_lock_identifier`` -- rather than the
+    raw, client-submitted login field, so that whichever equivalent
+    identifier reaches the same account row, the same bucket is used) with
+    the app's ``SECRET_KEY``, the same secret-sourcing convention already
+    used by ``kk.routes.auth._hash_phone_verification_code``.
+    """
+    secret = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    digest = hmac.new(
+        secret, canonical_identifier.encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+    return digest[:32]
+
+
+def check_account_login_throttle(canonical_identifier: str):
+    """
+    Returns ``(locked, error_response)`` for one logical account's M-09
+    failed-login throttle.
+
+    ``error_response`` is a Flask ``(body, status)`` tuple -- non-None only
+    when Redis is required (production, no dev/test escape hatch) but
+    unavailable; per H-06, callers MUST return it as-is (fail CLOSED --
+    never silently treat "can't check" as "not locked"). When
+    ``error_response`` is None, ``locked`` reflects whether this account is
+    currently inside an active throttle window; callers must skip password
+    verification entirely when ``locked`` is True.
+    """
+    if _account_login_throttle_disabled():
+        return False, None
+
+    key = f"acct_lock:{account_login_throttle_key(canonical_identifier)}"
+    allow_memory = _allow_inmemory_rate_limits()
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            return bool(r.exists(key)), None
+        except Exception:
+            if not allow_memory:
+                return False, _rate_limit_unavailable_response()
+    elif not allow_memory:
+        return False, _rate_limit_unavailable_response()
+
+    with _account_login_storage_lock:
+        expiry = _account_login_lock_storage.get(key)
+        return bool(expiry and expiry > time.time()), None
+
+
+def record_account_login_failure(canonical_identifier: str) -> None:
+    """
+    Atomically records one failed password attempt against
+    ``canonical_identifier`` and, once ``_ACCOUNT_LOGIN_MAX_FAILURES``
+    failures have landed inside the current
+    ``_ACCOUNT_LOGIN_WINDOW_MINUTES`` window, sets a separate, fixed-TTL
+    lock flag (``_ACCOUNT_LOGIN_LOCK_MINUTES``).
+
+    Uses the same atomic ``INCR`` (+ ``EXPIRE`` only on the first increment
+    of a window) primitive as the existing per-IP ``check_rate_limit`` Redis
+    branch above -- Redis's ``INCR`` is atomic server-side, so concurrent
+    failed attempts against the same account (e.g. from several racing
+    source IPs, exactly the M-09 attack shape) can never lose an increment.
+    No Python-side "read count, then write count+1" round trip exists here
+    -- the D-04 concern (a lost update from a SELECT -> increment -> UPDATE
+    race) does not apply because the increment itself is a single atomic
+    server-side operation, not a client-side read-modify-write.
+
+    Best-effort by design: unlike the *read* in
+    ``check_account_login_throttle`` (which fails closed), a transient
+    failure to *record* a failure must not itself block the response
+    ``login()`` is about to return -- unavailability of this write path only
+    degrades this specific account's throttle sensitivity; it never disables
+    the existing per-IP limiter or opens any other hole.
+    """
+    if _account_login_throttle_disabled():
+        return
+
+    window_s = _ACCOUNT_LOGIN_WINDOW_MINUTES * 60
+    lock_s = _ACCOUNT_LOGIN_LOCK_MINUTES * 60
+    hashed = account_login_throttle_key(canonical_identifier)
+    fail_key = f"acct_fail:{hashed}"
+    lock_key = f"acct_lock:{hashed}"
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            n = r.incr(fail_key)
+            if n == 1:
+                r.expire(fail_key, window_s)
+            if n >= _ACCOUNT_LOGIN_MAX_FAILURES:
+                r.set(lock_key, "1", ex=lock_s)
+            return
+        except Exception:
+            pass  # best-effort; fall through to the in-memory fallback below
+
+    if not _allow_inmemory_rate_limits():
+        return
+
+    now = time.time()
+    with _account_login_storage_lock:
+        times = _account_login_failure_storage.get(fail_key, [])
+        times = [t for t in times if t > now - window_s]
+        times.append(now)
+        _account_login_failure_storage[fail_key] = times
+        if len(times) >= _ACCOUNT_LOGIN_MAX_FAILURES:
+            _account_login_lock_storage[lock_key] = now + lock_s
+
+
+def reset_account_login_failures(canonical_identifier: str) -> None:
+    """
+    Clears both the failure counter and any active lock for
+    ``canonical_identifier`` -- called on every SUCCESSFUL login so a
+    legitimate user who eventually gets their password right is not left
+    throttled by their own earlier typos. Does NOT retroactively shorten an
+    already-active lock for anyone who has NOT yet authenticated
+    successfully (a locked request never reaches this call -- see
+    ``kk/routes/auth.py::login``). Best-effort, same reasoning as
+    ``record_account_login_failure``.
+    """
+    if _account_login_throttle_disabled():
+        return
+
+    hashed = account_login_throttle_key(canonical_identifier)
+    fail_key = f"acct_fail:{hashed}"
+    lock_key = f"acct_lock:{hashed}"
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            r.delete(fail_key, lock_key)
+            return
+        except Exception:
+            pass  # best-effort; fall through to the in-memory fallback below
+
+    with _account_login_storage_lock:
+        _account_login_failure_storage.pop(fail_key, None)
+        _account_login_lock_storage.pop(lock_key, None)
 
 
 # Fallback in-process storage (dev/test only) for check_global_daily_budget:

@@ -45,8 +45,11 @@ from ..models import (
 from ..config import dev_debug_response_fields_enabled
 from ..security import (
     atomic_increment_attempts,
+    check_account_login_throttle,
     check_rate_limit,
     rate_limit,
+    record_account_login_failure,
+    reset_account_login_failures,
     validate_input_sanitization,
 )
 
@@ -603,6 +606,42 @@ def _refresh_token_for_user(user: User) -> str:
     return create_refresh_token(identity=identity)
 
 
+def _account_login_lock_identifier(*, admin_account=None, user=None):
+    """
+    M-09: canonical, scope-prefixed identifier for the account-level
+    login-failure throttle -- derived from the ALREADY-RESOLVED account row,
+    never from the raw, client-submitted ``username`` field. This means
+    whichever equivalent identifier (phone vs. username for ``User``; email
+    vs. phone vs. username for ``AdminAccount``) the client used to reach
+    the SAME row, the SAME throttle bucket is used -- an attacker who knows
+    both a target's phone number and username cannot double their effective
+    attempt budget by alternating between them.
+
+    The ``admin:``/``user:`` prefix keeps the two account spaces from ever
+    colliding on an identical raw string (e.g. a mobile ``User.username``
+    that happens to equal an unrelated ``AdminAccount.username``).
+
+    Returns ``None`` when no account was resolved: unknown identifiers are
+    never throttled at the account level -- there is no real account to
+    protect, and doing so would create a new signal distinguishing "unknown"
+    from "known but not yet throttled" (an enumeration risk this fix must
+    not introduce). Unknown identifiers remain governed solely by the
+    existing per-IP ``@rate_limit`` decorator, unchanged.
+    """
+    if admin_account is not None:
+        canonical = (
+            admin_account.email
+            or admin_account.phone_number
+            or admin_account.username
+            or f"id:{admin_account.id}"
+        )
+        return f"admin:{canonical}"
+    if user is not None:
+        canonical = user.phone_number or user.username or f"id:{user.id}"
+        return f"user:{canonical}"
+    return None
+
+
 @bp.route("/api/auth/login", methods=["POST"])
 @rate_limit(max_requests=10, window_minutes=15)  # 10 login attempts per 15 minutes per IP
 def login():
@@ -620,6 +659,8 @@ def login():
         ident = data["username"]
         account_scope = str(data.get("account_scope") or "").strip().lower()
         admin_account = None
+        user = None
+
         if account_scope == "admin":
             admin_account = AdminAccount.query.filter(
                 or_(
@@ -628,16 +669,6 @@ def login():
                     AdminAccount.username == ident,
                 )
             ).first()
-            if not admin_account or not admin_account.check_password(data["password"]):
-                return jsonify({"message": "Invalid credentials"}), 401
-            user = admin_account.principal
-            if (
-                not admin_account.is_active
-                or not user
-                or not user.is_active
-                or not user.is_admin
-            ):
-                return jsonify({"message": "Admin account is deactivated"}), 401
         else:
             # Mobile password login is phone/username only (no email).
             user = User.query.filter(
@@ -646,10 +677,57 @@ def login():
             if user and AdminAccount.query.filter_by(principal_user_id=user.id).first():
                 return jsonify({"message": "Invalid credentials"}), 401
 
-        if account_scope != "admin" and (
-            not user or not user.check_password(data["password"])
-        ):
+        # M-09: account-keyed failed-login throttle -- independent of, and in
+        # addition to, the existing per-IP @rate_limit above. Checked BEFORE
+        # any password verification so a temporarily-throttled account never
+        # runs bcrypt at all (see kk/security.py::check_account_login_throttle
+        # for the full design note, thresholds, and fail-closed policy).
+        account_login_key = _account_login_lock_identifier(
+            admin_account=admin_account,
+            user=user if account_scope != "admin" else None,
+        )
+        if account_login_key is not None:
+            locked, throttle_error = check_account_login_throttle(account_login_key)
+            if throttle_error is not None:
+                # H-06 policy: Redis required but unavailable in production
+                # -> fail closed, exactly like the per-IP limiter above.
+                return throttle_error
+            if locked:
+                # Same generic response as a wrong password: an
+                # unauthenticated caller must not be able to distinguish
+                # "wrong password" from "this account is temporarily
+                # throttled" (no code/message/remaining-attempts leak).
+                return jsonify({"message": "Invalid credentials"}), 401
+
+        if account_scope == "admin":
+            password_ok = bool(admin_account) and admin_account.check_password(
+                data["password"]
+            )
+        else:
+            password_ok = bool(user) and user.check_password(data["password"])
+
+        if not password_ok:
+            # Only a genuinely-failed password check against a resolved
+            # account increments the throttle (never malformed requests,
+            # never unknown identifiers, never successful logins).
+            if account_login_key is not None:
+                record_account_login_failure(account_login_key)
             return jsonify({"message": "Invalid credentials"}), 401
+
+        # Correct password: clear any accumulated failures/throttle for this
+        # account so a legitimate user's earlier typos never linger.
+        if account_login_key is not None:
+            reset_account_login_failures(account_login_key)
+
+        if account_scope == "admin":
+            user = admin_account.principal
+            if (
+                not admin_account.is_active
+                or not user
+                or not user.is_active
+                or not user.is_admin
+            ):
+                return jsonify({"message": "Admin account is deactivated"}), 401
 
         if not user.is_active:
             return jsonify({"message": "Account is deactivated"}), 401

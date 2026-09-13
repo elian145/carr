@@ -228,6 +228,21 @@ class _FakeRedisHealthy:
         self._lock = threading.Lock()
         self._counts: dict[str, int] = {}
         self._expirations: dict[str, int] = {}
+        # SET/EXISTS/DELETE support: added alongside M-09
+        # (kk.security.check_account_login_throttle /
+        # record_account_login_failure / reset_account_login_failures),
+        # which -- unlike the pre-existing per-IP/global-budget limiters
+        # this class already stood in for -- also needs a plain key-exists
+        # flag, not just a counter. `login()` is called once by
+        # `test_existing_per_user_rate_limit_still_enforced_independently`
+        # below while this fake is wired in as the *entire* app's Redis
+        # client, so it must support whatever real Redis commands any code
+        # on that request path issues, exactly like the real client would.
+        # No BE-19 test asserts on these methods or exercises the M-09
+        # account-throttle codepath itself (a single, uncontested login
+        # only ever reaches 0 failures); this purely keeps the fake a
+        # faithful, non-raising stand-in for real Redis.
+        self._values: dict[str, str] = {}
 
     def incr(self, key):
         with self._lock:
@@ -235,16 +250,47 @@ class _FakeRedisHealthy:
             return self._counts[key]
 
     def expire(self, key, seconds):
-        self._expirations[key] = seconds
+        with self._lock:
+            if seconds <= 0:
+                # Matches real Redis: EXPIRE with a non-positive TTL deletes
+                # the key immediately.
+                self._counts.pop(key, None)
+                self._values.pop(key, None)
+                self._expirations.pop(key, None)
+                return True
+            self._expirations[key] = seconds
         return True
 
     def ttl(self, key):
         return self._expirations.get(key, 86400)
 
+    def set(self, key, value, ex=None):
+        with self._lock:
+            self._values[key] = value
+            if ex is not None:
+                self._expirations[key] = ex
+        return True
+
+    def exists(self, key):
+        with self._lock:
+            return 1 if key in self._values else 0
+
+    def delete(self, *keys):
+        with self._lock:
+            n = 0
+            for k in keys:
+                if k in self._values:
+                    del self._values[k]
+                    n += 1
+                self._counts.pop(k, None)
+                self._expirations.pop(k, None)
+            return n
+
     def reset_key(self, key):
         """Simulate the key's TTL having elapsed -- Redis would simply drop
         it, and the next INCR would start a fresh window."""
         self._counts.pop(key, None)
+        self._values.pop(key, None)
         self._expirations.pop(key, None)
 
 
