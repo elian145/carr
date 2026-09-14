@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import '../features/home/widgets/home_feed_states.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -217,7 +220,24 @@ class _SellAuthPromptState extends State<_SellAuthPrompt> {
 /// Special-case: the Favorites page is allowed to show even when logged out
 /// so it can display its own "login/signup required" message.
 /// Sell shows a login/signup dialog instead of an immediate redirect.
-class AuthGuard extends StatelessWidget {
+///
+/// F-05: `AuthService`'s own bounded profile-retry (`_scheduleProfileRetry`)
+/// already recovers a *transient* `/auth/me` failure on its own — this
+/// widget must not add a second retry mechanism. But `AuthService.isLoading`
+/// only covers the very first `/auth/me` attempt (see
+/// `AuthService._initializeOnce`); the automatic retries that follow run
+/// with `isLoading == false` the whole time. So a *sustained* failure (the
+/// retries exhaust with none of them succeeding, or genuinely never
+/// resolve) leaves a real stranded combination:
+///   `AuthService.isAuthenticated == false`
+///   `AuthService.isLoading == false`
+///   `ApiService.isAuthenticated == true` (token untouched — no 401 fired)
+/// which used to spin a bare `CircularProgressIndicator` forever. This
+/// widget now starts a bounded "terminal" timer the moment it observes that
+/// combination and, once it fires, swaps the spinner for a recoverable
+/// error state whose retry action calls the existing
+/// `AuthService().refreshProfile()` (no new profile-loading mechanism).
+class AuthGuard extends StatefulWidget {
   const AuthGuard({
     super.key,
     required this.child,
@@ -228,16 +248,133 @@ class AuthGuard extends StatelessWidget {
   final bool allowWhenLoggedOut;
   final bool promptSellAuthWhenLoggedOut;
 
+  // How long this widget waits, once it observes the terminal stranded
+  // state described above, before giving up on the spinner and showing a
+  // recoverable error instead.
+  //
+  // Must comfortably exceed AuthService's own worst-case bounded retry
+  // cascade, since the "stranded" window (as defined above) can begin as
+  // early as the very first `/auth/me` failure, not just after all
+  // retries are exhausted:
+  //   initial attempt, cold-start adaptive timeout ........... 55s
+  //   + retry 1 delay ......................................... 2s
+  //   + retry 1 attempt (ApiService.warmRequestTimeout) ...... 20s
+  //   + retry 2 delay ......................................... 5s
+  //   + retry 2 attempt (warmRequestTimeout) ................. 20s
+  //   + retry 3 delay ........................................ 10s
+  //   + retry 3 attempt (warmRequestTimeout) ................. 20s
+  //   = 132s worst case before AuthService's own retry budget is spent.
+  // 180s leaves a ~48s margin above that worst case, so this can never
+  // fire while a legitimate AuthService retry could still succeed.
+  static const Duration _terminalTimeout = Duration(seconds: 180);
+
+  /// Test-only override for [_terminalTimeout], so tests can reach the
+  /// terminal error state deterministically without a real ~3-minute wait.
+  /// Always `null` in production. Mirrors
+  /// `AuthService.debugProfileRetryDelaysOverride`'s existing convention.
+  @visibleForTesting
+  static Duration? debugTerminalTimeoutOverride;
+
+  @override
+  State<AuthGuard> createState() => _AuthGuardState();
+}
+
+class _AuthGuardState extends State<AuthGuard> {
+  final AuthService _authService = AuthService();
+  Timer? _terminalTimer;
+  bool _terminalTimeoutFired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService.addListener(_handleAuthChanged);
+    // Covers mounting directly into an already-stranded session (e.g. a
+    // deep link into a protected route after the retry cascade already
+    // ran its course elsewhere) — otherwise only a future
+    // `notifyListeners()` call would ever (re-)evaluate the terminal timer.
+    _handleAuthChanged();
+  }
+
+  @override
+  void dispose() {
+    _authService.removeListener(_handleAuthChanged);
+    _terminalTimer?.cancel();
+    super.dispose();
+  }
+
+  bool get _isStranded =>
+      !_authService.isAuthenticated &&
+      !_authService.isLoading &&
+      ApiService.isAuthenticated;
+
+  // Driven only by AuthService's own `notifyListeners()` (via the listener
+  // added in `initState`), by `initState` itself, and by `_retry()` below —
+  // deliberately never by `build()`, so repeated widget rebuilds can never
+  // create a duplicate timer.
+  void _handleAuthChanged() {
+    if (_isStranded) {
+      _terminalTimer ??= Timer(
+        AuthGuard.debugTerminalTimeoutOverride ?? AuthGuard._terminalTimeout,
+        _onTerminalTimeout,
+      );
+    } else {
+      // Recovered, or tokens were cleared (definitive 401) — cancel any
+      // pending terminal timer and clear a previously-fired one so a
+      // *future* stranding (a different session) gets its own fresh timer.
+      _cancelTerminalTimer();
+      if (_terminalTimeoutFired && mounted) {
+        setState(() => _terminalTimeoutFired = false);
+      }
+    }
+  }
+
+  void _cancelTerminalTimer() {
+    _terminalTimer?.cancel();
+    _terminalTimer = null;
+  }
+
+  void _onTerminalTimeout() {
+    _terminalTimer = null;
+    if (!mounted || !_isStranded) return;
+    setState(() => _terminalTimeoutFired = true);
+  }
+
+  void _retry() {
+    _cancelTerminalTimer();
+    if (_terminalTimeoutFired) {
+      setState(() => _terminalTimeoutFired = false);
+    }
+    // Reuses AuthService's existing single-flight profile fetch — no new
+    // loading mechanism. A failed manual attempt does not itself call
+    // notifyListeners() (AuthService's own automatic-retry budget is
+    // already exhausted by the time this UI can show), so re-evaluate the
+    // terminal timer once this attempt settles either way.
+    unawaited(
+      _authService.refreshProfile().whenComplete(() {
+        if (mounted) _handleAuthChanged();
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthService>(context);
-    if (auth.isAuthenticated || allowWhenLoggedOut) {
-      return child;
+    if (auth.isAuthenticated || widget.allowWhenLoggedOut) {
+      return widget.child;
+    }
+    if (_terminalTimeoutFired) {
+      final loc = AppLocalizations.of(context)!;
+      return Scaffold(
+        body: HomeFeedErrorState(
+          message: loc.failedToLoadUserData,
+          onRetry: _retry,
+        ),
+      );
     }
     if (auth.isLoading || ApiService.isAuthenticated) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (promptSellAuthWhenLoggedOut) {
+    if (widget.promptSellAuthWhenLoggedOut) {
       return const _SellAuthPrompt();
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
