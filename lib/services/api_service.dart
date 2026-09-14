@@ -454,7 +454,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getCar(String carId) =>
       _ApiServiceListings.getCar(carId);
 
-  static Future<Map<String, dynamic>?> getCarDetail(String carId) =>
+  static Future<Map<String, dynamic>> getCarDetail(String carId) =>
       _ApiServiceListings.getCarDetail(carId);
 
   static Future<List<String>> getCarContactPhones(String carId) =>

@@ -82,31 +82,53 @@ abstract final class _ApiServiceListings {
     return null;
   }
 
-  /// Loads a single listing for detail pages; returns null on failure (callers may use cache).
-  static Future<Map<String, dynamic>?> getCarDetail(String carId) async {
+  /// Loads a single listing for detail pages.
+  ///
+  /// Throws [ApiException] for any non-2xx response — including the
+  /// definitive 404 a deleted/nonexistent/not-visible listing returns (see
+  /// `GET /api/cars/<id>` in `kk/routes/cars.py`) — so callers can branch on
+  /// [ApiException.statusCode] to tell "not found" (404) apart from an
+  /// unresolved auth failure (401 surviving the refresh-then-retry below)
+  /// and from transient/server failures (5xx, 429, other). An empty,
+  /// malformed, or unexpectedly-shaped 200 body throws a [FormatException]
+  /// instead of silently returning `null` — it is not a "not found" case.
+  /// Transport failures (`TimeoutException`, `SocketException`, etc.)
+  /// propagate as their original exception type, unwrapped.
+  ///
+  /// Fixes F-01: this previously caught every failure and returned `null`,
+  /// making network/401/500 indistinguishable from a deleted listing.
+  static Future<Map<String, dynamic>> getCarDetail(String carId) async {
     final id = Uri.encodeComponent(carId.trim());
-    if (id.isEmpty) return null;
-    try {
-      await ApiService._ensureTokenLoaded();
-      final url = Uri.parse('${ApiService.baseUrl}/cars/$id');
-      var headers = ApiService._getHeaders(includeAuth: true);
-      var response = await ApiService._httpClient
+    if (id.isEmpty) {
+      throw ApiException(statusCode: 404, message: 'Invalid car id');
+    }
+    await ApiService._ensureTokenLoaded();
+    final url = Uri.parse('${ApiService.baseUrl}/cars/$id');
+    var headers = ApiService._getHeaders(includeAuth: true);
+    var response = await ApiService._httpClient
+        .get(url, headers: headers)
+        .timeout(const Duration(seconds: 20));
+    if (response.statusCode == 401 &&
+        await ApiService._refreshAccessToken()) {
+      headers = ApiService._getHeaders(includeAuth: true);
+      response = await ApiService._httpClient
           .get(url, headers: headers)
           .timeout(const Duration(seconds: 20));
-      if (response.statusCode == 401 &&
-          await ApiService._refreshAccessToken()) {
-        headers = ApiService._getHeaders(includeAuth: true);
-        response = await ApiService._httpClient
-            .get(url, headers: headers)
-            .timeout(const Duration(seconds: 20));
-      }
-      if (response.statusCode != 200) return null;
-      if (response.body.isEmpty) return null;
-      final decoded = json.decode(response.body);
-      return parseCarDetailPayload(decoded);
-    } catch (_) {
-      return null;
     }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      // Reuses the shared status -> ApiException mapping (404/401/429/5xx),
+      // so a car-detail failure carries the same statusCode/message/body
+      // shape as every other ApiService endpoint (throws; never returns).
+      ApiService._handleResponse(response);
+    }
+    if (response.body.isEmpty) {
+      throw const FormatException('Empty car detail response body');
+    }
+    final parsed = parseCarDetailPayload(json.decode(response.body));
+    if (parsed == null) {
+      throw const FormatException('Unexpected car detail response shape');
+    }
+    return parsed;
   }
 
   /// Reveals listing contact phones (not included in public browse payloads).

@@ -27,6 +27,15 @@ class FakeApiServer {
   /// this to 0 at the start of a test that relies on it.
   static int carDetailFetchCount = 0;
 
+  /// F-01/B-02 regression coverage: per-car-id override for a plain
+  /// `GET /api/cars/<id>` (car-detail) request, keyed by the raw id path
+  /// segment. Return an [http.Response] to force a specific status/body
+  /// (404/5xx/429/malformed/empty), or throw to simulate a transport
+  /// failure or timeout. Falls through to the default 200 stub when a car
+  /// id has no override. Cleared by [stop].
+  static final Map<String, http.Response Function()> carDetailOverrides =
+      <String, http.Response Function()>{};
+
   /// BE-18: records the `Idempotency-Key` header (or null if absent) seen on
   /// every `POST /api/chat/<id>/send*` request, in call order. Used to prove
   /// the same key is threaded through from `ApiService`/`OutgoingChatSendService`
@@ -69,6 +78,7 @@ class FakeApiServer {
     _expectedBearer = null;
     emptySavedSearches = false;
     carDetailFetchCount = 0;
+    carDetailOverrides.clear();
     chatSendIdempotencyKeys.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
@@ -176,6 +186,10 @@ class FakeApiServer {
       }
       if (method == 'GET' && segments.length == 1) {
         carDetailFetchCount++;
+        final override = carDetailOverrides[id];
+        if (override != null) {
+          return override();
+        }
       }
       return _json(200, {'car': _sampleCar(id)});
     }
