@@ -20,6 +20,42 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_API_BASE = "https://carr-5hrm.onrender.com"
 
 
+class ApiBaseValidationError(ValueError):
+    """Raised by validate_api_base() with a distinct, actionable message."""
+
+
+def validate_api_base(value: str | None) -> str:
+    """Validate a candidate production API_BASE value.
+
+    Mirrors the release-mode rules enforced at runtime by
+    ``validateReleaseApiBase()`` in ``lib/services/config.dart``: this is the
+    **production** build path (no dev/LAN defaults, no insecure-HTTP escape
+    hatch), so exactly two failure states are distinguished from the single
+    accepted state:
+
+    - missing/empty (after trimming)      -> raises (distinct message)
+    - non-empty but not ``https://``      -> raises (distinct message)
+    - valid ``https://`` origin           -> returns the normalized value
+      (trailing slash stripped)
+
+    Pure / side-effect-free so it can be unit tested directly — see
+    ``scripts/test_build_prod_android_validate.py`` — without invoking
+    Flutter or performing any I/O.
+    """
+    raw = (value or "").strip()
+    if not raw:
+        raise ApiBaseValidationError(
+            "Missing API_BASE: pass --api-base https://<your-domain> "
+            "(production builds must not omit it)."
+        )
+    normalized = raw.rstrip("/")
+    if not normalized.startswith("https://"):
+        raise ApiBaseValidationError(
+            f"Insecure API_BASE {normalized!r}: production builds require https://."
+        )
+    return normalized
+
+
 def _flutter() -> str:
     return shutil.which("flutter") or "flutter"
 
@@ -39,9 +75,10 @@ def main() -> None:
     p.add_argument("--skip-preflight", action="store_true", help="Skip verify_publish_ready.py")
     args = p.parse_args()
 
-    api_base = args.api_base.strip().rstrip("/")
-    if not api_base.startswith("https://"):
-        print("FAIL: --api-base must use https://", file=sys.stderr)
+    try:
+        api_base = validate_api_base(args.api_base)
+    except ApiBaseValidationError as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
         raise SystemExit(1)
 
     if not args.skip_preflight:

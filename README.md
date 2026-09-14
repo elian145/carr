@@ -413,14 +413,27 @@ See `test/README.md` and `docs/ARCHITECTURE.md`.
 
 ### Frontend Deployment
 
-1. **Android**
+1. **Android** — do **not** run a bare `flutter build apk --release`: with no
+   `--dart-define=API_BASE=...`, the build still succeeds but the app throws
+   at runtime on its first API/image call (`effectiveApiBase()` in
+   `lib/services/config.dart` fails fast by design — see the F-02 finding in
+   `PRODUCTION_AUDIT.md`). Use the [Android release quickstart](#android-release-quickstart)
+   above instead, e.g. via the helper script (which validates `API_BASE`
+   before invoking Flutter):
    ```bash
-   flutter build apk --release
+   python scripts/build_prod_android.py
+   ```
+   or explicitly:
+   ```bash
+   flutter build apk --release --flavor prod --dart-define=API_BASE=https://your-api-host
    ```
 
 2. **iOS**
    - For **Sideloadly** (no Mac needed): use Codemagic workflow **iOS (IPA for Sideloadly)** and install the unsigned IPA via Sideloadly — see [docs/IOS_TESTING.md](docs/IOS_TESTING.md).
-   - For Xcode / TestFlight: `flutter build ios --release` (or `flutter build ipa` with signing).
+   - For Xcode / TestFlight: prefer the Codemagic **iOS TestFlight** workflow (`ios-codemagic.yaml`), which already passes `--dart-define=API_BASE=...` — see [docs/IOS_TESTFLIGHT.md](docs/IOS_TESTFLIGHT.md). If building/signing locally instead of via Codemagic, you must pass it yourself — do **not** run a bare `flutter build ipa --release` (same F-02 rule as Android: it builds successfully but crashes at runtime, not at build time):
+     ```bash
+     flutter build ipa --release --dart-define=API_BASE=https://your-api-host
+     ```
 
 3. **Web**
    ```bash

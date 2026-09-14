@@ -118,30 +118,96 @@ String apiBase() {
   return kApiBase.trim();
 }
 
+/// Outcome of validating a candidate API_BASE value for a **release** build.
+///
+/// Kept separate from [ApiBaseValidationResult] so callers can branch on
+/// status without string-matching error messages.
+enum ApiBaseValidationStatus {
+  /// Empty (or whitespace-only) after trimming — no dart-define was supplied.
+  missing,
+
+  /// Non-empty but not an accepted secure origin, and no escape hatch applied.
+  insecureHttp,
+
+  /// Accepted: either `https://`, or `http://` explicitly allowed by one of
+  /// the existing compile-time escape hatches.
+  valid,
+}
+
+/// Result of [validateReleaseApiBase]. Carries the trimmed value alongside
+/// [status] so callers don't need to re-trim.
+class ApiBaseValidationResult {
+  const ApiBaseValidationResult(this.status, this.base);
+
+  final ApiBaseValidationStatus status;
+  final String base;
+
+  bool get isValid => status == ApiBaseValidationStatus.valid;
+}
+
+/// Pure validation of an API_BASE value for **release** builds.
+///
+/// This mirrors the release-mode rules previously inlined in
+/// [effectiveApiBase] and is intentionally independent of [kReleaseMode] and
+/// `dart:io`'s `Platform`, so it can be unit-tested directly for every input
+/// combination (see `test/config_api_base_validation_test.dart`) without
+/// needing an actual release build.
+///
+/// Rules:
+/// - empty/whitespace-only -> [ApiBaseValidationStatus.missing]
+/// - starts with `https://` -> [ApiBaseValidationStatus.valid]
+/// - starts with `http://` AND ([allowIosSideloadHttp] or
+///   [allowAndroidInsecureHttp]) -> [ApiBaseValidationStatus.valid]
+///   (existing iOS sideload / Android insecure-HTTP escape hatches — see
+///   [kSideloadBuild] and [kAllowInsecureHttpInRelease])
+/// - anything else -> [ApiBaseValidationStatus.insecureHttp]
+ApiBaseValidationResult validateReleaseApiBase(
+  String base, {
+  bool allowIosSideloadHttp = false,
+  bool allowAndroidInsecureHttp = false,
+}) {
+  final trimmed = base.trim();
+  if (trimmed.isEmpty) {
+    return ApiBaseValidationResult(ApiBaseValidationStatus.missing, trimmed);
+  }
+  if (trimmed.startsWith('https://')) {
+    return ApiBaseValidationResult(ApiBaseValidationStatus.valid, trimmed);
+  }
+  if (trimmed.startsWith('http://') &&
+      (allowIosSideloadHttp || allowAndroidInsecureHttp)) {
+    return ApiBaseValidationResult(ApiBaseValidationStatus.valid, trimmed);
+  }
+  return ApiBaseValidationResult(ApiBaseValidationStatus.insecureHttp, trimmed);
+}
+
 /// On Android emulator, 10.0.2.2 maps to the host machine.
 /// Keep port consistent with the default API base unless overridden via --dart-define.
 String effectiveApiBase() {
   final base = apiBase();
 
   if (kReleaseMode) {
-    if (base.isEmpty) {
-      throw StateError(
-        'Missing API_BASE. Provide --dart-define=API_BASE=https://<your-domain>',
-      );
-    }
-    if (!base.startsWith('https://')) {
-      // Sideload builds (typically for Sideloadly) may need to call a LAN HTTP API.
-      // This is only allowed on iOS when explicitly opted-in at compile time.
-      final bool allowIosSideloadHttp =
-          kSideloadBuild && Platform.isIOS && base.startsWith('http://');
-      final bool allowAndroidLocalHttp =
-          kAllowInsecureHttpInRelease && Platform.isAndroid && base.startsWith('http://');
+    // Sideload builds (typically for Sideloadly) may need to call a LAN HTTP API.
+    // This is only allowed on iOS when explicitly opted-in at compile time.
+    final bool allowIosSideloadHttp = kSideloadBuild && Platform.isIOS;
+    final bool allowAndroidLocalHttp =
+        kAllowInsecureHttpInRelease && Platform.isAndroid;
 
-      if (!(allowIosSideloadHttp || allowAndroidLocalHttp)) {
+    final result = validateReleaseApiBase(
+      base,
+      allowIosSideloadHttp: allowIosSideloadHttp,
+      allowAndroidInsecureHttp: allowAndroidLocalHttp,
+    );
+
+    switch (result.status) {
+      case ApiBaseValidationStatus.missing:
+        throw StateError(
+          'Missing API_BASE. Provide --dart-define=API_BASE=https://<your-domain>',
+        );
+      case ApiBaseValidationStatus.insecureHttp:
         throw StateError('In release builds, API_BASE must start with https://');
-      }
+      case ApiBaseValidationStatus.valid:
+        return result.base;
     }
-    return base;
   }
 
   // Debug/dev defaults: local backend convenience.
