@@ -30,7 +30,13 @@ function securityHeaders(res: NextResponse): NextResponse {
     [
       "default-src 'self'",
       scriptSrc,
-      "style-src 'self' 'unsafe-inline'",
+      // L-02: 'unsafe-inline' has no demonstrated requirement for style-src —
+      // no CSS-in-JS/styled-jsx/inline <style> is used, and React's
+      // style={{...}} usage (TrendChart, ActionBarChart) is applied via
+      // per-property CSSOM mutation, not a literal `style` attribute string,
+      // so it is not governed by this directive. Kept identical in both
+      // environments (unlike script-src's dev-only 'unsafe-eval').
+      "style-src 'self'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "connect-src 'self' https: http://localhost:* http://127.0.0.1:*",
