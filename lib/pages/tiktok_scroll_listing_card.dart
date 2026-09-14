@@ -58,7 +58,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
       );
     }
     if (value == null) return symbol;
-    return symbol + NumberFormat.decimalPattern().format(value);
+    return symbol + decimalFormatterForLocale(context).format(value);
   }
 
   String _normalizeBrandId(String brand) => brandLogoSlug(brand);
@@ -79,7 +79,7 @@ class _TikTokListingCardState extends State<_TikTokListingCard> {
         : num.tryParse(mileageRaw.replaceAll(RegExp(r'[^0-9.]'), ''));
     final String mileageDisplay = mileageRaw.isEmpty
         ? ''
-        : '${mileageNum == null ? mileageRaw : NumberFormat.decimalPattern().format(mileageNum)} ${loc.unit_km}';
+        : '${mileageNum == null ? mileageRaw : decimalFormatterForLocale(context).format(mileageNum)} ${loc.unit_km}';
     String? cityRaw;
     for (final key in const ['city', 'location', 'city_name']) {
       final v = car[key];

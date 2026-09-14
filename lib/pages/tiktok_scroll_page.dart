@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../shared/i18n/locale_formatting.dart';
 import '../theme/app_colors.dart';
 
 import '../shared/media/media_url.dart';
