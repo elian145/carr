@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:car_listing_app/services/api_service.dart';
@@ -35,6 +36,13 @@ class FakeApiServer {
   /// id has no override. Cleared by [stop].
   static final Map<String, http.Response Function()> carDetailOverrides =
       <String, http.Response Function()>{};
+
+  /// F-04 regression coverage: when set, `GET /api/user/favorites` awaits
+  /// this completer instead of returning the default stub immediately, so
+  /// tests can deterministically control exactly when the response resolves
+  /// relative to widget disposal (no timers/sleeps involved). Cleared by
+  /// [stop].
+  static Completer<http.Response>? favoritesResponseGate;
 
   /// BE-18: records the `Idempotency-Key` header (or null if absent) seen on
   /// every `POST /api/chat/<id>/send*` request, in call order. Used to prove
@@ -79,6 +87,7 @@ class FakeApiServer {
     emptySavedSearches = false;
     carDetailFetchCount = 0;
     carDetailOverrides.clear();
+    favoritesResponseGate = null;
     chatSendIdempotencyKeys.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
@@ -86,6 +95,12 @@ class FakeApiServer {
   }
 
   static Future<http.Response> _handle(http.Request request) async {
+    final gate = favoritesResponseGate;
+    if (gate != null &&
+        request.method.toUpperCase() == 'GET' &&
+        request.url.path == '/api/user/favorites') {
+      return gate.future;
+    }
     final response = _responseFor(request);
     return response ?? http.Response('Not found', 404);
   }

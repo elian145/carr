@@ -55,13 +55,15 @@ class _FavoritesPageState extends State<FavoritesPage> {
         try {
           final data = json.decode(cached);
           if (data is List) {
-            setState(() {
-              _favorites = listingMapsFromApiList(data);
-              _favorites.sort(
-                (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
-              );
-              _loading = false;
-            });
+            if (mounted) {
+              setState(() {
+                _favorites = listingMapsFromApiList(data);
+                _favorites.sort(
+                  (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+                );
+                _loading = false;
+              });
+            }
           }
         } catch (e, st) {
           logNonFatal(e, st);
@@ -69,14 +71,17 @@ class _FavoritesPageState extends State<FavoritesPage> {
       }
       final decoded = await ApiService.getFavorites();
       final parsed = listingMapsFromFavoritesResponse(decoded);
-      setState(() {
-        _favorites = parsed;
-        _favorites.sort(
-          (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
-        );
-      });
+      if (mounted) {
+        setState(() {
+          _favorites = parsed;
+          _favorites.sort(
+            (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+          );
+        });
+      }
       unawaited(sp.setString(cacheKey, json.encode(_favorites)));
     } on ApiException catch (e) {
+      if (!mounted) return;
       if (e.statusCode == 401) {
         setState(() {
           _loginRequired = true;
@@ -87,6 +92,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = userErrorText(
           context,
