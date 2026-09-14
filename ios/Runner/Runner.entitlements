@@ -12,7 +12,6 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:carr-5hrm.onrender.com</string>
-		<string>applinks:carr-5hrm.onrender.com?mode=developer</string>
 		<string>applinks:carzo.airbridge.io</string>
 		<string>applinks:carzo.abr.ge</string>
 	</array>
