@@ -353,13 +353,14 @@ class PushNotificationService {
         // ignore: avoid_print
         print('PushNotificationService: token registered with backend');
       }
-    } catch (e) {
+    } catch (e, st) {
       final sp = await SharedPreferences.getInstance();
       await sp.setString('push_last_sync_error', e.toString());
       if (kDebugMode) {
         // ignore: avoid_print
         print('PushNotificationService: backend register failed: $e');
       }
+      logNonFatal(e, st, 'PushNotificationService.syncTokenWithBackend');
     }
   }
 
