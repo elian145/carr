@@ -155,53 +155,59 @@ abstract final class _ApiServiceListings {
   }
 
   /// Reveals listing contact phones (not included in public browse payloads).
+  ///
+  /// Fixes F-07: this previously caught every failure (transport error,
+  /// timeout, 401, 429, 5xx, malformed body, ...) and collapsed it into
+  /// `const []`, making a transient/network/server/rate-limit/auth failure
+  /// indistinguishable from "this listing genuinely has no contact phone".
+  ///
+  /// `[]` is now returned ONLY for a genuine 200 response with no phone
+  /// present. Any non-2xx response throws [ApiException] (reusing the same
+  /// status -> exception mapping, `ApiService._handleResponse`, as every
+  /// other `ApiService` endpoint, e.g. [getCarDetail]'s F-01 fix), transport
+  /// failures (`TimeoutException`, `SocketException`, etc.) propagate
+  /// unwrapped, and a malformed/unexpectedly-shaped 200 body throws instead
+  /// of silently returning `[]`. The existing 401 -> refresh -> retry
+  /// behavior is unchanged.
   static Future<List<String>> getCarContactPhones(String carId) async {
     final id = Uri.encodeComponent(carId.trim());
     if (id.isEmpty) return const [];
-    try {
-      await ApiService._ensureTokenLoaded();
-      final url = Uri.parse('${ApiService.baseUrl}/cars/$id/contact');
-      var headers = ApiService._getHeaders(includeAuth: true);
-      var response = await ApiService._httpClient
+    await ApiService._ensureTokenLoaded();
+    final url = Uri.parse('${ApiService.baseUrl}/cars/$id/contact');
+    var headers = ApiService._getHeaders(includeAuth: true);
+    var response = await ApiService._httpClient
+        .get(url, headers: headers)
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode == 401 &&
+        await ApiService._refreshAccessToken()) {
+      headers = ApiService._getHeaders(includeAuth: true);
+      response = await ApiService._httpClient
           .get(url, headers: headers)
           .timeout(const Duration(seconds: 15));
-      if (response.statusCode == 401 &&
-          await ApiService._refreshAccessToken()) {
-        headers = ApiService._getHeaders(includeAuth: true);
-        response = await ApiService._httpClient
-            .get(url, headers: headers)
-            .timeout(const Duration(seconds: 15));
-      }
-      if (response.statusCode != 200 || response.body.isEmpty) {
-        return const [];
-      }
-      final decoded = json.decode(response.body);
-      if (decoded is! Map) return const [];
-      final map = Map<String, dynamic>.from(
-        decoded.map((k, v) => MapEntry(k.toString(), v)),
-      );
-      final out = <String>[];
-      final seen = <String>{};
-      void add(String? raw) {
-        final trimmed = (raw ?? '').trim();
-        if (trimmed.isEmpty) return;
-        final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
-        if (digits.isEmpty || seen.contains(digits)) return;
-        seen.add(digits);
-        out.add(trimmed);
-      }
-
-      final list = map['contact_phones'];
-      if (list is List) {
-        for (final item in list) {
-          add(item?.toString());
-        }
-      }
-      add(map['contact_phone']?.toString());
-      return out;
-    } catch (_) {
-      return const [];
     }
+    // Throws ApiException for any non-2xx (401/429/5xx/...); throws
+    // FormatException/TypeError for a malformed or non-Map 200 body;
+    // never silently returns [] for a failure (F-07).
+    final map = ApiService._handleResponse(response);
+    final out = <String>[];
+    final seen = <String>{};
+    void add(String? raw) {
+      final trimmed = (raw ?? '').trim();
+      if (trimmed.isEmpty) return;
+      final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+      if (digits.isEmpty || seen.contains(digits)) return;
+      seen.add(digits);
+      out.add(trimmed);
+    }
+
+    final list = map['contact_phones'];
+    if (list is List) {
+      for (final item in list) {
+        add(item?.toString());
+      }
+    }
+    add(map['contact_phone']?.toString());
+    return out;
   }
 
   static Future<Map<String, dynamic>> createCar(

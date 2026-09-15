@@ -97,9 +97,23 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
 
   Future<void> _callSeller() async {
     if (!await _confirmScamSafetyWarning()) return;
-    final String? raw = await _pickSellerPhone(
-      title: AppLocalizations.of(context)!.callSeller,
-    );
+    String? raw;
+    try {
+      raw = await _pickSellerPhone(
+        title: AppLocalizations.of(context)!.callSeller,
+      );
+    } catch (e) {
+      // F-07: a network/server/rate-limit/auth failure while revealing the
+      // phone must be distinguishable from "seller has no phone" — show the
+      // existing generic error presentation instead of the "not available"
+      // message below.
+      if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(userErrorText(context, e, fallback: loc.error))),
+      );
+      return;
+    }
     final String digits = (raw ?? '').replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) {
       if (mounted) {
@@ -125,9 +139,21 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
   Future<void> _openWhatsAppToSeller() async {
     if (car == null) return;
     if (!await _confirmScamSafetyWarning()) return;
-    final String? raw = await _pickSellerPhone(
-      title: AppLocalizations.of(context)!.chatOnWhatsApp,
-    );
+    String? raw;
+    try {
+      raw = await _pickSellerPhone(
+        title: AppLocalizations.of(context)!.chatOnWhatsApp,
+      );
+    } catch (e) {
+      // F-07: same distinction as _callSeller above — do not fall through
+      // to the "not available" message on a genuine failure.
+      if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(userErrorText(context, e, fallback: loc.error))),
+      );
+      return;
+    }
     if (raw == null || raw.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

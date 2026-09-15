@@ -37,6 +37,15 @@ class FakeApiServer {
   static final Map<String, http.Response Function()> carDetailOverrides =
       <String, http.Response Function()>{};
 
+  /// F-07 regression coverage: per-car-id override for
+  /// `GET /api/cars/<id>/contact` (the contact-phone-reveal endpoint).
+  /// Return an [http.Response] to force a specific status/body (401/429/
+  /// 500/malformed), or throw to simulate a transport failure or timeout.
+  /// Falls through to the default stub (a car with no contact phone) when a
+  /// car id has no override. Cleared by [stop].
+  static final Map<String, http.Response Function()> carContactOverrides =
+      <String, http.Response Function()>{};
+
   /// F-04 regression coverage: when set, `GET /api/user/favorites` awaits
   /// this completer instead of returning the default stub immediately, so
   /// tests can deterministically control exactly when the response resolves
@@ -100,6 +109,7 @@ class FakeApiServer {
     emptySavedSearches = false;
     carDetailFetchCount = 0;
     carDetailOverrides.clear();
+    carContactOverrides.clear();
     favoritesResponseGate = null;
     carDetailResponseGate = null;
     authRefreshGate = null;
@@ -228,6 +238,18 @@ class FakeApiServer {
       }
       if (segments.length > 1 && segments[1] == 'report' && method == 'POST') {
         return _json(201, {'message': 'Report submitted. Thank you.'});
+      }
+      if (segments.length > 1 && segments[1] == 'contact' && method == 'GET') {
+        final override = carContactOverrides[id];
+        if (override != null) {
+          return override();
+        }
+        // Default: a genuine, error-free "no contact phone" response.
+        return _json(200, {
+          'contact_phone': null,
+          'contact_phones': <dynamic>[],
+          'has_contact_phone': false,
+        });
       }
       if (method == 'GET' && segments.length == 1) {
         carDetailFetchCount++;
