@@ -214,6 +214,7 @@ mixin _SellStep5Build on _SellStep5Logic {
           });
           return;
         }
+        if (!mounted) return;
       }
       final List<String> required = [
         'brand',
@@ -301,7 +302,7 @@ mixin _SellStep5Build on _SellStep5Logic {
             updatedCar['public_id'] = submittedId;
           }
         }
-        if (!context.mounted) return;
+        if (!mounted) return;
         try {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -354,7 +355,7 @@ mixin _SellStep5Build on _SellStep5Logic {
         }
       }
 
-      if (!context.mounted) return;
+      if (!mounted) return;
       final pending = submitResult?.pendingReview ?? false;
       try {
         ScaffoldMessenger.of(context).showSnackBar(

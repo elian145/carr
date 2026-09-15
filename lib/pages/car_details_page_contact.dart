@@ -97,6 +97,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
 
   Future<void> _callSeller() async {
     if (!await _confirmScamSafetyWarning()) return;
+    if (!mounted) return;
     String? raw;
     try {
       raw = await _pickSellerPhone(
@@ -139,6 +140,7 @@ mixin _CarDetailsPageContact on _CarDetailsPageInit {
   Future<void> _openWhatsAppToSeller() async {
     if (car == null) return;
     if (!await _confirmScamSafetyWarning()) return;
+    if (!mounted) return;
     String? raw;
     try {
       raw = await _pickSellerPhone(

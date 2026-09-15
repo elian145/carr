@@ -408,6 +408,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
 
   Future<void> _saveSearchFromFiltersPage(BuildContext pageContext) async {
     if (!await _prepareSavedSearchAction(pageContext)) return;
+    if (!pageContext.mounted) return;
     await _saveCurrentSearch(
       forceNotify: false,
       openSavedSearches: false,
@@ -417,6 +418,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
 
   Future<void> _enableSearchMatchAlerts(BuildContext pageContext) async {
     if (!await _prepareSavedSearchAction(pageContext)) return;
+    if (!pageContext.mounted) return;
     await _saveCurrentSearch(
       forceNotify: true,
       openSavedSearches: false,
