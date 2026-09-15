@@ -9,6 +9,20 @@ abstract class _CarDetailsPageFields extends State<CarDetailsPage> {
   /// `_CarDetailsPageBuild` renders instead of always showing the generic
   /// "Car not found" text. Null while loading or once [car] is populated.
   _CarDetailLoadError? loadError;
+
+  /// Cancels the in-flight `ApiService.getCarDetail` call started by the
+  /// most recent [_CarDetailsPageLoad._loadCar] (F-06). Cancelled from
+  /// `dispose()` and re-created at the start of each `_loadCar()` call
+  /// (including retries), so at most one load is ever "live" at a time.
+  ApiCancelToken? _loadCarCancelToken;
+
+  /// Exposed only so widget tests can assert that disposing this page
+  /// cancels its in-flight car-detail load (F-06). Not read by production
+  /// code — mirrors the existing `@visibleForTesting` debug-hook convention
+  /// (e.g. `AuthGuard.debugTerminalTimeoutOverride`).
+  @visibleForTesting
+  ApiCancelToken? get debugLoadCarCancelToken => _loadCarCancelToken;
+
   bool isFavorite = false;
   List<Map<String, dynamic>> similarCars = [];
   bool loadingSimilar = false;

@@ -35,6 +35,12 @@ class _CarDetailLoadError {
 
 mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
   Future<void> _loadCar() async {
+    // F-06: abort any still-in-flight load from a previous call (e.g. an
+    // earlier retry) before starting a new one, and genuinely cancel this
+    // one on `dispose()`.
+    _loadCarCancelToken?.cancel();
+    final cancelToken = ApiCancelToken();
+    _loadCarCancelToken = cancelToken;
     try {
       final sp = await SharedPreferences.getInstance();
       final cacheKey = 'cache_car_${widget.carId}';
@@ -43,7 +49,17 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
       Map<String, dynamic>? loaded;
       _CarDetailLoadError? failure;
       try {
-        loaded = await ApiService.getCarDetail(widget.carId);
+        loaded = await ApiService.getCarDetail(
+          widget.carId,
+          cancelToken: cancelToken,
+        );
+      } on ApiCancelledException {
+        // Intentional cancellation (e.g. the user navigated away before
+        // this load finished) — not a network/server failure. Silently
+        // stop: no setState, no loadError, no non-fatal log, no cache
+        // write, and no retry. Distinguishable from every real failure by
+        // exception type (see ApiCancelledException's own doc comment).
+        return;
       } on ApiException catch (e, st) {
         if (e.statusCode == 404) {
           // Definitive "not found" — expected/benign (deleted or never

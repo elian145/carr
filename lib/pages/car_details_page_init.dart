@@ -16,6 +16,9 @@ mixin _CarDetailsPageInit on _CarDetailsPageLoad {
 
   @override
   void dispose() {
+    // F-06: genuinely abort a still-in-flight car-detail load instead of
+    // leaving it running in the background after this screen is gone.
+    _loadCarCancelToken?.cancel();
     try {
       ListingLayoutPrefs.columns.removeListener(_onListingLayoutChanged);
     } catch (e, st) { logNonFatal(e, st); }

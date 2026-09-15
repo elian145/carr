@@ -29,17 +29,69 @@ abstract final class _ApiServiceHttp {
     }
   }
 
+  /// Sends a single GET using `package:http`'s [http.Abortable] support
+  /// (F-06), and translates its [http.RequestAbortedException] into this
+  /// repo's own [ApiCancelledException] so callers never need to import or
+  /// match on a `package:http`-internal type.
+  ///
+  /// This is the ONLY change to how GET requests are constructed for F-06:
+  /// headers, auth, the caller's own timeout wrapping, caching, and retry
+  /// logic all live in the callers below, unchanged. Omitting [cancelToken]
+  /// (the default) preserves the exact prior behavior — an
+  /// [http.AbortableRequest] with a `null` `abortTrigger` sends and behaves
+  /// identically to a plain, non-abortable GET; only the call shape
+  /// (`Client.send` + `Response.fromStream` instead of the `Client.get`
+  /// convenience method) differs, which is required to attach an
+  /// `abortTrigger` at all.
+  ///
+  /// If [cancelToken] is already cancelled, this throws
+  /// [ApiCancelledException] immediately, without making any network call.
+  static Future<http.Response> _sendAbortableGet(
+    Uri url, {
+    Map<String, String>? headers,
+    ApiCancelToken? cancelToken,
+  }) async {
+    if (cancelToken != null && cancelToken.isCancelled) {
+      throw const ApiCancelledException();
+    }
+    final request = http.AbortableRequest(
+      'GET',
+      url,
+      abortTrigger: cancelToken?.whenCancelled,
+    );
+    if (headers != null) request.headers.addAll(headers);
+    try {
+      final streamed = await ApiService._httpClient.send(request);
+      return await http.Response.fromStream(streamed);
+    } on http.RequestAbortedException {
+      throw const ApiCancelledException();
+    }
+  }
+
   /// GET with adaptive timeout; on cold-start timeout, return fresh-enough cache.
+  ///
+  /// [cancelToken] is optional (F-06); when provided and cancelled, the
+  /// underlying request is genuinely aborted (see [_sendAbortableGet]) and
+  /// the resulting [ApiCancelledException] propagates straight out of this
+  /// function — it is never a [TimeoutException], so it is never caught by
+  /// the `on TimeoutException` branch below, and therefore an aborted GET
+  /// is never cached and never falls back to the stale-while-revalidate
+  /// cache or the cold-start retry.
   static Future<http.Response> _getWithAdaptiveTimeout(
     Uri url, {
     Map<String, String>? headers,
     Duration? timeout,
+    ApiCancelToken? cancelToken,
   }) async {
     final cacheKey = url.toString();
     final effectiveTimeout = timeout ?? ApiService.requestTimeout();
     Future<http.Response> sendOnce(Duration t) {
       return _withStaleClientRetry(
-        () => ApiService._httpClient.get(url, headers: headers).timeout(t),
+        () => _sendAbortableGet(
+          url,
+          headers: headers,
+          cancelToken: cancelToken,
+        ).timeout(t),
       );
     }
 

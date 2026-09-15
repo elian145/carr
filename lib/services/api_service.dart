@@ -8,10 +8,12 @@ import '../shared/auth/token_store.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/phone/phone_normalizer.dart';
 import 'api_exception.dart';
+import 'api_cancel_token.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
 
 export 'api_exception.dart';
+export 'api_cancel_token.dart';
 
 part 'api/api_http.dart';
 part 'api/api_auth.dart';
@@ -454,8 +456,14 @@ class ApiService {
   static Future<Map<String, dynamic>> getCar(String carId) =>
       _ApiServiceListings.getCar(carId);
 
-  static Future<Map<String, dynamic>> getCarDetail(String carId) =>
-      _ApiServiceListings.getCarDetail(carId);
+  /// [cancelToken], when provided, allows the caller to abort this specific
+  /// GET (e.g. from a screen's `dispose()`) — see F-06. Genuinely aborts the
+  /// underlying HTTP request (not just this `Future`); omit it to keep the
+  /// exact prior behavior unchanged.
+  static Future<Map<String, dynamic>> getCarDetail(
+    String carId, {
+    ApiCancelToken? cancelToken,
+  }) => _ApiServiceListings.getCarDetail(carId, cancelToken: cancelToken);
 
   static Future<List<String>> getCarContactPhones(String carId) =>
       _ApiServiceListings.getCarContactPhones(carId);

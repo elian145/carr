@@ -44,6 +44,19 @@ class FakeApiServer {
   /// [stop].
   static Completer<http.Response>? favoritesResponseGate;
 
+  /// F-06 regression coverage: when set, `GET /api/cars/<id>` (car-detail)
+  /// awaits this completer instead of returning the default/overridden
+  /// stub immediately, so tests can deterministically control exactly when
+  /// the response resolves relative to widget disposal/cancellation (no
+  /// timers/sleeps involved). Cleared by [stop].
+  static Completer<http.Response>? carDetailResponseGate;
+
+  /// F-06 regression coverage: when set, `POST /api/auth/refresh` awaits
+  /// this completer instead of returning the default stub immediately, so
+  /// a test can cancel a token specifically while a 401-triggered refresh
+  /// is still in flight. Cleared by [stop].
+  static Completer<http.Response>? authRefreshGate;
+
   /// BE-18: records the `Idempotency-Key` header (or null if absent) seen on
   /// every `POST /api/chat/<id>/send*` request, in call order. Used to prove
   /// the same key is threaded through from `ApiService`/`OutgoingChatSendService`
@@ -88,6 +101,8 @@ class FakeApiServer {
     carDetailFetchCount = 0;
     carDetailOverrides.clear();
     favoritesResponseGate = null;
+    carDetailResponseGate = null;
+    authRefreshGate = null;
     chatSendIdempotencyKeys.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
@@ -95,12 +110,27 @@ class FakeApiServer {
   }
 
   static Future<http.Response> _handle(http.Request request) async {
+    final method = request.method.toUpperCase();
+    final path = request.url.path;
+
     final gate = favoritesResponseGate;
-    if (gate != null &&
-        request.method.toUpperCase() == 'GET' &&
-        request.url.path == '/api/user/favorites') {
+    if (gate != null && method == 'GET' && path == '/api/user/favorites') {
       return gate.future;
     }
+
+    final carGate = carDetailResponseGate;
+    if (carGate != null &&
+        method == 'GET' &&
+        path.startsWith('/api/cars/') &&
+        path.substring('/api/cars/'.length).split('/').length == 1) {
+      return carGate.future;
+    }
+
+    final refreshGate = authRefreshGate;
+    if (refreshGate != null && method == 'POST' && path == '/api/auth/refresh') {
+      return refreshGate.future;
+    }
+
     final response = _responseFor(request);
     return response ?? http.Response('Not found', 404);
   }

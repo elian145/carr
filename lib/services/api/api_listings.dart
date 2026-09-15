@@ -97,7 +97,21 @@ abstract final class _ApiServiceListings {
   ///
   /// Fixes F-01: this previously caught every failure and returned `null`,
   /// making network/401/500 indistinguishable from a deleted listing.
-  static Future<Map<String, dynamic>> getCarDetail(String carId) async {
+  ///
+  /// [cancelToken] (F-06) is optional and GET-only: passing one lets a
+  /// caller (e.g. a car-detail screen's `dispose()`) genuinely abort the
+  /// underlying HTTP request instead of merely stopping its own `await`.
+  /// Cancelling throws [ApiCancelledException] — distinct from every other
+  /// failure this method can throw — instead of an [ApiException]/
+  /// [FormatException]/transport error. Omitting it preserves the exact
+  /// prior behavior. If cancellation happens while a 401 refresh is
+  /// in-flight, the retried GET is skipped entirely (never dispatched) and
+  /// [ApiCancelledException] is thrown instead — the refresh itself is left
+  /// to complete or fail on its own and never triggers a logout by itself.
+  static Future<Map<String, dynamic>> getCarDetail(
+    String carId, {
+    ApiCancelToken? cancelToken,
+  }) async {
     final id = Uri.encodeComponent(carId.trim());
     if (id.isEmpty) {
       throw ApiException(statusCode: 404, message: 'Invalid car id');
@@ -105,15 +119,24 @@ abstract final class _ApiServiceListings {
     await ApiService._ensureTokenLoaded();
     final url = Uri.parse('${ApiService.baseUrl}/cars/$id');
     var headers = ApiService._getHeaders(includeAuth: true);
-    var response = await ApiService._httpClient
-        .get(url, headers: headers)
-        .timeout(const Duration(seconds: 20));
+    var response = await _ApiServiceHttp._sendAbortableGet(
+      url,
+      headers: headers,
+      cancelToken: cancelToken,
+    ).timeout(const Duration(seconds: 20));
     if (response.statusCode == 401 &&
         await ApiService._refreshAccessToken()) {
+      // If cancellation landed while the refresh call above was in-flight,
+      // `_sendAbortableGet`'s own pre-flight check (see its doc comment)
+      // rejects before this retried GET is ever dispatched — the refresh
+      // itself is left to complete or fail on its own and never triggers a
+      // logout by itself.
       headers = ApiService._getHeaders(includeAuth: true);
-      response = await ApiService._httpClient
-          .get(url, headers: headers)
-          .timeout(const Duration(seconds: 20));
+      response = await _ApiServiceHttp._sendAbortableGet(
+        url,
+        headers: headers,
+        cancelToken: cancelToken,
+      ).timeout(const Duration(seconds: 20));
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
       // Reuses the shared status -> ApiException mapping (404/401/429/5xx),
