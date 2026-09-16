@@ -73,6 +73,23 @@ class FakeApiServer {
   /// on it.
   static final List<String?> chatSendIdempotencyKeys = [];
 
+  /// F-11 regression coverage: per-call override for
+  /// `POST /api/chat/<id>/send*` (any send variant — text/image/video/
+  /// audio/media_group all contain `/send` in their path). Called with the
+  /// raw request (including whatever `Idempotency-Key` header it carried)
+  /// and the 0-based call index for this endpoint (across all send
+  /// variants) seen so far. Return an [http.Response] to force a specific
+  /// status/body, return `null` to fall through to the default 201 success
+  /// stub, or throw to simulate a transport failure/timeout. Cleared by
+  /// [stop].
+  static http.Response? Function(http.Request request, int callIndex)?
+      chatSendOverride;
+
+  /// Number of `POST /api/chat/<id>/send*` requests observed so far (any
+  /// variant). Reset by [stop]. Useful to assert exactly how many attempts
+  /// a retry made.
+  static int chatSendCallCount = 0;
+
   /// When set, protected routes reject requests whose Authorization header
   /// is not `Bearer <token>`.
   static void expectBearer(String? token) {
@@ -114,6 +131,8 @@ class FakeApiServer {
     carDetailResponseGate = null;
     authRefreshGate = null;
     chatSendIdempotencyKeys.clear();
+    chatSendOverride = null;
+    chatSendCallCount = 0;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -306,6 +325,14 @@ class FakeApiServer {
           request.headers['Idempotency-Key'] ??
               request.headers['idempotency-key'],
         );
+        // F-11: let a test force a specific status/throw for this call.
+        final override = chatSendOverride;
+        final callIndex = chatSendCallCount;
+        chatSendCallCount++;
+        if (override != null) {
+          final forced = override(request, callIndex);
+          if (forced != null) return forced;
+        }
         var content = 'stub';
         try {
           if (request.body.isNotEmpty) {
