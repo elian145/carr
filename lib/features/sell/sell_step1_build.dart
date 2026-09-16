@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep1Build on _SellStep1Pickers {
+mixin _SellStep1Build on _SellStep1PickersTrim {
   Widget _sellStep1YearSection() {
     final loc = AppLocalizations.of(context)!;
     final style = filterDialogStyle(context);

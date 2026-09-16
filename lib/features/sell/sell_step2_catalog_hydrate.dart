@@ -261,10 +261,4 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
     selectedDamagedParts = null;
     selectedVin = null;
   }
-
-  void _dismissKeyboard() {
-    // Clear focus from mileage field
-    _mileageFocusNode.unfocus();
-    FocusScope.of(context).unfocus();
-  }
 }

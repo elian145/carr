@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:car_listing_app/features/home/home_filter_chip_style.dart';
 import 'package:car_listing_app/features/home/home_filter_chips.dart';
 import 'package:car_listing_app/features/home/home_filters_query.dart';
-import 'package:car_listing_app/features/home/home_multi_select_filter.dart';
 
 void main() {
   const labels = HomeFilterChipLabels(

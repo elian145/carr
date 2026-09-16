@@ -299,25 +299,6 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
 
   List<String> getAvailableColors() => colors;
 
-  // Helper method to get a valid drive type value for dropdown (dropdown uses '' for Any)
-  String? _getValidDriveTypeValue() {
-    return homeValidDropdownSelection(
-      selected: selectedDriveType,
-      available: getAvailableDriveTypes(),
-    );
-  }
-
-  String _getValidRegionSpecsValue() {
-    return homeFilterNormalizeRegionSpecs(selectedRegionSpecs) ?? '';
-  }
-
-  String? _getValidFuelTypeValue() {
-    return homeValidDropdownSelection(
-      selected: selectedFuelType,
-      available: getAvailableFuelTypes(),
-    );
-  }
-
   String _getValidCylinderCountValue() {
     return homeValidDropdownSelection(
       selected: selectedCylinderCount,

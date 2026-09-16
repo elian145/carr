@@ -70,12 +70,6 @@ mixin _SellStep1Catalog on _SellStep1Fields {
     setState(() {});
   }
 
-  void _dismissKeyboard() {
-    // Clear focus from year field
-    _yearFocusNode.unfocus();
-    FocusScope.of(context).unfocus();
-  }
-
   void _schedDsRefresh() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _refreshDsPicker();

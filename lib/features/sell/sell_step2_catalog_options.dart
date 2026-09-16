@@ -255,37 +255,4 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
     parentState.carData['vin'] = selectedVin;
     unawaited(parentState._saveSellDraftSnapshot());
   }
-
-  Color _colorFromName(String colorName) {
-    switch (colorName.toLowerCase()) {
-      case 'black':
-        return Colors.black;
-      case 'white':
-        return Colors.white;
-      case 'silver':
-        return Colors.grey[300]!;
-      case 'gray':
-        return Colors.grey[600]!;
-      case 'red':
-        return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'yellow':
-        return Colors.yellow;
-      case 'orange':
-        return Colors.orange;
-      case 'purple':
-        return Colors.purple;
-      case 'brown':
-        return Colors.brown;
-      case 'beige':
-        return const Color(0xFFF5F5DC);
-      case 'gold':
-        return const Color(0xFFFFD700);
-      default:
-        return Colors.grey;
-    }
-  }
 }

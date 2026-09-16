@@ -1,6 +1,6 @@
 part of 'home_flow.dart';
 
-mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersSpecsDrive {
+mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersColor {
   List<Widget> _moreFiltersSpecsEngineWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,

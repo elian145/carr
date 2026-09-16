@@ -24,7 +24,6 @@ import 'dart:ui' as ui;
 import '../../theme/app_colors.dart';
 
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as services;
 import 'package:http/http.dart' as http;
@@ -33,7 +32,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../app/app_api_base.dart' show getApiBase;
 import '../../app/widgets/listing_galleries.dart';
 import '../../app/widgets/listing_network_image.dart';
 import '../../data/car_catalog.dart';
@@ -65,7 +63,6 @@ import '../../shared/i18n/listing_value_labels.dart';
 import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/i18n/region_spec_labels.dart' as region_spec_labels;
 import '../../shared/listings/body_type_assets.dart' as body_type_assets;
-import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
 import '../../shared/listings/plate_city_assets.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
 import '../../shared/listings/listing_uploaded_ago.dart';
@@ -98,9 +95,7 @@ import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_wizard_steps.dart';
 import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
-import 'sell_brand_slug.dart';
 import '../../shared/listings/listing_status.dart';
-import '../../shared/ui/brand_logo_image.dart';
 import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
@@ -115,13 +110,11 @@ part 'sell_car_page.dart';
 part 'sell_step1_fields.dart';
 part 'sell_step1_catalog.dart';
 part 'sell_step1_pickers_trim.dart';
-part 'sell_step1_pickers.dart';
 part 'sell_step1_build.dart';
 part 'sell_step1.dart';
 part 'sell_step2_fields.dart';
 part 'sell_step2_catalog_options.dart';
 part 'sell_step2_catalog_hydrate.dart';
-part 'sell_step2_pickers.dart';
 part 'sell_step2_build_core.dart';
 part 'sell_step2_build_appearance.dart';
 part 'sell_step2_build_mechanical.dart';
@@ -132,7 +125,6 @@ part 'sell_step3_build_details.dart';
 part 'sell_step3_build.dart';
 part 'sell_step3_fields.dart';
 part 'sell_step3_catalog.dart';
-part 'sell_step3_pickers.dart';
 part 'sell_step3.dart';
 part 'sell_step4_build_intro.dart';
 part 'sell_step4_build_photos.dart';
@@ -257,12 +249,6 @@ bool isValidCarRegionSpecCode(String? s) =>
 String _translatePlateTypeLegacy(BuildContext context, String raw) =>
     translatePlateTypeLabel(context, raw);
 
-String _tapToSelectTextGlobal(BuildContext context) =>
-    AppLocalizations.of(context)!.tapToSelect;
-
-String _quickSellTextGlobal(BuildContext context) =>
-    AppLocalizations.of(context)!.quickSell;
-
 String carRegionSpecDisplayLabelLocalized(BuildContext context, String code) =>
     region_spec_labels.carRegionSpecDisplayLabelLocalized(context, code);
 
@@ -329,12 +315,6 @@ NumberFormat _decimalFormatterGlobal(BuildContext context) =>
 
 String _engineSizeSellRowLabel(BuildContext context, String raw) =>
     engineSizeSellRowLabel(context, raw);
-
-String _getBodyTypeAsset(String bodyType) =>
-    body_type_assets.getBodyTypeAsset(bodyType);
-
-Widget _buildBodyTypeImage(String assetPath) =>
-    body_type_image.buildBodyTypeImage(assetPath);
 
 Widget buildFancySelector(
   BuildContext context, {
@@ -455,12 +435,6 @@ Widget buildSellWizardNavRow(
     child: row,
   );
 }
-
-String _photosRequiredTitleGlobal(BuildContext context) =>
-    AppLocalizations.of(context)!.photosRequired;
-
-String _videosOptionalTitleGlobal(BuildContext context) =>
-    AppLocalizations.of(context)!.videosOptional;
 
 String _pleaseSelectPhotoTextGlobal(BuildContext context) =>
     pleaseSelectPhotoText(context);

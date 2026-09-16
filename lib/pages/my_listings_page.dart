@@ -9,7 +9,6 @@ import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../shared/errors/user_error_text.dart';
-import '../shared/debug/app_log.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';

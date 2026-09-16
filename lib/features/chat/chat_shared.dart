@@ -20,20 +20,6 @@ Color _peerBubbleTextMuted(BuildContext context) =>
 Color _peerBubbleBorderColor(BuildContext context) =>
     peerBubbleBorderColor(context);
 
-String _digitsLocalized(BuildContext context, String input) {
-  final code = Localizations.localeOf(context).languageCode;
-  if (code == 'ar' || code == 'ku' || code == 'ckb') {
-    const western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    var out = input;
-    for (int i = 0; i < western.length; i++) {
-      out = out.replaceAll(western[i], eastern[i]);
-    }
-    return out;
-  }
-  return input;
-}
-
 Widget buildChatListingAvatar(
   BuildContext context, {
   String? imageUrl,

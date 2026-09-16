@@ -28,14 +28,6 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
     }
   }
 
-  String _homeBrandFilterLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    final brand = _homeSelectedBrand;
-    if (brand == null) return loc.any;
-    final localized = CarNameTranslations.getLocalizedBrand(context, brand);
-    return localized.isNotEmpty ? localized : brand;
-  }
-
   void _homeSetSelectedBodyTypes(List<String> types) {
     selectedBodyType = homeFilterEncodeList(types);
   }
@@ -47,16 +39,6 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
     }
     _homeSetSelectedBodyTypes(
       homeFilterToggleValue(_homeSelectedBodyTypes, bodyType),
-    );
-  }
-
-  String _homeBodyTypeFilterLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return homeFilterSummaryLabel(
-      loc.any,
-      _homeSelectedBodyTypes,
-      (bodyType) =>
-          _translateValueGlobal(context, bodyType) ?? bodyType,
     );
   }
 
@@ -94,177 +76,7 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
     );
   }
 
-  String _homeFuelTypeFilterLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return homeFilterSummaryLabel(
-      loc.any,
-      _homeSelectedFuelTypes,
-      (fuel) => _translateValueGlobal(context, fuel) ?? fuel,
-    );
-  }
-
-  String _homeDriveTypeFilterLabel(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-    return homeFilterSummaryLabel(
-      loc.any,
-      _homeSelectedDriveTypes,
-      (drive) => _translateValueGlobal(context, drive) ?? drive,
-    );
-  }
-
-  Future<List<String>?> _showHomeMultiValuePickerDialog(
-    BuildContext context, {
-    required String title,
-    required List<String> options,
-    required List<String> initialSelection,
-    String Function(BuildContext, String)? labelForOption,
-  }) {
-    final selectable =
-        options.where((o) => o != 'Any').toList(growable: false);
-    return showDialog<List<String>>(
-      context: context,
-      builder: (dialogContext) {
-        final selected = Set<String>.from(initialSelection);
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            void toggle(String value) {
-              setDialogState(() {
-                if (selected.contains(value)) {
-                  selected.remove(value);
-                } else {
-                  selected.add(value);
-                }
-              });
-            }
-
-            return Dialog(
-              backgroundColor: Colors.grey[900]?.withValues(alpha: 0.98),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ResponsiveDialogBody(
-                maxHeight: AppResponsive.dialogMaxHeight(context, fraction: 0.75),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: AppFonts.orbitron(
-                              color: AppColors.brandOrange,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.pop(dialogContext, <String>[]),
-                          child: Text(AppLocalizations.of(context)!.any),
-                        ),
-                        IconButton(
-                          tooltip: AppLocalizations.of(dialogContext)!.close,
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.pop(dialogContext),
-                        ),
-                      ],
-                    ),
-                    if (selected.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          AppLocalizations.of(context)!.filterSelectedCount((selected.length).toString()),
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: selectable.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final value = selectable[index];
-                          final isSelected = selected.contains(value);
-                          final label = labelForOption?.call(context, value) ??
-                              _translateValueGlobal(context, value) ??
-                              value;
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => toggle(value),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.brandOrange
-                                      : Colors.white24,
-                                  width: isSelected ? 2 : 1,
-                                ),
-                              ),
-                              child: Text(
-                                label,
-                                style: AppFonts.orbitron(
-                                  fontSize: 14,
-                                  color: isSelected
-                                      ? AppColors.brandOrange
-                                      : Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => Navigator.pop(
-                          dialogContext,
-                          selected.toList(),
-                        ),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.brandOrange,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.apply,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   bool _hasActiveFilters() => _homeFiltersSnapshot().hasActiveFilters;
-
-  // Helper method to clear all filters
-  void _clearAllFilters() {
-    setState(() {
-      _resetAllFiltersInMemory();
-      _syncHomeFilterTextControllersFromSelection();
-    });
-    unawaited(_clearFiltersOnly());
-    onFilterChanged();
-  }
 
   // Helper method to clear a specific filter
   void _clearFilter(String filterType) {
@@ -283,30 +95,6 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
       context,
       filters: _homeFiltersSnapshot(),
       onClear: _clearFilter,
-    );
-  }
-
-  void _showSearchDialog(BuildContext context) {
-    showHomeBrandModelSearchDialog(
-      context: context,
-      brands: homeBrands,
-      models: models,
-      onBrandSelected: (brand) {
-        setState(() {
-          _homeSetSelectedBrand(brand);
-          clearFiltersOnVehicleChange();
-        });
-        onFilterChanged();
-      },
-      onModelSelected: (brand, model) {
-        setState(() {
-          _homeSetSelectedBrand(brand);
-          selectedModel = model;
-          selectedTrim = null;
-          clearFiltersOnVehicleChange();
-        });
-        onFilterChanged();
-      },
     );
   }
 }

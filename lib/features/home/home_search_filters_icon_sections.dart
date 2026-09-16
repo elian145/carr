@@ -14,46 +14,6 @@ mixin _HomePageSearchFiltersIconSections on _HomePageSearchFiltersBrand {
         selected;
   }
 
-  double _searchIconTileHeight({
-    required bool textOnly,
-    double? imageHeight,
-    bool compactImageTile = false,
-  }) {
-    if (textOnly) return 52;
-    final slotHeight = imageHeight ?? 26;
-    // Tile uses symmetric vertical padding; selected state adds a 2px border.
-    final verticalPadding = compactImageTile
-        ? 16.0
-        : (slotHeight > 80 ? 16.0 : 20.0);
-    const gap = 6.0;
-    const labelHeight = 15.0;
-    const borderAllowance = 4.0;
-    return verticalPadding + slotHeight + gap + labelHeight + borderAllowance;
-  }
-
-  double _searchIconScrollListHeight({
-    required bool textOnly,
-    required List<String> options,
-    double? tileImageHeight,
-    String? Function(String option)? imageAssetForOption,
-    Widget? Function(String option)? graphicForOption,
-    bool compactImageTile = false,
-  }) {
-    if (textOnly) return 52;
-    var maxHeight = 0.0;
-    for (final option in options) {
-      final hasGraphic = graphicForOption != null ||
-          (imageAssetForOption?.call(option) != null);
-      final height = _searchIconTileHeight(
-        textOnly: false,
-        imageHeight: hasGraphic ? tileImageHeight : null,
-        compactImageTile: compactImageTile,
-      );
-      if (height > maxHeight) maxHeight = height;
-    }
-    return maxHeight + 4;
-  }
-
   Widget _searchIconOptionTile(
     BuildContext context, {
     required bool selected,

@@ -1,6 +1,6 @@
 part of 'home_flow.dart';
 
-mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
+mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersMileageRange {
   List<Widget> _moreFiltersColorWidgets(
     BuildContext context,
     void Function(void Function()) setStateDialog,
@@ -271,16 +271,4 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersBodyType {
       if (!narrowMenu) const SizedBox(height: 12),
     ];
   }
-}
-
-mixin _HomePageMoreFiltersBodyColor on _HomePageMoreFiltersColor {
-  List<Widget> _moreFiltersBodyColorWidgets(
-    BuildContext context,
-    void Function(void Function()) setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) => [
-    ..._moreFiltersFuelWidgets(context, setStateDialog, style),
-    ..._moreFiltersBodyTypeWidgets(context, setStateDialog, style),
-    ..._moreFiltersColorWidgets(context, setStateDialog, style),
-  ];
 }

@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep2BuildCore on _SellStep2Pickers {
+mixin _SellStep2BuildCore on _SellStep2CatalogHydrate {
   Widget _mileageUnitOption({
     required String value,
     required String label,

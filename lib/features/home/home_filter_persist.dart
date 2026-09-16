@@ -117,49 +117,6 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     _syncHomeFilterTextControllersFromSelection();
   }
 
-  /// Clears only fields shown in the More Filters dialog (not brand/model/trim/sort).
-  Future<void> _resetFiltersFromMoreFiltersDialog(
-    VoidCallback refreshDialog,
-  ) async {
-    setState(() {
-      selectedMinPrice = null;
-      selectedMaxPrice = null;
-      selectedMinYear = null;
-      selectedMaxYear = null;
-      selectedMinMileage = null;
-      selectedMaxMileage = null;
-      selectedCondition = null;
-      selectedTransmission = null;
-      selectedFuelType = null;
-      selectedBodyType = null;
-      selectedColor = null;
-      selectedDriveType = null;
-      selectedRegionSpecs = null;
-      selectedCylinderCount = null;
-      selectedSeating = null;
-      selectedEngineSize = null;
-      selectedPlateType = null;
-      selectedPlateCity = null;
-      selectedTitleStatus = null;
-      selectedDamagedParts = null;
-      _moreFiltersDialogFieldGeneration++;
-      isPriceDropdown = true;
-      isYearDropdown = true;
-      isMileageDropdown = true;
-      isEngineSizeDropdown = true;
-      _minPriceController.clear();
-      _maxPriceController.clear();
-      _minYearController.clear();
-      _maxYearController.clear();
-      _minMileageController.clear();
-      _maxMileageController.clear();
-      _engineSizeController.clear();
-    });
-    refreshDialog();
-    await _persistFilters();
-    onFilterChanged();
-  }
-
   Future<void> _restoreFilters() async {
     try {
       // Drop disk leftovers from older builds; filters are session-memory only.
@@ -268,16 +225,6 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
       final sp = await SharedPreferences.getInstance();
       await sp.remove(_HomePageFields._filtersKey);
       await sp.remove(_HomePageFields._sellFiltersKey);
-    } catch (e, st) { logNonFatal(e, st); }
-  }
-
-  Future<void> _clearFiltersOnly() async {
-    try {
-      _HomeFilterSessionPersistence.clear();
-      await _removeLegacyPersistedHomeFilters();
-      final sp = await SharedPreferences.getInstance();
-      await sp.remove(_HomePageFields._savedSearchesKey);
-      // Don't clear cached car data to improve reliability
     } catch (e, st) { logNonFatal(e, st); }
   }
 

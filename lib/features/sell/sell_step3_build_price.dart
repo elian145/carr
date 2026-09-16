@@ -1,6 +1,6 @@
 part of 'sell_flow.dart';
 
-mixin _SellStep3BuildPrice on _SellStep3Pickers {
+mixin _SellStep3BuildPrice on _SellStep3Catalog {
   List<Widget> _sellStep3BuildPriceSection() {
     final style = filterDialogStyle(context);
     final priceLabel = AppLocalizations.of(context)!.priceSelectedCurrencyOptional(selectedCurrency);

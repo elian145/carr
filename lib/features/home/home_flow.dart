@@ -40,7 +40,6 @@ import '../../data/car_catalog_loader.dart';
 import '../../data/car_name_translations.dart';
 import '../../features/home/home_feed_client_sort.dart';
 import '../../features/home/home_feed_errors.dart';
-import '../../features/home/home_brand_model_search.dart';
 import '../../features/home/home_filter_chip_bar.dart';
 import '../../features/home/home_filter_chip_style.dart';
 import '../../features/home/home_filter_chips.dart';
@@ -70,7 +69,6 @@ import '../../shared/i18n/locale_formatting.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 import '../../shared/i18n/sort_api_mapping.dart';
 import '../../shared/listings/body_type_assets.dart' as body_type_assets;
-import '../../shared/listings/body_type_image_widget.dart' as body_type_image;
 import '../../shared/listings/listing_events.dart';
 import '../../shared/listings/listing_featured_mix.dart';
 import '../../shared/listings/listing_identity.dart';
@@ -97,20 +95,12 @@ part 'home_filter_persist.dart';
 part 'home_filter_logic.dart';
 part 'home_fetch_core.dart';
 part 'home_fetch.dart';
-part 'home_filter_bar_brand.dart';
-part 'home_filter_bar.dart';
 part 'home_more_filters_vehicle.dart';
 part 'home_more_filters_price.dart';
 part 'home_more_filters_year.dart';
 part 'home_more_filters_mileage_range.dart';
-part 'home_more_filters_mileage.dart';
-part 'home_more_filters_fuel.dart';
-part 'home_more_filters_body_type.dart';
 part 'home_more_filters_body_color.dart';
-part 'home_more_filters_mid.dart';
-part 'home_more_filters_specs_drive.dart';
 part 'home_more_filters_specs_engine.dart';
-part 'home_more_filters_specs.dart';
 part 'home_more_filters_dialog.dart';
 part 'home_search_filters_cards.dart';
 part 'home_search_filters_brand.dart';
@@ -134,12 +124,6 @@ Map<String, String> get globalBodyTypeAssetMap =>
 set globalBodyTypeAssetMap(Map<String, String> value) =>
     body_type_assets.globalBodyTypeAssetMap = value;
 
-String _getBodyTypeAsset(String bodyType) =>
-    body_type_assets.getBodyTypeAsset(bodyType);
-
-Widget _buildBodyTypeImage(String assetPath) =>
-    body_type_image.buildBodyTypeImage(assetPath);
-
 String _translatePlateTypeLegacy(BuildContext context, String raw) =>
     translatePlateTypeLabel(context, raw);
 
@@ -151,10 +135,6 @@ String _localizeDigitsGlobal(BuildContext context, String input) =>
 
 String _formatCurrencyGlobal(BuildContext context, dynamic raw) =>
     formatCurrency(context, raw);
-
-String _cancelTextGlobal(BuildContext context) {
-  return AppLocalizations.of(context)!.cancelAction;
-}
 
 String? _convertSortToApiValue(BuildContext context, String? sortOption) =>
     convertSortToApiValue(context, sortOption);
