@@ -11,7 +11,10 @@ mixin _ChatConversationMessageActions on _ChatConversationMedia {
 
   void _recallPendingMessageToComposer(ChatMessage message) {
     if (!message.isPending || !mounted) return;
-    OutgoingChatSendService.instance.discardInFlightMedia(message.id);
+    // F-11: also drop any durable pending-retry record so a recalled send
+    // is never silently re-attempted in the background after the user has
+    // taken it back into the composer.
+    OutgoingChatSendService.instance.discardPendingSend(message.id);
     _discardedOutgoingIds.add(message.id);
     final caption = _isAttachmentPlaceholder(message.content)
         ? ''
@@ -90,7 +93,8 @@ mixin _ChatConversationMessageActions on _ChatConversationMedia {
         ),
       );
       if (confirmed != true || !mounted) return;
-      OutgoingChatSendService.instance.discardInFlightMedia(message.id);
+      // F-11: also drop any durable pending-retry record for this message.
+      OutgoingChatSendService.instance.discardPendingSend(message.id);
       setState(() {
         _discardedOutgoingIds.add(message.id);
         _removeMessage(message.id);

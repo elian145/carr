@@ -16,6 +16,27 @@ mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
     }
   }
 
+  /// F-11: reload durable pending sends for this conversation (persisted on
+  /// a retryable REST-send failure — see `OutgoingChatSendService`) and
+  /// merge any not already represented in [_messages] as pending bubbles,
+  /// so a failed send that outlived the page/app is visible again instead
+  /// of silently vanishing. Call inside a `setState` after awaiting
+  /// [ChatPendingSendPrefs.loadForConversation] separately (this method
+  /// itself is synchronous so it can be used directly inside `setState`).
+  void _mergePersistedPendingSends(List<ChatPendingSendRecord> records) {
+    if (records.isEmpty) return;
+    var added = false;
+    for (final record in records) {
+      if (_discardedOutgoingIds.contains(record.id)) continue;
+      if (_messages.any((m) => m.id == record.id)) continue;
+      _messages.add(_pendingMessageFromPersistedRecord(record));
+      added = true;
+    }
+    if (added) {
+      _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    }
+  }
+
   List<ChatMediaEntry> _chatMediaEntries() {
     final authService = Provider.of<AuthService>(context, listen: false);
     final myId = authService.userId ?? '';

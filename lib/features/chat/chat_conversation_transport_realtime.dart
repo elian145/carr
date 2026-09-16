@@ -136,6 +136,22 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
         _hasMoreMessages = result['has_more'] == true;
         _refreshCarListingMeta();
       });
+      // F-11: rehydrate any durable pending sends for this conversation
+      // (a REST send that failed with a retryable error before this page
+      // was reopened — possibly after an app restart) and kick off a
+      // bounded recovery attempt for them.
+      final persistedPending =
+          await ChatPendingSendPrefs.loadForConversation(widget.carId);
+      if (!mounted) return;
+      if (persistedPending.isNotEmpty) {
+        setState(() {
+          _mergePersistedPendingSends(persistedPending);
+        });
+      }
+      unawaited(
+        OutgoingChatSendService.instance
+            .recoverPendingSends(conversationId: widget.carId),
+      );
       await _ensureCarListingMeta();
       _scrollToBottom(jump: true);
     } catch (e, st) {

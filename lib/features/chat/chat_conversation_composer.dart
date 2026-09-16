@@ -168,12 +168,34 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
         return;
       }
 
+      // F-11: give the REST send a visible, durably-recoverable pending
+      // bubble (same treatment as media/audio sends) instead of only
+      // relying on composer-restoration, which disappears if this page is
+      // no longer mounted by the time the send resolves.
+      final pendingMessage = _buildPendingTextMessage(
+        content,
+        listingPreview: listingPreviewForMessage,
+        replyToMessageId: replyingToMessageId,
+      );
+      if (mounted) {
+        setState(() {
+          _messages.add(pendingMessage);
+          _pendingInitialListingContext = false;
+          _replyingToMessage = null;
+        });
+        _scrollToBottom();
+      } else {
+        _pendingInitialListingContext = false;
+        _replyingToMessage = null;
+      }
+
       OutgoingChatSendService.instance.startTextMessageSend(
         conversationId: widget.carId,
         content: content,
         receiverId: widget.receiverId,
         listingPreview: listingPreviewForMessage,
         replyToMessageId: replyingToMessageId,
+        tempMessageId: pendingMessage.id,
       );
       deferIsSendingReset = true;
       return;

@@ -28,6 +28,26 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
     _composerScrollController.jumpTo(0);
   }
 
+  void _showSendFailedSnackBar(Object? errorCause, String? error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          userErrorText(
+            context,
+            errorCause ?? Exception(error ?? 'Send failed'),
+            fallback: chatText(
+              context,
+              'Send failed',
+              ar: 'فشل الإرسال',
+              ku: 'ناردن سەرکەوتوو نەبوو',
+            ),
+          ),
+        ),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   void _onOutgoingChatSendEvent(OutgoingChatSendEvent e) {
     if (e.conversationId != widget.carId || !mounted) return;
 
@@ -51,6 +71,15 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
             _pendingInitialListingContext = false;
           });
           _scrollToBottom();
+        } else if (!e.success &&
+            e.tempMessageId != null &&
+            e.pendingRetry) {
+          // F-11: retryable failure — a durable pending record was already
+          // persisted by OutgoingChatSendService. Keep the pending bubble
+          // as-is (still shown as "sending") instead of restoring the
+          // composer/draft attachments, since a background retry is
+          // expected; do not spam a "Send failed" snackbar for what may
+          // just be a brief connectivity blip.
         } else if (!e.success && e.tempMessageId != null) {
           setState(() {
             _removeMessage(e.tempMessageId!);
@@ -69,35 +98,40 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
               _scrollComposerToTop();
             });
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                userErrorText(
-                  context,
-                  e.errorCause ?? Exception(e.error ?? 'Send failed'),
-                  fallback: chatText(
-                    context,
-                    'Send failed',
-                    ar: 'فشل الإرسال',
-                    ku: 'ناردن سەرکەوتوو نەبوو',
-                  ),
-                ),
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showSendFailedSnackBar(e.errorCause, e.error);
         }
         finishSending();
         break;
       case OutgoingChatSendKind.textMessage:
         if (e.success && e.messageJson != null) {
           setState(() {
-            _addMessageIfMissing(ChatMessage.fromJson(e.messageJson!));
+            if (e.tempMessageId != null &&
+                _discardedOutgoingIds.remove(e.tempMessageId!)) {
+              // User recalled the pending message before this resolved.
+            } else if (e.tempMessageId != null) {
+              _replaceMessage(
+                e.tempMessageId!,
+                ChatMessage.fromJson(e.messageJson!),
+              );
+            } else {
+              _addMessageIfMissing(ChatMessage.fromJson(e.messageJson!));
+            }
             _pendingInitialListingContext = false;
             _replyingToMessage = null;
           });
           _scrollToBottom();
+        } else if (e.pendingRetry) {
+          // F-11: retryable failure — keep the pending text bubble as-is;
+          // a durable record was persisted and will be retried
+          // automatically (connectivity return / chat reopen / app
+          // restart), reusing the same idempotency key. Do not restore the
+          // composer (that would let the user create a second, duplicate
+          // logical send) and do not show a noisy error for a transient
+          // blip.
         } else {
+          if (e.tempMessageId != null) {
+            setState(() => _removeMessage(e.tempMessageId!));
+          }
           final t = e.restoredPlainText ?? '';
           if (t.isNotEmpty) {
             _messageController.text = t;
@@ -108,23 +142,7 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
               _scrollComposerToTop();
             });
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                userErrorText(
-                  context,
-                  e.errorCause ?? Exception(e.error ?? 'Send failed'),
-                  fallback: chatText(
-                    context,
-                    'Send failed',
-                    ar: 'فشل الإرسال',
-                    ku: 'ناردن سەرکەوتوو نەبوو',
-                  ),
-                ),
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showSendFailedSnackBar(e.errorCause, e.error);
         }
         finishSending();
         break;
@@ -143,27 +161,16 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
             _pendingInitialListingContext = false;
           });
           _scrollToBottom();
+        } else if (!e.success &&
+            e.tempMessageId != null &&
+            e.pendingRetry) {
+          // F-11: retryable failure — keep the pending audio bubble; a
+          // durable record was persisted for automatic background retry.
         } else if (!e.success && e.tempMessageId != null) {
           setState(() {
             _removeMessage(e.tempMessageId!);
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                userErrorText(
-                  context,
-                  e.errorCause ?? Exception(e.error ?? 'Send failed'),
-                  fallback: chatText(
-                    context,
-                    'Send failed',
-                    ar: 'فشل الإرسال',
-                    ku: 'ناردن سەرکەوتوو نەبوو',
-                  ),
-                ),
-              ),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showSendFailedSnackBar(e.errorCause, e.error);
         }
         finishSending();
         break;

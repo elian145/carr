@@ -16,6 +16,7 @@ import '../services/push_notification_service.dart'
 import '../state/locale_controller.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../features/sell/sell_pending_media_resume.dart';
+import '../services/outgoing_chat_send_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
 import '../shared/ui/device_performance.dart';
@@ -142,6 +143,9 @@ void _runZonedApp(Widget app) {
         try {
           await ConnectivityService.instance.start();
         } catch (e, st) { logNonFatal(e, st); }
+        // F-11: retry durable pending chat sends automatically once
+        // connectivity returns (bounded — see OutgoingChatSendService).
+        OutgoingChatSendService.instance.hookConnectivityRecovery();
         try {
           await LocaleController.loadSavedLocale();
         } catch (e, st) { logNonFatal(e, st); }
@@ -154,6 +158,11 @@ void _runZonedApp(Widget app) {
         // Finish media upload if the app was killed mid-submit.
         try {
           await SellPendingMediaResume.tryResume();
+        } catch (e, st) { logNonFatal(e, st); }
+        // F-11: resume any durable pending chat sends left over from a
+        // prior app session (retryable REST-send failures only).
+        try {
+          await OutgoingChatSendService.instance.recoverPendingSends();
         } catch (e, st) { logNonFatal(e, st); }
         // Auth must finish before syncing FCM token to the backend.
         try {

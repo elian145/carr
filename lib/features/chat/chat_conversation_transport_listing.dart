@@ -177,6 +177,129 @@ mixin _ChatConversationTransportListing on _ChatConversationTransportSync {
     );
   }
 
+  /// F-11: pending bubble for an outgoing REST text send, mirroring the
+  /// existing media/audio pending-bubble builders above so a failed-but-
+  /// retryable text send has the same "still sending" visual affordance
+  /// (and the same recall-to-composer manual-retry path via
+  /// `_showMessageActions`/`_recallPendingMessageToComposer`) instead of
+  /// vanishing with no trace when the page isn't mounted at failure time.
+  ChatMessage _buildPendingTextMessage(
+    String content, {
+    Map<String, dynamic>? listingPreview,
+    String? replyToMessageId,
+    String? tempId,
+    DateTime? createdAt,
+  }) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final replyTo = _replyingToMessage;
+    final effectiveReplyId = replyToMessageId ?? replyTo?.id;
+    final effectiveReply = replyTo == null
+        ? null
+        : ChatReplyPreview(
+            id: replyTo.id,
+            senderId: replyTo.senderId,
+            senderName: replyTo.senderName,
+            content: _replyPreviewLabel(replyTo),
+            messageType: replyTo.messageType,
+            isDeleted: replyTo.isDeleted,
+          );
+    return ChatMessage(
+      id: tempId ?? _temporaryMessageId(),
+      senderId: authService.userId ?? '',
+      receiverId: widget.receiverId ?? '',
+      carId: widget.carId,
+      replyToMessageId: effectiveReplyId,
+      replyToMessage: effectiveReply,
+      content: content,
+      messageType: 'text',
+      listingPreview: listingPreview,
+      isRead: false,
+      createdAt: createdAt ?? DateTime.now(),
+      isPending: true,
+    );
+  }
+
+  /// F-11: rebuild a pending bubble from a durable [ChatPendingSendRecord]
+  /// (recovered after reopening the chat / app restart), without any
+  /// dependency on the current composer's reply/listing-preview state —
+  /// everything needed was captured on the record itself at failure time.
+  ChatMessage _pendingMessageFromPersistedRecord(ChatPendingSendRecord record) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    ChatReplyPreview? replyPreview;
+    final replyJson = record.replyToPreviewJson;
+    if (replyJson != null && replyJson.isNotEmpty) {
+      replyPreview = ChatReplyPreview.fromJson(replyJson);
+    }
+    final createdAt = DateTime.fromMillisecondsSinceEpoch(record.createdAt);
+    final senderId = authService.userId ?? '';
+    final receiverId = record.receiverId ?? widget.receiverId ?? '';
+
+    if (record.kind == 'mediaGroup') {
+      final files = record.filePaths.map((p) => XFile(p)).toList();
+      return ChatMessage(
+        id: record.id,
+        senderId: senderId,
+        receiverId: receiverId,
+        carId: record.conversationId,
+        replyToMessageId: record.replyToMessageId,
+        replyToMessage: replyPreview,
+        content: _mediaGroupPlaceholder(files.length),
+        messageType: 'media_group',
+        attachments: files
+            .map(
+              (file) => ChatAttachment(
+                type: _chatIsVideoFile(file) ? 'video' : 'image',
+                url: file.path,
+                isLocal: true,
+              ),
+            )
+            .toList(),
+        listingPreview: record.listingPreview,
+        isRead: false,
+        createdAt: createdAt,
+        isPending: true,
+      );
+    }
+    if (record.kind == 'audio') {
+      final path = record.filePaths.isNotEmpty ? record.filePaths.first : '';
+      return ChatMessage(
+        id: record.id,
+        senderId: senderId,
+        receiverId: receiverId,
+        carId: record.conversationId,
+        replyToMessageId: record.replyToMessageId,
+        replyToMessage: replyPreview,
+        content: _chatText(
+          context,
+          '[Voice message]',
+          ar: '[رسالة صوتية]',
+          ku: '[پەیامی دەنگی]',
+        ),
+        messageType: 'audio',
+        attachmentUrl: path,
+        attachments: [ChatAttachment(type: 'audio', url: path, isLocal: true)],
+        isRead: false,
+        createdAt: createdAt,
+        isPending: true,
+      );
+    }
+    // Default / 'text'.
+    return ChatMessage(
+      id: record.id,
+      senderId: senderId,
+      receiverId: receiverId,
+      carId: record.conversationId,
+      replyToMessageId: record.replyToMessageId,
+      replyToMessage: replyPreview,
+      content: record.content ?? '',
+      messageType: 'text',
+      listingPreview: record.listingPreview,
+      isRead: false,
+      createdAt: createdAt,
+      isPending: true,
+    );
+  }
+
   Map<String, dynamic>? _replyToPreviewJson(ChatMessage? message) {
     if (message == null) return null;
     return ChatReplyPreview(

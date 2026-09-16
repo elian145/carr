@@ -123,10 +123,11 @@ mixin _SellStep5Logic on _SellStep5Fields {
         // Block dispose/async draft saves for the create→upload window so a
         // killed submit cannot leave both a listing and a draft.
         parentState?._beginSubmitDraftHandoff();
+        final createIdemKey = SellPendingMediaPrefs.createIdempotencyKey(draftId);
         try {
-          final created = await ApiService.createCar(
+          final created = await _createCarWithBoundedRetry(
             payload,
-            idempotencyKey: SellPendingMediaPrefs.createIdempotencyKey(draftId),
+            createIdemKey,
           );
           final carObj = unwrapCarApiPayload(created);
           carId = listingPrimaryId(carObj);
@@ -274,6 +275,41 @@ mixin _SellStep5Logic on _SellStep5Fields {
     } catch (e) {
       rethrow;
     }
+  }
+
+  /// F-11: a tiny bounded retry (2 attempts total) around the single
+  /// `POST /api/cars` create call, reusing the SAME [idempotencyKey] for
+  /// every attempt. Safe because the backend replays the first successful
+  /// response for a repeated key within its TTL (`kk/idempotency.py`), so a
+  /// retry can never create a second listing. Only transient network/
+  /// transport failures are retried (mirrors
+  /// `SellListingMediaUpload`'s own transient-error classification for the
+  /// media-upload step); validation/auth/permission failures still surface
+  /// immediately, unchanged from before this fix.
+  Future<Map<String, dynamic>> _createCarWithBoundedRetry(
+    Map<String, dynamic> payload,
+    String idempotencyKey,
+  ) async {
+    const maxAttempts = 2;
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await ApiService.createCar(
+          payload,
+          idempotencyKey: idempotencyKey,
+        );
+      } catch (e) {
+        final retryable = e is TimeoutException ||
+            (e is ApiException &&
+                const {408, 429, 500, 502, 503, 504}
+                    .contains(e.statusCode)) ||
+            isTransientNetworkError(e);
+        if (!retryable || attempt >= maxAttempts) rethrow;
+        appLog('sell_step5: retrying createCar after transient error: $e');
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+    }
+    // Unreachable: the loop above always returns or rethrows.
+    throw StateError('createCar retry loop exited unexpectedly');
   }
 
   Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {
