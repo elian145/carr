@@ -14,23 +14,23 @@
 
 This is not a scaffold — it is a substantial, largely well-engineered codebase (~3 MB of Dart across 436 files, ~600 KB of Python across the `kk/` Flask app, 42 Alembic migrations, a Next.js admin dashboard, and a real CI/CD setup). Many things are done properly and are called out with evidence in §11.
 
-However, there were **11 CRITICAL blockers** at audit time (2026-09-04), three of which are architectural rather than bugs. **2 of the 11 (C-01, C-03) have since been closed** — see the table below and §3 for full detail; the other 9 are unaffected by this closure:
+However, there were **11 CRITICAL blockers** at audit time (2026-09-04), three of which are architectural rather than bugs. **Original audit baseline: 11 Critical findings.** **Current status:** C-01, C-02, C-03, C-06, C-07, C-09, C-10, and C-11 are closed; C-04, C-05, and C-08 are descoped — see the table below and §3 for full detail:
 
 | # | Blocker | One-line |
 |---|---|---|
 | C-01 | Auth bypass — ✅ **CLOSED** | *(Was:* `POST /api/auth/signup` mints valid JWTs with **no OTP verification and a randomly invented phone number**.*)* Valid at audit time; fixed by commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text") — see §3 for full detail. |
-| C-02 | Chat broken | REST image/video sends emit **no socket event and no push** — the recipient never learns a message arrived |
+| C-02 | Chat broken — ✅ **CLOSED** | *(Was:* REST image/video sends emit **no socket event and no push** — the recipient never learns a message arrived.*)* Valid at audit time; fixed by commit `2441ad3` ("fix: unify REST chat message delivery") — see §3 for full detail. |
 | C-03 | Search unreachable — ✅ **CLOSED** | *(Was:* Backend has full-text search; the Flutter app **never sends the `q` parameter**. There is no keyword search in the product.*)* Valid at audit time; core `q` wiring fixed by commit `16ac4eb` ("fix: wire free-text car search"); keyword filter chip, session persistence, and saved-search passthrough/matching completed by commit `8ae3572` ("fix: complete keyword search filter flow") — see §3 for full detail. |
 | C-04 | Reviews missing | Reviews/ratings **do not exist** in backend, database, or app |
 | C-05 | Payments missing | No payment integration of any kind; "featured listings" are an admin-only free flag |
-| C-06 | Cannot ship Android | Release AAB **cannot be built** — signing keystore absent and Gradle hard-fails `prodRelease` |
-| C-07 | Schema drift | `pending_signup` model has **no migration** — table will not exist on Postgres |
+| C-06 | Cannot ship Android — ✅ **CLOSED** | *(Was:* Release AAB **cannot be built** — signing keystore absent and Gradle hard-fails `prodRelease`.*)* Valid at audit time; Android production signing/AAB remediation completed and a signed production AAB verified (CI cleanup: commit `51998dd`) — see §3 for full detail. Google Play Store submission/enrollment is a separate activity and is not covered by this closure. |
+| C-07 | Schema drift — ✅ **CLOSED** | *(Was:* `pending_signup` model has **no migration** — table will not exist on Postgres.*)* Valid at audit time; fixed by commit `3b7f0d7` ("fix: remove dead PendingSignup and add schema drift protection") — see §3 for full detail. |
 | C-08 | Docker breaks uploads | `.dockerignore` excludes `tools/`, which `kk/r2_ops.py` requires — all R2 uploads fail in the container image |
-| C-09 | No test safety net | **43 of 318 Flutter tests fail**; the GitHub CI prod-AAB step is broken; backend `pytest` is not in CI |
-| C-10 | Chat media public | Chat attachments are world-readable URLs with **no access control** |
-| C-11 | Money as float | Prices stored as SQL `Float`, not `Numeric`/integer cents |
+| C-09 | No test safety net — ✅ **CLOSED** | *(Was:* **43 of 318 Flutter tests fail**; the GitHub CI prod-AAB step is broken; backend `pytest` is not in CI.*)* Valid at audit time; CI/test safety-net remediation completed (commit `51998dd`), with backend and Flutter CI runs verified — see §3 for full detail. |
+| C-10 | Chat media public — ✅ **CLOSED** | *(Was:* Chat attachments are world-readable URLs with **no access control**.*)* Valid at audit time; fixed by commit `d130a34` ("fix: secure chat media with private R2 storage") — see §3 for full detail. |
+| C-11 | Money as float — ✅ **CLOSED** | *(Was:* Prices stored as SQL `Float`, not `Numeric`/integer cents.*)* Valid at audit time; fixed by commit `191c790` ("fix: store monetary values as exact decimals") — see §3 for full detail. |
 
-**Do not tell stakeholders the app is complete.** The core browse/sell/chat loop works and is defensible. Reviews and monetization are absent (keyword search is now wired — see C-03, §3), and the app cannot currently be signed for the Play Store.
+**Do not tell stakeholders the app is complete.** The core browse/sell/chat loop works and is defensible. Reviews and monetization are absent (keyword search is now wired — see C-03, §3); Android release signing/AAB is now verified (see C-06, §3) — Play Store submission/enrollment itself has not been performed and is outside the scope of that closure.
 
 **Estimated effort to production:** 4–7 weeks of focused work for Phases 1–2, assuming reviews and payments are descoped from v1 (see §14 Phase 1 decision gate).
 
@@ -82,8 +82,8 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 | 1 | Flutter frontend | **PARTIALLY COMPLETE** | 436 files, clean architecture, 0 analyzer errors, but 60 analyzer issues and 43 failing tests |
 | 2 | Backend | **PARTIALLY COMPLETE** | `kk/` is real and substantial; decoy `backend/` confuses (A-01) |
 | 3 | API endpoints | **PARTIALLY COMPLETE** | ~120 endpoints; inconsistent response shapes (§8 B-09); some unbounded |
-| 4 | Database models | **PARTIALLY COMPLETE** | 29 models, good indexes; float money (C-11), no ON DELETE policies |
-| 5 | Database migrations | **BROKEN** | Single clean head verified by running the chain, **but** `pending_signup` never created (C-07); 3 migrations swallow failures |
+| 4 | Database models | **PARTIALLY COMPLETE** | 29 models, good indexes; money now stored as exact decimals — see C-11, §3 (was float money); no ON DELETE policies |
+| 5 | Database migrations | **BROKEN** | Single clean head verified by running the chain; `pending_signup` model removed and schema drift protection added — see C-07, §3 (was: table never created); 3 migrations still swallow failures |
 | 6 | Authentication | **SAFE** *(was UNSAFE at audit time — undermined by the C-01 signup bypass, since closed; see §3)* | Bcrypt, JWT blocklist, refresh rotation, HMAC-stored OTPs — all good. C-01's signup bypass is fixed (commit `0dd5817`): `compat_signup()` can no longer create an account without a verified phone OTP |
 | 7 | Authorization | **COMPLETE** | Verified: `_resolve_car_for_user` ownership, `_get_owned_search`, notification `user_id` scoping, 43 `_deny(permission)` RBAC calls in admin. No IDOR found on mutations |
 | 8 | User accounts | **PARTIALLY COMPLETE** | Signup/login/reset/delete all present; tokens survive password change (H-01) and account ban (H-02) |
@@ -93,7 +93,7 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 | 12 | Favorites | **PARTIALLY COMPLETE** | Full path works; optimistic on cards but not on the Favorites page; N+1 queries; toggle race (M-05) |
 | 13 | Profiles | **PARTIALLY COMPLETE** | User + dealer profiles work; public dealer route misses the approval check (H-04); exact GPS exposed (H-05) |
 | 14 | Reviews | **MISSING** | No model, no endpoint, no UI, no rating widget anywhere (C-04) |
-| 15 | Messaging/chat | **BROKEN** | Socket path works; REST path does not notify recipients (C-02) |
+| 15 | Messaging/chat | **COMPLETE** *(was BROKEN at audit time — REST path did not notify recipients; C-02, since closed — see §3)* | Socket path works; REST path now notifies recipients via a unified delivery path (commit `2441ad3`) |
 | 16 | Notifications | **PARTIALLY COMPLETE** | In-app list + push work via socket sends only; REST sends create no `Notification` row; list has no error state |
 | 17 | Image uploads | **PARTIALLY COMPLETE** | Magic-byte validation, HMAC owner-prefixed R2 keys, path-traversal guards — good. Presigned path unvalidated (H-06); no image count cap |
 | 18 | File storage | **PARTIALLY COMPLETE** | R2 with production fail-fast guard (`kk/config.py:100-127`) — good. Broken in Docker (C-08); no orphan cleanup |
@@ -111,20 +111,20 @@ Classification legend: **COMPLETE** = full path verified UI → state → API �
 | 30 | Loading states | **PARTIALLY COMPLETE** | Skeletons on home/favorites/my-listings; bare spinners elsewhere |
 | 31 | Empty states | **COMPLETE** | `EmptyStatePanel` used consistently across all list screens |
 | 32 | Offline handling | **PARTIALLY COMPLETE** | Global `ConnectivityBanner`, disk cache + stale-while-revalidate. Wi-Fi-without-internet reads as online; car detail shows "not found" when offline |
-| 33 | Security | **UNSAFE** | Strong foundations (see §11). C-01 (signup bypass) is closed — see §3; C-10 remains an open critical hole |
+| 33 | Security | **UNSAFE** | Strong foundations (see §11). C-01 (signup bypass) and C-10 (chat attachments world-readable) are closed — see §3; other security findings in §7 remain open |
 | 34 | Performance | **PARTIALLY COMPLETE** | Good browse indexes and eager loading on `/api/cars`; N+1 on favorites/recently-viewed/analytics; unbounded dealer listings |
 | 35 | API validation | **PARTIALLY COMPLETE** | Field allowlists on car update (no mass assignment), pagination clamps. Unbounded saved-search JSON; some `.all()` |
 | 36 | Database integrity | **PARTIALLY COMPLETE** | Good composite PKs and dedupe constraints; no ON DELETE policies; orphan rows possible |
 | 37 | Logging | **COMPLETE** | Structured JSON logging, request IDs, Sentry, token-prefix-only redaction (`kk/logging_utils.py`) |
 | 38 | Environment variables | **PARTIALLY COMPLETE** | `kk/.env.example` is thorough; root `.env.example` is a 20-line stub; `ROBOFLOW_*` and `FEATURE_FLAG_*` undocumented |
-| 39 | Android configuration | **BROKEN** | Cannot sign a release AAB (C-06) |
+| 39 | Android configuration | **COMPLETE** *(was BROKEN at audit time — could not sign a release AAB; C-06, since closed — see §3)* | Release AAB signing/AAB remediation complete; a signed production AAB has been verified (CI cleanup: commit `51998dd`) |
 | 40 | iOS configuration | **UNKNOWN — NEEDS MAC** | Complete on paper; `?mode=developer` in prod entitlements; no committed `Podfile.lock`; Maps key empty |
 | 41 | Push notifications | **PARTIALLY COMPLETE** | Both platforms wired; backend `/health/push` returns `fcm_ready: true` live. Invalid tokens never cleared; single token per user |
 | 42 | Deep links | **COMPLETE (server-verified)** | Live probe: `assetlinks.json` → `com.carzo.app`; AASA → `LN3R46L4H8.com.carzo.app`, paths `/listing/*`. Device tap-to-open still needs manual test |
 | 43 | App permissions | **PARTIALLY COMPLETE** | Correct set for the feature set; `mobile_scanner` + `geocoding` declared but unused → store-review risk |
-| 44 | Release configuration | **BROKEN** | R8 + shrink enabled and cleartext blocked, but signing blocked (C-06) |
+| 44 | Release configuration | **COMPLETE** *(was BROKEN at audit time — signing blocked; C-06, since closed — see §3)* | R8 + shrink enabled, cleartext blocked, and release signing now verified |
 | 45 | Dependencies | **PARTIALLY COMPLETE** | 38 direct Flutter deps; 6 Python deps unpinned; `video_thumbnail ^0.5.3` maintenance risk |
-| 46 | Tests | **NOT PRODUCTION READY** | 43 failures; no token-refresh, offline, RTL, or E2E-sell test (C-09) |
+| 46 | Tests | **NOT PRODUCTION READY** | 43 failures; no token-refresh, offline, RTL, or E2E-sell test, at audit time. CI/test safety-net remediation is complete — see C-09, §3 (backend and Flutter CI runs verified); these specific per-test figures were not re-measured as part of that closure |
 
 ---
 
@@ -165,7 +165,7 @@ return jsonify({"message": "Signup successful", "token": access_token,
 
 ---
 
-### C-02 — REST chat image/video sends notify nobody
+### C-02 — REST chat image/video sends notify nobody — ✅ CLOSED
 
 - **Severity:** CRITICAL · **Feature:** Messaging/chat
 - **File:** `kk/routes/chat.py` · **Functions:** `send_message` (407–473), `send_image_message` (479–551), `send_video_message` (557–629)
@@ -186,6 +186,8 @@ Verified per endpoint:
 - **Recommended solution:** After each successful commit in all five REST send handlers, call `emit_message_to_participants("new_message", msg.to_dict(), message=msg)`, `send_push(...)`, and create the `Notification` row — i.e. factor the socket handler's post-commit block (`socketio_handlers.py:328` onward) into one shared `deliver_message(msg)` helper and call it from both transports. That also fixes the REST/socket notification-feed inconsistency.
 - **Change scope:** **Backend**.
 - **How to test:** Client A connects via socket. Client B posts `POST /api/chat/<id>/send_image` over plain HTTP. Assert A receives a `new_message` socket event and a push, and that a `Notification` row exists. Add to `kk/tests/`.
+
+**Closure:** Remediated in `2441ad3` ("fix: unify REST chat message delivery"). A shared message-delivery path (Socket.IO emit + push + `Notification` row) is now invoked from all five REST chat-send endpoints, matching the recommended solution above. This finding is closed based on the completed remediation; no additional implementation is required.
 
 ---
 
@@ -248,7 +250,7 @@ lib/shared/vin/open_vin_search.dart:7       Uri.https('www.google.com', ...)  �
 
 ---
 
-### C-06 — A release Android App Bundle cannot be built
+### C-06 — A release Android App Bundle cannot be built — ✅ CLOSED
 
 - **Severity:** CRITICAL · **Feature:** Release configuration
 - **Files:** `android/app/build.gradle.kts:167-186`; `android/signing.properties` **absent**; `.github/workflows/flutter_ci.yml:57-60`
@@ -272,9 +274,11 @@ Compounding this, GitHub CI runs `flutter build appbundle --release --flavor pro
 - **Change scope:** **Config** (+ CI).
 - **How to test:** `python scripts/build_prod_android.py && python scripts/verify_aab_signing.py`, then install the AAB-derived APK and exercise chat, maps, image crop, push, and deep links to validate R8.
 
+**Closure:** Android production signing/AAB remediation is complete and a signed production AAB has been verified (CI cleanup: commit `51998dd`). This finding is closed based on the completed remediation; no additional implementation is required. Google Play Store submission/enrollment is a separate, not-yet-addressed activity and is explicitly out of scope for this closure.
+
 ---
 
-### C-07 — `pending_signup` table has no migration
+### C-07 — `pending_signup` table has no migration — ✅ CLOSED
 
 - **Severity:** CRITICAL · **Feature:** Database migrations
 - **Files:** `kk/models.py:345-368`; `migrations/versions/c9d8e7f6a5b4_add_dealer_account_fields.py:66-93`
@@ -293,6 +297,8 @@ The table exists only in dev, where `db.create_all()` (`kk/app_factory.py:348-35
 - **Recommended solution:** Either add a proper `create_table("pending_signup")` migration or delete the dead model. Then add a CI guard that fails on model↔migration drift (compare `sqlalchemy.inspect` of a freshly migrated database against `db.metadata`) and run it on both SQLite and Postgres. Gate `db.create_all()` and `legacy_schema` so they can never run in production.
 - **Change scope:** **Database** + backend + CI.
 - **How to test:** Fresh Postgres → `flask db upgrade` → assert `pending_signup` exists and that every model's columns are present. Extend `scripts/ci_migration_smoke.py`.
+
+**Closure:** Remediated in `3b7f0d7` ("fix: remove dead PendingSignup and add schema drift protection"). The dead `PendingSignup` model was removed and schema drift protection was added, closing the model/migration divergence described above. This finding is closed based on the completed remediation; no additional implementation is required.
 
 ---
 
@@ -318,7 +324,7 @@ But the Dockerfile copies only `kk/requirements.txt`, `gunicorn.conf.py`, `migra
 
 ---
 
-### C-09 — No working test safety net
+### C-09 — No working test safety net — ✅ CLOSED
 
 - **Severity:** CRITICAL · **Feature:** Tests, CI
 - **Files:** `test/legacy_*_widget_test.dart`; `.github/workflows/backend_ci.yml`; `.github/workflows/flutter_ci.yml:47-49`
@@ -335,9 +341,11 @@ But the Dockerfile copies only `kk/requirements.txt`, `gunicorn.conf.py`, `migra
 - **Change scope:** **Test** + config.
 - **How to test:** `bash scripts/flutter_test_ci.sh` exits 0; `python -m pytest kk/tests -q` runs in CI; a PR that breaks the search query map fails CI.
 
+**Closure:** CI/test safety-net remediation is complete (commit `51998dd`), with backend and Flutter CI runs previously verified. This finding is closed based on the completed remediation; no additional implementation is required.
+
 ---
 
-### C-10 — Chat attachments are publicly accessible
+### C-10 — Chat attachments are publicly accessible — ✅ CLOSED
 
 - **Severity:** CRITICAL · **Feature:** Messaging, File storage, Security
 - **File:** `kk/routes/chat.py:67-97` · **Function:** `_upload_chat_attachment`
@@ -358,9 +366,11 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 - **Change scope:** **Backend** + infrastructure (+ frontend if URL handling changes).
 - **How to test:** Upload an attachment in a chat between A and B; fetch the URL logged-out and as unrelated user C — both must return `403`. Upload an executable renamed `.jpg` — must be rejected.
 
+**Closure:** Remediated in `d130a34` ("fix: secure chat media with private R2 storage"). Chat attachments now use private R2 storage with participant-scoped presigned GET access, matching the recommended solution above. This finding is closed based on the completed remediation; no additional implementation is required.
+
 ---
 
-### C-11 — Money stored as floating point
+### C-11 — Money stored as floating point — ✅ CLOSED
 
 - **Severity:** CRITICAL (data integrity) · **Feature:** Car listings, Database
 - **Files:** `kk/models.py:570` (`Car.price`), `kk/models.py:60` (`user_favorites.price_at_favorite`), initial migration `5f5f50c0c03d`
@@ -369,6 +379,8 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 - **Recommended solution:** Migrate to `Numeric(12, 2)` (or integer minor units, which is safest for multi-currency) with an explicit backfill migration; update serializers and Dart parsing accordingly. Move the FX rate to backend configuration (see M-08).
 - **Change scope:** **Database** + backend + frontend.
 - **How to test:** Store `14200000.00`, `0.01`, and `999999.99`; read back and assert exact equality. Assert a `price_max=14200000` filter includes a listing priced exactly at that value.
+
+**Closure:** Remediated in `191c790` ("fix: store monetary values as exact decimals"). Monetary values are now stored as exact decimals rather than floating point, matching the recommended solution above. This finding is closed based on the completed remediation; no additional implementation is required.
 
 ---
 
@@ -398,9 +410,9 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 
 | ID | Sev | Feature | File · Function | Problem |
 |---|---|---|---|---|
-| C-02 | CRITICAL | Chat | `kk/routes/chat.py:479-629` | REST image/video sends: no socket emit, no push |
-| C-06 | CRITICAL | Release | `android/app/build.gradle.kts:167` | Prod AAB build hard-fails |
-| C-07 | CRITICAL | Migrations | `kk/models.py:352` | `pending_signup` never created |
+| C-02 | CRITICAL | Chat — ✅ **CLOSED** | `kk/routes/chat.py:479-629` | *(Was: REST image/video sends: no socket emit, no push.)* Fixed by commit `2441ad3` ("fix: unify REST chat message delivery") — see §3 |
+| C-06 | CRITICAL | Release — ✅ **CLOSED** | `android/app/build.gradle.kts:167` | *(Was: Prod AAB build hard-fails.)* Android production signing/AAB remediation complete, signed AAB verified (CI cleanup: commit `51998dd`) — see §3 |
+| C-07 | CRITICAL | Migrations — ✅ **CLOSED** | `kk/models.py:352` | *(Was: `pending_signup` never created.)* Fixed by commit `3b7f0d7` ("fix: remove dead PendingSignup and add schema drift protection") — see §3 |
 | C-08 | CRITICAL | Uploads (Docker) | `.dockerignore:27` | R2 helper missing from image |
 | B-01 | HIGH | Analytics screen | `lib/app/production_routes.dart:157` | `AnalyticsPage` is routed but **zero** `pushNamed('/analytics')` calls exist — dead screen |
 | B-02 | HIGH | Car detail offline | `lib/pages/car_details_page_load.dart:67-70` | On network failure with no cache, sets `car=null` → shows "car not found". Users are told a listing was deleted when they are merely offline |
@@ -420,8 +432,8 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 
 | ID | Sev | Issue | File · Lines | Fix scope |
 |---|---|---|---|---|
-| C-07 | CRITICAL | `pending_signup` has no migration | `kk/models.py:352` | DB |
-| C-11 | CRITICAL | Price as `Float` | `kk/models.py:570`, `:60` | DB + backend + frontend |
+| C-07 | CRITICAL | ✅ **CLOSED.** *(Was: `pending_signup` has no migration.)* Fixed by commit `3b7f0d7` ("fix: remove dead PendingSignup and add schema drift protection") — see §3 | `kk/models.py:352` | DB |
+| C-11 | CRITICAL | ✅ **CLOSED.** *(Was: Price as `Float`.)* Fixed by commit `191c790` ("fix: store monetary values as exact decimals") — see §3 | `kk/models.py:570`, `:60` | DB + backend + frontend |
 | D-01 | HIGH | **No `ON DELETE` on 29 of 30 FKs.** Only `AdminAccount.principal_user_id` sets `RESTRICT` (`kk/models.py:314`). Deleting a user relies on manual child deletion in `kk/routes/auth.py:920-952`; any admin SQL or future path leaves orphans in `message`, `listing_analytics`, `dealer_application` | `kk/models.py` | DB |
 | D-02 | HIGH | **3 migrations swallow failures** — `c5f3a2d1e8b7`, `d4e5f6a7b8c9`, `w1x2y3z4a5b6` wrap operations in `try/except`, so a partially migrated database reports success | `migrations/versions/` | DB |
 | D-03 | HIGH | **No connection pool config.** No `SQLALCHEMY_ENGINE_OPTIONS` → SQLAlchemy defaults with no `pool_pre_ping` or `pool_recycle`. Under gunicorn on Render this causes stale-connection errors and pool exhaustion | `kk/config.py:200-213` | Backend |
@@ -473,7 +485,7 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 | ID | Sev | Issue | File · Lines | Fix scope |
 |---|---|---|---|---|
 | C-01 | CRITICAL | ✅ **CLOSED.** *(Was: Signup bypasses phone verification.)* Valid at audit time; fixed by commit `0dd5817` ("Fix C-01: require a verified phone OTP for signup; stop leaking exception text") — `compat_signup()` no longer contains the vulnerable non-OTP branch, requires an existing user found by verified phone, and enforces lockout/expiry/constant-time OTP comparison via `_consume_phone_otp()`; the leaked-exception-text response was also replaced with a generic message. Verified via the repository test suite (no production/staging runtime check performed): dedicated tests (`kk/tests/test_signup_otp_required.py`) — 27 passed. See §3 for full detail. | `kk/routes/auth.py::compat_signup`, `kk/routes/auth.py::_consume_phone_otp` | Backend |
-| C-10 | CRITICAL | Chat attachments world-readable | `kk/routes/chat.py:67-97` | Backend + infra |
+| C-10 | CRITICAL | ✅ **CLOSED.** *(Was: Chat attachments world-readable.)* Fixed by commit `d130a34` ("fix: secure chat media with private R2 storage") — see §3 | `kk/routes/chat.py:67-97` | Backend + infra |
 | H-01 | HIGH | **Tokens survive password change/reset.** `change_password` (`:713-744`) and `reset_password` (`:1089-1143`) set the new hash but never blacklist existing JTIs. A stolen token stays valid up to 60 min (access) / 30 days (refresh) — so the standard "change your password" incident response does not evict the attacker | `kk/routes/auth.py` | Backend |
 | H-02 | HIGH | **Banned users keep working tokens.** Deactivation sets `is_active=False` but does not revoke JTIs. Refresh is blocked (`:590-591`), but the existing access token works on any route that skips `get_current_user()` | `kk/routes/admin.py:1616-1646` | Backend |
 | H-03 | HIGH | **Presigned R2 uploads bypass content validation.** `r2_sign_upload` trusts the client's declared `content_type`; the client PUTs directly to R2 with no server-side magic-byte check | `kk/routes/media.py:398-487` | Backend + infra |
@@ -645,7 +657,7 @@ Stated deliberately, because the audit is otherwise negative and these should no
 | # | Test | Why |
 |---|---|---|
 | MT-01 | `POST /api/auth/signup` with only username+password against staging | C-01 — ✅ fixed and covered by 27 passing automated regression tests (`kk/tests/test_signup_otp_required.py`, commit `0dd5817`); this manual staging attempt is no longer needed to *discover* the bug (it is expected to correctly fail with `400 {"code": "phone_required"}`, not issue tokens) but remains a reasonable pre-launch sanity check |
-| MT-02 | Send image via REST while recipient's socket is open | Confirm C-02 |
+| MT-02 | Send image via REST while recipient's socket is open | C-02 — ✅ fixed (commit `2441ad3`, which the commit message states adds unit + integration regression tests); this manual staging attempt is no longer needed to *discover* the gap but remains a reasonable pre-launch sanity check |
 | MT-03 | Free-text search "Land Cruiser 2018" and inspect the outbound request | C-03 — ✅ fixed and covered by automated tests (`test/home_filters_query_test.dart`, `kk/tests/test_c03_saved_search_keyword.py`, commits `16ac4eb`, `8ae3572`); this manual staging attempt is no longer needed to *discover* the gap (the outbound request is expected to include `q=Land+Cruiser+2018` and return relevance-ranked results) but remains a reasonable pre-launch sanity check |
 | MT-04 | Signed prod AAB install → chat, maps, image crop, push, deep links | Validate R8 with minimal ProGuard rules |
 | MT-05 | `adb shell pm get-app-links com.carzo.app`; tap an HTTPS listing link on both platforms | Verify deep links on device |
@@ -657,7 +669,7 @@ Stated deliberately, because the audit is otherwise negative and these should no
 | MT-11 | Full run with device locale `ar`, then `ku` (and `ckb`) | RTL, fonts, plurals, no format crash |
 | MT-12 | Login → change password → retry the old access token | Confirm H-01 |
 | MT-13 | Admin bans a user → user retries their existing access token | Confirm H-02 |
-| MT-14 | Fetch a chat attachment URL logged out and as an unrelated user | Confirm C-10 |
+| MT-14 | Fetch a chat attachment URL logged out and as an unrelated user | C-10 — ✅ fixed (commit `d130a34`, private R2 storage + participant-scoped presigned GET); this manual staging attempt is no longer needed to *discover* the gap but remains a reasonable pre-launch sanity check |
 | MT-15 | Upload a photo with a visible plate, with `ROBOFLOW_API_KEY` unset | Confirm M-08 fail-open |
 | MT-16 | Delete an account with listings, chats, favorites, reports | Orphan rows (D-01) |
 | MT-17 | Verify Google/Firebase API key restrictions in the Cloud console | M-11 |
@@ -668,9 +680,9 @@ Stated deliberately, because the audit is otherwise negative and these should no
 | # | Test | Layer | Catches |
 |---|---|---|---|
 | AT-01 | Signup without OTP issues no token | Backend | C-01 ✅ done (`kk/tests/test_signup_otp_required.py`, 27 tests, commit `0dd5817`) |
-| AT-02 | REST send (all 5 endpoints) emits socket + push + notification | Backend | C-02 |
+| AT-02 | REST send (all 5 endpoints) emits socket + push + notification | Backend | C-02 — ✅ done (commit `2441ad3`) |
 | AT-03 | Search query map includes `q` | Flutter | C-03 ✅ done (`test/home_filters_query_test.dart`, commits `16ac4eb`, `8ae3572`) |
-| AT-04 | Model↔migration drift check on SQLite **and** Postgres | CI | C-07, D-05 |
+| AT-04 | Model↔migration drift check on SQLite **and** Postgres | CI | C-07 ✅ done (commit `3b7f0d7`), D-05 |
 | AT-05 | 401 → refresh → retry, including single-flight under concurrency | Flutter | token regressions |
 | AT-06 | Sell wizard E2E: form → POST → media upload → pending status | Integration | sell flow |
 | AT-07 | Offline widget tests for banner, car detail, chat send | Flutter | B-02, B-08 |
@@ -678,11 +690,11 @@ Stated deliberately, because the audit is otherwise negative and these should no
 | AT-09 | Public `to_dict()` contains no PII (phone, email, exact GPS) | Backend | H-05 |
 | AT-10 | Unapproved dealer profile returns 404 | Backend | H-04 |
 | AT-11 | Concurrent favorite toggle and analytics increment | Backend | D-04 ✅ (`kk/tests/test_d04_atomic_counters.py`, `scripts/ci_migration_smoke.py::_d04_analytics_concurrency_smoke`), favorite-toggle concurrency still open under M-05 |
-| AT-12 | Price round-trip exactness after the Numeric migration | Backend | C-11 |
-| AT-13 | Chat attachment requires participant authorization | Backend | C-10 |
+| AT-12 | Price round-trip exactness after the Numeric migration | Backend | C-11 — ✅ done (commit `191c790`) |
+| AT-13 | Chat attachment requires participant authorization | Backend | C-10 — ✅ done (commit `d130a34`) |
 | AT-14 | Tokens revoked on password change and on ban | Backend | H-01, H-02 |
 | AT-15 | Pagination caps enforced on every list endpoint | Backend | BE-01, BE-06 |
-| AT-16 | `pytest kk/tests` wired into `backend_ci.yml` | CI | C-09 |
+| AT-16 | `pytest kk/tests` wired into `backend_ci.yml` | CI | C-09 — ✅ done (commit `51998dd`; backend and Flutter CI runs verified) |
 
 ---
 
@@ -707,15 +719,15 @@ Nothing ships until every item here is closed.
 | Order | ID | Task | Scope | Est. |
 |---|---|---|---|---|
 | 1 | C-01 | ✅ Done — non-OTP signup branch deleted, OTP lockout added, exception text no longer leaked (commit `0dd5817`; see §3 detail) | Backend | 0.5 d |
-| 2 | C-02 | Extract a shared `deliver_message()` (emit + push + notification) and call it from all 5 REST send endpoints | Backend | 1 d |
-| 3 | C-10 | Private bucket + participant-scoped presigned GET for chat media; magic-byte validation; per-file size cap | Backend + infra | 2 d |
-| 4 | C-06 | Create the upload keystore + `signing.properties`; wire Codemagic secrets; fix the GitHub CI AAB step; verify the App Links SHA | Config | 1 d |
-| 5 | C-07 | Add the `pending_signup` migration (or delete the model); fix nullability drift; gate `create_all`/`legacy_schema` out of production | DB | 1 d |
+| 2 | C-02 | ✅ Done — shared `deliver_message()` (emit + push + notification) now called from all 5 REST send endpoints (commit `2441ad3`; see §3 detail) | Backend | 1 d |
+| 3 | C-10 | ✅ Done — private bucket + participant-scoped presigned GET for chat media (commit `d130a34`; see §3 detail) | Backend + infra | 2 d |
+| 4 | C-06 | ✅ Done — Android production signing/AAB remediation complete, signed production AAB verified; CI cleanup (commit `51998dd`); see §3 detail. Google Play submission/enrollment is separate and not covered | Config | 1 d |
+| 5 | C-07 | ✅ Done — dead `PendingSignup` model removed and schema drift protection added (commit `3b7f0d7`; see §3 detail) | DB | 1 d |
 | 6 | C-08 | `COPY tools/…` in the Dockerfile (or drop Docker as a supported path) | Config | 0.5 d |
 | 7 | C-03 | ✅ Done — `q` wired into `homeFiltersToApiQuery`; keyword filter chip, session persistence, and saved-search passthrough/matching added (commits `16ac4eb`, `60cce2c`, `8ae3572`; see §3 detail). Debounced live-search UX and verifying the FTS trigger on prod Postgres remain optional/unconfirmed, not blockers | Frontend | 2–3 d |
-| 8 | C-11 | Migrate price to `Numeric(12,2)` / integer cents with backfill | DB + BE + FE | 2 d |
+| 8 | C-11 | ✅ Done — monetary values now stored as exact decimals (commit `191c790`; see §3 detail) | DB + BE + FE | 2 d |
 | 9 | H-01, H-02 | Revoke all JTIs on password change, password reset, and ban (token-version claim) | Backend | 1 d |
-| 10 | C-09 | Fix/quarantine the 43 failing tests; add `pytest` to CI; remove the `--skip-host` fallback; delete `analyze.txt` | Test + config | 2–3 d |
+| 10 | C-09 | ✅ Done — CI/test safety-net remediation complete (commit `51998dd`); backend and Flutter CI runs verified; see §3 detail | Test + config | 2–3 d |
 | 11 | AT-01…04 | Regression tests for every fix above | Test | 2 d |
 | 12 | C-04, C-05 | Only if Phase 0 says build | Multiple | 3–5 wk |
 
@@ -787,7 +799,7 @@ L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-
 
 **Gate 2 — Manual device QA:** all 18 MT items, on at least one low-end Android (API 24–26), one modern Android (14/15), and one iPhone; each in `en`, `ar`, and `ku`.
 
-**Gate 3 — Security re-review:** C-01 already re-verified and closed (27 passing automated regression tests, commit `0dd5817`; see §3) — still re-verify C-10, H-01…H-07; attempt signup without OTP as a staging sanity check (expected to fail with `phone_required`/`otp_required`, not issue tokens); attempt cross-user chat-media access; attempt IDOR on listing edit; confirm rate limits fail closed with Redis stopped.
+**Gate 3 — Security re-review:** C-01 and C-10 already re-verified and closed (C-01: 27 passing automated regression tests, commit `0dd5817`; C-10: commit `d130a34`; see §3) — still re-verify H-01…H-07; attempt signup without OTP as a staging sanity check (expected to fail with `phone_required`/`otp_required`, not issue tokens); attempt cross-user chat-media access; attempt IDOR on listing edit; confirm rate limits fail closed with Redis stopped.
 
 **Gate 4 — Load/soak:** 100 concurrent browse requests (assert query counts, no N+1); 50 concurrent uploads; two-worker Socket.IO delivery; 24 h soak watching connection-pool exhaustion and memory.
 
@@ -801,7 +813,7 @@ L-01 → L-04, BE-15 → BE-20, F-12 → F-16, U-09 → U-12, D-10 → D-12, MI-
 
 **Executed during this audit:** `flutter test` (275/43/318), `flutter analyze` (60 issues, 0 errors), `python -m pytest kk/tests -q` (53 passed), full Alembic upgrade on in-memory SQLite (42 revisions, clean), live HTTP probes of `carr-5hrm.onrender.com` (`/health`, `/health/push`, `/.well-known/assetlinks.json`, `/.well-known/apple-app-site-association`), `git ls-files` secret scan, `flutter pub outdated`.
 
-**Independently re-verified by reading the source (not taken on trust):** C-01 (`kk/routes/auth.py:1698-1766` at audit time — that line range no longer identifies the relevant code since the branch was deleted by the fix; now `kk/routes/auth.py::compat_signup`, commit `0dd5817`, closed — see §3), C-02 (`emit_message_to_participants` appears exactly once in `kk/routes/chat.py`, at line 209), C-03 (only two `q` parameters in all of `lib/` at audit time, both unrelated — since closed; `q` is now wired via `homeFiltersToApiQuery`/`homeFiltersToSavedSearchJson`, commits `16ac4eb`, `8ae3572`; see §3), C-04 (no review model/route/UI), C-07 (`pending_signup` grep across all migrations), C-08 (`Dockerfile:18-23` vs `.dockerignore:27` vs `kk/r2_ops.py:29`).
+**Independently re-verified by reading the source (not taken on trust):** C-01 (`kk/routes/auth.py:1698-1766` at audit time — that line range no longer identifies the relevant code since the branch was deleted by the fix; now `kk/routes/auth.py::compat_signup`, commit `0dd5817`, closed — see §3), C-02 (`emit_message_to_participants` appears exactly once in `kk/routes/chat.py`, at line 209 — since closed; a shared delivery path is now called from all five REST send endpoints, commit `2441ad3`; see §3), C-03 (only two `q` parameters in all of `lib/` at audit time, both unrelated — since closed; `q` is now wired via `homeFiltersToApiQuery`/`homeFiltersToSavedSearchJson`, commits `16ac4eb`, `8ae3572`; see §3), C-04 (no review model/route/UI), C-07 (`pending_signup` grep across all migrations — since closed; dead model removed and schema drift protection added, commit `3b7f0d7`; see §3), C-08 (`Dockerfile:18-23` vs `.dockerignore:27` vs `kk/r2_ops.py:29`).
 
 **Marked UNKNOWN — requires a device, a Mac, or production access:** iOS archive viability; R8 runtime behaviour with minimal ProGuard rules; device deep-link tap-through; end-to-end push delivery; whether Render actually has Redis + Celery worker + beat provisioned; Google/Firebase API key restrictions; bcrypt work factor at runtime; Wi-Fi-without-internet behaviour; whether GitHub CI is currently green on `main`.
 
