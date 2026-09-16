@@ -8,6 +8,7 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
@@ -23,6 +24,18 @@ import '../app/listing_shell.dart'
     show buildGlobalCarCard, mapListingToGlobalCarCardData;
 
 part 'my_listings_page_widgets.dart';
+
+/// Test-only hook for F-13 coverage: when non-null, the next
+/// `_loadDrafts()` call throws this immediately after entering its try
+/// block, then clears itself. This exercises `_loadDrafts()`'s outer
+/// safety-net `catch` without fabricating fake prefs corruption — the three
+/// known corrupt-prefs sources (`SellListingDraftPrefs.load`,
+/// `LegacySellDraftList`'s snapshot/archive decoders, and
+/// `SellPendingMediaResume.tryResume`) already catch and `logNonFatal` their
+/// own decode failures internally and never reach this outer catch. Always
+/// `null` in production.
+@visibleForTesting
+Object? debugMyListingsLoadDraftsError;
 
 enum _MyListingsFilter { all, active, pending, sold, draft }
 
@@ -209,6 +222,11 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   Future<void> _loadDrafts() async {
     try {
+      final injectedError = debugMyListingsLoadDraftsError;
+      if (injectedError != null) {
+        debugMyListingsLoadDraftsError = null;
+        throw injectedError;
+      }
       // Finish interrupted submit media before showing drafts/listings.
       final resumed = await SellPendingMediaResume.tryResume();
       final drafts = <Map<String, dynamic>>[];
@@ -231,7 +249,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
       if (resumed) {
         unawaited(_fetch(refresh: true));
       }
-    } catch (_) {
+    } catch (e, st) {
+      logNonFatal(e, st, 'MyListingsPage._loadDrafts');
       if (!mounted) return;
       setState(() {
         _drafts = <Map<String, dynamic>>[];
