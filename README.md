@@ -93,6 +93,7 @@ If the app shows "Loading listings..." forever or "Failed to load listings":
 1. **Start both servers** (from repo root):
    - Windows: `.\scripts\dev\start_servers.ps1`
    - Or manually: start **kk** on port **5000** (`python -m kk.app_new`), then **proxy** on **5003** (`python backend/server.py` from repo root; needs `backend/env.local` with `PORT=5003` and `LISTINGS_API_BASE=http://127.0.0.1:5000`).
+   - Note: `backend/server.py` is a local-only convenience proxy; production runs `kk.wsgi:app` directly via Gunicorn and never uses this proxy. See `docs/ARCHITECTURE.md` for the backend entrypoint architecture.
 
 2. **Check API URL**: The app calls `http://<API_BASE>/api/cars`. Default is `http://192.168.1.7:5003`. Your PC must be reachable at that IP:
    - On PC: run `ipconfig` (Windows) and use the IPv4 address of your Wi‑Fi adapter. If your IP changes, rebuild with `--dart-define=API_BASE=http://YOUR_IP:5003` or set that in Codemagic env vars.
