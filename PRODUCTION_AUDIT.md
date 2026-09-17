@@ -391,7 +391,7 @@ The resulting `{R2_PUBLIC_URL}/{subdir}/{token}{ext}` (or local `/static/chat_up
 | C-04 | CRITICAL | Reviews / ratings | Absent from all layers |
 | C-05 | CRITICAL | Payments | Absent; promotion is admin-only and free |
 | C-03 | CRITICAL | Keyword search — ✅ **CLOSED** | *(Was: Backend exists, frontend never calls it.)* Now wired end-to-end (commits `16ac4eb`, `60cce2c`, `8ae3572`) — see §3 |
-| MI-01 | HIGH | Blocked-users management UI | `ApiService.getBlockedUsers()` exists (`lib/services/api/api_admin.dart:79`) but **no screen calls it** — users can block but never unblock |
+| MI-01 | HIGH | Blocked-users management UI — ✅ **CLOSED** | *(Was: `ApiService.getBlockedUsers()` exists (`lib/services/api/api_admin.dart:79`) but **no screen calls it** — users can block but never unblock.)* Now implemented: a blocked-users management screen at route `/blocked-users`, accessible from Profile → Account Actions. Reuses the existing block/unblock backend plumbing. `GET /api/users/blocked` remains backwards compatible — the existing `blocked_users` ID list is preserved unchanged, with an additive `blocked_user_details` field (id/name/profile_picture) added for the UI. Targeted backend tests: 9 passed. Targeted Flutter widget tests: 4 passed. `flutter analyze`: clean. Remediated in `8cfab368f32f0f77baeea32d3df54cad2f420dc1` ("feat: add blocked users management"). |
 | MI-02 | HIGH | Featured-listing expiry | No `featured_until` column, no un-feature job. Promotions are permanent |
 | MI-03 | HIGH | Localized backend messages | No `language`/`locale` column on `User`; all API errors, push bodies, emails, and SMS are English-only |
 | MI-04 | MEDIUM | Recent searches | 0 hits for `RecentSearch` in `lib/` |
@@ -765,7 +765,7 @@ Nothing ships until every item here is closed.
 | F-01, B-02 | Propagate `getCarDetail` errors; distinguish offline from not-found | Frontend |
 | F-02 | Fail the build (not runtime) when `API_BASE` is missing | Frontend + CI |
 | F-03 | Locale-aware `NumberFormat` in the TikTok card | Frontend |
-| MI-01 | Blocked-users management screen | Frontend |
+| MI-01 | ✅ Done — blocked-users management screen added (see §4 detail) | Frontend |
 | MI-02 | `featured_until` + expiry beat job | DB + backend |
 | MI-03, U-01 | `User.locale` column + `Accept-Language`; localize backend strings and the force-update gate | Multiple |
 | B-01 | Link or remove the dead `AnalyticsPage` | Frontend |
