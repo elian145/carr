@@ -202,7 +202,16 @@ def _detect_worker_count() -> int | None:
 
 
 def create_app():
-    app = Flask(__name__)
+    # A-03: disable Flask's own auto-registered /static/<path:filename> route.
+    # kk/routes/misc.py registers its own /static/<path:filename> handler
+    # (misc.static_files) that also serves UPLOAD_FOLDER-backed persistent-disk
+    # uploads and a repo-root static/ fallback -- not just kk/static. With the
+    # default static_folder, Flask's built-in `static` endpoint silently wins
+    # that exact (rule, method) collision, so misc.static_files() (and its
+    # UPLOAD_FOLDER fallback) was unreachable. static_folder=None removes the
+    # built-in route entirely, leaving misc.static_files as the sole handler
+    # for /static/<path:filename>; the URL path itself is unchanged.
+    app = Flask(__name__, static_folder=None)
 
     load_dotenv()
     try:
