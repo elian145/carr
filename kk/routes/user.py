@@ -1094,7 +1094,10 @@ def dealer_profile(dealer_public_id: str):
             dealer_listings_base_query.options(
                 selectinload(Car.images), selectinload(Car.videos)
             )
-            .order_by(Car.is_featured.desc(), Car.created_at.desc())
+            # MI-02: rank by effective-featured status, not the raw
+            # `is_featured` flag, so an expired feature promotion stops
+            # ranking first immediately (independent of Celery cleanup).
+            .order_by(Car.effective_featured_expr().desc(), Car.created_at.desc())
             .limit(_DEALER_PROFILE_LISTINGS_CAP)
             .all()
         )

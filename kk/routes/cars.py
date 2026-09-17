@@ -231,39 +231,45 @@ def _apply_interest_ordering(
         score = price_score if score is None else (score + price_score)
 
     if score is None:
-        return query.order_by(Car.is_featured.desc(), func.random())
+        return query.order_by(Car.effective_featured_expr().desc(), func.random())
 
     return query.order_by(
-        Car.is_featured.desc(),
+        Car.effective_featured_expr().desc(),
         score.desc(),
         Car.created_at.desc(),
     )
 
 
 def _order_cars_query(query, sort_by: str, *, rank_expr=None):
-    """Apply list ordering for GET /api/cars."""
+    """Apply list ordering for GET /api/cars.
+
+    MI-02: featured-first ordering uses `Car.effective_featured_expr()`, not
+    the raw `is_featured` column, so a listing whose `featured_until` has
+    passed stops ranking as featured immediately -- independent of whether
+    the Celery cleanup task has run yet.
+    """
     if sort_by in ("relevance", "rank") and rank_expr is not None:
         # `rank_expr` is a raw `sqlalchemy.text(...)` TextClause (see
         # listing_search.apply_listing_text_search); TextClause has no
         # `.desc()` method (AttributeError). Use the `desc()` function, which
         # wraps any clause in a proper descending UnaryExpression instead.
-        return query.order_by(desc(rank_expr), Car.is_featured.desc(), Car.created_at.desc())
+        return query.order_by(desc(rank_expr), Car.effective_featured_expr().desc(), Car.created_at.desc())
     if sort_by == "newest":
-        return query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.created_at.desc())
     if sort_by == "price_asc":
-        return query.order_by(Car.is_featured.desc(), Car.price.asc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.price.asc(), Car.created_at.desc())
     if sort_by == "price_desc":
-        return query.order_by(Car.is_featured.desc(), Car.price.desc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.price.desc(), Car.created_at.desc())
     if sort_by == "year_desc":
-        return query.order_by(Car.is_featured.desc(), Car.year.desc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.year.desc(), Car.created_at.desc())
     if sort_by == "year_asc":
-        return query.order_by(Car.is_featured.desc(), Car.year.asc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.year.asc(), Car.created_at.desc())
     if sort_by == "mileage_asc":
-        return query.order_by(Car.is_featured.desc(), Car.mileage.asc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.mileage.asc(), Car.created_at.desc())
     if sort_by == "mileage_desc":
-        return query.order_by(Car.is_featured.desc(), Car.mileage.desc(), Car.created_at.desc())
+        return query.order_by(Car.effective_featured_expr().desc(), Car.mileage.desc(), Car.created_at.desc())
     if sort_by == "random":
-        return query.order_by(Car.is_featured.desc(), func.random())
+        return query.order_by(Car.effective_featured_expr().desc(), func.random())
     if sort_by == "recommended":
         brands = _split_prefer_csv(request.args.get("prefer_brand"))
         body_types = _split_prefer_csv(request.args.get("prefer_body_type"))
@@ -291,7 +297,7 @@ def _order_cars_query(query, sort_by: str, *, rank_expr=None):
         )
 
     # Default (no sort_by): newest, featured first — keep API compat for other clients.
-    return query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+    return query.order_by(Car.effective_featured_expr().desc(), Car.created_at.desc())
 
 
 # Best-effort anonymous view cooldown (in-memory, per process)
@@ -817,7 +823,7 @@ def get_cars_alias():
         if engine_type:
             query = query.filter(Car.engine_type == engine_type)
 
-        query = query.order_by(Car.is_featured.desc(), Car.created_at.desc())
+        query = query.order_by(Car.effective_featured_expr().desc(), Car.created_at.desc())
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         cars = []
         for c in pagination.items:

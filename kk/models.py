@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
+from sqlalchemy import and_, or_
 import logging
 import uuid
 import os
@@ -633,6 +634,15 @@ class Car(db.Model):
     # Status and metadata
     is_active = db.Column(db.Boolean, default=True, index=True)
     is_featured = db.Column(db.Boolean, default=False)
+    # MI-02: optional expiry for a time-limited feature. NULL means "featured
+    # indefinitely" (legacy/manual admin behavior, preserved for backward
+    # compatibility). When set, a listing stops being *effectively* featured
+    # the instant `featured_until` is in the past -- see
+    # `Car.effective_featured_expr()` / `Car.is_effectively_featured` below.
+    # Query-time enforcement (not the Celery cleanup task) is the
+    # correctness mechanism; the cleanup task only denormalizes
+    # `is_featured` back to False for data hygiene.
+    featured_until = db.Column(db.DateTime, nullable=True)
     views_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=utcnow, index=True)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
@@ -651,7 +661,34 @@ class Car(db.Model):
     images = db.relationship('CarImage', backref='car', lazy=True, cascade='all, delete-orphan')
     videos = db.relationship('CarVideo', backref='car', lazy=True, cascade='all, delete-orphan')
     messages = db.relationship('Message', backref='car', lazy=True)
-    
+
+    @classmethod
+    def effective_featured_expr(cls):
+        """SQL expression: True when a listing is *currently* featured.
+
+        MI-02: `is_featured` alone never expires. This is the single source
+        of truth for "currently featured" used by ordering, filters, and
+        counts -- a listing is effectively featured iff `is_featured` is
+        true AND (`featured_until` is NULL -- indefinite -- OR still in the
+        future). An expired `featured_until` makes a listing stop ranking/
+        counting as featured immediately, independent of whether the Celery
+        cleanup task (`kk.tasks.listing_tasks.clear_expired_featured_listings`)
+        has run yet.
+        """
+        return and_(
+            cls.is_featured.is_(True),
+            or_(cls.featured_until.is_(None), cls.featured_until > utcnow()),
+        )
+
+    @property
+    def is_effectively_featured(self) -> bool:
+        """Python-side mirror of `effective_featured_expr()` for a loaded instance."""
+        if not self.is_featured:
+            return False
+        if self.featured_until is None:
+            return True
+        return self.featured_until > utcnow()
+
     def to_dict(self, include_private=False):
         """Convert car to dictionary. id is public_id when set, else numeric id so detail link works.
 
@@ -702,7 +739,13 @@ class Car(db.Model):
                 _mask_phone_number(contact_phones[0]) if contact_phones else None
             ),
             'is_active': self.is_active,
-            'is_featured': self.is_featured,
+            # MI-02: the public `is_featured` value reflects EFFECTIVE
+            # featured status (false once `featured_until` has passed), not
+            # the raw stored flag -- callers must not have to independently
+            # compute expiry to get correct behavior. The raw expiry is
+            # still exposed separately via `featured_until`.
+            'is_featured': self.is_effectively_featured,
+            'featured_until': self.featured_until.isoformat() if self.featured_until else None,
             'views_count': self.views_count,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

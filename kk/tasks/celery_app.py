@@ -59,6 +59,7 @@ def make_celery() -> Celery:
             "kk.tasks.image_tasks",
             "kk.tasks.alert_tasks",
             "kk.tasks.notification_tasks",
+            "kk.tasks.listing_tasks",
         ],
     )
     c.Task = FlaskContextTask
@@ -74,6 +75,15 @@ def make_celery() -> Celery:
             "process-due-scheduled-notifications": {
                 "task": "kk.tasks.notification_tasks.process_due_scheduled_notifications",
                 "schedule": 60.0,  # every minute
+            },
+            # MI-02: data-hygiene only -- query-time enforcement
+            # (Car.effective_featured_expr()) is what actually keeps expired
+            # featured listings from behaving as featured; this just
+            # denormalizes the raw is_featured column back to False on a
+            # reasonable cadence. See kk/tasks/listing_tasks.py.
+            "clear-expired-featured-listings": {
+                "task": "kk.tasks.listing_tasks.clear_expired_featured_listings",
+                "schedule": 3600.0,  # hourly
             },
         },
     )

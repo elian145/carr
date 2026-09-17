@@ -4,7 +4,7 @@ import logging
 import os
 
 from flask import Blueprint, current_app, jsonify, request, send_from_directory
-from sqlalchemy import asc, desc, func, or_
+from sqlalchemy import asc, desc, func, not_, or_
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import admin_required, get_current_user, log_user_action
@@ -59,6 +59,24 @@ def _bool_param(name: str) -> bool | None:
     if raw in ("0", "false", "no", "off"):
         return False
     return None
+
+
+def _parse_featured_until(raw):
+    """Parse a `featured_until` payload value into a naive UTC datetime.
+
+    MI-02: reuses the project's existing ISO-8601 parsing convention
+    (`notification_broadcast.parse_scheduled_at` -- accepts a trailing `Z`,
+    normalizes timezone-aware input to naive UTC) so `featured_until` is
+    validated exactly like `scheduled_at` elsewhere in the admin API.
+    Raises ValueError (-> clean 400 in the calling route) on a malformed
+    value.
+    """
+    from ..notification_broadcast import parse_scheduled_at
+
+    try:
+        return parse_scheduled_at(raw)
+    except ValueError as e:
+        raise ValueError("featured_until must be an ISO-8601 datetime") from e
 
 
 def _find_car(car_id: str) -> Car | None:
@@ -147,7 +165,12 @@ def dashboard():
             Car.status == "pending",
         ).count()
         dealer_accounts = User.query.filter(User.account_type == "dealer").count()
-        featured_cars = Car.query.filter_by(is_featured=True, is_active=True).count()
+        # MI-02: count only currently (effectively) featured listings -- a
+        # listing whose featured_until has passed no longer counts here,
+        # even before the Celery cleanup task runs.
+        featured_cars = Car.query.filter(
+            Car.effective_featured_expr(), Car.is_active.is_(True)
+        ).count()
         total_saved_searches = SavedSearch.query.count()
         total_user_actions = UserAction.query.count()
         engagement = db.session.query(
@@ -386,7 +409,14 @@ def cars():
         if active_only:
             q = q.filter_by(is_active=True)
         if is_featured is not None:
-            q = q.filter(Car.is_featured == is_featured)
+            # MI-02: "featured" here means *currently* (effectively)
+            # featured -- an expired featured_until excludes a listing from
+            # ?is_featured=true and includes it under ?is_featured=false,
+            # matching the same semantics used by public ordering/counts.
+            if is_featured:
+                q = q.filter(Car.effective_featured_expr())
+            else:
+                q = q.filter(not_(Car.effective_featured_expr()))
         if min_price is not None:
             q = q.filter(Car.price >= min_price)
         if max_price is not None:
@@ -1376,8 +1406,37 @@ def update_car_status(car_id: str):
             car.is_active = bool(data["is_active"])
         if "status" in data and str(data["status"]).strip():
             car.status = str(data["status"]).strip()
-        if "is_featured" in data:
-            car.is_featured = bool(data["is_featured"])
+
+        # MI-02: is_featured / featured_until.
+        #
+        # - is_featured=false always clears featured_until too (an
+        #   unfeatured listing carrying a stale expiry makes no sense).
+        # - is_featured=true (or omitted, leaving the existing flag as-is)
+        #   lets featured_until be set/cleared independently; a future
+        #   value time-limits the feature, null means "indefinite", and
+        #   omitting the field entirely PRESERVES whatever expiry already
+        #   existed (PATCH semantics -- an unrelated field update must not
+        #   silently erase a future expiry).
+        # - A newly-set featured_until in the past is rejected outright
+        #   (defense in depth: never let an admin create an
+        #   already-expired-but-still-is_featured=true row).
+        new_is_featured = bool(data["is_featured"]) if "is_featured" in data else None
+        if new_is_featured is False:
+            car.is_featured = False
+            car.featured_until = None
+        else:
+            if new_is_featured is True:
+                car.is_featured = True
+            if "featured_until" in data:
+                raw_featured_until = data["featured_until"]
+                if raw_featured_until is None:
+                    car.featured_until = None
+                else:
+                    parsed = _parse_featured_until(raw_featured_until)
+                    if car.is_featured and parsed <= utcnow():
+                        raise ValueError("featured_until must be in the future")
+                    car.featured_until = parsed
+
         car.updated_at = utcnow()
         db.session.commit()
         invalidate_filter_facets_cache()
@@ -1390,6 +1449,9 @@ def update_car_status(car_id: str):
                 metadata=data,
             )
         return jsonify({"car": car.to_dict()}), 200
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 400
     except Exception as e:
         db.session.rollback()
         logger.error("admin update_car_status error: %s", e, exc_info=True)
@@ -1419,8 +1481,23 @@ def bulk_update_car_status():
             patch["is_featured"] = bool(data["is_featured"])
         if "status" in data and str(data["status"]).strip():
             patch["status"] = str(data["status"]).strip()
+        has_featured_until = "featured_until" in data
+        if has_featured_until:
+            patch["featured_until"] = data["featured_until"]
         if not patch:
             return jsonify({"message": "Provide is_active, is_featured, and/or status"}), 400
+
+        # MI-02: parse/validate featured_until once, up front, exactly like
+        # the single-car endpoint (same ISO-8601 convention, same clean-400
+        # on malformed input) rather than re-parsing per listing.
+        clear_featured_until = False
+        parsed_featured_until = None
+        if has_featured_until:
+            raw_featured_until = data["featured_until"]
+            if raw_featured_until is None:
+                clear_featured_until = True
+            else:
+                parsed_featured_until = _parse_featured_until(raw_featured_until)
 
         updated = []
         missing = []
@@ -1431,10 +1508,24 @@ def bulk_update_car_status():
                 continue
             if "is_active" in patch:
                 car.is_active = patch["is_active"]
-            if "is_featured" in patch:
-                car.is_featured = patch["is_featured"]
             if "status" in patch:
                 car.status = patch["status"]
+
+            if "is_featured" in patch and patch["is_featured"] is False:
+                # Explicitly un-featuring always clears any expiry too.
+                car.is_featured = False
+                car.featured_until = None
+            else:
+                if "is_featured" in patch:
+                    car.is_featured = patch["is_featured"]
+                if has_featured_until:
+                    if clear_featured_until:
+                        car.featured_until = None
+                    else:
+                        if car.is_featured and parsed_featured_until <= utcnow():
+                            raise ValueError("featured_until must be in the future")
+                        car.featured_until = parsed_featured_until
+
             car.updated_at = utcnow()
             updated.append(car.public_id or str(car.id))
 
@@ -1461,6 +1552,9 @@ def bulk_update_car_status():
             ),
             200,
         )
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 400
     except Exception as e:
         db.session.rollback()
         logger.error("admin bulk_update_car_status error: %s", e, exc_info=True)
