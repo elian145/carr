@@ -105,6 +105,19 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
             ),
             SizedBox(height: 12),
             _buildActionButton(
+              Icons.insights_outlined,
+              AppLocalizations.of(context)!.analyticsDashboard,
+              () {
+                if (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty) {
+                  _showAuthRequiredDialog(context);
+                  return;
+                }
+                Navigator.pushNamed(context, '/analytics');
+              },
+            ),
+            SizedBox(height: 12),
+            _buildActionButton(
               Icons.notifications_outlined,
               AppLocalizations.of(context)!.notificationsTitle,
               () async {
