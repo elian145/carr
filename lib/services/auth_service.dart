@@ -5,6 +5,7 @@ import 'api_service.dart';
 import 'push_notification_service.dart';
 import 'websocket_service.dart';
 import '../shared/debug/app_log.dart';
+import '../state/locale_controller.dart';
 
 class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
@@ -189,6 +190,13 @@ class AuthService extends ChangeNotifier {
     if (user != null) {
       _currentUser = Map<String, dynamic>.from(user);
       _isAuthenticated = true;
+      // MI-03(B)/(C): `_loadUserProfile()` (the `else` branch) already
+      // triggers this itself; this branch adopts a profile handed in
+      // directly (e.g. straight from a login/signup response) and needs
+      // the same best-effort sync. The CURRENT local/device language is
+      // authoritative for this session -- login never changes the visible
+      // app language to whatever was previously synced to the account.
+      unawaited(_maybeSyncLocaleAfterProfileLoad());
     } else {
       await _loadUserProfile();
       if (!ApiService.isAuthenticated) return;
@@ -241,6 +249,10 @@ class AuthService extends ChangeNotifier {
       _isAuthenticated = true;
       _profileRetryAttempts = 0;
       notifyListeners();
+      // MI-03(B): best-effort, fire-and-forget -- never awaited so it can
+      // never delay this profile load or any of its callers (AuthGuard,
+      // app init, ...).
+      unawaited(_maybeSyncLocaleAfterProfileLoad());
     } catch (e, st) {
       logNonFatal(e, st, 'AuthService._loadUserProfile');
       if (ApiService.accessToken != tokenAtStart) {
@@ -301,6 +313,47 @@ class AuthService extends ChangeNotifier {
       // seconds before this class gives up.
       await _loadUserProfile(timeout: ApiService.warmRequestTimeout);
     });
+  }
+
+  /// MI-03(A): best-effort backend sync of the app's current locale.
+  ///
+  /// Wired up as `LocaleController.onLocaleChanged` (see `bootstrap.dart`)
+  /// so every explicit in-app language change is pushed to `User.locale`.
+  /// No-op when not authenticated. Never throws and never undoes the local
+  /// language change that already happened before this is called -- a
+  /// sync failure is logged non-fatally only.
+  Future<void> syncLocaleIfAuthenticated(String code) async {
+    if (!ApiService.isAuthenticated) return;
+    try {
+      final response = await ApiService.updateProfile({'locale': code});
+      final user = userMapFrom(response['user']);
+      if (user != null) {
+        _currentUser = user;
+        notifyListeners();
+      }
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService.syncLocaleIfAuthenticated');
+    }
+  }
+
+  /// MI-03(B): after any authenticated profile load, sync the CURRENT
+  /// app/device locale to the backend only if it's missing there or
+  /// differs from what's already stored -- never spams the API on every
+  /// load. This lets existing users get localized background push/email/
+  /// SMS even if they never revisit the language picker after this
+  /// update. Best-effort; the CURRENT local language is authoritative for
+  /// this session and is never overwritten by the stored backend value.
+  Future<void> _maybeSyncLocaleAfterProfileLoad() async {
+    try {
+      final backendLocale = (_currentUser?['locale'] as String?)?.trim();
+      final current = LocaleController.resolveCode();
+      if (backendLocale != null && backendLocale.isNotEmpty && backendLocale == current) {
+        return;
+      }
+      await syncLocaleIfAuthenticated(current);
+    } catch (e, st) {
+      logNonFatal(e, st, 'AuthService._maybeSyncLocaleAfterProfileLoad');
+    }
   }
 
   // Login user

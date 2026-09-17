@@ -39,10 +39,18 @@ SETTING_KEYS = (
     "min_android_build",
     "min_ios_build",
     "force_update_message",
+    # MI-03: additive, per-locale overrides for the force-update message.
+    # The existing English key/behavior above is unchanged; these are only
+    # consulted for ar/ku requests (see get_localized_platform_message()
+    # and GET /api/config/app in kk/routes/misc.py). Never renamed/removed.
+    "force_update_message_ar",
+    "force_update_message_ku",
     "recommended_app_version",
     "recommended_android_build",
     "recommended_ios_build",
     "soft_update_message",
+    "soft_update_message_ar",
+    "soft_update_message_ku",
     "android_store_url",
     "ios_store_url",
 )
@@ -117,6 +125,11 @@ def default_platform_settings() -> dict[str, Any]:
             "FORCE_UPDATE_MESSAGE",
             "Please update CarNet to continue.",
         ),
+        # MI-03: optional admin-configured ar/ku overrides. Empty by default
+        # -- get_localized_platform_message() falls back to the built-in
+        # translated text (kk.localization.translate) when unset.
+        "force_update_message_ar": _env("FORCE_UPDATE_MESSAGE_AR", ""),
+        "force_update_message_ku": _env("FORCE_UPDATE_MESSAGE_KU", ""),
         "recommended_app_version": _env("RECOMMENDED_APP_VERSION", ""),
         "recommended_android_build": _env("RECOMMENDED_ANDROID_BUILD", ""),
         "recommended_ios_build": _env("RECOMMENDED_IOS_BUILD", ""),
@@ -124,6 +137,8 @@ def default_platform_settings() -> dict[str, Any]:
             "SOFT_UPDATE_MESSAGE",
             "A newer version of CarNet is available.",
         ),
+        "soft_update_message_ar": _env("SOFT_UPDATE_MESSAGE_AR", ""),
+        "soft_update_message_ku": _env("SOFT_UPDATE_MESSAGE_KU", ""),
         "android_store_url": _env(
             "ANDROID_STORE_URL",
             "https://play.google.com/store/apps/details?id=com.carzo.app",
@@ -171,6 +186,33 @@ def get_platform_settings() -> dict[str, Any]:
         merged[key] = val
     merged["feature_flags"] = get_feature_flags()
     return merged
+
+
+def get_localized_platform_message(
+    base_key: str, locale: str | None, settings: dict[str, Any] | None = None
+) -> str:
+    """MI-03: locale-aware value for a message-type SETTING_KEY (currently
+    ``force_update_message`` / ``soft_update_message``).
+
+    English is completely unchanged: the existing ``base_key`` DB
+    override/env default is used exactly as before. For ar/ku, an additive
+    ``{base_key}_{locale}`` admin override is preferred; if unset/blank, a
+    built-in translated fallback (``kk.localization.translate``) is used --
+    this string is never empty.
+    """
+    from .localization import normalize_locale, translate
+
+    s = settings if settings is not None else get_platform_settings()
+    normalized = normalize_locale(locale) or "en"
+    if normalized == "en":
+        value = s.get(base_key)
+        text = str(value).strip() if value is not None else ""
+        return text or translate(base_key, "en")
+
+    override = s.get(f"{base_key}_{normalized}")
+    if isinstance(override, str) and override.strip():
+        return override.strip()
+    return translate(base_key, normalized)
 
 
 def get_admin_settings_payload() -> dict[str, Any]:

@@ -216,8 +216,18 @@ abstract final class _ApiServiceHttp {
     }
 
     // Get headers with authorization
+    //
+    // MI-03/U-01: every normal request also carries `Accept-Language` (one
+    // of `en`/`ar`/`ku`, mirroring the app's current effective locale --
+    // see `LocaleController.resolveCode()`) so the backend can localize its
+    // response even before/without an authenticated `User.locale`. This is
+    // the single chokepoint for outgoing headers -- do not add the header
+    // separately to individual call sites.
     static Map<String, String> _getHeaders({bool includeAuth = true}) {
-      Map<String, String> headers = {'Content-Type': 'application/json'};
+      Map<String, String> headers = {
+        'Content-Type': 'application/json',
+        'Accept-Language': LocaleController.resolveCode(),
+      };
 
       if (includeAuth && ApiService._accessToken != null && ApiService._accessToken!.isNotEmpty) {
         headers['Authorization'] = 'Bearer ${ApiService._accessToken}';

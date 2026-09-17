@@ -27,6 +27,7 @@ from ..models import (
 )
 from ..security import atomic_increment_attempts, generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
+from ..localization import normalize_locale
 from ..time_utils import utcnow
 from ..dealer_socials import clean_dealership_socials, public_dealership_socials
 from .media import _r2_configured, _r2_public_base
@@ -637,6 +638,24 @@ def update_profile():
             current_user.first_name = data["first_name"]
         if "last_name" in data:
             current_user.last_name = data["last_name"]
+        if "locale" in data:
+            raw_locale = data.get("locale")
+            if raw_locale is None or (
+                isinstance(raw_locale, str) and not raw_locale.strip()
+            ):
+                # Explicit null/empty clears the stored preference (falls
+                # back to Accept-Language / English -- see kk/localization.py).
+                current_user.locale = None
+            else:
+                normalized = normalize_locale(raw_locale)
+                if normalized is None:
+                    return jsonify(
+                        {
+                            "message": "Unsupported locale",
+                            "errors": {"locale": "Unsupported locale"},
+                        }
+                    ), 400
+                current_user.locale = normalized
         if "phone_number" in data:
             new_digits = _normalize_dealer_phone(data.get("phone_number"))
             old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
@@ -1320,8 +1339,11 @@ def send_dealer_email_verification():
     db.session.commit()
 
     from ..email_service import send_dealer_email_verification_code
+    from ..localization import current_request_locale
 
-    mail_sent = send_dealer_email_verification_code(email, code)
+    mail_sent = send_dealer_email_verification_code(
+        email, code, locale=current_request_locale(getattr(current_user, "locale", None))
+    )
     if not mail_sent:
         if dev_debug_response_fields_enabled():
             # Keep the OTP so local clients can verify with `dev_code`.

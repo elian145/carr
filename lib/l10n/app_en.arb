@@ -929,5 +929,17 @@
   "hidePassword": "Hide password",
   "changeProfilePhoto": "Change profile photo",
   "playVideo": "Play video",
-  "pauseVideo": "Pause video"
+  "pauseVideo": "Pause video",
+  "navigationErrorTitle": "Navigation error",
+  "missingChatConversationId": "Missing chat conversation id",
+  "missingListingData": "Missing listing data",
+  "somethingWentWrongRestart": "Something went wrong. Please restart the app.",
+  "updateAvailableTitle": "Update available",
+  "updateRequiredTitle": "Update required",
+  "updateNowButton": "Update now",
+  "updateButton": "Update",
+  "notNowButton": "Not now",
+  "tryAgainButton": "Try again",
+  "forceUpdateFallbackMessage": "Please update CarNet to continue.",
+  "softUpdateFallbackMessage": "A newer version of CarNet is available."
 }

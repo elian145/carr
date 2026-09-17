@@ -883,5 +883,17 @@
   "hidePassword": "شاردنەوەی وشەی نهێنی",
   "changeProfilePhoto": "گۆڕینی وێنەی پرۆفایل",
   "playVideo": "لێدانی ڤیدیۆ",
-  "pauseVideo": "وەستاندنی ڤیدیۆ"
+  "pauseVideo": "وەستاندنی ڤیدیۆ",
+  "navigationErrorTitle": "هەڵەی ڕێنیشاندن",
+  "missingChatConversationId": "ناسنامەی گفتوگۆی چات نییە",
+  "missingListingData": "زانیاری ڕیکلام نییە",
+  "somethingWentWrongRestart": "هەڵەیەک ڕوویدا. تکایە ئەپەکە دووبارە بکەرەوە.",
+  "updateAvailableTitle": "نوێکردنەوە بەردەستە",
+  "updateRequiredTitle": "پێویستە نوێ بکرێتەوە",
+  "updateNowButton": "ئێستا نوێ بکەرەوە",
+  "updateButton": "نوێکردنەوە",
+  "notNowButton": "ئێستا نا",
+  "tryAgainButton": "دووبارە هەوڵبدەرەوە",
+  "forceUpdateFallbackMessage": "تکایە CarNet نوێ بکەرەوە بۆ بەردەوامبوون.",
+  "softUpdateFallbackMessage": "وەشانێکی نوێتری CarNet بەردەستە."
 }

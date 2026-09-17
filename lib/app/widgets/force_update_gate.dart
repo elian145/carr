@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../services/app_version_gate.dart';
 
 /// Blocks the app for hard force-update; shows a dismissible soft-update prompt.
@@ -55,8 +56,9 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
       context: context,
       barrierDismissible: true,
       builder: (ctx) {
+        final l10n = AppLocalizations.of(ctx)!;
         return AlertDialog(
-          title: const Text('Update available'),
+          title: Text(l10n.updateAvailableTitle),
           content: Text(decision.message),
           actions: [
             TextButton(
@@ -67,14 +69,14 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
                 } catch (_) {}
                 if (ctx.mounted) Navigator.of(ctx).pop();
               },
-              child: const Text('Not now'),
+              child: Text(l10n.notNowButton),
             ),
             FilledButton(
               onPressed: () async {
                 await _openStoreUrl(decision.storeUrl);
                 if (ctx.mounted) Navigator.of(ctx).pop();
               },
-              child: const Text('Update'),
+              child: Text(l10n.updateButton),
             ),
           ],
         );
@@ -101,6 +103,7 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
     if (decision == null || !decision.required) return widget.child;
 
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: SafeArea(
@@ -116,7 +119,7 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
               ),
               const SizedBox(height: 24),
               Text(
-                'Update required',
+                l10n.updateRequiredTitle,
                 style: theme.textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
@@ -130,7 +133,7 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
               if (decision.storeUrl.trim().isNotEmpty)
                 FilledButton(
                   onPressed: _openStore,
-                  child: const Text('Update now'),
+                  child: Text(l10n.updateNowButton),
                 ),
               const SizedBox(height: 12),
               TextButton(
@@ -138,7 +141,7 @@ class _ForceUpdateGateState extends State<ForceUpdateGate> {
                   setState(() => _loading = true);
                   await _check();
                 },
-                child: const Text('Try again'),
+                child: Text(l10n.tryAgainButton),
               ),
             ],
           ),

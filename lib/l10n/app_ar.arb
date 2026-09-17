@@ -883,5 +883,17 @@
   "hidePassword": "إخفاء كلمة المرور",
   "changeProfilePhoto": "تغيير صورة الملف الشخصي",
   "playVideo": "تشغيل الفيديو",
-  "pauseVideo": "إيقاف الفيديو مؤقتاً"
+  "pauseVideo": "إيقاف الفيديو مؤقتاً",
+  "navigationErrorTitle": "خطأ في التنقل",
+  "missingChatConversationId": "معرف محادثة الدردشة مفقود",
+  "missingListingData": "بيانات الإعلان مفقودة",
+  "somethingWentWrongRestart": "حدث خطأ ما. يرجى إعادة تشغيل التطبيق.",
+  "updateAvailableTitle": "يتوفر تحديث",
+  "updateRequiredTitle": "التحديث مطلوب",
+  "updateNowButton": "التحديث الآن",
+  "updateButton": "تحديث",
+  "notNowButton": "ليس الآن",
+  "tryAgainButton": "حاول مرة أخرى",
+  "forceUpdateFallbackMessage": "يرجى تحديث CarNet للمتابعة.",
+  "softUpdateFallbackMessage": "يتوفر إصدار أحدث من CarNet."
 }

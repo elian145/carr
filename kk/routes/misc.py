@@ -67,13 +67,22 @@ def _trust_config_payload() -> dict:
 
 
 def _app_config_payload() -> dict:
-    """Public client version gates + store URLs (no secrets)."""
+    """Public client version gates + store URLs (no secrets).
+
+    MI-03: works before authentication (no ``User.locale`` yet), so the
+    force-update/soft-update message text is selected purely from the
+    request's ``Accept-Language`` header.
+    """
     try:
         from ..app_settings import get_platform_settings
 
         s = get_platform_settings()
     except Exception:
         s = {}
+
+    from ..localization import get_request_locale
+
+    locale = get_request_locale(request.headers.get("Accept-Language"))
 
     def _s(key: str, default: str = "") -> str:
         val = s.get(key)
@@ -106,20 +115,21 @@ def _app_config_payload() -> dict:
             "saved_searches": True,
         }
 
+    from ..app_settings import get_localized_platform_message
+
     return {
         "min_app_version": _s("min_app_version"),
         "min_android_build": _i("min_android_build"),
         "min_ios_build": _i("min_ios_build"),
-        "force_update_message": _s(
-            "force_update_message",
-            "Please update CarNet to continue.",
+        # MI-03: field names unchanged; value now localized by Accept-Language.
+        "force_update_message": get_localized_platform_message(
+            "force_update_message", locale, s
         ),
         "recommended_app_version": _s("recommended_app_version"),
         "recommended_android_build": _i("recommended_android_build"),
         "recommended_ios_build": _i("recommended_ios_build"),
-        "soft_update_message": _s(
-            "soft_update_message",
-            "A newer version of CarNet is available.",
+        "soft_update_message": get_localized_platform_message(
+            "soft_update_message", locale, s
         ),
         "android_store_url": _s(
             "android_store_url",

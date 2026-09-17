@@ -2604,4 +2604,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get pauseVideo => 'إيقاف الفيديو مؤقتاً';
+
+  @override
+  String get navigationErrorTitle => 'خطأ في التنقل';
+
+  @override
+  String get missingChatConversationId => 'معرف محادثة الدردشة مفقود';
+
+  @override
+  String get missingListingData => 'بيانات الإعلان مفقودة';
+
+  @override
+  String get somethingWentWrongRestart =>
+      'حدث خطأ ما. يرجى إعادة تشغيل التطبيق.';
+
+  @override
+  String get updateAvailableTitle => 'يتوفر تحديث';
+
+  @override
+  String get updateRequiredTitle => 'التحديث مطلوب';
+
+  @override
+  String get updateNowButton => 'التحديث الآن';
+
+  @override
+  String get updateButton => 'تحديث';
+
+  @override
+  String get notNowButton => 'ليس الآن';
+
+  @override
+  String get tryAgainButton => 'حاول مرة أخرى';
+
+  @override
+  String get forceUpdateFallbackMessage => 'يرجى تحديث CarNet للمتابعة.';
+
+  @override
+  String get softUpdateFallbackMessage => 'يتوفر إصدار أحدث من CarNet.';
 }

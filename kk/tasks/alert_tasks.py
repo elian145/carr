@@ -7,6 +7,7 @@ import logging
 from decimal import Decimal, InvalidOperation
 
 from ..listing_filters import car_matches_filters, summarize_filters
+from ..localization import get_background_locale, translate
 from ..models import Car, Notification, SavedSearch, SavedSearchAlert, User, db, user_favorites
 from ..push import send_push
 from sqlalchemy import update as sql_update
@@ -74,7 +75,12 @@ def notify_saved_searches_for_car(car_id: int) -> dict:
             continue
 
         summary = summarize_filters(filters)
-        title = search.name or "Saved search"
+        # MI-03: background task -- no request context, use the recipient's
+        # stored locale (> English). Only the fallback label is localized;
+        # a user-given search name is left exactly as the user typed it.
+        title = search.name or translate(
+            "saved_search_default_title", get_background_locale(getattr(user, "locale", None))
+        )
         body = f"{summary}: {car.brand} {car.model} {car.year}".strip()
         _send_retention_push(
             user,
@@ -118,7 +124,6 @@ def notify_price_drop_for_car(car_id: int, old_price: float, new_price: float) -
     )
     notified = 0
     currency = (car.currency or "USD").upper()
-    title = "Price drop"
     body = (
         f"{car.brand} {car.model} {car.year}: "
         f"{currency} {old_price:,.0f} → {currency} {new_price:,.0f}"
@@ -133,6 +138,9 @@ def notify_price_drop_for_car(car_id: int, old_price: float, new_price: float) -
         if not user or not user.is_active or user.id == car.seller_id:
             continue
 
+        # MI-03: title is per-recipient (each favoriter may have a different
+        # stored locale); the numeric/brand body stays locale-neutral.
+        title = translate("price_drop_title", get_background_locale(getattr(user, "locale", None)))
         _send_retention_push(
             user,
             title=title,

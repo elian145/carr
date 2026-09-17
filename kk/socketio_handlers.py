@@ -10,6 +10,7 @@ from flask_jwt_extended import decode_token, get_jwt_identity, verify_jwt_in_req
 from flask_socketio import emit, join_room, leave_room
 
 from .auth import phone_verification_error_payload
+from .localization import get_background_locale, translate
 from .chat_realtime import (
     emit_message_to_participants,
     mark_messages_read_for_viewer,
@@ -291,7 +292,11 @@ def register_socketio_handlers(socketio) -> None:
         try:
             notif = Notification(
                 user_id=receiver.id,
-                title="New message",
+                # MI-03: background notification -- no request context here,
+                # so this uses the receiver's stored locale (> English).
+                title=translate(
+                    "new_message_title", get_background_locale(getattr(receiver, "locale", None))
+                ),
                 message=content[:200],
                 notification_type="message",
                 is_read=False,

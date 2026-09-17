@@ -2661,4 +2661,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pauseVideo => 'Pause video';
+
+  @override
+  String get navigationErrorTitle => 'Navigation error';
+
+  @override
+  String get missingChatConversationId => 'Missing chat conversation id';
+
+  @override
+  String get missingListingData => 'Missing listing data';
+
+  @override
+  String get somethingWentWrongRestart =>
+      'Something went wrong. Please restart the app.';
+
+  @override
+  String get updateAvailableTitle => 'Update available';
+
+  @override
+  String get updateRequiredTitle => 'Update required';
+
+  @override
+  String get updateNowButton => 'Update now';
+
+  @override
+  String get updateButton => 'Update';
+
+  @override
+  String get notNowButton => 'Not now';
+
+  @override
+  String get tryAgainButton => 'Try again';
+
+  @override
+  String get forceUpdateFallbackMessage => 'Please update CarNet to continue.';
+
+  @override
+  String get softUpdateFallbackMessage =>
+      'A newer version of CarNet is available.';
 }

@@ -31,6 +31,7 @@ from ..auth import (
     verify_password_reset_token,
 )
 from ..extensions import mail
+from ..localization import current_request_locale, translate
 from ..models import (
     AdminAccount,
     BlockedUser,
@@ -194,6 +195,20 @@ class OtpError(Exception):
 
     def response(self):
         return jsonify({"message": self.message, "code": self.code}), self.status
+
+
+def _invalid_credentials_response(user: "User | None" = None):
+    """Localized generic 401 for a failed login (MI-03).
+
+    Only the human-readable message text varies by locale (Accept-Language
+    header, then the resolved account's own ``User.locale`` when one was
+    resolved) -- the machine-readable shape (401 status, single generic
+    ``message`` key, no ``code``) is unchanged. This keeps the M-09
+    "identical response whether the account is wrong, throttled, or the
+    password was wrong" guarantee intact for every locale.
+    """
+    locale = current_request_locale(getattr(user, "locale", None) if user else None)
+    return jsonify({"message": translate("invalid_credentials", locale)}), 401
 
 
 def _consume_phone_otp(user: User, phone_digits: str, code: str) -> None:
@@ -675,7 +690,7 @@ def login():
                 or_(User.phone_number == ident, User.username == ident)
             ).first()
             if user and AdminAccount.query.filter_by(principal_user_id=user.id).first():
-                return jsonify({"message": "Invalid credentials"}), 401
+                return _invalid_credentials_response(user)
 
         # M-09: account-keyed failed-login throttle -- independent of, and in
         # addition to, the existing per-IP @rate_limit above. Checked BEFORE
@@ -697,7 +712,7 @@ def login():
                 # unauthenticated caller must not be able to distinguish
                 # "wrong password" from "this account is temporarily
                 # throttled" (no code/message/remaining-attempts leak).
-                return jsonify({"message": "Invalid credentials"}), 401
+                return _invalid_credentials_response(user)
 
         if account_scope == "admin":
             password_ok = bool(admin_account) and admin_account.check_password(
@@ -712,7 +727,7 @@ def login():
             # never unknown identifiers, never successful logins).
             if account_login_key is not None:
                 record_account_login_failure(account_login_key)
-            return jsonify({"message": "Invalid credentials"}), 401
+            return _invalid_credentials_response(user)
 
         # Correct password: clear any accumulated failures/throttle for this
         # account so a legitimate user's earlier typos never linger.
@@ -1254,7 +1269,8 @@ def forgot_password():
 
         from ..sms_service import send_password_reset_sms
 
-        sms_sent = bool(send_password_reset_sms(dest_phone, token))
+        reset_locale = current_request_locale(getattr(user, "locale", None))
+        sms_sent = bool(send_password_reset_sms(dest_phone, token, locale=reset_locale))
         if not sms_sent:
             # M-02: do NOT return a distinct status/body for SMS-delivery
             # failure -- a response that differs only for existing accounts

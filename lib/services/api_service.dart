@@ -11,6 +11,7 @@ import 'api_exception.dart';
 import 'api_cancel_token.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
+import '../state/locale_controller.dart';
 
 export 'api_exception.dart';
 export 'api_cancel_token.dart';
@@ -158,6 +159,16 @@ class ApiService {
 
   static Map<String, String> _getHeaders({bool includeAuth = true}) =>
       _ApiServiceHttp._getHeaders(includeAuth: includeAuth);
+
+  /// MI-03: public accessor for the same default headers every other
+  /// request already sends (`Content-Type`, `Accept-Language`, and --
+  /// when [includeAuth] and a token exists -- `Authorization`). For
+  /// callers outside this library that build their own request via
+  /// [getHttp], e.g. [AppVersionGate], which must keep working
+  /// unauthenticated but still needs `Accept-Language` for the backend to
+  /// localize the force-update message.
+  static Map<String, String> defaultHeaders({bool includeAuth = false}) =>
+      _getHeaders(includeAuth: includeAuth);
 
   static Map<String, dynamic> _handleResponse(http.Response response) =>
       _ApiServiceHttp._handleResponse(response);

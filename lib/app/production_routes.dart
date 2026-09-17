@@ -102,8 +102,12 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
           .trim();
       if (rawId.isEmpty) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Navigation error')),
-          body: Center(child: Text('Missing chat conversation id')),
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context)!.navigationErrorTitle),
+          ),
+          body: Center(
+            child: Text(AppLocalizations.of(context)!.missingChatConversationId),
+          ),
         );
       }
       return AuthGuard(
@@ -124,8 +128,12 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       final car = args?['car'];
       if (car is! Map) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Navigation error')),
-          body: const Center(child: Text('Missing listing data')),
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context)!.navigationErrorTitle),
+          ),
+          body: Center(
+            child: Text(AppLocalizations.of(context)!.missingListingData),
+          ),
         );
       }
       return AuthGuard(
@@ -139,8 +147,12 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       final car = args is Map ? args['car'] : null;
       if (car is! Map) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Navigation error')),
-          body: const Center(child: Text('Missing listing data')),
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context)!.navigationErrorTitle),
+          ),
+          body: Center(
+            child: Text(AppLocalizations.of(context)!.missingListingData),
+          ),
         );
       }
       return AuthGuard(
@@ -174,7 +186,9 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
       final dealerPublicId = (args?['dealerPublicId'] ?? '').toString().trim();
       if (dealerPublicId.isEmpty) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Navigation error')),
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context)!.navigationErrorTitle),
+          ),
           body: Center(
             child: Text(
               AppLocalizations.of(context)!.missingDealerId,

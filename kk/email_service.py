@@ -144,19 +144,18 @@ def send_email(
     return _send_via_smtp(dest, subject, text_body, html_body)
 
 
-def send_dealer_email_verification_code(to_email: str, code: str) -> bool:
-    subject = "Your Carzo verification code"
-    text_body = (
-        f"Your Carzo verification code is: {code}\n\n"
-        "Enter this code in the app to verify your dealership contact email. "
-        "It expires in 10 minutes."
-    )
-    html_body = (
-        f"<p>Your Carzo verification code is:</p>"
-        f"<p style='font-size:24px;font-weight:700;letter-spacing:2px'>{code}</p>"
-        f"<p>Enter this code in the app to verify your dealership contact email. "
-        f"It expires in 10 minutes.</p>"
-    )
+def send_dealer_email_verification_code(
+    to_email: str, code: str, locale: str | None = None
+) -> bool:
+    """MI-03: subject/body localized via ``locale`` (the authenticated
+    requester's resolved language) -- ``en``/``ar``/``ku``, falling back to
+    English. Delivery behavior/provider selection is unchanged."""
+    from .localization import get_background_locale, translate
+
+    loc = get_background_locale(locale)
+    subject = translate("dealer_email_verification_subject", loc)
+    text_body = translate("dealer_email_verification_text", loc, code=code)
+    html_body = translate("dealer_email_verification_html", loc, code=code)
     return send_email(to_email, subject=subject, text_body=text_body, html_body=html_body)
 
 

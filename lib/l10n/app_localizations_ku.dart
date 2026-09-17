@@ -2623,4 +2623,42 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get pauseVideo => 'وەستاندنی ڤیدیۆ';
+
+  @override
+  String get navigationErrorTitle => 'هەڵەی ڕێنیشاندن';
+
+  @override
+  String get missingChatConversationId => 'ناسنامەی گفتوگۆی چات نییە';
+
+  @override
+  String get missingListingData => 'زانیاری ڕیکلام نییە';
+
+  @override
+  String get somethingWentWrongRestart =>
+      'هەڵەیەک ڕوویدا. تکایە ئەپەکە دووبارە بکەرەوە.';
+
+  @override
+  String get updateAvailableTitle => 'نوێکردنەوە بەردەستە';
+
+  @override
+  String get updateRequiredTitle => 'پێویستە نوێ بکرێتەوە';
+
+  @override
+  String get updateNowButton => 'ئێستا نوێ بکەرەوە';
+
+  @override
+  String get updateButton => 'نوێکردنەوە';
+
+  @override
+  String get notNowButton => 'ئێستا نا';
+
+  @override
+  String get tryAgainButton => 'دووبارە هەوڵبدەرەوە';
+
+  @override
+  String get forceUpdateFallbackMessage =>
+      'تکایە CarNet نوێ بکەرەوە بۆ بەردەوامبوون.';
+
+  @override
+  String get softUpdateFallbackMessage => 'وەشانێکی نوێتری CarNet بەردەستە.';
 }

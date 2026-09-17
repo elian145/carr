@@ -86,6 +86,14 @@ class User(db.Model):
     # used by car_image.image_url / car_video.video_url / thumbnail_url
     # (see migrations d9e0f1a2b3c4 / b4e8a1c2d3f4 and o1p2q3r4s5t6).
     profile_picture = db.Column(db.String(2048), nullable=True)
+    # MI-03: user's language preference (en/ar/ku), set via
+    # PUT /api/user/profile. NULL for every pre-existing row and for any
+    # user who has never explicitly chosen a language while authenticated --
+    # see kk/localization.py for the request-time (Accept-Language >
+    # User.locale > en) and background (User.locale > en) precedence this
+    # feeds into. Owner-only (see to_dict include_private below); never part
+    # of the public profile shape.
+    locale = db.Column(db.String(8), nullable=True)
     is_verified = db.Column(db.Boolean, default=False)
     # Phone OTP completed. Gated actions (listings, media, chat) require this —
     # email verification alone must not unlock them (see phone_verification_error_payload).
@@ -316,7 +324,10 @@ class User(db.Model):
                 'dealership_verified_emails': verified_emails_out,
                 'dealership_emails': emails_out,
                 'last_login': self.last_login.isoformat() if self.last_login else None,
-                'updated_at': self.updated_at.isoformat() if self.updated_at else None
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+                # MI-03: own-account language preference only -- never part
+                # of the public shape embedded in listing/dealer responses.
+                'locale': getattr(self, "locale", None),
             })
             # Only include email if it exists and isn't an internal placeholder.
             # Phone OTP flows may create a stable placeholder email for legacy DB schemas.

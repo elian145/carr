@@ -155,9 +155,16 @@ class SMSService:
         self.otpiq_api_key = (os.environ.get("OTPIQ_API_KEY") or "").strip()
         self.otpiq_provider = (os.environ.get("OTPIQ_PROVIDER") or "sms").strip().lower()
 
-    def send_password_reset_code(self, phone_number: str, reset_code: str) -> tuple[bool, str]:
+    def send_password_reset_code(
+        self, phone_number: str, reset_code: str, locale: str | None = None
+    ) -> tuple[bool, str]:
         """
         Send password reset code via SMS.
+
+        ``locale`` (MI-03) localizes the message body for the Twilio and
+        console providers only -- OTPIQ templates its own SMS text
+        server-side ("smsType": "verification") and does not accept a
+        freeform body from this codebase, so it is unaffected.
 
         Returns:
             (ok, detail) where detail is empty on success.
@@ -165,11 +172,11 @@ class SMSService:
         self.reload_config()
         try:
             if self.provider == "twilio":
-                return self._send_via_twilio(phone_number, reset_code)
+                return self._send_via_twilio(phone_number, reset_code, locale=locale)
             if self.provider == "otpiq":
                 return self._send_via_otpiq(phone_number, reset_code, purpose="password_reset")
             if self.provider == "console":
-                return self._send_via_console(phone_number, reset_code)
+                return self._send_via_console(phone_number, reset_code, locale=locale)
             detail = f"Unsupported SMS provider: {self.provider}"
             logger.error("%s (supported: twilio, otpiq, console)", detail)
             return False, detail
@@ -178,10 +185,14 @@ class SMSService:
             logger.error(detail)
             return False, _safe_provider_error(detail)
 
-    def _send_via_twilio(self, phone_number: str, reset_code: str) -> tuple[bool, str]:
+    def _send_via_twilio(
+        self, phone_number: str, reset_code: str, locale: str | None = None
+    ) -> tuple[bool, str]:
         """Send SMS via Twilio"""
         try:
             from twilio.rest import Client
+
+            from .localization import get_background_locale, translate
 
             if not all([self.twilio_account_sid, self.twilio_auth_token, self.twilio_phone_number]):
                 detail = "Twilio credentials not configured"
@@ -191,8 +202,11 @@ class SMSService:
             client = Client(self.twilio_account_sid, self.twilio_auth_token)
 
             normalized_to = _normalize_phone_twilio(phone_number)
+            body_text = translate(
+                "password_reset_sms_body", get_background_locale(locale), code=reset_code
+            )
             message = client.messages.create(
-                body=f"Your password reset code is: {reset_code}. This code expires in 1 hour.",
+                body=body_text,
                 from_=self.twilio_phone_number,
                 to=normalized_to,
             )
@@ -214,15 +228,23 @@ class SMSService:
             logger.error(detail)
             return False, _safe_provider_error(detail)
 
-    def _send_via_console(self, phone_number: str, reset_code: str) -> tuple[bool, str]:
+    def _send_via_console(
+        self, phone_number: str, reset_code: str, locale: str | None = None
+    ) -> tuple[bool, str]:
         """Send SMS via console (for development)"""
         if _app_env() == "production":
             detail = "SMS_PROVIDER=console is not allowed in production"
             logger.error(detail)
             return False, detail
+
+        from .localization import get_background_locale, translate
+
+        body_text = translate(
+            "password_reset_sms_body", get_background_locale(locale), code=reset_code
+        )
         print(f"\n{'=' * 50}")
         print(f"SMS TO: {phone_number}")
-        print(f"MESSAGE: Your password reset code is: {reset_code}")
+        print(f"MESSAGE: {body_text}")
         print(f"EXPIRES: 1 hour")
         print(f"{'=' * 50}\n")
 
@@ -395,9 +417,11 @@ class SMSService:
 sms_service = SMSService()
 
 
-def send_password_reset_sms(phone_number: str, reset_code: str) -> bool:
+def send_password_reset_sms(
+    phone_number: str, reset_code: str, locale: str | None = None
+) -> bool:
     """Convenience function to send password reset SMS"""
-    ok, _ = sms_service.send_password_reset_code(phone_number, reset_code)
+    ok, _ = sms_service.send_password_reset_code(phone_number, reset_code, locale=locale)
     return ok
 
 

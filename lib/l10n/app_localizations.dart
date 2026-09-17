@@ -4982,6 +4982,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pause video'**
   String get pauseVideo;
+
+  /// No description provided for @navigationErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Navigation error'**
+  String get navigationErrorTitle;
+
+  /// No description provided for @missingChatConversationId.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing chat conversation id'**
+  String get missingChatConversationId;
+
+  /// No description provided for @missingListingData.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing listing data'**
+  String get missingListingData;
+
+  /// No description provided for @somethingWentWrongRestart.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please restart the app.'**
+  String get somethingWentWrongRestart;
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateAvailableTitle;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateNowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get updateNowButton;
+
+  /// No description provided for @updateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get updateButton;
+
+  /// No description provided for @notNowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get notNowButton;
+
+  /// No description provided for @tryAgainButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get tryAgainButton;
+
+  /// No description provided for @forceUpdateFallbackMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Please update CarNet to continue.'**
+  String get forceUpdateFallbackMessage;
+
+  /// No description provided for @softUpdateFallbackMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A newer version of CarNet is available.'**
+  String get softUpdateFallbackMessage;
 }
 
 class _AppLocalizationsDelegate
