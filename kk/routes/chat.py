@@ -1553,7 +1553,19 @@ def push_test():
 @bp.route("/api/users/blocked", methods=["GET"])
 @jwt_required()
 def list_blocked_users():
-    """Return a list of blocked user IDs for the current user."""
+    """Return the current user's blocked users.
+
+    ``blocked_users`` (list[str] of public_ids) is the original, stable
+    contract and is preserved byte-for-byte for backwards compatibility.
+
+    ``blocked_user_details`` (MI-01) is an additive field carrying only the
+    minimal public display fields (``id``, ``name``, ``profile_picture``) a
+    "blocked users" management screen needs, resolved via the exact same
+    batched ``User`` lookup as ``blocked_users`` above — no extra per-user
+    queries are introduced. A blocked account that no longer exists (deleted
+    user) is silently skipped from both lists, matching the pre-existing
+    behavior.
+    """
     try:
         me = get_current_user()
         if not me:
@@ -1563,16 +1575,34 @@ def list_blocked_users():
         blocked_id_ints = [b.blocked_id for b in blocks]
         # BE-17: batch-fetch instead of one User lookup per block (N+1);
         # mirrors the users_by_id pattern already used in list_chats().
-        public_id_by_user_id = {
-            u.id: u.public_id
+        users_by_id = {
+            u.id: u
             for u in User.query.filter(User.id.in_(blocked_id_ints)).all()
         } if blocked_id_ints else {}
-        blocked_ids = [
-            public_id_by_user_id[b.blocked_id]
-            for b in blocks
-            if b.blocked_id in public_id_by_user_id
-        ]
-        return jsonify({"blocked_users": blocked_ids}), 200
+
+        blocked_ids = []
+        blocked_user_details = []
+        for b in blocks:
+            u = users_by_id.get(b.blocked_id)
+            if u is None:
+                # Deleted/missing account: skip from both lists, exactly as
+                # the pre-existing `blocked_users`-only behavior already did.
+                continue
+            blocked_ids.append(u.public_id)
+            blocked_user_details.append(
+                {
+                    "id": u.public_id,
+                    "name": f"{u.first_name} {u.last_name}".strip(),
+                    "profile_picture": u.profile_picture or None,
+                }
+            )
+
+        return jsonify(
+            {
+                "blocked_users": blocked_ids,
+                "blocked_user_details": blocked_user_details,
+            }
+        ), 200
     except Exception as e:
         _log_route_exception("list_blocked_users", e)
         return jsonify({"message": "Failed to load blocked users"}), 500

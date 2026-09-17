@@ -168,7 +168,10 @@ def test_get_blocked_users_empty_list_when_no_blocks(app_ctx):
 
     r = client.get("/api/users/blocked", headers=_auth(token))
     assert r.status_code == 200, r.data
-    assert r.get_json() == {"blocked_users": []}
+    # MI-01 added the additive `blocked_user_details` field alongside the
+    # original `blocked_users` contract asserted here — both are empty when
+    # there are no blocks.
+    assert r.get_json() == {"blocked_users": [], "blocked_user_details": []}
 
 
 def test_get_blocked_users_returns_all_expected_public_ids_in_order(app_ctx):

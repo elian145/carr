@@ -834,6 +834,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get removeAction => 'Remove';
 
   @override
+  String get blockedUsersTitle => 'Blocked users';
+
+  @override
+  String get unblockAction => 'Unblock';
+
+  @override
+  String get noBlockedUsers => 'You haven\'t blocked anyone.';
+
+  @override
+  String get unblockUserTitle => 'Unblock user?';
+
+  @override
+  String unblockUserConfirmation(String name) {
+    return 'Unblock $name? They will be able to message you again.';
+  }
+
+  @override
+  String get userUnblocked => 'User unblocked';
+
+  @override
+  String get blockedUsersLoadError => 'Failed to load blocked users';
+
+  @override
+  String get failedToUnblockUser => 'Failed to unblock user';
+
+  @override
   String get settingsThemeTitle => 'Theme';
 
   @override

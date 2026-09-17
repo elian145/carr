@@ -836,6 +836,33 @@ class AppLocalizationsKu extends AppLocalizations {
   String get removeAction => 'لابردن';
 
   @override
+  String get blockedUsersTitle => 'بەکارهێنەرە بلۆککراوەکان';
+
+  @override
+  String get unblockAction => 'هەڵوەشاندنەوەی بلۆک';
+
+  @override
+  String get noBlockedUsers => 'تۆ کەست بلۆک نەکردووە.';
+
+  @override
+  String get unblockUserTitle => 'بلۆکی بەکارهێنەر هەڵبوەشێتەوە؟';
+
+  @override
+  String unblockUserConfirmation(String name) {
+    return 'بلۆکی $name هەڵبوەشێتەوە؟ دەتوانێت دووبارە پەیامت بۆ بنێرێت.';
+  }
+
+  @override
+  String get userUnblocked => 'بلۆکی بەکارهێنەر هەڵوەشایەوە';
+
+  @override
+  String get blockedUsersLoadError =>
+      'نەتوانرا بەکارهێنەرە بلۆککراوەکان بار بکرێن';
+
+  @override
+  String get failedToUnblockUser => 'نەتوانرا بلۆکی بەکارهێنەر هەڵبوەشێتەوە';
+
+  @override
   String get settingsThemeTitle => 'ڕووکار';
 
   @override

@@ -198,6 +198,19 @@ mixin _ProfilePageBodyActions on _ProfilePageBodyAccount {
             ],
             SizedBox(height: 12),
             _buildActionButton(
+              Icons.block_outlined,
+              AppLocalizations.of(context)!.blockedUsersTitle,
+              () {
+                if (ApiService.accessToken == null ||
+                    ApiService.accessToken!.isEmpty) {
+                  _showAuthRequiredDialog(context);
+                  return;
+                }
+                Navigator.pushNamed(context, '/blocked-users');
+              },
+            ),
+            SizedBox(height: 12),
+            _buildActionButton(
               Icons.contact_mail_outlined,
               AppLocalizations.of(context)!.helpSupportTitle,
               () {

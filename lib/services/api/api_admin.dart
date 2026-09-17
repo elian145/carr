@@ -84,4 +84,24 @@ abstract final class _ApiServiceAdmin {
       }
       return [];
     }
+
+    /// Get the current user's blocked users with display details (MI-01).
+    ///
+    /// Each record is a raw `{id, name, profile_picture}` map -- `id` is the
+    /// blocked user's public_id (the same value [getBlockedUsers] returns),
+    /// `name` is a display name, and `profile_picture` is a possibly-null
+    /// relative/absolute URL. Mirrors the existing raw-map convention already
+    /// used for `other_user` in [getChats] rather than introducing a new
+    /// model class.
+    static Future<List<Map<String, dynamic>>> getBlockedUserDetails() async {
+      final result = await ApiService._makeAuthenticatedRequest('GET', '/users/blocked');
+      final raw = result['blocked_user_details'];
+      if (raw is List) {
+        return raw
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+      return [];
+    }
 }

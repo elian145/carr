@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../pages/analytics_page.dart';
+import '../pages/blocked_users_page.dart';
 import '../pages/forgot_password_page.dart';
 import '../pages/change_password_page.dart';
 import '../features/chat/chat_pages.dart' as carzo_chat;
@@ -71,6 +72,7 @@ Map<String, WidgetBuilder> buildProductionRoutes() {
         AuthGuard(child: const DealerOnboardingPage()),
     '/profile': (context) => const MainShell(initialIndex: 3),
     '/edit-profile': (context) => AuthGuard(child: EditProfilePage()),
+    '/blocked-users': (context) => AuthGuard(child: const BlockedUsersPage()),
     '/car_detail': (context) {
       final args = readRouteArgs(context);
       final carId = (args?['carId'] ?? '').toString().trim();

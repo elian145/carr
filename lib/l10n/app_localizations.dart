@@ -1696,6 +1696,54 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get removeAction;
 
+  /// No description provided for @blockedUsersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked users'**
+  String get blockedUsersTitle;
+
+  /// No description provided for @unblockAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get unblockAction;
+
+  /// No description provided for @noBlockedUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t blocked anyone.'**
+  String get noBlockedUsers;
+
+  /// No description provided for @unblockUserTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock user?'**
+  String get unblockUserTitle;
+
+  /// No description provided for @unblockUserConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock {name}? They will be able to message you again.'**
+  String unblockUserConfirmation(String name);
+
+  /// No description provided for @userUnblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'User unblocked'**
+  String get userUnblocked;
+
+  /// No description provided for @blockedUsersLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load blocked users'**
+  String get blockedUsersLoadError;
+
+  /// No description provided for @failedToUnblockUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unblock user'**
+  String get failedToUnblockUser;
+
   /// No description provided for @settingsThemeTitle.
   ///
   /// In en, this message translates to:

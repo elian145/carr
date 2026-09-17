@@ -783,6 +783,9 @@ class ApiService {
 
   static Future<List<String>> getBlockedUsers() =>
       _ApiServiceAdmin.getBlockedUsers();
+
+  static Future<List<Map<String, dynamic>>> getBlockedUserDetails() =>
+      _ApiServiceAdmin.getBlockedUserDetails();
 }
 
 class _ApiGetCacheEntry {

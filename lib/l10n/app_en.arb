@@ -288,6 +288,21 @@
   "comparisonEmptyHint": "Add cars to comparison from listings.",
   "comparisonSpecLabel": "Spec",
   "removeAction": "Remove",
+  "blockedUsersTitle": "Blocked users",
+  "unblockAction": "Unblock",
+  "noBlockedUsers": "You haven't blocked anyone.",
+  "unblockUserTitle": "Unblock user?",
+  "unblockUserConfirmation": "Unblock {name}? They will be able to message you again.",
+  "@unblockUserConfirmation": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userUnblocked": "User unblocked",
+  "blockedUsersLoadError": "Failed to load blocked users",
+  "failedToUnblockUser": "Failed to unblock user",
   "settingsThemeTitle": "Theme",
   "settingsLanguageTitle": "Language",
   "settingsSystem": "System",

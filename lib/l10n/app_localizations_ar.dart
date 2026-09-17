@@ -832,6 +832,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get removeAction => 'إزالة';
 
   @override
+  String get blockedUsersTitle => 'المستخدمون المحظورون';
+
+  @override
+  String get unblockAction => 'إلغاء الحظر';
+
+  @override
+  String get noBlockedUsers => 'لم تقم بحظر أي شخص.';
+
+  @override
+  String get unblockUserTitle => 'إلغاء حظر المستخدم؟';
+
+  @override
+  String unblockUserConfirmation(String name) {
+    return 'إلغاء حظر $name؟ سيتمكن من مراسلتك مرة أخرى.';
+  }
+
+  @override
+  String get userUnblocked => 'تم إلغاء حظر المستخدم';
+
+  @override
+  String get blockedUsersLoadError => 'فشل تحميل المستخدمين المحظورين';
+
+  @override
+  String get failedToUnblockUser => 'فشل إلغاء حظر المستخدم';
+
+  @override
   String get settingsThemeTitle => 'المظهر';
 
   @override
