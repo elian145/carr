@@ -7,16 +7,21 @@ class AppFonts {
   static const String orbitronFamily = 'Orbitron';
   static const String barlowCondensedFamily = 'BarlowCondensed';
 
+  /// Bundled Arabic-script display font (Noto Sans Arabic, variable `wght`
+  /// 100-900) used for `ar`/`ku` text instead of the Latin-only branded
+  /// fonts. Covers standard Arabic glyphs plus the extended Sorani Kurdish
+  /// letters this app's `ku` content uses (e.g. `ڕ ڵ ھ ێ ۆ`). See
+  /// `assets/fonts/README.md` for source/license (OFL, google/fonts).
+  static const String notoSansArabicFamily = 'NotoSansArabic';
+
   /// U-04: [orbitronFamily] / [barlowCondensedFamily] are bundled Latin-only
   /// display fonts (Orbitron, Barlow Condensed) with no Arabic/Kurdish
   /// glyphs. Forcing them onto Arabic/Kurdish text leaves glyph selection to
   /// an unpredictable OEM/platform fallback font that varies by device (see
-  /// PRODUCTION_AUDIT.md U-04). No Arabic/Kurdish-capable font asset is
-  /// bundled with the app yet, so for those locales we deliberately fall
-  /// back to the app's normal default text style (no forced `fontFamily`)
-  /// instead -- the same, already-working rendering path every other piece
-  /// of Arabic/Kurdish text in the app already uses -- rather than the
-  /// Latin-only branded font. English keeps the branded font unchanged.
+  /// PRODUCTION_AUDIT.md U-04). [notoSansArabicFamily] is now bundled with
+  /// the app specifically to give `ar`/`ku` a deterministic, glyph-complete
+  /// font instead of relying on OEM/platform fallback. English keeps the
+  /// branded font unchanged.
   ///
   /// Use [orbitronForLocale] / [barlowCondensedForLocale] (not [orbitron] /
   /// [barlowCondensed] directly) for any text whose content can be a
@@ -25,6 +30,18 @@ class AppFonts {
   /// regardless of locale (e.g. plate codes).
   static bool isLatinBrandFontLocale(Locale locale) =>
       locale.languageCode != 'ar' && locale.languageCode != 'ku';
+
+  /// Returns the deterministic bundled font family for [locale]: the
+  /// branded Latin font is never appropriate for `ar`/`ku` (see
+  /// [isLatinBrandFontLocale]), so those locales resolve to
+  /// [notoSansArabicFamily] instead of an unpredictable OEM/platform
+  /// fallback. Centralizing this here means callers never need their own
+  /// `languageCode == 'ar' || ...` branching.
+  static String fontFamilyForLocale(
+    Locale locale, {
+    required String latinFamily,
+  }) =>
+      isLatinBrandFontLocale(locale) ? latinFamily : notoSansArabicFamily;
 
   static TextStyle _brandStyle({
     required String? fontFamily,
@@ -121,9 +138,10 @@ class AppFonts {
   /// Locale-aware variant of [orbitron] for text that can be a
   /// translated/localized string (headings, hints, labels, etc.). Applies
   /// the branded Orbitron font only when [isLatinBrandFontLocale] is true
-  /// for [locale]; otherwise returns the same style without forcing a
-  /// Latin-only `fontFamily`, letting Arabic/Kurdish render through the
-  /// app's normal default text rendering path.
+  /// for [locale]; otherwise deterministically resolves to the bundled
+  /// [notoSansArabicFamily] font for Arabic/Kurdish (see
+  /// [fontFamilyForLocale]) instead of an unpredictable OEM/platform
+  /// fallback.
   static TextStyle orbitronForLocale(
     Locale locale, {
     TextStyle? textStyle,
@@ -145,7 +163,7 @@ class AppFonts {
     double? decorationThickness,
   }) {
     return _brandStyle(
-      fontFamily: isLatinBrandFontLocale(locale) ? orbitronFamily : null,
+      fontFamily: fontFamilyForLocale(locale, latinFamily: orbitronFamily),
       textStyle: textStyle,
       color: color,
       fontSize: fontSize,
@@ -199,7 +217,7 @@ class AppFonts {
 
   /// Locale-aware variant of [barlowCondensed] for text that can be a
   /// translated/localized string. See [orbitronForLocale] / U-04 note on
-  /// [isLatinBrandFontLocale].
+  /// [isLatinBrandFontLocale] / [fontFamilyForLocale].
   static TextStyle barlowCondensedForLocale(
     Locale locale, {
     TextStyle? textStyle,
@@ -213,7 +231,8 @@ class AppFonts {
     TextBaseline? textBaseline,
   }) {
     return _brandStyle(
-      fontFamily: isLatinBrandFontLocale(locale) ? barlowCondensedFamily : null,
+      fontFamily:
+          fontFamilyForLocale(locale, latinFamily: barlowCondensedFamily),
       textStyle: textStyle,
       color: color,
       fontSize: fontSize,

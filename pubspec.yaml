@@ -164,3 +164,6 @@ flutter:
       fonts:
         - asset: assets/fonts/BarlowCondensed-Black.ttf
           weight: 900
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
