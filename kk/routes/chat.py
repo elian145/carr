@@ -453,6 +453,7 @@ def list_chats():
                 .filter(
                     Message.receiver_id == me.id,
                     Message.is_read == False,  # noqa: E712
+                    Message.is_deleted == False,  # noqa: E712
                     Message.car_id.in_(car_ids),
                     Message.sender_id.in_(other_ids),
                 )
@@ -1358,11 +1359,24 @@ def unread_count():
         me = get_current_user()
         if not me:
             return jsonify({"message": "Unauthorized"}), 401
-        n = (
-            db.session.query(func.count(Message.id))
-            .filter(Message.receiver_id == me.id, Message.is_read == False)  # noqa: E712
-            .scalar()
+
+        # B-06: match the conversation-list semantics — a blocked sender's
+        # messages are hidden from this user, and a soft-deleted message
+        # ("This message was deleted") is not a real pending unread.
+        blocked_ids = [
+            b.blocked_id
+            for b in BlockedUser.query.filter_by(blocker_id=me.id).all()
+        ]
+
+        count_q = db.session.query(func.count(Message.id)).filter(
+            Message.receiver_id == me.id,
+            Message.is_read == False,  # noqa: E712
+            Message.is_deleted == False,  # noqa: E712
         )
+        if blocked_ids:
+            count_q = count_q.filter(~Message.sender_id.in_(blocked_ids))
+
+        n = count_q.scalar()
         return jsonify({"unread_count": int(n or 0)}), 200
     except Exception as e:
         _log_route_exception("unread_count", e)
