@@ -73,6 +73,16 @@ class FakeApiServer {
   /// on it.
   static final List<String?> chatSendIdempotencyKeys = [];
 
+  /// B-07 regression coverage: when set, `GET /api/user/notifications`
+  /// returns this list (wrapped in the real `{notifications, pagination}`
+  /// shape) instead of the default empty stub. Cleared by [stop].
+  static List<Map<String, dynamic>>? notificationsOverride;
+
+  /// B-07 regression coverage: records every notification id marked read
+  /// via `PATCH /api/user/notifications/<id>/read`, in call order. Reset at
+  /// the start of a test that relies on it, cleared by [stop].
+  static final List<String> markNotificationReadCalls = [];
+
   /// F-11 regression coverage: per-call override for
   /// `POST /api/chat/<id>/send*` (any send variant — text/image/video/
   /// audio/media_group all contain `/send` in their path). Called with the
@@ -133,6 +143,8 @@ class FakeApiServer {
     chatSendIdempotencyKeys.clear();
     chatSendOverride = null;
     chatSendCallCount = 0;
+    notificationsOverride = null;
+    markNotificationReadCalls.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -282,6 +294,27 @@ class FakeApiServer {
 
     if (path == '/api/users/blocked') {
       return _json(200, {'blocked_users': <dynamic>[]});
+    }
+
+    // B-07 regression coverage.
+    if (path == '/api/user/notifications' && method == 'GET') {
+      final list = notificationsOverride ?? const <Map<String, dynamic>>[];
+      return _json(200, {
+        'notifications': list,
+        'pagination': {'has_next': false},
+      });
+    }
+    if (path.startsWith('/api/user/notifications/') &&
+        path.endsWith('/read') &&
+        method == 'PATCH') {
+      final id = Uri.decodeComponent(
+        path.substring(
+          '/api/user/notifications/'.length,
+          path.length - '/read'.length,
+        ),
+      );
+      markNotificationReadCalls.add(id);
+      return _json(200, {'message': 'Notification marked read'});
     }
 
     if (path.startsWith('/api/users/') && path.length > '/api/users/'.length) {

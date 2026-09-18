@@ -145,6 +145,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       return;
     }
     if (type == 'dealer_application') {
+      // B-07: the dealer onboarding/status screen already shows the user's
+      // current application/status, so route there instead of no-op'ing.
+      await Navigator.pushNamed(context, '/dealer-onboarding');
       return;
     }
     final listingId =
