@@ -78,6 +78,13 @@ class FakeApiServer {
   /// shape) instead of the default empty stub. Cleared by [stop].
   static List<Map<String, dynamic>>? notificationsOverride;
 
+  /// B-04 regression coverage: when set, `GET /api/user/notifications`
+  /// calls this instead of returning the default/[notificationsOverride]
+  /// 200 stub — return an [http.Response] to force a specific status (e.g.
+  /// 500) or throw to simulate a transport failure/timeout. Takes priority
+  /// over [notificationsOverride] while set. Cleared by [stop].
+  static http.Response Function()? notificationsGetOverride;
+
   /// B-07 regression coverage: records every notification id marked read
   /// via `PATCH /api/user/notifications/<id>/read`, in call order. Reset at
   /// the start of a test that relies on it, cleared by [stop].
@@ -144,6 +151,7 @@ class FakeApiServer {
     chatSendOverride = null;
     chatSendCallCount = 0;
     notificationsOverride = null;
+    notificationsGetOverride = null;
     markNotificationReadCalls.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
@@ -296,8 +304,12 @@ class FakeApiServer {
       return _json(200, {'blocked_users': <dynamic>[]});
     }
 
-    // B-07 regression coverage.
+    // B-07/B-04 regression coverage.
     if (path == '/api/user/notifications' && method == 'GET') {
+      final override = notificationsGetOverride;
+      if (override != null) {
+        return override();
+      }
       final list = notificationsOverride ?? const <Map<String, dynamic>>[];
       return _json(200, {
         'notifications': list,

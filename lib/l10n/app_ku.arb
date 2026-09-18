@@ -458,6 +458,7 @@
   "accountActionsTitle": "کردارەکانی هەژمار",
   "notificationsTitle": "ئاگادارکردنەوەکان",
   "noNotificationsYet": "هێشتا هیچ ئاگادارکردنەوەیەک نییە",
+  "failedToLoadNotifications": "بارکردنی ئاگادارکردنەوەکان شکستی هێنا",
   "helpSupportTitle": "یارمەتی و پشتگیری",
   "carComparisonCount": "بەراوردی ئۆتۆمبێل",
   "addNewButton": "زیادکردنی نوێ +",

@@ -2500,6 +2500,12 @@ abstract class AppLocalizations {
   /// **'No notifications yet'**
   String get noNotificationsYet;
 
+  /// No description provided for @failedToLoadNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load notifications'**
+  String get failedToLoadNotifications;
+
   /// No description provided for @helpSupportTitle.
   ///
   /// In en, this message translates to:

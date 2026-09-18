@@ -14,6 +14,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
   bool _loadingMore = false;
   int _page = 1;
   bool _hasNext = false;
+  // B-04: tracks whether the most recent *initial* load (refresh: true)
+  // failed, so a failed load can be distinguished from a genuinely empty
+  // inbox instead of both rendering the same "No notifications yet" state.
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -47,6 +51,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         setState(() {
           _loading = true;
           _page = 1;
+          // B-04: clear any stale error from a previous attempt up front so
+          // a new load never briefly shows a leftover error state.
+          _loadFailed = false;
         });
       }
     } else {
@@ -92,6 +99,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
         _hasNext = hasNext;
         _loading = false;
         _loadingMore = false;
+        // B-04: any successful load clears a previously-shown error state.
+        _loadFailed = false;
       });
     } catch (e, st) {
       logNonFatal(e, st, 'NotificationsPage.load');
@@ -99,6 +108,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
       setState(() {
         _loading = false;
         _loadingMore = false;
+        // B-04: only the initial-load/pull-to-refresh path (refresh: true)
+        // shows the distinct error/retry state. A failed "load more" page
+        // must not replace already-loaded notifications with an error
+        // screen — it silently stops, exactly as before this fix.
+        if (refresh) _loadFailed = true;
       });
     }
   }
@@ -189,10 +203,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       children: [
                         SizedBox(
                           height: MediaQuery.sizeOf(context).height * 0.55,
-                          child: EmptyStatePanel(
-                            icon: Icons.notifications_none_rounded,
-                            title: loc.noNotificationsYet,
-                          ),
+                          // B-04: a failed initial/refresh load must not look
+                          // identical to a genuinely empty inbox — show a
+                          // distinct, retryable error state instead, reusing
+                          // the existing EmptyStatePanel's optional action.
+                          child: _loadFailed
+                              ? EmptyStatePanel(
+                                  icon: Icons.cloud_off,
+                                  title: loc.failedToLoadNotifications,
+                                  actionLabel: loc.retryAction,
+                                  actionIcon: Icons.refresh,
+                                  onAction: () =>
+                                      _loadNotifications(refresh: true),
+                                )
+                              : EmptyStatePanel(
+                                  icon: Icons.notifications_none_rounded,
+                                  title: loc.noNotificationsYet,
+                                ),
                         ),
                       ],
                     )

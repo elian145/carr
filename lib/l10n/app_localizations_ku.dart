@@ -1302,6 +1302,10 @@ class AppLocalizationsKu extends AppLocalizations {
   String get noNotificationsYet => 'هێشتا هیچ ئاگادارکردنەوەیەک نییە';
 
   @override
+  String get failedToLoadNotifications =>
+      'بارکردنی ئاگادارکردنەوەکان شکستی هێنا';
+
+  @override
   String get helpSupportTitle => 'یارمەتی و پشتگیری';
 
   @override

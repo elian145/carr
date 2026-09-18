@@ -1314,6 +1314,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noNotificationsYet => 'لا توجد إشعارات بعد';
 
   @override
+  String get failedToLoadNotifications => 'تعذر تحميل الإشعارات';
+
+  @override
   String get helpSupportTitle => 'المساعدة والدعم';
 
   @override

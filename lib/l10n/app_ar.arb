@@ -458,6 +458,7 @@
   "accountActionsTitle": "إجراءات الحساب",
   "notificationsTitle": "الإشعارات",
   "noNotificationsYet": "لا توجد إشعارات بعد",
+  "failedToLoadNotifications": "تعذر تحميل الإشعارات",
   "helpSupportTitle": "المساعدة والدعم",
   "carComparisonCount": "مقارنة السيارات",
   "addNewButton": "إضافة جديد +",

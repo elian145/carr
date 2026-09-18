@@ -464,6 +464,7 @@
   "accountActionsTitle": "Account Actions",
   "notificationsTitle": "Notifications",
   "noNotificationsYet": "No notifications yet",
+  "failedToLoadNotifications": "Failed to load notifications",
   "helpSupportTitle": "Help & Support",
   "carComparisonCount": "Car Comparison",
   "addNewButton": "Add New +",
