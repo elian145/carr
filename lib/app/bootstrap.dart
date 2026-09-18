@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/car_name_translations.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -114,6 +115,31 @@ void _runZonedApp(Widget app) {
         final override = sp.getString(_apiBaseOverrideKey);
         setRuntimeApiBaseOverride(override);
         LocaleController.applyFromPrefs(sp);
+      } catch (e, st) { logNonFatal(e, st); }
+
+      // MT-11: also load the Arabic/Kurdish car brand/model display-name
+      // pack (`CarNameTranslations`) before `runApp`, not just the app
+      // locale above. Previously this only happened in the post-`runApp`
+      // microtask below (`LocaleController.loadSavedLocale()`), which let
+      // the Home feed's very first paint race the async JSON asset load:
+      // cards rendered immediately (from disk/memory cache or the first
+      // network response) with correct RTL/AppLocalizations strings
+      // (locale was already applied above) but still-English brand/model
+      // names, because `CarNameTranslations`'s ar/ku pack hadn't finished
+      // loading yet -- and nothing rebuilds the feed once it does, until
+      // some unrelated `setState` (e.g. pull-to-refresh) happens to fire
+      // after the pack has since finished loading. Loading it here closes
+      // that race the same way the locale-prefs read above already was
+      // moved earlier for the identical reason. No-op / effectively
+      // instant for `en` (see `CarNameTranslations.ensureLoadedForLocale`'s
+      // early return for untranslated locales); `loadSavedLocale()` below
+      // still runs afterward as a cheap, idempotent no-op (cache hit) --
+      // kept in case the resolved locale ever legitimately changes between
+      // this point and then.
+      try {
+        await CarNameTranslations.ensureLoadedForLocale(
+          LocaleController.resolveCode(),
+        );
       } catch (e, st) { logNonFatal(e, st); }
 
       // Minimal pre-run init only (fast): load tokens if available.
