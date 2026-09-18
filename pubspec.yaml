@@ -80,6 +80,11 @@ dev_dependencies:
   # depending on whichever real secure-storage backend happens to be
   # available on the test-runner OS.
   flutter_secure_storage_platform_interface: ^1.1.2
+  # B-08: lets connectivity_service_test.dart install a deterministic fake
+  # ConnectivityPlatform.instance (connected / none / throw / stream error)
+  # instead of depending on the real connectivity_plus platform channel,
+  # which is unavailable under `flutter test`.
+  connectivity_plus_platform_interface: ^2.1.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

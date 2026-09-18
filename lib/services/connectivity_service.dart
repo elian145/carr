@@ -19,9 +19,19 @@ class ConnectivityService {
     try {
       final initial = await Connectivity().checkConnectivity();
       _apply(initial);
-      _sub = Connectivity().onConnectivityChanged.listen(_apply);
+      _sub = Connectivity().onConnectivityChanged.listen(
+        _apply,
+        // B-08: a stream error must not be silently swallowed into a
+        // stale/default "online" value — fail conservatively toward
+        // offline, matching the initial-check catch below.
+        onError: (_) => _markOffline(),
+      );
     } catch (_) {
-      isOnline.value = true;
+      // B-08: a plugin/check failure must NOT be reported as online — that
+      // hides a genuine offline state from the rest of the app (chat/Sell
+      // recovery triggers, API error/cache messaging, the offline banner,
+      // etc). Fail conservatively toward offline instead.
+      _markOffline();
     }
   }
 
@@ -29,6 +39,12 @@ class ConnectivityService {
     final online = results.any((r) => r != ConnectivityResult.none);
     if (isOnline.value != online) {
       isOnline.value = online;
+    }
+  }
+
+  void _markOffline() {
+    if (isOnline.value) {
+      isOnline.value = false;
     }
   }
 
