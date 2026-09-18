@@ -68,19 +68,6 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     }
   }
 
-  String _draftTitle(Map<String, dynamic> data) {
-    final brand = (data['brand'] ?? '').toString().trim();
-    final model = (data['model'] ?? '').toString().trim();
-    final trim = (data['trim'] ?? '').toString().trim();
-    final year = (data['year'] ?? '').toString().trim();
-    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
-    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
-    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
-    if (title.isEmpty) return suffix;
-    if (suffix.isEmpty) return title;
-    return '$title • $suffix';
-  }
-
   Future<void> _loadDrafts() async {
     try {
       final sp = await SharedPreferences.getInstance();
@@ -428,7 +415,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       AppLocalizations.of(context)!.sellStep6Review,
     ];
     final label = labels[stepIndex];
-    final title = _draftTitle(carData);
+    final title = localizedSellDraftTitle(context, carData);
     final isActive = draft['isActive'] == true;
 
     return Container(

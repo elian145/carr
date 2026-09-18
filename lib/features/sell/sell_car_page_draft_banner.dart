@@ -51,7 +51,10 @@ mixin _SellCarPageDraftBanner on _SellCarPageDraftPersist {
               ),
               const SizedBox(height: 12),
               Text(
-                _draftTitle(_draftPreviewCarData ?? carData),
+                sell_draft_helpers.localizedSellDraftTitle(
+                  context,
+                  _draftPreviewCarData ?? carData,
+                ),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),

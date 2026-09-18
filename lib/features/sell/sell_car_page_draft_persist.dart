@@ -408,16 +408,4 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     } catch (e, st) { logNonFatal(e, st); }
   }
 
-  String _draftTitle(Map<String, dynamic> data) {
-    final brand = (data['brand'] ?? '').toString().trim();
-    final model = (data['model'] ?? '').toString().trim();
-    final trim = (data['trim'] ?? '').toString().trim();
-    final year = (data['year'] ?? '').toString().trim();
-    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
-    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
-    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
-    if (title.isEmpty) return suffix;
-    if (suffix.isEmpty) return title;
-    return '$title • $suffix';
-  }
 }

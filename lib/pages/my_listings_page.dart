@@ -16,6 +16,7 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../features/sell/sell_draft_helpers.dart';
 import '../features/sell/sell_pending_media_resume.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';
@@ -361,18 +362,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
     });
   }
 
-  String _draftTitle(Map<String, dynamic> carData) {
-    final brand = (carData['brand'] ?? '').toString().trim();
-    final model = (carData['model'] ?? '').toString().trim();
-    final trim = (carData['trim'] ?? '').toString().trim();
-    final year = (carData['year'] ?? '').toString().trim();
-    final title = [brand, model].where((v) => v.isNotEmpty).join(' ');
-    final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
-    if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
-    if (title.isEmpty) return suffix;
-    if (suffix.isEmpty) return title;
-    return '$title • $suffix';
-  }
+  String _draftTitle(Map<String, dynamic> carData) =>
+      localizedSellDraftTitle(context, carData);
 
   @override
   Widget build(BuildContext context) {
