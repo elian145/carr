@@ -87,7 +87,8 @@ extension _DealerProfilePageSearch on _DealerProfilePageState {
                     maxLines: 1,
                     softWrap: false,
                     overflow: TextOverflow.visible,
-                    style: AppFonts.orbitron(
+                    style: AppFonts.orbitronForLocale(
+                      Localizations.localeOf(context),
                       color: AppColors.brandOrange,
                       fontWeight: FontWeight.bold,
                       fontSize: 18,

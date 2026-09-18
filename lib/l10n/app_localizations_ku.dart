@@ -1052,27 +1052,57 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String timeDaysAgo(int count) {
-    return 'پێش $count ڕۆژ';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'پێش $count ڕۆژ',
+      one: 'پێش ڕۆژێک',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeHoursAgo(int count) {
-    return 'پێش $count کاتژمێر';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'پێش $count کاتژمێر',
+      one: 'پێش کاتژمێرێک',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeMinutesAgo(int count) {
-    return 'پێش $count خولەک';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'پێش $count خولەک',
+      one: 'پێش خولەکێک',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeMonthsAgo(int count) {
-    return 'پێش $count مانگ';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'پێش $count مانگ',
+      one: 'پێش مانگێک',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeYearsAgo(int count) {
-    return 'پێش $count ساڵ';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'پێش $count ساڵ',
+      one: 'پێش ساڵێک',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1592,7 +1622,13 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String daysAgo(int count) {
-    return 'پێش $count ڕۆژ';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'پێش $count ڕۆژ',
+      one: 'پێش ڕۆژێک',
+    );
+    return '$_temp0';
   }
 
   @override

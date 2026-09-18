@@ -136,7 +136,8 @@ class HomeSearchDialogState extends State<HomeSearchDialog> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.searchCars,
-                  style: AppFonts.orbitron(
+                  style: AppFonts.orbitronForLocale(
+                    Localizations.localeOf(context),
                     color: AppColors.brandOrange,
                     fontWeight: FontWeight.bold,
                     fontSize: 24,

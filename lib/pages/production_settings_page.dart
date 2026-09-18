@@ -107,7 +107,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Text(
                       title,
-                      style: AppFonts.orbitron(
+                      style: AppFonts.orbitronForLocale(
+                        Localizations.localeOf(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: titleColor,

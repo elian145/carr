@@ -355,7 +355,7 @@
   "unknownSender": "نەناسراو",
   "justNow": "ئێستا",
   "noMessagesYet": "هێشتا نامەیەک نییە.",
-  "timeDaysAgo": "پێش {count} ڕۆژ",
+  "timeDaysAgo": "{count, plural, one{پێش ڕۆژێک} other{پێش {count} ڕۆژ}}",
   "@timeDaysAgo": {
     "placeholders": {
       "count": {
@@ -363,7 +363,7 @@
       }
     }
   },
-  "timeHoursAgo": "پێش {count} کاتژمێر",
+  "timeHoursAgo": "{count, plural, one{پێش کاتژمێرێک} other{پێش {count} کاتژمێر}}",
   "@timeHoursAgo": {
     "placeholders": {
       "count": {
@@ -371,7 +371,7 @@
       }
     }
   },
-  "timeMinutesAgo": "پێش {count} خولەک",
+  "timeMinutesAgo": "{count, plural, one{پێش خولەکێک} other{پێش {count} خولەک}}",
   "@timeMinutesAgo": {
     "placeholders": {
       "count": {
@@ -379,7 +379,7 @@
       }
     }
   },
-  "timeMonthsAgo": "پێش {count} مانگ",
+  "timeMonthsAgo": "{count, plural, one{پێش مانگێک} other{پێش {count} مانگ}}",
   "@timeMonthsAgo": {
     "placeholders": {
       "count": {
@@ -387,7 +387,7 @@
       }
     }
   },
-  "timeYearsAgo": "پێش {count} ساڵ",
+  "timeYearsAgo": "{count, plural, one{پێش ساڵێک} other{پێش {count} ساڵ}}",
   "@timeYearsAgo": {
     "placeholders": {
       "count": {
@@ -558,7 +558,7 @@
   "addedToComparison": "زیادکرا بۆ بەراورد ({count}/{max})",
   "today": "ئەمڕۆ",
   "yesterday": "دوێنێ",
-  "daysAgo": "پێش {count} ڕۆژ",
+  "daysAgo": "{count, plural, one{پێش ڕۆژێک} other{پێش {count} ڕۆژ}}",
   "@daysAgo": {
     "placeholders": {
       "count": {

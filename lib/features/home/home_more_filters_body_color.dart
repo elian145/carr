@@ -64,7 +64,8 @@ mixin _HomePageMoreFiltersColor on _HomePageMoreFiltersMileageRange {
                             children: [
                               Text(
                                 AppLocalizations.of(context)!.selectColor,
-                                style: AppFonts.orbitron(
+                                style: AppFonts.orbitronForLocale(
+                                  Localizations.localeOf(dlgContext),
                                   color: AppColors.brandOrange,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20,

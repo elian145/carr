@@ -1045,27 +1045,77 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String timeDaysAgo(int count) {
-    return 'قبل $count يوم';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قبل $count يوم',
+      many: 'قبل $count يوماً',
+      few: 'قبل $count أيام',
+      two: 'قبل يومين',
+      one: 'قبل يوم',
+      zero: 'قبل $count يوم',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeHoursAgo(int count) {
-    return 'قبل $count ساعة';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قبل $count ساعة',
+      many: 'قبل $count ساعة',
+      few: 'قبل $count ساعات',
+      two: 'قبل ساعتين',
+      one: 'قبل ساعة',
+      zero: 'قبل $count ساعة',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeMinutesAgo(int count) {
-    return 'قبل $count دقيقة';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قبل $count دقيقة',
+      many: 'قبل $count دقيقة',
+      few: 'قبل $count دقائق',
+      two: 'قبل دقيقتين',
+      one: 'قبل دقيقة',
+      zero: 'قبل $count دقيقة',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeMonthsAgo(int count) {
-    return 'قبل $count شهر';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قبل $count شهر',
+      many: 'قبل $count شهراً',
+      few: 'قبل $count أشهر',
+      two: 'قبل شهرين',
+      one: 'قبل شهر',
+      zero: 'قبل $count شهر',
+    );
+    return '$_temp0';
   }
 
   @override
   String timeYearsAgo(int count) {
-    return 'قبل $count سنة';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'قبل $count سنة',
+      many: 'قبل $count سنة',
+      few: 'قبل $count سنوات',
+      two: 'قبل سنتين',
+      one: 'قبل سنة',
+      zero: 'قبل $count سنة',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1580,7 +1630,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String daysAgo(int count) {
-    return 'منذ $count أيام';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'منذ $count يوم',
+      many: 'منذ $count يوماً',
+      few: 'منذ $count أيام',
+      two: 'منذ يومين',
+      one: 'منذ يوم',
+      zero: 'منذ $count يوم',
+    );
+    return '$_temp0';
   }
 
   @override

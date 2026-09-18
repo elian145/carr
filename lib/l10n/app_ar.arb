@@ -355,7 +355,7 @@
   "unknownSender": "غير معروف",
   "justNow": "الآن",
   "noMessagesYet": "لا توجد رسائل بعد.",
-  "timeDaysAgo": "قبل {count} يوم",
+  "timeDaysAgo": "{count, plural, zero{قبل {count} يوم} one{قبل يوم} two{قبل يومين} few{قبل {count} أيام} many{قبل {count} يوماً} other{قبل {count} يوم}}",
   "@timeDaysAgo": {
     "placeholders": {
       "count": {
@@ -363,7 +363,7 @@
       }
     }
   },
-  "timeHoursAgo": "قبل {count} ساعة",
+  "timeHoursAgo": "{count, plural, zero{قبل {count} ساعة} one{قبل ساعة} two{قبل ساعتين} few{قبل {count} ساعات} many{قبل {count} ساعة} other{قبل {count} ساعة}}",
   "@timeHoursAgo": {
     "placeholders": {
       "count": {
@@ -371,7 +371,7 @@
       }
     }
   },
-  "timeMinutesAgo": "قبل {count} دقيقة",
+  "timeMinutesAgo": "{count, plural, zero{قبل {count} دقيقة} one{قبل دقيقة} two{قبل دقيقتين} few{قبل {count} دقائق} many{قبل {count} دقيقة} other{قبل {count} دقيقة}}",
   "@timeMinutesAgo": {
     "placeholders": {
       "count": {
@@ -379,7 +379,7 @@
       }
     }
   },
-  "timeMonthsAgo": "قبل {count} شهر",
+  "timeMonthsAgo": "{count, plural, zero{قبل {count} شهر} one{قبل شهر} two{قبل شهرين} few{قبل {count} أشهر} many{قبل {count} شهراً} other{قبل {count} شهر}}",
   "@timeMonthsAgo": {
     "placeholders": {
       "count": {
@@ -387,7 +387,7 @@
       }
     }
   },
-  "timeYearsAgo": "قبل {count} سنة",
+  "timeYearsAgo": "{count, plural, zero{قبل {count} سنة} one{قبل سنة} two{قبل سنتين} few{قبل {count} سنوات} many{قبل {count} سنة} other{قبل {count} سنة}}",
   "@timeYearsAgo": {
     "placeholders": {
       "count": {
@@ -558,7 +558,7 @@
   "addedToComparison": "تمت الإضافة إلى المقارنة ({count}/{max})",
   "today": "اليوم",
   "yesterday": "أمس",
-  "daysAgo": "منذ {count} أيام",
+  "daysAgo": "{count, plural, zero{منذ {count} يوم} one{منذ يوم} two{منذ يومين} few{منذ {count} أيام} many{منذ {count} يوماً} other{منذ {count} يوم}}",
   "@daysAgo": {
     "placeholders": {
       "count": {
