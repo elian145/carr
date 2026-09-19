@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import os
 import secrets
+import tempfile
 from datetime import datetime
+from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from werkzeug.utils import safe_join
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
+from ..job_ownership import register_job_owner
 from ..media_processing import (
     DecompressionBombRejected,
     PlateBlurRequiredRejected,
@@ -18,6 +21,8 @@ from ..media_processing import (
 )
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
+from ..tasks.image_tasks import process_car_image_file
+from ..time_utils import utcnow
 
 bp = Blueprint("media", __name__)
 
@@ -176,8 +181,24 @@ def _http_url_staged_by_user(url: str, owner_public_id: str | None) -> bool:
 
 def _upload_video_file_to_r2(file_storage) -> str:
     """
-    Read validated multipart file, put to R2, return public HTTPS URL for DB storage.
-    Caller must ensure stream is at position 0 or call seek(0) after validation.
+    Stream a validated multipart video upload to R2, return public HTTPS
+    URL for DB storage. Caller must ensure stream is at position 0 or call
+    seek(0) after validation.
+
+    P-02: videos are allowed up to 100MB (see ``upload_car_videos``'s
+    ``validate_file_upload(..., max_size_mb=100)`` call). The previous
+    implementation read the *entire* file into a single ``bytes`` object in
+    this process (``file_storage.read()``) before handing it to
+    ``r2_put_bytes()``, which then wrote those same bytes back out to a
+    second temp file just to satisfy the R2 subprocess's ``body_path``
+    contract -- i.e. the full video was buffered in this request-handling
+    process's memory (on top of a redundant disk copy) for every upload.
+    This now streams straight to a temp file via ``FileStorage.save()``
+    (Werkzeug copies in small fixed-size chunks -- no full-file memory
+    buffer here) and hands that existing path directly to
+    ``r2_put_file()``, so this process never holds more than one chunk of
+    the video in memory at a time. The temp file is always removed
+    afterward, success or failure.
     """
     public_base = _r2_public_base()
     if not public_base:
@@ -193,15 +214,27 @@ def _upload_video_file_to_r2(file_storage) -> str:
         file_storage.seek(0)
     except Exception:
         pass
-    body = file_storage.read()
-    if not body:
-        raise RuntimeError("Empty file body")
 
-    from ..r2_ops import r2_put_bytes
+    upload_root = (current_app.config.get("UPLOAD_FOLDER") or "").strip() or tempfile.gettempdir()
+    tmp_dir = os.path.join(upload_root, "temp")
+    os.makedirs(tmp_dir, exist_ok=True)
+    tmp_path = os.path.join(tmp_dir, f"r2video_{secrets.token_hex(16)}{ext}")
+    try:
+        file_storage.save(tmp_path)
+        if not os.path.isfile(tmp_path) or os.path.getsize(tmp_path) <= 0:
+            raise RuntimeError("Empty file body")
 
-    ct = _video_content_type_for_ext(ext)
-    r2_put_bytes(key=key, body=body, content_type=ct, timeout=180)
-    return f"{public_base}/{key}"
+        from ..r2_ops import r2_put_file
+
+        ct = _video_content_type_for_ext(ext)
+        r2_put_file(key=key, file_path=tmp_path, content_type=ct, timeout=180)
+        return f"{public_base}/{key}"
+    finally:
+        try:
+            if os.path.isfile(tmp_path):
+                os.remove(tmp_path)
+        except OSError:
+            pass
 
 
 def _get_car_by_any_id(car_id: str):
@@ -552,6 +585,73 @@ def r2_sign_upload():
         return jsonify({"message": "Failed to generate upload URL"}), 500
 
 
+def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
+    """
+    P-01: validate + stream each file to a temp path, then enqueue the
+    existing ``process_car_image_file`` Celery task (blur + downscale +
+    persist) instead of running that work inline on this request thread.
+
+    Mirrors the file-validation loop in the synchronous branch exactly
+    (same size/extension/magic-byte checks via ``validate_file_upload``,
+    same per-file skip-reason convention) so no upload correctness is
+    lost -- only *when* the expensive blur/persist work runs changes.
+
+    Returns a Flask response tuple: ``202`` with ``job_ids`` (and any
+    per-file ``skipped`` reasons) on success, or ``400`` if every file was
+    rejected before it could even be enqueued (never a fabricated success).
+    """
+    job_ids = []
+    skip_reasons = []
+
+    for fs in files:
+        if not fs or not fs.filename:
+            skip_reasons.append("Missing filename")
+            continue
+
+        is_valid, msg = validate_file_upload(
+            fs,
+            max_size_mb=25,
+            allowed_extensions=current_app.config["ALLOWED_EXTENSIONS"],
+        )
+        if not is_valid:
+            skip_reasons.append(msg or "Invalid file")
+            continue
+
+        filename = generate_secure_filename(fs.filename)
+        ts = utcnow().strftime("%Y%m%d_%H%M%S_%f")
+        temp_rel = f"temp/celery_{ts}_{uuid4().hex}_{filename}"
+        temp_abs = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_rel)
+        os.makedirs(os.path.dirname(temp_abs), exist_ok=True)
+        # FileStorage.save() streams in chunks -- the file never needs to be
+        # fully buffered in this process's memory just to hand it to Celery.
+        fs.save(temp_abs)
+
+        res = process_car_image_file.delay(
+            temp_abs,
+            fs.filename,
+            False,
+            skip_blur,
+            owner_public_id=current_user.public_id,
+        )
+        register_job_owner(res.id, current_user.public_id)
+        job_ids.append(res.id)
+
+    if not job_ids:
+        detail = skip_reasons[0] if skip_reasons else "file type/size"
+        return jsonify({"message": f"No valid images were uploaded ({detail})."}), 400
+
+    return (
+        jsonify(
+            {
+                "message": f"{len(job_ids)} image(s) queued for processing",
+                "job_ids": job_ids,
+                "skipped": skip_reasons,
+            }
+        ),
+        202,
+    )
+
+
 @bp.route("/api/cars/<car_id>/images", methods=["POST"])
 @jwt_required()
 @rate_limit(max_requests=60, window_minutes=60, per_ip=False)
@@ -604,6 +704,31 @@ def upload_car_images(car_id: str):
             )
             if limit_err:
                 return limit_err
+
+        # P-01: optional async mode -- enqueue each file to the existing
+        # Celery image-processing task (kk/tasks/image_tasks.py) instead of
+        # running the (potentially slow, Roboflow-backed) blur+persist
+        # pipeline inline on this request thread. Off by default so every
+        # existing caller keeps the exact current synchronous response
+        # contract unchanged; callers that opt in with `?async=1` get a 202
+        # with `job_ids` back and must poll `GET /api/jobs/<task_id>`, then
+        # call the existing `POST /api/cars/<car_id>/images/attach` with the
+        # resulting `result.rel_path` to actually attach the processed
+        # photo to this listing (reuses two already-audited endpoints
+        # instead of duplicating their ownership/cap/primary-flag logic in
+        # task code).
+        want_async = (request.args.get("async") or "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+            "on",
+        )
+        if want_async:
+            return _enqueue_async_car_image_uploads(
+                incoming_files,
+                current_user=current_user,
+                skip_blur=skip_blur,
+            )
 
         for fs in incoming_files:
             if not fs or not fs.filename:

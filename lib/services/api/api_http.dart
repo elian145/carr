@@ -379,7 +379,19 @@ abstract final class _ApiServiceHttp {
         if (ApiService._accessToken != null && ApiService._accessToken!.isNotEmpty) {
           request.headers['Authorization'] = 'Bearer ${ApiService._accessToken}';
         }
-        final streamed = await request.send().timeout(ApiService._uploadTimeout);
+        // P-01 testability follow-up: send through the shared
+        // ApiService._httpClient (same as every other request in this
+        // file) instead of the request's own default `send()`, which opens
+        // a brand-new throwaway `http.Client()` under the hood. Behavior is
+        // unchanged in production (the shared client is a plain
+        // `http.Client()` too), but this is what lets
+        // `ApiService.testHttpClient` (used by widget/unit tests, e.g. the
+        // P-01 async-upload regression test) actually observe multipart
+        // uploads instead of always hitting Flutter's test-binding
+        // `HttpClient` stub, which unconditionally returns 400.
+        final streamed = await ApiService._httpClient
+            .send(request)
+            .timeout(ApiService._uploadTimeout);
         return http.Response.fromStream(streamed);
       }
 

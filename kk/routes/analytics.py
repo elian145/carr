@@ -17,6 +17,16 @@ from ..security import rate_limit, validate_input_sanitization
 
 bp = Blueprint("analytics", __name__)
 
+# BE-09b: hard cap on the number of listings analytics-serialized by
+# `GET /api/analytics/listings` (`get_listings_analytics()`). Bounds
+# worst-case query-result size / serialization cost for a single request;
+# not real pagination -- this endpoint's Flutter caller strictly expects a
+# bare JSON array response and has no pagination support, so adding
+# page/per_page params would be a client-incompatible behavior change.
+# Mirrors the `_MY_LISTINGS_COMPAT_CAP` (BE-06) / `_DEALER_PROFILE_LISTINGS_CAP`
+# (BE-01) precedent.
+_ANALYTICS_LISTINGS_CAP = 200
+
 
 def _get_car_by_listing_id(listing_id: str):
     return get_car_for_analytics(listing_id)
@@ -36,7 +46,19 @@ def get_listings_analytics():
         if not current_user:
             return jsonify({"message": "Unauthorized"}), 401
 
-        user_cars = Car.query.filter_by(seller_id=current_user.id).all()
+        # BE-09b: cap the driving query (see `_ANALYTICS_LISTINGS_CAP`) so a
+        # seller with an unusually large number of listings can't force this
+        # request to load/serialize an unbounded number of
+        # cars/ListingAnalytics rows. Every `.all()` below filters on
+        # `car_id.in_(car_ids)`, so bounding `car_ids` here bounds all of
+        # them; newest-first ordering keeps the seller's most relevant
+        # (most recent) listings visible when the cap is exceeded.
+        user_cars = (
+            Car.query.filter_by(seller_id=current_user.id)
+            .order_by(Car.created_at.desc())
+            .limit(_ANALYTICS_LISTINGS_CAP)
+            .all()
+        )
         car_ids = [c.id for c in user_cars]
         if not car_ids:
             return jsonify([]), 200

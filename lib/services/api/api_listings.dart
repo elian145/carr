@@ -265,6 +265,15 @@ abstract final class _ApiServiceListings {
 
     /// Backend: `kind=damage` for crash/damage disclosure (excluded from main gallery).
     String imageKind = 'listing',
+
+    /// P-01: when true, adds `?async=1` so the backend enqueues the
+    /// (potentially slow, Roboflow-backed) plate-blur/persist pipeline on
+    /// Celery instead of running it inline on the request. The response
+    /// then carries `job_ids` (HTTP 202) instead of `images` -- callers
+    /// must poll [getJobStatus] per job id and, once every job is
+    /// `SUCCESS`, attach the resulting `result.rel_path`s via
+    /// [attachCarImages] (see `SellListingMediaUpload._uploadImagesResilient`).
+    bool async = false,
   }) async {
     // App-default behavior: do NOT blur unless user explicitly requests it.
     // FORCE_SKIP_BLUR remains a hard override for dev/testing builds.
@@ -272,6 +281,7 @@ abstract final class _ApiServiceListings {
     final qp = <String>[];
     if (skipBlur) qp.add('skip_blur=1');
     if (imageKind.toLowerCase() == 'damage') qp.add('kind=damage');
+    if (async) qp.add('async=1');
     final String query = qp.isEmpty ? '' : '?${qp.join('&')}';
     final id = Uri.encodeComponent(carId.trim());
     final data = await ApiService._sendAuthenticatedMultipart(() async {
@@ -298,11 +308,26 @@ abstract final class _ApiServiceListings {
       return request;
     });
     // Backend compatibility: some endpoints return { uploaded: [...] }
-    // Normalize to { images: [...] } expected by UI services
+    // Normalize to { images: [...] } expected by UI services. Async
+    // responses carry `job_ids` instead and are left untouched here.
     if (!data.containsKey('images') && data.containsKey('uploaded')) {
       data['images'] = List.from(data['uploaded'] as List);
     }
     return data;
+  }
+
+  /// P-01: poll `GET /api/jobs/<task_id>` for one Celery job's state.
+  ///
+  /// Returns the decoded response as-is -- callers read `state`
+  /// (`PENDING`/`STARTED`/`SUCCESS`/`FAILURE`) and, once `SUCCESS`,
+  /// `result` (e.g. `result['rel_path']`). Reuses the existing
+  /// authenticated-GET plumbing (auth header, 401 refresh) -- no separate
+  /// polling transport.
+  static Future<Map<String, dynamic>> getJobStatus(String taskId) async {
+    return await ApiService._makeAuthenticatedRequest(
+      'GET',
+      '/jobs/${Uri.encodeComponent(taskId.trim())}',
+    );
   }
 
   static Future<Map<String, dynamic>> attachCarImages(

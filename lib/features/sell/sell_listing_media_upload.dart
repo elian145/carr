@@ -198,8 +198,130 @@ class SellListingMediaUpload {
     return isTransientNetworkError(error);
   }
 
+  /// P-01: interval between `GET /api/jobs/<task_id>` polls while waiting
+  /// for one enqueued image's plate-blur/persist job to finish.
+  static const Duration _imageJobPollInterval = Duration(milliseconds: 1500);
+
+  /// P-01: total poll budget per job -- matches [ApiService]'s existing
+  /// 180s multipart upload timeout (`_uploadTimeout`), i.e. the same
+  /// worst-case wait the old synchronous upload already tolerated, just
+  /// spent polling a cheap status endpoint instead of blocking one HTTP
+  /// upload request on the server's Roboflow call.
+  static const int _imageJobMaxPolls = 120;
+
+  /// P-01: poll one Celery image-processing job until it reaches a terminal
+  /// state. Returns the processed image's server-relative path on
+  /// `SUCCESS`, or `null` on `FAILURE`/timeout/a malformed result -- the
+  /// caller drops that one file rather than attaching a bogus path,
+  /// mirroring how the synchronous path already skips a single rejected
+  /// file instead of failing the whole batch.
+  static Future<String?> _awaitImageJobRelPath(String jobId) async {
+    for (var attempt = 0; attempt < _imageJobMaxPolls; attempt++) {
+      if (attempt > 0) {
+        await Future<void>.delayed(_imageJobPollInterval);
+      }
+      Map<String, dynamic> status;
+      try {
+        status = await ApiService.getJobStatus(jobId);
+      } catch (e, st) {
+        // A 404 means the server has no record of this job for us (e.g. the
+        // Celery result backend already expired/evicted it) -- that can
+        // never resolve, so stop polling immediately rather than burning
+        // the full budget. Anything else (503 broker hiccup, timeout,
+        // transient network error) is worth retrying within budget.
+        if (e is ApiException && e.statusCode == 404) {
+          appLog('SellListingMediaUpload: job $jobId not found while polling');
+          return null;
+        }
+        logNonFatal(e, st, 'SellListingMediaUpload.pollJob');
+        continue;
+      }
+      final state = (status['state'] ?? '').toString();
+      if (state == 'SUCCESS') {
+        final result = status['result'];
+        if (result is Map) {
+          final relPath = (result['rel_path'] ?? '').toString().trim();
+          if (relPath.isNotEmpty) return relPath;
+        }
+        appLog('SellListingMediaUpload: job $jobId succeeded with no rel_path');
+        return null;
+      }
+      if (state == 'FAILURE') {
+        appLog('SellListingMediaUpload: image job $jobId failed');
+        return null;
+      }
+      // PENDING / STARTED / UNAVAILABLE -- still processing, keep polling.
+    }
+    appLog('SellListingMediaUpload: image job $jobId timed out while polling');
+    return null;
+  }
+
+  /// P-01: enqueues [files] on the existing async image-processing pipeline
+  /// (`?async=1` on `POST /api/cars/<id>/images` ->
+  /// `kk.tasks.image_tasks.process_car_image_file`) instead of blocking the
+  /// upload request on the Roboflow plate-blur call, polls
+  /// `GET /api/jobs/<task_id>` (existing job-status endpoint) for every
+  /// enqueued job, then attaches the resulting server paths via the
+  /// existing `POST /api/cars/<id>/images/attach` endpoint -- the same
+  /// endpoint already used elsewhere in this file for pre-staged photos.
+  ///
+  /// Returns the attach response (`{"images": [...]}`), the exact same
+  /// shape the old synchronous multipart upload returned, so every caller
+  /// in this file (`_collectUploadedImageIds`, `_attachedRowCount`,
+  /// primary-image/layout logic) needs no changes.
+  static Future<Map<String, dynamic>> _uploadImagesViaAsyncJobs({
+    required String carId,
+    required List<XFile> files,
+    required String imageKind,
+  }) async {
+    final enqueueResponse = await ApiService.uploadCarImages(
+      carId,
+      files,
+      imageKind: imageKind,
+      async: true,
+    );
+    final rawJobIds = enqueueResponse['job_ids'];
+    final jobIds = rawJobIds is List
+        ? rawJobIds.map((e) => e.toString()).where((s) => s.isNotEmpty).toList()
+        : const <String>[];
+    if (jobIds.isEmpty) {
+      // Every file was rejected before it could even be enqueued (bad
+      // extension/size/cap) -- surface the server's message exactly like
+      // the synchronous path's 400 would have.
+      throw ApiException(
+        statusCode: 400,
+        message: (enqueueResponse['message'] as String?) ??
+            'No valid images were uploaded.',
+      );
+    }
+
+    final relPaths = <String>[];
+    for (final jobId in jobIds) {
+      final relPath = await _awaitImageJobRelPath(jobId);
+      if (relPath != null && relPath.isNotEmpty) relPaths.add(relPath);
+    }
+
+    if (relPaths.isEmpty) {
+      // Every enqueued job failed or timed out -- treat like a transient
+      // server-side failure so the outer retry loop gets another attempt.
+      throw ApiException(
+        statusCode: 502,
+        message: 'Photo processing failed. Please try again.',
+      );
+    }
+
+    return CarService().attachCarImages(carId, relPaths, kind: imageKind);
+  }
+
   /// Uploads [files] and treats "client timed out after the server saved them"
   /// as success so a retry does not duplicate photos.
+  ///
+  /// P-01: uploads now go through the async job pipeline
+  /// ([_uploadImagesViaAsyncJobs]) -- the request that stages each file on
+  /// the server returns almost immediately, and the (potentially slow)
+  /// plate-blur work happens in a Celery worker while this polls a
+  /// lightweight status endpoint, instead of one HTTP upload request
+  /// blocking on Roboflow for up to a minute per photo.
   static Future<Map<String, dynamic>> _uploadImagesResilient({
     required String carId,
     required List<XFile> files,
@@ -225,9 +347,9 @@ class SellListingMediaUpload {
         await Future<void>.delayed(Duration(seconds: attempt * 2));
       }
       try {
-        return await CarService().uploadCarImages(
-          carId,
-          files,
+        return await _uploadImagesViaAsyncJobs(
+          carId: carId,
+          files: files,
           imageKind: imageKind,
         );
       } catch (e, st) {

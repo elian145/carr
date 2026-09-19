@@ -503,12 +503,18 @@ class ApiService {
     List<XFile> imageFiles, {
     bool blurPlates = false,
     String imageKind = 'listing',
+    bool async = false,
   }) => _ApiServiceListings.uploadCarImages(
     carId,
     imageFiles,
     blurPlates: blurPlates,
     imageKind: imageKind,
+    async: async,
   );
+
+  /// P-01: poll one Celery image-processing job's status.
+  static Future<Map<String, dynamic>> getJobStatus(String taskId) =>
+      _ApiServiceListings.getJobStatus(taskId);
 
   static Future<Map<String, dynamic>> attachCarImages(
     String carId,

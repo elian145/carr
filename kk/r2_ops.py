@@ -177,6 +177,37 @@ def r2_put_bytes(
             pass
 
 
+def r2_put_file(
+    *,
+    key: str,
+    file_path: str,
+    content_type: str = "application/octet-stream",
+    timeout: float = 120,
+) -> None:
+    """Upload an existing local file to R2 under ``key`` (eventlet-safe).
+
+    P-02: unlike :func:`r2_put_bytes`, the caller already has the payload
+    staged on disk (e.g. a validated multipart video upload streamed
+    straight to a temp file via ``FileStorage.save()``), so this skips the
+    extra "read whole file into memory, then re-write it back out to a
+    second temp file" round trip that :func:`r2_put_bytes` does, and hands
+    the already-existing path straight to the subprocess.
+    """
+    if not file_path or not os.path.isfile(file_path):
+        raise RuntimeError("Missing file body")
+    if os.path.getsize(file_path) <= 0:
+        raise RuntimeError("Empty file body")
+    creds = _cred_payload()
+    payload = {
+        **creds,
+        "op": "put_object",
+        "key": key,
+        "content_type": content_type,
+        "body_path": file_path,
+    }
+    _run_r2_op(payload, timeout=timeout)
+
+
 def r2_chat_put_bytes(
     *,
     key: str,

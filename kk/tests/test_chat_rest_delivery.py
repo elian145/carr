@@ -34,6 +34,27 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+# Test-artifact cleanup follow-up: without a chat R2 bucket configured, the
+# real `_upload_chat_attachment()` local-disk fallback (kk/routes/chat.py)
+# writes every image/video/audio fixture below straight into the real
+# `kk/static/chat_uploads/` / `chat_videos/` / `chat_audio/` directories --
+# not a pytest tmp dir -- leaving dummy files behind after every run. Mirrors
+# the established isolation pattern already used by
+# test_m07_chat_attachment_limits.py / test_h03_upload_content_validation.py:
+# fake R2 chat-bucket config + mocked `r2_chat_put_bytes`/`r2_presign_get`, so
+# no attachment bytes ever touch disk. No test in this file asserts on the
+# stored URL/key shape, so this is behavior-preserving for everything here.
+FAKE_CHAT_BUCKET_CONFIG = {
+    "R2_ACCOUNT_ID": "test-account-id",
+    "R2_CHAT_BUCKET_NAME": "carzo-chat-media-test",
+    "R2_CHAT_ACCESS_KEY_ID": "test-chat-access-key",
+    "R2_CHAT_SECRET_ACCESS_KEY": "test-chat-secret-key",
+}
+
+
+def _fake_presign_get(*, key: str, expires_in: int = 600, timeout: float = 30) -> str:
+    return f"https://fake-r2-presigned.example.test/{key}?X-Amz-Expires={expires_in}&sig=test"
+
 
 @pytest.fixture(scope="module")
 def app_ctx():
@@ -48,6 +69,7 @@ def app_ctx():
     from kk.app_factory import create_app
 
     app, socketio, *_ = create_app()
+    app.config.update(FAKE_CHAT_BUCKET_CONFIG)
     from kk.models import Car, Message, Notification, User, db
 
     with app.app_context():
@@ -65,6 +87,16 @@ def app_ctx():
 @pytest.fixture
 def client(app_ctx):
     return app_ctx[2]
+
+
+@pytest.fixture(autouse=True)
+def _mock_r2_chat_ops():
+    """No real R2 network calls, and no real chat_uploads/chat_videos/
+    chat_audio files written to disk anywhere in this file."""
+    with patch("kk.r2_ops.r2_chat_put_bytes") as put_mock, patch(
+        "kk.r2_ops.r2_presign_get", side_effect=_fake_presign_get
+    ) as presign_mock:
+        yield put_mock, presign_mock
 
 
 def _unique_phone() -> str:
