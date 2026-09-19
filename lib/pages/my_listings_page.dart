@@ -124,8 +124,15 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   Future<void> _fetch({required bool refresh}) async {
     final requestGeneration = refresh ? ++_fetchGeneration : _fetchGeneration;
-    final auth = Provider.of<AuthService>(context, listen: false);
-    if (!auth.isAuthenticated) {
+    // Gate on the locally-stored token (`ApiService.isAuthenticated`), not
+    // `AuthService.isAuthenticated` (which only flips true once `/auth/me`
+    // confirms it). AuthGuard now mounts this page as soon as a stored
+    // token exists, *before* that confirmation finishes, so this fetch
+    // must be able to start immediately in parallel with `/auth/me`
+    // instead of showing a spurious "Login required" until it resolves.
+    // The backend still independently rejects the request below if the
+    // token actually turns out to be invalid.
+    if (!ApiService.isAuthenticated) {
       setState(() {
         _loading = false;
         _error =
@@ -368,7 +375,17 @@ class _MyListingsPageState extends State<MyListingsPage> {
   @override
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context);
-    final auth = context.watch<AuthService>();
+    // Subscribe to AuthService so this page still rebuilds when `/auth/me`
+    // resolves (or a definitive 401 clears the session) — see
+    // `AuthService.onApiTokensCleared` — but gate the UI below on
+    // `ApiService.isAuthenticated` (the locally-stored token), matching
+    // AuthGuard's own optimistic-mount behavior and `_fetch` above. Gating
+    // on `AuthService.isAuthenticated` here instead would show a spurious
+    // "Login required" flash on every fresh app launch, since AuthGuard now
+    // mounts this page as soon as a stored token exists, before `/auth/me`
+    // has confirmed it.
+    context.watch<AuthService>();
+    final hasLocalSession = ApiService.isAuthenticated;
 
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final showDrafts =
@@ -509,7 +526,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     );
 
     final isLightShell = Theme.of(context).brightness == Brightness.light;
-    final bodyChild = !auth.isAuthenticated
+    final bodyChild = !hasLocalSession
         ? Center(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -552,7 +569,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
               ),
               child: bodyChild,
             ),
-      floatingActionButton: auth.isAuthenticated
+      floatingActionButton: hasLocalSession
           ? FloatingActionButton(
               onPressed: () => Navigator.pushNamed(context, '/sell'),
               child: const Icon(Icons.add),

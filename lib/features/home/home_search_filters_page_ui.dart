@@ -302,25 +302,83 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           );
         }
 
-        // RC smoke-test fix: the very first frame after `Navigator.push`
-        // must be cheap so the route's push animation / first paint is
-        // never delayed — but the filter-section list below (make/brand
-        // logos, icon tiles, ...) is the one part of this page whose
-        // *actual* on-device cost varies (image decode, first-use shader
-        // work, etc.) instead of being a fixed, small amount of work.
-        // Rendering a plain placeholder for exactly one frame, then
-        // swapping in the real `ListView.builder` via a post-frame
-        // callback, guarantees the page shell (title/close/keyword field/
-        // footer — all already cheap) is what appears instantly, while
-        // that variable-cost content is deferred to the frame right after,
-        // once the route is already visually on screen. No filters,
-        // localization, persistence, or keyword-search behavior changes —
-        // only when the section list's widgets first get built.
-        if (!_searchFiltersShellReady) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+        // RC smoke-test fix (round 2): a single deferred-by-one-frame swap
+        // was not enough — on a real device, the filter-section list below
+        // (make/brand logos, icon tiles, ...) still started its expensive
+        // first build (image decode, first-use shader work, ...) *while
+        // the route's own push transition was still animating in*,
+        // competing with it for the same frames and making the "Search
+        // Cars" shell itself look janky/slow to finish opening.
+        //
+        // Instead, watch this route's own entrance-transition `Animation`
+        // (the same one `AppPageRoute`/`Navigator.push` already drives) and
+        // only flip `_searchFiltersShellReady` once it reports
+        // `AnimationStatus.completed` — i.e. once the shell has *finished*
+        // sliding/fading in and is sitting fully still on screen. Only then
+        // is the expensive section list allowed to build, so it can never
+        // steal frames from the transition itself. If there is no
+        // transition to observe at all (no `ModalRoute`, or one already at
+        // rest — e.g. a widget test that mounts this page directly, or a
+        // platform with "reduce motion" collapsing the transition to
+        // instant), fall back to the previous one-frame defer instead of
+        // waiting forever. Attached at most once per route instance (see
+        // `_searchFiltersAnimationListenerAttached`'s doc) since this
+        // builder re-runs on every `setStateDialog` call (catalog load,
+        // keyword typing, filter edits, ...) long before the flag flips.
+        //
+        // No filters, localization, persistence, keyword-search, or
+        // section-order behavior changes — only when the section list's
+        // widgets first get built.
+        if (!_searchFiltersShellReady &&
+            !_searchFiltersAnimationListenerAttached) {
+          _searchFiltersAnimationListenerAttached = true;
+          final routeAnimation = ModalRoute.of(context)?.animation;
+
+          void markShellReady() {
             if (!context.mounted) return;
             setStateDialog(() => _searchFiltersShellReady = true);
-          });
+          }
+
+          if (routeAnimation == null) {
+            // No route/animation to observe at all — fall back to a
+            // one-frame defer instead of waiting forever.
+            WidgetsBinding.instance.addPostFrameCallback((_) => markShellReady());
+          } else {
+            var settled = false;
+            late final void Function(AnimationStatus) onEntranceStatusChange;
+            onEntranceStatusChange = (status) {
+              if (status != AnimationStatus.completed || settled) return;
+              settled = true;
+              routeAnimation.removeStatusListener(onEntranceStatusChange);
+              markShellReady();
+            };
+            routeAnimation.addStatusListener(onEntranceStatusChange);
+
+            // A *synchronous* read of `routeAnimation.status` right here
+            // (at attach time) would be unreliable for exactly one frame
+            // after a real `Navigator.push`: `MaterialApp`'s default
+            // `HeroController` briefly forces the incoming route's
+            // `ModalRoute.animation` to report `AnimationStatus.completed`
+            // (via `ModalRoute.offstage`) while it decides whether any
+            // Hero widgets need to fly, then reverts it to the real,
+            // still-in-progress status before this same frame ends. Acting
+            // on that snapshot here would skip the real transition
+            // entirely — the very regression this fix exists to prevent.
+            //
+            // Instead, re-check the *same* animation object one frame
+            // later, once any such masking has resolved. If it is
+            // genuinely already at rest by then (no real push transition
+            // to observe at all — e.g. a widget test that mounts this page
+            // directly, or a platform that collapses the transition to
+            // instant), proceed immediately instead of waiting on a status
+            // transition that will now never fire.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (settled || !routeAnimation.isCompleted) return;
+              settled = true;
+              routeAnimation.removeStatusListener(onEntranceStatusChange);
+              markShellReady();
+            });
+          }
         }
 
         if (focusSearchField && !_searchFiltersDidRequestFocus) {
@@ -398,12 +456,19 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                   Expanded(
                     child: Builder(
                       builder: (context) {
-                        // Deferred by exactly one frame — see the
-                        // `_searchFiltersShellReady` comment above — so the
-                        // route's first frame never has to pay for this
-                        // section list's build cost.
+                        // Deferred until this route's entrance transition
+                        // completes — see the `_searchFiltersShellReady`
+                        // comment above — so the section list's build cost
+                        // can never compete with the transition for frames.
+                        // A bare `SizedBox.shrink()` here would leave the
+                        // shell looking empty/broken while that plays out,
+                        // so show the same lightweight, already-used-
+                        // elsewhere-in-this-page spinner instead (cheap: no
+                        // asset decode, no list construction).
                         if (!_searchFiltersShellReady) {
-                          return const SizedBox.shrink();
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
                         }
                         // Rebuilt list of *unbuilt* section closures — cheap
                         // (just closure references), unlike the sections
@@ -545,6 +610,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     _searchFiltersBrandsExpanded = false;
     _searchFiltersCatalogLoadStarted = false;
     _searchFiltersShellReady = false;
+    _searchFiltersAnimationListenerAttached = false;
     _syncMoreFiltersControllers();
     final revertSnapshot = <Map<String, dynamic>>[
       _searchFiltersPageSnapshot(),

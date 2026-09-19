@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:car_listing_app/features/home/home_flow.dart' show HomePage;
 import 'package:car_listing_app/l10n/app_localizations.dart';
+import 'package:car_listing_app/navigation/app_page_route.dart';
 
 import 'fake_api_server.dart';
 
@@ -13,11 +14,23 @@ import 'fake_api_server.dart';
 /// `ListView(children: ...)`) before the very first frame could be
 /// painted.
 ///
-/// This does NOT assert on timing (fragile) — instead it proves the fix's
-/// actual mechanism: with a lazy `ListView.builder`, a section far below
-/// the initial viewport must not exist anywhere in the widget tree until
-/// the user scrolls that far, while an early section (and the page's own
-/// title/keyword field) must exist immediately.
+/// Round 1 of this fix (deferring the section list by exactly one frame)
+/// was insufficient: on a real device the section list's own expensive
+/// first build (brand-logo image decode, ...) still competed for frames
+/// with the route's *own push transition*, which was still animating in
+/// at that point. Round 2 (covered below) instead watches the pushed
+/// route's own entrance-transition `Animation` and only builds the section
+/// list once it reports `AnimationStatus.completed`.
+///
+/// None of this asserts on wall-clock timing (fragile) — instead it proves
+/// the fix's actual mechanism structurally:
+///   - the page shell (title/keyword field) and the filter-section list's
+///     build state are asserted directly against the real push route's own
+///     `Animation.status`, not a guessed delay;
+///   - with a lazy `ListView.builder`, a section far below the initial
+///     viewport must not exist anywhere in the widget tree until the user
+///     scrolls that far, while an early section must exist as soon as the
+///     transition completes.
 ///
 /// Uses the page's public `HomePage.searchFilters()` constructor (see
 /// `home_page.dart`) — the same "Search Cars" full-page filters UI reached
@@ -61,40 +74,95 @@ void main() {
   );
 
   testWidgets(
-    'renders the page shell (title/close/keyword field/footer) on the very '
-    'first frame, and defers the filter-section list to the frame right '
-    'after — instead of paying for its build cost before the route can '
-    'even appear',
+    'while a real push transition into the Search Cars page is still '
+    'animating, the shell (title/keyword field) is already visible but the '
+    'filter-section list stays unbuilt — it only builds once the route\'s '
+    'own entrance Animation reports AnimationStatus.completed',
     (tester) async {
-      // `pumpWidget` itself already performs the route's first frame — an
-      // extra explicit `pump()` here would let the post-frame callback
-      // that flips `_searchFiltersShellReady` take effect *before* the
-      // assertions below, defeating the point of this test.
-      await tester.pumpWidget(harness());
+      late final AppPageRoute<void> searchRoute;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          // A plain first screen with a real push, matching how Home
+          // actually opens this page via `_openHomeSearchFiltersPage`
+          // (an `AppPageRoute` pushed on top of an already-settled route)
+          // — unlike `harness()` above, whose `HomePage.searchFilters()`
+          // is the app's *initial* route and therefore never has a real
+          // entrance transition to observe.
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    searchRoute = AppPageRoute<void>(
+                      fullscreenDialog: true,
+                      builder: (_) => const HomePage.searchFilters(),
+                    );
+                    Navigator.of(context).push(searchRoute);
+                  },
+                  child: const Text('Open Search'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Search'));
+      // The first pump pushes the route and starts its entrance
+      // transition; the second (zero-duration, so it does not itself
+      // advance the transition) lets the new route's own localization
+      // delegates resolve — the same two-step settle the very first test
+      // above needs before it can find any of this page's text.
+      await tester.pump();
+      await tester.pump();
+
+      final animation = searchRoute.animation!;
+      expect(
+        animation.status,
+        AnimationStatus.forward,
+        reason:
+            'Sanity check: the transition must genuinely still be running '
+            'for the assertions below to prove anything about it.',
+      );
 
       // The shell — everything that does not depend on the filter-section
-      // list — must already be on screen immediately.
+      // list — must already be on screen immediately, mid-transition.
       expect(find.text('Search Cars'), findsOneWidget);
       expect(find.byType(TextField), findsWidgets);
 
       // The filter-section list itself (make/brand row, price/year/mileage
-      // cards, ...) must not be built yet on this very first frame — this
-      // is the actual first-open delay this fix removes.
+      // cards, ...) must not be built yet — this is the actual first-open
+      // jank this fix removes: it must never compete with the transition
+      // itself for frames.
       expect(
         find.text('Year Range'),
         findsNothing,
         reason:
-            'The filter-section list must not be built on the same frame '
-            'as the route\'s first paint — that upfront build cost (e.g. '
-            'brand-logo image decode in the make section) is exactly what '
-            'made the first open of this page feel delayed.',
+            'The filter-section list must not be built while the route\'s '
+            'own push transition is still animating — that upfront build '
+            'cost (e.g. brand-logo image decode in the make section) is '
+            'exactly what made the first open of this page feel delayed.',
       );
 
-      // The very next frame (the post-frame callback set up on the first
-      // frame flips the ready flag and calls `setState`) must reveal the
-      // real section list — laziness only delays it by one frame, it must
-      // never lose it.
-      await tester.pump();
+      // Still short of the transition's own (real, not guessed) duration:
+      // the section list must remain unbuilt.
+      await tester.pump(searchRoute.transitionDuration ~/ 2);
+      expect(animation.status, AnimationStatus.forward);
+      expect(find.text('Year Range'), findsNothing);
+
+      // Cross the transition's own duration: once the Animation reports
+      // `completed`, the section list must build on that same frame —
+      // laziness only delays it, it must never lose it.
+      await tester.pump(searchRoute.transitionDuration);
+      expect(animation.status, AnimationStatus.completed);
       expect(find.text('Year Range'), findsOneWidget);
     },
   );

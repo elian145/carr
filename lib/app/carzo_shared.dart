@@ -371,7 +371,31 @@ class _AuthGuardState extends State<AuthGuard> {
         ),
       );
     }
-    if (auth.isLoading || ApiService.isAuthenticated) {
+    // RC fix: a locally-stored token (loaded from secure storage at app
+    // start by `ApiService.initializeTokens()` — see
+    // `ApiService.isAuthenticated`'s own doc) means this session *was*
+    // authenticated last time the app ran. Mount the protected child
+    // immediately and let `/auth/me` keep validating it in the background
+    // instead of serializing every protected route behind that HTTP round
+    // trip (which, on a cold backend, can take tens of seconds — see
+    // `_terminalTimeout`'s budget breakdown above). The child's own
+    // data/local-init work can now start in parallel with `/auth/me`
+    // instead of waiting for it.
+    //
+    // This is purely an optimistic *UI* decision, not a security one: the
+    // backend independently re-validates the token on every request the
+    // child itself makes, and a definitive 401 here still runs
+    // `AuthService.onApiTokensCleared()`, which clears `ApiService`'s
+    // tokens and calls `notifyListeners()` — this `Provider.of` subscription
+    // then rebuilds, `ApiService.isAuthenticated` flips back to `false`,
+    // and control falls through to the redirect-to-login branch below,
+    // exactly as before. An unauthenticated session (no local token) never
+    // takes this branch, so logged-out users still never see protected
+    // content.
+    if (ApiService.isAuthenticated) {
+      return widget.child;
+    }
+    if (auth.isLoading) {
       return const _AuthGuardLoadingShell();
     }
     if (widget.promptSellAuthWhenLoggedOut) {
@@ -386,9 +410,15 @@ class _AuthGuardState extends State<AuthGuard> {
   }
 }
 
-/// Loading presentation for [AuthGuard] while the one-time initial auth
-/// check (or a same-session re-check) is still in flight, and while
-/// redirecting an unauthenticated session to `/login`.
+/// Loading presentation for [AuthGuard] while there is genuinely no local
+/// session to optimistically render yet — i.e. only during the brief
+/// window right after launch before `ApiService.initializeTokens()` has
+/// even determined whether a stored token exists (`auth.isLoading` with no
+/// token), and while redirecting a confirmed-unauthenticated session to
+/// `/login`. Once a local token exists, `AuthGuard.build` mounts the real
+/// child immediately instead (see the `ApiService.isAuthenticated` branch
+/// above) — this shell is no longer shown while `/auth/me` itself is in
+/// flight for an existing session.
 ///
 /// Route navigation to a protected page (Sell, My Listings, Chat, ...)
 /// already happens immediately — see `AuthGuard.build` above — so by the

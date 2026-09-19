@@ -328,9 +328,16 @@ abstract class _HomePageFields extends State<HomePage> {
   bool _searchFiltersDidRequestFocus = false;
   bool _searchFiltersBrandsExpanded = false;
   bool _searchFiltersCatalogLoadStarted = false;
-  // False for exactly the very first frame the "Search Cars" page is on
-  // screen; see `_buildListingSearchFiltersPage` for why.
+  // False until the "Search Cars" page's *push* route transition has
+  // reached `AnimationStatus.completed`; see `_buildListingSearchFiltersPage`
+  // for why.
   bool _searchFiltersShellReady = false;
+  // Guards against attaching more than one `AnimationStatusListener` (or
+  // scheduling more than one fallback post-frame callback) to the current
+  // "Search Cars" route across its many `StatefulBuilder` rebuilds (catalog
+  // load, keyword typing, filter edits, ...) before `_searchFiltersShellReady`
+  // flips true. Reset alongside it in `_openHomeSearchFiltersPage`.
+  bool _searchFiltersAnimationListenerAttached = false;
 
   void _focusSearchFiltersKeywordField() {
     void request() {
