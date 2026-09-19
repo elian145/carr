@@ -302,6 +302,27 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           );
         }
 
+        // RC smoke-test fix: the very first frame after `Navigator.push`
+        // must be cheap so the route's push animation / first paint is
+        // never delayed — but the filter-section list below (make/brand
+        // logos, icon tiles, ...) is the one part of this page whose
+        // *actual* on-device cost varies (image decode, first-use shader
+        // work, etc.) instead of being a fixed, small amount of work.
+        // Rendering a plain placeholder for exactly one frame, then
+        // swapping in the real `ListView.builder` via a post-frame
+        // callback, guarantees the page shell (title/close/keyword field/
+        // footer — all already cheap) is what appears instantly, while
+        // that variable-cost content is deferred to the frame right after,
+        // once the route is already visually on screen. No filters,
+        // localization, persistence, or keyword-search behavior changes —
+        // only when the section list's widgets first get built.
+        if (!_searchFiltersShellReady) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            setStateDialog(() => _searchFiltersShellReady = true);
+          });
+        }
+
         if (focusSearchField && !_searchFiltersDidRequestFocus) {
           _searchFiltersDidRequestFocus = true;
           _focusSearchFiltersKeywordField();
@@ -377,6 +398,13 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                   Expanded(
                     child: Builder(
                       builder: (context) {
+                        // Deferred by exactly one frame — see the
+                        // `_searchFiltersShellReady` comment above — so the
+                        // route's first frame never has to pay for this
+                        // section list's build cost.
+                        if (!_searchFiltersShellReady) {
+                          return const SizedBox.shrink();
+                        }
                         // Rebuilt list of *unbuilt* section closures — cheap
                         // (just closure references), unlike the sections
                         // themselves, which `ListView.builder` below only
@@ -516,6 +544,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     _searchFiltersDidRequestFocus = false;
     _searchFiltersBrandsExpanded = false;
     _searchFiltersCatalogLoadStarted = false;
+    _searchFiltersShellReady = false;
     _syncMoreFiltersControllers();
     final revertSnapshot = <Map<String, dynamic>>[
       _searchFiltersPageSnapshot(),

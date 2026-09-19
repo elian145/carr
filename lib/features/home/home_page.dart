@@ -328,6 +328,9 @@ abstract class _HomePageFields extends State<HomePage> {
   bool _searchFiltersDidRequestFocus = false;
   bool _searchFiltersBrandsExpanded = false;
   bool _searchFiltersCatalogLoadStarted = false;
+  // False for exactly the very first frame the "Search Cars" page is on
+  // screen; see `_buildListingSearchFiltersPage` for why.
+  bool _searchFiltersShellReady = false;
 
   void _focusSearchFiltersKeywordField() {
     void request() {

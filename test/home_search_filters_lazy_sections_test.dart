@@ -61,6 +61,45 @@ void main() {
   );
 
   testWidgets(
+    'renders the page shell (title/close/keyword field/footer) on the very '
+    'first frame, and defers the filter-section list to the frame right '
+    'after — instead of paying for its build cost before the route can '
+    'even appear',
+    (tester) async {
+      // `pumpWidget` itself already performs the route's first frame — an
+      // extra explicit `pump()` here would let the post-frame callback
+      // that flips `_searchFiltersShellReady` take effect *before* the
+      // assertions below, defeating the point of this test.
+      await tester.pumpWidget(harness());
+
+      // The shell — everything that does not depend on the filter-section
+      // list — must already be on screen immediately.
+      expect(find.text('Search Cars'), findsOneWidget);
+      expect(find.byType(TextField), findsWidgets);
+
+      // The filter-section list itself (make/brand row, price/year/mileage
+      // cards, ...) must not be built yet on this very first frame — this
+      // is the actual first-open delay this fix removes.
+      expect(
+        find.text('Year Range'),
+        findsNothing,
+        reason:
+            'The filter-section list must not be built on the same frame '
+            'as the route\'s first paint — that upfront build cost (e.g. '
+            'brand-logo image decode in the make section) is exactly what '
+            'made the first open of this page feel delayed.',
+      );
+
+      // The very next frame (the post-frame callback set up on the first
+      // frame flips the ready flag and calls `setState`) must reveal the
+      // real section list — laziness only delays it by one frame, it must
+      // never lose it.
+      await tester.pump();
+      expect(find.text('Year Range'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'builds only visible/near-visible sections up front and defers a '
     'clearly off-screen section until scrolled into view',
     (tester) async {

@@ -228,6 +228,19 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
               Theme.of(context).brightness,
             ),
           ),
+          // This page is always pushed as a standalone full-screen route (no
+          // `bottomNavigationBar`), so — unlike MainShell's tabs, whose
+          // floating nav bar already wraps itself in `SafeArea` — nothing
+          // otherwise keeps the scroll content's bottom edge (the listings
+          // grid / About section) clear of Android's edge-to-edge system
+          // navigation bar. `top: false` leaves the `AppBar` alone (it
+          // already sits below the status bar via `Scaffold`);
+          // `maintainBottomViewPadding` keeps this bottom padding in place
+          // even while the keyboard is open (e.g. the inline search bar's
+          // keyboard), matching the pattern used for the chat composer.
+          // (Inner content below intentionally left at its original
+          // indentation to keep this diff minimal.)
+          SafeArea(top: false, maintainBottomViewPadding: true, child:
           RefreshIndicator(
             onRefresh: _load,
             child: _loading
@@ -492,6 +505,7 @@ class _DealerProfilePageState extends State<DealerProfilePage> {
                     ],
                   ),
           ),
+          ), // end SafeArea
         ],
       ),
     );
