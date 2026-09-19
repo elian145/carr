@@ -58,11 +58,23 @@ abstract final class SystemDisplayLock {
   /// Also keeps [MediaQueryData.padding] bottom at least [viewPadding] when the
   /// keyboard is closed so Android edge-to-edge / 3-button nav does not cover
   /// bottom controls (SafeArea and `padding.bottom` callers).
+  ///
+  /// Deliberately does NOT use [TextScaler.clamp] here: that returns a
+  /// `_ClampedTextScaler`, and some framework widgets (e.g.
+  /// `BottomNavigationBar`'s label text) call `.clamp(maxScaleFactor: 1.0)`
+  /// on the *inherited* scaler again internally. `_ClampedTextScaler.clamp()`
+  /// only compares its own raw min/max arguments for equality before
+  /// computing the actual intersected bounds, so when our lower bound
+  /// (1.0) and the nested call's upper bound (1.0) intersect to an equal
+  /// range, its constructor's `assert(maxScale > minScale)` fires — the
+  /// known `_ClampedTextScaler` assertion. Resolving the clamp to a plain
+  /// scale factor and wrapping it in [TextScaler.linear] keeps the exact
+  /// same effective scaling (still clamped to [1.0, 1.3]) while avoiding
+  /// that nested-clamp code path entirely, since `_LinearTextScaler.clamp()`
+  /// has no such bug.
   static MediaQueryData lock(MediaQueryData mq) {
-    final clampedScale = mq.textScaler.clamp(
-      minScaleFactor: 1.0,
-      maxScaleFactor: 1.3,
-    );
+    final clampedFactor = mq.textScaler.scale(1.0).clamp(1.0, 1.3);
+    final clampedScale = TextScaler.linear(clampedFactor);
     var data = mq.copyWith(textScaler: clampedScale);
     data = _ensureBottomSystemInset(data);
     final scale = visualScaleOf(mq);

@@ -3,6 +3,25 @@ import 'package:car_listing_app/shared/ui/system_display_lock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Mirrors the framework's real `SystemTextScaler` (returned by
+/// `MediaQueryData.fromView` on real devices) for reproduction purposes: it
+/// extends [TextScaler] and overrides only [scale]/[textScaleFactor],
+/// deliberately leaving [TextScaler.clamp] as the inherited base
+/// implementation. That base implementation (unlike `_LinearTextScaler`'s
+/// own eager-resolving override) really does construct a `_ClampedTextScaler`
+/// when `minScaleFactor != maxScaleFactor` -- which is the only way to
+/// reproduce the nested-clamp assertion in a widget test, since
+/// `SystemTextScaler` itself cannot be constructed outside the framework.
+class _RealDeviceLikeTextScaler extends TextScaler {
+  const _RealDeviceLikeTextScaler(this.textScaleFactor);
+
+  @override
+  final double textScaleFactor;
+
+  @override
+  double scale(double fontSize) => fontSize * textScaleFactor;
+}
+
 void main() {
   tearDown(() {
     SystemDisplayLock.debugStableDevicePixelRatio = null;
@@ -111,4 +130,52 @@ void main() {
     expect(innerSize.height, closeTo(800, 0.5));
     expect(find.byType(FittedBox), findsOneWidget);
   });
+
+  testWidgets(
+    'TS-01: BottomNavigationBar does not throw the _ClampedTextScaler '
+    'assertion when the system text scale sits at the lock floor',
+    (tester) async {
+      // BottomNavigationBar internally re-clamps the inherited text scaler
+      // to `maxScaleFactor: 1.0` for its labels (see
+      // MediaQuery.withClampedTextScaling in bottom_navigation_bar.dart).
+      // With a system textScaleFactor of exactly 1.0, SystemDisplayLock.lock
+      // used to hand down a `_ClampedTextScaler` with min == max == 1.0,
+      // and re-clamping that (max == min) previously hit an assertion
+      // inside `_ClampedTextScaler.clamp()`. This must build cleanly.
+      final locked = SystemDisplayLock.lock(
+        const MediaQueryData(
+          size: Size(360, 800),
+          textScaler: _RealDeviceLikeTextScaler(1.0),
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          // MaterialApp derives its own root MediaQuery from the platform
+          // view, which would otherwise shadow an ancestor MediaQuery
+          // wrapped around it -- `builder` is how app code actually injects
+          // SystemDisplayLock's MediaQuery in production (see
+          // lib/app/bootstrap.dart), so this must go through `builder` too
+          // for BottomNavigationBar to see the locked textScaler.
+          builder: (context, child) =>
+              MediaQuery(data: locked, child: child!),
+          home: Scaffold(
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: 0,
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.search),
+                  label: 'Search',
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(BottomNavigationBar), findsOneWidget);
+    },
+  );
 }

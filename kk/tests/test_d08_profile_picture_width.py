@@ -73,6 +73,13 @@ if str(_REPO_ROOT) not in sys.path:
 # `down_revision`) -- this is the D-06 migration's revision id.
 _PRE_D08_REVISION = "n5o6p7q8r9s0"
 
+# The D-08 migration's own revision id. Isolated "one step" upgrades must
+# target this explicitly -- a bare `flask db upgrade` (no target) goes all
+# the way to HEAD, which silently pulls in every later migration (e.g.
+# MI-03's `user.locale` column) and breaks the "D-08 changes nothing else"
+# assertions below for reasons unrelated to D-08 itself.
+_D08_REVISION = "o1p2q3r4s5t6"
+
 _LONG_VALUE = "https://pub-" + ("a" * 220) + ".r2.dev/profile_pictures/x.jpg"  # > 200, <= 2048
 _NORMAL_VALUE = "https://pub-1a2b3c4d5e6f7890.r2.dev/profile_pictures/deadbeef.jpg"  # realistic, <= 200
 
@@ -145,7 +152,7 @@ class D08ProfilePictureWidthMigrationTest(unittest.TestCase):
             engine.dispose()
 
         # Step 2: isolated D-08 upgrade (exactly one migration step).
-        self._flask_db("upgrade")
+        self._flask_db("upgrade", _D08_REVISION)
 
         engine = sa.create_engine(f"sqlite:///{self._db_path}")
         try:
@@ -284,7 +291,7 @@ class D08ProfilePictureWidthMigrationTest(unittest.TestCase):
 
         # Step 5: re-upgrade once more to prove the migration is safe to
         # re-run in the same process.
-        self._flask_db("upgrade")
+        self._flask_db("upgrade", _D08_REVISION)
         engine = sa.create_engine(f"sqlite:///{self._db_path}")
         try:
             insp = sa.inspect(engine)
@@ -359,7 +366,7 @@ class D08ProfilePictureWidthMigrationTest(unittest.TestCase):
             conn.close()
 
         # Isolated D-08 upgrade -- the step under test.
-        self._flask_db("upgrade")
+        self._flask_db("upgrade", _D08_REVISION)
 
         conn = sqlite3.connect(self._db_path)
         try:

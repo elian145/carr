@@ -1,18 +1,21 @@
-"""D-06: proves the migration adds (and cleanly removes) exactly five
-indexes, and that the deliberately-excluded sixth column stays unindexed.
+"""D-06: proves the migrations add (and cleanly remove) exactly the six
+target indexes named by the confirmed D-06 audit row.
 
-Covers ``migrations/versions/n5o6p7q8r9s0_d06_fk_and_report_status_indexes.py``:
+Covers:
 
-- ``notification.user_id``       -> ix_notification_user_id
-- ``user_action.user_id``        -> ix_user_action_user_id
-- ``password_reset.user_id``     -> ix_password_reset_user_id
-- ``email_verification.user_id`` -> ix_email_verification_user_id
-- ``user_report.status``         -> ix_user_report_status
+- ``migrations/versions/n5o6p7q8r9s0_d06_fk_and_report_status_indexes.py``:
+  - ``notification.user_id``       -> ix_notification_user_id
+  - ``user_action.user_id``        -> ix_user_action_user_id
+  - ``password_reset.user_id``     -> ix_password_reset_user_id
+  - ``email_verification.user_id`` -> ix_email_verification_user_id
+  - ``user_report.status``         -> ix_user_report_status
+- ``migrations/versions/d5e6f7a8b9c0_d06_token_blacklist_expires_at_index.py``:
+  - ``token_blacklist.expires_at``  -> ix_token_blacklist_expires_at
 
-``token_blacklist.expires_at`` is explicitly part of the original D-06 audit
-row but was investigated and excluded (zero query usage anywhere in the
-codebase) -- this test also asserts it stays unindexed, so a future change
-can't silently reintroduce it without a deliberate test update.
+``token_blacklist.expires_at`` was originally investigated and excluded from
+``n5o6p7q8r9s0`` (zero query usage at the time); the re-confirmed D-06 audit
+row explicitly calls for it, so a second, small migration adds it on its own
+without touching the original five.
 
 Method, mirroring ``kk/tests/test_d05_nullability_backfill.py`` (the
 established pattern for "isolate one migration via downgrade/upgrade and
@@ -26,13 +29,12 @@ inspect the real schema" tests in this repo):
    one step before D-06 -- covering "fresh full SQLite migration chain"
    in this same step.
 2. Inspect the real schema with `sqlalchemy.inspect` and assert none of the
-   five target indexes exist yet, and that `token_blacklist` has no
-   `expires_at` index.
-3. `flask db upgrade` -- applies exactly the D-06 migration in isolation
-   (isolated D-06 upgrade). Assert all five indexes now exist with the
-   correct columns, and `token_blacklist.expires_at` is still unindexed.
+   six target indexes exist yet.
+3. `flask db upgrade <token_blacklist revision>` -- applies both D-06
+   migrations in isolation (isolated D-06 upgrade). Assert all six indexes
+   now exist with the correct columns.
 4. `flask db downgrade` back to immediately before D-06 again (isolated
-   D-06 downgrade). Assert all five indexes are gone again.
+   D-06 downgrade). Assert all six indexes are gone again.
 5. Re-upgrade once more to prove the existence guards make the migration
    idempotent/safe to re-run.
 """
@@ -57,12 +59,19 @@ if str(_REPO_ROOT) not in sys.path:
 # `down_revision`) -- this is the D-05 migration's revision id.
 _PRE_D06_REVISION = "3f945e50c327"
 
+# Revision id of the second D-06 migration (token_blacklist.expires_at).
+# Isolated upgrades must target this explicitly -- a bare `flask db upgrade`
+# (no target) goes all the way to HEAD, pulling in unrelated later
+# migrations.
+_D06_TOKEN_BLACKLIST_REVISION = "d5e6f7a8b9c0"
+
 _D06_INDEXES: tuple[tuple[str, str, list[str]], ...] = (
     ("notification", "ix_notification_user_id", ["user_id"]),
     ("user_action", "ix_user_action_user_id", ["user_id"]),
     ("password_reset", "ix_password_reset_user_id", ["user_id"]),
     ("email_verification", "ix_email_verification_user_id", ["user_id"]),
     ("user_report", "ix_user_report_status", ["status"]),
+    ("token_blacklist", "ix_token_blacklist_expires_at", ["expires_at"]),
 )
 
 
@@ -110,11 +119,6 @@ class D06FkAndReportStatusIndexesTest(unittest.TestCase):
                     self._index_names(insp, table),
                     f"{name} should not exist yet ({label})",
                 )
-            self.assertNotIn(
-                "ix_token_blacklist_expires_at",
-                self._index_names(insp, "token_blacklist"),
-                f"token_blacklist.expires_at must stay unindexed ({label})",
-            )
         finally:
             engine.dispose()
 
@@ -130,14 +134,7 @@ class D06FkAndReportStatusIndexesTest(unittest.TestCase):
                     cols,
                     f"{name} should cover exactly {cols} ({label})",
                 )
-            # D-06 deliberately excludes token_blacklist.expires_at --
-            # confirm it stays unindexed even after the migration runs.
-            self.assertNotIn(
-                "ix_token_blacklist_expires_at",
-                self._index_names(insp, "token_blacklist"),
-                f"token_blacklist.expires_at must stay unindexed ({label})",
-            )
-            # And the pre-existing token_blacklist.jti unique index must be
+            # The pre-existing token_blacklist.jti unique index must be
             # completely unaffected by this migration.
             self.assertIn(
                 "ix_token_blacklist_jti",
@@ -155,18 +152,18 @@ class D06FkAndReportStatusIndexesTest(unittest.TestCase):
         self._flask_db("downgrade", _PRE_D06_REVISION)
         self._assert_indexes_absent("pre-D-06, after initial bootstrap+downgrade")
 
-        # Step 2: isolated D-06 upgrade (exactly one migration step).
-        self._flask_db("upgrade")
+        # Step 2: isolated D-06 upgrade (both D-06 migrations, exactly).
+        self._flask_db("upgrade", _D06_TOKEN_BLACKLIST_REVISION)
         self._assert_indexes_present("post-D-06 upgrade")
 
-        # Step 3: isolated D-06 downgrade (exactly one migration step back).
+        # Step 3: isolated D-06 downgrade (both D-06 migrations, back off).
         self._flask_db("downgrade", _PRE_D06_REVISION)
         self._assert_indexes_absent("post-D-06 downgrade")
 
         # Step 4: re-upgrade once more to prove idempotent re-application
         # (the migration's existence guards must not choke on a normal
         # re-run in the same process/db).
-        self._flask_db("upgrade")
+        self._flask_db("upgrade", _D06_TOKEN_BLACKLIST_REVISION)
         self._assert_indexes_present("post-D-06 re-upgrade")
 
 

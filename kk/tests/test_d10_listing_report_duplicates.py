@@ -54,6 +54,16 @@ if str(_REPO_ROOT) not in sys.path:
 # (D-08: widen user.profile_picture).
 _PRE_D10_REVISION = "o1p2q3r4s5t6"
 
+# The D-10 migration's own revision id. Isolated "one step" upgrades that
+# will later be downgraded back to `_PRE_D10_REVISION` must target this
+# explicitly -- a bare `flask db upgrade` (no target) goes all the way to
+# HEAD, so a subsequent `downgrade _PRE_D10_REVISION` would then walk back
+# through every later migration's own downgrade() too (e.g. MI-03's
+# `user.locale` batch_alter_table, which recreates the `user` table and
+# trips FK enforcement against the seeded car/listing_report rows here) --
+# unrelated to D-10 itself.
+_D10_REVISION = "7ae553c40b45"
+
 _UNIQUE_CONSTRAINT_NAME = "uq_listing_report_reporter_car"
 
 _KNOWN_REPORTER_ID = 26
@@ -520,7 +530,7 @@ class TestD10Downgrade(D10ListingReportDedupeMigrationTest):
         finally:
             conn.close()
 
-        self._flask_db("upgrade")
+        self._flask_db("upgrade", _D10_REVISION)
         conn = self._connect()
         try:
             assert _listing_report_ids(conn) == [1]
@@ -553,7 +563,7 @@ class TestD10Downgrade(D10ListingReportDedupeMigrationTest):
         finally:
             conn.close()
 
-        self._flask_db("upgrade")
+        self._flask_db("upgrade", _D10_REVISION)
         conn = self._connect()
         try:
             assert _listing_report_ids(conn) == [1]
