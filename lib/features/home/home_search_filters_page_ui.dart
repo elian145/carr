@@ -1,15 +1,20 @@
 part of 'home_flow.dart';
 
-mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
-  List<Widget> _searchEssentialFilterSections(
-    BuildContext context,
-    StateSetter setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) {
-    final loc = AppLocalizations.of(context)!;
+/// Builds one filter-section widget on demand. Deferring construction to a
+/// closure (instead of building the [Widget] eagerly) is what lets the
+/// filters page's scroll body be consumed lazily via `ListView.builder` —
+/// see `_searchFiltersPageScrollBody` below.
+typedef _SearchFilterSectionBuilder =
+    Widget Function(
+      BuildContext context,
+      StateSetter setStateDialog,
+      MoreFiltersDialogStyle style,
+    );
 
+mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
+  List<_SearchFilterSectionBuilder> _searchEssentialFilterSectionBuilders() {
     return [
-      _searchNumericRangeCard(
+      (context, setStateDialog, style) => _searchNumericRangeCard(
         context: context,
         children: _moreFiltersPriceWidgets(
           context,
@@ -17,7 +22,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           style,
         ),
       ),
-      _searchNumericRangeCard(
+      (context, setStateDialog, style) => _searchNumericRangeCard(
         context: context,
         children: _moreFiltersYearWidgets(
           context,
@@ -25,7 +30,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           style,
         ),
       ),
-      _searchNumericRangeCard(
+      (context, setStateDialog, style) => _searchNumericRangeCard(
         context: context,
         children: _moreFiltersMileageRangeWidgets(
           context,
@@ -33,17 +38,17 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           style,
         ),
       ),
-      _searchIconCardSection(
+      (context, setStateDialog, style) => _searchIconCardSection(
         context,
         setStateDialog,
-        title: loc.conditionLabel,
+        title: AppLocalizations.of(context)!.conditionLabel,
         options: const ['New', 'Used'],
         selected: selectedCondition,
         onSelected: (v) => selectedCondition = v ?? 'Any',
         labelForOption: (ctx, o) => _translateValueGlobal(ctx, o) ?? o,
         textOnly: true,
       ),
-      _searchNumericRangeCard(
+      (context, setStateDialog, style) => _searchNumericRangeCard(
         context: context,
         children: _moreFiltersSpecsEngineWidgets(
           context,
@@ -53,10 +58,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           includeSeating: false,
         ),
       ),
-      _searchIconCardSection(
+      (context, setStateDialog, style) => _searchIconCardSection(
         context,
         setStateDialog,
-        title: loc.titleStatus,
+        title: AppLocalizations.of(context)!.titleStatus,
         options: const ['clean', 'damaged'],
         selected: selectedTitleStatus,
         onSelected: (v) {
@@ -69,16 +74,16 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         textOnly: true,
       ),
       if (selectedTitleStatus == 'damaged')
-        _searchNumericRangeCard(
+        (context, setStateDialog, style) => _searchNumericRangeCard(
           context: context,
           children: [
             _searchDamagedPartsField(context, setStateDialog, style),
           ],
         ),
-      _searchMultiIconCardSection(
+      (context, setStateDialog, style) => _searchMultiIconCardSection(
         context,
         setStateDialog,
-        title: loc.fuelTypeLabel,
+        title: AppLocalizations.of(context)!.fuelTypeLabel,
         options: fuelTypes,
         selectedValues: _homeSelectedFuelTypes,
         onToggle: _homeToggleFuelType,
@@ -92,10 +97,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         tileImageHeight: 44,
         tileImageBorderRadius: 8,
       ),
-      _searchMultiIconCardSection(
+      (context, setStateDialog, style) => _searchMultiIconCardSection(
         context,
         setStateDialog,
-        title: loc.bodyTypeLabel,
+        title: AppLocalizations.of(context)!.bodyTypeLabel,
         options: bodyTypes,
         selectedValues: _homeSelectedBodyTypes,
         onToggle: _homeToggleBodyType,
@@ -108,10 +113,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         tileImageHeight: 40,
         tileImageBorderRadius: 8,
       ),
-      _searchIconCardSection(
+      (context, setStateDialog, style) => _searchIconCardSection(
         context,
         setStateDialog,
-        title: loc.transmissionLabel,
+        title: AppLocalizations.of(context)!.transmissionLabel,
         options: transmissions,
         selected: selectedTransmission,
         onSelected: (v) => selectedTransmission = v ?? 'Any',
@@ -128,18 +133,12 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     ];
   }
 
-  List<Widget> _searchAdvancedFilterSections(
-    BuildContext context,
-    StateSetter setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) {
-    final loc = AppLocalizations.of(context)!;
-
+  List<_SearchFilterSectionBuilder> _searchAdvancedFilterSectionBuilders() {
     return [
-      _searchMultiIconCardSection(
+      (context, setStateDialog, style) => _searchMultiIconCardSection(
         context,
         setStateDialog,
-        title: loc.driveType,
+        title: AppLocalizations.of(context)!.driveType,
         options: driveTypes,
         selectedValues: _homeSelectedDriveTypes,
         onToggle: _homeToggleDriveType,
@@ -153,7 +152,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         tileImageHeight: 48,
         tileImageBorderRadius: 8,
       ),
-      _searchNumericRangeCard(
+      (context, setStateDialog, style) => _searchNumericRangeCard(
         context: context,
         children: _moreFiltersColorWidgets(
           context,
@@ -162,10 +161,10 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           narrowMenu: true,
         ),
       ),
-      _searchIconCardSection(
+      (context, setStateDialog, style) => _searchIconCardSection(
         context,
         setStateDialog,
-        title: loc.regionSpecsLabel,
+        title: AppLocalizations.of(context)!.regionSpecsLabel,
         options: kCarRegionSpecCodes,
         selected: selectedRegionSpecs,
         onSelected: (v) => selectedRegionSpecs = v,
@@ -180,7 +179,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         tileImageFit: BoxFit.cover,
         tileImageBorderRadius: 4,
       ),
-      _searchIconCardSection(
+      (context, setStateDialog, style) => _searchIconCardSection(
         context,
         setStateDialog,
         title: AppLocalizations.of(context)!.labelPlateType,
@@ -201,7 +200,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         tileImageHeight: 40,
         compactImageTile: true,
       ),
-      _searchIconCardSection(
+      (context, setStateDialog, style) => _searchIconCardSection(
         context,
         setStateDialog,
         title: AppLocalizations.of(context)!.labelPlateCity,
@@ -217,7 +216,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
         tileImageHeight: 40,
         compactImageTile: true,
       ),
-      _searchNumericRangeCard(
+      (context, setStateDialog, style) => _searchNumericRangeCard(
         context: context,
         children: _moreFiltersSpecsEngineWidgets(
           context,
@@ -231,42 +230,52 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
     ];
   }
 
-  Widget _searchAllFilterSections(
-    BuildContext context,
-    StateSetter setStateDialog,
-    MoreFiltersDialogStyle style,
-  ) {
-    return KeyedSubtree(
-      key: ValueKey<int>(_moreFiltersDialogFieldGeneration),
-      child: Column(
-        children: [
-          ..._searchEssentialFilterSections(context, setStateDialog, style),
-          ..._searchAdvancedFilterSections(context, setStateDialog, style),
-        ],
-      ),
-    );
+  /// Combined, ordered list of every filter-section builder (essential then
+  /// advanced) — the exact same order previously produced by
+  /// `_searchAllFilterSections`'s `Column`, just not built yet.
+  List<_SearchFilterSectionBuilder> _searchAllFilterSectionBuilders() {
+    return [
+      ..._searchEssentialFilterSectionBuilders(),
+      ..._searchAdvancedFilterSectionBuilders(),
+    ];
   }
 
-  List<Widget> _searchFiltersPageScrollBody(
+  /// One item per row of the filters page's `ListView.builder`: index 0 is
+  /// the make/brand section, the rest are the essential+advanced filter
+  /// sections in their original order. Each entry is only invoked (i.e.
+  /// actually builds its widget subtree) when `ListView.builder` requests
+  /// that index, so off-screen sections stay unbuilt until scrolled into
+  /// view — this is what fixes the eager-build first-frame delay.
+  List<Widget Function(BuildContext)> _searchFiltersPageScrollBody(
     BuildContext context,
     StateSetter setStateDialog, {
     required bool brandsExpanded,
     required VoidCallback onToggleBrandsExpanded,
   }) {
     final style = _searchMoreFiltersStyle(context);
+    final sectionBuilders = _searchAllFilterSectionBuilders();
 
     return [
-      _searchMakeSection(
-        context,
+      (ctx) => _searchMakeSection(
+        ctx,
         setStateDialog,
         brandsExpanded: brandsExpanded,
         onToggleBrandsExpanded: onToggleBrandsExpanded,
       ),
-      _searchAllFilterSections(
-        context,
-        setStateDialog,
-        style,
-      ),
+      for (var i = 0; i < sectionBuilders.length; i++)
+        (ctx) => KeyedSubtree(
+          // Same remount-on-reset trick as the previous single
+          // `KeyedSubtree(key: ValueKey(_moreFiltersDialogFieldGeneration))`
+          // wrapping the whole section Column: each individual section key
+          // still changes together whenever the generation counter is
+          // bumped (More Filters reset / cylinder / engine-size changes),
+          // forcing dropdowns to remount and drop stale `initialValue`
+          // state, just per-item instead of for the whole subtree at once.
+          key: ValueKey(
+            'filters_section_${i}_$_moreFiltersDialogFieldGeneration',
+          ),
+          child: sectionBuilders[i](ctx, setStateDialog, style),
+        ),
     ];
   }
 
@@ -366,23 +375,34 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
                     ),
                   ),
                   Expanded(
-                    child: Container(
-                      decoration: isLightShell
-                          ? null
-                          : AppThemes.shellBackgroundDecoration(
-                              Theme.of(context).brightness,
-                            ),
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        children: _searchFiltersPageScrollBody(
+                    child: Builder(
+                      builder: (context) {
+                        // Rebuilt list of *unbuilt* section closures — cheap
+                        // (just closure references), unlike the sections
+                        // themselves, which `ListView.builder` below only
+                        // invokes for items it actually needs to lay out.
+                        final sectionItems = _searchFiltersPageScrollBody(
                           context,
                           setStateDialog,
                           brandsExpanded: _searchFiltersBrandsExpanded,
                           onToggleBrandsExpanded: toggleSearchBrandsExpanded,
-                        ),
-                      ),
+                        );
+                        return Container(
+                          decoration: isLightShell
+                              ? null
+                              : AppThemes.shellBackgroundDecoration(
+                                  Theme.of(context).brightness,
+                                ),
+                          child: ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            itemCount: sectionItems.length,
+                            itemBuilder: (context, index) =>
+                                sectionItems[index](context),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   SafeArea(

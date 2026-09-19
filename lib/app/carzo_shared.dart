@@ -372,7 +372,7 @@ class _AuthGuardState extends State<AuthGuard> {
       );
     }
     if (auth.isLoading || ApiService.isAuthenticated) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const _AuthGuardLoadingShell();
     }
     if (widget.promptSellAuthWhenLoggedOut) {
       return const _SellAuthPrompt();
@@ -382,6 +382,34 @@ class _AuthGuardState extends State<AuthGuard> {
         Navigator.pushReplacementNamed(context, '/login');
       }
     });
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const _AuthGuardLoadingShell();
+  }
+}
+
+/// Loading presentation for [AuthGuard] while the one-time initial auth
+/// check (or a same-session re-check) is still in flight, and while
+/// redirecting an unauthenticated session to `/login`.
+///
+/// Route navigation to a protected page (Sell, My Listings, Chat, ...)
+/// already happens immediately — see `AuthGuard.build` above — so by the
+/// time this widget is on screen the destination route has *already*
+/// opened. Previously this state was a bare
+/// `Scaffold(body: Center(child: CircularProgressIndicator()))`: a blank
+/// page with nothing but a spinner, which on a slow/cold `/auth/me`
+/// response reads to the user as "the tap didn't work" rather than "the
+/// page opened and is loading". Adding a plain `AppBar` (using the app's
+/// normal, page-agnostic theme — no destination-specific title or colors)
+/// is the smallest change that makes this look like a real, already-open
+/// app screen instead of a frozen/blank one, without building a per-route
+/// loading-shell architecture.
+class _AuthGuardLoadingShell extends StatelessWidget {
+  const _AuthGuardLoadingShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(automaticallyImplyLeading: false),
+      body: const Center(child: CircularProgressIndicator()),
+    );
   }
 }

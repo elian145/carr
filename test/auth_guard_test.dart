@@ -21,6 +21,15 @@
 // wall-clock wait. AuthService.debugProfileRetryDelaysOverride and the new
 // AuthGuard.debugTerminalTimeoutOverride (mirroring the same existing
 // testing convention) keep the simulated cascade short.
+//
+// RC smoke-test follow-up (test 7 below): while the initial `/auth/me`
+// check is genuinely pending (not failing/retrying — the ordinary case on
+// every cold app session), AuthGuard's pending-state UI must be a real
+// loading shell (Scaffold + AppBar), not a bare spinner on an otherwise
+// blank page, which real-device testing found reads as "the tap did
+// nothing". This does not change any auth/retry/timeout/navigation
+// behavior — only what is rendered while `auth.isLoading` is true.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:car_listing_app/app/carzo_shared.dart';
@@ -364,6 +373,71 @@ void main() {
       // multiple/duplicated).
       await tester.pump(const Duration(milliseconds: 300));
       expect(find.text(_terminalErrorText), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    '7: while the initial /auth/me check is pending, AuthGuard immediately '
+    'shows a proper loading shell (Scaffold + AppBar) — not a bare/blank '
+    'spinner page — and swaps to the real child once auth resolves',
+    (tester) async {
+      final pendingProfileResponse = Completer<http.Response>();
+      ApiService.testHttpClient = MockClient((request) async {
+        if (request.url.path == '/api/auth/me') {
+          return pendingProfileResponse.future;
+        }
+        return _jsonResponse(200, <String, dynamic>{});
+      });
+      await ApiService.setTokens(
+        accessToken: 'pending_token',
+        refreshToken: 'pending_refresh',
+      );
+      // Deliberately not awaited: this leaves AuthService.isLoading true
+      // and the (mocked) /auth/me request in flight, exactly like a real
+      // cold app session at the moment a protected route is first opened.
+      unawaited(AuthService().initialize());
+
+      await tester.pumpWidget(_appWithGuard(const Text('Protected Content')));
+      await tester.pump();
+
+      expect(AuthService().isLoading, isTrue);
+      expect(
+        find.text('Protected Content'),
+        findsNothing,
+        reason: 'The real destination must not render before auth resolves.',
+      );
+      expect(
+        find.byType(CircularProgressIndicator),
+        findsOneWidget,
+        reason: 'The pending state must still show a loading indicator.',
+      );
+      expect(
+        find.byType(AppBar),
+        findsOneWidget,
+        reason:
+            'The pending state must render a proper loading shell (a real '
+            'Scaffold + AppBar), not a bare/blank spinner-only page — this '
+            'is the RC smoke-test UX fix (route "visibly opens" instead of '
+            'looking like the tap did nothing).',
+      );
+      expect(
+        find.text(_terminalErrorText),
+        findsNothing,
+        reason: 'A merely-pending request is not the stranded/error case.',
+      );
+
+      // Resolve the in-flight /auth/me request: the real child must
+      // replace the loading shell exactly like every other success path
+      // (test 1) — this proves the new shell is purely presentational and
+      // does not change when/whether AuthGuard releases.
+      pendingProfileResponse.complete(
+        _jsonResponse(200, {'id': 1, 'username': 'testuser'}),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Protected Content'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     },
   );
 }
