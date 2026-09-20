@@ -4,6 +4,13 @@ analyzer:
   exclude:
     - tools/scratch/original_main.dart.txt
     - tools/scratch/temp_main.dart.txt
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   rules:
