@@ -395,7 +395,12 @@ def test_L_old_helpers_and_inline_gates_removed():
     # phone_start()'s failure branch that gates only the internal `detail`
     # field (not `dev_code`) using the same shared helper -- 6 total calls.
     assert auth_src.count("dev_debug_response_fields_enabled()") == 6
-    assert user_src.count("dev_debug_response_fields_enabled()") == 8
+    # user.py: was 8 (4 SMS/email-send endpoints x 2 calls each -- one on
+    # the success path, one on the SMS/email-failed path). Release-candidate
+    # fix 3 (account phone-number change) added a 5th such endpoint
+    # (`send_account_phone_change_code` / `/api/user/phone-change/send-code`),
+    # gated by this exact same shared helper -- 10 total calls.
+    assert user_src.count("dev_debug_response_fields_enabled()") == 10
 
     # sms_service must delegate rather than re-implement env resolution.
     assert "get_app_env()" in sms_src
@@ -404,7 +409,7 @@ def test_L_old_helpers_and_inline_gates_removed():
 
 def test_L_dev_code_still_emitted_from_exactly_the_expected_sites():
     """Sanity companion to test_L above: `dev_code` itself must still be
-    reachable from exactly the 8 known functions (not fewer -> feature
+    reachable from exactly the known functions (not fewer -> feature
     silently dropped; not more -> new, unreviewed leak site introduced)."""
     auth_src = (_REPO_ROOT / "kk" / "routes" / "auth.py").read_text(encoding="utf-8")
     user_src = (_REPO_ROOT / "kk" / "routes" / "user.py").read_text(encoding="utf-8")
@@ -413,4 +418,7 @@ def test_L_dev_code_still_emitted_from_exactly_the_expected_sites():
     # x2, send_phone_verification x1, forgot_password x1, phone_start x1),
     # plus comment lines mentioning it are fine -- assert the KEY form.
     assert auth_src.count('"dev_code"') == 5
-    assert user_src.count('"dev_code"') == 8
+    # user.py: was 8 (4 SMS/email-send endpoints x 2 literal `dev_code` key
+    # sites each). Release-candidate fix 3 added a 5th such endpoint
+    # (`send_account_phone_change_code`) with the same 2-site shape -- 10.
+    assert user_src.count('"dev_code"') == 10

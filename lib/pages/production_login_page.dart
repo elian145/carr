@@ -64,6 +64,17 @@ class _LoginPageState extends State<LoginPage> {
     return false;
   }
 
+  /// True only when the server has confirmed -- via a genuinely correct,
+  /// live OTP for this exact phone number -- that the matching account has
+  /// been deactivated (see `kk/routes/auth.py::_deactivated_account_otp_response`).
+  /// Never derived from a guess/enumeration-prone signal.
+  bool _isAccountDeactivated(Object e) {
+    if (e is ApiException) {
+      return e.errorCode == 'account_deactivated';
+    }
+    return false;
+  }
+
   Future<void> _showPersonalAccountConflictDialog() async {
     final loc = AppLocalizations.of(context)!;
     await showDialog<void>(
@@ -134,15 +145,17 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _showApiErrorDialog(
     ApiException e, {
     String? fallback,
+    String? overrideMessage,
   }) async {
     if (!mounted) return;
     final loc = AppLocalizations.of(context)!;
     // ApiService already appends retry timing for 429 responses.
-    final msg = userErrorText(
-      context,
-      e,
-      fallback: fallback ?? loc.errorTitle,
-    );
+    // `overrideMessage` is used for error codes with a dedicated localized
+    // string (e.g. `account_deactivated`) instead of surfacing the raw
+    // (English-only) server message text.
+    final msg =
+        overrideMessage ??
+        userErrorText(context, e, fallback: fallback ?? loc.errorTitle);
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -339,6 +352,16 @@ class _LoginPageState extends State<LoginPage> {
         if (_isDealerAccountConflict(e)) {
           _resetOtpState();
           await _showDealerAccountConflictDialog();
+          return;
+        }
+        if (_isAccountDeactivated(e)) {
+          _resetOtpState();
+          await _showApiErrorDialog(
+            e,
+            overrideMessage: AppLocalizations.of(
+              context,
+            )!.accountDeactivatedMessage,
+          );
           return;
         }
         await _showApiErrorDialog(e);

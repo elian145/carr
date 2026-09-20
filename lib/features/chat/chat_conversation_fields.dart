@@ -20,7 +20,6 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
   bool _historyLoadError = false;
   bool _loadingOlderMessages = false;
   bool _hasMoreMessages = false;
-  int _currentPage = 1;
   static const int _perPage = 50;
   Timer? _pollTimer;
   Timer? _typingDebounce;

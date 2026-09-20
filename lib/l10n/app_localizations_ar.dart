@@ -559,6 +559,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get accountDeactivatedMessage =>
+      'تم إيقاف هذا الحساب. يرجى التواصل مع الدعم للمساعدة.';
+
+  @override
   String devOtpCode(Object code) {
     return 'رمز المطور: $code';
   }
@@ -1291,6 +1295,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get emailUpdatedSuccess => 'تم تحديث البريد الإلكتروني بنجاح';
+
+  @override
+  String get verifyNewPhoneDialogTitle => 'تحقق من رقم هاتفك الجديد';
+
+  @override
+  String verifyNewPhoneDialogMessage(Object phone) {
+    return 'سنرسل رمزاً من 6 أرقام إلى $phone لتأكيد ملكيتك له. تم حفظ التغييرات الأخرى مسبقاً.';
+  }
+
+  @override
+  String get phoneNumberUpdatedSuccess => 'تم تحديث رقم الهاتف بنجاح';
 
   @override
   String get failedToPickImage => 'فشل اختيار الصورة';
@@ -2354,6 +2369,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get discard => 'حذف';
 
   @override
+  String get discardDraftAction => 'حذف المسودة';
+
+  @override
+  String get continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver =>
+      'تابع هنا لإنهاء الإعلان، أو احذفه إذا كنت تريد البدء من جديد.';
+
+  @override
+  String get draftBadgeLabel => 'مسودة';
+
+  @override
   String get failedToBlurPlatesPleaseTryAgain =>
       'فشل تمويه اللوحات. حاول مرة أخرى.';
 
@@ -2380,6 +2405,22 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get noDraftsYetCreateYourFirstCarListingToGetStarted =>
       'لا توجد مسودات بعد. أنشئ أول إعلان سيارة للبدء.';
+
+  @override
+  String get pleaseCompleteAllRequiredFieldsBeforeProceeding =>
+      'يرجى إكمال جميع الحقول المطلوبة قبل الاستمرار';
+
+  @override
+  String pleaseCompleteMissingFields(String fields) {
+    return 'يرجى إكمال: $fields';
+  }
+
+  @override
+  String get sellingUnavailableTitle => 'البيع غير متوفر';
+
+  @override
+  String get sellingUnavailableBody =>
+      'تم تعطيل إنشاء الإعلانات الجديدة مؤقتاً. يرجى المحاولة مرة أخرى لاحقاً.';
 
   @override
   String get specsAppliedYearSetStep2FieldsPreFilled =>

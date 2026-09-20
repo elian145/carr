@@ -1180,6 +1180,12 @@ abstract class AppLocalizations {
   /// **'Failed to send OTP: {msg}'**
   String otpFailedWithMsg(Object msg);
 
+  /// No description provided for @accountDeactivatedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This account has been deactivated. Contact support for assistance.'**
+  String get accountDeactivatedMessage;
+
   /// No description provided for @devOtpCode.
   ///
   /// In en, this message translates to:
@@ -2457,6 +2463,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Email updated successfully'**
   String get emailUpdatedSuccess;
+
+  /// No description provided for @verifyNewPhoneDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your new phone number'**
+  String get verifyNewPhoneDialogTitle;
+
+  /// No description provided for @verifyNewPhoneDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send a 6-digit code to {phone} to confirm you own it. Your other changes are saved already.'**
+  String verifyNewPhoneDialogMessage(Object phone);
+
+  /// No description provided for @phoneNumberUpdatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number updated successfully'**
+  String get phoneNumberUpdatedSuccess;
 
   /// No description provided for @failedToPickImage.
   ///
@@ -4411,6 +4435,24 @@ abstract class AppLocalizations {
   /// **'Discard'**
   String get discard;
 
+  /// No description provided for @discardDraftAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard draft'**
+  String get discardDraftAction;
+
+  /// No description provided for @continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue here to finish the listing, or discard it if you want to start over.'**
+  String get continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver;
+
+  /// No description provided for @draftBadgeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'DRAFT'**
+  String get draftBadgeLabel;
+
   /// No description provided for @failedToBlurPlatesPleaseTryAgain.
   ///
   /// In en, this message translates to:
@@ -4458,6 +4500,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No drafts yet. Create your first car listing to get started.'**
   String get noDraftsYetCreateYourFirstCarListingToGetStarted;
+
+  /// No description provided for @pleaseCompleteAllRequiredFieldsBeforeProceeding.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete all required fields before proceeding'**
+  String get pleaseCompleteAllRequiredFieldsBeforeProceeding;
+
+  /// No description provided for @pleaseCompleteMissingFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Please complete: {fields}'**
+  String pleaseCompleteMissingFields(String fields);
+
+  /// No description provided for @sellingUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Selling unavailable'**
+  String get sellingUnavailableTitle;
+
+  /// No description provided for @sellingUnavailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating new listings is temporarily disabled. Please try again later.'**
+  String get sellingUnavailableBody;
 
   /// No description provided for @specsAppliedYearSetStep2FieldsPreFilled.
   ///

@@ -272,7 +272,11 @@ mixin _SellStep5Build on _SellStep5Logic {
         pageState?._jumpSellWizardToIndex(targetStep);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Please complete: ${missing.join(', ')}'),
+            content: Text(
+              AppLocalizations.of(context)!.pleaseCompleteMissingFields(
+                missing.join(', '),
+              ),
+            ),
             backgroundColor: Colors.red,
           ),
         );

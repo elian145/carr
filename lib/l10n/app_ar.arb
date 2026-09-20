@@ -202,6 +202,7 @@
   "otpSent": "تم إرسال الرمز",
   "otpFailed": "فشل إرسال الرمز",
   "otpFailedWithMsg": "فشل إرسال الرمز: {msg}",
+  "accountDeactivatedMessage": "تم إيقاف هذا الحساب. يرجى التواصل مع الدعم للمساعدة.",
   "devOtpCode": "رمز المطور: {code}",
   "english": "الإنجليزية",
   "arabic": "العربية",
@@ -451,6 +452,9 @@
   "verifyNewEmailDialogTitle": "تحقق من بريدك الإلكتروني الجديد",
   "verifyNewEmailDialogMessage": "سنرسل رمزاً من 6 أرقام إلى {email} لتأكيد ملكيتك له. تم حفظ التغييرات الأخرى مسبقاً.",
   "emailUpdatedSuccess": "تم تحديث البريد الإلكتروني بنجاح",
+  "verifyNewPhoneDialogTitle": "تحقق من رقم هاتفك الجديد",
+  "verifyNewPhoneDialogMessage": "سنرسل رمزاً من 6 أرقام إلى {phone} لتأكيد ملكيتك له. تم حفظ التغييرات الأخرى مسبقاً.",
+  "phoneNumberUpdatedSuccess": "تم تحديث رقم الهاتف بنجاح",
   "failedToPickImage": "فشل اختيار الصورة",
   "emailOrPhoneLabel": "البريد الإلكتروني أو رقم الهاتف",
   "enterEmailOrPhoneHint": "أدخل بريدك الإلكتروني أو رقم هاتفك",
@@ -782,6 +786,9 @@
   "discardDraft": "حذف المسودة؟",
   "thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone": "سيتم حذف مسودة الإعلان نهائياً. لا يمكن التراجع عن هذا الإجراء.",
   "discard": "حذف",
+  "discardDraftAction": "حذف المسودة",
+  "continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver": "تابع هنا لإنهاء الإعلان، أو احذفه إذا كنت تريد البدء من جديد.",
+  "draftBadgeLabel": "مسودة",
   "failedToBlurPlatesPleaseTryAgain": "فشل تمويه اللوحات. حاول مرة أخرى.",
   "platesBlurredSuccessfully": "تم تمويه اللوحات بنجاح.",
   "inProgress": "قيد التقدم",
@@ -790,6 +797,18 @@
   "startNewListing": "ابدأ إعلانا جديدا",
   "startANewListing": "ابدأ إعلانا جديدا",
   "noDraftsYetCreateYourFirstCarListingToGetStarted": "لا توجد مسودات بعد. أنشئ أول إعلان سيارة للبدء.",
+  "pleaseCompleteAllRequiredFieldsBeforeProceeding": "يرجى إكمال جميع الحقول المطلوبة قبل الاستمرار",
+  "pleaseCompleteMissingFields": "يرجى إكمال: {fields}",
+  "@pleaseCompleteMissingFields": {
+    "placeholders": {
+      "fields": {
+        "type": "String",
+        "example": "brand, model"
+      }
+    }
+  },
+  "sellingUnavailableTitle": "البيع غير متوفر",
+  "sellingUnavailableBody": "تم تعطيل إنشاء الإعلانات الجديدة مؤقتاً. يرجى المحاولة مرة أخرى لاحقاً.",
   "specsAppliedYearSetStep2FieldsPreFilled": "تم تطبيق المواصفات — تم ضبط السنة وملء حقول الخطوة 2 مسبقا.",
   "search": "بحث...",
   "loadingVehicleSpecs": "جاري تحميل مواصفات السيارة…",

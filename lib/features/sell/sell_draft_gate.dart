@@ -625,17 +625,16 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     if (!flags.sellEnabled) {
       if (!mounted) return;
       setState(() => _loading = false);
+      final gateLoc = AppLocalizations.of(context)!;
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Selling unavailable'),
-          content: const Text(
-            'Creating new listings is temporarily disabled. Please try again later.',
-          ),
+          title: Text(gateLoc.sellingUnavailableTitle),
+          content: Text(gateLoc.sellingUnavailableBody),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
+              child: Text(gateLoc.ok),
             ),
           ],
         ),

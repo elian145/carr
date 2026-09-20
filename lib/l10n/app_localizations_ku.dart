@@ -560,6 +560,10 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
+  String get accountDeactivatedMessage =>
+      'ئەم هەژمارە ناچالاک کراوە. تکایە پەیوەندی بە پشتگیری بکە بۆ یارمەتی.';
+
+  @override
   String devOtpCode(Object code) {
     return 'کۆدی گەشەپێدەەر: $code';
   }
@@ -1279,6 +1283,18 @@ class AppLocalizationsKu extends AppLocalizations {
 
   @override
   String get emailUpdatedSuccess => 'ئیمەیل بە سەرکەوتوویی نوێ کرا';
+
+  @override
+  String get verifyNewPhoneDialogTitle => 'پشتڕاستکردنەوەی ژمارە تەلەفۆنی نوێت';
+
+  @override
+  String verifyNewPhoneDialogMessage(Object phone) {
+    return 'کۆدێکی ٦ ژمارەیی بۆ $phone دەنێرین بۆ پشتڕاستکردنەوەی خاوەندارێتیت. گۆڕانکاریی ترەکان پێشتر پاشەکەوت کراوە.';
+  }
+
+  @override
+  String get phoneNumberUpdatedSuccess =>
+      'ژمارە تەلەفۆن بە سەرکەوتوویی نوێ کرا';
 
   @override
   String get failedToPickImage => 'هەڵبژاردنی وێنە شکستی هێنا';
@@ -2348,6 +2364,16 @@ class AppLocalizationsKu extends AppLocalizations {
   String get discard => 'بسڕەوە';
 
   @override
+  String get discardDraftAction => 'ڕەشنووس بسڕەوە';
+
+  @override
+  String get continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver =>
+      'لێرە بەردەوام بە بۆ تەواوکردنی ڕیکلامەکە، یان بیسڕەوە ئەگەر دەتەوێت لە سەرەتاوە دەستپێبکەیتەوە.';
+
+  @override
+  String get draftBadgeLabel => 'ڕەشنووس';
+
+  @override
   String get failedToBlurPlatesPleaseTryAgain =>
       'شاردنەوەی ڕەقەم سەرنەکەوت. دووبارە هەوڵ بدە.';
 
@@ -2374,6 +2400,22 @@ class AppLocalizationsKu extends AppLocalizations {
   @override
   String get noDraftsYetCreateYourFirstCarListingToGetStarted =>
       'هێشتا ڕەشنووس نییە. یەکەم ڕیکلامی ئۆتۆمبێل دروست بکە.';
+
+  @override
+  String get pleaseCompleteAllRequiredFieldsBeforeProceeding =>
+      'تکایە هەموو خانە پێویستەکان تەواو بکە پێش بەردەوامبوون';
+
+  @override
+  String pleaseCompleteMissingFields(String fields) {
+    return 'تکایە ئەمانە تەواو بکە: $fields';
+  }
+
+  @override
+  String get sellingUnavailableTitle => 'فرۆشتن بەردەست نییە';
+
+  @override
+  String get sellingUnavailableBody =>
+      'دروستکردنی ڕیکلامی نوێ بۆ ماوەیەک ناچالاک کراوە. تکایە دوایتر هەوڵ بدەوە.';
 
   @override
   String get specsAppliedYearSetStep2FieldsPreFilled =>

@@ -407,6 +407,10 @@ class ApiService {
     String code,
   ) => _ApiServiceAuth.verifyAccountEmailChange(email, code);
 
+  static Future<Map<String, dynamic>> sendAccountPhoneChangeCode(
+    String phoneNumber,
+  ) => _ApiServiceAuth.sendAccountPhoneChangeCode(phoneNumber);
+
   static Future<Map<String, dynamic>> sendContactPhoneVerification(
     String phoneNumber,
   ) => _ApiServiceAuth.sendContactPhoneVerification(phoneNumber);
@@ -687,12 +691,12 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getChatMessagesByConversation(
     String conversationId, {
-    int page = 1,
     int perPage = 50,
+    String? before,
   }) => _ApiServiceChat.getChatMessagesByConversation(
     conversationId,
-    page: page,
     perPage: perPage,
+    before: before,
   );
 
   static Future<Map<String, dynamic>> sendChatImage({

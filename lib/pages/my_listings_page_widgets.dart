@@ -152,13 +152,14 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
           )
         : <String, dynamic>{};
     final currentStep = LegacySellDraftList.readStep(snapshot['currentStep']);
-    const labels = [
-      'Step 1: Photos',
-      'Step 2: Basic info',
-      'Step 3: Details',
-      'Step 4: Pricing',
-      'Step 5: Plates',
-      'Step 6: Review',
+    final draftCardLoc = AppLocalizations.of(context)!;
+    final labels = [
+      draftCardLoc.sellStep1Photos,
+      draftCardLoc.sellStep2BasicInfo,
+      draftCardLoc.sellStep3Details,
+      draftCardLoc.sellStep4Pricing,
+      draftCardLoc.sellStep5Plates,
+      draftCardLoc.sellStep6Review,
     ];
     final label = labels[currentStep.clamp(0, 5).toInt()];
     final draftListing = <String, dynamic>{
@@ -199,9 +200,9 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
                 color: Colors.black.withValues(alpha: 0.62),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Text(
-                'DRAFT',
-                style: TextStyle(
+              child: Text(
+                draftCardLoc.draftBadgeLabel,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
                   fontSize: 11,

@@ -202,6 +202,7 @@
   "otpSent": "کۆد نێردرا",
   "otpFailed": "نەتوانرا کۆد بنێردرێت",
   "otpFailedWithMsg": "ناتوانرێت کۆد بنێردرێت: {msg}",
+  "accountDeactivatedMessage": "ئەم هەژمارە ناچالاک کراوە. تکایە پەیوەندی بە پشتگیری بکە بۆ یارمەتی.",
   "devOtpCode": "کۆدی گەشەپێدەەر: {code}",
   "english": "ئینگلیزی",
   "arabic": "عەرەبی",
@@ -451,6 +452,9 @@
   "verifyNewEmailDialogTitle": "پشتڕاستکردنەوەی ئیمەیلی نوێت",
   "verifyNewEmailDialogMessage": "کۆدێکی ٦ ژمارەیی بۆ {email} دەنێرین بۆ پشتڕاستکردنەوەی خاوەندارێتیت. گۆڕانکاریی ترەکان پێشتر پاشەکەوت کراوە.",
   "emailUpdatedSuccess": "ئیمەیل بە سەرکەوتوویی نوێ کرا",
+  "verifyNewPhoneDialogTitle": "پشتڕاستکردنەوەی ژمارە تەلەفۆنی نوێت",
+  "verifyNewPhoneDialogMessage": "کۆدێکی ٦ ژمارەیی بۆ {phone} دەنێرین بۆ پشتڕاستکردنەوەی خاوەندارێتیت. گۆڕانکاریی ترەکان پێشتر پاشەکەوت کراوە.",
+  "phoneNumberUpdatedSuccess": "ژمارە تەلەفۆن بە سەرکەوتوویی نوێ کرا",
   "failedToPickImage": "هەڵبژاردنی وێنە شکستی هێنا",
   "emailOrPhoneLabel": "ئیمەیل یان ژمارەی تەلەفۆن",
   "enterEmailOrPhoneHint": "ئیمەیل یان ژمارەی تەلەفۆن بنووسە",
@@ -782,6 +786,9 @@
   "discardDraft": "ڕەشنووس بسڕێتەوە؟",
   "thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone": "ئەمە ڕەشنووسی ڕێکلامەکە بە هەمیشەیی دەسڕێتەوە. ناتوانرێت پاشگەز ببێتەوە.",
   "discard": "بسڕەوە",
+  "discardDraftAction": "ڕەشنووس بسڕەوە",
+  "continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver": "لێرە بەردەوام بە بۆ تەواوکردنی ڕیکلامەکە، یان بیسڕەوە ئەگەر دەتەوێت لە سەرەتاوە دەستپێبکەیتەوە.",
+  "draftBadgeLabel": "ڕەشنووس",
   "failedToBlurPlatesPleaseTryAgain": "شاردنەوەی ڕەقەم سەرنەکەوت. دووبارە هەوڵ بدە.",
   "platesBlurredSuccessfully": "ڕەقەم بە سەرکەوتوویی شاردرایەوە.",
   "inProgress": "لە پێشکەوتن",
@@ -790,6 +797,18 @@
   "startNewListing": "ڕیکلامێکی نوێ دەستپێبکە",
   "startANewListing": "ڕیکلامێکی نوێ دەستپێبکە",
   "noDraftsYetCreateYourFirstCarListingToGetStarted": "هێشتا ڕەشنووس نییە. یەکەم ڕیکلامی ئۆتۆمبێل دروست بکە.",
+  "pleaseCompleteAllRequiredFieldsBeforeProceeding": "تکایە هەموو خانە پێویستەکان تەواو بکە پێش بەردەوامبوون",
+  "pleaseCompleteMissingFields": "تکایە ئەمانە تەواو بکە: {fields}",
+  "@pleaseCompleteMissingFields": {
+    "placeholders": {
+      "fields": {
+        "type": "String",
+        "example": "brand, model"
+      }
+    }
+  },
+  "sellingUnavailableTitle": "فرۆشتن بەردەست نییە",
+  "sellingUnavailableBody": "دروستکردنی ڕیکلامی نوێ بۆ ماوەیەک ناچالاک کراوە. تکایە دوایتر هەوڵ بدەوە.",
   "specsAppliedYearSetStep2FieldsPreFilled": "مواسەفات جێبەجێ کرا؛ ساڵ دانرا و خانەکانی هەنگاو 2 پڕکرانەوە.",
   "search": "گەڕان...",
   "loadingVehicleSpecs": "مواسەفاتی ئۆتۆمبێل بار دەکرێت…",

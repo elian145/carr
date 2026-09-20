@@ -135,6 +135,70 @@ void main() {
     expect(ListingImageMedia.height(images.single), 1600);
   });
 
+  test(
+    'edit draft populates existing_video_records from a REAL backend-shaped '
+    'listing response (structured {id, video_url, thumbnail_url} objects, '
+    'not bare URL strings)',
+    () {
+      // Shape matches what GET /api/cars/<id> now returns after the video
+      // serialization fix (kk/routes/cars.py::_serialize_videos /
+      // CarVideo.to_dict()) -- id/video_url/thumbnail_url/duration/order.
+      final snapshot = listingToSellDraftSnapshot({
+        'id': 'car-1',
+        'image_url': 'uploads/a.jpg',
+        'images': const [],
+        'videos': [
+          {
+            'id': 601,
+            'video_url': 'https://cdn.example.com/car_videos/one.mp4',
+            'thumbnail_url': 'https://cdn.example.com/car_videos/one.jpg',
+            'duration': 12,
+            'order': 0,
+          },
+          {
+            'id': 602,
+            'video_url': 'https://cdn.example.com/car_videos/two.mp4',
+            'thumbnail_url': 'https://cdn.example.com/car_videos/two.jpg',
+            'duration': 30,
+            'order': 1,
+          },
+        ],
+      });
+      final carData = snapshot['carData'] as Map<String, dynamic>;
+      final records = carData['existing_video_records'] as List;
+      final paths = carData['videos'] as List;
+
+      expect(records, hasLength(2));
+      expect(records[0]['id'], 601);
+      expect(records[0]['video_url'], 'https://cdn.example.com/car_videos/one.mp4');
+      expect(records[0]['thumbnail_url'], 'https://cdn.example.com/car_videos/one.jpg');
+      expect(records[1]['id'], 602);
+
+      // The bare-path list used by the new-video upload pipeline must still
+      // be derived correctly from the structured records.
+      expect(paths, [
+        'https://cdn.example.com/car_videos/one.mp4',
+        'https://cdn.example.com/car_videos/two.mp4',
+      ]);
+    },
+  );
+
+  test(
+    'edit draft has no existing_video_records when the backend returns no '
+    'videos',
+    () {
+      final snapshot = listingToSellDraftSnapshot({
+        'id': 'car-2',
+        'image_url': 'uploads/a.jpg',
+        'images': const [],
+        'videos': const [],
+      });
+      final carData = snapshot['carData'] as Map<String, dynamic>;
+
+      expect(carData.containsKey('existing_video_records'), isFalse);
+    },
+  );
+
   test('resolveDynamicMediaList keeps Android content URIs', () {
     final out = SellDraftMediaPersistence.resolveDynamicMediaList([
       {'source': 'content://media/external/images/media/42'},

@@ -202,6 +202,7 @@
   "otpSent": "OTP sent",
   "otpFailed": "Failed to send OTP",
   "otpFailedWithMsg": "Failed to send OTP: {msg}",
+  "accountDeactivatedMessage": "This account has been deactivated. Contact support for assistance.",
   "devOtpCode": "Dev OTP: {code}",
   "english": "English",
   "arabic": "Arabic",
@@ -457,6 +458,9 @@
   "verifyNewEmailDialogTitle": "Verify your new email",
   "verifyNewEmailDialogMessage": "We'll send a 6-digit code to {email} to confirm you own it. Your other changes are saved already.",
   "emailUpdatedSuccess": "Email updated successfully",
+  "verifyNewPhoneDialogTitle": "Verify your new phone number",
+  "verifyNewPhoneDialogMessage": "We'll send a 6-digit code to {phone} to confirm you own it. Your other changes are saved already.",
+  "phoneNumberUpdatedSuccess": "Phone number updated successfully",
   "failedToPickImage": "Failed to pick image",
   "emailOrPhoneLabel": "Email or Phone Number",
   "enterEmailOrPhoneHint": "Enter your email address or phone number",
@@ -820,6 +824,9 @@
   "discardDraft": "Discard draft?",
   "thisWillPermanentlyDeleteThisDraftListingThisCannotBeUndone": "This will permanently delete this draft listing. This cannot be undone.",
   "discard": "Discard",
+  "discardDraftAction": "Discard draft",
+  "continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver": "Continue here to finish the listing, or discard it if you want to start over.",
+  "draftBadgeLabel": "DRAFT",
   "failedToBlurPlatesPleaseTryAgain": "Failed to blur plates. Please try again.",
   "platesBlurredSuccessfully": "Plates blurred successfully.",
   "inProgress": "In progress",
@@ -828,6 +835,18 @@
   "startNewListing": "Start new listing",
   "startANewListing": "Start a new listing",
   "noDraftsYetCreateYourFirstCarListingToGetStarted": "No drafts yet. Create your first car listing to get started.",
+  "pleaseCompleteAllRequiredFieldsBeforeProceeding": "Please complete all required fields before proceeding",
+  "pleaseCompleteMissingFields": "Please complete: {fields}",
+  "@pleaseCompleteMissingFields": {
+    "placeholders": {
+      "fields": {
+        "type": "String",
+        "example": "brand, model"
+      }
+    }
+  },
+  "sellingUnavailableTitle": "Selling unavailable",
+  "sellingUnavailableBody": "Creating new listings is temporarily disabled. Please try again later.",
   "specsAppliedYearSetStep2FieldsPreFilled": "Specs applied — year set; step 2 fields pre-filled.",
   "search": "Search...",
   "loadingVehicleSpecs": "Loading vehicle specs…",

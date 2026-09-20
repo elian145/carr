@@ -272,7 +272,9 @@ class _SellCarPageState extends _SellCarPageFields
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Please complete all required fields before proceeding',
+              AppLocalizations.of(
+                context,
+              )!.pleaseCompleteAllRequiredFieldsBeforeProceeding,
             ),
             backgroundColor: Colors.red,
           ),

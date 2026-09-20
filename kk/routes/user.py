@@ -14,6 +14,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import joinedload, selectinload
 
 from ..auth import get_current_user, log_user_action, validate_user_input
+from .auth import _hash_phone_verification_code
 from ..config import dev_debug_response_fields_enabled
 from ..models import (
     Car,
@@ -692,12 +693,11 @@ def update_profile():
                 code_hash = getattr(current_user, "phone_verification_code_hash", None)
                 if not expires_at or not code_hash or expires_at <= now:
                     return jsonify({"message": "Invalid or expired verification code"}), 400
-                key = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
-                expected = hmac.new(
-                    key,
-                    msg=f"{new_digits}:{code}".encode("utf-8"),
-                    digestmod=hashlib.sha256,
-                ).hexdigest()
+                # Must match `_hash_phone_verification_code()` in
+                # kk/routes/auth.py exactly -- that's what
+                # `/api/user/phone-change/send-code` (below) uses to produce
+                # this hash in the first place.
+                expected = _hash_phone_verification_code(new_digits, code)
                 if not hmac.compare_digest(code_hash, expected):
                     attempts = atomic_increment_attempts(current_user, "phone_verification_attempts")
                     if attempts >= 5:
@@ -765,6 +765,97 @@ def update_profile():
     except Exception:
         db.session.rollback()
         return jsonify({"message": "Failed to update profile"}), 500
+
+
+@bp.route("/api/user/phone-change/send-code", methods=["POST"])
+@jwt_required()
+def send_account_phone_change_code():
+    """Send an SMS verification code for changing the account's primary
+    login phone number.
+
+    This only sends and stores the code -- ``PUT /api/user/profile``
+    (``phone_number`` + ``verification_code``) is what actually applies the
+    change once verified, exactly like the analogous
+    ``/api/user/email-change/send-code`` -> ``PUT /api/user/profile``
+    (``email``) pairing. The code is hashed with
+    ``_hash_phone_verification_code(new_digits, code)`` -- the same
+    unprefixed ``phone:code`` HMAC format ``update_profile()`` already
+    expects for a ``phone_number`` change (unlike the dealer-phone/
+    contact-phone flows below, which deliberately namespace their hash with
+    a prefix so those codes can never be replayed here). Stored in the same
+    ``phone_verification_code_hash``/``_expires_at``/``_attempts``/
+    ``_locked_until``/``_last_sent_at`` columns -- and therefore reuses the
+    exact same 60s resend cooldown and 5-attempt/15-minute lockout already
+    enforced by every other phone-OTP flow in this app.
+    """
+    current_user = get_current_user()
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
+
+    data = validate_input_sanitization(request.get_json(silent=True) or {})
+    raw_phone = (
+        data.get("phone_number")
+        or data.get("new_phone_number")
+        or data.get("phone")
+        or ""
+    ).strip()
+    new_digits = _normalize_dealer_phone(raw_phone)
+    if len(new_digits) < 7:
+        return jsonify({"message": "Enter a valid phone number"}), 400
+
+    old_digits = _normalize_dealer_phone(getattr(current_user, "phone_number", None))
+    if new_digits == old_digits:
+        return jsonify({"message": "This is already your phone number"}), 400
+
+    # New-phone uniqueness, checked up front so we don't burn an SMS send on
+    # a number `update_profile()` would reject anyway; re-checked there too
+    # at commit time in case someone else claims it in the meantime.
+    existing_phone = User.query.filter_by(phone_number=new_digits).first()
+    if existing_phone and existing_phone.id != current_user.id:
+        return jsonify({"message": "Phone number already exists"}), 400
+
+    now = utcnow()
+    locked_until = getattr(current_user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+    last_sent = getattr(current_user, "phone_verification_last_sent_at", None)
+    if last_sent and (now - last_sent).total_seconds() < 60:
+        return jsonify({"message": "Please wait before requesting another code"}), 429
+
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    current_user.phone_verification_code_hash = _hash_phone_verification_code(
+        new_digits, code
+    )
+    current_user.phone_verification_expires_at = now + timedelta(minutes=10)
+    current_user.phone_verification_attempts = 0
+    current_user.phone_verification_last_sent_at = now
+    current_user.phone_verification_locked_until = None
+    db.session.commit()
+
+    from ..sms_service import send_verification_sms_result
+
+    sms_sent, sms_detail = send_verification_sms_result(new_digits, code)
+    if not sms_sent:
+        current_user.phone_verification_code_hash = None
+        current_user.phone_verification_expires_at = None
+        current_user.phone_verification_attempts = 0
+        current_user.phone_verification_last_sent_at = None
+        db.session.commit()
+        payload = {
+            "message": "Failed to send verification code",
+            "sent": False,
+            "code": "sms_send_failed",
+        }
+        if sms_detail:
+            payload["detail"] = sms_detail
+        if dev_debug_response_fields_enabled():
+            payload["dev_code"] = code
+        return jsonify(payload), 502
+
+    payload = {"message": "Verification code sent", "sent": True}
+    if dev_debug_response_fields_enabled():
+        payload["dev_code"] = code
+    return jsonify(payload), 200
 
 
 @bp.route("/api/user/upload-profile-picture", methods=["POST"])

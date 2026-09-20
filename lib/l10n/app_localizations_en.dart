@@ -560,6 +560,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get accountDeactivatedMessage =>
+      'This account has been deactivated. Contact support for assistance.';
+
+  @override
   String devOtpCode(Object code) {
     return 'Dev OTP: $code';
   }
@@ -1277,6 +1281,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get emailUpdatedSuccess => 'Email updated successfully';
+
+  @override
+  String get verifyNewPhoneDialogTitle => 'Verify your new phone number';
+
+  @override
+  String verifyNewPhoneDialogMessage(Object phone) {
+    return 'We\'ll send a 6-digit code to $phone to confirm you own it. Your other changes are saved already.';
+  }
+
+  @override
+  String get phoneNumberUpdatedSuccess => 'Phone number updated successfully';
 
   @override
   String get failedToPickImage => 'Failed to pick image';
@@ -2347,6 +2362,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discard => 'Discard';
 
   @override
+  String get discardDraftAction => 'Discard draft';
+
+  @override
+  String get continueHereToFinishTheListingOrDiscardItIfYouWantToStartOver =>
+      'Continue here to finish the listing, or discard it if you want to start over.';
+
+  @override
+  String get draftBadgeLabel => 'DRAFT';
+
+  @override
   String get failedToBlurPlatesPleaseTryAgain =>
       'Failed to blur plates. Please try again.';
 
@@ -2373,6 +2398,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noDraftsYetCreateYourFirstCarListingToGetStarted =>
       'No drafts yet. Create your first car listing to get started.';
+
+  @override
+  String get pleaseCompleteAllRequiredFieldsBeforeProceeding =>
+      'Please complete all required fields before proceeding';
+
+  @override
+  String pleaseCompleteMissingFields(String fields) {
+    return 'Please complete: $fields';
+  }
+
+  @override
+  String get sellingUnavailableTitle => 'Selling unavailable';
+
+  @override
+  String get sellingUnavailableBody =>
+      'Creating new listings is temporarily disabled. Please try again later.';
 
   @override
   String get specsAppliedYearSetStep2FieldsPreFilled =>

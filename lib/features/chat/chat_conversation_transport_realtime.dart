@@ -112,9 +112,10 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       _historyLoadError = false;
     });
     try {
+      // No `before` cursor: fetches the NEWEST page of messages so the
+      // conversation always opens at the latest message, not the oldest.
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
-        page: 1,
         perPage: _ChatConversationFields._perPage,
       );
       if (!mounted) return;
@@ -132,7 +133,6 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
         if (stillSending) {
           _isSending = true;
         }
-        _currentPage = 1;
         _hasMoreMessages = result['has_more'] == true;
         _refreshCarListingMeta();
       });

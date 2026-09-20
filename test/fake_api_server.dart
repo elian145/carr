@@ -20,6 +20,13 @@ class FakeApiServer {
   /// When true, GET/sync saved-searches return an empty list (empty-state tests).
   static bool emptySavedSearches = false;
 
+  /// CarNet V1 fix 4 regression coverage: when set, `POST
+  /// /api/auth/phone/verify` returns this response instead of the default
+  /// stub success -- used to simulate the backend's
+  /// `403 {"code": "account_deactivated"}` response for a deactivated
+  /// account's otherwise-correct OTP. Reset by [stop].
+  static http.Response Function()? phoneVerifyOverride;
+
   /// Counts plain `GET /api/cars/<id>` requests (car-detail fetches).
   ///
   /// Used by chat-navigation tests (Fix A) to prove `ChatConversationPage`
@@ -57,6 +64,20 @@ class FakeApiServer {
   /// request's `page`/`per_page` query params instead of returning the
   /// generic empty-list stub. Cleared by [stop].
   static List<Map<String, dynamic>>? favoritesAllItems;
+
+  /// Release-candidate fix 2 (chat pagination direction) regression
+  /// coverage: when set, `GET /api/chat/<id>/messages` serves this full,
+  /// ascending-chronological-order conversation from an in-memory list and
+  /// mirrors the real backend contract (kk/routes/chat.py::get_messages) --
+  /// no `before` cursor => newest `per_page` messages; `before=<iso ts>` =>
+  /// the next-older page -- instead of the generic empty-list stub.
+  /// Cleared by [stop].
+  static List<Map<String, dynamic>>? chatMessagesAllItems;
+
+  /// Records every `before` query value seen on
+  /// `GET /api/chat/<id>/messages`, in call order (empty string when the
+  /// request had no `before` cursor). Reset by [stop].
+  static final List<String> chatMessagesRequestedBefore = [];
 
   /// Records every `page` value requested via
   /// `GET /api/user/favorites?page=N`, in call order. Reset by [stop].
@@ -198,6 +219,9 @@ class FakeApiServer {
     favoritesAllItems = null;
     favoritesRequestedPages.clear();
     myListingsByStatus = null;
+    chatMessagesAllItems = null;
+    chatMessagesRequestedBefore.clear();
+    phoneVerifyOverride = null;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -428,7 +452,43 @@ class FakeApiServer {
     }
 
     if (path.startsWith('/api/chat/')) {
-      if (path.endsWith('/messages')) {
+      if (path.endsWith('/messages') && method == 'GET') {
+        final all = chatMessagesAllItems;
+        if (all != null) {
+          final perPage =
+              int.tryParse(request.url.queryParameters['per_page'] ?? '') ??
+                  50;
+          final beforeRaw = request.url.queryParameters['before'] ?? '';
+          chatMessagesRequestedBefore.add(beforeRaw);
+
+          List<Map<String, dynamic>> eligible = all;
+          if (beforeRaw.isNotEmpty) {
+            final beforeDt = DateTime.parse(beforeRaw);
+            eligible = all
+                .where(
+                  (m) => DateTime.parse(
+                    m['created_at'] as String,
+                  ).isBefore(beforeDt),
+                )
+                .toList();
+          }
+          // Newest-first slice of `perPage`, then reversed to ascending --
+          // mirrors kk/routes/chat.py::get_messages exactly.
+          final descSlice = eligible.reversed.take(perPage).toList();
+          final page = descSlice.reversed.toList();
+          final hasMore = page.isNotEmpty &&
+              eligible.any(
+                (m) => DateTime.parse(m['created_at'] as String).isBefore(
+                  DateTime.parse(page.first['created_at'] as String),
+                ),
+              );
+          return _json(200, {
+            'messages': page,
+            'per_page': perPage,
+            'total': all.length,
+            'has_more': hasMore,
+          });
+        }
         return _json(200, <dynamic>[]);
       }
       if (path.contains('/send') && method == 'POST') {
@@ -557,9 +617,15 @@ class FakeApiServer {
         return _json(200, _sampleChats());
       case '/api/chat/unread_count':
         return _json(200, {'unread_count': 0});
+      case '/api/auth/phone/verify':
+        if (phoneVerifyOverride != null) return phoneVerifyOverride!();
+        return _json(200, {
+          'access_token': 'test_access_token',
+          'refresh_token': 'test_refresh_token',
+          'user': {'id': 1, 'username': 'test', 'is_admin': false},
+        });
       case '/api/auth/login':
       case '/api/auth/signup':
-      case '/api/auth/phone/verify':
         return _json(200, {
           'access_token': 'test_access_token',
           'refresh_token': 'test_refresh_token',
@@ -623,16 +689,36 @@ class FakeApiServer {
         });
       case '/api/user/profile':
         if (method == 'PUT') {
+          // Echo back whichever profile fields the caller actually sent
+          // (e.g. `phone_number`, `email`) so tests that drive a real
+          // send-code -> verify UI flow (fix 3: account phone-number
+          // change) can assert the change was actually applied, not just
+          // that *some* fixed stub user came back.
+          Map<String, dynamic> sent = const {};
+          if (request.body.isNotEmpty) {
+            final decoded = json.decode(request.body);
+            if (decoded is Map<String, dynamic>) sent = decoded;
+          }
+          final user = {
+            'id': 1,
+            'username': 'test',
+            'first_name': 'Updated',
+            'last_name': 'User',
+            'is_admin': false,
+            'account_type': 'individual',
+            if (sent['phone_number'] != null)
+              'phone_number': sent['phone_number'],
+            if (sent['email'] != null) 'email': sent['email'],
+          };
+          if (sent.containsKey('first_name')) {
+            user['first_name'] = sent['first_name'];
+          }
+          if (sent.containsKey('last_name')) {
+            user['last_name'] = sent['last_name'];
+          }
           return _json(200, {
             'message': 'Profile updated successfully',
-            'user': {
-              'id': 1,
-              'username': 'test',
-              'first_name': 'Updated',
-              'last_name': 'User',
-              'is_admin': false,
-              'account_type': 'individual',
-            },
+            'user': user,
           });
         }
         return _json(200, {

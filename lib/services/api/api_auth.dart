@@ -501,6 +501,19 @@ abstract final class _ApiServiceAuth {
     );
   }
 
+  /// Sends an ownership code to [phoneNumber] before it can replace the
+  /// account's personal login phone number. The number is only saved after
+  /// this code is passed as `verification_code` to [updateProfile].
+  static Future<Map<String, dynamic>> sendAccountPhoneChangeCode(
+    String phoneNumber,
+  ) {
+    return ApiService._makeAuthenticatedRequest(
+      'POST',
+      '/user/phone-change/send-code',
+      body: {'phone_number': phoneNumber.trim()},
+    );
+  }
+
   static Future<Map<String, dynamic>> sendContactPhoneVerification(
     String phoneNumber,
   ) {

@@ -13,13 +13,17 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
 
   Future<void> _loadOlderMessages() async {
     if (_loadingOlderMessages || !_hasMoreMessages) return;
+    if (_messages.isEmpty) return;
     setState(() => _loadingOlderMessages = true);
     try {
-      final nextPage = _currentPage + 1;
+      // Cursor into strictly-older history: the oldest message currently
+      // loaded on screen. This is the only supported pagination contract
+      // (no parallel offset/page scheme) -- see kk/routes/chat.py::get_messages.
+      final oldestLoaded = _messages.first.createdAt;
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
-        page: nextPage,
         perPage: _ChatConversationFields._perPage,
+        before: oldestLoaded.toUtc().toIso8601String(),
       );
       if (!mounted) return;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
@@ -35,7 +39,6 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
           _addMessageIfMissing(m);
         }
         _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-        _currentPage = nextPage;
         _hasMoreMessages = result['has_more'] == true;
         _refreshCarListingMeta();
       });
@@ -90,9 +93,10 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
       return;
     }
     try {
+      // No `before` cursor: REST fallback polling always wants the latest
+      // page (new messages arrive at the end, not on some offset page).
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
-        page: 1,
         perPage: _ChatConversationFields._perPage,
       );
       if (!mounted) return;

@@ -625,6 +625,17 @@ class AuthService extends ChangeNotifier {
     return ApiService.sendAccountEmailChangeCode(email);
   }
 
+  /// Sends an ownership code to [phoneNumber] before it can become the
+  /// account's personal login phone number. Unlike email change, there is
+  /// no separate verify endpoint -- the code is passed straight to
+  /// [updateProfile] as `verification_code`, which applies the change and
+  /// refreshes `_currentUser` in one step.
+  Future<Map<String, dynamic>> sendAccountPhoneChangeCode(
+    String phoneNumber,
+  ) {
+    return ApiService.sendAccountPhoneChangeCode(phoneNumber);
+  }
+
   Future<Map<String, dynamic>> verifyAccountEmailChange(
     String email,
     String code,

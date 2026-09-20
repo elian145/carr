@@ -27,6 +27,7 @@ mixin _EditProfilePageCore on _EditProfilePageWidgets {
             )
           else
             TextButton(
+              key: const Key('editProfileSaveAction'),
               onPressed: _saveProfile,
               child: Text(
                 loc.save,

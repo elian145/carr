@@ -45,15 +45,26 @@ abstract final class _ApiServiceChat {
 
     /// Load chat history for a listing conversation (car public_id or numeric id).
     ///
-    /// Returns a map with keys: `messages` (list), `page`, `per_page`, `total`, `has_more`.
+    /// With no [before] cursor, returns the NEWEST [perPage] messages (this is
+    /// what opening a conversation should call). Pass [before] (the
+    /// `created_at` of the oldest message currently loaded on screen) to page
+    /// backward into strictly older history -- this is the only supported
+    /// pagination cursor; there is no separate offset/page scheme.
+    ///
+    /// `messages` in the result is always in ascending chronological order.
+    /// Returns a map with keys: `messages` (list), `per_page`, `total`, `has_more`.
     static Future<Map<String, dynamic>> getChatMessagesByConversation(
       String conversationId, {
-      int page = 1,
       int perPage = 50,
+      String? before,
     }) async {
-      final endpoint =
-          '/chat/$conversationId/messages?page=$page&per_page=$perPage';
-      final url = Uri.parse('${ApiService.baseUrl}$endpoint');
+      final query = <String, String>{'per_page': '$perPage'};
+      final beforeCursor = before?.trim();
+      if (beforeCursor != null && beforeCursor.isNotEmpty) {
+        query['before'] = beforeCursor;
+      }
+      final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/messages')
+          .replace(queryParameters: query);
       Map<String, String> headers = ApiService._getHeaders();
 
       http.Response response = await ApiService._httpClient
@@ -79,7 +90,6 @@ abstract final class _ApiServiceChat {
           'messages': <Map<String, dynamic>>[],
           'has_more': false,
           'total': 0,
-          'page': page,
         };
       }
       final decoded = json.decode(response.body);
@@ -108,7 +118,6 @@ abstract final class _ApiServiceChat {
         'messages': messages,
         'has_more': hasMore,
         'total': total,
-        'page': page,
       };
     }
 

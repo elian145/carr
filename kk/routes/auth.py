@@ -292,6 +292,74 @@ def _get_active_user_by_phone(phone_digits: str) -> User | None:
     return User.query.filter_by(phone_number=phone_digits, is_active=True).first()
 
 
+def _deactivated_account_otp_response(phone_digits: str, code: str):
+    """CarNet V1 fix 4: if `phone_digits` belongs to an existing but
+    deactivated/banned account whose stored OTP genuinely matches `code`,
+    return the deactivated-account error to use in `phone_verify()` instead
+    of letting it fall through to the generic "Invalid or expired
+    verification code" (or "No account found") response.
+
+    `phone_start()` happily issues a real OTP for a deactivated account's
+    phone number (via `_get_or_create_user_for_phone()`, which does not
+    filter on `is_active`) so that requesting a code looks identical
+    whether or not the account is active -- no enumeration signal there.
+    But `phone_verify()`'s user lookup *is* `is_active`-filtered, so a
+    deactivated user who then submits that perfectly valid code was
+    previously told it was simply wrong/expired, which is misleading and
+    indistinguishable from a typo.
+
+    This is only ever reachable by someone who already possesses a live,
+    correct code for this exact phone number -- i.e. someone with control
+    of the phone the SMS was sent to -- so it cannot be used to probe
+    arbitrary phone numbers for account existence: a wrong code, an
+    expired code, or a phone number with no account at all all still fall
+    through (return None) to the caller's existing generic branches,
+    completely unchanged.
+    """
+    user = User.query.filter_by(phone_number=phone_digits, is_active=False).first()
+    if not user:
+        return None
+
+    from ..time_utils import utcnow
+
+    now = utcnow()
+    locked_until = getattr(user, "phone_verification_locked_until", None)
+    if locked_until and locked_until > now:
+        # Same lockout enforcement as the active-account path -- this branch
+        # must not become an easier brute-force target than normal login.
+        return jsonify({"message": "Too many attempts. Please try again later."}), 429
+
+    expires_at = getattr(user, "phone_verification_expires_at", None)
+    code_hash = getattr(user, "phone_verification_code_hash", None)
+    if not expires_at or not code_hash or expires_at <= now:
+        return None
+
+    expected = _hash_phone_verification_code(phone_digits, code)
+    if not hmac.compare_digest(code_hash, expected):
+        attempts = atomic_increment_attempts(user, "phone_verification_attempts")
+        if attempts >= 5:
+            user.phone_verification_locked_until = now + timedelta(minutes=15)
+            user.phone_verification_code_hash = None
+            user.phone_verification_expires_at = None
+            user.phone_verification_attempts = 0
+        db.session.commit()
+        return None
+
+    # Correct code for a deactivated account -- consume it (no replay) and
+    # report the real reason login cannot proceed.
+    user.phone_verification_code_hash = None
+    user.phone_verification_expires_at = None
+    user.phone_verification_attempts = 0
+    user.phone_verification_locked_until = None
+    db.session.commit()
+    return jsonify(
+        {
+            "message": "This account has been deactivated. Contact support for assistance.",
+            "code": "account_deactivated",
+        }
+    ), 403
+
+
 def _is_dealer_account(user: User) -> bool:
     account_type = (getattr(user, "account_type", None) or "user").strip().lower()
     dealer_status = (getattr(user, "dealer_status", None) or "none").strip().lower()
@@ -1763,6 +1831,13 @@ def phone_verify():
         # Creating before OTP validation left unverified orphan rows on bad codes.
         user = _get_active_user_by_phone(phone_digits)
         if not user:
+            # A deactivated account with a genuinely correct, live code gets
+            # a real "account deactivated" answer instead of being folded
+            # into the generic branches below (see docstring for why this
+            # can't be used to enumerate arbitrary numbers).
+            deactivated_response = _deactivated_account_otp_response(phone_digits, code)
+            if deactivated_response is not None:
+                return deactivated_response
             if not create_if_missing:
                 return jsonify({
                     "message": "No account found with this phone number. Please sign up first.",

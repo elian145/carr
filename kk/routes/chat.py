@@ -522,12 +522,29 @@ def list_chats():
 @bp.route("/api/chat/<conversation_id>/messages", methods=["GET"])
 @jwt_required()
 def get_messages(conversation_id: str):
-    """Fetch messages for a conversation with optional pagination.
+    """Fetch messages for a conversation, newest-first-by-default with a
+    `before` cursor for paging backward into older history.
+
+    A conversation should always *open* on its newest messages, and
+    scrolling up should load strictly *older* history -- not the reverse.
+    The previous implementation always sorted ascending and paged forward
+    with `page`/offset, which made `page=1` return the OLDEST messages: for
+    any conversation with more than one page of history, that's exactly
+    backward from what both the initial load and the "load older on
+    scroll-up" behavior need. There is only one supported pagination
+    contract now (the `before` cursor) -- no parallel offset scheme.
 
     Query params:
-        page (int, default 1): Page number (1-indexed).
-        per_page (int, default 50): Messages per page (max 200).
-        before (str, optional): ISO timestamp – fetch only messages created before this.
+        per_page (int, default 50): messages per page (max 200).
+        before (str, optional): ISO timestamp of the oldest message
+            currently loaded on the client -- fetch only messages created
+            strictly before this cursor (i.e. the next-older page).
+
+    Response `messages` is always in ascending chronological order (oldest
+    of the returned batch first) -- ready to prepend/append into the UI's
+    chronological list without any client-side re-sorting surprises.
+    `has_more` reports whether there is still older history beyond what
+    was just returned (i.e. whether another `before` page is possible).
     """
     try:
         me = get_current_user()
@@ -538,7 +555,6 @@ def get_messages(conversation_id: str):
         if not car:
             return jsonify({"message": "Listing not found"}), 404
 
-        page = max(int(request.args.get("page", 1)), 1)
         per_page = min(max(int(request.args.get("per_page", 50)), 1), 200)
 
         blocked_ids = [
@@ -553,27 +569,43 @@ def get_messages(conversation_id: str):
         if blocked_ids:
             base_q = base_q.filter(~Message.sender_id.in_(blocked_ids))
 
+        total = base_q.count()
+
+        before_dt = None
         before_raw = (request.args.get("before") or "").strip()
         if before_raw:
             try:
                 before_dt = datetime.fromisoformat(before_raw.replace("Z", "+00:00"))
-                base_q = base_q.filter(Message.created_at < before_dt)
             except Exception:
-                pass
+                before_dt = None
 
-        total = base_q.count()
-        msgs = (
-            base_q.options(
+        page_q = base_q
+        if before_dt is not None:
+            page_q = page_q.filter(Message.created_at < before_dt)
+
+        # Fetch newest-first (either the overall latest page, or the newest
+        # slice strictly before the `before` cursor), then reverse into
+        # chronological order for the response.
+        msgs_desc = (
+            page_q.options(
                 joinedload(Message.sender),
                 joinedload(Message.receiver),
                 joinedload(Message.car),
                 joinedload(Message.reply_to).joinedload(Message.sender),
             )
-            .order_by(Message.created_at.asc())
-            .offset((page - 1) * per_page)
+            .order_by(Message.created_at.desc(), Message.id.desc())
             .limit(per_page)
             .all()
         )
+        msgs = list(reversed(msgs_desc))
+
+        has_more = False
+        if msgs:
+            oldest_loaded = msgs[0].created_at
+            has_more = (
+                base_q.filter(Message.created_at < oldest_loaded).first()
+                is not None
+            )
 
         # Mark messages to me as read and notify senders (read receipts).
         try:
@@ -583,10 +615,9 @@ def get_messages(conversation_id: str):
 
         return jsonify({
             "messages": [m.to_dict() for m in msgs],
-            "page": page,
             "per_page": per_page,
             "total": total,
-            "has_more": (page * per_page) < total,
+            "has_more": has_more,
         }), 200
     except Exception as e:
         _log_route_exception("get_messages", e)

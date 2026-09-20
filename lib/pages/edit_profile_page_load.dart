@@ -5,6 +5,11 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
   /// prompt for OTP confirmation when the value actually changed (S7).
   String _originalEmail = '';
 
+  /// Phone (digits only, no `+964` prefix) as loaded from the server, used
+  /// to detect real changes so we only prompt for OTP confirmation when the
+  /// value actually changed -- mirrors `_originalEmail` above.
+  String _originalPhone = '';
+
   @override
   void initState() {
     super.initState();
@@ -34,6 +39,7 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
           phoneNumber = phoneNumber.substring(4);
         }
         _phoneController.text = phoneNumber;
+        _originalPhone = phoneNumber;
         _usernameController.text = currentUser['username'] ?? '';
         _currentProfilePicture = currentUser['profile_picture'];
       }
@@ -106,13 +112,19 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
       final emailNeedsVerification =
           newEmail.isNotEmpty && newEmail != _originalEmail;
 
-      // Prepare profile data (omit 'email' when it needs separate OTP proof
-      // so this call can't be rejected because of it).
+      final newPhoneDigits = _phoneController.text.trim();
+      final newPhoneFull = '+964$newPhoneDigits';
+      // A changed phone number can't be saved directly either: the server
+      // requires an SMS-verified code first, the same way email does above.
+      final phoneNeedsVerification = newPhoneDigits != _originalPhone;
+
+      // Prepare profile data (omit 'email'/'phone_number' when they need
+      // separate OTP proof so this call can't be rejected because of them).
       final profileData = {
         'first_name': _firstNameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         if (!emailNeedsVerification) 'email': newEmail,
-        'phone_number': '+964${_phoneController.text.trim()}',
+        if (!phoneNeedsVerification) 'phone_number': newPhoneFull,
         'username': _usernameController.text.trim(),
       };
 
@@ -135,6 +147,31 @@ mixin _EditProfilePageLoad on _EditProfilePageStyle {
               duration: const Duration(seconds: 2),
             ),
           );
+        }
+      }
+
+      if (phoneNeedsVerification) {
+        if (!mounted) return;
+        final verified = await showPhoneChangeConfirmDialog(
+          context,
+          auth: authService,
+          newPhone: newPhoneFull,
+        );
+        if (verified && mounted) {
+          _originalPhone = newPhoneDigits;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AppLocalizations.of(context)!.phoneNumberUpdatedSuccess,
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else if (!verified && mounted) {
+          // Revert the field to the last confirmed value so the form
+          // doesn't silently imply the change went through.
+          _phoneController.text = _originalPhone;
         }
       }
 

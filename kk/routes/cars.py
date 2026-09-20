@@ -433,6 +433,20 @@ def _resolve_rel(rel: str) -> str:
         return ""
 
 
+def _serialize_videos(car: Car) -> list[dict]:
+    """Structured video objects (id, video_url, thumbnail_url, ...) so the
+    Flutter edit flow can populate `existing_video_records` and the DELETE
+    /cars/<id>/videos/<video_id> endpoint has a real video id to target.
+    Kept consistent across every listing response path (list/detail/create/
+    update) -- do not flatten this back to plain URL strings.
+    """
+    videos = sorted(
+        car.videos or [],
+        key=lambda v: (int(getattr(v, "order", 0) or 0), int(getattr(v, "id", 0) or 0)),
+    )
+    return [v.to_dict() for v in videos]
+
+
 def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
     d = car.to_dict(include_private=include_private)
     # Keep per-image metadata (especially `kind`: listing vs damage). Plain string
@@ -472,8 +486,10 @@ def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
         primary_rel = "uploads/car_photos/placeholder.jpg"
     d["image_url"] = primary_rel
     d["images"] = image_objs
-    # Match list endpoints: expose plain relative paths so mobile clients can build /static/... URLs.
-    d["videos"] = [v.video_url for v in car.videos] if car.videos else []
+    # Structured video objects (id/video_url/thumbnail_url/...) -- required by the
+    # Flutter edit-listing flow to populate existing_video_records and by the
+    # DELETE /cars/<id>/videos/<video_id> endpoint, which needs a real video id.
+    d["videos"] = _serialize_videos(car)
     return d
 
 
@@ -765,7 +781,7 @@ def get_cars_alias():
             d = _with_media_compat(car)
             # legacy client expects numeric id
             d["id"] = car.id
-            d["videos"] = [v.video_url for v in car.videos] if car.videos else []
+            d["videos"] = _serialize_videos(car)
             if not d.get("title"):
                 d["title"] = f"{(car.brand or '').title()} {(car.model or '').title()} {car.year or ''}".strip()
             return jsonify(d), 200
@@ -835,7 +851,7 @@ def get_cars_alias():
         for c in pagination.items:
             d = _with_media_compat(c)
             d["id"] = c.id
-            d["videos"] = [v.video_url for v in c.videos] if c.videos else []
+            d["videos"] = _serialize_videos(c)
             if not d.get("title"):
                 d["title"] = f"{(c.brand or '').title()} {(c.model or '').title()} {c.year or ''}".strip()
             cars.append(d)
@@ -1579,7 +1595,7 @@ def compat_my_listings():
             d = _with_media_compat(car)
             # Keep public_id as `id` (from to_dict); expose numeric id for legacy clients.
             d["numeric_id"] = car.id
-            d["videos"] = [v.video_url for v in car.videos] if car.videos else []
+            d["videos"] = _serialize_videos(car)
             if not d.get("title"):
                 d["title"] = f"{(car.brand or '').title()} {(car.model or '').title()} {car.year or ''}".strip()
             result.append(d)
