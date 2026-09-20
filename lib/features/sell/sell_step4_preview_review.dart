@@ -160,8 +160,6 @@ class _SellReviewCarDetailScrollViewState
 
   double _titleContentHeight(BuildContext context) {
     final car = _reviewCar(context);
-    final bool hasQuickSell =
-        car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
     final bool hasModelOrPrice =
         _sellReviewListingModel(context, car).isNotEmpty ||
         _sellReviewHasPrice(car);
@@ -171,7 +169,6 @@ class _SellReviewCarDetailScrollViewState
     height += _metaBlockHeight(context, car);
     height += _metaToDividerGap + 1;
     height += 4 + _specsTitleBlockHeight(context) + 4;
-    if (hasQuickSell) height += 44 + 16;
     return height;
   }
 
@@ -396,39 +393,6 @@ class _SellReviewCarDetailScrollViewState
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.max,
             children: [
-              if (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true')
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 16,
-                  ),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.orange, Colors.deepOrange],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.flash_on, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context)!.quickSell,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [

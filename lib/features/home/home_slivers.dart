@@ -22,7 +22,10 @@ mixin _HomePageSlivers on _HomePageSliversFeatured {
               _fetchRetryCount = 0;
               fetchCars(bypassCache: true);
             },
-            onClearFilters: () => onFilterChanged(),
+            // Item 4 (CarNet V1 batch): reuse the same canonical filter-reset
+            // mechanism as the filters page's "Reset" button instead of just
+            // refetching with the still-applied (possibly invalid) filters.
+            onClearFilters: () => unawaited(_resetSearchFiltersPage(() {})),
           ),
         )
       else if (cars.isEmpty)

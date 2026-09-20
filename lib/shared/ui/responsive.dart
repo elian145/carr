@@ -216,16 +216,15 @@ abstract final class AppResponsive {
 
   static double listingGridImageHeight(
     BuildContext context, {
-    bool quickSell = false,
     double? maxHeight,
     double? cardWidth,
   }) {
     final w = screenSize(context).width;
     final colW = cardWidth ?? ((w - 24) / 2);
     // Slightly taller than 4:3 on grid tiles so car photos feel less cropped.
-    final ratio = quickSell ? 0.62 : 0.82;
-    final preferredMin = quickSell ? 100.0 : 120.0;
-    final preferredMax = quickSell ? 130.0 : 230.0;
+    const ratio = 0.82;
+    const preferredMin = 120.0;
+    const preferredMax = 230.0;
     var height = (colW * ratio).clamp(preferredMin, preferredMax);
     if (maxHeight != null && maxHeight.isFinite) {
       // Cap to the caller budget even when it's below the preferred minimum,

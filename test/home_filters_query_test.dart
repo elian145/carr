@@ -45,6 +45,20 @@ void main() {
       expect(q['damaged_parts'], '2');
     });
 
+    // Item 2 (CarNet V1 batch): the seating filter must reach the backend
+    // query once exposed in the filters UI (home_search_filters_page_ui.dart).
+    test('includes the selected seating count', () {
+      const f = HomeFiltersSnapshot(seating: '7');
+      final q = homeFiltersToApiQuery(f);
+      expect(q['seating'], '7');
+    });
+
+    test('omits seating when Any/unset', () {
+      const f = HomeFiltersSnapshot(seating: 'Any');
+      final q = homeFiltersToApiQuery(f);
+      expect(q.containsKey('seating'), isFalse);
+    });
+
     test('omits sort when includeSort is false', () {
       const f = HomeFiltersSnapshot(sortByUi: 'Newest');
       final q = homeFiltersToApiQuery(

@@ -124,12 +124,6 @@ extension _CarComparisonPageRows on CarComparisonPage {
             'suffix': '',
             'icon': Icons.build,
           },
-          {
-            'label': AppLocalizations.of(context)!.quickSell,
-            'key': 'is_quick_sell',
-            'isBoolean': true,
-            'icon': Icons.flash_on,
-          },
         ],
       },
     ];

@@ -64,8 +64,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
   }
 
   double _carDetailsTitleContentHeight(BuildContext context) {
-    final bool hasQuickSell =
-        car!['is_quick_sell'] == true || car!['is_quick_sell'] == 'true';
     final bool hasModelOrPrice =
         _displayModelName(context).isNotEmpty ||
         tryParseCurrencyValue(car!['price']) != null;
@@ -78,7 +76,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         _specsTitleTopGap +
         _specsTitleBlockHeight(context) +
         _specsTitleBottomGap;
-    if (hasQuickSell) height += 44 + 16;
     return height;
   }
 
@@ -183,40 +180,6 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
             mainAxisAlignment: MainAxisAlignment.start,
             mainAxisSize: MainAxisSize.max,
             children: [
-              if (car!['is_quick_sell'] == true ||
-                  car!['is_quick_sell'] == 'true')
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 16,
-                  ),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Colors.orange, Colors.deepOrange],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.flash_on, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context)!.quickSell,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [

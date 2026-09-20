@@ -55,7 +55,6 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           setStateDialog,
           style,
           narrowMenu: true,
-          includeSeating: false,
         ),
       ),
       (context, setStateDialog, style) => _searchIconCardSection(
@@ -224,6 +223,7 @@ mixin _HomePageSearchFiltersPageUi on _HomePageSearchFiltersKeyword {
           style,
           narrowMenu: true,
           includeCylinder: false,
+          includeSeating: false,
           includeEngine: false,
         ),
       ),

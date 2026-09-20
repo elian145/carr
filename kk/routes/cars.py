@@ -597,6 +597,10 @@ def get_cars():
         color = (request.args.get("color") or "").strip().lower() or None
         trim = request.args.get("trim")
         title_status = (request.args.get("title_status") or "").strip().lower() or None
+        # Item 3 (CarNet V1 batch): Flutter already sends `damaged_parts` when
+        # title_status=damaged (see homeFiltersToApiQuery); the server ignored
+        # it entirely. Filter against the existing `Car.damaged_parts` column.
+        damaged_parts = _safe_int(request.args.get("damaged_parts"))
         region_specs_raw = (request.args.get("region_specs") or "").strip().lower()
         region_specs = region_specs_raw if region_specs_raw in _ALLOWED_REGION_SPECS else None
         plate_type_raw = (request.args.get("plate_type") or request.args.get("plateType") or "").strip().lower()
@@ -681,6 +685,8 @@ def get_cars():
             query = query.filter(Car.color.ilike(f"%{_like_escape(color)}%", escape="\\"))
         if title_status:
             query = query.filter(Car.title_status == title_status)
+        if damaged_parts is not None:
+            query = query.filter(Car.damaged_parts == damaged_parts)
         if region_specs:
             query = query.filter(Car.region_specs == region_specs)
         if plate_type:
@@ -1083,6 +1089,8 @@ def create_car():
             errors["price"] = "must be greater than 0"
         if not location:
             errors["location"] = "required"
+        if title_status == "damaged" and damaged_parts_val is None:
+            errors["damaged_parts"] = "required when title status is damaged"
         if errors:
             return jsonify({"message": "Validation failed", "errors": errors}), 400
 
@@ -1243,6 +1251,12 @@ def update_car(car_id: str):
         if "title_status" in data:
             ts = _s(data.get("title_status"), car.title_status or "clean").lower()
             data["title_status"] = ts if ts in {"clean", "damaged"} else "clean"
+        if "currency" in data:
+            # Item 1 (CarNet V1 batch): "currency" was missing from
+            # `updatable_fields` below, so an edited listing's USD/IQD
+            # selection was silently dropped on update even though the
+            # Flutter payload sent it and create_car() already persists it.
+            data["currency"] = _s(data.get("currency"), car.currency or "USD")[:3] or "USD"
 
         updatable_fields = [
             "brand",
@@ -1268,6 +1282,7 @@ def update_car(car_id: str):
             "damaged_parts",
             "plate_type",
             "plate_city",
+            "currency",
         ]
         if "contact_phones" in data or "contact_phone" in data:
             contact_phones = parse_listing_contact_phones(data)
@@ -1342,6 +1357,28 @@ def update_car(car_id: str):
 
         if (car.title_status or "").lower() == "clean":
             car.damaged_parts = None
+
+        # Item 5 (CarNet V1 batch): require damaged_parts whenever the
+        # listing ends up with title_status=damaged. Scoped to requests that
+        # actually touch title_status/damaged_parts so an unrelated field
+        # edit on a pre-existing listing (created before this validation
+        # existed) is never retroactively blocked.
+        if (
+            ("title_status" in data or "damaged_parts" in data)
+            and (car.title_status or "").lower() == "damaged"
+            and not car.damaged_parts
+        ):
+            return (
+                jsonify(
+                    {
+                        "message": "Validation failed",
+                        "errors": {
+                            "damaged_parts": "required when title status is damaged"
+                        },
+                    }
+                ),
+                400,
+            )
 
         if car.vin:
             car.vin = _normalize_vin(car.vin)

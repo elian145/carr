@@ -13,7 +13,6 @@ mixin _SellStep3Fields on State<SellStep3Page> {
   String? contactPhone;
   /// All listing contact phones (`+964…`), max [maxContactPhones].
   List<String> contactPhones = <String>[];
-  bool isQuickSell = false;
   String selectedCurrency = 'USD';
 
   // Focus node for keyboard management

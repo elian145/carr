@@ -36,6 +36,18 @@ mixin _SellStep3Build on _SellStep3BuildDetails {
       missing.add(l.cityLabel);
     }
 
+    // Item 6 (CarNet V1 batch): mirror the backend's own price requirement
+    // (`price is None or float(price) <= 0` => error) here so an empty or
+    // non-positive price is caught client-side instead of only failing at
+    // the API once the whole wizard has been submitted.
+    final priceDigits = ThousandsSeparatorInputFormatter.digitsOnly(
+      selectedPrice ?? '',
+    );
+    final priceValue = priceDigits.isEmpty ? null : int.tryParse(priceDigits);
+    if (priceValue == null || priceValue <= 0) {
+      missing.add(l.priceLabel);
+    }
+
     setState(() {
       contactPhones = _collectContactPhonesFromControllers();
       contactPhone = contactPhones.isEmpty ? null : contactPhones.first;

@@ -102,6 +102,11 @@ Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
   final plateCity = (carData['plate_city']?.toString() ?? '').trim();
   final fuelEconomy = (carData['fuel_economy']?.toString() ?? '').trim();
   final description = (carData['description']?.toString() ?? '').trim();
+  // Item 1 (CarNet V1 batch): currency (USD/IQD) was selected in the sell
+  // flow and stored on carData, but never included in the update payload,
+  // so editing a listing silently dropped its currency. Only send it when
+  // present so an update that doesn't touch currency never overwrites it.
+  final currency = (carData['currency']?.toString() ?? '').trim().toUpperCase();
 
   return {
     'title': '$brand $model $trim'.trim(),
@@ -129,6 +134,7 @@ Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
     'plate_city': plateCity.isNotEmpty ? plateCity : null,
     if (fuelEconomy.isNotEmpty) 'fuel_economy': fuelEconomy,
     if (description.isNotEmpty) 'description': description,
+    if (currency.isNotEmpty) 'currency': currency,
     ..._sellContactPhonePayload(carData),
     if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
       'vin': carData['vin'].toString().trim(),
@@ -187,6 +193,13 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
   final String engineType = fuelType;
   final String location = (carData['location']?.toString() ?? city)
       .toString();
+  // Item 1 (CarNet V1 batch): send the selected currency so the backend
+  // persists it (defaults to USD server-side when omitted/empty, matching
+  // existing USD listings' behavior).
+  final currencyRaw = (carData['currency']?.toString() ?? '')
+      .trim()
+      .toUpperCase();
+  final currency = currencyRaw.isNotEmpty ? currencyRaw : 'USD';
 
   return {
     'title': title,
@@ -216,7 +229,7 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
     'plate_city': plateCity.isNotEmpty ? plateCity : null,
     'plateCity': plateCity.isNotEmpty ? plateCity : null,
     'description': (carData['description']?.toString() ?? '').trim(),
-    'is_quick_sell': carData['is_quick_sell'] ?? false,
+    'currency': currency,
     ..._sellContactPhonePayload(carData),
     if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
       'vin': carData['vin'].toString().trim(),

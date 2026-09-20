@@ -41,7 +41,6 @@ mixin _AnalyticsPageListingCard on _AnalyticsPageLoad {
           ) ??
           '',
       'images': [],
-      'is_quick_sell': false,
     };
 
     Widget cardWidget = buildGlobalCarCard(

@@ -63,17 +63,78 @@ class PushNotificationService {
     _openFromNotificationData(pending);
   }
 
-  static bool _isChatNotification(Map<String, dynamic> data) {
-    final type = (data['type'] ?? '').toString();
-    return type.isEmpty || type == 'chat_message';
+  // Item 9 (CarNet V1 batch): resolve the specific in-app destination for a
+  // notification payload instead of always opening the generic `/chat` or
+  // `/profile` shells. Reuses the existing named routes
+  // (`/chat/conversation`, `/car_detail`) already wired in
+  // `production_routes.dart` -- no new navigation infrastructure.
+  //
+  // Payload shapes handled (see `kk/socketio_handlers.py` for chat and
+  // `kk/tasks/alert_tasks.py` for saved-search/price-drop; all FCM `data`
+  // values arrive as strings -- see `kk/push.py::send_push`):
+  //   - chat_message: {type: "chat_message", car_id, sender_id}
+  //   - saved_search / price_drop: {car_id, ...} (no `type` key at all)
+  //   - dealer_application: {type: "dealer_application"}
+  //   - legacy/unknown payloads: missing or unrecognized fields
+  static ({String route, Map<String, dynamic>? arguments})?
+  _resolveNotificationDestination(Map<String, dynamic> data) {
+    final type = (data['type'] ?? '').toString().trim();
+    final carId = (data['car_id'] ?? '').toString().trim();
+    final senderId = (data['sender_id'] ?? '').toString().trim();
+
+    if (type == 'dealer_application') {
+      return (route: '/profile', arguments: null);
+    }
+
+    final bool looksLikeChat =
+        type == 'chat_message' || (type.isEmpty && senderId.isNotEmpty);
+    if (looksLikeChat) {
+      if (carId.isNotEmpty) {
+        return (
+          route: '/chat/conversation',
+          arguments: {
+            'carId': carId,
+            if (senderId.isNotEmpty) 'receiverId': senderId,
+          },
+        );
+      }
+      // Chat notification with no usable car id (e.g. a stripped-down
+      // local-notification payload) -- fall back to the chat list instead
+      // of the conversation route's "missing id" error screen.
+      return (route: '/chat', arguments: null);
+    }
+
+    if (carId.isNotEmpty) {
+      // Saved-search / price-drop alerts (and any future car-id-bearing
+      // notification type) open the specific listing. `/car_detail`
+      // already renders its own "not found" state if the listing was
+      // deleted/unpublished by the time the user taps through.
+      return (route: '/car_detail', arguments: {'carId': carId});
+    }
+
+    if (type.isEmpty) {
+      // Legacy payload predating per-type routing -- keep the old default.
+      return (route: '/chat', arguments: null);
+    }
+
+    // Unrecognized type with no usable id: safest to do nothing rather
+    // than guess a destination.
+    return null;
   }
 
+  /// Test-only hook onto the pure routing decision above -- exercised by
+  /// `test/push_notification_deep_link_test.dart` without needing a real
+  /// `NavigatorState`/widget tree.
+  @visibleForTesting
+  static ({String route, Map<String, dynamic>? arguments})?
+  debugResolveNotificationDestination(Map<String, dynamic> data) =>
+      _resolveNotificationDestination(data);
+
   static void _openFromNotificationData(Map<String, dynamic> data) {
-    final type = (data['type'] ?? '').toString();
-    final route = type == 'dealer_application'
-        ? '/profile'
-        : (_isChatNotification(data) ? '/chat' : null);
-    if (route == null) return;
+    final destination = _resolveNotificationDestination(data);
+    if (destination == null) return;
+    final route = destination.route;
+    final arguments = destination.arguments;
 
     void tryNavigate(int frame) {
       final nav = _navigatorKey?.currentState;
@@ -87,7 +148,16 @@ class PushNotificationService {
         return;
       }
       _pendingNavigation = null;
-      nav.pushNamed(route);
+      try {
+        nav.pushNamed(route, arguments: arguments);
+      } catch (e, st) {
+        // Never let a bad/unexpected payload crash the app on notification
+        // tap -- fall back to the generic chat list, which always exists.
+        logNonFatal(e, st, 'PushNotificationService._openFromNotificationData');
+        if (route != '/chat') {
+          nav.pushNamed('/chat');
+        }
+      }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) => tryNavigate(0));

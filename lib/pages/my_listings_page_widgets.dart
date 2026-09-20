@@ -123,7 +123,6 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
           : (carData['video_paths'] is List)
           ? List<dynamic>.from(carData['video_paths'] as List)
           : const <dynamic>[],
-      'is_quick_sell': carData['is_quick_sell'] ?? false,
     };
 
     return Padding(

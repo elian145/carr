@@ -87,6 +87,19 @@ void main() {
       });
       expect(payload['mileage'], 16093);
     });
+
+    test('sends the currency selected when editing an IQD listing', () {
+      final payload = buildSellCarUpdatePayload({
+        ...sampleCarData,
+        'currency': 'IQD',
+      });
+      expect(payload['currency'], 'IQD');
+    });
+
+    test('omits currency when unset so an update never overwrites it', () {
+      final payload = buildSellCarUpdatePayload(sampleCarData);
+      expect(payload.containsKey('currency'), isFalse);
+    });
   });
 
   group('sellMileageKmFromCarData', () {
@@ -121,8 +134,21 @@ void main() {
       expect(payload['contact_phone'], '+9647701234567');
       expect(payload['contact_phones'], ['+9647701234567']);
       expect(payload['description'], 'Well maintained');
-      expect(payload['is_quick_sell'], isFalse);
+      expect(payload.containsKey('is_quick_sell'), isFalse);
       expect(payload['vin'], '1HGBH41JXMN109186');
+    });
+
+    test('defaults currency to USD when unset', () {
+      final payload = buildSellCarCreatePayload(sampleCarData);
+      expect(payload['currency'], 'USD');
+    });
+
+    test('sends selected IQD currency', () {
+      final payload = buildSellCarCreatePayload({
+        ...sampleCarData,
+        'currency': 'IQD',
+      });
+      expect(payload['currency'], 'IQD');
     });
 
     test('parses damaged title status parts', () {

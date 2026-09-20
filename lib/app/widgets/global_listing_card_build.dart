@@ -31,8 +31,6 @@ Widget _buildGlobalCarCard(
   final brand = car['brand'] ?? '';
   final brandId = brandLogoSlug(brand.toString());
   final trimLine = localizedTrimForCard(context, car);
-  final bool quickSell =
-      car['is_quick_sell'] == true || car['is_quick_sell'] == 'true';
   final bool sold = isListingSold(Map<String, dynamic>.from(car));
   final bool pending = listingShowsPendingBadge(Map<String, dynamic>.from(car));
   final bool featured = listingIsFeatured(car);
@@ -194,36 +192,6 @@ Widget _buildGlobalCarCard(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.max,
           children: [
-            if (car['is_quick_sell'] == true || car['is_quick_sell'] == 'true')
-              Container(
-                width: double.infinity,
-                height: 35,
-                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.orange, Colors.deepOrange],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.flash_on, color: Colors.white, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'QUICK SELL',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             Expanded(
               child: LayoutBuilder(
                 builder: (context, rowConstraints) {
@@ -272,6 +240,11 @@ Widget _buildGlobalCarCard(
                                     large: true,
                                   ),
                                 ),
+                              Positioned(
+                                bottom: 8,
+                                right: 8,
+                                child: _globalListingCardCompareButton(car),
+                              ),
                             ],
                           ),
                         ),
@@ -308,7 +281,6 @@ Widget _buildGlobalCarCard(
         )
       : LayoutBuilder(
           builder: (context, constraints) {
-            final bannerH = quickSell ? 35.0 : 0.0;
             // Room for two-line title + trim chips + specs + footer; keep a few
             // px slack so Arabic metrics don't clip on some devices.
             final textReserve = AppResponsive.isCompactPhone(context)
@@ -316,12 +288,10 @@ Widget _buildGlobalCarCard(
                 : 150.0;
             // Prefer a shorter image over stealing from the text block — the
             // preferred 120px floor must not win when the card is short.
-            final availableForImage =
-                constraints.maxHeight - bannerH - textReserve;
+            final availableForImage = constraints.maxHeight - textReserve;
             final maxImage = availableForImage.clamp(78.0, 230.0);
             final baseImageH = AppResponsive.listingGridImageHeight(
               context,
-              quickSell: quickSell,
               maxHeight: maxImage,
               cardWidth: constraints.maxWidth,
             );
@@ -331,50 +301,12 @@ Widget _buildGlobalCarCard(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
               children: [
-                // Quick Sell Banner (conditional height)
-                if (car['is_quick_sell'] == true ||
-                    car['is_quick_sell'] == 'true')
-                  Container(
-                    width: double.infinity,
-                    height: 35, // Fixed height for banner
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.orange, Colors.deepOrange],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.flash_on, color: Colors.white, size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'QUICK SELL',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 // Image section
                 SizedBox(
                   height: imageH,
                   child: ClipRRect(
                     borderRadius: BorderRadius.vertical(
-                      top:
-                          (car['is_quick_sell'] == true ||
-                              car['is_quick_sell'] == 'true')
-                          ? Radius.zero
-                          : Radius.circular(20),
+                      top: Radius.circular(20),
                       bottom: Radius.zero,
                     ),
                     child: Stack(
@@ -400,6 +332,11 @@ Widget _buildGlobalCarCard(
                               large: true,
                             ),
                           ),
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: _globalListingCardCompareButton(car),
+                        ),
                       ],
                     ),
                   ),

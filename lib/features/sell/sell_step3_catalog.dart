@@ -56,7 +56,6 @@ mixin _SellStep3Catalog on _SellStep3Fields {
       selectedPlateCity = data['plate_city']?.toString();
       contactPhones = _phonesFromCarData(data);
       contactPhone = contactPhones.isEmpty ? null : contactPhones.first;
-      isQuickSell = data['is_quick_sell'] == true;
       selectedCurrency = (data['currency']?.toString().trim().isNotEmpty == true)
           ? data['currency'].toString()
           : selectedCurrency;
@@ -92,7 +91,6 @@ mixin _SellStep3Catalog on _SellStep3Fields {
     parentState.carData['contact_phone'] = contactPhone;
     parentState.carData['contact_phones'] = List<String>.from(contactPhones);
     parentState.carData['description'] = _descriptionController.text.trim();
-    parentState.carData['is_quick_sell'] = isQuickSell;
     parentState.carData['currency'] = selectedCurrency;
     parentState.setState(() {});
     unawaited(parentState._saveSellDraftSnapshot());
@@ -130,7 +128,6 @@ mixin _SellStep3Catalog on _SellStep3Fields {
           'selectedPlateCity': selectedPlateCity,
           'contactPhone': contactPhone,
           'contactPhones': contactPhones,
-          'isQuickSell': isQuickSell,
           'selectedCurrency': selectedCurrency,
           'priceControllerText': _priceController.text,
           'descriptionControllerText': _descriptionController.text,
@@ -158,7 +155,6 @@ mixin _SellStep3Catalog on _SellStep3Fields {
     if (_phoneControllers.isEmpty) {
       _phoneControllers.add(TextEditingController());
     }
-    isQuickSell = false;
     selectedCurrency = 'USD';
     _priceController.clear();
     // Initialize global currency symbol

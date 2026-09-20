@@ -38,6 +38,16 @@ mixin _SellStep2Build on _SellStep2BuildMechanical {
     if (selectedTitleStatus == null || selectedTitleStatus!.trim().isEmpty) {
       missing.add(l.titleStatus);
     }
+    // Item 5 (CarNet V1 batch): mirror the backend requirement — a
+    // title_status of "damaged" must always come with damaged_parts.
+    final bool titleIsDamaged =
+        (selectedTitleStatus ?? '').trim().toLowerCase() == 'damaged';
+    final bool damagedPartsMissing =
+        titleIsDamaged &&
+        (selectedDamagedParts == null || selectedDamagedParts!.trim().isEmpty);
+    if (damagedPartsMissing) {
+      missing.add(l.damagedParts);
+    }
 
     setState(() {
       errMileage = selectedMileage == null || selectedMileage!.trim().isEmpty;
@@ -57,6 +67,7 @@ mixin _SellStep2Build on _SellStep2BuildMechanical {
       errSeating = selectedSeating == null || selectedSeating!.trim().isEmpty;
       errTitle = selectedTitleStatus == null ||
           selectedTitleStatus!.trim().isEmpty;
+      errDamagedParts = damagedPartsMissing;
     });
 
     if (missing.isNotEmpty) {

@@ -157,37 +157,6 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (data['is_quick_sell'] == true ||
-                    data['is_quick_sell'] == 'true')
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.orange, Colors.deepOrange],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.flash_on, color: Colors.white, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          AppLocalizations.of(context)!.quickSell,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 Text(
                   titleWithYear,
                   style: TextStyle(
