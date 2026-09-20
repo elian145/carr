@@ -295,7 +295,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
 
         captured = {}
 
-        def capture_mail(email, code):
+        def capture_mail(email, code, locale=None):
             captured["email"] = email
             captured["code"] = code
             return True
@@ -1140,7 +1140,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self.assertIsInstance(body, list)
             self.assertGreaterEqual(len(body), 1)
             target = (body[0] or {}).get("target") or {}
-            self.assertEqual(target.get("package_name"), "com.carzo.app")
+            self.assertEqual(target.get("package_name"), "com.carnetiq.app")
             self.assertIn(fp, target.get("sha256_cert_fingerprints") or [])
         finally:
             if prev is None:

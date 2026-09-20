@@ -10,7 +10,7 @@ void main() {
     AppVersionGate.resetCacheForTests();
     AppVersionGate.debugPackageInfo = PackageInfo(
       appName: 'CarNet',
-      packageName: 'com.carzo.app',
+      packageName: 'com.carnetiq.app',
       version: '1.0.0',
       buildNumber: '10',
     );
@@ -59,7 +59,7 @@ void main() {
   test('no prompt when already on recommended version', () async {
     AppVersionGate.debugPackageInfo = PackageInfo(
       appName: 'CarNet',
-      packageName: 'com.carzo.app',
+      packageName: 'com.carnetiq.app',
       version: '1.2.0',
       buildNumber: '20',
     );

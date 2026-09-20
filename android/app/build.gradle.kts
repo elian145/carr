@@ -158,9 +158,10 @@ android {
             applicationIdSuffix = ".stage"
             versionNameSuffix = "-stage"
         }
-        create("prod") {
-            dimension = "env"
-        }
+      create("prod") {
+    dimension = "env"
+    applicationId = "com.carnetiq.app"
+}
     }
 }
 

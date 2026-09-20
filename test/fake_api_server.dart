@@ -808,7 +808,7 @@ class FakeApiServer {
           'recommended_ios_build': null,
           'soft_update_message': 'A newer version of CarNet is available.',
           'android_store_url':
-              'https://play.google.com/store/apps/details?id=com.carzo.app',
+              'https://play.google.com/store/apps/details?id=com.carnetiq.app',
           'ios_store_url': '',
           'listing_require_approval': false,
           'feature_flags': {

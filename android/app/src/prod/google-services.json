@@ -7,6 +7,28 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:666842532837:android:52e03b822c8d00a2537d0c",
+        "android_client_info": {
+          "package_name": "com.carnetiq.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
+        {
+          "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:666842532837:android:bc9de5e841d39bb7537d0c",
         "android_client_info": {
           "package_name": "com.carzo.app"
@@ -14,6 +36,119 @@
       },
       "oauth_client": [],
       "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
+        {
+          "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666842532837:android:a690a3b8b569b67b537d0c",
+        "android_client_info": {
+          "package_name": "com.carzo.app.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
+        {
+          "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666842532837:android:fad689731d3d0cf1537d0c",
+        "android_client_info": {
+          "package_name": "com.carzo.app.stage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
+        {
+          "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666842532837:android:cbf29ab0db3a79e6537d0c",
+        "android_client_info": {
+          "package_name": "com.example.car_listing_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
+        {
+          "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666842532837:android:9e9426aec74a5a77537d0c",
+        "android_client_info": {
+          "package_name": "com.example.car_listing_app.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
+        {
+          "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666842532837:android:e3f471a250707a9b537d0c",
+        "android_client_info": {
+          "package_name": "com.example.car_listing_app.stage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4z8hWpy3wAdTCKf4kPUXLrIALLG0Bppc"
+        },
         {
           "current_key": "AIzaSyAC0ltl1SYq0Kb0L9JN8wB9oMGeQ8w4b68"
         }

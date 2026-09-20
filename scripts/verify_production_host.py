@@ -137,11 +137,11 @@ def _check_app_links(host: str, timeout: float, required: bool) -> list[str]:
             target = (data[0].get("target") or {}) if isinstance(data[0], dict) else {}
             pkg = target.get("package_name")
             fps = target.get("sha256_cert_fingerprints") or []
-            if pkg != "com.carzo.app":
+            if pkg != "com.carnetiq.app":
                 _note(
                     required,
                     errors,
-                    f"assetlinks package_name={pkg!r}, expected com.carzo.app",
+                    f"assetlinks package_name={pkg!r}, expected com.carnetiq.app",
                 )
             elif not isinstance(fps, list) or not fps:
                 _note(required, errors, "assetlinks.json missing sha256_cert_fingerprints")

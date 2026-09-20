@@ -327,7 +327,7 @@ void main() {
       AppVersionGate.resetCacheForTests();
       AppVersionGate.debugPackageInfo = PackageInfo(
         appName: 'CarNet',
-        packageName: 'com.carzo.app',
+        packageName: 'com.carnetiq.app',
         version: '1.0.0',
         buildNumber: '1',
       );
@@ -391,7 +391,7 @@ void main() {
       AppVersionGate.resetCacheForTests();
       AppVersionGate.debugPackageInfo = PackageInfo(
         appName: 'CarNet',
-        packageName: 'com.carzo.app',
+        packageName: 'com.carnetiq.app',
         version: '1.0.0',
         buildNumber: '1',
       );

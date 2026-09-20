@@ -133,7 +133,7 @@ def _app_config_payload() -> dict:
         ),
         "android_store_url": _s(
             "android_store_url",
-            "https://play.google.com/store/apps/details?id=com.carzo.app",
+            "https://play.google.com/store/apps/details?id=com.carnetiq.app",
         ),
         "ios_store_url": _s("ios_store_url"),
         "listing_require_approval": require_approval,
@@ -330,7 +330,7 @@ def _listing_handoff_script(listing_id: str, is_android: bool, *, auto_attempt: 
   window.carzoOpenAndroidIntent = function () {{
     window.location.href =
       "intent://listing?id=" + encodeURIComponent(listingId) +
-      "#Intent;scheme=carzo;package=com.carzo.app;S.browser_fallback_url=" + webFallback + ";end";
+      "#Intent;scheme=carzo;package=com.carnetiq.app;S.browser_fallback_url=" + webFallback + ";end";
   }};
 
   window.carzoOpenInSafari = function () {{
@@ -435,7 +435,7 @@ def _listing_in_app_bridge_html(listing_id: str) -> Response:
   <meta property="al:ios:url" content="{esc_deep}"/>
   <meta property="al:ios:app_name" content="CarNet"/>
   <meta property="al:android:url" content="{esc_deep}"/>
-  <meta property="al:android:package" content="com.carzo.app"/>
+  <meta property="al:android:package" content="com.carnetiq.app"/>
   <meta property="al:android:app_name" content="CarNet"/>
   <style>
     * {{ box-sizing: border-box; }}
@@ -500,7 +500,7 @@ def _listing_mobile_app_redirect(listing_id: str):
     if "android" in ua:
         intent = (
             f"intent://listing?id={qid}"
-            f"#Intent;scheme=carzo;package=com.carzo.app;"
+            f"#Intent;scheme=carzo;package=com.carnetiq.app;"
             f"S.browser_fallback_url={web_fallback};end"
         )
         return redirect(intent, code=302)
@@ -584,7 +584,7 @@ def android_assetlinks():
             "relation": ["delegate_permission/common.handle_all_urls"],
             "target": {
                 "namespace": "android_app",
-                "package_name": "com.carzo.app",
+                "package_name": "com.carnetiq.app",
                 "sha256_cert_fingerprints": fps,
             },
         }

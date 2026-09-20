@@ -141,7 +141,7 @@ def default_platform_settings() -> dict[str, Any]:
         "soft_update_message_ku": _env("SOFT_UPDATE_MESSAGE_KU", ""),
         "android_store_url": _env(
             "ANDROID_STORE_URL",
-            "https://play.google.com/store/apps/details?id=com.carzo.app",
+            "https://play.google.com/store/apps/details?id=com.carnetiq.app",
         ),
         "ios_store_url": _env("IOS_STORE_URL", ""),
         "feature_flags": default_feature_flags(),

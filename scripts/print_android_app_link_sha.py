@@ -131,8 +131,8 @@ def _remote_fingerprints(host: str, timeout: float = 90.0) -> list[str]:
 
     target = (data[0].get("target") or {}) if isinstance(data[0], dict) else {}
     pkg = target.get("package_name")
-    if pkg != "com.carzo.app":
-        print(f"FAIL: package_name={pkg!r}, expected com.carzo.app", file=sys.stderr)
+    if pkg != "com.carnetiq.app":
+        print(f"FAIL: package_name={pkg!r}, expected com.carnetiq.app", file=sys.stderr)
         raise SystemExit(1)
 
     fps = target.get("sha256_cert_fingerprints") or []

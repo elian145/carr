@@ -40,9 +40,9 @@ def _check_prod_firebase() -> None:
         (c.get("client_info") or {}).get("android_client_info", {}).get("package_name")
         for c in clients
     ]
-    if "com.carzo.app" not in packages:
-        _fail(f"google-services.json must include package_name com.carzo.app, got {packages!r}")
-    _ok("prod Firebase package_name com.carzo.app")
+    if "com.carnetiq.app" not in packages:
+        _fail(f"google-services.json must include package_name com.carnetiq.app, got {packages!r}")
+    _ok("prod Firebase package_name com.carnetiq.app")
 
 
 def _check_ios_firebase() -> None:
