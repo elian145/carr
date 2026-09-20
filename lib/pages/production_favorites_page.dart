@@ -8,10 +8,18 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
+  final ScrollController _controller = ScrollController();
+
   List<Map<String, dynamic>> _favorites = [];
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasNext = true;
+  int _page = 1;
+  int _fetchGeneration = 0;
   String? _error;
   bool _loginRequired = false;
+
+  static const int _perPage = 20;
 
   int _favoritedAtMs(Map<String, dynamic> m) {
     final raw = (m['favorited_at'] ?? m['favoritedAt'])?.toString().trim();
@@ -24,89 +32,173 @@ class _FavoritesPageState extends State<FavoritesPage> {
     }
   }
 
+  String _carIdOf(Map<String, dynamic> m) =>
+      (m['public_id'] ?? m['id'] ?? '').toString();
+
   @override
   void initState() {
     super.initState();
     ListingLayoutPrefs.load();
+    _controller.addListener(() {
+      if (_loading || _loadingMore || !_hasNext) return;
+      final pos = _controller.position;
+      if (pos.pixels >= (pos.maxScrollExtent - 500)) {
+        _loadMore();
+      }
+    });
     // Delay loading until after first frame so that inherited widgets
-    // like Localizations are available when _loadFavorites runs.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadFavorites());
+    // like Localizations are available when _fetch runs.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _fetch(refresh: true),
+    );
   }
 
-  Future<void> _loadFavorites() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-      _loginRequired = false;
-    });
-    try {
-      final tok = ApiService.accessToken;
-      if (tok == null || tok.isEmpty) {
-        setState(() {
-          _loginRequired = true;
-          _loading = false;
-        });
-        return;
-      }
-      final sp = await SharedPreferences.getInstance();
-      final cacheKey = 'cache_favorites';
-      final cached = sp.getString(cacheKey);
-      if (cached != null && cached.isNotEmpty) {
-        try {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Loads (or reloads) the favorites feed.
+  ///
+  /// [refresh] == true resets pagination back to page 1 and replaces the
+  /// list (used by initial load and pull-to-refresh); == false appends the
+  /// next page (infinite scroll / "load more").
+  Future<void> _fetch({required bool refresh}) async {
+    final requestGeneration = refresh ? ++_fetchGeneration : _fetchGeneration;
+    final tok = ApiService.accessToken;
+    if (tok == null || tok.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _loginRequired = true;
+        _loading = false;
+        _loadingMore = false;
+      });
+      return;
+    }
+
+    if (refresh) {
+      setState(() {
+        _loading = true;
+        _loadingMore = false;
+        _error = null;
+        _loginRequired = false;
+        _page = 1;
+        _hasNext = true;
+      });
+
+      // Show a cached page-1 snapshot instantly while the network request
+      // for a fresh page 1 is in flight (this is a best-effort perceived-
+      // performance optimization, not the source of truth).
+      try {
+        final sp = await SharedPreferences.getInstance();
+        final cached = sp.getString('cache_favorites');
+        if (cached != null &&
+            cached.isNotEmpty &&
+            mounted &&
+            requestGeneration == _fetchGeneration) {
           final data = json.decode(cached);
           if (data is List) {
-            if (mounted) {
-              setState(() {
-                _favorites = listingMapsFromApiList(data);
-                _favorites.sort(
-                  (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
-                );
-                _loading = false;
-              });
-            }
+            final parsed = listingMapsFromApiList(data);
+            parsed.sort(
+              (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
+            );
+            setState(() {
+              _favorites = parsed;
+            });
           }
-        } catch (e, st) {
-          logNonFatal(e, st);
         }
+      } catch (e, st) {
+        logNonFatal(e, st);
       }
-      final decoded = await ApiService.getFavorites();
-      final parsed = listingMapsFromFavoritesResponse(decoded);
-      if (mounted) {
-        setState(() {
-          _favorites = parsed;
+    } else {
+      if (_loadingMore || !_hasNext) return;
+      setState(() {
+        _loadingMore = true;
+        _error = null;
+      });
+    }
+
+    try {
+      final decoded = await ApiService.getFavorites(
+        page: _page,
+        perPage: _perPage,
+      );
+      final items = listingMapsFromFavoritesResponse(decoded);
+
+      bool hasNext = false;
+      final pagination = decoded['pagination'];
+      if (pagination is Map && pagination['has_next'] is bool) {
+        hasNext = pagination['has_next'] as bool;
+      } else {
+        hasNext = items.length >= _perPage;
+      }
+      // A short/empty page always ends the list, even if the server didn't
+      // send an explicit `has_next` flag.
+      if (items.isEmpty) hasNext = false;
+
+      if (!mounted || requestGeneration != _fetchGeneration) return;
+      setState(() {
+        if (refresh) {
+          _favorites = items;
           _favorites.sort(
             (a, b) => _favoritedAtMs(b).compareTo(_favoritedAtMs(a)),
           );
-        });
+        } else {
+          // De-dupe against everything already shown: a favorite added/
+          // removed elsewhere mid-scroll can shift page boundaries and
+          // hand back a listing the first page already rendered.
+          final seen = _favorites.map(_carIdOf).toSet();
+          for (final item in items) {
+            final id = _carIdOf(item);
+            if (id.isEmpty || !seen.add(id)) continue;
+            _favorites.add(item);
+          }
+        }
+        _hasNext = hasNext;
+        _loading = false;
+        _loadingMore = false;
+      });
+
+      if (refresh) {
+        final sp = await SharedPreferences.getInstance();
+        unawaited(sp.setString('cache_favorites', json.encode(_favorites)));
       }
-      unawaited(sp.setString(cacheKey, json.encode(_favorites)));
     } on ApiException catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _fetchGeneration) return;
       if (e.statusCode == 401) {
         setState(() {
           _loginRequired = true;
+          _loading = false;
+          _loadingMore = false;
         });
       } else {
         setState(() {
           _error = AppLocalizations.of(context)!.failedToLoadListings;
+          _loading = false;
+          _loadingMore = false;
         });
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || requestGeneration != _fetchGeneration) return;
       setState(() {
         _error = userErrorText(
           context,
           e,
           fallback: AppLocalizations.of(context)!.error,
         );
+        _loading = false;
+        _loadingMore = false;
       });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
     }
+  }
+
+  Future<void> _loadFavorites() => _fetch(refresh: true);
+
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !_hasNext) return;
+    _page += 1;
+    await _fetch(refresh: false);
   }
 
   Future<void> _toggleFavorite(String carId) async {
@@ -120,10 +212,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           (res['is_favorited'] == true) || (res['favorited'] == true);
       if (!favorited) {
         setState(() {
-          _favorites.removeWhere((c) {
-            final cid = (c['public_id'] ?? c['id'] ?? '').toString();
-            return cid == carId;
-          });
+          _favorites.removeWhere((c) => _carIdOf(c) == carId);
         });
       } else {
         unawaited(AnalyticsService.trackFavorite(carId));
@@ -241,6 +330,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         screenWidth,
                       );
                   return GridView.builder(
+                    controller: _controller,
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.fromLTRB(
                       listingColumns == 1 ? 4 : 8,
@@ -258,8 +348,22 @@ class _FavoritesPageState extends State<FavoritesPage> {
                             screenWidth,
                           ),
                     ),
-                    itemCount: _favorites.length,
+                    itemCount: _favorites.length + (_hasNext ? 1 : 0),
                     itemBuilder: (context, index) {
+                      if (index >= _favorites.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
                       final carMap = Map<String, dynamic>.from(
                         _favorites[index],
                       );
@@ -268,9 +372,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                         mapListingToGlobalCarCardData(context, carMap),
                         listLayout: listingColumns == 1,
                       );
-                      final String carId =
-                          (carMap['public_id'] ?? carMap['id'] ?? '')
-                              .toString();
+                      final String carId = _carIdOf(carMap);
                       if (carId.isEmpty) return card;
                       return Stack(
                         clipBehavior: Clip.none,

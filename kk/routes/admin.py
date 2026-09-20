@@ -35,6 +35,7 @@ from ..models import (
 )
 from ..response_cache import invalidate_filter_facets_cache
 from ..listing_search import apply_listing_text_search
+from ..localization import get_background_locale, translate
 from ..time_utils import utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
@@ -828,22 +829,29 @@ def _review_dealer_application(
             application_snapshot=application.snapshot(),
         )
     )
+    # MI-03/batch-2: this notification is about *target*'s own dealer
+    # application, and target is not the caller making this admin request
+    # (the admin is) -- use target's stored locale, never the admin's
+    # Accept-Language. Free-text `reason` is the admin's own written words
+    # and is never translated/altered; only the static titles and the
+    # default (no-reason) fallback bodies are localized.
+    _locale = get_background_locale(getattr(target, "locale", None))
     messages = {
         "under_review": (
-            "Dealer application under review",
-            "An administrator has started reviewing your dealer application.",
+            translate("dealer_decision_under_review_title", _locale),
+            translate("dealer_decision_under_review_body", _locale),
         ),
         "needs_changes": (
-            "Dealer application needs changes",
-            reason or "Please update your dealer application.",
+            translate("dealer_decision_needs_changes_title", _locale),
+            reason or translate("dealer_decision_needs_changes_default_body", _locale),
         ),
         "approved": (
-            "Dealer application approved",
-            "Your dealership is verified and active. Complete your public profile with a logo, cover image, opening hours, and contact details.",
+            translate("dealer_decision_approved_title", _locale),
+            translate("dealer_decision_approved_body", _locale),
         ),
         "rejected": (
-            "Dealer application declined",
-            reason or "Your dealer application was not approved.",
+            translate("dealer_decision_rejected_title", _locale),
+            reason or translate("dealer_decision_rejected_default_body", _locale),
         ),
     }
     title, message = messages[action]

@@ -492,6 +492,16 @@ class ApiService {
   static Future<Map<String, dynamic>> deleteCar(String carId) =>
       _ApiServiceListings.deleteCar(carId);
 
+  static Future<Map<String, dynamic>> deleteCarImage(
+    String carId,
+    int imageId,
+  ) => _ApiServiceListings.deleteCarImage(carId, imageId);
+
+  static Future<Map<String, dynamic>> deleteCarVideo(
+    String carId,
+    int videoId,
+  ) => _ApiServiceListings.deleteCarVideo(carId, videoId);
+
   static Future<Map<String, dynamic>> markListingSold(String carId) =>
       _ApiServiceListings.markListingSold(carId);
 

@@ -1801,6 +1801,23 @@ class AppLocalizationsKu extends AppLocalizations {
       'ڕێکلامە چاوەڕوانی پێداچوونەوە لێرە دەردەکەون.';
 
   @override
+  String get listingHiddenBadge => 'شاردراوەتەوە';
+
+  @override
+  String get myListingsHiddenFilter => 'شاردراوەتەوە';
+
+  @override
+  String get myListingsHiddenExplainer =>
+      'ئەم ڕێکلامانە لەلایەن تیمی پێداچوونەوەمانەوە شاردراونەتەوە و بۆ کڕیاران دیار نین. ئەگەر پرسیارت هەیە پەیوەندی بە پشتگیری بکە.';
+
+  @override
+  String get myListingsNoHiddenTitle => 'هیچ ڕێکلامێکی شاردراوەتەوە نییە';
+
+  @override
+  String get myListingsNoHiddenHint =>
+      'ڕێکلامە شاردراوەکان لەلایەن پێداچوونەوەوە لێرە دەردەکەون.';
+
+  @override
   String get joinAnd => ' و';
 
   @override

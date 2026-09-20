@@ -3418,6 +3418,36 @@ abstract class AppLocalizations {
   /// **'Listings waiting for review will appear here.'**
   String get myListingsNoPendingHint;
 
+  /// No description provided for @listingHiddenBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get listingHiddenBadge;
+
+  /// No description provided for @myListingsHiddenFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get myListingsHiddenFilter;
+
+  /// No description provided for @myListingsHiddenExplainer.
+  ///
+  /// In en, this message translates to:
+  /// **'These listings were hidden by our moderation team and are not visible to buyers. Contact support if you have questions.'**
+  String get myListingsHiddenExplainer;
+
+  /// No description provided for @myListingsNoHiddenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden listings'**
+  String get myListingsNoHiddenTitle;
+
+  /// No description provided for @myListingsNoHiddenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Listings hidden by moderation will appear here.'**
+  String get myListingsNoHiddenHint;
+
   /// No description provided for @joinAnd.
   ///
   /// In en, this message translates to:

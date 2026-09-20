@@ -186,29 +186,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                               label: AppLocalizations.of(context)!.removeAction,
                               child: InkWell(
                         onTap: () {
-                          final parentState = context
-                              .findAncestorStateOfType<_SellCarPageState>();
-                          setState(() {
-                            _selectedImages.removeAt(index);
-                            if (index < _blurredImages.length) {
-                              _blurredImages.removeAt(index);
-                            } else {
-                              _blurredImages = [];
-                              _imagesProcessed = false;
-                            }
-                            _onImageRemovedAt(index);
-                            if (_selectedImages.isEmpty) {
-                              _blurredImages = [];
-                              _imagesProcessed = false;
-                            }
-                          });
-                          parentState?.carData.remove('use_blurred_plates');
-                          parentState?.invalidatePlateBlurJob();
-                          parentState?.invalidatePhotoPrestage();
-                          unawaited(_syncMediaDraftToParent());
-                          if (_selectedImages.isNotEmpty) {
-                            unawaited(parentState?.startBackgroundPlateBlur());
-                          }
+                          unawaited(_removePhotoAt(index));
                         },
                               borderRadius: BorderRadius.circular(20),
                               child: Container(

@@ -1800,6 +1800,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Listings waiting for review will appear here.';
 
   @override
+  String get listingHiddenBadge => 'Hidden';
+
+  @override
+  String get myListingsHiddenFilter => 'Hidden';
+
+  @override
+  String get myListingsHiddenExplainer =>
+      'These listings were hidden by our moderation team and are not visible to buyers. Contact support if you have questions.';
+
+  @override
+  String get myListingsNoHiddenTitle => 'No hidden listings';
+
+  @override
+  String get myListingsNoHiddenHint =>
+      'Listings hidden by moderation will appear here.';
+
+  @override
   String get joinAnd => ' and ';
 
   @override

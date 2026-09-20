@@ -151,11 +151,86 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ar": "بيانات الاعتماد غير صحيحة",
         "ku": "زانیاری چوونەژوورەوە هەڵەیە",
     },
-    # kk/socketio_handlers.py -- chat message notification title.
+    # kk/socketio_handlers.py + kk/chat_realtime.py -- chat message
+    # notification title (in-app Notification row).
     "new_message_title": {
         "en": "New message",
         "ar": "رسالة جديدة",
         "ku": "پەیامی نوێ",
+    },
+    # kk/socketio_handlers.py + kk/chat_realtime.py -- chat message FCM push
+    # title (includes the sender's display name).
+    "new_message_push_title": {
+        "en": "New message from {name}",
+        "ar": "رسالة جديدة من {name}",
+        "ku": "پەیامی نوێ لە {name}",
+    },
+    # kk/routes/user.py -- Notification sent to a user when their dealer
+    # application is submitted for review.
+    "dealer_application_submitted_title": {
+        "en": "Dealer application submitted",
+        "ar": "تم إرسال طلب المعرض",
+        "ku": "داواکاری شوکە نێردرا",
+    },
+    "dealer_application_submitted_body": {
+        "en": "Your dealership details were received and are ready for review.",
+        "ar": "تم استلام بيانات معرضك وهي جاهزة للمراجعة.",
+        "ku": "زانیارییەکانی شوکەکەت وەرگیران و ئامادەن بۆ پێداچوونەوە.",
+    },
+    # kk/routes/admin.py -- _review_dealer_application() decision notification
+    # sent to the applicant. Titles are always shown; bodies are only used
+    # when the admin did not supply a free-text `reason` (needs_changes /
+    # rejected always require one, so those body strings are unreachable in
+    # practice but kept as a safe fallback if that ever changes).
+    "dealer_decision_under_review_title": {
+        "en": "Dealer application under review",
+        "ar": "طلب المعرض قيد المراجعة",
+        "ku": "داواکاری شوکە لە ژێر پێداچوونەوەدایە",
+    },
+    "dealer_decision_under_review_body": {
+        "en": "An administrator has started reviewing your dealer application.",
+        "ar": "بدأ أحد المسؤولين بمراجعة طلب معرضك.",
+        "ku": "بەڕێوەبەرێک دەستی کرد بە پێداچوونەوە بە داواکاری شوکەکەت.",
+    },
+    "dealer_decision_needs_changes_title": {
+        "en": "Dealer application needs changes",
+        "ar": "طلب المعرض يحتاج إلى تعديلات",
+        "ku": "داواکاری شوکە پێویستی بە گۆڕانکاری هەیە",
+    },
+    "dealer_decision_needs_changes_default_body": {
+        "en": "Please update your dealer application.",
+        "ar": "يرجى تحديث طلب معرضك.",
+        "ku": "تکایە داواکاری شوکەکەت نوێ بکەرەوە.",
+    },
+    "dealer_decision_approved_title": {
+        "en": "Dealer application approved",
+        "ar": "تمت الموافقة على طلب المعرض",
+        "ku": "داواکاری شوکە پەسەند کرا",
+    },
+    "dealer_decision_approved_body": {
+        "en": (
+            "Your dealership is verified and active. Complete your public "
+            "profile with a logo, cover image, opening hours, and contact "
+            "details."
+        ),
+        "ar": (
+            "تم التحقق من معرضك وهو نشط الآن. أكمل ملفك العام بشعار وصورة "
+            "غلاف وساعات عمل وبيانات تواصل."
+        ),
+        "ku": (
+            "شوکەکەت پشتڕاست کرایەوە و چالاکە. پرۆفایلی گشتیت تەواو بکە "
+            "بە لۆگۆ، وێنەی بەرگ، کاتەکانی کارکردن، و زانیاری پەیوەندی."
+        ),
+    },
+    "dealer_decision_rejected_title": {
+        "en": "Dealer application declined",
+        "ar": "تم رفض طلب المعرض",
+        "ku": "داواکاری شوکە ڕەتکرایەوە",
+    },
+    "dealer_decision_rejected_default_body": {
+        "en": "Your dealer application was not approved.",
+        "ar": "لم تتم الموافقة على طلب معرضك.",
+        "ku": "داواکاری شوکەکەت پەسەند نەکرا.",
     },
     # kk/tasks/alert_tasks.py -- saved-search push, fallback title when the
     # search has no user-given name.

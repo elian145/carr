@@ -10,6 +10,11 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
         AppLocalizations.of(context)?.myListingsPendingFilter ??
             _text('Pending', ar: 'قيد المراجعة', ku: 'چاوەڕوان'),
       ),
+      (
+        _MyListingsFilter.hidden,
+        AppLocalizations.of(context)?.myListingsHiddenFilter ??
+            _text('Hidden', ar: 'مخفي', ku: 'شاردراوەتەوە'),
+      ),
       (_MyListingsFilter.sold, _text('Sold', ar: 'مُباع', ku: 'فرۆشراو')),
       (_MyListingsFilter.draft, _text('Draft', ar: 'مسودة', ku: 'ڕەشنووس')),
     ];
@@ -67,6 +72,55 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
               const Icon(
                 Icons.info_outline_rounded,
                 color: Color(0xFFF57C00),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHiddenExplainer() {
+    final text = AppLocalizations.of(context)?.myListingsHiddenExplainer ??
+        _text(
+          'These listings were hidden by our moderation team and are not '
+          'visible to buyers. Contact support if you have questions.',
+          ar: 'تم إخفاء هذه الإعلانات من قبل فريق المراجعة لدينا وهي غير ظاهرة '
+              'للمشترين. تواصل مع الدعم إذا كانت لديك أسئلة.',
+          ku: 'ئەم ڕێکلامانە لەلایەن تیمی پێداچوونەوەمانەوە شاردراونەتەوە و بۆ '
+              'کڕیاران دیار نین. ئەگەر پرسیارت هەیە پەیوەندی بە پشتگیری بکە.',
+        );
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFC62828).withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFFC62828).withValues(alpha: 0.35),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.visibility_off_outlined,
+                color: Color(0xFFC62828),
                 size: 20,
               ),
               const SizedBox(width: 10),
@@ -225,6 +279,20 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
               'Listings waiting for admin approval will appear here.',
               ar: 'الإعلانات بانتظار موافقة المشرف ستظهر هنا.',
               ku: 'ڕێکلامە چاوەڕوانی پەسەندکردنی بەڕێوەبەر لێرە دەردەکەون.',
+            ),
+      ),
+      _MyListingsFilter.hidden => (
+        loc?.myListingsNoHiddenTitle ??
+            _text(
+              'No hidden listings',
+              ar: 'لا توجد إعلانات مخفية',
+              ku: 'هیچ ڕێکلامێکی شاردراوەتەوە نییە',
+            ),
+        loc?.myListingsNoHiddenHint ??
+            _text(
+              'Listings hidden by moderation will appear here.',
+              ar: 'الإعلانات المخفية من قبل المراجعة ستظهر هنا.',
+              ku: 'ڕێکلامە شاردراوەکان لەلایەن پێداچوونەوەوە لێرە دەردەکەون.',
             ),
       ),
       _MyListingsFilter.sold => (

@@ -486,6 +486,223 @@ def update_car_image_layout(car_id: str):
         return jsonify({"message": "Failed to update image layout"}), 500
 
 
+def _storage_key_from_url(url: str) -> str | None:
+    """Extract an R2 object key from a stored ``image_url``/``video_url``.
+
+    Returns ``None`` when ``url`` is not an R2-hosted object this process
+    knows how to map back to a key (e.g. a local ``uploads/...`` path, or an
+    unrelated/foreign HTTPS URL) -- callers must treat that as "nothing to
+    delete from R2", not an error.
+    """
+    u = (url or "").strip()
+    if not u:
+        return None
+    public_base = _r2_public_base()
+    if public_base:
+        prefix = public_base.rstrip("/") + "/"
+        if u.startswith(prefix):
+            return u[len(prefix):] or None
+        if u.lower().startswith("http://") or u.lower().startswith("https://"):
+            # Foreign/unexpected host -- never attempt to delete it.
+            return None
+    # R2 configured without a public URL: `persist_jpeg_bytes()` /
+    # `_upload_video_file_to_r2()` can store the bare bucket key itself
+    # (see media_processing.persist_jpeg_bytes docstring).
+    if u.startswith("car_photos/") or u.startswith("car_videos/"):
+        return u
+    return None
+
+
+def _delete_media_storage_object(url: str) -> None:
+    """Best-effort delete of the underlying storage object for ``url``.
+
+    Never raises: an already-missing object, an unrecognized URL shape, or a
+    storage-backend failure must never block the DB row deletion the caller
+    already committed -- this mirrors the fail-safe posture every upload
+    path in this file already takes toward storage errors (log and degrade,
+    never leave the request half-done).
+    """
+    u = (url or "").strip()
+    if not u:
+        return
+    key = _storage_key_from_url(u)
+    if key and _r2_configured():
+        try:
+            from ..r2_ops import r2_delete_object
+
+            r2_delete_object(key=key)
+        except Exception as e:
+            current_app.logger.warning(
+                "Failed to delete R2 media object (best-effort, key length=%d): %s",
+                len(key),
+                e,
+            )
+        return
+
+    # Local-disk path: uploads/car_photos/<file> or uploads/car_videos/<file>.
+    rel = u.lstrip("/")
+    if rel.startswith("static/"):
+        rel = rel[len("static/"):]
+    if not rel.startswith("uploads/"):
+        return
+    subpath = os.path.relpath(rel, "uploads").replace("\\", "/")
+
+    # Mirror misc.static_files()'s resolution order: prefer the configured
+    # UPLOAD_FOLDER (may live outside kk/static on persistent storage), then
+    # fall back to the kk/static/uploads mirror used by older uploads.
+    candidate_roots = []
+    configured_root = (current_app.config.get("UPLOAD_FOLDER") or "").strip()
+    if configured_root:
+        candidate_roots.append(os.path.abspath(configured_root))
+    candidate_roots.append(
+        os.path.abspath(os.path.join(current_app.root_path, "static", "uploads"))
+    )
+
+    for upload_root in candidate_roots:
+        try:
+            abs_path = safe_join(upload_root, subpath)
+            if not abs_path:
+                continue
+            abs_path = os.path.abspath(abs_path)
+            if not abs_path.startswith(upload_root + os.sep):
+                continue
+            if os.path.isfile(abs_path):
+                os.remove(abs_path)
+                return
+        except OSError as e:
+            current_app.logger.warning(
+                "Failed to delete local media file (best-effort): %s", e
+            )
+
+
+@bp.route("/api/cars/<car_id>/images/<int:image_id>", methods=["DELETE"])
+@jwt_required()
+def delete_car_image(car_id: str, image_id: int):
+    """Delete one photo from a listing: removes the DB row and (best-effort)
+    the underlying storage object.
+
+    - Owner (or admin) only -- 403 otherwise (no IDOR: the image must also
+      belong to *this* car, not just to the caller, or a guessed image id on
+      someone else's car would 404 rather than leaking existence).
+    - Refuses to delete the last remaining "listing" (non-damage) photo so a
+      listing never ends up with zero cover-eligible photos -- this is the
+      server-side backstop for the same "at least one photo" invariant the
+      sell wizard already enforces client-side before it will submit.
+    - If the deleted photo was the primary/cover image, promotes the next
+      remaining listing photo (lowest ``order``, then ``id``) to primary so
+      the listing's cover never silently disappears.
+    """
+    try:
+        current_user = get_current_user()
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
+
+        car = _get_car_by_any_id(car_id)
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            return jsonify({"message": "Not authorized to modify images for this listing"}), 403
+
+        image = CarImage.query.filter_by(id=image_id, car_id=car.id).first()
+        if not image:
+            return jsonify({"message": "Image not found on this listing"}), 404
+
+        kind = _normalize_car_image_kind(image.kind)
+        if kind == "listing":
+            remaining_listing = (
+                CarImage.query.filter(
+                    CarImage.car_id == car.id,
+                    CarImage.id != image.id,
+                    CarImage.kind != "damage",
+                ).count()
+            )
+            if remaining_listing == 0:
+                return (
+                    jsonify(
+                        {
+                            "message": (
+                                "At least one photo is required. Add a new "
+                                "photo before removing the last one."
+                            )
+                        }
+                    ),
+                    400,
+                )
+
+        was_primary = bool(image.is_primary) and kind == "listing"
+        image_url = image.image_url
+
+        db.session.delete(image)
+
+        if was_primary:
+            next_image = (
+                CarImage.query.filter(
+                    CarImage.car_id == car.id,
+                    CarImage.id != image.id,
+                    CarImage.kind != "damage",
+                )
+                .order_by(CarImage.order.asc(), CarImage.id.asc())
+                .first()
+            )
+            if next_image:
+                next_image.is_primary = True
+
+        db.session.commit()
+
+        _delete_media_storage_object(image_url)
+
+        log_user_action(current_user, "delete_image", "car", car.public_id)
+
+        try:
+            primary = _pick_primary_listing_url(car)
+        except Exception:
+            primary = None
+
+        return (
+            jsonify({"message": "Image deleted", "image_url": primary or ""}),
+            200,
+        )
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to delete image"}), 500
+
+
+@bp.route("/api/cars/<car_id>/videos/<int:video_id>", methods=["DELETE"])
+@jwt_required()
+def delete_car_video(car_id: str, video_id: int):
+    """Delete one video from a listing: removes the DB row and (best-effort)
+    the underlying storage object. Owner (or admin) only; no minimum-count
+    invariant -- videos are optional listing media, unlike photos."""
+    try:
+        current_user = get_current_user()
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
+
+        car = _get_car_by_any_id(car_id)
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            return jsonify({"message": "Not authorized to modify videos for this listing"}), 403
+
+        video = CarVideo.query.filter_by(id=video_id, car_id=car.id).first()
+        if not video:
+            return jsonify({"message": "Video not found on this listing"}), 404
+
+        video_url = video.video_url
+        db.session.delete(video)
+        db.session.commit()
+
+        _delete_media_storage_object(video_url)
+
+        log_user_action(current_user, "delete_video", "car", car.public_id)
+        return jsonify({"message": "Video deleted"}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to delete video"}), 500
+
+
 @bp.route("/api/media/r2/sign-upload", methods=["POST"])
 @jwt_required()
 @rate_limit(max_requests=60, window_minutes=60, per_ip=False)

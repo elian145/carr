@@ -38,7 +38,7 @@ part 'my_listings_page_widgets.dart';
 @visibleForTesting
 Object? debugMyListingsLoadDraftsError;
 
-enum _MyListingsFilter { all, active, pending, sold, draft }
+enum _MyListingsFilter { all, active, pending, hidden, sold, draft }
 
 class MyListingsPage extends StatefulWidget {
   const MyListingsPage({super.key});
@@ -98,6 +98,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final next = switch (raw) {
       'pending' => _MyListingsFilter.pending,
       'active' => _MyListingsFilter.active,
+      'hidden' => _MyListingsFilter.hidden,
       'sold' => _MyListingsFilter.sold,
       'draft' => _MyListingsFilter.draft,
       _ => null,
@@ -171,6 +172,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       final status = switch (_filter) {
         _MyListingsFilter.active => 'active',
         _MyListingsFilter.pending => 'pending',
+        _MyListingsFilter.hidden => 'hidden',
         _MyListingsFilter.sold => 'sold',
         _ => null,
       };
@@ -395,6 +397,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       children: [
         _buildListingFilters(),
         if (_filter == _MyListingsFilter.pending) _buildPendingExplainer(),
+        if (_filter == _MyListingsFilter.hidden) _buildHiddenExplainer(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {

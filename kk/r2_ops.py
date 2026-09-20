@@ -354,6 +354,27 @@ def r2_presign_get(
     return url
 
 
+def r2_delete_object(*, key: str, timeout: float = 30) -> None:
+    """Delete one object from the listing-media R2 bucket (eventlet-safe).
+
+    Best-effort by contract of the underlying S3 `DeleteObject` call: a key
+    that no longer exists (already deleted, or the DB row was never
+    successfully uploaded) is not an error -- S3 returns success either way.
+    Callers that want deletion to never block a DB-row delete should still
+    wrap this in their own try/except (see
+    ``kk/routes/media.py::_delete_media_storage_object``).
+    """
+    if not key:
+        return
+    creds = _cred_payload()
+    payload: dict[str, Any] = {
+        **creds,
+        "op": "delete_object",
+        "key": key,
+    }
+    _run_r2_op(payload, timeout=timeout)
+
+
 def r2_presign_put(
     *,
     key: str,

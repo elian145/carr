@@ -27,7 +27,7 @@ from ..models import (
 )
 from ..security import atomic_increment_attempts, generate_secure_filename, validate_file_upload
 from ..security import validate_input_sanitization
-from ..localization import normalize_locale
+from ..localization import get_background_locale, normalize_locale, translate
 from ..time_utils import utcnow
 from ..dealer_socials import clean_dealership_socials, public_dealership_socials
 from .media import _r2_configured, _r2_public_base
@@ -402,11 +402,15 @@ def _save_dealer_application(user: User, data: dict) -> DealerApplication:
         )
     )
     if submit:
+        # MI-03/batch-2: this is the applicant's own stored locale -- the
+        # notification is about their own submission, not a per-request
+        # Accept-Language concern.
+        _locale = get_background_locale(getattr(user, "locale", None))
         db.session.add(
             Notification(
                 user_id=user.id,
-                title="Dealer application submitted",
-                message="Your dealership details were received and are ready for review.",
+                title=translate("dealer_application_submitted_title", _locale),
+                message=translate("dealer_application_submitted_body", _locale),
                 notification_type="dealer_application",
                 data={"application_id": application.public_id, "status": next_status},
             )

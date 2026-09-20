@@ -6,12 +6,14 @@ Run in a subprocess so the parent process (eventlet/gunicorn) never creates a
 boto3 SSL context — avoids RecursionError from eventlet monkey-patching ssl.
 
 Stdin JSON:
-  op: "put_object" | "presign_put" | "presign_get"
+  op: "put_object" | "presign_put" | "presign_get" | "delete_object"
   account_id, bucket, access_key, secret_key, region (optional, default auto)
   key, content_type
   put_object: body_path (path to local file)
   presign_put: expires_in (optional), content_length (optional)
   presign_get: expires_in (optional) — C-10 private chat-media downloads
+  delete_object: none (S3's DeleteObject is idempotent -- deleting an
+    already-missing key is not an error)
 
 Stdout: {"ok": true, ...} or {"error": "..."}
 """
@@ -97,6 +99,15 @@ def main() -> None:
                 ExpiresIn=expires_in,
             )
             json.dump({"ok": True, "download_url": url, "key": key}, sys.stdout)
+            return
+
+        if op == "delete_object":
+            # S3's DeleteObject is idempotent: deleting a key that does not
+            # exist still returns 204/success rather than raising, so a
+            # media row whose storage object was already removed (or never
+            # made it to R2) deletes cleanly here too.
+            client.delete_object(Bucket=bucket, Key=key)
+            json.dump({"ok": True, "key": key}, sys.stdout)
             return
 
         json.dump({"error": f"unknown op: {op}"}, sys.stdout)

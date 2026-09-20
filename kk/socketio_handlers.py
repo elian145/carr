@@ -356,7 +356,11 @@ def register_socketio_handlers(socketio) -> None:
                 sender_name = f"{me.first_name} {me.last_name}".strip() or "Someone"
                 ok = send_push(
                     fcm_token,
-                    title=f"New message from {sender_name}",
+                    title=translate(
+                        "new_message_push_title",
+                        get_background_locale(getattr(receiver, "locale", None)),
+                        name=sender_name,
+                    ),
                     body=content[:200],
                     data={"car_id": car.public_id, "sender_id": me.public_id, "type": "chat_message"},
                     user_id=receiver.id,

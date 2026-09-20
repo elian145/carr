@@ -1810,6 +1810,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get myListingsNoPendingHint => 'الإعلانات بانتظار المراجعة ستظهر هنا.';
 
   @override
+  String get listingHiddenBadge => 'مخفي';
+
+  @override
+  String get myListingsHiddenFilter => 'مخفي';
+
+  @override
+  String get myListingsHiddenExplainer =>
+      'تم إخفاء هذه الإعلانات من قبل فريق المراجعة لدينا وهي غير ظاهرة للمشترين. تواصل مع الدعم إذا كانت لديك أسئلة.';
+
+  @override
+  String get myListingsNoHiddenTitle => 'لا توجد إعلانات مخفية';
+
+  @override
+  String get myListingsNoHiddenHint =>
+      'الإعلانات المخفية من قبل المراجعة ستظهر هنا.';
+
+  @override
   String get joinAnd => ' و';
 
   @override

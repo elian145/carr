@@ -32,7 +32,11 @@ Widget _buildGlobalCarCard(
   final brandId = brandLogoSlug(brand.toString());
   final trimLine = localizedTrimForCard(context, car);
   final bool sold = isListingSold(Map<String, dynamic>.from(car));
-  final bool pending = listingShowsPendingBadge(Map<String, dynamic>.from(car));
+  final Widget? statusBadge = buildListingStatusBadge(
+    context,
+    Map<String, dynamic>.from(car),
+    large: true,
+  );
   final bool featured = listingIsFeatured(car);
   final String yearRaw = (car['year'] ?? '').toString().trim();
   final String mileageRaw = (car['mileage'] ?? '').toString().trim();
@@ -233,13 +237,8 @@ Widget _buildGlobalCarCard(
                                     large: true,
                                   ),
                                 )
-                              else if (pending)
-                                Center(
-                                  child: buildListingPendingBadge(
-                                    context,
-                                    large: true,
-                                  ),
-                                ),
+                              else if (statusBadge != null)
+                                Center(child: statusBadge),
                               Positioned(
                                 bottom: 8,
                                 right: 8,
@@ -325,13 +324,8 @@ Widget _buildGlobalCarCard(
                           Center(
                             child: buildListingSoldBadge(context, large: true),
                           )
-                        else if (pending)
-                          Center(
-                            child: buildListingPendingBadge(
-                              context,
-                              large: true,
-                            ),
-                          ),
+                        else if (statusBadge != null)
+                          Center(child: statusBadge),
                         Positioned(
                           bottom: 8,
                           right: 8,

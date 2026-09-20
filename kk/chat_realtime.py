@@ -18,6 +18,7 @@ import logging
 from sqlalchemy import and_, or_
 
 from .extensions import socketio
+from .localization import get_background_locale, translate
 from .models import BlockedUser, Car, Message, Notification, User, db
 from .push import send_push
 
@@ -243,9 +244,15 @@ def deliver_message(msg: Message, *, sender: User, receiver: User) -> dict:
     # insert (never the already-committed Message) and leave the session usable.
     try:
         car = msg.car
+        # MI-03/batch-2: this is a background/no-request-context delivery
+        # path (REST fallback for the socket flow in socketio_handlers.py,
+        # which already localizes this same title) -- use the receiver's
+        # stored locale, never the sender's or the current request's.
         notif = Notification(
             user_id=receiver.id,
-            title="New message",
+            title=translate(
+                "new_message_title", get_background_locale(getattr(receiver, "locale", None))
+            ),
             message=(msg.content or "")[:200],
             notification_type="message",
             is_read=False,
@@ -277,7 +284,11 @@ def deliver_message(msg: Message, *, sender: User, receiver: User) -> dict:
             car = msg.car
             send_push(
                 fcm_token,
-                title=f"New message from {sender_name}",
+                title=translate(
+                    "new_message_push_title",
+                    get_background_locale(getattr(receiver, "locale", None)),
+                    name=sender_name,
+                ),
                 body=(msg.content or "")[:200],
                 data={
                     "car_id": car.public_id if car else None,

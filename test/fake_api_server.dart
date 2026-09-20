@@ -46,6 +46,22 @@ class FakeApiServer {
   static final Map<String, http.Response Function()> carContactOverrides =
       <String, http.Response Function()>{};
 
+  /// CarNet V1 batch 2 (rejected/hidden vs pending listing status UX)
+  /// regression coverage: when set, `GET /api/user/my-listings?status=X`
+  /// returns `byStatus[X] ?? []` (`byStatus['']` for the unfiltered "All"
+  /// tab) instead of the generic empty-list stub. Cleared by [stop].
+  static Map<String, List<Map<String, dynamic>>>? myListingsByStatus;
+
+  /// CarNet V1 batch 2 (favorites pagination) regression coverage: when
+  /// set, `GET /api/user/favorites` paginates this full item list by the
+  /// request's `page`/`per_page` query params instead of returning the
+  /// generic empty-list stub. Cleared by [stop].
+  static List<Map<String, dynamic>>? favoritesAllItems;
+
+  /// Records every `page` value requested via
+  /// `GET /api/user/favorites?page=N`, in call order. Reset by [stop].
+  static final List<int> favoritesRequestedPages = [];
+
   /// F-04 regression coverage: when set, `GET /api/user/favorites` awaits
   /// this completer instead of returning the default stub immediately, so
   /// tests can deterministically control exactly when the response resolves
@@ -107,6 +123,28 @@ class FakeApiServer {
   /// a retry made.
   static int chatSendCallCount = 0;
 
+  /// CarNet V1 batch 2 (edit listing: delete photos/videos) regression
+  /// coverage: records every `DELETE /api/cars/<carId>/images/<imageId>`
+  /// call as `"<carId>/<imageId>"`, in call order. Reset by [stop].
+  static final List<String> deletedCarImageCalls = [];
+
+  /// Same as [deletedCarImageCalls] but for
+  /// `DELETE /api/cars/<carId>/videos/<videoId>`. Reset by [stop].
+  static final List<String> deletedCarVideoCalls = [];
+
+  /// Per-call override for `DELETE /api/cars/<carId>/images/<imageId>`.
+  /// Called with `(carId, imageId)`; return an [http.Response] to force a
+  /// specific status/body (e.g. a 400 last-photo-invariant rejection), or
+  /// `null` to fall through to the default 200 success stub. Cleared by
+  /// [stop].
+  static http.Response? Function(String carId, String imageId)?
+      deleteCarImageOverride;
+
+  /// Same as [deleteCarImageOverride] but for the video-delete endpoint.
+  /// Cleared by [stop].
+  static http.Response? Function(String carId, String videoId)?
+      deleteCarVideoOverride;
+
   /// When set, protected routes reject requests whose Authorization header
   /// is not `Bearer <token>`.
   static void expectBearer(String? token) {
@@ -153,6 +191,13 @@ class FakeApiServer {
     notificationsOverride = null;
     notificationsGetOverride = null;
     markNotificationReadCalls.clear();
+    deletedCarImageCalls.clear();
+    deletedCarVideoCalls.clear();
+    deleteCarImageOverride = null;
+    deleteCarVideoOverride = null;
+    favoritesAllItems = null;
+    favoritesRequestedPages.clear();
+    myListingsByStatus = null;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -256,6 +301,29 @@ class FakeApiServer {
       }
       if (segments.length > 1 && segments[1] == 'videos' && method == 'POST') {
         return _json(201, {'videos': <dynamic>[], 'message': 'stub'});
+      }
+      // CarNet V1 batch 2 (edit listing: delete photos/videos) regression
+      // coverage: DELETE /api/cars/<id>/images/<image_id> and
+      // /api/cars/<id>/videos/<video_id>.
+      if (segments.length > 2 && segments[1] == 'images' && method == 'DELETE') {
+        final imageId = segments[2];
+        deletedCarImageCalls.add('$id/$imageId');
+        final override = deleteCarImageOverride;
+        if (override != null) {
+          final forced = override(id, imageId);
+          if (forced != null) return forced;
+        }
+        return _json(200, {'message': 'Image deleted', 'image_url': ''});
+      }
+      if (segments.length > 2 && segments[1] == 'videos' && method == 'DELETE') {
+        final videoId = segments[2];
+        deletedCarVideoCalls.add('$id/$videoId');
+        final override = deleteCarVideoOverride;
+        if (override != null) {
+          final forced = override(id, videoId);
+          if (forced != null) return forced;
+        }
+        return _json(200, {'message': 'Video deleted'});
       }
       if (method == 'PUT' || method == 'PATCH') {
         return _json(200, {'car': _sampleCar(id), 'message': 'updated'});
@@ -408,6 +476,33 @@ class FakeApiServer {
       return _json(200, <String, dynamic>{});
     }
 
+    // CarNet V1 batch 2 (favorites pagination) regression coverage:
+    // GET /api/user/favorites?page=N&per_page=M, paginated from
+    // [favoritesAllItems] when set (falls through to the generic empty-list
+    // stub in the switch below otherwise).
+    if (path == '/api/user/favorites' && method == 'GET') {
+      final all = favoritesAllItems;
+      if (all != null) {
+        final page = int.tryParse(request.url.queryParameters['page'] ?? '') ?? 1;
+        final perPage =
+            int.tryParse(request.url.queryParameters['per_page'] ?? '') ?? 20;
+        favoritesRequestedPages.add(page);
+        final start = (page - 1) * perPage;
+        final items = start >= all.length
+            ? <Map<String, dynamic>>[]
+            : all.sublist(start, (start + perPage).clamp(0, all.length));
+        final hasNext = (start + perPage) < all.length;
+        return _json(200, {
+          'cars': items,
+          'pagination': {
+            'page': page,
+            'per_page': perPage,
+            'has_next': hasNext,
+          },
+        });
+      }
+    }
+
     if (path.startsWith('/api/saved-searches/')) {
       if (method == 'DELETE') {
         return _json(200, {'message': 'deleted'});
@@ -434,6 +529,15 @@ class FakeApiServer {
       case '/api/my_listings':
         return _json(200, <dynamic>[]);
       case '/api/user/my-listings':
+        final byStatus = myListingsByStatus;
+        if (byStatus != null) {
+          final status = request.url.queryParameters['status'] ?? '';
+          final items = byStatus[status] ?? const <Map<String, dynamic>>[];
+          return _json(200, {
+            'cars': items,
+            'pagination': {'has_next': false},
+          });
+        }
         return _json(200, {
           'cars': <dynamic>[],
           'pagination': {'has_next': false},

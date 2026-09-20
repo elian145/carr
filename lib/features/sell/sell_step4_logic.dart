@@ -430,6 +430,69 @@ mixin _SellStep4Logic on _SellStep4Fields {
     return ListingImageMedia.map(file, width: width, height: height);
   }
 
+  /// Removes the photo at [index] from the wizard's local media state.
+  ///
+  /// If this photo already exists on the server (has a backend image id and
+  /// we're editing an existing listing), the server row/storage object is
+  /// deleted first; the local list is only updated once that succeeds so a
+  /// failed delete (e.g. the last-photo invariant, or a network error) never
+  /// leaves the UI showing a photo that's actually still live on the server,
+  /// or drops a photo from the draft when it wasn't actually deleted.
+  Future<void> _removePhotoAt(int index) async {
+    if (index < 0 || index >= _selectedImages.length) return;
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final image = _selectedImages[index];
+    final imageId = ListingImageMedia.id(image);
+    final editListingId = parentState?._editListingId;
+    final isEditMode = parentState?._isEditMode == true;
+
+    if (imageId != null && isEditMode && editListingId != null) {
+      try {
+        await ApiService.deleteCarImage(editListingId, imageId);
+      } catch (e, st) {
+        logNonFatal(e, st);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                userErrorText(
+                  context,
+                  e,
+                  fallback:
+                      AppLocalizations.of(context)?.errorTitle ?? 'Error',
+                ),
+              ),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _selectedImages.removeAt(index);
+      if (index < _blurredImages.length) {
+        _blurredImages.removeAt(index);
+      } else {
+        _blurredImages = [];
+        _imagesProcessed = false;
+      }
+      _onImageRemovedAt(index);
+      if (_selectedImages.isEmpty) {
+        _blurredImages = [];
+        _imagesProcessed = false;
+      }
+    });
+    parentState?.carData.remove('use_blurred_plates');
+    parentState?.invalidatePlateBlurJob();
+    parentState?.invalidatePhotoPrestage();
+    unawaited(_syncMediaDraftToParent());
+    if (_selectedImages.isNotEmpty) {
+      unawaited(parentState?.startBackgroundPlateBlur());
+    }
+  }
+
   void _setPrimaryImage(int index) {
     if (index < 0 || index >= _selectedImages.length) return;
     if (index == _primaryImageIndex) return;
