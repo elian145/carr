@@ -92,6 +92,115 @@ def _find_car(car_id: str) -> Car | None:
     return None
 
 
+def _car_moderation_state(is_active: bool, status: str | None) -> str | None:
+    """Classify a Car's (is_active, status) pair into the seller-facing
+    moderation bucket this batch notifies for. Returns ``None`` for any
+    state outside "approved/active" vs "hidden" (e.g. sold, pending,
+    draft) -- those are not moderation actions and are intentionally out
+    of scope for this notification (see CarNet V1 batch-3 instructions).
+
+    "hidden" is intentionally broad (any non-"active" status, OR
+    ``is_active=False`` regardless of the status string) because that
+    mirrors the exact public-visibility check in ``kk/routes/cars.py``
+    (``car.is_active and (car.status or "active") == "active"``) -- a
+    listing the seller can no longer be found by buyers should read as
+    "hidden" to them even if an admin only flipped one of the two fields.
+    """
+    s = (status or "").strip().lower()
+    if is_active and s in ("", "active"):
+        return "active"
+    if s == "hidden" or not is_active:
+        return "hidden"
+    return None
+
+
+def _queue_listing_moderation_notification(
+    car: Car, new_state: str, *, reason: str | None = None
+) -> Notification | None:
+    """Build and `db.session.add()` (but do not commit) a Notification for
+    the listing's seller after an admin moderation action actually changes
+    its public-visibility bucket. Returns ``None`` (adding nothing) if the
+    listing has no resolvable seller -- ``Car.seller_id`` is NOT
+    NULL/RESTRICT so this should not normally happen, but this must never
+    raise over a missing relationship.
+
+    Caller is responsible for commit + best-effort delivery (push/realtime)
+    via `_deliver_listing_moderation_notification` afterwards, mirroring
+    the existing `_review_dealer_application()` / `dealers_approve()`
+    pattern.
+    """
+    seller = car.seller
+    if seller is None:
+        return None
+    locale = get_background_locale(getattr(seller, "locale", None))
+    if new_state == "active":
+        title = translate("listing_moderation_active_title", locale)
+        message = translate("listing_moderation_active_body", locale)
+    elif new_state == "removed":
+        title = translate("listing_moderation_removed_title", locale)
+        message = translate("listing_moderation_removed_body", locale)
+    else:  # "hidden"
+        title = translate("listing_moderation_hidden_title", locale)
+        # An admin-provided reason is the admin's own written words -- pass
+        # it through verbatim in every locale (never machine-translated),
+        # and never fabricate one when the admin didn't supply it.
+        message = reason or translate("listing_moderation_hidden_default_body", locale)
+
+    data: dict = {"status": new_state}
+    if new_state != "removed":
+        # A soft-deleted listing is no longer viewable even though the row
+        # is retained for audit (D-01) -- never deep-link a notification
+        # into a listing detail page that will 404 / look gone.
+        data["car_id"] = car.public_id
+
+    notification = Notification(
+        user_id=seller.id,
+        title=title,
+        message=message,
+        notification_type="listing_status",
+        data=data,
+    )
+    db.session.add(notification)
+    return notification
+
+
+def _deliver_listing_moderation_notification(notification: Notification, seller: User) -> None:
+    """Best-effort push + realtime emit for an already-committed listing
+    moderation Notification -- mirrors `dealers_approve()`'s pattern."""
+    notif_data = notification.data or {}
+    push_data = {
+        "type": "listing_status",
+        "status": notif_data.get("status"),
+        "notification_id": notification.public_id,
+    }
+    if notif_data.get("car_id"):
+        push_data["car_id"] = notif_data["car_id"]
+    if seller.firebase_token:
+        try:
+            send_push(
+                seller.firebase_token,
+                title=notification.title,
+                body=notification.message,
+                data=push_data,
+                user_id=seller.id,
+            )
+        except Exception:
+            logger.exception(
+                "Listing moderation push failed for user %s", seller.public_id
+            )
+    try:
+        socketio.emit(
+            "new_notification",
+            notification.to_dict(),
+            room=f"user:{seller.public_id}",
+        )
+    except Exception:
+        logger.exception(
+            "Listing moderation realtime notification failed for user %s",
+            seller.public_id,
+        )
+
+
 def _find_user(public_id: str) -> User | None:
     pid = (public_id or "").strip()
     if not pid:
@@ -1410,6 +1519,11 @@ def update_car_status(car_id: str):
         if not car:
             return jsonify({"message": "Listing not found"}), 404
         data = request.get_json(silent=True) or {}
+        # CarNet V1 batch-3: snapshot the pre-update moderation bucket so we
+        # can tell afterwards whether this PATCH actually changed the
+        # listing's public-visibility state (no notification otherwise --
+        # e.g. an is_featured-only update must never notify the seller).
+        old_moderation_state = _car_moderation_state(car.is_active, car.status)
         if "is_active" in data:
             car.is_active = bool(data["is_active"])
         if "status" in data and str(data["status"]).strip():
@@ -1446,8 +1560,28 @@ def update_car_status(car_id: str):
                     car.featured_until = parsed
 
         car.updated_at = utcnow()
+
+        # CarNet V1 batch-3: notify the seller only when the visible
+        # moderation bucket actually changed into "active" or "hidden" --
+        # never on a no-op resend, and never for buckets out of scope
+        # (sold/pending/draft). An optional admin-provided `reason` is
+        # used verbatim for the "hidden" body; never fabricated.
+        new_moderation_state = _car_moderation_state(car.is_active, car.status)
+        moderation_reason = (data.get("reason") or "").strip() or None
+        moderation_notification = None
+        if (
+            new_moderation_state in ("active", "hidden")
+            and new_moderation_state != old_moderation_state
+        ):
+            moderation_notification = _queue_listing_moderation_notification(
+                car, new_moderation_state, reason=moderation_reason
+            )
+        moderation_seller = car.seller
+
         db.session.commit()
         invalidate_filter_facets_cache()
+        if moderation_notification is not None and moderation_seller is not None:
+            _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
         if admin_user:
             log_user_action(
                 admin_user,
@@ -1507,6 +1641,12 @@ def bulk_update_car_status():
             else:
                 parsed_featured_until = _parse_featured_until(raw_featured_until)
 
+        # CarNet V1 batch-3: one optional free-text reason applies to every
+        # listing this bulk PATCH actually hides (verbatim, never
+        # translated/fabricated) -- mirrors the single-car endpoint.
+        bulk_moderation_reason = (data.get("reason") or "").strip() or None
+        pending_moderation_notifications: list[tuple[Notification, User]] = []
+
         updated = []
         missing = []
         for raw_id in ids:
@@ -1514,6 +1654,7 @@ def bulk_update_car_status():
             if not car:
                 missing.append(str(raw_id))
                 continue
+            old_moderation_state = _car_moderation_state(car.is_active, car.status)
             if "is_active" in patch:
                 car.is_active = patch["is_active"]
             if "status" in patch:
@@ -1535,6 +1676,18 @@ def bulk_update_car_status():
                         car.featured_until = parsed_featured_until
 
             car.updated_at = utcnow()
+
+            new_moderation_state = _car_moderation_state(car.is_active, car.status)
+            if (
+                new_moderation_state in ("active", "hidden")
+                and new_moderation_state != old_moderation_state
+            ):
+                notif = _queue_listing_moderation_notification(
+                    car, new_moderation_state, reason=bulk_moderation_reason
+                )
+                if notif is not None and car.seller is not None:
+                    pending_moderation_notifications.append((notif, car.seller))
+
             updated.append(car.public_id or str(car.id))
 
         if not updated:
@@ -1542,6 +1695,8 @@ def bulk_update_car_status():
 
         db.session.commit()
         invalidate_filter_facets_cache()
+        for notif, seller in pending_moderation_notifications:
+            _deliver_listing_moderation_notification(notif, seller)
         if admin_user:
             log_user_action(
                 admin_user,
@@ -2186,12 +2341,26 @@ def delete_car(car_id: str):
 
         remove_listing_from_all_favorites(car.id)
         remove_listing_from_all_view_history(car.id)
+
+        # CarNet V1 batch-3: only notify "removed" if this delete is the
+        # action that actually took the listing out of public view --
+        # never a duplicate if it was already hidden/inactive.
+        old_moderation_state = _car_moderation_state(car.is_active, car.status)
+
         car.is_active = False
         if not (car.status or "").strip() or car.status == "active":
             car.status = "hidden"
         car.updated_at = utcnow()
+
+        moderation_notification = None
+        if old_moderation_state != "hidden":
+            moderation_notification = _queue_listing_moderation_notification(car, "removed")
+        moderation_seller = car.seller
+
         db.session.commit()
         invalidate_filter_facets_cache()
+        if moderation_notification is not None and moderation_seller is not None:
+            _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
 
         if admin_user:
             log_user_action(

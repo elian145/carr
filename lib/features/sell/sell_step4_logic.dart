@@ -28,6 +28,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _blurredImages = [];
           _damageImages = [];
           _selectedVideos.clear();
+          _existingServerVideos = [];
           _primaryImageIndex = 0;
           _imagesProcessed = false;
           _isProcessingImages = false;
@@ -41,6 +42,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData.remove('original_damage_images');
         parentState.carData.remove('blurred_damage_images');
         parentState.carData.remove('videos');
+        parentState.carData.remove('existing_video_records');
         parentState.carData.remove('images_processed');
         parentState.carData.remove('processed_image_paths');
         parentState.carData.remove('use_blurred_plates');
@@ -54,6 +56,12 @@ mixin _SellStep4Logic on _SellStep4Fields {
           parentState?.carData['damage_images'];
       final parentDamageBlurred = parentState?.carData['blurred_damage_images'];
       final parentVideos = parentState?.carData['videos'];
+      // CarNet V1 batch-3: raw existing-video records (with server `id`),
+      // set once by `listingToSellDraftSnapshot` when entering edit mode.
+      // Not merged with picker-driven `_selectedVideos`/draft persistence --
+      // this is a read/delete-only view of what's already on the server.
+      final parentExistingVideoRecords =
+          parentState?.carData['existing_video_records'];
       List<dynamic> stepImages = const [];
       List<dynamic> stepBlurred = const [];
       List<dynamic> stepDamage = const [];
@@ -134,6 +142,12 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _selectedVideos
             ..clear()
             ..addAll(ListingImageMedia.localFiles(mergedVideos));
+          _existingServerVideos = parentExistingVideoRecords is List
+              ? parentExistingVideoRecords
+                    .whereType<Map>()
+                    .map((e) => Map<String, dynamic>.from(e))
+                    .toList()
+              : [];
           _clampPrimaryImageIndex();
           _isProcessingImages = false;
         });
@@ -490,6 +504,54 @@ mixin _SellStep4Logic on _SellStep4Fields {
     unawaited(_syncMediaDraftToParent());
     if (_selectedImages.isNotEmpty) {
       unawaited(parentState?.startBackgroundPlateBlur());
+    }
+  }
+
+  /// Deletes an already-uploaded video (shown while editing an existing
+  /// listing) from the backend, then removes it locally on success.
+  ///
+  /// Optimistic-with-rollback: the server call happens first; the tile
+  /// only disappears once the delete actually succeeds, and a failure
+  /// leaves `_existingServerVideos` untouched and surfaces the existing
+  /// Sell-flow error snackbar, so a removed-looking-but-still-live video
+  /// can never reappear later and confuse the seller.
+  Future<void> _removeExistingVideoAt(int index) async {
+    if (index < 0 || index >= _existingServerVideos.length) return;
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    final editListingId = parentState?._editListingId;
+    if (editListingId == null) return;
+    final video = _existingServerVideos[index];
+    final videoId = ListingImageMedia.id(video);
+    if (videoId == null) return;
+
+    try {
+      await ApiService.deleteCarVideo(editListingId, videoId);
+    } catch (e, st) {
+      logNonFatal(e, st);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              userErrorText(
+                context,
+                e,
+                fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+              ),
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _existingServerVideos.removeAt(index);
+    });
+    if (parentState != null) {
+      parentState.carData['existing_video_records'] = List<dynamic>.from(
+        _existingServerVideos,
+      );
     }
   }
 

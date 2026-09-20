@@ -59,13 +59,22 @@ Map<String, dynamic> listingToSellDraftSnapshot(
   }
 
   final videoPaths = <String>[];
+  // CarNet V1 batch-3: also keep the raw `{id, video_url, thumbnail_url}`
+  // records (not just bare path strings) so the edit wizard can offer
+  // per-video delete against the backend -- `videoPaths`/`'videos'` below
+  // is unchanged and still feeds the existing new-video upload pipeline.
+  final existingVideoRecords = <Map<String, dynamic>>[];
   final videos = listing['videos'];
   if (videos is List) {
     for (final it in videos) {
       final path = it is Map
           ? (it['video_url'] ?? it['url'] ?? it['path'] ?? '').toString()
           : it.toString();
-      if (path.trim().isNotEmpty) videoPaths.add(path.trim());
+      if (path.trim().isEmpty) continue;
+      videoPaths.add(path.trim());
+      if (it is Map) {
+        existingVideoRecords.add(Map<String, dynamic>.from(it));
+      }
     }
   }
 
@@ -132,6 +141,8 @@ Map<String, dynamic> listingToSellDraftSnapshot(
           .take(3)
           .toList(),
     if (damageImages.isNotEmpty) 'damage_images': damageImages,
+    if (existingVideoRecords.isNotEmpty)
+      'existing_video_records': existingVideoRecords,
   };
 
   return {

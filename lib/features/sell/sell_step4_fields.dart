@@ -13,6 +13,14 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   /// Local picks and/or server-relative paths for damage / crash disclosure.
   List<dynamic> _damageImages = [];
   final List<XFile> _selectedVideos = [];
+  /// CarNet V1 batch-3: already-uploaded videos on the listing being
+  /// edited (each a `{id, video_url, thumbnail_url, ...}` map from the
+  /// server). Kept separate from [_selectedVideos] (newly-picked local
+  /// files awaiting upload) so the existing pick/persist/upload pipeline
+  /// for new videos is untouched -- this list exists purely so an owner
+  /// editing a listing can see and delete videos that are already live on
+  /// the server (backend `DELETE /api/cars/<id>/videos/<video_id>`).
+  List<Map<String, dynamic>> _existingServerVideos = [];
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
   /// True while chosen photos/videos are being processed into the draft.

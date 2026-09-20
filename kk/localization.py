@@ -297,6 +297,41 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
             "پەیوەندی شوکەکەت. ئەم کۆدە لە ماوەی 10 خولەکدا بەسەردەچێت.</p>"
         ),
     },
+    # kk/routes/admin.py -- seller-facing listing-moderation notifications
+    # (update_car_status / bulk_update_car_status / delete_car). Titles are
+    # always localized; the "hidden" default body is only used when the
+    # admin supplied no free-text `reason` (a supplied reason is the
+    # admin's own words and is passed through verbatim, never translated).
+    "listing_moderation_active_title": {
+        "en": "Listing approved",
+        "ar": "تمت الموافقة على الإعلان",
+        "ku": "ڕێکلامەکە پەسەند کرا",
+    },
+    "listing_moderation_active_body": {
+        "en": "Your listing is now live and visible to buyers.",
+        "ar": "إعلانك أصبح الآن مباشرًا ومرئيًا للمشترين.",
+        "ku": "ڕێکلامەکەت ئێستا چالاکە و بۆ کڕیاران دیارە.",
+    },
+    "listing_moderation_hidden_title": {
+        "en": "Listing hidden",
+        "ar": "تم إخفاء الإعلان",
+        "ku": "ڕێکلامەکە شاردرایەوە",
+    },
+    "listing_moderation_hidden_default_body": {
+        "en": "Your listing was hidden by our moderation team.",
+        "ar": "تم إخفاء إعلانك من قبل فريق المراجعة لدينا.",
+        "ku": "ڕێکلامەکەت لەلایەن تیمی پێداچوونەوەمانەوە شاردرایەوە.",
+    },
+    "listing_moderation_removed_title": {
+        "en": "Listing removed",
+        "ar": "تمت إزالة الإعلان",
+        "ku": "ڕێکلامەکە لابرا",
+    },
+    "listing_moderation_removed_body": {
+        "en": "Your listing was removed by our moderation team.",
+        "ar": "تمت إزالة إعلانك من قبل فريق المراجعة لدينا.",
+        "ku": "ڕێکلامەکەت لەلایەن تیمی پێداچوونەوەمانەوە لابرا.",
+    },
     # kk/app_settings.py + kk/routes/misc.py -- force-update gate
     # (GET /api/config/app), built-in fallback text when no admin-configured
     # override exists for the resolved locale.
