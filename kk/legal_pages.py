@@ -40,6 +40,14 @@ def default_privacy_url() -> str:
 
 
 def _support_email() -> str:
+    """Effective support/contact email (DB override, else SUPPORT_EMAIL env).
+
+    No hardcoded fallback mailbox: SUPPORT_EMAIL is required in production
+    (enforced by validate_required_secrets() in kk/config.py), so a missing
+    value fails app boot loudly instead of silently swallowing support /
+    account-deletion emails via a fake address. In development/testing where
+    it may be unset, this simply returns an empty string.
+    """
     try:
         from .app_settings import get_platform_settings
 
@@ -48,7 +56,7 @@ def _support_email() -> str:
             return email
     except Exception:
         pass
-    return (os.environ.get("SUPPORT_EMAIL") or "support@carnetiq.app").strip()
+    return (os.environ.get("SUPPORT_EMAIL") or "").strip()
 
 
 def _effective_date() -> str:

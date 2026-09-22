@@ -27,7 +27,7 @@ def validate_required_secrets(env: str | None = None) -> None:
     if env_name in ("development", "testing"):
         return
     missing: list[str] = []
-    for key in ('SECRET_KEY', 'JWT_SECRET_KEY', 'DATABASE_URL'):
+    for key in ('SECRET_KEY', 'JWT_SECRET_KEY', 'DATABASE_URL', 'SUPPORT_EMAIL'):
         if not (os.environ.get(key) or '').strip():
             missing.append(key)
     if missing:

@@ -107,7 +107,12 @@ def default_platform_settings() -> dict[str, Any]:
 
     return {
         "app_name": _env("APP_DISPLAY_NAME", "CarNet"),
-        "support_email": _env("SUPPORT_EMAIL", "support@carnetiq.app"),
+        # No fake fallback mailbox: SUPPORT_EMAIL is required in production
+        # (enforced by validate_required_secrets() in kk/config.py). In
+        # development/testing where it may be unset, this is simply empty --
+        # never a placeholder address that could silently swallow real
+        # support/account-deletion emails.
+        "support_email": _env("SUPPORT_EMAIL", ""),
         "support_phone": _env("SUPPORT_PHONE", ""),
         "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
         "terms_url": _env("TERMS_URL", "") or default_terms_url(),

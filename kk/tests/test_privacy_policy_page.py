@@ -110,6 +110,19 @@ def test_privacy_page_has_effective_date_september_22_2026(monkeypatch):
     assert "Effective: September 22, 2026" in body
 
 
+def test_privacy_page_media_permission_wording_matches_photo_picker_behavior():
+    """S/PERM-01: the Android production app only uses the system Photo
+    Picker (no READ_MEDIA_IMAGES/READ_MEDIA_VIDEO/READ_EXTERNAL_STORAGE/
+    WRITE_EXTERNAL_STORAGE -- see android/app/src/main/AndroidManifest.xml).
+    The Permissions section must not imply CarNet requests broad photo or
+    video library access."""
+    resp = _client().get("/privacy")
+    body = resp.get_data(as_text=True)
+    assert "system media picker" in body
+    assert "does not request broad access to your photo or video library" in body
+    assert "Selecting listing, profile, chat, or dealer media from your library" not in body
+
+
 def test_privacy_page_does_not_show_old_android_package_wording():
     """Old public Google Play/iOS package-identifier wording must not leak
     onto the public Privacy Policy page (S/BRAND-01)."""
@@ -127,17 +140,33 @@ def test_privacy_page_controller_is_carnetiq_by_default(monkeypatch):
 
 
 def test_privacy_page_deletion_retention_wording_does_not_weaken_commitment():
-    """Retention section must commit to deleting account + personal data on
-    request, only carving out narrow, named retention exceptions -- not
-    imply that deactivation alone is an acceptable substitute for deletion."""
+    """Retention section must commit to deleting the account + directly
+    identifying personal data on request, only carving out narrow, named
+    retention exceptions -- not imply that deactivation alone is an
+    acceptable substitute for deletion."""
     resp = _client().get("/privacy")
     body = resp.get_data(as_text=True)
     assert (
-        "we delete your account and personal data associated with it"
+        "we delete your account and directly identifying personal data"
         in body
     )
-    assert "listings, messages, favorites, and saved searches" in body
+    assert "login, profile, favorites, saved searches, and recently viewed history are removed" in body
     assert "kept only for those purposes and for no longer than necessary" in body
+
+
+def test_privacy_page_retention_does_not_imply_full_listing_or_message_deletion():
+    """S/RETAIN-01: the opening retention sentence must not claim listings or
+    chat messages are deleted outright -- they are de-identified/disassociated
+    and the row/message text is retained, as the detailed bullets describe.
+    The old, contradictory phrasing ("we delete ... including listings,
+    messages, favorites, and saved searches") must be gone."""
+    resp = _client().get("/privacy")
+    body = resp.get_data(as_text=True)
+    assert "including listings, messages, favorites, and saved searches" not in body
+    assert "not deleted outright" in body
+    assert "taken offline and have their personal details and media" in body
+    assert "disassociated from your identity" in body
+    assert "kept for trust and safety" in body
 
 
 def test_privacy_page_does_not_leak_secrets_or_credentials():
