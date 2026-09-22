@@ -262,6 +262,47 @@ void main() {
     });
   });
 
+  group('applyExactModelListingFilter', () {
+    // Regression coverage for the runtime-traced "Land Cruiser" ->
+    // "Land Cruiser Prado" bug: the backend's `/api/cars?model=...` filter
+    // is a substring (`ILIKE '%...%'`) match, so a request for
+    // `model=Land Cruiser` genuinely comes back with "Land Cruiser Prado"
+    // (and any other model containing "Land Cruiser") mixed in alongside
+    // the exact "Land Cruiser" rows. This is the client-side fix that
+    // restores exactness once that (correct, as-designed) API response is
+    // in hand.
+    final rows = [
+      {'id': 'lc_1', 'model': 'Land Cruiser'},
+      {'id': 'prado_1', 'model': 'Land Cruiser Prado'},
+      {'id': 'prado_2', 'model': 'Land Cruiser Prado'},
+      {'id': 'lc70_1', 'model': 'Land Cruiser 70'},
+    ];
+
+    test('drops every substring-matched model that is not an exact match', () {
+      final out = applyExactModelListingFilter(rows, selectedModel: 'Land Cruiser');
+      expect(out.map((c) => c['id']), ['lc_1']);
+    });
+
+    test('is case-insensitive and trims whitespace on both sides', () {
+      final out = applyExactModelListingFilter(
+        rows,
+        selectedModel: '  land cruiser  ',
+      );
+      expect(out.map((c) => c['id']), ['lc_1']);
+    });
+
+    test('is a no-op when no model is selected (null or empty)', () {
+      expect(applyExactModelListingFilter(rows, selectedModel: null), rows);
+      expect(applyExactModelListingFilter(rows, selectedModel: ''), rows);
+      expect(applyExactModelListingFilter(rows, selectedModel: '   '), rows);
+    });
+
+    test('returns empty when nothing matches exactly', () {
+      final out = applyExactModelListingFilter(rows, selectedModel: 'Camry');
+      expect(out, isEmpty);
+    });
+  });
+
   group('listingMatchesHomeFilters', () {
     const toyota = {
       'brand': 'toyota',

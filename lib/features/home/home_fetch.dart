@@ -105,6 +105,14 @@ mixin _HomePageFetch on _HomePageFetchCore {
         _debugLog('[home-feed] Attempt $attempt with ${timeout.inSeconds}s timeout');
 
         Map<String, String> filters = _buildFilters();
+        final int traceId = ++_searchTraceRequestSeq;
+        _debugLog(
+          '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
+          'source=_tryDirectSort q=${filters['q']} model=${filters['model']} '
+          'brand=${filters['brand']} page=${filters['page']} '
+          'per_page=${filters['per_page']} sort_by=${filters['sort_by']} '
+          'all_params=$filters',
+        );
         final response = await ApiService.getCarsRaw(
           filters,
           timeout: timeout,
@@ -120,17 +128,28 @@ mixin _HomePageFetch on _HomePageFetchCore {
           // A newer request (search/filter change/another sort) superseded
           // this one while it was in flight — treat as done, not a
           // failure, and never overwrite the newer request's results.
-          if (requestGen != _feedRequestGeneration) return;
+          if (requestGen != _feedRequestGeneration) {
+            _debugLog(
+              '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
+              'current_gen=$_feedRequestGeneration source=_tryDirectSort',
+            );
+            return;
+          }
           final decoded = json.decode(response.body);
           final List<Map<String, dynamic>> parsed =
               listingMapsFromApiResponse(decoded);
+          _debugLog(
+            '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
+            'query="${filters['q']}" status=${response.statusCode} '
+            'models=${_searchTraceListingSummary(parsed)}',
+          );
 
           if (mounted) {
             setState(() {
               if (parsed.isNotEmpty) {
-                cars = _applyDamagedPartsExactFilter(parsed);
+                cars = _applyClientPostFilters(parsed);
               } else if (cars.isEmpty) {
-                cars = _applyDamagedPartsExactFilter(parsed);
+                cars = _applyClientPostFilters(parsed);
               }
               isLoading = false;
               hasLoadedOnce = true;
@@ -144,6 +163,12 @@ mixin _HomePageFetch on _HomePageFetchCore {
           final cacheKey = _homeDiskCacheKey(query);
           unawaited(_writeHomeDiskCache(sp, cacheKey, response.body));
           _HomePageFields._homeFeedCacheFetchedAt = DateTime.now();
+
+          _debugLog(
+            '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
+            'query="${filters['q']}" source=_tryDirectSort '
+            'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
+          );
 
           unawaited(_autoSaveSearch());
           _debugLog('[home-feed] Direct sort successful on attempt $attempt');
@@ -169,6 +194,11 @@ mixin _HomePageFetch on _HomePageFetchCore {
     for (int attempt = 1; attempt <= 3; attempt++) {
       try {
         Map<String, String> filters = _buildFilters();
+        final int traceId = ++_searchTraceRequestSeq;
+        _debugLog(
+          '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
+          'source=_tryAlternativeSort q=${filters['q']} all_params=$filters',
+        );
         final response = await ApiService.getCarsRaw(
           filters,
           timeout: const Duration(seconds: 15),
@@ -183,17 +213,28 @@ mixin _HomePageFetch on _HomePageFetchCore {
         );
 
         if (response.statusCode == 200) {
-          if (requestGen != _feedRequestGeneration) return;
+          if (requestGen != _feedRequestGeneration) {
+            _debugLog(
+              '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
+              'current_gen=$_feedRequestGeneration source=_tryAlternativeSort',
+            );
+            return;
+          }
           final decoded = json.decode(response.body);
           final List<Map<String, dynamic>> parsed =
               listingMapsFromApiResponse(decoded);
+          _debugLog(
+            '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
+            'query="${filters['q']}" status=${response.statusCode} '
+            'models=${_searchTraceListingSummary(parsed)}',
+          );
 
           if (mounted) {
             setState(() {
               if (parsed.isNotEmpty) {
-                cars = _applyDamagedPartsExactFilter(parsed);
+                cars = _applyClientPostFilters(parsed);
               } else if (cars.isEmpty) {
-                cars = _applyDamagedPartsExactFilter(parsed);
+                cars = _applyClientPostFilters(parsed);
               }
               isLoading = false;
               hasLoadedOnce = true;
@@ -201,6 +242,11 @@ mixin _HomePageFetch on _HomePageFetchCore {
             });
           }
 
+          _debugLog(
+            '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
+            'query="${filters['q']}" source=_tryAlternativeSort '
+            'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
+          );
           unawaited(_autoSaveSearch());
           _debugLog('[home-feed] Alternative sort successful on attempt $attempt');
           return;
@@ -222,6 +268,11 @@ mixin _HomePageFetch on _HomePageFetchCore {
     _debugLog('[home-feed] Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
+    final int traceId = ++_searchTraceRequestSeq;
+    _debugLog(
+      '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
+      'source=_trySimpleSort q=${filters['q']} all_params=$filters',
+    );
 
     final response = await ApiService.getCarsRaw(
       filters,
@@ -230,22 +281,38 @@ mixin _HomePageFetch on _HomePageFetchCore {
     );
 
     if (response.statusCode == 200) {
-      if (requestGen != _feedRequestGeneration) return;
+      if (requestGen != _feedRequestGeneration) {
+        _debugLog(
+          '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
+          'current_gen=$_feedRequestGeneration source=_trySimpleSort',
+        );
+        return;
+      }
       final decoded = json.decode(response.body);
       final List<Map<String, dynamic>> parsed =
           listingMapsFromApiResponse(decoded);
+      _debugLog(
+        '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
+        'query="${filters['q']}" status=${response.statusCode} '
+        'models=${_searchTraceListingSummary(parsed)}',
+      );
 
       if (mounted) {
         setState(() {
           if (parsed.isNotEmpty) {
-            cars = _applyDamagedPartsExactFilter(parsed);
+            cars = _applyClientPostFilters(parsed);
           } else if (cars.isEmpty) {
-            cars = _applyDamagedPartsExactFilter(parsed);
+            cars = _applyClientPostFilters(parsed);
           }
           isLoading = false;
           hasLoadedOnce = true;
           loadErrorMessage = null;
         });
+        _debugLog(
+          '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
+          'query="${filters['q']}" source=_trySimpleSort '
+          'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
+        );
       }
       unawaited(_autoSaveSearch());
     } else {
@@ -261,6 +328,11 @@ mixin _HomePageFetch on _HomePageFetchCore {
 
     try {
       Map<String, String> filters = _buildFilters();
+      final int traceId = ++_searchTraceRequestSeq;
+      _debugLog(
+        '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
+        'source=_tryConnectionReset q=${filters['q']} all_params=$filters',
+      );
 
       // Try with a very simple request
       final response = await ApiService.getCarsRaw(
@@ -270,22 +342,38 @@ mixin _HomePageFetch on _HomePageFetchCore {
       );
 
       if (response.statusCode == 200) {
-        if (requestGen != _feedRequestGeneration) return;
+        if (requestGen != _feedRequestGeneration) {
+          _debugLog(
+            '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
+            'current_gen=$_feedRequestGeneration source=_tryConnectionReset',
+          );
+          return;
+        }
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed =
             listingMapsFromApiResponse(decoded);
+        _debugLog(
+          '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
+          'query="${filters['q']}" status=${response.statusCode} '
+          'models=${_searchTraceListingSummary(parsed)}',
+        );
 
         if (mounted) {
           setState(() {
             if (parsed.isNotEmpty) {
-              cars = _applyDamagedPartsExactFilter(parsed);
+              cars = _applyClientPostFilters(parsed);
             } else if (cars.isEmpty) {
-              cars = _applyDamagedPartsExactFilter(parsed);
+              cars = _applyClientPostFilters(parsed);
             }
             isLoading = false;
             hasLoadedOnce = true;
             loadErrorMessage = null;
           });
+          _debugLog(
+            '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
+            'query="${filters['q']}" source=_tryConnectionReset '
+            'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
+          );
         }
 
         unawaited(_autoSaveSearch());

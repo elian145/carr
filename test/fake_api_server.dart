@@ -119,6 +119,17 @@ class FakeApiServer {
   /// exactly which searches were actually sent, and in what order.
   static final List<String> carsRequestedQueries = [];
 
+  /// Regression coverage for the client-side exact-model filter fix
+  /// (traced "Land Cruiser" -> "Land Cruiser Prado" bug): when set, called
+  /// for every `GET /api/cars` request with its full query-parameter map
+  /// (checked after [carsQueryGates]). Return an [http.Response] to force a
+  /// specific response -- e.g. to simulate the real backend's
+  /// `Car.model.ilike('%<model>%')` substring match returning rows outside
+  /// the exact requested `model` -- or `null` to fall through to the
+  /// default `/api/cars` stub. Cleared by [stop].
+  static http.Response? Function(Map<String, String> queryParameters)?
+      carsResponseOverride;
+
   /// BE-18: records the `Idempotency-Key` header (or null if absent) seen on
   /// every `POST /api/chat/<id>/send*` request, in call order. Used to prove
   /// the same key is threaded through from `ApiService`/`OutgoingChatSendService`
@@ -240,6 +251,7 @@ class FakeApiServer {
     phoneVerifyOverride = null;
     carsQueryGates = null;
     carsRequestedQueries.clear();
+    carsResponseOverride = null;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -274,6 +286,11 @@ class FakeApiServer {
       if (gates != null) {
         final gate = gates[q];
         if (gate != null) return gate.future;
+      }
+      final override = carsResponseOverride;
+      if (override != null) {
+        final forced = override(request.url.queryParameters);
+        if (forced != null) return forced;
       }
     }
 

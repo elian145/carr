@@ -626,6 +626,41 @@ List<Map<String, dynamic>> filterListingsByHomeFilters(
   return source.where((row) => listingMatchesHomeFilters(row, filters)).toList();
 }
 
+/// Client-side exact match for the "Model" filter chip (`selectedModel`).
+///
+/// ROOT CAUSE (runtime-traced "Land Cruiser" -> "Land Cruiser Prado" bug):
+/// the backend's `/api/cars` endpoint filters the `model` query param with
+/// `Car.model.ilike(f"%{model}%")` (`kk/routes/cars.py`) -- a *substring*
+/// match, not an exact one. The free-text `q` keyword search was already
+/// fixed to rank/restrict exact model matches correctly (see
+/// `homeFeedDefaultSortAllowed`'s doc comment), but that fix does not apply
+/// to `model`, which is a *separate* query param sent whenever the user
+/// selects a specific model -- most commonly by tapping a model suggestion
+/// in the keyword search field's autocomplete panel (see
+/// `_searchKeywordResultsPanel` in `home_search_filters_keyword.dart`),
+/// which sets `selectedModel` and clears the keyword instead of sending
+/// `q`. Traced live against production: searching "Land Cruiser" and
+/// tapping the "Land Cruiser" suggestion sends `model=Land Cruiser`, and
+/// the backend returns every model containing that substring -- including
+/// "Land Cruiser Prado" -- with `pagination.total` counting them all.
+///
+/// Per-instruction constraint, the backend is intentionally left
+/// unmodified; this restores exactness purely on the client by dropping
+/// any row whose `model` field is not an exact (case-insensitive, trimmed)
+/// match for [selectedModel] once the API response is already in hand.
+List<Map<String, dynamic>> applyExactModelListingFilter(
+  List<Map<String, dynamic>> source, {
+  required String? selectedModel,
+}) {
+  final target = selectedModel?.trim();
+  if (target == null || target.isEmpty) return source;
+  final normalizedTarget = target.toLowerCase();
+  return source.where((car) {
+    final carModel = (car['model'] ?? '').toString().trim().toLowerCase();
+    return carModel == normalizedTarget;
+  }).toList();
+}
+
 /// Client-side exact match when API returns broad damaged-title rows.
 List<Map<String, dynamic>> applyDamagedPartsListingFilter(
   List<Map<String, dynamic>> source, {
