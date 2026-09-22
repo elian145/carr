@@ -280,6 +280,30 @@ Map<String, String> homeFiltersToApiQuery(
   return out;
 }
 
+/// Whether the home feed's *ambient* default sort (`random` for new users,
+/// `recommended` after activity -- see `_defaultFeedSortBy` in
+/// `home_fetch_core.dart`) may be applied as a fallback when the user has
+/// not explicitly picked a sort option.
+///
+/// CN-SEARCH-01: this must be `false` whenever a free-text keyword search is
+/// active. `_buildFilters` used to fall back to the ambient default sort
+/// unconditionally, so every `/api/cars` request -- including keyword
+/// searches -- carried an explicit `sort_by=random`/`recommended`. Because
+/// that is neither `''`/`relevance`/`rank`, the backend's exactness-aware
+/// relevance ranking (`kk/routes/cars.py::_order_cars_query`,
+/// `kk/listing_search.py::build_relevance_rank_expr`) was never applied at
+/// all: matches were shuffled (or interest-boosted) instead. A query like
+/// "Land Cruiser" legitimately matches both real "Land Cruiser" listings and
+/// broader "Land Cruiser Prado" listings -- with `sort_by=random` and more
+/// Prado listings in the data, Prado numerically dominated any random page.
+///
+/// Returning `false` here means `_buildFilters` omits `sort_by` entirely for
+/// a keyword search (unless the user picked an explicit sort), letting the
+/// backend apply relevance ranking as designed.
+bool homeFeedDefaultSortAllowed(HomeFiltersSnapshot filters) {
+  return (filters.keyword ?? '').trim().isEmpty;
+}
+
 /// Saved-search / server payload (matches [SavedSearchService.normalizeFilters] inputs).
 Map<String, dynamic> homeFiltersToSavedSearchJson(
   HomeFiltersSnapshot filters, {

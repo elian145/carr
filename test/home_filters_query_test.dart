@@ -132,6 +132,38 @@ void main() {
     });
   });
 
+  group('homeFeedDefaultSortAllowed', () {
+    // CN-SEARCH-01: the ambient home-feed default sort (random/recommended)
+    // must never override relevance ranking for an active keyword search --
+    // see the doc comment on `homeFeedDefaultSortAllowed` for the full bug
+    // history (query "Land Cruiser" was effectively randomized across every
+    // row containing both tokens, including "Land Cruiser Prado").
+    test('is true when there is no keyword', () {
+      const f = HomeFiltersSnapshot(brand: 'Toyota');
+      expect(homeFeedDefaultSortAllowed(f), isTrue);
+    });
+
+    test('is true when the keyword is null (default)', () {
+      const f = HomeFiltersSnapshot();
+      expect(homeFeedDefaultSortAllowed(f), isTrue);
+    });
+
+    test('is true when the keyword is whitespace-only', () {
+      const f = HomeFiltersSnapshot(keyword: '   ');
+      expect(homeFeedDefaultSortAllowed(f), isTrue);
+    });
+
+    test('is false when a free-text keyword is active', () {
+      const f = HomeFiltersSnapshot(keyword: 'Land Cruiser');
+      expect(homeFeedDefaultSortAllowed(f), isFalse);
+    });
+
+    test('is false for a keyword with only leading/trailing whitespace', () {
+      const f = HomeFiltersSnapshot(keyword: '  land cruiser  ');
+      expect(homeFeedDefaultSortAllowed(f), isFalse);
+    });
+  });
+
   group('homeFiltersToSavedSearchJson', () {
     test('includes q for a non-empty free-text keyword', () {
       const f = HomeFiltersSnapshot(keyword: 'Land Cruiser');

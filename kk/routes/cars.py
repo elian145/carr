@@ -18,7 +18,7 @@ from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
-from ..listing_search import apply_listing_text_search
+from ..listing_search import apply_listing_text_search, like_escape as _like_escape
 from ..listing_visibility import (
     MODERATION_LISTING_STATUSES as _MODERATION_LISTING_STATUSES,
     listing_visible_to_viewer as _listing_visible_to_viewer,
@@ -332,22 +332,6 @@ def _split_multi_filter(val: str | None) -> list[str]:
         for part in val.split(",")
         if part.strip() and part.strip().lower() not in ("any", "")
     ]
-
-
-def _like_escape(value: str) -> str:
-    """Escape ``\\``, ``%`` and ``_`` so ``value`` is matched literally when
-    substituted into an ``ILIKE`` pattern (BE-15).
-
-    Callers must pass ``escape="\\\\"`` to ``.ilike()`` alongside the escaped
-    value, e.g. ``Car.brand.ilike(f"%{_like_escape(brand)}%", escape="\\\\")``.
-    Backslash is escaped first so a literal backslash in ``value`` isn't
-    mistaken for (part of) an escape sequence introduced by this function.
-    """
-    return (
-        value.replace("\\", "\\\\")
-        .replace("%", "\\%")
-        .replace("_", "\\_")
-    )
 
 
 def _client_ip() -> str:

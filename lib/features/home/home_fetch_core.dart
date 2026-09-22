@@ -748,14 +748,22 @@ mixin _HomePageFetchCore on _HomePageFields {
   }
 
   Map<String, String> _buildFilters({bool includeSort = true}) {
+    final snapshot = _homeFiltersSnapshot();
     String? apiSortValue;
     if (includeSort) {
       apiSortValue = _convertSortToApiValue(context, selectedSortBy);
       // Default home feed: random for new users, recommended after activity.
-      apiSortValue ??= _defaultFeedSortBy;
+      // CN-SEARCH-01: never apply this ambient default while a free-text
+      // keyword search is active -- it silently discarded the backend's
+      // relevance ranking (see `homeFeedDefaultSortAllowed` for the full
+      // explanation). Leaving `apiSortValue` null here means `sort_by` is
+      // omitted from the request, so the backend applies relevance ranking.
+      if (apiSortValue == null && homeFeedDefaultSortAllowed(snapshot)) {
+        apiSortValue = _defaultFeedSortBy;
+      }
     }
     final out = homeFiltersToApiQuery(
-      _homeFiltersSnapshot(),
+      snapshot,
       apiSortValue: apiSortValue,
       includeSort: includeSort,
     );
