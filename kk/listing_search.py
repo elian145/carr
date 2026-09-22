@@ -36,6 +36,28 @@ to the normalized query --
     6. model contains query elsewhere
     7. title / "brand model" contains query elsewhere
     8. matched via some other field only (description/color/location/trim)
+
+Restriction (CN-SEARCH-02): tier 5 above only *deprioritizes* a related-but-
+different model like "Land Cruiser Prado" -- it still shows up (just lower)
+for a "Land Cruiser" search. Follow-up feedback wants it excluded entirely
+when the query is itself a known, exact model name: searching "Land Cruiser"
+should be *restricted* to the Land Cruiser family (including numeric/
+generation variants such as "Land Cruiser 300"/"70"/"76"), not merely
+prioritized over "Land Cruiser Prado".
+
+``_sibling_canonical_models()`` answers this generically using the same
+canonical brand/model dataset the app already ships and seeds its catalog
+tables from (``assets/car_catalog.json`` -- see ``kk/catalog_service.py``):
+if the normalized query exactly matches a known canonical model name, any
+*other* canonical model name that starts with the query followed by a WORD
+(not a digit) is a distinct sibling model and is excluded from the result
+set entirely (``_exclude_sibling_models``), before ``LIMIT``/``OFFSET`` is
+ever applied. A continuation that starts with a digit (cataloged or not --
+e.g. "Land Cruiser 300" even if that exact generation isn't itself a
+catalog entry) is treated as the same model family and is never excluded.
+If the query does not exactly match a known canonical model, no exclusion
+is applied and normal broad keyword search behavior (tiers 1-8 above)
+governs ranking as before.
 """
 
 from __future__ import annotations
@@ -65,6 +87,14 @@ _RANK_COMBINED_CONTAINS = 25
 _RANK_OTHER_FIELD = 10
 
 _DIGITS = tuple("0123456789")
+
+
+def _normalize_plain(raw: str | None) -> str:
+    """Python-side ``lower(trim(collapse-whitespace(raw)))`` -- the same
+    normalization ``build_relevance_rank_expr`` applies in SQL, used here to
+    compare a query against the canonical model catalog in Python.
+    """
+    return re.sub(r"\s+", " ", (raw or "").strip().lower())
 
 
 def normalize_search_query(raw: str | None) -> str:
@@ -132,7 +162,7 @@ def build_relevance_rank_expr(term: str):
     are better matches. See module docstring for the tier list; this is
     generic across any brand/model pair, not specific to "Land Cruiser".
     """
-    term_norm = re.sub(r"\s+", " ", (term or "").strip().lower())
+    term_norm = _normalize_plain(term)
     if not term_norm:
         return None
 
@@ -184,6 +214,104 @@ def build_relevance_rank_expr(term: str):
     )
 
 
+_canonical_model_names_cache: frozenset[str] | None = None
+
+
+def _canonical_model_names() -> frozenset[str]:
+    """Every model name across every brand in the app's canonical vehicle
+    catalog (``assets/car_catalog.json``), normalized. This is the same
+    static dataset ``kk/catalog_service.py::seed_catalog`` uses to populate
+    ``CatalogVehicleModel`` and that the Flutter app bundles for its
+    make/model pickers -- i.e. the single canonical "known model names"
+    source for the whole app, not something reinvented here.
+
+    Cached for the life of the process: this is a static bundled file, not
+    request/user data, so re-parsing it on every search request would be
+    wasted work. Returns an empty set (falls back to unrestricted broad
+    search) if the catalog can't be loaded for any reason -- a missing/
+    malformed catalog file must never break search.
+    """
+    global _canonical_model_names_cache
+    if _canonical_model_names_cache is not None:
+        return _canonical_model_names_cache
+
+    names: set[str] = set()
+    try:
+        from .catalog_service import load_catalog_json
+
+        data = load_catalog_json()
+        models_map = data.get("models") or {}
+        if isinstance(models_map, dict):
+            for model_list in models_map.values():
+                if not isinstance(model_list, list):
+                    continue
+                for raw_name in model_list:
+                    norm = _normalize_plain(str(raw_name or ""))
+                    if norm:
+                        names.add(norm)
+    except Exception:
+        logger.exception(
+            "Failed to load canonical model catalog for search restriction; "
+            "falling back to unrestricted broad search"
+        )
+
+    _canonical_model_names_cache = frozenset(names)
+    return _canonical_model_names_cache
+
+
+def _sibling_canonical_models(term_norm: str) -> list[str]:
+    """Other canonical model names that must be EXCLUDED when ``term_norm``
+    itself exactly matches a known canonical model.
+
+    A canonical name is a "sibling" (distinct model, exclude it) when it
+    starts with ``term_norm`` followed by a separator (space/hyphen) and a
+    WORD -- e.g. querying "land cruiser" makes "land cruiser prado" a
+    sibling. It is instead treated as the SAME model family (never
+    excluded, regardless of whether it is itself cataloged) when the
+    character right after the separator is a DIGIT -- e.g. "land cruiser
+    70"/"land cruiser 76" continue the same base model with a generation/
+    trim number. Returns ``[]`` immediately if ``term_norm`` doesn't exactly
+    match a known canonical model, i.e. normal broad search applies.
+    """
+    if not term_norm or term_norm not in _canonical_model_names():
+        return []
+
+    prefix_len = len(term_norm)
+    siblings: list[str] = []
+    for name in _canonical_model_names():
+        if name == term_norm or not name.startswith(term_norm):
+            continue
+        remainder = name[prefix_len:]
+        if not remainder or remainder[0] not in (" ", "-"):
+            continue
+        continuation = remainder[1:]
+        if continuation and continuation[0].isdigit():
+            continue  # same-family generation/variant -- never a sibling
+        siblings.append(name)
+    return siblings
+
+
+def _exclude_sibling_models(query, sibling_models: list[str]):
+    """Remove rows whose ``Car.model`` belongs to one of ``sibling_models``
+    (or is itself an extension of one, e.g. a future trim-in-model string)
+    from ``query``. No-op when ``sibling_models`` is empty.
+    """
+    if not sibling_models:
+        return query
+    model_n = _normalized_text(Car.model)
+    is_sibling = or_(
+        *[
+            or_(
+                model_n == sibling,
+                model_n.like(f"{like_escape(sibling)} %", escape="\\"),
+                model_n.like(f"{like_escape(sibling)}-%", escape="\\"),
+            )
+            for sibling in sibling_models
+        ]
+    )
+    return query.filter(~is_sibling)
+
+
 def apply_listing_text_search(query, raw: str | None):
     """Filter ``query`` by free-text ``q`` / ``search`` and attach a
     relevance rank expression.
@@ -196,10 +324,21 @@ def apply_listing_text_search(query, raw: str | None):
     matches consistently. The underlying row-matching filter stays
     dialect-specific (Postgres FTS vs. ILIKE fallback) since that's a
     performance/matching concern independent of ranking.
+
+    CN-SEARCH-02: when ``raw`` normalizes to an exact known canonical model
+    name (see ``_canonical_model_names``), distinct sibling models sharing
+    the same leading words (e.g. "Land Cruiser Prado" for a "Land Cruiser"
+    query) are excluded from the returned ``query`` entirely -- not merely
+    ranked lower -- via ``_exclude_sibling_models``. This happens before
+    ``LIMIT``/``OFFSET`` (pagination) is applied by the caller, so an
+    excluded sibling model can never "reappear" on a later page. Non-exact
+    queries are unaffected and keep the prior broad-match behavior.
     """
     term = normalize_search_query(raw)
     if not term:
         return query, None
+
+    sibling_models = _sibling_canonical_models(_normalize_plain(term))
 
     if _dialect_name() == "postgresql":
         try:
@@ -209,6 +348,7 @@ def apply_listing_text_search(query, raw: str | None):
                     "car.search_vector @@ websearch_to_tsquery('simple', :fts_q)"
                 ).bindparams(fts_q=term)
             )
+            filtered = _exclude_sibling_models(filtered, sibling_models)
             return filtered, build_relevance_rank_expr(term)
         except Exception:
             logger.exception("Postgres FTS filter failed; falling back to ILIKE")
@@ -225,4 +365,5 @@ def apply_listing_text_search(query, raw: str | None):
             Car.color.ilike(like),
         )
     )
+    filtered = _exclude_sibling_models(filtered, sibling_models)
     return filtered, build_relevance_rank_expr(term)

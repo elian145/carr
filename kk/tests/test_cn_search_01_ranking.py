@@ -38,6 +38,15 @@ Root causes (both fixed here):
    `_buildFilters` change -- see `test/home_filters_query_test.dart` for the
    Flutter-side regression tests for that half of the fix.
 
+FOLLOW-UP (CN-SEARCH-02, see ``test_cn_search_02_model_family_restriction.py``):
+ranking alone (tier 5, "related but different model") still let "Land
+Cruiser Prado" appear -- just lower -- for a "Land Cruiser" search. Product
+feedback wanted it excluded entirely whenever the query exactly matches a
+known canonical model name. That stricter exclusion is layered on top of
+(and reuses) the ranking machinery here; the tests below were updated where
+they previously asserted the old "still appears, just lower" behavior, and
+now note where CN-SEARCH-02 governs instead.
+
 This file covers the backend half end-to-end via ``GET /api/cars?q=...``
 (SQLite ILIKE-fallback dialect, same as the rest of the suite -- the ranking
 fix is dialect-agnostic by construction, see the ``build_relevance_rank_expr``
@@ -91,9 +100,11 @@ def seeded_cars(app_ctx):
     """Seed a catalog reproducing the reported bug shape: a handful of real
     "Land Cruiser" listings alongside many more "Land Cruiser Prado"
     listings (a different, but overlapping-named, real Toyota model -- see
-    ``assets/car_catalog.json``'s Toyota model list), plus a second,
-    independent overlapping-model pair ("Corolla" / "Corolla Cross") to
-    prove the fix is generic and not specific to Land Cruiser/Prado.
+    ``assets/car_catalog.json``'s Toyota model list), a second independent
+    overlapping-model pair ("Corolla" / "Corolla Cross"), and a fictitious
+    (NOT in the canonical catalog) overlapping-model pair used to prove
+    ranking-only behavior still applies when the query does not exactly
+    match a known canonical model (CN-SEARCH-02 requirement #4).
     """
     app, _client, db, User, Car = app_ctx
     with app.app_context():
@@ -146,9 +157,11 @@ def seeded_cars(app_ctx):
             model="Land Cruiser 76",
         )
         # Deliberately many more Prado listings than real Land Cruiser
-        # listings -- this is the exact shape that triggered the bug: if
-        # ranking doesn't discriminate, sheer Prado volume dominates any
-        # recency/random ordering and any fixed-size results page.
+        # listings -- this is the exact shape that triggered the original
+        # bug report. Under CN-SEARCH-02 these are now excluded outright
+        # from a "Land Cruiser" search (see that test file); they remain
+        # seeded here so this file's case-insensitivity/whitespace tests
+        # exercise the same realistic, Prado-heavy dataset.
         prados = [
             _car(
                 title=f"20{18 + i} Toyota Land Cruiser Prado",
@@ -183,6 +196,23 @@ def seeded_cars(app_ctx):
             model="Civic",
             body_type="sedan",
         )
+
+        # Fictitious brand/model NOT present in assets/car_catalog.json --
+        # proves ranking (not exclusion) governs when the query itself is
+        # not a known canonical model (CN-SEARCH-02 requirement #4: "if the
+        # query does NOT exactly match a known model, retain normal broad
+        # keyword search behavior").
+        zeta_x = _car(
+            title="2021 Zetaworks Zeta X",
+            brand="Zetaworks",
+            model="Zeta X",
+        )
+        zeta_x_sport = _car(
+            title="2021 Zetaworks Zeta X Sport",
+            brand="Zetaworks",
+            model="Zeta X Sport",
+        )
+
         db.session.commit()
 
         return {
@@ -194,6 +224,8 @@ def seeded_cars(app_ctx):
             "corolla_cross": corolla_cross.public_id,
             "camry": camry.public_id,
             "civic": civic.public_id,
+            "zeta_x": zeta_x.public_id,
+            "zeta_x_sport": zeta_x_sport.public_id,
         }
 
 
@@ -205,7 +237,8 @@ def _search(client, **params):
 
 
 # ---------------------------------------------------------------------------
-# 1. "Land Cruiser": exact listings appear and rank ahead of Prado listings.
+# 1. "Land Cruiser": exact + variant listings appear; Prado is excluded
+#    outright (CN-SEARCH-02 -- see that test file for the full matrix).
 # ---------------------------------------------------------------------------
 
 
@@ -215,37 +248,45 @@ def test_land_cruiser_query_returns_exact_and_variant_listings(app_ctx, seeded_c
     assert seeded_cars["land_cruiser"] in ids
     assert seeded_cars["land_cruiser_70"] in ids
     assert seeded_cars["land_cruiser_76"] in ids
-    # Prado legitimately contains both query tokens -- it must still appear,
-    # just ranked lower (see next test), never excluded outright.
+    # CN-SEARCH-02: "Land Cruiser" is an exact canonical model match, so the
+    # distinct sibling model "Land Cruiser Prado" is excluded entirely, not
+    # merely ranked lower.
     for prado_id in seeded_cars["prados"]:
-        assert prado_id in ids
+        assert prado_id not in ids
     # Unrelated brand/model must never match.
     assert seeded_cars["civic"] not in ids
     assert seeded_cars["camry"] not in ids
 
 
-def test_land_cruiser_ranks_ahead_of_land_cruiser_prado(app_ctx, seeded_cars):
+def test_land_cruiser_variants_rank_ahead_of_each_other_by_recency(
+    app_ctx, seeded_cars
+):
+    """With Prado excluded, the remaining Land Cruiser family members are
+    all tier-90 ("model variant") or tier-100 (exact) matches; the exact
+    match must still be first."""
     _app, client, *_ = app_ctx
     ids, _pg = _search(client, q="Land Cruiser", per_page=50)
-    lc_index = ids.index(seeded_cars["land_cruiser"])
-    for prado_id in seeded_cars["prados"]:
-        assert lc_index < ids.index(prado_id), (
-            "exact 'Land Cruiser' must rank ahead of every 'Land Cruiser "
-            "Prado' listing"
-        )
+    assert ids[0] == seeded_cars["land_cruiser"]
+    assert set(ids) == {
+        seeded_cars["land_cruiser"],
+        seeded_cars["land_cruiser_70"],
+        seeded_cars["land_cruiser_76"],
+    }
 
 
-def test_land_cruiser_variants_rank_ahead_of_prado(app_ctx, seeded_cars):
-    """"Land Cruiser 70"/"Land Cruiser 76" are variants of the same base
-    model (numeric generation suffix) and must outrank the different,
-    broader "Land Cruiser Prado" model."""
+def test_non_canonical_query_ranks_related_model_lower_without_excluding_it(
+    app_ctx, seeded_cars
+):
+    """CN-SEARCH-02 requirement #4: when the query does NOT exactly match a
+    known canonical model (here: a fictitious brand/model absent from
+    ``assets/car_catalog.json``), normal broad ranking applies -- the
+    related-but-different model ("Zeta X Sport") still appears, just ranked
+    below the exact match, rather than being excluded."""
     _app, client, *_ = app_ctx
-    ids, _pg = _search(client, q="Land Cruiser", per_page=50)
-    lc70_index = ids.index(seeded_cars["land_cruiser_70"])
-    lc76_index = ids.index(seeded_cars["land_cruiser_76"])
-    min_prado_index = min(ids.index(p) for p in seeded_cars["prados"])
-    assert lc70_index < min_prado_index
-    assert lc76_index < min_prado_index
+    ids, _pg = _search(client, q="Zeta X", per_page=50)
+    assert seeded_cars["zeta_x"] in ids
+    assert seeded_cars["zeta_x_sport"] in ids
+    assert ids.index(seeded_cars["zeta_x"]) < ids.index(seeded_cars["zeta_x_sport"])
 
 
 # ---------------------------------------------------------------------------
@@ -269,9 +310,8 @@ def test_land_cruiser_query_normalizes_whitespace(app_ctx, seeded_cars):
 
 
 # ---------------------------------------------------------------------------
-# 4. "Land Cruiser Prado": Prado listings rank first (and only Prado
-# listings match -- a plain "Land Cruiser" must not satisfy this more
-# specific query).
+# 4. "Land Cruiser Prado": Prado listings match (and only Prado listings --
+# a plain "Land Cruiser" must not satisfy this more specific query).
 # ---------------------------------------------------------------------------
 
 
@@ -301,16 +341,16 @@ def test_prado_query_returns_prado_listings_only(app_ctx, seeded_cars):
 
 # ---------------------------------------------------------------------------
 # 6. A second, independent overlapping-model pair behaves the same way --
-# proves the fix is generic, not Land-Cruiser-specific.
+# proves the fix is generic, not Land-Cruiser-specific. Full exclusion
+# matrix lives in test_cn_search_02_model_family_restriction.py.
 # ---------------------------------------------------------------------------
 
 
-def test_corolla_query_ranks_exact_model_ahead_of_corolla_cross(app_ctx, seeded_cars):
+def test_corolla_query_excludes_corolla_cross(app_ctx, seeded_cars):
     _app, client, *_ = app_ctx
     ids, _pg = _search(client, q="Corolla", per_page=50)
     assert seeded_cars["corolla"] in ids
-    assert seeded_cars["corolla_cross"] in ids
-    assert ids.index(seeded_cars["corolla"]) < ids.index(seeded_cars["corolla_cross"])
+    assert seeded_cars["corolla_cross"] not in ids
 
 
 def test_corolla_cross_query_returns_only_corolla_cross(app_ctx, seeded_cars):
@@ -320,42 +360,39 @@ def test_corolla_cross_query_returns_only_corolla_cross(app_ctx, seeded_cars):
 
 
 # ---------------------------------------------------------------------------
-# 7. Pagination must not hide the exact match behind partial/broader
-# matches: with a small page size and many more Prado rows than real Land
-# Cruiser rows, the exact match must still land on page 1.
+# 7. Pagination must not resurrect an excluded sibling model, and must not
+# hide an exact match behind a small page size either.
 # ---------------------------------------------------------------------------
 
 
-def test_pagination_does_not_hide_exact_match_behind_partial_matches(
-    app_ctx, seeded_cars
-):
+def test_pagination_does_not_resurrect_excluded_sibling_model(app_ctx, seeded_cars):
     _app, client, *_ = app_ctx
-    ids, pagination = _search(client, q="Land Cruiser", per_page=3, page=1)
-    assert len(ids) == 3
-    assert seeded_cars["land_cruiser"] in ids, (
-        "the exact 'Land Cruiser' match must be on page 1 even though there "
-        "are 8 'Land Cruiser Prado' rows and only a 3-row page size"
-    )
-    # Total count must still reflect every legitimately matching row
-    # (exact + variants + Prado) -- ranking must not have narrowed the
-    # underlying result set, only reordered it.
-    assert pagination.get("total") == 1 + 2 + len(seeded_cars["prados"])
+    ids, pagination = _search(client, q="Land Cruiser", per_page=2, page=1)
+    assert seeded_cars["land_cruiser"] in ids
+    # Only the 3 real family members (exact + 2 numeric variants) can ever
+    # match "Land Cruiser" now that Prado is excluded at the query level --
+    # so the total must reflect that, and no amount of paging can surface
+    # a Prado id (there are none left in the underlying result set).
+    assert pagination.get("total") == 3
 
 
 def test_pagination_page_two_still_consistent_with_ranking(app_ctx, seeded_cars):
     """Sanity check: paging through with a small page size and concatenating
     pages reproduces the same order as a single large-page request (i.e.
-    ranking is applied consistently before LIMIT/OFFSET, not per-page)."""
+    ranking/exclusion is applied consistently before LIMIT/OFFSET, not
+    per-page), and no excluded sibling model id ever appears on any page."""
     _app, client, *_ = app_ctx
     full_ids, _ = _search(client, q="Land Cruiser", per_page=50, page=1)
 
     paged_ids: list[str] = []
     page = 1
     while True:
-        page_ids, pg = _search(client, q="Land Cruiser", per_page=3, page=page)
+        page_ids, pg = _search(client, q="Land Cruiser", per_page=2, page=page)
         paged_ids.extend(page_ids)
         if not pg.get("has_next"):
             break
         page += 1
 
     assert paged_ids == full_ids
+    for prado_id in seeded_cars["prados"]:
+        assert prado_id not in paged_ids
