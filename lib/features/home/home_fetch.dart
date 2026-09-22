@@ -11,6 +11,11 @@ mixin _HomePageFetch on _HomePageFetchCore {
     // Immediate response - no debounce for better UX
     if (!mounted) return;
 
+    // Claims a new generation so any in-flight search/feed fetch (or an
+    // earlier sort attempt) can never overwrite this one's result, and vice
+    // versa — see `_feedRequestGeneration`'s doc comment on `_HomePageFields`.
+    final int requestGen = ++_feedRequestGeneration;
+
     // Reset retry count when sorting changes
     _fetchRetryCount = 0;
 
@@ -35,10 +40,10 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
 
     // Try the sort operation immediately
-    await _performSortWithFallback();
+    await _performSortWithFallback(requestGen);
   }
 
-  Future<void> _performSortWithFallback() async {
+  Future<void> _performSortWithFallback(int requestGen) async {
     // Validate sort parameter before attempting
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     _debugLog(
@@ -53,14 +58,18 @@ mixin _HomePageFetch on _HomePageFetchCore {
 
     // Try multiple strategies in sequence
     List<Future<void> Function()> strategies = [
-      () => _tryDirectSort(apiSortValue),
-      () => _tryAlternativeSort(apiSortValue),
-      () => _trySimpleSort(apiSortValue),
-      () => _tryConnectionReset(apiSortValue),
-      () => _tryWithoutSort(),
+      () => _tryDirectSort(apiSortValue, requestGen),
+      () => _tryAlternativeSort(apiSortValue, requestGen),
+      () => _trySimpleSort(apiSortValue, requestGen),
+      () => _tryConnectionReset(apiSortValue, requestGen),
+      () => _tryWithoutSort(requestGen),
     ];
 
     for (int i = 0; i < strategies.length; i++) {
+      // A newer request (another sort change or a fresh search) has since
+      // started — stop trying strategies for this now-stale one instead of
+      // possibly overwriting the newer request's results below.
+      if (requestGen != _feedRequestGeneration) return;
       try {
         _debugLog('[home-feed] Trying strategy ${i + 1}/${strategies.length}');
         await strategies[i]();
@@ -74,6 +83,8 @@ mixin _HomePageFetch on _HomePageFetchCore {
       }
     }
 
+    if (requestGen != _feedRequestGeneration) return;
+
     // If all strategies fail, show error
     if (mounted) {
       setState(() {
@@ -83,7 +94,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
   }
 
-  Future<void> _tryDirectSort(String apiSortValue) async {
+  Future<void> _tryDirectSort(String apiSortValue, int requestGen) async {
     _debugLog('[home-feed] Direct sort attempt with: $apiSortValue');
 
     // Try up to 5 times with increasing delays and different approaches
@@ -106,6 +117,10 @@ mixin _HomePageFetch on _HomePageFetchCore {
         );
 
         if (response.statusCode == 200) {
+          // A newer request (search/filter change/another sort) superseded
+          // this one while it was in flight — treat as done, not a
+          // failure, and never overwrite the newer request's results.
+          if (requestGen != _feedRequestGeneration) return;
           final decoded = json.decode(response.body);
           final List<Map<String, dynamic>> parsed =
               listingMapsFromApiResponse(decoded);
@@ -147,7 +162,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
   }
 
-  Future<void> _tryAlternativeSort(String apiSortValue) async {
+  Future<void> _tryAlternativeSort(String apiSortValue, int requestGen) async {
     _debugLog('[home-feed] Alternative sort attempt with: $apiSortValue');
 
     // Try with different connection approaches
@@ -168,6 +183,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
         );
 
         if (response.statusCode == 200) {
+          if (requestGen != _feedRequestGeneration) return;
           final decoded = json.decode(response.body);
           final List<Map<String, dynamic>> parsed =
               listingMapsFromApiResponse(decoded);
@@ -202,7 +218,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
   }
 
-  Future<void> _trySimpleSort(String apiSortValue) async {
+  Future<void> _trySimpleSort(String apiSortValue, int requestGen) async {
     _debugLog('[home-feed] Simple sort attempt with: $apiSortValue');
     // Try with minimal headers and shorter timeout
     Map<String, String> filters = _buildFilters();
@@ -214,6 +230,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
     );
 
     if (response.statusCode == 200) {
+      if (requestGen != _feedRequestGeneration) return;
       final decoded = json.decode(response.body);
       final List<Map<String, dynamic>> parsed =
           listingMapsFromApiResponse(decoded);
@@ -236,7 +253,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
   }
 
-  Future<void> _tryConnectionReset(String apiSortValue) async {
+  Future<void> _tryConnectionReset(String apiSortValue, int requestGen) async {
     _debugLog('[home-feed] Connection reset attempt with: $apiSortValue');
 
     // Wait a bit longer and try with a completely fresh approach
@@ -253,6 +270,7 @@ mixin _HomePageFetch on _HomePageFetchCore {
       );
 
       if (response.statusCode == 200) {
+        if (requestGen != _feedRequestGeneration) return;
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed =
             listingMapsFromApiResponse(decoded);
@@ -281,12 +299,12 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
   }
 
-  Future<void> _tryWithoutSort() async {
+  Future<void> _tryWithoutSort(int requestGen) async {
     _debugLog('[home-feed] Fallback: trying without sort');
     try {
-      await _fetchWithoutSort();
+      await _fetchWithoutSort(requestGen: requestGen);
       // If we get here, try client-side sorting as a last resort
-      await _tryClientSideSort();
+      await _tryClientSideSort(requestGen);
     } catch (e) {
       _debugLog('[home-feed] Fallback also failed: $e');
       if (mounted) {
@@ -301,10 +319,11 @@ mixin _HomePageFetch on _HomePageFetchCore {
     }
   }
 
-  Future<void> _tryClientSideSort() async {
+  Future<void> _tryClientSideSort(int requestGen) async {
     _debugLog('[home-feed] Attempting client-side sort');
     final apiSortValue = _convertSortToApiValue(context, selectedSortBy);
     if (apiSortValue == null || selectedSortBy == null) return;
+    if (requestGen != _feedRequestGeneration) return;
 
     try {
       final sortedCars = homeFeedClientSortedListings(cars, apiSortValue);

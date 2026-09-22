@@ -132,6 +132,26 @@ abstract class _HomePageFields extends State<HomePage> {
   bool _isLoadingMore = false;
   bool _loadMoreFailed = false;
 
+  /// Monotonic counter guarding out-of-order `/api/cars` responses.
+  ///
+  /// Bumped at the very start of every [fetchCars] call (a fresh search,
+  /// filter change, or refresh). Any in-flight request — including the
+  /// initial unfiltered home-feed load, a previous/broader keyword search,
+  /// a `_loadMore` page fetch, or the `_fetchFromApiCars`/`_fetchWithoutSort`
+  /// fallbacks — captures the generation value that was current when *it*
+  /// started, then compares it back against this field just before applying
+  /// its result. If they no longer match, a newer request has since started
+  /// and the stale one's result is discarded instead of overwriting `cars`.
+  ///
+  /// Root cause this fixes: searching "Land Cruiser" while an older,
+  /// broader request (e.g. the unfiltered home feed, or a previous search
+  /// like "Land Cruiser Prado") was still in flight could have that older
+  /// request's response arrive *after* the new search's and silently
+  /// replace the correct, narrow result set with the older/broader one —
+  /// so the UI showed listings (e.g. "Land Cruiser Prado") that were never
+  /// part of the current search's actual API response.
+  int _feedRequestGeneration = 0;
+
   /// Pauses featured auto-advance while the home feed is scrolling (no setState).
   final ValueNotifier<bool> _featuredAutoScrollPaused = ValueNotifier(false);
   Timer? _featuredResumeTimer;

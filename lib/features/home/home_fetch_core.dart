@@ -186,6 +186,11 @@ mixin _HomePageFetchCore on _HomePageFields {
     bool bypassCache = false,
     bool isRetry = false,
   }) async {
+    // Claim a new generation immediately: this makes every earlier
+    // in-flight fetchCars/_loadMore/_fetchFromApiCars/_fetchWithoutSort
+    // call stale the instant this one starts, regardless of which
+    // finishes first. See the field doc comment on `_feedRequestGeneration`.
+    final int requestGen = ++_feedRequestGeneration;
     _debugLog(
       '[home-feed] fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
     );
@@ -253,7 +258,10 @@ mixin _HomePageFetchCore on _HomePageFields {
           final decoded = json.decode(cached);
           final List<Map<String, dynamic>> parsed =
               _applyDefaultFeedOrdering(listingMapsFromApiResponse(decoded));
-          if (mounted) {
+          // A newer fetchCars() (e.g. the user already changed the search)
+          // started while this disk read was in flight — never let this
+          // stale disk snapshot clobber whatever it already applied.
+          if (mounted && requestGen == _feedRequestGeneration) {
             setState(() {
               cars = _applyDamagedPartsExactFilter(parsed);
               isLoading = false;
@@ -288,6 +296,17 @@ mixin _HomePageFetchCore on _HomePageFields {
       _debugLog('[home-feed] Response status: ${response.statusCode}');
       _debugLog('[home-feed] Response body length: ${response.body.length}');
 
+      // A newer fetchCars() already superseded this one (started while the
+      // network call above was in flight) — this response is stale no
+      // matter its status, so discard it instead of mutating pagination
+      // state or `cars` out from under the newer, already-applied request.
+      if (requestGen != _feedRequestGeneration) {
+        _debugLog(
+          '[home-feed] Discarding stale response (gen $requestGen != '
+          '$_feedRequestGeneration)',
+        );
+        return;
+      }
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         if (decoded is Map) {
@@ -342,6 +361,7 @@ mixin _HomePageFetchCore on _HomePageFields {
           cached,
           HomeFeedErrors.server(response.statusCode),
           isRetry: isRetry,
+          requestGen: requestGen,
         );
       }
     } catch (e) {
@@ -351,9 +371,10 @@ mixin _HomePageFetchCore on _HomePageFields {
         cached,
         HomeFeedErrors.network,
         isRetry: isRetry,
+        requestGen: requestGen,
       );
     }
-    if (mounted) {
+    if (mounted && requestGen == _feedRequestGeneration) {
       _scheduleHomeScrollRestoreAfterListReady();
     }
   }
@@ -363,26 +384,34 @@ mixin _HomePageFetchCore on _HomePageFields {
     String? cached,
     String errorMessage, {
     bool isRetry = false,
+    required int requestGen,
   }) async {
     // Don't show error immediately - try fallback strategies first
     _debugLog('[home-feed] Handling fetch error: $errorMessage, isRetry: $isRetry');
 
     // First, attempt the alternative endpoint /api/cars (server returns { cars: [...], pagination: {...} })
     try {
-      final ok = await _fetchFromApiCars(includeSort: true);
+      final ok = await _fetchFromApiCars(includeSort: true, requestGen: requestGen);
       if (ok) return; // Success via /api/cars; stop handling error
     } catch (e, st) { logNonFatal(e, st); }
+
+    // A newer fetchCars() may have started while the fallback attempt(s)
+    // above were in flight — from here on this call only ever *writes*
+    // shared state (retry, error message), so bail before doing that too.
+    if (requestGen != _feedRequestGeneration) return;
 
     // If sorting failed and we have a sort parameter, try without sorting first
     if (selectedSortBy != null && selectedSortBy!.isNotEmpty && !isRetry) {
       _debugLog('[home-feed] Sorting failed, trying without sort parameter');
       try {
-        await _fetchWithoutSort();
+        await _fetchWithoutSort(requestGen: requestGen);
         return; // Success, don't show error
       } catch (e) {
         _debugLog('[home-feed] Fallback without sort also failed: $e');
       }
     }
+
+    if (requestGen != _feedRequestGeneration) return;
 
     // Auto-retry logic for network errors
     if (_fetchRetryCount < _HomePageFields._maxRetries &&
@@ -395,6 +424,9 @@ mixin _HomePageFetchCore on _HomePageFields {
       await Future.delayed(Duration(seconds: 1)); // Shorter delay for better UX
       if (mounted) {
         try {
+          // Deliberately claims a fresh generation (via fetchCars' own
+          // `++_feedRequestGeneration`) — this retry is the latest
+          // legitimate continuation of the request, not a stale one.
           await fetchCars(bypassCache: bypassCache, isRetry: true);
           return; // Success, don't show error
         } catch (e) {
@@ -402,6 +434,8 @@ mixin _HomePageFetchCore on _HomePageFields {
         }
       }
     }
+
+    if (requestGen != _feedRequestGeneration) return;
 
     // Only show error if all fallback strategies failed
     if (mounted) {
@@ -426,6 +460,12 @@ mixin _HomePageFetchCore on _HomePageFields {
 
   Future<void> _loadMore() async {
     if (_isLoadingMore || !_hasNext || _loadMoreFailed) return;
+    // Snapshot (don't bump) the current generation: a page fetch belongs to
+    // whichever search/filter state is active right now. If a new
+    // fetchCars() (a fresh search) starts before this page request
+    // resolves, its result must never be appended to the newer search's
+    // list — see `_feedRequestGeneration`'s doc comment.
+    final int requestGen = _feedRequestGeneration;
     _isLoadingMore = true;
     bool failed = false;
     try {
@@ -441,6 +481,13 @@ mixin _HomePageFetchCore on _HomePageFields {
         timeout: const Duration(seconds: 20),
         extraHeaders: {'Accept': 'application/json'},
       );
+      // A new search/filter change superseded this page fetch while it was
+      // in flight — discard it instead of appending stale-query rows (or
+      // mutating `_page`/`_hasNext`) onto the newer search's results.
+      if (requestGen != _feedRequestGeneration) {
+        _isLoadingMore = false;
+        return;
+      }
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
         var hasNext = _hasNext;
@@ -515,7 +562,10 @@ mixin _HomePageFetchCore on _HomePageFields {
   }
 
   // Fallback fetch using /api/cars which wraps results in { cars: [...], pagination: { has_next: bool } }
-  Future<bool> _fetchFromApiCars({bool includeSort = true}) async {
+  Future<bool> _fetchFromApiCars({
+    bool includeSort = true,
+    required int requestGen,
+  }) async {
     try {
       Map<String, String> filters = _buildFilters(includeSort: includeSort);
       final resp = await ApiService.getCarsRaw(
@@ -527,6 +577,9 @@ mixin _HomePageFetchCore on _HomePageFields {
               'Cache-Control': 'no-cache',
             },
       );
+      // Stale: a newer fetchCars() started while this fallback request was
+      // in flight — never let it overwrite the newer request's results.
+      if (requestGen != _feedRequestGeneration) return true;
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
         if (decoded is Map && decoded['cars'] is List) {
@@ -560,7 +613,7 @@ mixin _HomePageFetchCore on _HomePageFields {
     return false;
   }
 
-  Future<void> _fetchWithoutSort() async {
+  Future<void> _fetchWithoutSort({required int requestGen}) async {
     try {
       _debugLog('[home-feed] Attempting fetch without sort parameter');
       Map<String, String> filters = _buildFilters(includeSort: false);
@@ -576,6 +629,9 @@ mixin _HomePageFetchCore on _HomePageFields {
         filters,
         timeout: const Duration(seconds: 10),
       );
+      // Stale: a newer fetchCars() started while this fallback request was
+      // in flight — never let it overwrite the newer request's results.
+      if (requestGen != _feedRequestGeneration) return;
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed =

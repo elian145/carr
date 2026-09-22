@@ -103,6 +103,22 @@ class FakeApiServer {
   /// is still in flight. Cleared by [stop].
   static Completer<http.Response>? authRefreshGate;
 
+  /// Regression coverage for the Home-feed search race-condition fix: when
+  /// set, `GET /api/cars` requests whose `q` query parameter matches a key
+  /// in this map await that key's [Completer] instead of resolving
+  /// immediately. Lets a test control the exact order in which two
+  /// overlapping searches' responses arrive — e.g. an older, broader
+  /// search's response completing *after* a newer, narrower one — without
+  /// timers/sleeps. A `q`-less request (plain feed load) is keyed by `''`.
+  /// Falls through to the default `/api/cars` stub when the current
+  /// request's `q` has no entry. Cleared by [stop].
+  static Map<String, Completer<http.Response>>? carsQueryGates;
+
+  /// Records every `q` value seen on `GET /api/cars`, in call order
+  /// (`''` for a request with no `q`). Reset by [stop]. Lets a test assert
+  /// exactly which searches were actually sent, and in what order.
+  static final List<String> carsRequestedQueries = [];
+
   /// BE-18: records the `Idempotency-Key` header (or null if absent) seen on
   /// every `POST /api/chat/<id>/send*` request, in call order. Used to prove
   /// the same key is threaded through from `ApiService`/`OutgoingChatSendService`
@@ -222,6 +238,8 @@ class FakeApiServer {
     chatMessagesAllItems = null;
     chatMessagesRequestedBefore.clear();
     phoneVerifyOverride = null;
+    carsQueryGates = null;
+    carsRequestedQueries.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -247,6 +265,16 @@ class FakeApiServer {
     final refreshGate = authRefreshGate;
     if (refreshGate != null && method == 'POST' && path == '/api/auth/refresh') {
       return refreshGate.future;
+    }
+
+    if (method == 'GET' && path == '/api/cars') {
+      final q = request.url.queryParameters['q'] ?? '';
+      carsRequestedQueries.add(q);
+      final gates = carsQueryGates;
+      if (gates != null) {
+        final gate = gates[q];
+        if (gate != null) return gate.future;
+      }
     }
 
     final response = _responseFor(request);
