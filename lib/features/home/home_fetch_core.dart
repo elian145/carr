@@ -191,13 +191,8 @@ mixin _HomePageFetchCore on _HomePageFields {
     // call stale the instant this one starts, regardless of which
     // finishes first. See the field doc comment on `_feedRequestGeneration`.
     final int requestGen = ++_feedRequestGeneration;
-    final int traceId = ++_searchTraceRequestSeq;
     _debugLog(
       '[home-feed] fetchCars called with bypassCache: $bypassCache, isRetry: $isRetry',
-    );
-    _debugLog(
-      '[search-trace] entered_query="${_searchFiltersKeywordController.text}" '
-      'trace=$traceId gen=$requestGen source=fetchCars',
     );
     // Only show full-screen loading when there is no feed yet. If we already have
     // listings (e.g. memory rehydrate after tab switch), isLoading would replace the
@@ -247,12 +242,6 @@ mixin _HomePageFetchCore on _HomePageFields {
     _debugLog('[home-feed] Fetching cars from: $url');
     _debugLog('[home-feed] Applied filters: $filters');
     _debugLog('[home-feed] Sort parameter: ${filters['sort_by']}');
-    _debugLog(
-      '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
-      'q=${filters['q']} model=${filters['model']} brand=${filters['brand']} '
-      'page=${filters['page']} per_page=${filters['per_page']} '
-      'sort_by=${filters['sort_by']} all_params=$filters',
-    );
 
     // Offline-first cache (skip cache if bypassCache is true)
     final sp = await SharedPreferences.getInstance();
@@ -282,11 +271,6 @@ mixin _HomePageFetchCore on _HomePageFields {
               servingCachedFeed = true;
               if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
             });
-            _debugLog(
-              '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
-              'query="${filters['q']}" source=disk-cache '
-              'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
-            );
             _scheduleHomeScrollRestoreAfterListReady();
           }
         } catch (e, st) { logNonFatal(e, st); }
@@ -321,23 +305,15 @@ mixin _HomePageFetchCore on _HomePageFields {
           '[home-feed] Discarding stale response (gen $requestGen != '
           '$_feedRequestGeneration)',
         );
-        _debugLog(
-          '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
-          'current_gen=$_feedRequestGeneration status=${response.statusCode}',
-        );
         return;
       }
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        int? paginationTotal;
         if (decoded is Map) {
           try {
             final pg = (decoded['pagination'] as Map?);
             if (pg != null && pg['has_next'] is bool) {
               _hasNext = pg['has_next'] as bool;
-            }
-            if (pg != null && pg['total'] is num) {
-              paginationTotal = (pg['total'] as num).toInt();
             }
           } catch (e, st) { logNonFatal(e, st); }
         }
@@ -346,12 +322,6 @@ mixin _HomePageFetchCore on _HomePageFields {
         );
 
         _debugLog('[home-feed] Parsed ${parsed.length} cars from response');
-        _debugLog(
-          '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
-          'query="${filters['q']}" status=${response.statusCode} '
-          'pagination_total=$paginationTotal '
-          'models=${_searchTraceListingSummary(parsed)}',
-        );
 
         // An empty first page means there is nothing more to load, whatever the
         // server said, otherwise the footer spinner never resolves.
@@ -368,11 +338,6 @@ mixin _HomePageFetchCore on _HomePageFields {
             servingCachedFeed = false;
             if (parsed.isNotEmpty) _autoFetchedForEmptyWithSort = false;
           });
-          _debugLog(
-            '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
-            'query="${filters['q']}" cars.length=${cars.length} '
-            'models=${_searchTraceListingSummary(cars)}',
-          );
           // Cache the page to request next, not the one just consumed, so a
           // restore from cache cannot re-fetch it and duplicate rows.
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
@@ -501,7 +466,6 @@ mixin _HomePageFetchCore on _HomePageFields {
     // resolves, its result must never be appended to the newer search's
     // list — see `_feedRequestGeneration`'s doc comment.
     final int requestGen = _feedRequestGeneration;
-    final int traceId = ++_searchTraceRequestSeq;
     _isLoadingMore = true;
     bool failed = false;
     try {
@@ -512,13 +476,6 @@ mixin _HomePageFetchCore on _HomePageFields {
       final Map<String, String> filters = _buildFilters();
       filters['page'] = _page.toString();
       filters['per_page'] = '20';
-      _debugLog(
-        '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
-        'source=_loadMore q=${filters['q']} model=${filters['model']} '
-        'brand=${filters['brand']} page=${filters['page']} '
-        'per_page=${filters['per_page']} sort_by=${filters['sort_by']} '
-        'all_params=$filters',
-      );
       final resp = await ApiService.getCarsRaw(
         filters,
         timeout: const Duration(seconds: 20),
@@ -528,36 +485,22 @@ mixin _HomePageFetchCore on _HomePageFields {
       // in flight — discard it instead of appending stale-query rows (or
       // mutating `_page`/`_hasNext`) onto the newer search's results.
       if (requestGen != _feedRequestGeneration) {
-        _debugLog(
-          '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
-          'current_gen=$_feedRequestGeneration source=_loadMore',
-        );
         _isLoadingMore = false;
         return;
       }
       if (resp.statusCode == 200) {
         final decoded = json.decode(resp.body);
         var hasNext = _hasNext;
-        int? paginationTotal;
         if (decoded is Map) {
           try {
             final pg = (decoded['pagination'] as Map?);
             if (pg != null && pg['has_next'] is bool) {
               hasNext = pg['has_next'] as bool;
             }
-            if (pg != null && pg['total'] is num) {
-              paginationTotal = (pg['total'] as num).toInt();
-            }
           } catch (e, st) { logNonFatal(e, st); }
         }
         final List<Map<String, dynamic>> more = _applyDefaultFeedOrdering(
           listingMapsFromApiResponse(decoded),
-        );
-        _debugLog(
-          '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
-          'query="${filters['q']}" status=${resp.statusCode} '
-          'pagination_total=$paginationTotal '
-          'models=${_searchTraceListingSummary(more)}',
         );
         // An empty page ends the feed even if the server omits or stales
         // `has_next`, which would otherwise keep the footer spinner forever.
@@ -581,11 +524,6 @@ mixin _HomePageFetchCore on _HomePageFields {
               }
             }
           });
-          _debugLog(
-            '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
-            'query="${filters['q']}" source=_loadMore cars.length=${cars.length} '
-            'models=${_searchTraceListingSummary(cars)}',
-          );
           _HomePageFields._homeFeedCache = copyListingMapList(cars);
           _HomePageFields._homeFeedCachePage = _page;
           _HomePageFields._homeFeedCacheHasNext = _hasNext;
@@ -628,16 +566,8 @@ mixin _HomePageFetchCore on _HomePageFields {
     bool includeSort = true,
     required int requestGen,
   }) async {
-    final int traceId = ++_searchTraceRequestSeq;
     try {
       Map<String, String> filters = _buildFilters(includeSort: includeSort);
-      _debugLog(
-        '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
-        'source=_fetchFromApiCars q=${filters['q']} model=${filters['model']} '
-        'brand=${filters['brand']} page=${filters['page']} '
-        'per_page=${filters['per_page']} sort_by=${filters['sort_by']} '
-        'all_params=$filters',
-      );
       final resp = await ApiService.getCarsRaw(
         filters,
         timeout: const Duration(seconds: 20),
@@ -650,10 +580,6 @@ mixin _HomePageFetchCore on _HomePageFields {
       // Stale: a newer fetchCars() started while this fallback request was
       // in flight — never let it overwrite the newer request's results.
       if (requestGen != _feedRequestGeneration) {
-        _debugLog(
-          '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
-          'current_gen=$_feedRequestGeneration source=_fetchFromApiCars',
-        );
         return true;
       }
       if (resp.statusCode == 200) {
@@ -661,11 +587,6 @@ mixin _HomePageFetchCore on _HomePageFields {
         if (decoded is Map && decoded['cars'] is List) {
           final List<Map<String, dynamic>> parsed =
               _applyDefaultFeedOrdering(listingMapsFromApiResponse(decoded));
-          _debugLog(
-            '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
-            'query="${filters['q']}" status=${resp.statusCode} '
-            'models=${_searchTraceListingSummary(parsed)}',
-          );
           // This replaces page 1, so pagination has to be reset with it or
           // load-more keeps requesting from wherever the failed attempt left off.
           var hasNext = true;
@@ -683,11 +604,6 @@ mixin _HomePageFetchCore on _HomePageFields {
               hasLoadedOnce = true;
               loadErrorMessage = null;
             });
-            _debugLog(
-              '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
-              'query="${filters['q']}" source=_fetchFromApiCars '
-              'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
-            );
             _HomePageFields._homeFeedCache = copyListingMapList(cars);
             _HomePageFields._homeFeedCachePage = _page;
             _HomePageFields._homeFeedCacheHasNext = _hasNext;
@@ -700,7 +616,6 @@ mixin _HomePageFetchCore on _HomePageFields {
   }
 
   Future<void> _fetchWithoutSort({required int requestGen}) async {
-    final int traceId = ++_searchTraceRequestSeq;
     try {
       _debugLog('[home-feed] Attempting fetch without sort parameter');
       Map<String, String> filters = _buildFilters(includeSort: false);
@@ -711,13 +626,6 @@ mixin _HomePageFetchCore on _HomePageFields {
       );
 
       _debugLog('[home-feed] Fallback URL: $url');
-      _debugLog(
-        '[search-trace] REQUEST trace=$traceId gen=$requestGen endpoint=/api/cars '
-        'source=_fetchWithoutSort q=${filters['q']} model=${filters['model']} '
-        'brand=${filters['brand']} page=${filters['page']} '
-        'per_page=${filters['per_page']} sort_by=${filters['sort_by']} '
-        'all_params=$filters',
-      );
 
       final response = await ApiService.getCarsRaw(
         filters,
@@ -726,21 +634,12 @@ mixin _HomePageFetchCore on _HomePageFields {
       // Stale: a newer fetchCars() started while this fallback request was
       // in flight — never let it overwrite the newer request's results.
       if (requestGen != _feedRequestGeneration) {
-        _debugLog(
-          '[search-trace] STALE-DISCARDED trace=$traceId gen=$requestGen '
-          'current_gen=$_feedRequestGeneration source=_fetchWithoutSort',
-        );
         return;
       }
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<Map<String, dynamic>> parsed =
             listingMapsFromApiResponse(decoded);
-        _debugLog(
-          '[search-trace] RESPONSE trace=$traceId gen=$requestGen '
-          'query="${filters['q']}" status=${response.statusCode} '
-          'models=${_searchTraceListingSummary(parsed)}',
-        );
 
         if (mounted) {
           setState(() {
@@ -749,11 +648,6 @@ mixin _HomePageFetchCore on _HomePageFields {
             hasLoadedOnce = true;
             loadErrorMessage = null;
           });
-          _debugLog(
-            '[search-trace] STATE-APPLIED trace=$traceId gen=$requestGen '
-            'query="${filters['q']}" source=_fetchWithoutSort '
-            'cars.length=${cars.length} models=${_searchTraceListingSummary(cars)}',
-          );
         }
 
         _debugLog(
@@ -792,10 +686,6 @@ mixin _HomePageFetchCore on _HomePageFields {
 
   void onFilterChanged() {
     if (widget.isSearchFiltersHost) return;
-    _debugLog(
-      '[search-trace] SEARCH-SUBMITTED entered_query='
-      '"${_searchFiltersKeywordController.text}"',
-    );
     // Analytics tracking for filters applied
     fetchCars();
     unawaited(fetchFeaturedCars());
@@ -841,17 +731,11 @@ mixin _HomePageFetchCore on _HomePageFields {
     // search/filter is currently active: promoted/featured listings must
     // only ever be shown for the default, filter-less home feed.
     if (_homeFiltersSnapshot().hasActiveFilters) {
-      _debugLog(
-        '[search-trace] SKIPPED source=fetchFeaturedCars reason=active-filters '
-        'entered_query="${_searchFiltersKeywordController.text}" '
-        'previous_featuredCars=${_searchTraceListingSummary(featuredCars)}',
-      );
       if (featuredCars.isNotEmpty && mounted) {
         setState(() => featuredCars = []);
       }
       return;
     }
-    final int traceId = ++_searchTraceRequestSeq;
     try {
       final filters = <String, String>{
         'page': '1',
@@ -861,32 +745,15 @@ mixin _HomePageFetchCore on _HomePageFields {
       if (city != null && city.isNotEmpty && city != 'Any') {
         filters['city'] = city;
       }
-      _debugLog(
-        '[search-trace] REQUEST trace=$traceId endpoint=/api/cars '
-        'source=fetchFeaturedCars q=${filters['q']} model=${filters['model']} '
-        'brand=${filters['brand']} page=${filters['page']} '
-        'per_page=${filters['per_page']} sort_by=${filters['sort_by']} '
-        'all_params=$filters',
-      );
       final response = await ApiService.getCarsRaw(filters);
       if (response.statusCode != 200 || !mounted) return;
       final decoded = json.decode(response.body);
       final parsed = listingMapsFromApiResponse(decoded);
-      _debugLog(
-        '[search-trace] RESPONSE trace=$traceId query="" '
-        'status=${response.statusCode} '
-        'models=${_searchTraceListingSummary(parsed)}',
-      );
       final featured = parsed
           .where(_isListingFeatured)
           .map((car) => Map<String, dynamic>.from(car))
           .toList(growable: false);
       setState(() => featuredCars = featured);
-      _debugLog(
-        '[search-trace] STATE-APPLIED trace=$traceId source=fetchFeaturedCars '
-        'featuredCars.length=${featuredCars.length} '
-        'models=${_searchTraceListingSummary(featuredCars)}',
-      );
     } catch (e, st) {
       logNonFatal(e, st);
     }
