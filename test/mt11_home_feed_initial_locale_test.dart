@@ -32,12 +32,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/app/widgets/global_listing_card.dart';
 import 'package:car_listing_app/data/car_name_translations.dart';
-import 'package:car_listing_app/features/comparison/state/car_comparison_store.dart';
 import 'package:car_listing_app/l10n/app_localizations.dart';
 import 'package:car_listing_app/shared/i18n/ku_delegates.dart';
 import 'package:car_listing_app/state/locale_controller.dart';
@@ -74,32 +72,24 @@ void _installTestCatalogPacks() {
 /// directly on raw listing maps), so this exercises the real render path --
 /// not just `CarNameTranslations` in isolation.
 Widget _homeFeedCardHarness(Locale locale, Map<String, dynamic> car) {
-  // `buildGlobalCarCard` now also renders a compact "Add to Compare" toggle
-  // (CarNet V1 batch, item 8) that reads `CarComparisonStore` via
-  // `provider` -- same as every real page, which wires it app-wide in
-  // `lib/app/providers.dart`. Mirror that here so this harness matches the
-  // real render path it claims to exercise.
-  return ChangeNotifierProvider<CarComparisonStore>(
-    create: (_) => CarComparisonStore(),
-    child: MaterialApp(
-      locale: locale,
-      supportedLocales: const [Locale('en'), Locale('ar'), Locale('ku')],
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        KuMaterialLocalizationsDelegate(),
-        KuWidgetsLocalizationsDelegate(),
-        KuCupertinoLocalizationsDelegate(),
-      ],
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => SizedBox(
-            width: 340,
-            height: 420,
-            child: buildGlobalCarCard(context, car),
-          ),
+  return MaterialApp(
+    locale: locale,
+    supportedLocales: const [Locale('en'), Locale('ar'), Locale('ku')],
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+      KuMaterialLocalizationsDelegate(),
+      KuWidgetsLocalizationsDelegate(),
+      KuCupertinoLocalizationsDelegate(),
+    ],
+    home: Scaffold(
+      body: Builder(
+        builder: (context) => SizedBox(
+          width: 340,
+          height: 420,
+          child: buildGlobalCarCard(context, car),
         ),
       ),
     ),

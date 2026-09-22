@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../../data/brand_logo_filenames.dart';
 import '../../shared/ui/brand_logo_image.dart';
 import '../../data/car_name_translations.dart';
-import '../../features/comparison/widgets/comparison_button.dart';
 import '../../l10n/app_localizations.dart';
 import '../../services/analytics_service.dart';
 import '../../services/api_service.dart';

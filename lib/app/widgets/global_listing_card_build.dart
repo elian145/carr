@@ -239,11 +239,6 @@ Widget _buildGlobalCarCard(
                                 )
                               else if (statusBadge != null)
                                 Center(child: statusBadge),
-                              Positioned(
-                                bottom: 8,
-                                right: 8,
-                                child: _globalListingCardCompareButton(car),
-                              ),
                             ],
                           ),
                         ),
@@ -326,11 +321,6 @@ Widget _buildGlobalCarCard(
                           )
                         else if (statusBadge != null)
                           Center(child: statusBadge),
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: _globalListingCardCompareButton(car),
-                        ),
                       ],
                     ),
                   ),

@@ -26,31 +26,6 @@ Widget _globalListingCardVideoCountBadge(Map car) {
   );
 }
 
-/// Item 8 (CarNet V1 batch): compact "Add to Compare" toggle overlaid on
-/// browse/listing cards, reusing the exact same [ComparisonButton] +
-/// [CarComparisonStore] used on the listing details page (no second compare
-/// implementation) — just rendered here at its existing `isCompact` size
-/// inside an opaque circular backdrop so it stays legible over photos.
-Widget _globalListingCardCompareButton(Map car) {
-  return Container(
-    width: 32,
-    height: 32,
-    decoration: const BoxDecoration(
-      color: Colors.black54,
-      shape: BoxShape.circle,
-    ),
-    // Force a legible default icon color over the dark backdrop; the
-    // button's own selected-state color (amber) still overrides this.
-    child: IconTheme.merge(
-      data: const IconThemeData(color: Colors.white),
-      child: ComparisonButton(
-        car: Map<String, dynamic>.from(car),
-        isCompact: true,
-      ),
-    ),
-  );
-}
-
 Widget _globalListingCardPhotoCountBadge(int count) {
   if (count <= 1) return const SizedBox.shrink();
   return Container(
