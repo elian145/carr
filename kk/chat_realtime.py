@@ -101,8 +101,15 @@ def resolve_allowed_chat_receiver(
     if raw:
         receiver = User.query.filter_by(public_id=raw).first()
     if receiver is None:
-        if car.seller_id != me.id:
+        # D-01 revisit: car.seller_id is now nullable (the seller may have
+        # deleted their account, leaving this listing scrubbed/deactivated
+        # but present for chat history -- see kk/models.py::Car.seller_id).
+        # There is no one left to start a *new* thread with; fall through
+        # to "no receiver" rather than calling Session.get(User, None).
+        if car.seller_id is not None and car.seller_id != me.id:
             receiver = db.session.get(User, car.seller_id)
+        elif car.seller_id is None:
+            receiver = None
         else:
             last = (
                 Message.query.filter(

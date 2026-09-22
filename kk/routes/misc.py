@@ -47,7 +47,7 @@ def _trust_config_payload() -> dict:
 
         s = get_platform_settings()
         return {
-            "support_email": s.get("support_email") or "support@carzo.app",
+            "support_email": s.get("support_email") or "support@carnetiq.app",
             "support_phone": s.get("support_phone") or "",
             "support_whatsapp": s.get("support_whatsapp") or "",
             "terms_url": s.get("terms_url") or "",
@@ -58,7 +58,7 @@ def _trust_config_payload() -> dict:
             return (os.environ.get(key) or default).strip()
 
         return {
-            "support_email": _env("SUPPORT_EMAIL", "support@carzo.app"),
+            "support_email": _env("SUPPORT_EMAIL", "support@carnetiq.app"),
             "support_phone": _env("SUPPORT_PHONE", ""),
             "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
             "terms_url": _env("TERMS_URL", "") or default_terms_url(),
@@ -193,7 +193,7 @@ def account_deletion_request():
         return jsonify({"message": "A valid account phone number is required"}), 400
 
     trust = _trust_config_payload()
-    support_email = trust.get("support_email") or "support@carzo.app"
+    support_email = trust.get("support_email") or "support@carnetiq.app"
     body = (
         f"Web account deletion request\n"
         f"Phone: {phone}\n"

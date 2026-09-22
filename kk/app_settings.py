@@ -107,7 +107,7 @@ def default_platform_settings() -> dict[str, Any]:
 
     return {
         "app_name": _env("APP_DISPLAY_NAME", "CarNet"),
-        "support_email": _env("SUPPORT_EMAIL", "support@carzo.app"),
+        "support_email": _env("SUPPORT_EMAIL", "support@carnetiq.app"),
         "support_phone": _env("SUPPORT_PHONE", ""),
         "support_whatsapp": _env("SUPPORT_WHATSAPP", ""),
         "terms_url": _env("TERMS_URL", "") or default_terms_url(),

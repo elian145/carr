@@ -122,19 +122,25 @@ def _make_car(app, db, seller_id: int, **extra):
 
 
 class TestSqliteFkPolicies:
-    def test_car_seller_restrict_blocks_user_delete(self, app_ctx):
+    def test_car_seller_set_null_on_user_delete(self, app_ctx):
+        """D-01 revisit: car.seller_id is ON DELETE SET NULL (not RESTRICT)
+        so deleting a user who still has listings succeeds at the DB level
+        -- kk/routes/auth.py::delete_account() relies on this (after first
+        scrubbing the listing's personal data) to hard-delete the account
+        instead of falling back to anonymizing it."""
         app, _client, db = app_ctx
-        from kk.models import User
+        from kk.models import Car, User
 
         uid, _pub, _name = _make_user(app, db)
-        _make_car(app, db, uid)
+        car_id, _cp = _make_car(app, db, uid)
         with app.app_context():
             user = db.session.get(User, uid)
             db.session.delete(user)
-            with pytest.raises(IntegrityError):
-                db.session.commit()
-            db.session.rollback()
-            assert db.session.get(User, uid) is not None
+            db.session.commit()
+            assert db.session.get(User, uid) is None
+            car = db.session.get(Car, car_id)
+            assert car is not None
+            assert car.seller_id is None
 
     def test_deleting_car_cascades_media_and_analytics_and_nulls_message_car(
         self, app_ctx
@@ -388,10 +394,21 @@ class TestSqliteFkPolicies:
 
 
 class TestDeleteAccountHttp:
-    def test_user_with_car_is_anonymized_and_history_survives(self, app_ctx, client):
+    def test_user_with_car_is_hard_deleted_and_listing_survives_scrubbed(
+        self, app_ctx, client
+    ):
+        """The account-deletion fix: a seller with listings must be
+        genuinely hard-deleted -- never left behind as an active/deactivated
+        `User` row just because they had a car. The listing itself survives
+        (deactivated, seller unlinked) so the counterpart's chat history and
+        trust & safety records stay intact, but every piece of the
+        listing's *personal* data (photos/videos, description, VIN, contact
+        numbers, exact coordinates) is removed."""
         app, _c, db = app_ctx
         from kk.models import (
             Car,
+            CarImage,
+            CarVideo,
             DealerApplication,
             ListingReport,
             Message,
@@ -401,9 +418,25 @@ class TestDeleteAccountHttp:
 
         seller_id, seller_pub, seller_name = _make_user(app, db)
         other_id, _op, _on = _make_user(app, db)
-        car_id, _cp = _make_car(app, db, seller_id)
+        car_id, _cp = _make_car(
+            app,
+            db,
+            seller_id,
+            description="call me at 0770 000 0000",
+            vin="1HGCM82633A004352",
+            contact_phone="07700000000",
+            contact_phones=["07700000000"],
+            latitude=36.19,
+            longitude=44.01,
+        )
         marker = f"keep-{seller_id}"
         with app.app_context():
+            db.session.add(
+                CarImage(car_id=car_id, image_url="https://example.com/a.jpg")
+            )
+            db.session.add(
+                CarVideo(car_id=car_id, video_url="https://example.com/a.mp4")
+            )
             db.session.add(
                 Message(
                     sender_id=other_id,
@@ -439,21 +472,212 @@ class TestDeleteAccountHttp:
             headers=_auth(token),
         )
         assert resp.status_code == 200, resp.data
+        assert resp.get_json()["message"] == "Account deleted successfully"
 
         with app.app_context():
-            user = db.session.get(User, seller_id)
-            assert user is not None
-            assert user.is_active is False
-            assert user.username.startswith("deleted_")
+            # The core fix: the User row is genuinely gone, not anonymized.
+            assert db.session.get(User, seller_id) is None
+            assert User.query.filter_by(public_id=seller_pub).first() is None
+
             car = db.session.get(Car, car_id)
-            assert car is not None
+            assert car is not None, "listing must survive for chat/report history"
+            assert car.seller_id is None
             assert car.is_active is False
+            assert car.status == "hidden"
+            assert car.description is None
+            assert car.vin is None
+            assert car.contact_phone is None
+            assert car.contact_phones is None
+            assert car.latitude is None
+            assert car.longitude is None
+            assert CarImage.query.filter_by(car_id=car_id).count() == 0
+            assert CarVideo.query.filter_by(car_id=car_id).count() == 0
+
             assert Message.query.filter_by(content=marker).count() == 1
             assert UserReport.query.filter_by(reason=marker).count() == 1
             assert ListingReport.query.filter_by(reason=marker).count() == 1
-            appn = DealerApplication.query.filter_by(user_id=seller_id).first()
+            appn = DealerApplication.query.filter_by(dealership_name=shop_name).first()
             assert appn is not None
-            assert appn.dealership_name == f"Shop-{seller_id}"
+            assert appn.user_id is None
+
+        # Deleted account cannot log in again.
+        relogin = client.post(
+            "/api/auth/login",
+            json={"username": seller_name, "password": _PASSWORD},
+        )
+        assert relogin.status_code == 401
+
+    def test_deletes_own_profile_picture_and_dealer_cover_and_profile_row(
+        self, app_ctx, client, monkeypatch
+    ):
+        """Data Safety audit fix: the user's own profile picture is personal
+        data with no surviving record referencing it, so it must be
+        best-effort deleted from storage on account deletion (mirrors
+        listing photos/videos). `DealerProfile` -- and its
+        `dealership_cover_picture` -- get exactly the same treatment: unlike
+        a `Car` listing, `DealerProfile` is never reachable through any
+        public route once its owning `User` row is gone (`GET
+        /api/dealers/<id>` / `GET /api/dealers` both require a live,
+        `is_active` `User` row -- see kk/routes/user.py::dealer_profile() /
+        list_dealers()), so it is deleted outright rather than kept around
+        as orphaned PII, and its cover photo is deleted from storage exactly
+        once (not duplicated with the profile-picture cleanup above)."""
+        app, _c, db = app_ctx
+        from kk.models import DealerProfile, User
+
+        seller_id, _sp, seller_name = _make_user(
+            app,
+            db,
+            profile_picture="uploads/profile_pictures/mine.jpg",
+            dealership_cover_picture="uploads/dealer_covers/shared.jpg",
+        )
+        shop_name = f"Shop-{seller_id}"
+        with app.app_context():
+            db.session.add(
+                DealerProfile(
+                    user_id=seller_id,
+                    dealership_name=shop_name,
+                    dealership_phone="07700000000",
+                    dealership_location="Erbil",
+                    dealership_cover_picture="uploads/dealer_covers/shared.jpg",
+                )
+            )
+            db.session.commit()
+
+        deleted_urls: list[str] = []
+        monkeypatch.setattr(
+            "kk.routes.media._delete_media_storage_object",
+            lambda url: deleted_urls.append(url),
+        )
+
+        token = _login(client, seller_name)
+        resp = client.post(
+            "/api/auth/delete-account",
+            json={"password": _PASSWORD},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200, resp.data
+
+        assert "uploads/profile_pictures/mine.jpg" in deleted_urls
+        assert deleted_urls.count("uploads/dealer_covers/shared.jpg") == 1
+
+        with app.app_context():
+            assert db.session.get(User, seller_id) is None
+            profile = DealerProfile.query.filter_by(dealership_name=shop_name).first()
+            assert profile is None, "orphaned DealerProfile must not survive deletion"
+
+    def test_deleted_sellers_listing_no_longer_public(self, app_ctx, client):
+        """A deleted seller's former listing must never resurface on any
+        public browse/search surface (it is deactivated as part of the
+        same transaction that deletes the account)."""
+        app, _c, db = app_ctx
+
+        seller_id, _sp, seller_name = _make_user(app, db)
+        _car_id, car_pub = _make_car(app, db, seller_id)
+
+        token = _login(client, seller_name)
+        resp = client.post(
+            "/api/auth/delete-account",
+            json={"password": _PASSWORD},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 200, resp.data
+
+        listing = client.get(f"/api/cars/{car_pub}")
+        assert listing.status_code == 404
+
+        browse = client.get("/api/cars")
+        assert browse.status_code == 200
+        ids = {c.get("id") for c in browse.get_json()["cars"]}
+        assert car_pub not in ids
+
+    def test_admin_dashboard_principal_cannot_self_delete(self, app_ctx, client):
+        """A mobile User that backs a dashboard AdminAccount must keep being
+        rejected -- this restriction is independent of the RESTRICT->SET
+        NULL change and must still behave exactly as before.
+
+        Mobile `/api/auth/login` itself already refuses to authenticate an
+        admin-principal User (dashboard credentials are a separate login
+        surface), so a JWT is minted directly here -- exactly what
+        `current_user.generate_tokens()` does -- to exercise
+        `delete_account()`'s own independent `AdminAccount` guard.
+        """
+        app, _c, db = app_ctx
+        from flask_jwt_extended import create_access_token
+        from kk.models import AdminAccount, User
+
+        uid, pub, name = _make_user(app, db, is_admin=True)
+        with app.app_context():
+            db.session.add(
+                AdminAccount(
+                    principal_user_id=uid,
+                    origin_user_public_id=pub,
+                    username=f"dash_{name}",
+                    password_hash="x" * 60,
+                    admin_role="super_admin",
+                )
+            )
+            db.session.commit()
+            token = create_access_token(identity=pub)
+
+        resp = client.post(
+            "/api/auth/delete-account",
+            json={"password": _PASSWORD},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 403, resp.data
+        with app.app_context():
+            assert db.session.get(User, uid) is not None
+
+    def test_failure_mid_delete_leaves_no_partial_state(self, app_ctx, client, monkeypatch):
+        """If anything raises partway through, the whole transaction must
+        roll back -- never a half-deleted account (some rows gone, `User`
+        row still present with its original data intact)."""
+        app, _c, db = app_ctx
+        from kk.models import BlockedUser, SavedSearch, TokenBlacklist, User
+        from kk.time_utils import utcnow
+        import kk.routes.auth as auth_module
+
+        victim_id, _vp, victim_name = _make_user(app, db)
+        other_id, _op, _on = _make_user(app, db)
+        with app.app_context():
+            db.session.add(
+                BlockedUser(blocker_id=victim_id, blocked_id=other_id)
+            )
+            db.session.add(
+                SavedSearch(user_id=victim_id, name="s", filters={"brand": "toyota"})
+            )
+            db.session.add(
+                TokenBlacklist(
+                    jti="jti-1",
+                    token_type="access",
+                    user_id=victim_id,
+                    expires_at=utcnow(),
+                )
+            )
+            db.session.commit()
+
+        def _boom(*_a, **_kw):
+            raise RuntimeError("simulated mid-delete failure")
+
+        monkeypatch.setattr(auth_module, "_delete_and_scrub_user_listings", _boom)
+
+        token = _login(client, victim_name)
+        resp = client.post(
+            "/api/auth/delete-account",
+            json={"password": _PASSWORD},
+            headers=_auth(token),
+        )
+        assert resp.status_code == 500, resp.data
+
+        with app.app_context():
+            user = db.session.get(User, victim_id)
+            assert user is not None, "user must not be deleted on failure"
+            assert user.is_active is True
+            assert user.username == victim_name
+            assert BlockedUser.query.filter_by(blocker_id=victim_id).count() == 1
+            assert SavedSearch.query.filter_by(user_id=victim_id).count() == 1
+            assert TokenBlacklist.query.filter_by(user_id=victim_id).count() == 1
 
     def test_carless_user_hard_delete_nulls_messages_and_reports(self, app_ctx, client):
         app, _c, db = app_ctx

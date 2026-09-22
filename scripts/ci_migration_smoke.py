@@ -270,9 +270,9 @@ def _d01_fk_ondelete_smoke(app) -> int:
             ),
             None,
         )
-        if not seller_fk or (seller_fk.get("options") or {}).get("ondelete") != "RESTRICT":
+        if not seller_fk or (seller_fk.get("options") or {}).get("ondelete") != "SET NULL":
             print(
-                f"D-01: car.seller_id ondelete is not RESTRICT: {seller_fk!r}",
+                f"D-01: car.seller_id ondelete is not SET NULL: {seller_fk!r}",
                 file=sys.stderr,
             )
             return 1
@@ -344,17 +344,25 @@ def _d01_fk_ondelete_smoke(app) -> int:
         appn_id = appn.id
         principal_id = principal.id
 
-        # RESTRICT: deleting a seller who still has cars must fail at the DB.
-        try:
-            db.session.execute(
-                text('DELETE FROM "user" WHERE id = :id'), {"id": seller_id}
+        # SET NULL (D-01 revisit, migration h1i2j3k4l5m6): deleting a seller
+        # who still has listings must succeed at the DB level --
+        # kk/routes/auth.py::delete_account() relies on exactly this (after
+        # itself scrubbing each listing's personal data/media first) to
+        # hard-delete the account instead of falling back to anonymizing it.
+        db.session.execute(
+            text('DELETE FROM "user" WHERE id = :id'), {"id": seller_id}
+        )
+        db.session.commit()
+        seller_id_after = db.session.execute(
+            text("SELECT seller_id FROM car WHERE id = :id"), {"id": car_id}
+        ).scalar()
+        if seller_id_after is not None:
+            print(
+                f"D-01: car.seller_id SET NULL failed: {seller_id_after!r}",
+                file=sys.stderr,
             )
-            db.session.commit()
-            print("D-01: DELETE seller with cars unexpectedly succeeded", file=sys.stderr)
             return 1
-        except IntegrityError:
-            db.session.rollback()
-            print("D-01: car.seller_id RESTRICT OK", flush=True)
+        print("D-01: car.seller_id SET NULL OK", flush=True)
 
         # RESTRICT: admin_account.principal_user_id.
         try:

@@ -120,9 +120,10 @@ def _queue_listing_moderation_notification(
     """Build and `db.session.add()` (but do not commit) a Notification for
     the listing's seller after an admin moderation action actually changes
     its public-visibility bucket. Returns ``None`` (adding nothing) if the
-    listing has no resolvable seller -- ``Car.seller_id`` is NOT
-    NULL/RESTRICT so this should not normally happen, but this must never
-    raise over a missing relationship.
+    listing has no resolvable seller -- ``Car.seller_id`` is nullable
+    (``ON DELETE SET NULL``; the seller may have deleted their account,
+    see kk/routes/auth.py::delete_account()), so this can legitimately
+    happen and must never raise over a missing relationship.
 
     Caller is responsible for commit + best-effort delivery (push/realtime)
     via `_deliver_listing_moderation_notification` afterwards, mirroring

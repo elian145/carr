@@ -17,6 +17,24 @@
 #   LISTING_REQUIRE_APPROVAL=1
 #   LISTING_REQUIRE_APPROVAL=0   # auto-publish (explicit)
 #
+# Google Play reviewer login (optional; off unless all three are set).
+# Lets the Play reviewer sign in with a fixed phone/OTP pair that never
+# expires and never sends a real SMS -- ONLY for the exact phone number
+# below, gated behind the enable flag. See kk/routes/auth.py
+# (_is_google_review_phone/_google_review_otp_matches) for the full design.
+# Set these as Render dashboard secrets (sync:false) -- never commit real
+# values to this file or anywhere else in the repo:
+#   GOOGLE_REVIEW_LOGIN_ENABLED=1
+#   GOOGLE_REVIEW_PHONE=<EXACTLY the 10 digits the reviewer will type into
+#     the app's phone field -- NO leading 0, NO +964, e.g. 7999999999.
+#     IMPORTANT: the mobile login screen always sends "+964" + those 10
+#     digits, and the backend strips the "964" back off before comparing
+#     (kk/routes/auth.py::_normalize_phone). If you enter the "0XXXXXXXXXX"
+#     local format instead (11 digits, leading 0 -- e.g. what you'd see on
+#     a SIM card), it will NEVER equal what the app actually sends, and the
+#     bypass will silently never trigger for that reviewer.
+#   GOOGLE_REVIEW_OTP=<a random 6-digit code, e.g. from: python -c "import secrets;print(f'{secrets.randbelow(1_000_000):06d}')">
+#
 # Also provision separately in the Render dashboard (not in this minimal blueprint):
 #   - Redis instance → set REDIS_URL on the web service (required at boot)
 #   - Background Worker running: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000

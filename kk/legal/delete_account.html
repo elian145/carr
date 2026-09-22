@@ -34,7 +34,7 @@
   <div class="wrap">
     <div class="card">
       <h1>Delete your CarNet account</h1>
-      <p class="meta">Google Play and App Store require a way to request account deletion on the web as well as in the app.</p>
+      <p class="meta">CarNet lets you request deletion of your account and associated personal data either from within the app or through this web page. CarNet is published and operated by {{OPERATOR_NAME}}.</p>
 
       <h2>Fastest: delete in the app</h2>
       <ol>
@@ -42,10 +42,21 @@
         <li>Go to <strong>Profile → Delete account</strong>.</li>
         <li>Confirm with the SMS code sent to your registered phone.</li>
       </ol>
-      <p>This permanently deletes your account and associated data (listings, messages, favorites, saved searches) when possible. See our <a href="{{PRIVACY_URL}}">Privacy Policy</a>.</p>
+      <p>This permanently deletes your account: your login, profile, favorites, and saved searches are removed. See our <a href="{{PRIVACY_URL}}">Privacy Policy</a> for the full retention details below.</p>
+
+      <h2>What is deleted, and what is kept (and why)</h2>
+      <ul>
+        <li><strong>Deleted:</strong> your account/login, profile (name shown to others, profile picture), favorites, saved searches, recently viewed history, blocks, and device push-notification registration.</li>
+        <li><strong>Taken offline and de-identified, not deleted outright:</strong> any listings you posted. They stop being shown to anyone, and their description, VIN, contact numbers, exact map location, photos, and videos are permanently removed &mdash; but the listing row itself is kept (with no link back to you) so it doesn't break the browsing history or trust-and-safety reports of other users who interacted with it.</li>
+        <li><strong>Kept, disassociated from your identity:</strong> chat messages you sent or received. The conversation is no longer linked to your account or name, but the message text stays visible to the other participant, the same way it would if they kept a paper record of the conversation.</li>
+        <li><strong>Kept for trust &amp; safety:</strong> reports you filed or that were filed against you, with the reporting/reported identity removed once your account is deleted.</li>
+        <li><strong>Dealer accounts:</strong> if you applied as, or were approved as, a dealership, your public dealer page is removed immediately &mdash; it is never shown once your account is gone, and it is not kept around behind the scenes either: the underlying record and its cover photo are deleted, and your dealership phone number(s), email(s), physical location, description, business registration number, and any verification documents/photo you uploaded are permanently deleted or erased from our systems. We keep only a minimal, non-personal audit record of the application itself (its status, your dealership's business name, and the dates/reasons of any approval or rejection decisions) for fraud-prevention and moderation history &mdash; never your personal contact details.</li>
+        <li><strong>Retention period:</strong> the above de-identified records are kept indefinitely as ordinary marketplace/moderation history (no personal data remains attached to them). Anything we retain temporarily for security, fraud prevention, or legal obligations is kept only as long as needed for that purpose.</li>
+      </ul>
+      <p>We do not promise permanent erasure of listing or chat history itself &mdash; only of the personal data that identifies you within it. If you need something we haven't covered here, contact support below.</p>
 
       <h2>Or request deletion here</h2>
-      <p>If you cannot use the app, submit this form. We will process verified requests and remove your account and personal data. You may need to confirm ownership of the phone or email you provide.</p>
+      <p>If you cannot use the app, submit this form. We will verify you own the phone or email you provide, then process the same deletion described above. Typical turnaround is a few business days.</p>
 
       <form id="delete-form" method="post" action="/api/account-deletion-request" novalidate>
         <label for="phone">Account phone number (required)</label>

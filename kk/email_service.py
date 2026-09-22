@@ -20,7 +20,7 @@ def _from_address() -> str:
         or (os.environ.get("SENDGRID_FROM_EMAIL") or "").strip()
         or (current_app.config.get("MAIL_DEFAULT_SENDER") or "").strip()
         or (current_app.config.get("MAIL_USERNAME") or "").strip()
-        or "noreply@carzo.app"
+        or "noreply@carnetiq.app"
     )
 
 

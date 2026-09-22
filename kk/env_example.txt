@@ -88,7 +88,7 @@ PLATE_BLUR_KEEP_ORIGINAL=0
 PLATE_BLUR_REQUIRE_SUCCESS=0
 
 # Trust & support (mobile Help / Terms / Contact)
-SUPPORT_EMAIL=support@carzo.app
+SUPPORT_EMAIL=support@carnetiq.app
 SUPPORT_PHONE=
 # E.164 or wa.me link, e.g. https://wa.me/9647XXXXXXXX
 SUPPORT_WHATSAPP=
@@ -97,4 +97,6 @@ SUPPORT_WHATSAPP=
 # Optional overrides (defaults: {PUBLIC_BASE_URL or request host}/terms and /privacy)
 TERMS_URL=
 PRIVACY_URL=
-# LEGAL_EFFECTIVE_DATE=May 22, 2026
+# LEGAL_EFFECTIVE_DATE=September 22, 2026
+# Optional override for the Privacy Policy / Terms "Controller"/"Operator" name (defaults to CarNetiq).
+# LEGAL_OPERATOR_NAME=CarNetiq

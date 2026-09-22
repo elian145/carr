@@ -165,22 +165,33 @@ class User(db.Model):
     # NOT use `cascade='all, delete-orphan'`. That ORM cascade would make
     # SQLAlchemy issue explicit `DELETE` statements for the child rows
     # *before* attempting to delete the User — bypassing whatever the
-    # database-level `ondelete=` policy says (RESTRICT/SET NULL only fire
+    # database-level `ondelete=` policy says (SET NULL/RESTRICT only fire
     # when the DB itself processes a parent delete while children still
     # exist; they never apply if the ORM proactively deletes the children
-    # itself). Per the D-01 product decision, listings/dealer records must
-    # survive account deletion (car.seller_id=RESTRICT,
-    # dealer_application.user_id/dealer_profile.user_id=SET NULL), so these
-    # three relationships use the default-equivalent 'save-update, merge'
-    # cascade instead — see kk/routes/auth.py::delete_account().
+    # itself). car.seller_id / dealer_application.user_id / dealer_profile.
+    # user_id are all ON DELETE SET NULL as of migration
+    # h1i2j3k4l5m6_d01r_car_seller_set_null.py, so these three
+    # relationships use the default-equivalent 'save-update, merge' cascade
+    # instead and let the DB null the FK itself once the User row is gone
+    # — see kk/routes/auth.py::delete_account(), which explicitly
+    # scrubs each listing's personal data/media *before* deleting the User
+    # in the same transaction. Listings survive de-identified this way
+    # (chat/report history about them stays intact). Dealer records do NOT
+    # blanket-survive the same way: `DealerApplication`/`DealerDecision`
+    # keep only their non-personal audit trail (status, business name,
+    # decision/reviewer/reason history) — every contact/document field is
+    # scrubbed in place — and `DealerProfile` (the live public-page mirror,
+    # unreachable via any route once its User is gone) is deleted outright.
+    # See kk/routes/auth.py::_scrub_dealer_records_for_deletion().
     cars = db.relationship(
         'Car',
         backref='seller',
         lazy=True,
         cascade='save-update, merge',
-        # Let the DB enforce RESTRICT. Without this the ORM would emit
-        # UPDATE car SET seller_id=NULL before deleting the user, which
-        # fails the NOT NULL column and never reaches the FK policy.
+        # Let the DB enforce ON DELETE SET NULL. Without this the ORM would
+        # try to UPDATE car SET seller_id=NULL itself before the User
+        # delete flushes, racing/duplicating exactly what the DB constraint
+        # already does.
         passive_deletes=True,
     )
     sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender', lazy=True)
@@ -409,8 +420,16 @@ class DealerApplication(db.Model):
     public_id = db.Column(
         db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
-    # D-01: SET NULL, not CASCADE — application/review history is preserved
-    # after the owning account is deleted (see kk/routes/auth.py::delete_account()).
+    # D-01: SET NULL, not CASCADE — the application/review *audit trail*
+    # (status, timestamps, decision history) is preserved after the owning
+    # account is deleted, for trust & safety/fraud history. The applicant's
+    # personal/contact fields below (phone, location, description, business
+    # registration number, uploaded documents, verification photo) are
+    # explicitly scrubbed in place by
+    # kk/routes/auth.py::_scrub_dealer_records_for_deletion() as part of the
+    # same delete_account() transaction — this FK alone does not protect
+    # them, it only keeps the row (and its DealerDecision history) from
+    # being destroyed.
     user_id = db.Column(
         db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), unique=True, nullable=True
     )
@@ -474,9 +493,19 @@ class DealerProfile(db.Model):
     public_id = db.Column(
         db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
-    # D-01: SET NULL, not CASCADE — the public dealer profile record is
-    # preserved after the owning account is deleted (see
-    # kk/routes/auth.py::delete_account()).
+    # D-01: SET NULL (not CASCADE) at the DB level, same as DealerApplication
+    # above -- but unlike DealerApplication, this row is NOT kept around
+    # de-identified. `DealerProfile` is purely the live, publicly-displayed
+    # mirror of an *approved* dealer's contact info (see
+    # kk/routes/admin.py::_review_dealer_application()); every public route
+    # that could ever show it (`GET /api/dealers`, `GET /api/dealers/<id>`)
+    # requires a live, active `User` row first, so once the owning account
+    # is hard-deleted this row is unreachable dead PII with no remaining
+    # product purpose. kk/routes/auth.py::_scrub_dealer_records_for_deletion()
+    # deletes it outright (and best-effort deletes its cover picture object)
+    # as part of the same delete_account() transaction. The SET NULL FK
+    # exists only so an unexpected mid-transaction ordering issue can never
+    # violate the constraint -- it is not itself a retention decision.
     user_id = db.Column(
         db.Integer, db.ForeignKey("user.id", ondelete="SET NULL"), unique=True, nullable=True
     )
@@ -592,12 +621,20 @@ class Car(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     public_id = db.Column(db.String(50), unique=True, default=lambda: str(uuid.uuid4()))
-    # D-01: RESTRICT (explicit) — account deletion must never destroy or
-    # orphan a seller's listings. The DB blocks deleting a `user` row while
-    # any `car` row still references it; kk/routes/auth.py::delete_account()
-    # relies on exactly this to fall back to anonymizing the account instead
-    # of hard-deleting it. See also `User.cars`' cascade note above.
-    seller_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='RESTRICT'), nullable=False)
+    # D-01 revisit (see migration h1i2j3k4l5m6_d01r_car_seller_set_null.py):
+    # SET NULL, not RESTRICT. Account deletion must never destroy or orphan
+    # a seller's listing history/chat threads, but it also must not be
+    # blocked by -- or fall back to anonymizing the user instead of
+    # deleting them because of -- that listing existing. kk/routes/auth.py
+    # ::delete_account() explicitly scrubs each listing's personal data
+    # (description, VIN, contact phones, exact coordinates, photos/videos)
+    # and deactivates it *before* deleting the `User` row in the same
+    # transaction; the DB then nulls this column itself the instant the
+    # user row is gone. A NULL seller_id means "listing survives,
+    # deactivated and de-identified, previous owner's account was
+    # deleted" -- every ownership check in the codebase already compares
+    # `car.seller_id == some_user.id`, which safely evaluates False.
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
     
     # Basic car information
     title = db.Column(db.String(200), nullable=False, default='')  # Some legacy DBs require NOT NULL

@@ -83,7 +83,7 @@ If chat works in-app but no phone banner: check Render logs for `no firebase_tok
 | `SENTRY_DSN` | Backend error tracking |
 | `PRIVACY_URL` | Live privacy policy (required for stores + Airbridge) |
 | `TERMS_URL` | Terms of service |
-| `LEGAL_OPERATOR_NAME` | Trading/legal name on `/terms` and `/privacy` (default `CarNet (Carzo)`) |
+| `LEGAL_OPERATOR_NAME` | Trading/legal name on `/terms` and `/privacy` (default `CarNetiq`) |
 | `LEGAL_OPERATOR_ADDRESS` | Optional address line on legal pages |
 | `LEGAL_JURISDICTION` | Governing law (default `Iraq`) |
 | `LEGAL_EFFECTIVE_DATE` | Shown on legal pages; defaults to today if unset |

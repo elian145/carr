@@ -103,6 +103,43 @@ def test_privacy_page_has_effective_date():
     assert "Effective:" in body
 
 
+def test_privacy_page_has_effective_date_september_22_2026(monkeypatch):
+    monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "September 22, 2026")
+    resp = _client().get("/privacy")
+    body = resp.get_data(as_text=True)
+    assert "Effective: September 22, 2026" in body
+
+
+def test_privacy_page_does_not_show_old_android_package_wording():
+    """Old public Google Play/iOS package-identifier wording must not leak
+    onto the public Privacy Policy page (S/BRAND-01)."""
+    resp = _client().get("/privacy")
+    body = resp.get_data(as_text=True)
+    assert "com.carzo.app" not in body
+    assert "com.carnetiq.app" not in body
+
+
+def test_privacy_page_controller_is_carnetiq_by_default(monkeypatch):
+    monkeypatch.delenv("LEGAL_OPERATOR_NAME", raising=False)
+    resp = _client().get("/privacy")
+    body = resp.get_data(as_text=True)
+    assert "Controller: CarNetiq" in body
+
+
+def test_privacy_page_deletion_retention_wording_does_not_weaken_commitment():
+    """Retention section must commit to deleting account + personal data on
+    request, only carving out narrow, named retention exceptions -- not
+    imply that deactivation alone is an acceptable substitute for deletion."""
+    resp = _client().get("/privacy")
+    body = resp.get_data(as_text=True)
+    assert (
+        "we delete your account and personal data associated with it"
+        in body
+    )
+    assert "listings, messages, favorites, and saved searches" in body
+    assert "kept only for those purposes and for no longer than necessary" in body
+
+
 def test_privacy_page_does_not_leak_secrets_or_credentials():
     """Sanity guard: the rendered page must never contain obvious secret
     material, even if env vars happen to be set to something sensitive in

@@ -129,6 +129,80 @@ def _to_bool(value) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+# --- Google Play reviewer OTP bypass ----------------------------------------
+#
+# Google Play review requires a login that (a) never expires and (b) never
+# depends on receiving a real SMS. Real phone-OTP login cannot satisfy
+# either, so a single, narrowly-scoped account gets a fixed, operator-chosen
+# phone number + code instead, gated behind THREE separate environment
+# variables (never hardcoded, never committed):
+#
+#   GOOGLE_REVIEW_LOGIN_ENABLED  - master on/off switch (default: off)
+#   GOOGLE_REVIEW_PHONE          - the exact phone number this applies to
+#   GOOGLE_REVIEW_OTP            - the fixed code accepted for that phone
+#
+# GOOGLE_REVIEW_PHONE format gotcha: the mobile login screen always sends
+# "+964" + exactly the 10 digits typed into its phone field, and
+# `_normalize_phone()` below strips that "964" back off before any
+# comparison happens. So GOOGLE_REVIEW_PHONE must be set to EXACTLY those
+# 10 digits (no leading 0, no "+964") -- the same 10 digits the reviewer
+# types into the app. Setting it to the 11-digit "0XXXXXXXXXX" local
+# format instead (what you'd read off a SIM) normalizes to a different
+# string and the bypass below will never match.
+#
+# Design invariants enforced below (see phone_start()/phone_verify()):
+#   * The bypass only ever matches when the incoming phone number, after the
+#     SAME normalization every other phone number goes through, equals
+#     GOOGLE_REVIEW_PHONE exactly -- it can never apply to any other user's
+#     phone number, and a wrong code against THIS phone still fails.
+#   * GOOGLE_REVIEW_OTP is compared with `hmac.compare_digest` (constant
+#     time), the same primitive used for real OTP hashes elsewhere in this
+#     file.
+#   * Disabling GOOGLE_REVIEW_LOGIN_ENABLED (or leaving either variable
+#     unset) fully disables this code path -- both helpers below fail
+#     closed to False/"" when misconfigured.
+#   * Neither the request endpoint nor the verify endpoint ever reveals
+#     that a given phone number is the reviewer account: /phone/start
+#     returns the exact same success response as a real send, and a wrong
+#     code on /phone/verify returns the exact same generic invalid-code
+#     response as any other account.
+#   * This path never reads or writes `phone_verification_code_hash` /
+#     `_expires_at` / `_attempts` / `_locked_until` for the reviewer's
+#     phone number, so it can never be blocked by (or interact with) the
+#     real per-user OTP lockout -- the reviewer cannot become permanently
+#     locked out.
+def _google_review_login_enabled() -> bool:
+    return _to_bool(os.environ.get("GOOGLE_REVIEW_LOGIN_ENABLED"))
+
+
+def _google_review_phone_digits() -> str:
+    raw = (os.environ.get("GOOGLE_REVIEW_PHONE") or "").strip()
+    if not raw:
+        return ""
+    return _normalize_phone(raw)
+
+
+def _google_review_otp_code() -> str:
+    return (os.environ.get("GOOGLE_REVIEW_OTP") or "").strip()
+
+
+def _is_google_review_phone(phone_digits: str) -> bool:
+    """True only when review login is enabled, GOOGLE_REVIEW_PHONE is
+    configured, and `phone_digits` (already normalized by the caller)
+    matches it exactly."""
+    if not phone_digits or not _google_review_login_enabled():
+        return False
+    review_phone = _google_review_phone_digits()
+    return bool(review_phone) and phone_digits == review_phone
+
+
+def _google_review_otp_matches(code: str) -> bool:
+    review_otp = _google_review_otp_code()
+    if not review_otp or not code:
+        return False
+    return hmac.compare_digest(code, review_otp)
+
+
 def _apply_dealer_profile(
     user: User,
     *,
@@ -1030,22 +1104,251 @@ def change_password():
         return jsonify({"message": "Failed to change password"}), 500
 
 
-def _scrub_user_listings_on_delete(user_id: int) -> None:
-    """Deactivate and scrub listing PII/media when hard-delete falls back to anonymize."""
-    from ..models import Car
+def _delete_and_scrub_user_listings(user_id: int, table_names: set[str]) -> list[str]:
+    """Deactivate every listing owned by ``user_id`` and permanently remove
+    its personal data, as part of the *same* transaction that goes on to
+    delete the ``User`` row itself.
 
+    D-01 revisit (see migration ``h1i2j3k4l5m6_d01r_car_seller_set_null.py``):
+    ``car.seller_id`` is ``ON DELETE SET NULL``, not ``RESTRICT`` -- the DB
+    nulls it automatically the instant the user row is deleted, so this
+    function does NOT need to (and must not) touch ``seller_id`` itself,
+    delete the ``Car`` row, or delete rows that already survive de-identified
+    via their own SET NULL FK (``Message``, ``ListingReport``). Deleting the
+    listing row outright would orphan the *surviving* counterpart's chat
+    history for it (``GET /api/chat/<car_id>/messages`` looks the car up by
+    id) -- exactly what D-01 exists to prevent.
+
+    What this *does* remove, because it is personal/identifying data of the
+    account being deleted:
+    - Photos/videos: both the ``CarImage``/``CarVideo`` DB rows (cascade-safe
+      either way) and, best-effort, the underlying object-storage file --
+      returned here so the caller can clean those up *after* the whole
+      deletion commits (mirrors ``kk/routes/media.py``'s commit-then-clean
+      -storage ordering).
+    - Free-text ``description`` and ``vin`` (may contain a name/phone/etc).
+    - ``contact_phone`` / ``contact_phones`` (the seller's own numbers).
+    - Exact ``latitude``/``longitude`` (already treated as owner/admin-only
+      in ``Car.to_dict()`` -- H-05).
+
+    Deliberately left alone: ``location`` (free-text city/area, not exact,
+    and is NOT NULL at the DB level), and the car's own spec fields
+    (brand/model/year/price/...) plus aggregate analytics -- none of that is
+    personal data about the seller, and the listing is deactivated
+    (``is_active=False``, ``status='hidden'``) so none of it is shown to
+    anyone once scrubbed.
+    """
+    if "car" not in table_names:
+        return []
+    from ..models import Car
+    from ..time_utils import utcnow
+
+    media_urls: list[str] = []
     cars = Car.query.filter_by(seller_id=user_id).all()
     for car in cars:
+        for img in list(car.images or []):
+            if img.image_url:
+                media_urls.append(img.image_url)
+            db.session.delete(img)
+        for vid in list(car.videos or []):
+            if vid.video_url:
+                media_urls.append(vid.video_url)
+            db.session.delete(vid)
         car.is_active = False
         car.status = "hidden"
         car.description = None
         car.vin = None
-        # `location` is NOT NULL — do not assign None (that 500s the
-        # anonymize fallback). The listing is already hidden from browse.
-        for img in list(car.images or []):
-            db.session.delete(img)
-        for vid in list(car.videos or []):
-            db.session.delete(vid)
+        car.contact_phone = None
+        car.contact_phones = None
+        car.latitude = None
+        car.longitude = None
+        car.updated_at = utcnow()
+    return media_urls
+
+
+def _scrub_dealer_application_snapshot(snapshot):
+    """Return a copy of a `DealerApplication.snapshot()` JSON blob with every
+    personal/contact/document field redacted.
+
+    Used both on the live `DealerApplication.snapshot()`-shaped dict (n/a --
+    the live row's own columns are scrubbed directly, see below) and on every
+    historical `DealerDecision.application_snapshot` for that application:
+    each decision stores a *copy* of the applicant's contact/business data
+    at the time of that review event (see `DealerApplication.snapshot()` /
+    `_save_dealer_application()` / `_review_dealer_application()`), so
+    leaving those JSON blobs untouched would let the exact same PII we just
+    scrubbed off the live row keep surviving inside the audit history.
+
+    Kept as-is: `dealership_name` (business name, not personal to an
+    individual -- matches what stays on the live row) and
+    `has_verification_photo` (already just a boolean, never the photo
+    itself).
+    """
+    if not isinstance(snapshot, dict):
+        return snapshot
+    scrubbed = dict(snapshot)
+    if "dealership_phone" in scrubbed:
+        scrubbed["dealership_phone"] = ""
+    if "dealership_phones" in scrubbed:
+        scrubbed["dealership_phones"] = []
+    if "dealership_location" in scrubbed:
+        scrubbed["dealership_location"] = ""
+    if "dealership_description" in scrubbed:
+        scrubbed["dealership_description"] = None
+    if "business_registration_number" in scrubbed:
+        scrubbed["business_registration_number"] = None
+    if "document_urls" in scrubbed:
+        scrubbed["document_urls"] = []
+    return scrubbed
+
+
+def _scrub_dealer_records_for_deletion(
+    user_id: int, table_names: set[str]
+) -> tuple[list[str], list[str]]:
+    """De-identify/remove dealer application + dealer profile personal data,
+    as part of the *same* transaction that goes on to delete the ``User``
+    row (called from delete_account() alongside
+    ``_delete_and_scrub_user_listings``).
+
+    Data Safety audit follow-up (dealer accounts): unlike a ``Car`` listing
+    (D-01), neither ``DealerApplication`` nor ``DealerProfile`` is ever
+    reachable through any *public* route once the owning ``User`` row is
+    gone. ``GET /api/dealers`` and ``GET /api/dealers/<id>`` both require a
+    live, ``is_active`` ``User`` row with ``account_type == "dealer"`` /
+    ``dealer_status == "approved"`` (see kk/routes/user.py::list_dealers() /
+    dealer_profile()) -- there is no route that looks a dealer up by
+    ``DealerProfile.public_id`` / ``DealerApplication.public_id`` directly.
+    So unlike a listing (which stays browsable/chat-linked after the seller
+    is gone), these rows have no surviving *public* purpose once the account
+    is deleted -- personal/contact data left on them would just be orphaned
+    PII sitting in the database, unreachable but not actually erased.
+
+    What survives, for trust & safety / fraud audit purposes (mirrors the
+    D-01 treatment of listing reports/messages):
+    - The ``DealerApplication`` row itself: ``status``, ``dealership_name``
+      (business name, not personal to an individual),
+      ``submitted_at``/``reviewed_at``, ``review_reason`` (the *admin
+      reviewer's* own words, not the applicant's data), and its full
+      ``DealerDecision`` history (decision/reviewer/reason/created_at) -- so
+      "this account applied as a dealer and was approved/rejected on this
+      date, for this reason" remains auditable after the account is gone.
+
+    What is removed/de-identified, because it is personal/contact data of
+    the account being deleted, with no documented fraud/security/legal need
+    for it to survive the account (grep of the codebase shows no feature
+    ever reads these fields back to cross-check a *new* application against
+    a previous one -- if such a fraud workflow is built later, it should
+    define its own narrow, documented retention for exactly what it needs):
+    - ``DealerApplication.dealership_phone``/``dealership_phones`` and
+      ``dealership_location`` (contact details) are reset to ``""``/``[]``
+      -- both columns are ``NOT NULL`` at the DB level, so an empty string
+      is the redaction marker (never real data past this point).
+    - ``dealership_description`` and ``business_registration_number`` are
+      cleared to ``None`` (both nullable).
+    - ``document_urls``: any R2/local-hosted object is best-effort deleted
+      from storage (foreign/third-party URLs are safely skipped -- see
+      ``_storage_key_from_url()``), then the column is cleared to ``[]``.
+    - ``verification_photo_filename``: the private local file under
+      ``PRIVATE_UPLOAD_FOLDER/dealer_verification/`` is best-effort deleted,
+      then the column is cleared to ``None``.
+    - Every historical ``DealerDecision.application_snapshot`` for that
+      application is scrubbed the same way in place (see
+      ``_scrub_dealer_application_snapshot()``) -- otherwise the exact same
+      contact/document data would silently keep surviving inside the JSON
+      audit blob even after the live application row is cleaned.
+    - The ``DealerProfile`` row is deleted outright (not merely
+      de-identified): it is the live, publicly-displayed mirror of an
+      approved dealer's contact info, and per the above is never
+      independently browsable once the account is gone, so keeping an
+      emptied-out shell around serves no purpose. Its
+      ``dealership_cover_picture`` storage object is queued for best-effort
+      deletion by the caller.
+
+    Returns ``(pending_media_urls, verification_photo_filenames)``:
+    - ``pending_media_urls``: R2/local object URLs (dealer cover picture +
+      any R2/local-hosted ``document_urls``) for the caller to merge into
+      its own post-commit ``_delete_media_storage_object()`` cleanup list.
+    - ``verification_photo_filenames``: bare filenames under
+      ``PRIVATE_UPLOAD_FOLDER/dealer_verification/`` for the caller to
+      best-effort delete after commit via
+      ``_delete_dealer_verification_file()`` (not a URL -- a different,
+      private-only storage layout, see
+      ``kk/routes/user.py::upload_dealer_verification_photo()``).
+    """
+    media_urls: list[str] = []
+    verification_files: list[str] = []
+
+    if "dealer_application" in table_names:
+        from ..time_utils import utcnow
+
+        application = DealerApplication.query.filter_by(user_id=user_id).first()
+        if application is not None:
+            for doc_url in application.document_urls or []:
+                if doc_url:
+                    media_urls.append(doc_url)
+            if application.verification_photo_filename:
+                verification_files.append(application.verification_photo_filename)
+
+            if "dealer_decision" in table_names:
+                decisions = DealerDecision.query.filter_by(
+                    application_id=application.id
+                ).all()
+                for decision in decisions:
+                    decision.application_snapshot = _scrub_dealer_application_snapshot(
+                        decision.application_snapshot
+                    )
+
+            application.dealership_phone = ""
+            application.dealership_phones = []
+            application.dealership_location = ""
+            application.dealership_description = None
+            application.business_registration_number = None
+            application.document_urls = []
+            application.verification_photo_filename = None
+            application.updated_at = utcnow()
+
+    if "dealer_profile" in table_names:
+        from ..models import DealerProfile
+
+        profile = DealerProfile.query.filter_by(user_id=user_id).first()
+        if profile is not None:
+            if profile.dealership_cover_picture:
+                media_urls.append(profile.dealership_cover_picture)
+            db.session.delete(profile)
+
+    return media_urls, verification_files
+
+
+def _delete_dealer_verification_file(filename: str) -> None:
+    """Best-effort delete of a private dealer-verification photo from local
+    disk (mirrors ``kk/routes/media.py::_delete_media_storage_object()``'s
+    fail-safe posture -- an already-missing file or a filesystem hiccup must
+    never raise, since this always runs *after* the DB delete already
+    committed).
+
+    Not folded into ``_delete_media_storage_object()`` because verification
+    photos are stored by bare filename under
+    ``PRIVATE_UPLOAD_FOLDER/dealer_verification/`` (private disk, never R2,
+    never a public ``uploads/...`` URL -- see
+    ``kk/routes/user.py::upload_dealer_verification_photo()``), a different
+    layout than every other media type that helper already understands.
+    """
+    name = (filename or "").strip()
+    if not name:
+        return
+    try:
+        folder = os.path.join(
+            current_app.config["PRIVATE_UPLOAD_FOLDER"], "dealer_verification"
+        )
+        path = os.path.join(folder, os.path.basename(name))
+        if os.path.isfile(path):
+            os.remove(path)
+    except OSError as e:
+        current_app.logger.warning(
+            "delete_account: failed to delete dealer verification photo "
+            "(best-effort): %s",
+            e,
+        )
 
 
 def _hash_delete_account_code(phone_digits: str, code: str) -> str:
@@ -1190,6 +1493,20 @@ def delete_account():
             return jsonify({"message": "Incorrect password"}), 400
 
         user_id = current_user.id
+        username_for_log = current_user.username
+        # Captured now (before the User row is deleted/expired below) so the
+        # storage object can be cleaned up best-effort after commit, same as
+        # each listing's photos/videos in `_delete_and_scrub_user_listings`.
+        # NOT `dealership_cover_picture`: `User.dealership_cover_picture`
+        # itself is not queued here because it is the *same* underlying
+        # object as `DealerProfile.dealership_cover_picture` (copied
+        # verbatim on approval -- see
+        # kk/routes/admin.py::_review_dealer_application()`), which
+        # `_scrub_dealer_records_for_deletion()` already queues for
+        # best-effort deletion exactly once when it deletes the
+        # `DealerProfile` row below -- queuing it a second time here would
+        # just be a redundant (harmless, but pointless) storage delete call.
+        profile_picture_url = current_user.profile_picture
         bind = db.session.get_bind()
         table_names = set()
         try:
@@ -1198,14 +1515,28 @@ def delete_account():
         except Exception:
             table_names = set()
 
+        # Everything from here to the single db.session.commit() below is
+        # one transaction: if anything raises, the outer `except` rolls
+        # ALL of it back, so a failure never leaves a half-deleted account
+        # (some rows gone, User row still present) -- see the module-level
+        # note on _delete_and_scrub_user_listings() for why listings
+        # themselves are deactivated/scrubbed in place rather than deleted.
+        #
         # Remove many-to-many associations so FK constraints don't block user delete.
         current_user.favorites = []
         current_user.viewed_listings = []
 
         # D-01: do NOT bulk-delete Message / UserReport / ListingReport here.
-        # Conversation history and trust & safety reports must survive account
-        # deletion (SET NULL on the user/listing FKs). Group-A child rows
-        # (blocks, tokens, saved searches) are still cleaned explicitly.
+        # Conversation history and trust & safety reports survive account
+        # deletion, de-identified via ON DELETE SET NULL on their
+        # user/listing FKs. Dealer records are handled explicitly below by
+        # _scrub_dealer_records_for_deletion() -- their audit trail
+        # (DealerApplication/DealerDecision) survives with every
+        # personal/contact/document field scrubbed, and DealerProfile (the
+        # live public-page mirror) is deleted outright; see that function's
+        # docstring for why it is not a simple SET-NULL-and-done case like
+        # the FKs below. Group-A child rows (blocks, tokens, saved
+        # searches) are still cleaned explicitly too.
 
         if "blocked_user" in table_names:
             BlockedUser.query.filter(
@@ -1225,85 +1556,84 @@ def delete_account():
 
             SavedSearch.query.filter_by(user_id=user_id).delete(synchronize_session=False)
 
-        log_user_action(current_user, "account_deleted")
+        # Deactivate + strip personal data from every listing this user
+        # owns (photos/videos, description, VIN, contact numbers, exact
+        # coordinates). Does NOT delete the Car row or touch seller_id --
+        # the DB nulls that itself (ON DELETE SET NULL) the instant the
+        # User row below is deleted, which is also what makes the final
+        # hard delete possible at all (no more RESTRICT to violate).
+        pending_media_urls = _delete_and_scrub_user_listings(user_id, table_names)
+        if profile_picture_url:
+            pending_media_urls.append(profile_picture_url)
 
-        try:
-            # Chat-list grouping fix: stamp every message this user sent or
-            # received with their own (about-to-be-gone) id, *before* the
-            # DB's `ON DELETE SET NULL` on sender_id/receiver_id fires below.
-            # `deleted_counterpart_marker` has no FK, so it survives the
-            # delete untouched; kk/routes/chat.py::list_chats() uses it to
-            # keep collapsing this user's messages into one conversation row
-            # per car, without merging them with some *other* deleted
-            # user's messages about the same car.
-            if "message" in table_names:
-                from ..models import Message as _ChatMessage
+        # Data Safety audit follow-up: scrub the dealer application's
+        # personal/contact/document fields (+ their historical
+        # DealerDecision.application_snapshot copies) and delete the
+        # DealerProfile row outright -- see that function's docstring for
+        # the full rationale (mirrors the listing scrub above: DB rows that
+        # legitimately need to survive keep only their non-personal audit
+        # value, everything personal is removed in the same transaction).
+        dealer_media_urls, dealer_verification_files = _scrub_dealer_records_for_deletion(
+            user_id, table_names
+        )
+        pending_media_urls.extend(dealer_media_urls)
 
-                _ChatMessage.query.filter(
-                    (_ChatMessage.sender_id == user_id)
-                    | (_ChatMessage.receiver_id == user_id),
-                ).update(
-                    {"deleted_counterpart_marker": user_id}, synchronize_session=False
-                )
+        # Chat-list grouping fix: stamp every message this user sent or
+        # received with their own (about-to-be-gone) id, *before* the
+        # DB's `ON DELETE SET NULL` on sender_id/receiver_id fires below.
+        # `deleted_counterpart_marker` has no FK, so it survives the
+        # delete untouched; kk/routes/chat.py::list_chats() uses it to
+        # keep collapsing this user's messages into one conversation row
+        # per car, without merging them with some *other* deleted
+        # user's messages about the same car.
+        if "message" in table_names:
+            from ..models import Message as _ChatMessage
 
-            db.session.delete(current_user)
-            db.session.commit()
-            return jsonify({"message": "Account deleted successfully"}), 200
-        except Exception as hard_delete_error:
-            # Fallback: anonymize/deactivate and scrub listings so PII/media are not left public.
-            db.session.rollback()
-            suffix = secrets.token_hex(4)
-            from ..time_utils import utcnow
-
-            # Re-load user after rollback
-            current_user = db.session.get(User, user_id)
-            if not current_user:
-                return jsonify({"message": "Account deleted successfully"}), 200
-
-            # Re-apply association clears after rollback
-            current_user.favorites = []
-            current_user.viewed_listings = []
-            if "blocked_user" in table_names:
-                BlockedUser.query.filter(
-                    (BlockedUser.blocker_id == user_id)
-                    | (BlockedUser.blocked_id == user_id),
-                ).delete(synchronize_session=False)
-            if "saved_search" in table_names:
-                from ..models import SavedSearch
-
-                SavedSearch.query.filter_by(user_id=user_id).delete(
-                    synchronize_session=False
-                )
-            try:
-                _scrub_user_listings_on_delete(user_id)
-            except Exception as scrub_err:
-                current_app.logger.warning(
-                    "Listing scrub failed during anonymize for user_id=%s: %s",
-                    user_id,
-                    scrub_err,
-                )
-
-            current_user.username = f"deleted_{suffix}"
-            current_user.phone_number = f"del_{int(time.time())}_{suffix}"[:20]
-            current_user.email = None
-            current_user.first_name = "Deleted"
-            current_user.last_name = "User"
-            current_user.is_active = False
-            current_user.is_verified = False
-            try:
-                current_user.phone_verified = False
-            except Exception:
-                pass
-            current_user.firebase_token = None
-            current_user.set_password(secrets.token_urlsafe(24))
-            current_user.updated_at = utcnow()
-            db.session.commit()
-            current_app.logger.warning(
-                "Hard delete failed for user_id=%s; account anonymized instead: %s",
-                user_id,
-                str(hard_delete_error),
+            _ChatMessage.query.filter(
+                (_ChatMessage.sender_id == user_id)
+                | (_ChatMessage.receiver_id == user_id),
+            ).update(
+                {"deleted_counterpart_marker": user_id}, synchronize_session=False
             )
-            return jsonify({"message": "Account removed successfully"}), 200
+
+        # Not a DB-persisted audit row: UserAction.user_id is itself
+        # ON DELETE CASCADE, so any row logged here would just be deleted
+        # again a few lines down along with everything else this user
+        # owns -- an app-log line is the only thing that actually survives.
+        current_app.logger.info(
+            "account_deleted user_id=%s username=%s", user_id, username_for_log
+        )
+
+        db.session.delete(current_user)
+        db.session.commit()
+
+        # Best-effort: delete listing media + the user's own profile picture
+        # from storage now that the DB delete has committed (mirrors
+        # kk/routes/media.py::delete_car_image()'s commit-then-clean
+        # -storage ordering, so a storage-backend hiccup can never block,
+        # or partially undo, the account delete itself).
+        if pending_media_urls:
+            from .media import _delete_media_storage_object
+
+            for url in pending_media_urls:
+                try:
+                    _delete_media_storage_object(url)
+                except Exception as media_err:
+                    current_app.logger.warning(
+                        "delete_account: best-effort media cleanup failed for "
+                        "user_id=%s (url length=%d): %s",
+                        user_id,
+                        len(url or ""),
+                        media_err,
+                    )
+
+        # Same best-effort, post-commit ordering for the private dealer
+        # verification photo (different storage layout -- see
+        # _delete_dealer_verification_file()).
+        for filename in dealer_verification_files:
+            _delete_dealer_verification_file(filename)
+
+        return jsonify({"message": "Account deleted successfully"}), 200
     except Exception as e:
         db.session.rollback()
         current_app.logger.exception("delete_account failed: %s", e)
@@ -1682,6 +2012,33 @@ def send_phone_verification():
 
 # --- Phone OTP auth endpoints ---
 
+def _google_review_phone_start_response():
+    """Response for a `/phone/start` request against the Google Play
+    reviewer phone number.
+
+    Provisions the dedicated review account on first use, through the
+    exact same `_get_or_create_user_for_phone()` helper every other phone
+    number uses (idempotent -- looked up by phone number first, so this
+    never creates a duplicate row for an existing account). Deliberately
+    does NOT generate a random code, write `phone_verification_code_hash`
+    / `_expires_at` / `_locked_until`, or call the SMS provider -- the
+    paired bypass in `phone_verify()` checks the fixed `GOOGLE_REVIEW_OTP`
+    value directly and never consults that per-user OTP state, so this
+    account can never end up locked out by real OTP attempts either.
+
+    Returns the exact same 200 `{"message": "OTP sent"}` shape a real
+    successful send returns, and -- unlike the real path -- never includes
+    a `dev_code` field, so nothing here can ever expose the reviewer's
+    fixed OTP through the debug echo path, and no observer can distinguish
+    this response from an ordinary successful send.
+    """
+    try:
+        _get_or_create_user_for_phone(_google_review_phone_digits())
+    except Exception:
+        current_app.logger.exception("Failed to provision Google review account")
+    return jsonify({"message": "OTP sent"}), 200
+
+
 @bp.route("/api/auth/phone/start", methods=["POST"])
 @rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
 def phone_start():
@@ -1697,6 +2054,14 @@ def phone_start():
         phone_digits = _normalize_phone(raw_phone)
         if not phone_digits:
             return jsonify({"message": "Phone number is required"}), 400
+
+        if _is_google_review_phone(phone_digits):
+            # Google Play reviewer bypass: identical success response to a
+            # real send, no SMS, no signal that this phone number is
+            # special. See the module-level comment above
+            # `_is_google_review_phone` for the full design invariants.
+            return _google_review_phone_start_response()
+
         if is_dealer_requested:
             if not dealership_name:
                 return jsonify({"message": "Dealership name is required for dealer accounts"}), 400
@@ -1799,6 +2164,55 @@ def phone_start():
         return jsonify({"message": "Failed to start phone verification"}), 500
 
 
+def _google_review_login_success_response():
+    """Authenticates the Google Play reviewer account through the exact
+    same account/session/JWT issuance path as a real, successful phone-OTP
+    verification.
+
+    Provisions the account on first use (idempotent -- same
+    `_get_or_create_user_for_phone()` lookup-by-phone-first helper every
+    other phone number uses, so this can never create a duplicate row),
+    marks it verified so it has full ordinary-user access during Play
+    review, and returns the identical `{access_token, refresh_token,
+    user}` shape `phone_verify()` returns for any other successful
+    verification. Never reads or writes this phone's
+    `phone_verification_code_hash` / `_expires_at` / `_attempts` /
+    `_locked_until` -- entirely independent of the real per-user OTP state.
+    """
+    from ..time_utils import utcnow
+
+    phone_digits = _google_review_phone_digits()
+    user = _get_or_create_user_for_phone(phone_digits)
+
+    if not user.is_active:
+        # Should never happen for the dedicated review account, but stay
+        # consistent with the real deactivated-account response rather
+        # than silently issuing tokens for a deactivated row.
+        return jsonify({
+            "message": "This account has been deactivated. Contact support for assistance.",
+            "code": "account_deactivated",
+        }), 403
+
+    if not user.is_verified or not user.phone_verified:
+        user.is_verified = True
+        user.phone_verified = True
+
+    first_login = user.last_login is None
+    user.last_login = utcnow()
+    db.session.commit()
+
+    access_token = _access_token_for_user(user)
+    refresh_token = _refresh_token_for_user(user)
+    if first_login:
+        log_user_action(user, "signup")
+    log_user_action(user, "login_phone")
+    return jsonify({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "user": user.to_dict(include_private=True),
+    }), 200
+
+
 @bp.route("/api/auth/phone/verify", methods=["POST"])
 @rate_limit(max_requests=10, window_minutes=15)
 def phone_verify():
@@ -1815,6 +2229,19 @@ def phone_verify():
         phone_digits = _normalize_phone(raw_phone)
         if not phone_digits or not code:
             return jsonify({"message": "Phone number and code are required"}), 400
+
+        if _is_google_review_phone(phone_digits):
+            # Google Play reviewer bypass -- ONLY reachable when the phone
+            # number matches GOOGLE_REVIEW_PHONE exactly and the feature is
+            # enabled (see `_is_google_review_phone`). A wrong code against
+            # this exact phone number gets the SAME generic response as any
+            # other wrong/expired code -- this never touches, and is never
+            # blocked by, the real per-user OTP hash/lockout state for this
+            # phone, so the reviewer cannot become permanently locked out.
+            if _google_review_otp_matches(code):
+                return _google_review_login_success_response()
+            return jsonify({"message": "Invalid or expired verification code"}), 400
+
         if is_dealer_requested:
             if not dealership_name:
                 return jsonify({"message": "Dealership name is required for dealer accounts"}), 400

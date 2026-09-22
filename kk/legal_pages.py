@@ -48,7 +48,7 @@ def _support_email() -> str:
             return email
     except Exception:
         pass
-    return (os.environ.get("SUPPORT_EMAIL") or "support@carzo.app").strip()
+    return (os.environ.get("SUPPORT_EMAIL") or "support@carnetiq.app").strip()
 
 
 def _effective_date() -> str:
@@ -68,8 +68,8 @@ def _effective_date() -> str:
 
 def _operator_name() -> str:
     return (
-        os.environ.get("LEGAL_OPERATOR_NAME") or "CarNet (Carzo)"
-    ).strip() or "CarNet (Carzo)"
+        os.environ.get("LEGAL_OPERATOR_NAME") or "CarNetiq"
+    ).strip() or "CarNetiq"
 
 
 def _operator_address() -> str:
