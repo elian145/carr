@@ -1,13 +1,60 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Media/storage permissions for selecting and uploading photos -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--
+         Media access: CarNet only lets users SELECT existing photos/videos (car listings,
+         chat attachments, profile/dealer images) via image_picker, which launches the
+         Android Photo Picker (ACTION_PICK_IMAGES, backed by Google Play services on
+         Android <13) or the system document/gallery picker on older OS versions. Neither
+         image_picker nor image_cropper declares or checks READ_MEDIA_IMAGES,
+         READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE, or WRITE_EXTERNAL_STORAGE — the OS grants
+         the app access only to the specific item(s) the user picks, so none of those broad
+         library-wide permissions are requested here. CAMERA is kept for in-app photo/video
+         capture and RECORD_AUDIO for chat voice messages.
+    -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+
+    <!--
+         Permission audit (transitive, not used at runtime by CarNet — removed via
+         tools:node="remove" so the manifest merger strips them from every build variant):
+
+         ACCESS_FINE_LOCATION / ACCESS_COARSE_LOCATION
+           Injected by `com.google.android.libraries.places:places:4.1.0`, a native
+           dependency of the `google_places_autocomplete` plugin (see its
+           android/build.gradle: implementation 'com.google.android.libraries.places:places:4.1.0').
+           That library declares both permissions unconditionally to support optional
+           location-biased autocomplete (e.g. PlacesClient "current place" / origin-based
+           ranking). CarNet's native plugin implementation
+           (GooglePlacesAutocompletePlugin.kt) only calls
+           FindAutocompletePredictionsRequest / FetchPlaceRequest for text-based search and
+           place-detail lookups — it never calls setOrigin(), never touches
+           FusedLocationProviderClient, and never requests "current place". The app has no
+           geolocator dependency, no getCurrentPosition()/current-position API usage
+           anywhere in lib/, and dealer location is always picked manually on the map
+           (myLocationButtonEnabled/myLocationEnabled are never set to true — see
+           dealer_location_picker_page_core.dart / dealer_location_map_preview.dart).
+           Google Maps tile rendering itself never requires a location permission. Safe to
+           remove: Maps rendering, Places autocomplete, and manual pin selection all keep
+           working with these permissions absent.
+
+         AD_ID (com.google.android.gms.permission.AD_ID)
+           Injected by `io.airbridge:sdk-android:4.9.4`, the native dependency of
+           `airbridge_flutter_sdk`. The SDK declares AD_ID so it *can* collect the Google
+           Advertising ID for attribution/session-start tracking, but
+           android/app/src/main/assets/airbridge.json sets
+           "autoStartTrackingEnabled": false, and there is no startTracking() call anywhere
+           in lib/ — so CarNet never triggers the tracking/session flow that would read the
+           advertising ID. The only Airbridge API actually used is
+           Airbridge.createTrackingLink() (lib/shared/listings/listing_share.dart), which
+           creates a short deep link for sharing a listing via a server-side API call and
+           does not depend on AD_ID. Safe to remove: deep links and
+           Airbridge.createTrackingLink() keep working with AD_ID absent.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="remove" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
     <application
         android:name="com.carzo.app.MainApplication"
         android:label="CarNet"
