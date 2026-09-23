@@ -9,6 +9,7 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/phone/phone_normalizer.dart';
 import 'api_exception.dart';
 import 'api_cancel_token.dart';
+import 'api/tracked_http_client.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/debug/expected_client_noise.dart';
 import '../state/locale_controller.dart';
@@ -88,18 +89,50 @@ class ApiService {
   /// Optional hook when [clearTokens] runs outside [AuthService.logout].
   static void Function()? onTokensCleared;
 
-  static http.Client _productionHttpClient = http.Client();
+  static TrackedHttpClient _productionHttpClient = TrackedHttpClient(
+    http.Client(),
+  );
   static http.Client? _testHttpClient;
 
   /// Replace the shared [http.Client] after iOS reclaims keep-alive sockets.
+  ///
+  /// Called from `_withStaleClientRetry` when a single request hits a
+  /// stale-connection error, from `AppWithDeepLinks.didChangeAppLifecycleState`
+  /// on every app resume, and from ad-hoc resilience loops (e.g.
+  /// `SellListingMediaUpload._uploadImagesResilient`) between retry attempts.
+  ///
+  /// Bug fix: this used to call `previous.close()` directly, which — via
+  /// `IOClient.close()` -> `HttpClient.close(force: true)` — force-aborts
+  /// *every* socket the old client has open, not just the one that hit a
+  /// stale-connection error. Because every request in this file shares one
+  /// production client, that could (and in production did) kill a
+  /// completely unrelated, still-streaming request — e.g. a multipart video
+  /// upload whose body was ~78% written when an unrelated push-token retry
+  /// (or a plain app-resume event) recycled the client — surfacing as
+  /// `ClientException: Content size below specified contentLength` on the
+  /// victim request, even though that request was never itself reused or
+  /// retried.
+  ///
+  /// [TrackedHttpClient.closeWhenIdle] fixes this: the outgoing client is
+  /// swapped out for new work immediately, but its underlying socket(s) are
+  /// only actually closed once every request already in flight on it has
+  /// finished — an active upload is never terminated just because the app
+  /// briefly backgrounded/foregrounded or because some other request
+  /// happened to need a fresh connection.
   static void recycleProductionHttpClient() {
     if (_testHttpClient != null) return;
     final previous = _productionHttpClient;
-    _productionHttpClient = http.Client();
-    try {
-      previous.close();
-    } catch (_) {}
+    _productionHttpClient = TrackedHttpClient(http.Client());
+    previous.closeWhenIdle();
   }
+
+  /// Test-only introspection of the production client wrapper (not the
+  /// test-mode [testHttpClient]) — lets tests assert on in-flight/closed
+  /// state around [recycleProductionHttpClient] without depending on real
+  /// sockets.
+  @visibleForTesting
+  static TrackedHttpClient get debugProductionHttpClient =>
+      _productionHttpClient;
 
   /// Widget/integration tests: route API calls through [FakeApiServer] mock client.
   @visibleForTesting
