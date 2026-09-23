@@ -3406,6 +3406,48 @@ abstract class AppLocalizations {
   /// **'Under review'**
   String get listingPendingBadge;
 
+  /// No description provided for @sellSubmissionContinueMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your listing is being uploaded. You can continue using CarNet.'**
+  String get sellSubmissionContinueMessage;
+
+  /// No description provided for @sellSubmissionUploadingGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading listing…'**
+  String get sellSubmissionUploadingGeneric;
+
+  /// No description provided for @sellSubmissionUploadingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading listing… {completed} of {total} media uploaded'**
+  String sellSubmissionUploadingProgress(int completed, int total);
+
+  /// No description provided for @sellSubmissionRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Finishing your listing upload…'**
+  String get sellSubmissionRetrying;
+
+  /// No description provided for @sellSubmissionNeedsAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Your listing was created, but we couldn\'t finish uploading it. Open My Listings to fix it.'**
+  String get sellSubmissionNeedsAttention;
+
+  /// No description provided for @sellSubmissionNeedsAttentionNoListing.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t finish creating your listing. Open My Listings to find and fix the draft.'**
+  String get sellSubmissionNeedsAttentionNoListing;
+
+  /// No description provided for @sellSubmissionOpenMyListingsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'My Listings'**
+  String get sellSubmissionOpenMyListingsAction;
+
   /// No description provided for @homeOfflineCachedBanner.
   ///
   /// In en, this message translates to:

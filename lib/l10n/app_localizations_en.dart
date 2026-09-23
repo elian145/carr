@@ -1793,6 +1793,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listingPendingBadge => 'Under review';
 
   @override
+  String get sellSubmissionContinueMessage =>
+      'Your listing is being uploaded. You can continue using CarNet.';
+
+  @override
+  String get sellSubmissionUploadingGeneric => 'Uploading listing…';
+
+  @override
+  String sellSubmissionUploadingProgress(int completed, int total) {
+    return 'Uploading listing… $completed of $total media uploaded';
+  }
+
+  @override
+  String get sellSubmissionRetrying => 'Finishing your listing upload…';
+
+  @override
+  String get sellSubmissionNeedsAttention =>
+      'Your listing was created, but we couldn\'t finish uploading it. Open My Listings to fix it.';
+
+  @override
+  String get sellSubmissionNeedsAttentionNoListing =>
+      'We couldn\'t finish creating your listing. Open My Listings to find and fix the draft.';
+
+  @override
+  String get sellSubmissionOpenMyListingsAction => 'My Listings';
+
+  @override
   String get homeOfflineCachedBanner =>
       'You are offline. Showing cached listings.';
 

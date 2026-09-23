@@ -622,6 +622,25 @@
   "listingSubmittedPending": "Your listing is under review and hidden from buyers for now. Track it in My Listings → Pending.",
   "listingSubmittedSuccess": "Your listing is live. Find it in My Listings → Active.",
   "listingPendingBadge": "Under review",
+  "sellSubmissionContinueMessage": "Your listing is being uploaded. You can continue using CarNet.",
+  "sellSubmissionUploadingGeneric": "Uploading listing…",
+  "sellSubmissionUploadingProgress": "Uploading listing… {completed} of {total} media uploaded",
+  "@sellSubmissionUploadingProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int",
+        "example": "1"
+      },
+      "total": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "sellSubmissionRetrying": "Finishing your listing upload…",
+  "sellSubmissionNeedsAttention": "Your listing was created, but we couldn't finish uploading it. Open My Listings to fix it.",
+  "sellSubmissionNeedsAttentionNoListing": "We couldn't finish creating your listing. Open My Listings to find and fix the draft.",
+  "sellSubmissionOpenMyListingsAction": "My Listings",
   "homeOfflineCachedBanner": "You are offline. Showing cached listings.",
   "offlineBannerMessage": "You're offline. Some features may not work.",
   "myListingsPendingFilter": "Pending",

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +8,7 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/deep_link_service.dart';
 import '../../services/push_notification_service.dart';
+import '../../features/sell/pending_sell_submission_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/ui/keyboard.dart';
 import '../../shared/ui/responsive.dart';
@@ -89,10 +92,21 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
     auth.addListener(_onAuthChanged);
   }
 
+  bool _wasAuthenticated = false;
+
   void _onAuthChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkApprovedDealerProfile();
     });
+    // Automatic-resume trigger (req. #5): a Sell submission recorded while
+    // signed out (should not normally happen — Submit requires auth — but
+    // also covers a token refresh completing) gets picked back up the
+    // moment auth becomes true, without the user reopening the draft.
+    final isAuthenticated = _authService?.isAuthenticated ?? false;
+    if (isAuthenticated && !_wasAuthenticated) {
+      unawaited(PendingSellSubmissionService.instance.resumeAll());
+    }
+    _wasAuthenticated = isAuthenticated;
   }
 
   @override
@@ -100,6 +114,11 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
     if (state == AppLifecycleState.resumed) {
       ApiService.recycleProductionHttpClient();
       _refreshProfileAfterResume();
+      // Automatic-resume trigger (req. #4/#5): coming back to the
+      // foreground (app was only backgrounded, never killed) is exactly
+      // when iOS/Android may have quietly dropped the in-flight upload's
+      // socket — check for any Sell submission that needs finishing.
+      unawaited(PendingSellSubmissionService.instance.resumeAll());
     }
   }
 

@@ -34,282 +34,156 @@ mixin _SellStep5Logic on _SellStep5Fields {
     return n;
   }
 
-  /// Returns submit result on success so caller can navigate and show the right copy.
+  String _submitPhaseLocalizedMessage(
+    BuildContext context,
+    SellSubmissionPhase phase, {
+    required bool isEdit,
+  }) {
+    final loc = AppLocalizations.of(context)!;
+    switch (phase) {
+      case SellSubmissionPhase.creating:
+        return isEdit ? loc.submitting : loc.creatingListing;
+      case SellSubmissionPhase.uploadingPhotos:
+        return loc.uploadingPhotos;
+      case SellSubmissionPhase.uploadingVideos:
+        return loc.uploadingVideos;
+      case SellSubmissionPhase.uploadingDamagePhotos:
+        return loc.uploadingDamagePhotos;
+      case SellSubmissionPhase.done:
+        return isEdit ? loc.submitting : loc.creatingListing;
+    }
+  }
+
+  /// Returns submit result on success so caller can navigate and show the
+  /// right copy.
+  ///
+  /// The actual create-listing / upload-media work happens inside
+  /// [PendingSellSubmissionService] — a process-wide coordinator that is
+  /// NOT owned by this widget's `State`. Pressing Submit durably records
+  /// the submission and starts (or joins) that coordinator; this method
+  /// only does the same-session bookkeeping that still makes sense while
+  /// this page happens to be mounted (draft-handoff flags, localized
+  /// status text, precache) and otherwise just awaits the result. If this
+  /// widget is disposed (user navigates away) while the `await` below is
+  /// pending, the service keeps running unaffected — nothing in this
+  /// method or in the service ever checks this widget's `mounted` to
+  /// decide whether to *continue* the submission, only whether it is still
+  /// safe to touch this widget's own state.
   Future<SellListingSubmitResult?> _submitListing(
     Map<String, dynamic> carData, {
     _SellCarPageState? parentState,
   }) async {
-    // Require authentication before allowing submission
+    // Require authentication before allowing submission.
     final existingToken = ApiService.accessToken;
     if (existingToken == null || existingToken.isEmpty) {
       throw ApiException(statusCode: 401, message: 'Authentication required');
     }
 
-    final payload = buildSellCarCreatePayload(carData);
     final draftId = parentState?._currentDraftId.isNotEmpty == true
         ? parentState!._currentDraftId
         : 'default';
     final loc = AppLocalizations.of(context)!;
+    final editId =
+        context
+            .findAncestorStateOfType<_SellCarPageState>()
+            ?._editListingId
+            ?.trim() ??
+        '';
+    final isEdit = editId.isNotEmpty;
+
+    _setSubmitStatus(isEdit ? loc.submitting : loc.creatingListing);
+
+    // Finish background photo upload started when leaving the photos step,
+    // and adopt whatever it staged. This is a same-session optimization
+    // only available while this widget is mounted; a headless resume (app
+    // restart, no SellStep5 in the tree) simply skips it — the service's
+    // own staging inside `PendingSellSubmissionService.submit` covers that
+    // case idempotently.
+    if (_listingPhotoCount(carData) > 0 ||
+        (parentState?.carData['images'] is List &&
+            (parentState!.carData['images'] as List).isNotEmpty)) {
+      _setSubmitStatus(loc.uploadingPhotos);
+      await parentState?.awaitBackgroundPhotoPrestage();
+      if (mounted && parentState != null) {
+        _adoptPreparedMedia(carData, parentState.carData);
+      }
+    }
+
+    // Block dispose/async draft saves for the create→upload window so a
+    // killed submit cannot leave both a listing and a draft. This only
+    // affects this widget *instance* (harmless / a no-op once it is
+    // disposed); the durable record created by the service below is what
+    // actually survives navigation, backgrounding, or a process kill.
+    if (!isEdit) {
+      parentState?._beginSubmitDraftHandoff();
+    }
 
     try {
-      final editId =
-          context
-              .findAncestorStateOfType<_SellCarPageState>()
-              ?._editListingId
-              ?.trim() ??
-          '';
-
-      _setSubmitStatus(
-        editId.isNotEmpty ? loc.submitting : loc.creatingListing,
+      final result = await PendingSellSubmissionService.instance.submit(
+        draftId: draftId,
+        carData: carData,
+        editListingId: isEdit ? editId : null,
+        onPhase: (phase) {
+          if (!mounted) return;
+          _setSubmitStatus(
+            _submitPhaseLocalizedMessage(context, phase, isEdit: isEdit),
+          );
+        },
       );
 
-      // Finish background photo upload started when leaving the photos step.
-      if (_listingPhotoCount(carData) > 0 ||
-          (parentState?.carData['images'] is List &&
-              (parentState!.carData['images'] as List).isNotEmpty)) {
-        _setSubmitStatus(loc.uploadingPhotos);
-        await parentState?.awaitBackgroundPhotoPrestage();
-        if (!mounted) return null;
-        if (parentState != null) {
-          _adoptPreparedMedia(carData, parentState.carData);
-        }
-      }
-
-      // Copy remaining local picker files to durable paths. Android
-      // cache/content URIs can vanish; never replace live photos with empty.
-      final storedMedia =
-          await SellDraftMediaPersistence.prepareCarDataForStorage(
-            carData,
-            draftId: draftId,
-          );
-      _adoptPreparedMedia(carData, storedMedia);
-
-      // Stage whatever is still local (no-op when background prestage finished).
-      if (_listingPhotoCount(carData) > 0) {
-        _setSubmitStatus(loc.uploadingPhotos);
-        await SellPhotoPrestage.stageCarData(carData);
-        if (!mounted) return null;
-        _setSubmitStatus(
-          editId.isNotEmpty ? loc.submitting : loc.creatingListing,
+      if (result == null) {
+        // The service could not start (e.g. signed out between validation
+        // and this call) — surface the same 401 the pre-existing guard at
+        // the top of this method would have.
+        throw ApiException(
+          statusCode: 401,
+          message: 'Authentication required',
         );
       }
 
-      String carId = '';
-      var pendingReview = false;
-      if (editId.isNotEmpty) {
-        try {
-          await ApiService.updateCar(
-            editId,
-            buildSellCarUpdatePayload(carData),
-          );
-          carId = editId;
-          try {
-            final fresh = await ApiService.getCar(editId);
-            final inner = fresh['car'];
-            if (inner is Map) {
-              pendingReview = isListingPendingReview(
-                Map<String, dynamic>.from(inner.cast<String, dynamic>()),
-              );
-            }
-          } catch (e, st) {
-            logNonFatal(e, st);
-          }
-        } on ApiException {
-          // Keep the ApiException so status code and error code survive for the
-          // user-facing message (validation details, phone verification, 401).
-          rethrow;
-        }
-      } else {
-        // Block dispose/async draft saves for the create→upload window so a
-        // killed submit cannot leave both a listing and a draft.
-        parentState?._beginSubmitDraftHandoff();
-        final createIdemKey = SellPendingMediaPrefs.createIdempotencyKey(draftId);
-        try {
-          final created = await _createCarWithBoundedRetry(
-            payload,
-            createIdemKey,
-          );
-          final carObj = unwrapCarApiPayload(created);
-          carId = listingPrimaryId(carObj);
-          pendingReview = isListingPendingReview(carObj);
-          unawaited(
-            AnalyticsService.trackProductEvent(
-              'listing_created',
-              metadata: {'listing_id': carId},
-            ),
-          );
-        } on ApiException catch (e) {
-          parentState?._abortSubmitDraftHandoff();
-          _debugLog('Submission failed: ${e.statusCode} - ${e.message}');
-          final body = e.body;
-          String msg = e.message;
-          if (body != null) {
-            final List<dynamic>? errs = (body['errors'] is List)
-                ? List<dynamic>.from(body['errors']!)
-                : null;
-            if (errs != null && errs.isNotEmpty) {
-              msg = errs.map((err) => err.toString()).join(', ');
-            }
-          }
-          // Re-throw as ApiException so the status code and error code still
-          // drive the user-facing message (401 relogin, phone verification).
-          throw ApiException(
-            statusCode: e.statusCode,
-            message: msg,
-            body: e.body,
-          );
-        } catch (e) {
-          parentState?._abortSubmitDraftHandoff();
-          rethrow;
+      if (isEdit && parentState != null && parentState.mounted) {
+        parentState.setState(() {
+          parentState.carData['images'] = carData['images'];
+          parentState.carData['damage_images'] = carData['damage_images'];
+          parentState.carData['videos'] = carData['videos'];
+        });
+      }
+
+      // Precache off the submit path so success navigation is not blocked.
+      if (mounted) {
+        final svc = CarService();
+        final createdCar = svc.cars
+            .where((c) => c['id']?.toString() == result.id)
+            .toList();
+        final Map<String, dynamic>? car = createdCar.isNotEmpty
+            ? createdCar.first
+            : null;
+        if (car != null) {
+          unawaited(_precacheSubmittedListingImages(car));
         }
       }
 
-      if (carId.isNotEmpty) {
-        // Upload media before treating submit as done. Haptics wait until photos land.
-        try {
-          if (editId.isEmpty) {
-            await SellPendingMediaPrefs.save(
-              carId: carId,
-              draftId: draftId,
-              carData: carData,
-              pendingReview: pendingReview,
-            );
-            if (parentState != null) {
-              await parentState._clearSubmittedDraftOnly(draftId: draftId);
-            } else {
-              LegacySellDraftPrefs.invalidatePersist();
-              final sp = await SharedPreferences.getInstance();
-              await LegacySellDraftPrefs.clearActiveStorage();
-              final archive = _decodeSellDraftArchive(
-                sp.getString(_sellDraftArchiveKey),
-              );
-              archive.removeWhere(
-                (item) => item['draftId']?.toString() == draftId,
-              );
-              await sp.setString(
-                _sellDraftArchiveKey,
-                _encodeSellDraftArchive(archive),
-              );
-            }
-          } else if (parentState != null && parentState.mounted) {
-            parentState.setState(() {
-              parentState.carData['images'] = carData['images'];
-              parentState.carData['damage_images'] = carData['damage_images'];
-              parentState.carData['videos'] = carData['videos'];
-            });
-          }
-
-          final listingMediaConfirmed =
-              await SellListingMediaUpload.uploadForCar(
-            carId: carId,
-            carData: carData,
-            multipartFileBuilder: _buildVideoMultipartFile,
-            onPhase: (phase) {
-              if (!mounted) return;
-              final phaseLoc = AppLocalizations.of(context)!;
-              switch (phase) {
-                case SellMediaUploadPhase.photos:
-                  _setSubmitStatus(phaseLoc.uploadingPhotos);
-                case SellMediaUploadPhase.videos:
-                  _setSubmitStatus(phaseLoc.uploadingVideos);
-                case SellMediaUploadPhase.damagePhotos:
-                  _setSubmitStatus(phaseLoc.uploadingDamagePhotos);
-              }
-            },
-          );
-
-          if (_listingPhotoCount(carData) > 0 && !listingMediaConfirmed) {
-            _setSubmitStatus(loc.uploadingPhotos);
-            var hasMedia =
-                await SellListingMediaUpload.listingAlreadyHasMedia(carId);
-            for (var attempt = 0; !hasMedia && attempt < 4; attempt++) {
-              await Future<void>.delayed(
-                Duration(milliseconds: 300 * (attempt + 1)),
-              );
-              hasMedia =
-                  await SellListingMediaUpload.listingAlreadyHasMedia(carId);
-            }
-            if (!hasMedia) {
-              throw StateError(
-                'Listing photos did not finish uploading. Please try again.',
-              );
-            }
-          }
-
-          // Precache off the submit path so success navigation is not blocked.
-          if (mounted) {
-            final svc = CarService();
-            final createdCar = svc.cars
-                .where((c) => c['id']?.toString() == carId)
-                .toList();
-            final Map<String, dynamic>? car = createdCar.isNotEmpty
-                ? createdCar.first
-                : null;
-            if (car != null) {
-              unawaited(_precacheSubmittedListingImages(car));
-            }
-          }
-          await SellPendingMediaPrefs.clear();
-        } catch (e, st) {
-          logNonFatal(e, st, 'sell_step5.uploadMedia');
-          unawaited(
-            Future<void>.delayed(const Duration(seconds: 4), () {
-              SellPendingMediaResume.tryResume();
-            }),
-          );
-          Error.throwWithStackTrace(e, st);
-        }
-        unawaited(AppHaptics.success());
-        _debugLog(
-          editId.isNotEmpty
-              ? 'Listing updated successfully'
-              : 'Listing created successfully',
-        );
-        return SellListingSubmitResult(
-          id: carId,
-          pendingReview: pendingReview,
-        );
-      }
-
-      throw Exception('Failed to create listing');
+      _debugLog(
+        isEdit ? 'Listing updated successfully' : 'Listing created successfully',
+      );
+      return result;
     } catch (e) {
+      // Only release this widget's draft-handoff flag when no listing was
+      // created yet — once a listing exists, the "draft" is this
+      // in-progress submission (tracked by the service), and resuming
+      // normal draft editing on it would risk confusing UX (not
+      // duplicate listings — the idempotency key still prevents that).
+      if (!isEdit) {
+        final hasListing =
+            await PendingSellSubmissionService.instance.hasCreatedListing(
+          draftId,
+        );
+        if (!hasListing) {
+          parentState?._abortSubmitDraftHandoff();
+        }
+      }
       rethrow;
     }
-  }
-
-  /// F-11: a tiny bounded retry (2 attempts total) around the single
-  /// `POST /api/cars` create call, reusing the SAME [idempotencyKey] for
-  /// every attempt. Safe because the backend replays the first successful
-  /// response for a repeated key within its TTL (`kk/idempotency.py`), so a
-  /// retry can never create a second listing. Only transient network/
-  /// transport failures are retried (mirrors
-  /// `SellListingMediaUpload`'s own transient-error classification for the
-  /// media-upload step); validation/auth/permission failures still surface
-  /// immediately, unchanged from before this fix.
-  Future<Map<String, dynamic>> _createCarWithBoundedRetry(
-    Map<String, dynamic> payload,
-    String idempotencyKey,
-  ) async {
-    const maxAttempts = 2;
-    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        return await ApiService.createCar(
-          payload,
-          idempotencyKey: idempotencyKey,
-        );
-      } catch (e) {
-        final retryable = e is TimeoutException ||
-            (e is ApiException &&
-                const {408, 429, 500, 502, 503, 504}
-                    .contains(e.statusCode)) ||
-            isTransientNetworkError(e);
-        if (!retryable || attempt >= maxAttempts) rethrow;
-        appLog('sell_step5: retrying createCar after transient error: $e');
-        await Future<void>.delayed(const Duration(seconds: 2));
-      }
-    }
-    // Unreachable: the loop above always returns or rethrows.
-    throw StateError('createCar retry loop exited unexpectedly');
   }
 
   Future<void> _precacheSubmittedListingImages(Map<String, dynamic> car) async {

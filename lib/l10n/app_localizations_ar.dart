@@ -1805,6 +1805,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listingPendingBadge => 'قيد المراجعة';
 
   @override
+  String get sellSubmissionContinueMessage =>
+      'يتم رفع إعلانك الآن. يمكنك الاستمرار باستخدام CarNet.';
+
+  @override
+  String get sellSubmissionUploadingGeneric => 'جارٍ رفع الإعلان…';
+
+  @override
+  String sellSubmissionUploadingProgress(int completed, int total) {
+    return 'جارٍ رفع الإعلان… تم رفع $completed من $total من الوسائط';
+  }
+
+  @override
+  String get sellSubmissionRetrying => 'جارٍ إنهاء رفع إعلانك…';
+
+  @override
+  String get sellSubmissionNeedsAttention =>
+      'تم إنشاء إعلانك، لكننا لم نتمكن من إتمام رفعه. افتحه في إعلاناتي لإصلاحه.';
+
+  @override
+  String get sellSubmissionNeedsAttentionNoListing =>
+      'لم نتمكن من إنشاء إعلانك. افتح إعلاناتي للعثور على المسودة وإصلاحها.';
+
+  @override
+  String get sellSubmissionOpenMyListingsAction => 'إعلاناتي';
+
+  @override
   String get homeOfflineCachedBanner =>
       'أنت غير متصل. يتم عرض الإعلانات المخزنة.';
 

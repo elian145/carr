@@ -616,6 +616,25 @@
   "listingSubmittedPending": "ڕێکلامەکەت لە ژێر پێداچوونەوەدایە و کڕیاران نابینن ئێستا. لە ڕێکلامەکانم ← چاوەڕوان بیبینە.",
   "listingSubmittedSuccess": "ڕێکلامەکەت زیندووە. لە ڕێکلامەکانم ← چالاک بدۆزەرەوە.",
   "listingPendingBadge": "لە ژێر پێداچوونەوە",
+  "sellSubmissionContinueMessage": "ڕێکلامەکەت بارگیری دەکرێت. دەتوانیت بەردەوام بیت لە بەکارهێنانی CarNet.",
+  "sellSubmissionUploadingGeneric": "بارگیری ڕێکلام…",
+  "sellSubmissionUploadingProgress": "بارگیری ڕێکلام… {completed} لە {total} میدیا بارگیری کراوە",
+  "@sellSubmissionUploadingProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int",
+        "example": "1"
+      },
+      "total": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "sellSubmissionRetrying": "تەواوکردنی بارگیری ڕێکلامەکەت…",
+  "sellSubmissionNeedsAttention": "ڕێکلامەکەت دروستکرا، بەڵام نەمانتوانی بارگیریەکەی تەواو بکەین. لە ڕێکلامەکانم بکەرەوە بۆ چاککردنی.",
+  "sellSubmissionNeedsAttentionNoListing": "نەمانتوانی ڕێکلامەکەت دروست بکەین. ڕێکلامەکانم بکەرەوە بۆ دۆزینەوە و چاککردنی ڕەشنووسەکە.",
+  "sellSubmissionOpenMyListingsAction": "ڕێکلامەکانم",
   "homeOfflineCachedBanner": "ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.",
   "offlineBannerMessage": "ئۆفلاینیت. هەندێک تایبەتمەندی کار ناکەن.",
   "myListingsPendingFilter": "چاوەڕوان",

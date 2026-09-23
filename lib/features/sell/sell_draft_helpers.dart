@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/car_name_translations.dart';
 import '../../shared/debug/app_log.dart';
+import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 
 const String kSellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
@@ -93,6 +95,51 @@ bool hasMeaningfulSellDraftValue(dynamic value, {String? key}) {
 bool isVisibleSellDraft(Map<String, dynamic> draft) {
   if (draft['isPlaceholder'] == true) return false;
   return hasMeaningfulSellDraftValue(draft['carData']);
+}
+
+/// Widget-independent equivalent of `_SellCarPageDraftPersist._clearSubmittedDraftOnly`,
+/// usable from `PendingSellSubmissionService` when a submission completes
+/// with no `SellCarPage` mounted (e.g. resumed at app startup).
+///
+/// Only clears the single "active" draft slot when it actually belongs to
+/// [draftId] (so finishing a background submission for one draft can never
+/// wipe a *different* draft the user is actively editing in the
+/// foreground) and always removes any matching archive entry.
+Future<void> discardSellDraftById(String draftId) async {
+  final id = draftId.trim();
+  if (id.isEmpty) return;
+  try {
+    final sp = await SharedPreferences.getInstance();
+    final activeRaw = sp.getString(LegacySellDraftPrefs.snapshotKey);
+    var activeMatches = false;
+    if (activeRaw != null && activeRaw.trim().isNotEmpty) {
+      try {
+        final decoded = json.decode(activeRaw);
+        if (decoded is Map &&
+            (decoded['draftId'] ?? '').toString().trim() == id) {
+          activeMatches = true;
+        }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
+    }
+    if (activeMatches) {
+      await LegacySellDraftPrefs.clearActiveStorage();
+    }
+    final archive = decodeSellDraftArchive(
+      sp.getString(LegacySellDraftPrefs.archiveKey),
+    );
+    final before = archive.length;
+    archive.removeWhere((item) => (item['draftId'] ?? '').toString() == id);
+    if (archive.length != before) {
+      await sp.setString(
+        LegacySellDraftPrefs.archiveKey,
+        encodeSellDraftArchive(archive),
+      );
+    }
+  } catch (e, st) {
+    logNonFatal(e, st);
+  }
 }
 
 /// Localized "Brand Model • Trim Year" title for a Sell Draft card/banner

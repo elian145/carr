@@ -17,6 +17,7 @@ import 'widgets/app_with_deep_links.dart';
 import 'widgets/connectivity_banner.dart';
 import 'widgets/first_run_onboarding_gate.dart';
 import 'widgets/force_update_gate.dart';
+import 'widgets/sell_submission_status_banner.dart';
 
 export 'carzo_shared.dart'
     show
@@ -61,13 +62,15 @@ class MyApp extends StatelessWidget {
                   return ForceUpdateGate(
                     child: FirstRunOnboardingGate(
                       child: ConnectivityBanner(
-                        child: AppResponsive.wrapApp(
-                          context,
-                          ColoredBox(
-                            color: shellColor,
-                            child: EdgeSwipeBack(
-                              navigatorKey: productionNavigatorKey,
-                              child: child ?? const SizedBox.shrink(),
+                        child: SellSubmissionStatusBanner(
+                          child: AppResponsive.wrapApp(
+                            context,
+                            ColoredBox(
+                              color: shellColor,
+                              child: EdgeSwipeBack(
+                                navigatorKey: productionNavigatorKey,
+                                child: child ?? const SizedBox.shrink(),
+                              ),
                             ),
                           ),
                         ),

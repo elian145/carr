@@ -17,6 +17,7 @@ import '../services/push_notification_service.dart'
     show PushNotificationService, firebaseMessagingBackgroundHandler;
 import '../state/locale_controller.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
+import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_pending_media_resume.dart';
 import '../services/outgoing_chat_send_service.dart';
 import '../shared/debug/app_log.dart';
@@ -187,6 +188,10 @@ void _runZonedApp(Widget app) {
         // F-11: retry durable pending chat sends automatically once
         // connectivity returns (bounded — see OutgoingChatSendService).
         OutgoingChatSendService.instance.hookConnectivityRecovery();
+        // Resume any Sell listing submission interrupted mid-upload
+        // automatically once connectivity returns (see
+        // PendingSellSubmissionService).
+        PendingSellSubmissionService.instance.hookConnectivityRecovery();
         try {
           await LocaleController.loadSavedLocale();
         } catch (e, st) { logNonFatal(e, st); }

@@ -26,7 +26,6 @@ import '../../theme/app_colors.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as services;
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -48,7 +47,6 @@ import '../../models/online_spec_variant.dart';
 import '../../navigation/app_page_route.dart';
 import '../../pages/listing_image_gallery_page.dart';
 import '../../services/ai_service.dart';
-import '../../services/analytics_service.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/car_service.dart';
@@ -71,9 +69,7 @@ import '../../shared/media/media_url.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
-import '../../shared/prefs/sell_pending_media_prefs.dart';
-import 'sell_listing_media_upload.dart';
-import 'sell_pending_media_resume.dart';
+import 'pending_sell_submission_service.dart';
 import 'sell_photo_prestage.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/listings/drive_type_assets.dart';
@@ -88,14 +84,12 @@ import '../../shared/ui/make_model_keyword_search.dart';
 import '../../shared/ui/filter_option_icons.dart';
 import '../../shared/ui/keyboard.dart';
 import '../../shared/ui/responsive.dart';
-import '../../shared/ui/app_haptics.dart';
 import '../../shared/ui/thousands_separator_input_formatter.dart';
 import '../../theme_provider.dart';
 import 'sell_draft_helpers.dart' as sell_draft_helpers;
 import 'sell_wizard_steps.dart';
 import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
-import '../../shared/listings/listing_status.dart';
 import 'sell_currency_convert.dart';
 import 'sell_fancy_selector.dart' as sell_fancy_selector;
 import 'sell_video_helpers.dart' as sell_video_helpers;
@@ -352,9 +346,6 @@ Widget buildCarListingSpecsGrid(
 ) => car_listing_specs_grid.buildCarListingSpecsGrid(context, car);
 
 typedef _SpecItem = ListingSpecItem;
-
-Future<http.MultipartFile> _buildVideoMultipartFile(XFile video) =>
-    sell_video_helpers.buildVideoMultipartFile(video);
 
 Future<String?> generateVideoThumbnail(String videoPath) =>
     sell_video_helpers.generateVideoThumbnail(videoPath);

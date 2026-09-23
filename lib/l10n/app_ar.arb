@@ -616,6 +616,25 @@
   "listingSubmittedPending": "إعلانك قيد المراجعة وغير ظاهر للمشترين حالياً. تابعه في إعلاناتي ← قيد المراجعة.",
   "listingSubmittedSuccess": "إعلانك منشور الآن. تجده في إعلاناتي ← نشط.",
   "listingPendingBadge": "قيد المراجعة",
+  "sellSubmissionContinueMessage": "يتم رفع إعلانك الآن. يمكنك الاستمرار باستخدام CarNet.",
+  "sellSubmissionUploadingGeneric": "جارٍ رفع الإعلان…",
+  "sellSubmissionUploadingProgress": "جارٍ رفع الإعلان… تم رفع {completed} من {total} من الوسائط",
+  "@sellSubmissionUploadingProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int",
+        "example": "1"
+      },
+      "total": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "sellSubmissionRetrying": "جارٍ إنهاء رفع إعلانك…",
+  "sellSubmissionNeedsAttention": "تم إنشاء إعلانك، لكننا لم نتمكن من إتمام رفعه. افتحه في إعلاناتي لإصلاحه.",
+  "sellSubmissionNeedsAttentionNoListing": "لم نتمكن من إنشاء إعلانك. افتح إعلاناتي للعثور على المسودة وإصلاحها.",
+  "sellSubmissionOpenMyListingsAction": "إعلاناتي",
   "homeOfflineCachedBanner": "أنت غير متصل. يتم عرض الإعلانات المخزنة.",
   "offlineBannerMessage": "أنت غير متصل. قد لا تعمل بعض الميزات.",
   "myListingsPendingFilter": "قيد المراجعة",

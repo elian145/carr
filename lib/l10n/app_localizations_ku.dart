@@ -1796,6 +1796,32 @@ class AppLocalizationsKu extends AppLocalizations {
   String get listingPendingBadge => 'لە ژێر پێداچوونەوە';
 
   @override
+  String get sellSubmissionContinueMessage =>
+      'ڕێکلامەکەت بارگیری دەکرێت. دەتوانیت بەردەوام بیت لە بەکارهێنانی CarNet.';
+
+  @override
+  String get sellSubmissionUploadingGeneric => 'بارگیری ڕێکلام…';
+
+  @override
+  String sellSubmissionUploadingProgress(int completed, int total) {
+    return 'بارگیری ڕێکلام… $completed لە $total میدیا بارگیری کراوە';
+  }
+
+  @override
+  String get sellSubmissionRetrying => 'تەواوکردنی بارگیری ڕێکلامەکەت…';
+
+  @override
+  String get sellSubmissionNeedsAttention =>
+      'ڕێکلامەکەت دروستکرا، بەڵام نەمانتوانی بارگیریەکەی تەواو بکەین. لە ڕێکلامەکانم بکەرەوە بۆ چاککردنی.';
+
+  @override
+  String get sellSubmissionNeedsAttentionNoListing =>
+      'نەمانتوانی ڕێکلامەکەت دروست بکەین. ڕێکلامەکانم بکەرەوە بۆ دۆزینەوە و چاککردنی ڕەشنووسەکە.';
+
+  @override
+  String get sellSubmissionOpenMyListingsAction => 'ڕێکلامەکانم';
+
+  @override
   String get homeOfflineCachedBanner =>
       'ئۆفلاینیت. ڕێکلامە پاشەکەوتکراوەکان پیشان دەدرێن.';
 

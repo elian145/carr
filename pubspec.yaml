@@ -85,6 +85,11 @@ dev_dependencies:
   # instead of depending on the real connectivity_plus platform channel,
   # which is unavailable under `flutter test`.
   connectivity_plus_platform_interface: ^2.1.0
+  # Lets pending_sell_submission_service_test.dart install a deterministic
+  # fake PathProviderPlatform.instance (a temp directory) instead of
+  # depending on the real path_provider platform channel, which is
+  # unavailable under `flutter test`.
+  path_provider_platform_interface: ^2.1.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
