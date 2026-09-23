@@ -299,6 +299,121 @@ def _normalize_image_bytes_for_inference(image_bytes: bytes, output_ext: str) ->
 		return image_bytes, {"normalize_status": "normalize_failed", "normalize_error": _public_error(str(e))}
 
 
+def _decode_full_resolution_bgr(image_bytes: bytes):
+	"""
+	Decode raw image bytes directly into a full-resolution BGR numpy array,
+	with EXIF orientation normalized into the pixels.
+
+	Quality-audit fix: unlike the old code path (PIL re-encode to JPEG/WEBP
+	for "inference normalization" -> cv2.imdecode of THAT re-encoded copy),
+	this decodes the ORIGINAL bytes exactly once and hands back the raw
+	pixel buffer that the plate blur is drawn onto and that is then encoded
+	*once* as the final output. That removes a whole extra full-frame lossy
+	JPEG generation (previously baked into every blurred photo, even in
+	areas far from the plate) without changing what the final output looks
+	like for the plate ROI itself.
+
+	``_normalize_image_bytes_for_inference()`` (below) is still used, but
+	now purely to build the (optionally downscaled) copy of the image sent
+	to the Roboflow detection API -- never as the source of the pixels that
+	get blurred/persisted.
+
+	Raises ``PIL.Image.DecompressionBombError`` untouched (never swallowed)
+	-- the M-06 pixel-bomb guard must still fire exactly as before. This
+	happens at ``Image.open()`` time, before any cv2 call, so a bomb-flagged
+	upload still never reaches cv2 in this module.
+	"""
+	import numpy as np  # type: ignore
+	import cv2  # type: ignore
+	from PIL import Image, ImageOps  # type: ignore
+	from io import BytesIO
+
+	try:
+		import pillow_heif  # type: ignore
+		pillow_heif.register_heif_opener()
+	except Exception:
+		pass
+
+	im = Image.open(BytesIO(image_bytes))
+	im = ImageOps.exif_transpose(im)
+	if im.mode != "RGB":
+		# Matches the old cv2.IMREAD_COLOR behavior (always forces a
+		# 3-channel color image, dropping any alpha channel / palette).
+		im = im.convert("RGB")
+	arr = np.asarray(im)
+	bgr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+	return np.ascontiguousarray(bgr)
+
+
+def _detection_max_dim_from_env() -> Optional[int]:
+	"""
+	``PLATE_DETECT_MAX_DIM``: optional longest-side cap (pixels) for the copy
+	sent to the Roboflow detection request.
+
+	Unset/blank/0 (the default) preserves the exact pre-fix behavior of
+	sending the full-resolution normalized image to the detector -- this is
+	an opt-in performance knob (requirement A: "detection may use a smaller
+	working copy for performance"), not a behavior change forced on every
+	deployment. When enabled, detected boxes are mapped back to
+	full-resolution coordinates (`_scale_box_to_full_res`) before any
+	clamping/expansion/blurring happens, so the downscaled copy is never
+	saved and never used as a pixel source.
+	"""
+	raw = (os.getenv("PLATE_DETECT_MAX_DIM", "") or "").strip()
+	if not raw:
+		return None
+	try:
+		v = int(raw)
+	except ValueError:
+		return None
+	return v if v > 0 else None
+
+
+def _resize_for_detection(im, max_dim: Optional[int]):
+	"""
+	Return ``(copy_of_im_for_detection, scale)`` where ``scale`` is
+	``downscaled_longest_side / original_longest_side`` (<= 1.0). ``scale``
+	is ``1.0`` when no resize happened (``max_dim`` unset, or the image is
+	already at/under ``max_dim``).
+
+	The returned copy is only ever used to build the bytes sent to the
+	Roboflow detection API -- it is never persisted and never used as the
+	pixel source for blurring.
+	"""
+	if not max_dim or max_dim <= 0:
+		return im, 1.0
+	w, h = im.size
+	longest = max(w, h)
+	if longest <= max_dim:
+		return im, 1.0
+	scale = max_dim / float(longest)
+	new_w = max(1, int(round(w * scale)))
+	new_h = max(1, int(round(h * scale)))
+	from PIL import Image as _PILImage  # type: ignore
+
+	resized = im.resize((new_w, new_h), _PILImage.Resampling.LANCZOS)
+	return resized, scale
+
+
+def _scale_box_to_full_res(b: "PlateBox", scale: float) -> "PlateBox":
+	"""
+	Map a box detected on a downscaled detection copy back to
+	full-resolution pixel coordinates. ``scale`` is the same
+	downscaled/original ratio returned by ``_resize_for_detection()`` (a
+	no-op when ``scale >= 1.0``, i.e. no resize happened).
+	"""
+	if scale >= 1.0 or scale <= 0:
+		return b
+	inv = 1.0 / scale
+	return PlateBox(
+		x1=int(round(b.x1 * inv)),
+		y1=int(round(b.y1 * inv)),
+		x2=int(round(b.x2 * inv)),
+		y2=int(round(b.y2 * inv)),
+		confidence=b.confidence,
+	)
+
+
 def _odd(n: int) -> int:
 	return n if (n % 2 == 1) else (n + 1)
 
@@ -335,22 +450,52 @@ def blur_license_plates(
 		return image_bytes, {"status": "opencv_missing", "error": _public_error(str(e))}
 
 	try:
-		# Normalize EXIF orientation *before* detection and decoding, so boxes match pixels.
-		normalized_bytes, norm_meta = _normalize_image_bytes_for_inference(image_bytes, output_ext)
-
-		arr = np.frombuffer(normalized_bytes, dtype=np.uint8)
-		img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
-		if img is None:
-			return image_bytes, {**norm_meta, "status": "decode_failed"}
+		# Decode the FULL-resolution pixels exactly once, with EXIF
+		# orientation baked in. This is the *only* source of the pixels that
+		# get blurred and encoded below -- it is never derived from a
+		# re-encoded (lossy) intermediate copy, which is what previously
+		# caused the entire photo (not just the plate ROI) to pick up an
+		# extra generation of JPEG artifacts on every blurred upload.
+		img = _decode_full_resolution_bgr(image_bytes)
 		height, width = img.shape[:2]
 
-		# Roboflow needs the bytes; we use normalized bytes so orientation matches.
-		boxes, det_meta = detector.detect_with_meta(normalized_bytes)
+		# Build a copy of the image for the Roboflow detection request only
+		# -- normalizes orientation/format for the API and (optionally, see
+		# PLATE_DETECT_MAX_DIM) downscales for performance. Never used as a
+		# pixel source and never persisted.
+		normalized_bytes, norm_meta = _normalize_image_bytes_for_inference(image_bytes, output_ext)
+		detect_bytes = normalized_bytes
+		detect_scale = 1.0
+		max_detect_dim = _detection_max_dim_from_env()
+		if max_detect_dim:
+			try:
+				from PIL import Image as _PILImage  # type: ignore
+				from io import BytesIO as _BytesIO
+
+				det_im = _PILImage.open(_BytesIO(normalized_bytes))
+				det_im, detect_scale = _resize_for_detection(det_im, max_detect_dim)
+				if detect_scale < 1.0:
+					if det_im.mode not in ("RGB", "L"):
+						det_im = det_im.convert("RGB")
+					_out_det = _BytesIO()
+					det_im.save(_out_det, format="JPEG", quality=90, optimize=True)
+					detect_bytes = _out_det.getvalue()
+			except Exception:
+				detect_bytes = normalized_bytes
+				detect_scale = 1.0
+
+		boxes, det_meta = detector.detect_with_meta(detect_bytes)
 		if not boxes:
 			# Distinguish "no plates" from request failures for debugging/observability.
 			if det_meta.get("detect_status") in ("detect_failed", "bad_response"):
 				return image_bytes, {**norm_meta, **det_meta, "status": "detect_failed"}
 			return image_bytes, {**norm_meta, **det_meta, "status": "no_plates", "plates": 0}
+
+		if detect_scale < 1.0:
+			# Boxes came back in the downscaled detection copy's coordinate
+			# space -- map them to full-resolution pixel coordinates before
+			# any clamping/expansion/drawing happens (requirement A).
+			boxes = [_scale_box_to_full_res(b, detect_scale) for b in boxes]
 
 		applied = 0
 		ratio = float(expand_ratio)
@@ -383,19 +528,50 @@ def blur_license_plates(
 		if ext not in (".jpg", ".jpeg", ".png", ".webp"):
 			ext = ".jpg"
 
+		def _quality_env(name: str, default: int) -> int:
+			try:
+				v = int(os.getenv(name, str(default)) or default)
+			except ValueError:
+				v = default
+			return max(1, min(100, v))
+
+		# Requirement D: high-quality output (92-95) for the ONE encode this
+		# function performs on the full image, so the plate blur itself
+		# never softens/recompresses the rest of the photo more than
+		# necessary. Configurable, but the defaults are deliberately high
+		# (never a "low default JPEG quality").
+		jpeg_quality = _quality_env("PLATE_BLUR_OUTPUT_JPEG_QUALITY", 95)
+		webp_quality = _quality_env("PLATE_BLUR_OUTPUT_WEBP_QUALITY", 95)
+
 		encode_params: List[int] = []
 		if ext in (".jpg", ".jpeg"):
-			encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), 92]
+			encode_params = [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality]
+			# Preserve chroma/detail where practical: request 4:4:4 (no
+			# chroma subsampling) when this OpenCV build supports the flag;
+			# silently skip on older builds that lack it.
+			sampling_flag = getattr(cv2, "IMWRITE_JPEG_SAMPLING_FACTOR", None)
+			sampling_444 = getattr(cv2, "IMWRITE_JPEG_SAMPLING_FACTOR_444", None)
+			if sampling_flag is not None and sampling_444 is not None:
+				encode_params.extend([int(sampling_flag), int(sampling_444)])
 		elif ext == ".png":
 			encode_params = [int(cv2.IMWRITE_PNG_COMPRESSION), 3]
 		elif ext == ".webp":
-			encode_params = [int(cv2.IMWRITE_WEBP_QUALITY), 90]
+			encode_params = [int(cv2.IMWRITE_WEBP_QUALITY), webp_quality]
 
 		ok, out = cv2.imencode(ext, img, encode_params)
 		if not ok:
 			return image_bytes, {**norm_meta, **det_meta, "status": "encode_failed", "plates": len(boxes), "applied": applied}
 
-		return bytes(out.tobytes()), {**norm_meta, **det_meta, "status": "blurred", "plates": len(boxes), "applied": applied}
+		return bytes(out.tobytes()), {
+			**norm_meta,
+			**det_meta,
+			"status": "blurred",
+			"plates": len(boxes),
+			"applied": applied,
+			"detect_scale": detect_scale,
+			"output_width": width,
+			"output_height": height,
+		}
 	except Exception as e:
 		logger.warning("License-plate blurring failed: %s", e, exc_info=True)
 		return image_bytes, {"status": "error", "error": _public_error(str(e))}

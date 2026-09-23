@@ -86,6 +86,41 @@ PLATE_BLUR_KEEP_ORIGINAL=0
 # per-request skip_blur=1 opt-out no longer bypasses this requirement --
 # see PRODUCTION_AUDIT.md M-08.
 PLATE_BLUR_REQUIRE_SUCCESS=0
+# Quality-audit (image-quality-loss fix): JPEG/WEBP quality used for the
+# SINGLE encode blur_license_plates() performs on the full-resolution image
+# after drawing the plate blur. Kept high (92-95) so the plate-blur pipeline
+# never softens the rest of the photo -- do not lower these to "save space";
+# use UPLOAD_IMAGE_JPEG_QUALITY below (the shared downstream step both
+# blurred and non-blurred uploads go through) for overall size tuning
+# instead.
+PLATE_BLUR_OUTPUT_JPEG_QUALITY=95
+PLATE_BLUR_OUTPUT_WEBP_QUALITY=95
+# Optional performance knob: longest-side cap (pixels) for the copy of the
+# image sent to the Roboflow detection request only. Unset/0 (default)
+# sends the full-resolution image to Roboflow, unchanged from prior
+# behavior. Detected boxes are always mapped back to full-resolution pixel
+# coordinates before the blur is drawn, regardless of this setting -- the
+# downscaled copy is never saved.
+# PLATE_DETECT_MAX_DIM=1600
+
+# Final listing-photo downscale/re-encode (applies EQUALLY to blurred and
+# non-blurred uploads -- kk/media_processing.py::process_and_store_image()
+# and kk/tasks/image_tasks.py::_process_image_path()). UPLOAD_IMAGE_JPEG_QUALITY
+# was raised from the previous default of 80 (a "low default JPEG quality"
+# that softened every listing photo) to a high-quality setting appropriate
+# for listing photos.
+# UPLOAD_IMAGE_MAX_DIM was raised from 1200 to 2048 based on a real-image
+# benchmark (see the plate-blur image-quality audit report): 2048 matches
+# Flutter's own image_picker maxWidth/maxHeight cap exactly, so most
+# uploads need no further backend resize at all, which avoided a measured
+# artifact where resizing an already-once-compressed 2048px image down to
+# an intermediate size (e.g. 1920px) could locally cost MORE bytes/quality
+# than leaving it at 2048px. Benchmark averages across sample images: 1200
+# = 26.6dB PSNR / 0.587 SSIM vs. the true original; 2048 = 28.6dB / 0.621,
+# for ~2.4x the average file size (still capped -- larger sources are still
+# downscaled to this limit).
+UPLOAD_IMAGE_MAX_DIM=2048
+UPLOAD_IMAGE_JPEG_QUALITY=92
 
 # Trust & support (mobile Help / Terms / Contact)
 SUPPORT_EMAIL=support@carnetiq.app

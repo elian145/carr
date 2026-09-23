@@ -77,13 +77,28 @@ def _process_image_path(
         im = ImageOps.exif_transpose(im)
         if im.mode not in ("RGB", "L"):
             im = im.convert("RGB")
-        max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "1200") or "1200")
+        # Quality-audit benchmark: kept consistent with
+        # media_processing.py::process_and_store_image() -- raised from 1200
+        # to 2048 (matches Flutter's own image_picker cap, see that
+        # function's comment for the measured PSNR/SSIM/file-size numbers).
+        max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "2048") or "2048")
         if max(im.size) > max_dim:
             im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
 
         buf = BytesIO()
-        quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "80") or "80")
-        im.save(buf, format="JPEG", quality=quality, optimize=True, exif=b"")
+        # Quality-audit fix: kept consistent with
+        # media_processing.py::process_and_store_image(), which this
+        # function duplicates -- same higher default quality + chroma
+        # preservation, for the same reason (requirements D and F).
+        quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "92") or "92")
+        im.save(
+            buf,
+            format="JPEG",
+            quality=quality,
+            optimize=True,
+            exif=b"",
+            subsampling=0,  # 4:4:4 -- preserve chroma/detail (requirement D)
+        )
         out_bytes = buf.getvalue()
     except DecompressionBombError as e:
         # M-06 follow-up: reuse the exact same rejection mechanism as
