@@ -85,6 +85,15 @@ def make_celery() -> Celery:
                 "task": "kk.tasks.listing_tasks.clear_expired_featured_listings",
                 "schedule": 3600.0,  # hourly
             },
+            # OOM-fix follow-up: backstop sweep for R2 async-image-staging
+            # objects abandoned by a lost/crashed job (see
+            # kk/tasks/image_tasks.py::cleanup_stale_image_staging_objects).
+            # Normal jobs always clean up their own staging object; this
+            # only catches the rare abandoned case.
+            "cleanup-stale-image-staging-objects": {
+                "task": "kk.tasks.image_tasks.cleanup_stale_image_staging_objects",
+                "schedule": 3600.0,  # hourly
+            },
         },
     )
     return c

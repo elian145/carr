@@ -20,6 +20,52 @@ class FakeApiServer {
   /// When true, GET/sync saved-searches return an empty list (empty-state tests).
   static bool emptySavedSearches = false;
 
+  /// OOM-fix follow-up regression coverage: records every
+  /// `POST /api/process-car-images` request seen, in call order --
+  /// `{'async': bool, 'skip_blur': bool, 'file_count': int}`. Used to prove
+  /// production Sell prestage always sends `async=1` (and never hits the
+  /// synchronous branch). Reset by [stop].
+  static final List<Map<String, dynamic>> processCarImagesCalls = [];
+
+  /// Per-call override for `POST /api/process-car-images` (any mode).
+  /// Return an [http.Response] to force a specific status/body (e.g. a 400
+  /// validation rejection or a malformed job-id list), or `null`/leave
+  /// unset to fall through to the default stub (202 + one job id per
+  /// uploaded file when `async=1`; 200 + `processed_images` otherwise).
+  /// Cleared by [stop].
+  static http.Response? Function(http.Request request)?
+      processCarImagesOverride;
+
+  /// Monotonically increasing counter used to generate unique job ids for
+  /// the default `POST /api/process-car-images?async=1` stub. Reset by
+  /// [stop].
+  static int _processCarImagesJobIdSeq = 0;
+
+  /// Per-job-id response queue for `GET /api/jobs/<job_id>` polling.
+  /// Each entry is consumed in order (the last entry repeats once the
+  /// queue is down to one) -- lets a test simulate a PENDING -> SUCCESS/
+  /// FAILURE sequence deterministically, with no real delays. The default
+  /// `POST /api/process-car-images?async=1` stub seeds every job id it
+  /// returns with a single `SUCCESS` entry unless a test has already
+  /// queued something for that id first. Cleared by [stop].
+  static final Map<String, List<Map<String, dynamic>>> jobStatusQueue = {};
+
+  /// Records every `GET /api/jobs/<job_id>` poll, in call order. Reset by
+  /// [stop].
+  static final List<String> jobStatusPollCalls = [];
+
+  /// Crude multipart-part counter for the fake server's own request
+  /// inspection (not a general-purpose parser): counts
+  /// `name="<fieldName>"` occurrences in the raw multipart body, which
+  /// corresponds 1:1 with the number of files [MultipartRequest] attached
+  /// under that field name.
+  static int _countMultipartParts(http.Request request, String fieldName) {
+    final contentType = request.headers['content-type'] ?? '';
+    if (!contentType.contains('multipart/form-data')) return 0;
+    final bodyStr = String.fromCharCodes(request.bodyBytes);
+    return RegExp('name="$fieldName"').allMatches(bodyStr).length;
+  }
+
   /// CarNet V1 fix 4 regression coverage: when set, `POST
   /// /api/auth/phone/verify` returns this response instead of the default
   /// stub success -- used to simulate the backend's
@@ -252,6 +298,11 @@ class FakeApiServer {
     carsQueryGates = null;
     carsRequestedQueries.clear();
     carsResponseOverride = null;
+    processCarImagesCalls.clear();
+    processCarImagesOverride = null;
+    _processCarImagesJobIdSeq = 0;
+    jobStatusQueue.clear();
+    jobStatusPollCalls.clear();
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     setRuntimeApiBaseOverride(null);
@@ -439,6 +490,69 @@ class FakeApiServer {
 
     if (path == '/api/users/blocked') {
       return _json(200, {'blocked_users': <dynamic>[]});
+    }
+
+    // OOM-fix follow-up regression coverage: POST /api/process-car-images
+    // (Sell photo prestage's enqueue endpoint) and GET /api/jobs/<job_id>
+    // (the shared job-status poll endpoint).
+    if (path == '/api/process-car-images' && method == 'POST') {
+      final isAsync = (request.url.queryParameters['async'] ?? '') == '1';
+      final skipBlur = (request.url.queryParameters['skip_blur'] ?? '') == '1';
+      final fileCount = _countMultipartParts(request, 'images');
+      processCarImagesCalls.add({
+        'async': isAsync,
+        'skip_blur': skipBlur,
+        'file_count': fileCount,
+      });
+      final override = processCarImagesOverride;
+      if (override != null) {
+        final forced = override(request);
+        if (forced != null) return forced;
+      }
+      if (fileCount == 0) {
+        return _json(400, {'error': 'No image files provided'});
+      }
+      if (isAsync) {
+        final batchSeq = _processCarImagesJobIdSeq;
+        _processCarImagesJobIdSeq++;
+        final jobIds = List<String>.generate(
+          fileCount,
+          (i) => 'job-$batchSeq-$i',
+        );
+        for (final id in jobIds) {
+          jobStatusQueue.putIfAbsent(
+            id,
+            () => [
+              {
+                'state': 'SUCCESS',
+                'result': {'rel_path': 'uploads/car_photos/staged_$id.jpg'},
+              },
+            ],
+          );
+        }
+        return _json(202, {'success': true, 'job_ids': jobIds});
+      }
+      // Synchronous (legacy) branch -- OOM-fix regression guard: production
+      // Sell prestage must never hit this branch; kept only so a test can
+      // assert that explicitly via [processCarImagesCalls].
+      return _json(200, {
+        'processed_images': List<String>.generate(
+          fileCount,
+          (i) => 'uploads/car_photos/sync_$i.jpg',
+        ),
+        'processed_images_base64': <String>[],
+      });
+    }
+
+    if (path.startsWith('/api/jobs/') && method == 'GET') {
+      final jobId = Uri.decodeComponent(path.substring('/api/jobs/'.length));
+      jobStatusPollCalls.add(jobId);
+      final queue = jobStatusQueue[jobId];
+      if (queue == null || queue.isEmpty) {
+        return _json(404, {'error': 'job_not_found'});
+      }
+      final next = queue.length > 1 ? queue.removeAt(0) : queue.first;
+      return _json(200, next);
     }
 
     // B-07/B-04 regression coverage.

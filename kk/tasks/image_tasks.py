@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 import os
+import tempfile
+from uuid import uuid4
 
 from PIL.Image import DecompressionBombError
 
@@ -11,15 +13,29 @@ from .celery_app import celery_app
 
 def _process_image_path(
     *,
-    temp_abs: str,
+    temp_abs: str | None,
     original_filename: str,
     inline_base64: bool,
     skip_blur: bool,
     owner_public_id: str | None = None,
+    source_r2_key: str | None = None,
 ) -> dict:
     """
-    Process an image already saved to disk at temp_abs.
-    Returns {rel_path, base64?}.
+    Process an image already saved to disk at temp_abs, OR staged in R2
+    under source_r2_key. Returns {rel_path, base64?}.
+
+    ``source_r2_key``: OOM-fix follow-up -- when the enqueuing web process
+    and this Celery worker run as *separate* Render services (production:
+    ``carr`` vs ``carr-worker-fra``), a local path written by the web
+    process is not visible here; Render never shares a local disk across
+    services. In that case the enqueuer stages the original upload to a
+    short-lived R2 object instead
+    (``kk.media_processing.stage_upload_for_async_job``), and this downloads
+    it to a fresh path on THIS worker's own disk before processing. The
+    downloaded copy and the R2 staging object are both removed before this
+    function returns or raises -- never left behind either way. When
+    ``source_r2_key`` is not given, behavior is unchanged: ``temp_abs`` must
+    already exist on this machine (same-process/dev/test case).
     """
     from kk.media_processing import (
         DecompressionBombRejected,
@@ -34,7 +50,73 @@ def _process_image_path(
     base_name = os.path.splitext(filename)[0]
     final_filename = f"processed_{timestamp}_{base_name}.jpg"
 
-    with open(temp_abs, "rb") as fp:
+    downloaded_path: str | None = None
+    try:
+        source_path = temp_abs
+        if source_r2_key:
+            from flask import current_app
+
+            from kk.r2_ops import r2_get_file
+
+            upload_root = (
+                (current_app.config.get("UPLOAD_FOLDER") or "").strip()
+                or tempfile.gettempdir()
+            )
+            tmp_dir = os.path.join(upload_root, "temp")
+            os.makedirs(tmp_dir, exist_ok=True)
+            downloaded_path = os.path.join(
+                tmp_dir, f"celery_r2_{timestamp}_{uuid4().hex}_{filename}"
+            )
+            r2_get_file(key=source_r2_key, dest_path=downloaded_path)
+            source_path = downloaded_path
+
+        if not source_path:
+            raise RuntimeError(
+                "_process_image_path: no source provided (temp_abs or source_r2_key)"
+            )
+
+        return _process_image_bytes_from_path(
+            source_path=source_path,
+            final_filename=final_filename,
+            inline_base64=inline_base64,
+            skip_blur=skip_blur,
+            owner_public_id=owner_public_id,
+        )
+    finally:
+        if downloaded_path:
+            try:
+                if os.path.isfile(downloaded_path):
+                    os.remove(downloaded_path)
+            except OSError:
+                pass
+        if source_r2_key:
+            try:
+                from kk.r2_ops import r2_delete_object
+
+                r2_delete_object(key=source_r2_key)
+            except Exception:
+                pass
+
+
+def _process_image_bytes_from_path(
+    *,
+    source_path: str,
+    final_filename: str,
+    inline_base64: bool,
+    skip_blur: bool,
+    owner_public_id: str | None = None,
+) -> dict:
+    """The actual decode/blur/downscale/encode/persist pipeline, factored
+    out of ``_process_image_path`` so the R2-staging download/cleanup
+    wrapper above stays simple. Behavior is byte-for-byte identical to the
+    pre-existing inline implementation."""
+    from kk.media_processing import (
+        DecompressionBombRejected,
+        blur_image_bytes,
+        persist_jpeg_bytes,
+    )
+
+    with open(source_path, "rb") as fp:
         raw_bytes = fp.read()
 
     # Optional: blur plates (fallback to original on any failure, unless
@@ -148,17 +230,25 @@ def _process_image_path(
 @celery_app.task(bind=True, name="kk.process_car_image_file")
 def process_car_image_file(
     self,
-    temp_abs: str,
+    temp_abs: str | None,
     original_filename: str,
     inline_base64: bool = False,
     skip_blur: bool = False,
     owner_public_id: str | None = None,
+    source_r2_key: str | None = None,
 ):
     """
     Process a car image under the shared Celery Flask app context (P-06).
 
     ``owner_public_id`` is embedded in task meta/result so job polling can authorize
     even if the enqueue-time ownership registry is unavailable.
+
+    ``source_r2_key``: see ``_process_image_path``'s docstring. When set,
+    ``temp_abs`` is expected to be ``None`` (or otherwise not present on
+    this machine) -- this task's own cleanup below only ever touches
+    ``temp_abs``, so it is a harmless no-op in that case; the R2 staging
+    object and the worker's own downloaded copy are cleaned up inside
+    ``_process_image_path`` itself, success or failure.
     """
     owner = (owner_public_id or "").strip() or None
     if owner:
@@ -174,6 +264,7 @@ def process_car_image_file(
             inline_base64=bool(inline_base64),
             skip_blur=bool(skip_blur),
             owner_public_id=owner,
+            source_r2_key=source_r2_key,
         )
         out = {"ok": True, **res}
         if owner:
@@ -185,3 +276,43 @@ def process_car_image_file(
                 os.remove(temp_abs)
         except Exception:
             pass
+
+
+@celery_app.task(name="kk.cleanup_stale_image_staging_objects")
+def cleanup_stale_image_staging_objects():
+    """Backstop sweep for abandoned R2 async-image-staging objects.
+
+    ``kk.media_processing.stage_upload_for_async_job`` stages original
+    upload bytes under ``car_photos/_staging/`` in R2 so a Celery worker on
+    a separate Render service/disk can fetch them (see that function's
+    docstring). The normal path always deletes the staging object itself,
+    in ``_process_image_path``'s ``finally`` block, once the job finishes
+    (success or failure). This task only catches the rare case a job is
+    lost entirely (worker crash, broker outage, task never picked up) and
+    its staging object would otherwise linger in R2 forever -- registered
+    on the existing Celery Beat schedule (see ``kk/tasks/celery_app.py``),
+    same pattern as ``clear_expired_featured_listings``.
+
+    A generous 6-hour age threshold is used: real jobs normally complete
+    within seconds to a couple of minutes, so anything still present after
+    6 hours is safely assumed abandoned, not merely slow.
+    """
+    from flask import current_app
+
+    from kk.media_processing import _ASYNC_STAGING_KEY_PREFIX, _r2_configured
+
+    if not _r2_configured():
+        return {"ok": True, "deleted": 0, "skipped": "r2_not_configured"}
+
+    from kk.r2_ops import r2_cleanup_stale_staging
+
+    deleted = r2_cleanup_stale_staging(
+        prefix=_ASYNC_STAGING_KEY_PREFIX,
+        older_than_seconds=6 * 3600,
+    )
+    if deleted:
+        current_app.logger.info(
+            "cleanup_stale_image_staging_objects: deleted %d stale staging object(s)",
+            deleted,
+        )
+    return {"ok": True, "deleted": deleted}

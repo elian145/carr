@@ -475,7 +475,7 @@ class PendingSellSubmissionService {
           // storage so create->attach is one small call instead of a big
           // multipart upload landing right after create.
           try {
-            await SellPhotoPrestage.stageCarData(carData);
+            await SellPhotoPrestage.stageCarData(carData, draftId: draftId);
           } catch (e, st) {
             logNonFatal(e, st);
           }
@@ -548,6 +548,7 @@ class PendingSellSubmissionService {
       final listingMediaConfirmed = await SellListingMediaUpload.uploadForCar(
         carId: carId,
         carData: carData,
+        draftId: draftId,
         multipartFileBuilder: buildVideoMultipartFile,
         onPhase: (phase) {
           switch (phase) {

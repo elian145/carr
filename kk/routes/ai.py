@@ -268,26 +268,30 @@ def process_car_images():
 
         # Optional async mode: enqueue work to Celery.
         if (request.args.get("async") or "").strip().lower() in ("1", "true", "yes", "on"):
-            from uuid import uuid4
-
             from ..job_ownership import register_job_owner
+            from ..media_processing import stage_upload_for_async_job
 
             job_ids = []
             for fs in files:
                 if not fs or not fs.filename:
                     continue
                 filename = generate_secure_filename(fs.filename)
-                ts = utcnow().strftime("%Y%m%d_%H%M%S_%f")
-                temp_rel = f"temp/celery_{ts}_{uuid4().hex}_{filename}"
-                temp_abs = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_rel)
-                os.makedirs(os.path.dirname(temp_abs), exist_ok=True)
-                fs.save(temp_abs)
+                try:
+                    temp_abs, source_r2_key = stage_upload_for_async_job(
+                        fs, filename_hint=filename
+                    )
+                except Exception:
+                    current_app.logger.exception(
+                        "process_car_images(async): failed to stage upload for Celery"
+                    )
+                    continue
                 res = process_car_image_file.delay(
                     temp_abs,
                     fs.filename,
                     want_b64,
                     skip_blur,
                     owner_public_id=current_user.public_id,
+                    source_r2_key=source_r2_key,
                 )
                 register_job_owner(res.id, current_user.public_id)
                 job_ids.append(res.id)

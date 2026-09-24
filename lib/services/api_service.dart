@@ -164,6 +164,16 @@ class ApiService {
   static http.Client get _httpClient =>
       _testHttpClient ?? _productionHttpClient;
 
+  /// Effective HTTP client for other service classes (e.g. [AiService])
+  /// that build their own [http.MultipartRequest] instead of going through
+  /// one of [ApiService]'s own request helpers, but still need the same
+  /// test-mode behavior those helpers already have -- honors
+  /// [testHttpClient] when bound (widget/unit tests), otherwise the shared
+  /// production client. Callers must not close the returned client; its
+  /// lifecycle (including recycling on a stale socket, see
+  /// [recycleProductionHttpClient]) is owned by [ApiService].
+  static http.Client get effectiveHttpClient => _httpClient;
+
   // HTTP + token core (api/api_http.dart)
   static Future<void> initializeTokens() => _ApiServiceHttp.initializeTokens();
 

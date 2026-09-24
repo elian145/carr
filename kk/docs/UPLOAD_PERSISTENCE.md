@@ -60,6 +60,28 @@ Existing uploads that were already lost cannot be recovered; re-upload or restor
 
 - One disk per service; multiple instances do not share one disk—prefer R2 for horizontal scaling.
 - Free / starter plans may not include disks; see [Render disks](https://render.com/docs/disks).
+- **The async Celery image-processing pipeline requires Option A (R2), not
+  Option B, in this app's multi-service deployment.** `POST
+  /api/cars/<id>/images?async=1` and `POST
+  /api/process-car-images?async=1` enqueue `kk.tasks.image_tasks.
+  process_car_image_file` on `carr-worker-fra` -- a *separate* Render
+  service from `carr` (the web process that accepted the upload). Render
+  never shares a disk across services (see the note above and
+  [Render disks](https://render.com/docs/disks)), so a local `UPLOAD_FOLDER`
+  path written by `carr` is not readable by `carr-worker-fra`. When R2 is
+  configured, the enqueuing route stages the original upload to a
+  short-lived `car_photos/_staging/` R2 key instead
+  (`kk.media_processing.stage_upload_for_async_job`) and the worker
+  downloads it from there; this staging object -- and the worker's own
+  downloaded copy -- are removed once the job finishes (success or
+  failure), with an hourly Celery Beat sweep
+  (`cleanup_stale_image_staging_objects`) as a backstop for a lost/abandoned
+  job. If this app is ever deployed with Option B (disk) instead of R2
+  *and* a separate Celery worker service, every async image job will fail
+  with a missing-source error -- Option B alone only ever worked safely
+  because the confirmed-fixed OOM bug (see the production OOM investigation)
+  meant this cross-service path was not yet exercised end-to-end in
+  production.
 
 ---
 

@@ -5,10 +5,13 @@ import hashlib
 import hmac
 import logging
 import os
+import secrets
+import tempfile
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
 from typing import Tuple
+from uuid import uuid4
 
 from flask import current_app
 from PIL.Image import DecompressionBombError
@@ -113,6 +116,79 @@ def _r2_configured() -> bool:
 
 def _r2_public_base() -> str:
     return (current_app.config.get("R2_PUBLIC_URL") or "").strip().rstrip("/")
+
+
+# OOM-fix follow-up (moving Sell photo prestage onto the Celery async
+# image-processing pipeline): objects staged here are the *original*,
+# not-yet-processed upload bytes, kept only long enough for
+# ``kk.tasks.image_tasks.process_car_image_file`` to download and consume
+# them. Deliberately namespaced away from real listing photos
+# (``car_photos/<owner_tag>/...``) so they are never mistaken for one and so
+# the periodic backstop sweep (``kk.tasks.image_tasks.
+# cleanup_stale_image_staging_objects``) can target them precisely by prefix.
+_ASYNC_STAGING_KEY_PREFIX = "car_photos/_staging/"
+
+
+def stage_upload_for_async_job(
+    file_storage, *, filename_hint: str, subdir: str = "temp"
+) -> tuple[str | None, str | None]:
+    """Save one uploaded file so the async Celery image-processing task
+    (``kk.tasks.image_tasks.process_car_image_file``) can read it.
+
+    Returns ``(temp_abs, source_r2_key)`` -- exactly one of the two is
+    non-``None``.
+
+    ``carr-worker-fra`` (the Celery worker) runs as a *separate* Render
+    service from the web process handling this request. Render never shares
+    a local disk across services or instances (see
+    ``kk/docs/UPLOAD_PERSISTENCE.md`` and Render's own disk docs), so a path
+    written to this process's own disk is not readable by that worker. When
+    R2 is configured (the production default -- see
+    ``kk/docs/UPLOAD_PERSISTENCE.md``), this uploads the file to a
+    short-lived R2 staging key instead and returns that key as
+    ``source_r2_key``, removing the local temp copy immediately since it is
+    no longer needed once the bytes are durably staged in R2. When R2 is not
+    configured (dev/test, or a single-process deployment with no separate
+    worker service), this returns a local ``temp_abs`` path exactly as
+    before -- unchanged behavior for that case, since same-machine execution
+    makes a local path readable by whatever process runs the Celery task.
+
+    The upload is always streamed via ``FileStorage.save()`` -- this
+    function never reads the file fully into this process's memory, in
+    either branch.
+    """
+    upload_root = (
+        (current_app.config.get("UPLOAD_FOLDER") or "").strip()
+        or tempfile.gettempdir()
+    )
+    tmp_dir = os.path.join(upload_root, subdir)
+    os.makedirs(tmp_dir, exist_ok=True)
+    ts = utcnow().strftime("%Y%m%d_%H%M%S_%f")
+    temp_abs = os.path.join(tmp_dir, f"celery_{ts}_{uuid4().hex}_{filename_hint}")
+    file_storage.save(temp_abs)
+
+    if not _r2_configured():
+        return temp_abs, None
+
+    ext = os.path.splitext(filename_hint)[1].lower() or ".jpg"
+    staging_key = f"{_ASYNC_STAGING_KEY_PREFIX}{secrets.token_hex(16)}{ext}"
+    try:
+        from .r2_ops import r2_put_file
+
+        r2_put_file(
+            key=staging_key,
+            file_path=temp_abs,
+            content_type="application/octet-stream",
+        )
+    finally:
+        # The local copy is redundant once staged in R2 -- and would
+        # otherwise never be cleaned up on this machine, since only the
+        # worker (on a different machine) knows the job finished.
+        try:
+            os.remove(temp_abs)
+        except OSError:
+            pass
+    return None, staging_key
 
 
 def media_owner_tag(owner_public_id: str | None) -> str | None:

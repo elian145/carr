@@ -115,7 +115,8 @@ class SellSubmissionRecord {
     this.lastErrorRetryable = false,
     this.attempts = 0,
     this.ownerUserId,
-  });
+    Map<String, String>? pendingAsyncImageJobs,
+  }) : pendingAsyncImageJobs = pendingAsyncImageJobs ?? const <String, String>{};
 
   final String draftId;
   final SellSubmissionStatus status;
@@ -166,6 +167,20 @@ class SellSubmissionRecord {
   final int createdAt;
   final int updatedAt;
 
+  /// OOM-fix follow-up: durable map of local source-photo path -> the
+  /// Celery job id currently outstanding for it (enqueued by
+  /// [SellPhotoPrestage] or [SellListingMediaUpload] via
+  /// `POST /api/process-car-images?async=1` / `?async=1` on the images
+  /// upload route). Lets a submission resumed after the app process was
+  /// killed while a job was still running poll the SAME already-enqueued
+  /// job (Celery job state lives server-side, independent of which
+  /// process enqueued it) instead of enqueueing a duplicate one for the
+  /// same source image. Entries are removed as soon as their job resolves
+  /// (success or failure) either way -- a lingering entry only ever means
+  /// "still genuinely in flight (or the app was killed before it could
+  /// resolve)", never "definitely done".
+  final Map<String, String> pendingAsyncImageJobs;
+
   SellSubmissionRecord copyWith({
     SellSubmissionStatus? status,
     String? carId,
@@ -180,6 +195,7 @@ class SellSubmissionRecord {
     int? attempts,
     int? updatedAt,
     bool clearLastError = false,
+    Map<String, String>? pendingAsyncImageJobs,
   }) {
     return SellSubmissionRecord(
       draftId: draftId,
@@ -204,6 +220,8 @@ class SellSubmissionRecord {
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
       ownerUserId: ownerUserId,
+      pendingAsyncImageJobs:
+          pendingAsyncImageJobs ?? this.pendingAsyncImageJobs,
     );
   }
 
@@ -227,6 +245,8 @@ class SellSubmissionRecord {
         'createdAt': createdAt,
         'updatedAt': updatedAt,
         if (ownerUserId != null) 'ownerUserId': ownerUserId,
+        if (pendingAsyncImageJobs.isNotEmpty)
+          'pendingAsyncImageJobs': pendingAsyncImageJobs,
       };
 
   static SellSubmissionRecord? fromJson(dynamic raw) {
@@ -271,12 +291,26 @@ class SellSubmissionRecord {
         ownerUserId: (map['ownerUserId']?.toString().trim().isNotEmpty ?? false)
             ? map['ownerUserId'].toString().trim()
             : null,
+        pendingAsyncImageJobs: _pendingAsyncImageJobsFromJson(
+          map['pendingAsyncImageJobs'],
+        ),
       );
     } catch (e, st) {
       logNonFatal(e, st);
       return null;
     }
   }
+}
+
+Map<String, String> _pendingAsyncImageJobsFromJson(dynamic raw) {
+  if (raw is! Map) return const <String, String>{};
+  final out = <String, String>{};
+  raw.forEach((k, v) {
+    final key = k?.toString().trim() ?? '';
+    final value = v?.toString().trim() ?? '';
+    if (key.isNotEmpty && value.isNotEmpty) out[key] = value;
+  });
+  return out;
 }
 
 /// Durable storage for [SellSubmissionRecord]s.

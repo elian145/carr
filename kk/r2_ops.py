@@ -208,6 +208,69 @@ def r2_put_file(
     _run_r2_op(payload, timeout=timeout)
 
 
+def r2_get_file(
+    *,
+    key: str,
+    dest_path: str,
+    timeout: float = 120,
+) -> None:
+    """Download an object from the listing-media R2 bucket to a local path
+    (eventlet-safe).
+
+    OOM-fix follow-up: the Celery async image-processing pipeline
+    (``kk/tasks/image_tasks.py::process_car_image_file``) enqueues jobs from
+    the ``carr`` web process but runs them on ``carr-worker-fra`` -- a
+    *separate* Render service with its own, non-shared ephemeral disk
+    (Render never shares a local disk across services or instances; see
+    ``kk/docs/UPLOAD_PERSISTENCE.md``). A local path written by the web
+    process is therefore not readable by the worker. When R2 is configured
+    (the production default), the web process instead stages the original
+    upload to a short-lived R2 key and the worker downloads it here, straight
+    to disk (never buffered fully as bytes in this process), before
+    processing it exactly as it would a same-machine local file.
+    """
+    if not key:
+        raise RuntimeError("Missing key")
+    creds = _cred_payload()
+    payload: dict[str, Any] = {
+        **creds,
+        "op": "get_object",
+        "key": key,
+        "dest_path": dest_path,
+    }
+    _run_r2_op(payload, timeout=timeout)
+
+
+def r2_cleanup_stale_staging(
+    *,
+    prefix: str,
+    older_than_seconds: int,
+    timeout: float = 60,
+) -> int:
+    """Delete R2 objects under ``prefix`` older than ``older_than_seconds``.
+
+    Bounds worst-case accumulation of the short-lived staging objects
+    created by the async image-processing enqueue path
+    (``kk/media_processing.py::stage_upload_for_async_job``) in the rare case
+    a Celery job is lost/abandoned before it can run its own cleanup (e.g. a
+    worker crash, a broker outage, or the job simply never being picked up).
+    Normal success/failure cleanup already removes the staging object
+    immediately (see ``process_car_image_file``'s ``finally`` block); this is
+    strictly a backstop. Returns the number of objects deleted.
+    """
+    if not prefix:
+        return 0
+    creds = _cred_payload()
+    payload: dict[str, Any] = {
+        **creds,
+        "op": "list_and_delete_stale",
+        "prefix": prefix,
+        "older_than_seconds": int(older_than_seconds),
+    }
+    result = _run_r2_op(payload, timeout=timeout)
+    return int(result.get("deleted") or 0)
+
+
 def r2_chat_put_bytes(
     *,
     key: str,

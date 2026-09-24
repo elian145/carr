@@ -4,7 +4,6 @@ import os
 import secrets
 import tempfile
 from datetime import datetime
-from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
@@ -18,6 +17,7 @@ from ..media_processing import (
     media_key_owner_prefix_matches,
     media_owner_tag,
     process_and_store_image,
+    stage_upload_for_async_job,
 )
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
@@ -835,13 +835,20 @@ def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
             continue
 
         filename = generate_secure_filename(fs.filename)
-        ts = utcnow().strftime("%Y%m%d_%H%M%S_%f")
-        temp_rel = f"temp/celery_{ts}_{uuid4().hex}_{filename}"
-        temp_abs = os.path.join(current_app.config["UPLOAD_FOLDER"], temp_rel)
-        os.makedirs(os.path.dirname(temp_abs), exist_ok=True)
-        # FileStorage.save() streams in chunks -- the file never needs to be
-        # fully buffered in this process's memory just to hand it to Celery.
-        fs.save(temp_abs)
+        # OOM-fix follow-up: stage via R2 when configured (production), since
+        # carr-worker-fra runs as a separate Render service and cannot read a
+        # path on this process's own disk. See
+        # kk.media_processing.stage_upload_for_async_job's docstring.
+        try:
+            temp_abs, source_r2_key = stage_upload_for_async_job(
+                fs, filename_hint=filename
+            )
+        except Exception:
+            current_app.logger.exception(
+                "_enqueue_async_car_image_uploads: failed to stage upload for Celery"
+            )
+            skip_reasons.append("Upload failed; please retry")
+            continue
 
         res = process_car_image_file.delay(
             temp_abs,
@@ -849,6 +856,7 @@ def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
             False,
             skip_blur,
             owner_public_id=current_user.public_id,
+            source_r2_key=source_r2_key,
         )
         register_job_owner(res.id, current_user.public_id)
         job_ids.append(res.id)
@@ -1107,6 +1115,16 @@ def attach_car_images(car_id: str):
 
         attached = []
         upload_root = os.path.abspath(os.path.join(current_app.root_path, "static", "uploads"))
+        # OOM-fix follow-up (item #3, media-attachment idempotency): a
+        # retried/duplicated async image job (e.g. after an ambiguous
+        # network failure during enqueue) is the one case that could ever
+        # ask this endpoint to attach the exact same already-processed
+        # image path twice for this car. Cheap, safe backstop: never add a
+        # second CarImage row for a URL/path already attached to this car,
+        # regardless of kind -- a listing photo and a damage photo never
+        # legitimately share the same processed-image URL, so this can
+        # never accidentally suppress a distinct, intentional attach.
+        existing_urls = {img.image_url for img in car.images if img.image_url}
         for rel in paths:
             try:
                 rel_str = str(rel or "").strip().lstrip("/").replace("\\", "/")
@@ -1122,6 +1140,8 @@ def attach_car_images(car_id: str):
                         )
                     ):
                         continue
+                    if rel_str in existing_urls:
+                        continue
                     listing_n = _count_listing_images(car)
                     is_primary = attach_kind == "listing" and listing_n == 0
                     ci = CarImage(
@@ -1132,6 +1152,7 @@ def attach_car_images(car_id: str):
                     )
                     db.session.add(ci)
                     attached.append(ci)
+                    existing_urls.add(rel_str)
                     continue
                 if not rel_str.lower().startswith("uploads/"):
                     continue
@@ -1145,6 +1166,8 @@ def attach_car_images(car_id: str):
                 if not os.path.isfile(abs_path):
                     continue
                 rel_str = f"uploads/{subpath}".replace("\\", "/")
+                if rel_str in existing_urls:
+                    continue
                 listing_n = _count_listing_images(car)
                 is_primary = attach_kind == "listing" and listing_n == 0
                 ci = CarImage(
@@ -1155,6 +1178,7 @@ def attach_car_images(car_id: str):
                 )
                 db.session.add(ci)
                 attached.append(ci)
+                existing_urls.add(rel_str)
             except Exception:
                 continue
 

@@ -180,6 +180,74 @@ class AiService {
     }
   }
 
+  /// OOM-fix follow-up: enqueue [imageFiles] on the existing async
+  /// image-processing pipeline (`POST /api/process-car-images?async=1` ->
+  /// `kk.tasks.image_tasks.process_car_image_file`) instead of blocking
+  /// this request on synchronous PIL decode/blur/encode work running
+  /// inside the `carr` Gunicorn web process.
+  ///
+  /// Used only by [SellPhotoPrestage] (pre-create Sell photo staging, where
+  /// there is no `carId` yet so `/api/cars/<id>/images?async=1` cannot be
+  /// used). [processCarImagesToServerPaths] (the "Blur Plates" button) and
+  /// [processCarImagesToServerPayload]'s synchronous behavior are
+  /// unaffected -- this is an additional method, not a replacement.
+  ///
+  /// Returns the enqueued job ids in the same order as [imageFiles] (the
+  /// server validates every file before enqueueing any of them for this
+  /// route, so a rejected file fails the whole batch with a thrown
+  /// [Exception] rather than silently shifting positions), or `null` on
+  /// any transport/auth failure. Callers must poll each job id (e.g. via
+  /// `SellImageJobPolling.awaitImageJobRelPath`) to get the resulting
+  /// `rel_path`.
+  static Future<List<String>?> enqueueCarImagesAsync(
+    List<XFile> imageFiles, {
+    bool skipBlur = false,
+  }) async {
+    if (imageFiles.isEmpty) return const [];
+    final token = await _getAuthToken();
+    if (token == null || token.isEmpty) {
+      appLog('AI Service: Enqueue-images requires authentication');
+      return null;
+    }
+    final url = Uri.parse(
+      '${apiBaseApi()}/process-car-images'
+      '?async=1'
+      '${skipBlur ? '&skip_blur=1' : ''}',
+    );
+    final request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+    for (final f in imageFiles) {
+      request.files.add(await http.MultipartFile.fromPath('images', f.path));
+    }
+    // Route through ApiService's effective client (test-bound client in
+    // widget/unit tests, the shared production client otherwise) instead
+    // of this class's other multipart methods' `request.send()` pattern --
+    // that pattern always creates its own throwaway default `Client()`,
+    // which never honors `ApiService.testHttpClient` and would make this
+    // method untestable.
+    final streamed = await ApiService.effectiveHttpClient
+        .send(request)
+        .timeout(
+          const Duration(seconds: 60),
+          onTimeout: () => throw TimeoutException('Enqueue images timed out'),
+        );
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode != 202 && response.statusCode != 200) {
+      appLog(
+        'AI Service: Enqueue images failed: ${response.statusCode} ${response.body}',
+      );
+      return null;
+    }
+    final data = json.decode(response.body);
+    final rawJobIds = (data is Map) ? data['job_ids'] : null;
+    if (rawJobIds is! List) return null;
+    final jobIds = rawJobIds
+        .map((e) => e.toString())
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+    return jobIds;
+  }
+
   /// Blur/store images on the server (single request) and return both:
   /// - `paths`: server-relative paths (e.g. uploads/car_photos/processed_...jpg)
   /// - `base64`: data URIs (image/jpeg) for immediate local preview without downloading static URLs.

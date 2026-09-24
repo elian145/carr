@@ -10,6 +10,7 @@ import '../../shared/debug/app_log.dart';
 import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_image_media.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
+import 'sell_image_job_polling.dart';
 import 'sell_photo_prestage.dart';
 import 'sell_video_helpers.dart';
 
@@ -198,63 +199,17 @@ class SellListingMediaUpload {
     return isTransientNetworkError(error);
   }
 
-  /// P-01: interval between `GET /api/jobs/<task_id>` polls while waiting
-  /// for one enqueued image's plate-blur/persist job to finish.
-  static const Duration _imageJobPollInterval = Duration(milliseconds: 1500);
-
-  /// P-01: total poll budget per job -- matches [ApiService]'s existing
-  /// 180s multipart upload timeout (`_uploadTimeout`), i.e. the same
-  /// worst-case wait the old synchronous upload already tolerated, just
-  /// spent polling a cheap status endpoint instead of blocking one HTTP
-  /// upload request on the server's Roboflow call.
-  static const int _imageJobMaxPolls = 120;
-
   /// P-01: poll one Celery image-processing job until it reaches a terminal
-  /// state. Returns the processed image's server-relative path on
-  /// `SUCCESS`, or `null` on `FAILURE`/timeout/a malformed result -- the
-  /// caller drops that one file rather than attaching a bogus path,
-  /// mirroring how the synchronous path already skips a single rejected
-  /// file instead of failing the whole batch.
-  static Future<String?> _awaitImageJobRelPath(String jobId) async {
-    for (var attempt = 0; attempt < _imageJobMaxPolls; attempt++) {
-      if (attempt > 0) {
-        await Future<void>.delayed(_imageJobPollInterval);
-      }
-      Map<String, dynamic> status;
-      try {
-        status = await ApiService.getJobStatus(jobId);
-      } catch (e, st) {
-        // A 404 means the server has no record of this job for us (e.g. the
-        // Celery result backend already expired/evicted it) -- that can
-        // never resolve, so stop polling immediately rather than burning
-        // the full budget. Anything else (503 broker hiccup, timeout,
-        // transient network error) is worth retrying within budget.
-        if (e is ApiException && e.statusCode == 404) {
-          appLog('SellListingMediaUpload: job $jobId not found while polling');
-          return null;
-        }
-        logNonFatal(e, st, 'SellListingMediaUpload.pollJob');
-        continue;
-      }
-      final state = (status['state'] ?? '').toString();
-      if (state == 'SUCCESS') {
-        final result = status['result'];
-        if (result is Map) {
-          final relPath = (result['rel_path'] ?? '').toString().trim();
-          if (relPath.isNotEmpty) return relPath;
-        }
-        appLog('SellListingMediaUpload: job $jobId succeeded with no rel_path');
-        return null;
-      }
-      if (state == 'FAILURE') {
-        appLog('SellListingMediaUpload: image job $jobId failed');
-        return null;
-      }
-      // PENDING / STARTED / UNAVAILABLE -- still processing, keep polling.
-    }
-    appLog('SellListingMediaUpload: image job $jobId timed out while polling');
-    return null;
-  }
+  /// state. Returns the processed image's server-relative path on success,
+  /// or `null` on failure/timeout. Delegates to the shared
+  /// [SellImageJobPolling] helper also used by [SellPhotoPrestage]'s async
+  /// prestage path (OOM-fix follow-up), so both callers share one polling
+  /// budget/interval instead of maintaining two copies.
+  static Future<String?> _awaitImageJobRelPath(String jobId) =>
+      SellImageJobPolling.awaitImageJobRelPath(
+        jobId,
+        logTag: 'SellListingMediaUpload',
+      );
 
   /// P-01: enqueues [files] on the existing async image-processing pipeline
   /// (`?async=1` on `POST /api/cars/<id>/images` ->
@@ -269,38 +224,81 @@ class SellListingMediaUpload {
   /// shape the old synchronous multipart upload returned, so every caller
   /// in this file (`_collectUploadedImageIds`, `_attachedRowCount`,
   /// primary-image/layout logic) needs no changes.
+  /// OOM-fix follow-up: when [tracker] has a durably-recorded outstanding
+  /// job id for one of [files] (from an earlier, possibly killed,
+  /// process), that job is polled directly instead of enqueueing a
+  /// duplicate one -- see [SellAsyncJobTracker].
   static Future<Map<String, dynamic>> _uploadImagesViaAsyncJobs({
     required String carId,
     required List<XFile> files,
     required String imageKind,
+    SellAsyncJobTracker? tracker,
   }) async {
-    final enqueueResponse = await ApiService.uploadCarImages(
-      carId,
-      files,
-      imageKind: imageKind,
-      async: true,
-    );
-    final rawJobIds = enqueueResponse['job_ids'];
-    final jobIds = rawJobIds is List
-        ? rawJobIds.map((e) => e.toString()).where((s) => s.isNotEmpty).toList()
-        : const <String>[];
-    if (jobIds.isEmpty) {
-      // Every file was rejected before it could even be enqueued (bad
-      // extension/size/cap) -- surface the server's message exactly like
-      // the synchronous path's 400 would have.
-      throw ApiException(
-        statusCode: 400,
-        message: (enqueueResponse['message'] as String?) ??
-            'No valid images were uploaded.',
+    // resolved[i] corresponds to files[i]; filled either by reusing a
+    // previously-recorded job or by a fresh enqueue below.
+    final resolved = List<String?>.filled(files.length, null);
+    final freshIndexes = <int>[];
+    for (var i = 0; i < files.length; i++) {
+      final path = files[i].path;
+      final existingJobId = await tracker?.lookup(path);
+      if (existingJobId == null) {
+        freshIndexes.add(i);
+        continue;
+      }
+      final relPath = await _awaitImageJobRelPath(existingJobId);
+      await tracker?.clear(path);
+      if (relPath != null && relPath.isNotEmpty) {
+        resolved[i] = relPath;
+      } else {
+        // Recorded job is gone/failed/expired -- enqueue a replacement.
+        freshIndexes.add(i);
+      }
+    }
+
+    if (freshIndexes.isNotEmpty) {
+      final freshFiles = [for (final i in freshIndexes) files[i]];
+      final enqueueResponse = await ApiService.uploadCarImages(
+        carId,
+        freshFiles,
+        imageKind: imageKind,
+        async: true,
       );
+      final rawJobIds = enqueueResponse['job_ids'];
+      final jobIds = rawJobIds is List
+          ? rawJobIds
+              .map((e) => e.toString())
+              .where((s) => s.isNotEmpty)
+              .toList()
+          : const <String>[];
+      if (jobIds.isEmpty) {
+        // Every file was rejected before it could even be enqueued (bad
+        // extension/size/cap) -- surface the server's message exactly like
+        // the synchronous path's 400 would have.
+        throw ApiException(
+          statusCode: 400,
+          message: (enqueueResponse['message'] as String?) ??
+              'No valid images were uploaded.',
+        );
+      }
+      // jobIds correspond 1:1, in order, to freshFiles -- the server
+      // validates every file before enqueueing any of them for this
+      // route, so a rejected file fails the whole request rather than
+      // silently shifting positions (see AiService.enqueueCarImagesAsync).
+      if (tracker != null) {
+        for (var k = 0; k < jobIds.length && k < freshFiles.length; k++) {
+          await tracker.record(freshFiles[k].path, jobIds[k]);
+        }
+      }
+      for (var k = 0; k < jobIds.length && k < freshIndexes.length; k++) {
+        final relPath = await _awaitImageJobRelPath(jobIds[k]);
+        await tracker?.clear(freshFiles[k].path);
+        if (relPath != null && relPath.isNotEmpty) {
+          resolved[freshIndexes[k]] = relPath;
+        }
+      }
     }
 
-    final relPaths = <String>[];
-    for (final jobId in jobIds) {
-      final relPath = await _awaitImageJobRelPath(jobId);
-      if (relPath != null && relPath.isNotEmpty) relPaths.add(relPath);
-    }
-
+    final relPaths = [for (final r in resolved) if (r != null) r];
     if (relPaths.isEmpty) {
       // Every enqueued job failed or timed out -- treat like a transient
       // server-side failure so the outer retry loop gets another attempt.
@@ -327,10 +325,12 @@ class SellListingMediaUpload {
     required List<XFile> files,
     String imageKind = 'listing',
     int? alreadyOnServer,
+    String? draftId,
   }) async {
     if (files.isEmpty) return <String, dynamic>{};
     final kind = imageKind.toLowerCase() == 'damage' ? 'damage' : 'listing';
     final before = alreadyOnServer ?? await _remoteImageCount(carId, kind);
+    final tracker = SellAsyncJobTracker(draftId);
     Object? lastError;
     StackTrace? lastStack;
     for (var attempt = 0; attempt < 3; attempt++) {
@@ -351,6 +351,7 @@ class SellListingMediaUpload {
           carId: carId,
           files: files,
           imageKind: imageKind,
+          tracker: tracker,
         );
       } catch (e, st) {
         lastError = e;
@@ -429,6 +430,7 @@ class SellListingMediaUpload {
     required String carId,
     required List<dynamic> attachItems,
     required String kind,
+    String? draftId,
   }) async {
     final files = <XFile>[];
     for (final item in attachItems) {
@@ -447,6 +449,7 @@ class SellListingMediaUpload {
       files: files,
       imageKind: kind,
       alreadyOnServer: 0,
+      draftId: draftId,
     );
   }
 
@@ -467,6 +470,7 @@ class SellListingMediaUpload {
     required Map<String, dynamic> carData,
     Future<http.MultipartFile> Function(XFile video)? multipartFileBuilder,
     void Function(SellMediaUploadPhase phase)? onPhase,
+    String? draftId,
   }) async {
     final dynamic maybeImgs = carData['images'];
     final List<dynamic> imgsRaw = (maybeImgs is List) ? maybeImgs : const [];
@@ -547,6 +551,7 @@ class SellListingMediaUpload {
           carId: carId,
           attachItems: attachItems,
           kind: 'listing',
+          draftId: draftId,
         );
         if (recovered != null) {
           latestMediaResponse = recovered;
@@ -562,6 +567,7 @@ class SellListingMediaUpload {
         carId: carId,
         files: toUpload,
         alreadyOnServer: remoteListingCount,
+        draftId: draftId,
       );
       latestMediaResponse = uploadResponse;
       _collectUploadedImageIds(imageIdsBySource, uploadItems, uploadResponse);
@@ -654,6 +660,7 @@ class SellListingMediaUpload {
           carId: carId,
           attachItems: damageAttachItems,
           kind: 'damage',
+          draftId: draftId,
         );
       }
     }
@@ -663,6 +670,7 @@ class SellListingMediaUpload {
         files: damageToUpload,
         imageKind: 'damage',
         alreadyOnServer: remoteDamageCount,
+        draftId: draftId,
       );
     }
 
