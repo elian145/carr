@@ -146,6 +146,12 @@ void main() {
 
     TokenStore.testMode = true;
     setRuntimeApiBaseOverride('http://127.0.0.1:1');
+    // E-fix: real backoff delays (10s-300s) are impractical to wait out in
+    // a unit test and are not what most of these tests exercise -- disable
+    // spacing by default so pre-existing "resume again immediately"
+    // scenarios keep their original zero-delay semantics. The dedicated
+    // backoff/cap tests below override this per-test instead.
+    debugSellSubmissionRetryBackoffOverride = (_) => Duration.zero;
 
     ApiService.testHttpClient = MockClient((request) async {
       final method = request.method.toUpperCase();
@@ -340,10 +346,71 @@ void main() {
     setRuntimeApiBaseOverride(null);
     TokenStore.testMode = false;
     TokenStore.resetForTests();
+    debugSellSubmissionRetryBackoffOverride = null;
     tempDir.deleteSync(recursive: true);
   });
 
   group('SellSubmissionRecord persistence (no HTTP)', () {
+    test(
+      'J-12: an old-schema record (persisted by a version of the app that '
+      'predates attempts/lastError*/ownerUserId/pendingAsyncImageJobs) '
+      'decodes safely with sensible defaults instead of failing to parse',
+      () {
+        // Exactly what `SellSubmissionStatePrefs` would have written before
+        // those fields existed -- only the fields present since the very
+        // first version of this record type.
+        final oldSchemaJson = <String, dynamic>{
+          'draftId': 'draft_old_schema',
+          'status': 'retryable',
+          'isEdit': false,
+          'carId': 'car_old_1',
+          'pendingReview': false,
+          'carData': {'brand': 'kia', 'images': <dynamic>[]},
+          'idempotencyKey': 'sell-create-draft_old_schema',
+          'currentPhase': 'photos',
+          'completedMediaCount': 0,
+          'totalMediaCount': 1,
+          'createdAt': 1700000000000,
+          'updatedAt': 1700000000000,
+          // Deliberately absent: attempts, lastErrorMessage,
+          // lastErrorStatusCode, lastErrorRetryable, ownerUserId,
+          // pendingAsyncImageJobs, editListingId.
+        };
+
+        final decoded = SellSubmissionRecord.fromJson(oldSchemaJson);
+
+        expect(decoded, isNotNull);
+        expect(decoded!.draftId, 'draft_old_schema');
+        expect(decoded.status, SellSubmissionStatus.retryable);
+        expect(decoded.carId, 'car_old_1');
+        expect(
+          decoded.attempts,
+          0,
+          reason: 'missing attempts must default to 0, not crash/null',
+        );
+        expect(decoded.lastErrorMessage, isNull);
+        expect(decoded.lastErrorStatusCode, isNull);
+        expect(decoded.lastErrorRetryable, isFalse);
+        expect(
+          decoded.ownerUserId,
+          isNull,
+          reason: 'missing ownerUserId must default to null (resumable by '
+              'whichever account is current), not crash',
+        );
+        expect(decoded.pendingAsyncImageJobs, isEmpty);
+        expect(decoded.editListingId, isNull);
+
+        // Round-trips through toJson()/fromJson() again without loss, now
+        // that the "new" fields have concrete (default) values.
+        final roundTripped = SellSubmissionRecord.fromJson(
+          json.decode(json.encode(decoded.toJson())),
+        );
+        expect(roundTripped, isNotNull);
+        expect(roundTripped!.attempts, 0);
+        expect(roundTripped.carId, 'car_old_1');
+      },
+    );
+
     test('never serializes auth tokens/secrets', () {
       final now = DateTime.now().millisecondsSinceEpoch;
       final record = SellSubmissionRecord(
@@ -1166,6 +1233,431 @@ void main() {
       // Clean up the real AuthService singleton so no other test file
       // sharing this process observes a signed-in session it never set up.
       await AuthService().logout();
+    },
+  );
+
+  // ---- J-12: an old-schema record on disk resumes correctly end-to-end ----
+  test(
+    'J-12: an old-schema record written directly to SharedPreferences (raw '
+    'JSON missing every field added after the first version of this '
+    'record type) is discovered and successfully resumed by resumeAll() -- '
+    'not just parseable in isolation, but actually usable',
+    () async {
+      const draftId = 'draft_old_schema_e2e';
+      final sp = await SharedPreferences.getInstance();
+      await sp.setString(
+        'sell_submission_state_v1',
+        json.encode([
+          {
+            'draftId': draftId,
+            'status': 'pending',
+            'isEdit': false,
+            'pendingReview': false,
+            'carData': _baseCarData(),
+            'idempotencyKey': 'sell-create-$draftId',
+            'currentPhase': 'creating',
+            'completedMediaCount': 0,
+            'totalMediaCount': 0,
+            'createdAt': DateTime.now().millisecondsSinceEpoch,
+            'updatedAt': DateTime.now().millisecondsSinceEpoch,
+            // No attempts / lastError* / ownerUserId /
+            // pendingAsyncImageJobs -- exactly what a pre-those-fields app
+            // version would have written.
+          },
+        ]),
+      );
+
+      final resumed = await PendingSellSubmissionService.instance
+          .resumeAll();
+
+      expect(resumed, isTrue);
+      expect(createCarCalls.length, 1);
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      expect(carsById.length, 1);
+    },
+  );
+
+  // ---- F: overlapping resume triggers never duplicate work -----------------
+  // Real triggers that call `resumeAll()`/`submit()` independently: app
+  // bootstrap, `AppLifecycleState.resumed`, connectivity restored
+  // (`hookConnectivityRecovery`), and auth/login completion
+  // (`app_with_deep_links.dart`). Proves one persisted draftId can never
+  // simultaneously execute two media-upload flows even when several of
+  // these fire close together, via BOTH dedup layers at once
+  // (`_bulkResumeRunning` for the bulk scan, `_activeRuns`/`_ensureRunning`
+  // per draft).
+  test(
+    'F: four resumeAll() calls fired back-to-back (simulating bootstrap + '
+    'lifecycle-resume + connectivity-restored + login-completion all '
+    'triggering near-simultaneously) for the SAME single pending draft '
+    'result in exactly ONE create call and ONE finished submission -- '
+    'never a duplicate/overlapping worker',
+    () async {
+      const draftId = 'draft_f_overlap';
+      createCarOverride = (body) {
+        return http.Response(
+          json.encode({
+            'car': (() {
+              carIdCounter++;
+              final id = 'car_$carIdCounter';
+              carsById[id] = {
+                'id': id,
+                'images': <dynamic>[],
+                'videos': <dynamic>[],
+              };
+              return carsById[id];
+            })(),
+          }),
+          201,
+          headers: {'content-type': 'application/json'},
+        );
+      };
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.pending,
+          carData: _baseCarData(),
+          idempotencyKey: 'sell-create-$draftId',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      // Four independent triggers, fired without awaiting each other --
+      // exactly how bootstrap/lifecycle/connectivity/login-completion fire
+      // independently in production.
+      final futures = <Future<bool>>[
+        PendingSellSubmissionService.instance.resumeAll(),
+        PendingSellSubmissionService.instance.resumeAll(),
+        PendingSellSubmissionService.instance.resumeAll(),
+        PendingSellSubmissionService.instance.resumeAll(),
+      ];
+      final results = await Future.wait(futures);
+
+      expect(
+        results.where((r) => r).length,
+        greaterThanOrEqualTo(1),
+        reason: 'at least the winning trigger must report success',
+      );
+      expect(
+        createCarCalls.length,
+        1,
+        reason: 'four overlapping resume triggers for the SAME draft must '
+            'still only create the listing ONCE -- this is the exact '
+            '"two simultaneous media upload flows for one draftId" '
+            'scenario Section F guards against',
+      );
+      expect(carsById.length, 1);
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+    },
+  );
+
+  // ---- E-fix: bounded retry / backoff (real-device evidence) --------------
+  // Reported symptom: the "Uploading listing… 0 of N media uploaded" banner
+  // reappeared on every app launch/resume indefinitely because a
+  // `retryable` record was retried unconditionally, forever, by every
+  // resumeAll() trigger with no cap and no minimum spacing.
+  group('E-fix: bounded retry / backoff for retryable records', () {
+    test(
+      'sellSubmissionRetryBackoff() increases with attempts and caps at '
+      '300s',
+      () {
+        expect(sellSubmissionRetryBackoff(0), const Duration(seconds: 10));
+        expect(sellSubmissionRetryBackoff(1), const Duration(seconds: 20));
+        expect(sellSubmissionRetryBackoff(2), const Duration(seconds: 40));
+        expect(sellSubmissionRetryBackoff(3), const Duration(seconds: 80));
+        expect(sellSubmissionRetryBackoff(4), const Duration(seconds: 160));
+        expect(sellSubmissionRetryBackoff(5), const Duration(seconds: 300));
+        expect(
+          sellSubmissionRetryBackoff(20),
+          const Duration(seconds: 300),
+          reason: 'must cap, never grow unbounded',
+        );
+      },
+    );
+
+    test(
+      'a retryable record whose backoff window has not elapsed yet is '
+      'skipped by resumeAll() -- no new network attempt, record left '
+      'untouched -- instead of retrying the same still-failing request on '
+      'every trigger',
+      () async {
+        // Force a large backoff so "not enough time has passed" is
+        // deterministic regardless of real wall-clock speed.
+        debugSellSubmissionRetryBackoffOverride = (_) => const Duration(
+          hours: 1,
+        );
+        const draftId = 'draft_backoff_skip';
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.retryable,
+            carData: _baseCarData(),
+            idempotencyKey: 'sell-create-$draftId',
+            attempts: 1,
+            lastErrorMessage: 'Service Unavailable',
+            lastErrorStatusCode: 503,
+            lastErrorRetryable: true,
+            createdAt: now,
+            // "Just failed a moment ago" -- well within the 1-hour backoff.
+            updatedAt: now,
+          ),
+        );
+
+        // `resumeAll()`'s return value only signals "something was
+        // eligible enough to schedule a worker for" (pre-existing
+        // semantics, unchanged here) -- not "something actually changed".
+        // The real proof this backoff check works is what happens (and
+        // does not happen) below.
+        await PendingSellSubmissionService.instance.resumeAll();
+
+        expect(
+          createCarCalls,
+          isEmpty,
+          reason: 'must not re-attempt before the backoff window elapses',
+        );
+        final still = await SellSubmissionStatePrefs.load(draftId);
+        expect(still, isNotNull);
+        expect(still!.status, SellSubmissionStatus.retryable);
+        expect(
+          still.attempts,
+          1,
+          reason: 'a skipped-due-to-backoff attempt must not itself count '
+              'as a new attempt',
+        );
+      },
+    );
+
+    test(
+      'once its backoff window has elapsed, the SAME retryable record is '
+      'retried normally by a later resumeAll() trigger',
+      () async {
+        debugSellSubmissionRetryBackoffOverride = (_) =>
+            const Duration(milliseconds: 1);
+        const draftId = 'draft_backoff_elapsed';
+        final longAgo = DateTime.now()
+            .subtract(const Duration(minutes: 5))
+            .millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.retryable,
+            carData: _baseCarData(),
+            idempotencyKey: 'sell-create-$draftId',
+            attempts: 1,
+            lastErrorRetryable: true,
+            createdAt: longAgo,
+            updatedAt: longAgo,
+          ),
+        );
+
+        final resumed = await PendingSellSubmissionService.instance
+            .resumeAll();
+
+        expect(resumed, isTrue);
+        expect(createCarCalls.length, 1);
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      },
+    );
+
+    test(
+      'a retryable record that has already been auto-retried '
+      '$kSellSubmissionMaxAutoRetryAttempts times is converted to '
+      'needsAttention (and excluded from all future resumeAll() calls) '
+      'instead of being retried forever',
+      () async {
+        const draftId = 'draft_retry_exhausted';
+        const carId = 'car_retry_exhausted';
+        carsById[carId] = {
+          'id': carId,
+          'images': <dynamic>[],
+          'videos': <dynamic>[],
+        };
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.retryable,
+            carId: carId,
+            carData: _baseCarData(),
+            idempotencyKey: 'sell-create-$draftId',
+            attempts: kSellSubmissionMaxAutoRetryAttempts,
+            lastErrorMessage: 'Service Unavailable',
+            lastErrorStatusCode: 503,
+            lastErrorRetryable: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        // (`resumeAll()`'s boolean return only means "something was
+        // eligible for a worker" -- unchanged pre-existing semantics; the
+        // meaningful assertions are the ones below.)
+        await PendingSellSubmissionService.instance.resumeAll();
+
+        expect(
+          createCarCalls,
+          isEmpty,
+          reason: 'must not make yet another attempt once the budget is '
+              'exhausted',
+        );
+        final exhausted = await SellSubmissionStatePrefs.load(draftId);
+        expect(exhausted, isNotNull);
+        expect(exhausted!.status, SellSubmissionStatus.needsAttention);
+        expect(
+          exhausted.carId,
+          carId,
+          reason: 'the listing id must survive so My Listings can still '
+              'find/fix it',
+        );
+
+        // And it is now permanently excluded from resumeAll(), matching
+        // every other needsAttention record (test I above).
+        final secondResume = await PendingSellSubmissionService.instance
+            .resumeAll();
+        expect(secondResume, isFalse);
+        expect(createCarCalls, isEmpty);
+      },
+    );
+  });
+
+  // ---- E-fix: a required local media file that vanished can never be ------
+  // retried into success -- fail closed to needsAttention immediately
+  // instead of silently dropping the file or retrying forever.
+  test(
+    'E-fix: a retryable/resumable record referencing a local photo file '
+    'that no longer exists on disk is converted to needsAttention '
+    'immediately (no network attempt), instead of retrying forever or '
+    'silently publishing with fewer photos than the user picked',
+    () async {
+      const draftId = 'draft_missing_local_media';
+      final missingPath = '${tempDir.path}/this_file_was_deleted.jpg';
+      // Deliberately never created -- simulates the durable copy having
+      // been removed out from under a resumed draft (or a pre-durability
+      // cache path that no longer resolves).
+      expect(File(missingPath).existsSync(), isFalse);
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.retryable,
+          carData: _baseCarData(images: [missingPath]),
+          idempotencyKey: 'sell-create-$draftId',
+          attempts: 1,
+          lastErrorRetryable: true,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      // (`resumeAll()`'s boolean return only means "something was
+      // eligible for a worker" -- unchanged pre-existing semantics; the
+      // meaningful assertions are the ones below.)
+      await PendingSellSubmissionService.instance.resumeAll();
+
+      expect(
+        createCarCalls,
+        isEmpty,
+        reason: 'must fail closed before ever attempting create/upload -- '
+            'a missing local file can never succeed no matter how many '
+            'network attempts are made',
+      );
+      final failed = await SellSubmissionStatePrefs.load(draftId);
+      expect(failed, isNotNull);
+      expect(failed!.status, SellSubmissionStatus.needsAttention);
+      expect(failed.lastErrorRetryable, isFalse);
+      expect(failed.lastErrorMessage, contains(missingPath));
+
+      // Also permanently excluded from future resumes, same as any other
+      // needsAttention record.
+      final secondResume = await PendingSellSubmissionService.instance
+          .resumeAll();
+      expect(secondResume, isFalse);
+      expect(createCarCalls, isEmpty);
+    },
+  );
+
+  // ---- D-fix: resumed progress banner reflects already-confirmed server ---
+  // media instead of always restarting at "0 of N".
+  test(
+    'D-fix: resuming a draft whose listing already has 1 of 2 images '
+    'confirmed on the server reports a non-zero completedMediaCount via '
+    'statusNotifier during the run, never starting the visible progress '
+    'back at 0',
+    () async {
+      const draftId = 'draft_progress_baseline';
+      const carId = 'car_progress_baseline';
+      final img2 = File('${tempDir.path}/progress_img2.jpg')
+        ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3]);
+
+      // Server already confirmed 1 of the 2 listing images this draft
+      // describes (landed before a simulated kill/interruption).
+      carsById[carId] = {
+        'id': carId,
+        'images': [
+          {'id': 701, 'kind': 'listing'},
+        ],
+        'videos': <dynamic>[],
+      };
+
+      final carData = _baseCarData(
+        images: [
+          {'id': 701, 'source': 'uploads/car_photos/existing_701.jpg'},
+          img2.path,
+        ],
+      );
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.inProgress,
+          carId: carId,
+          carData: carData,
+          idempotencyKey: 'sell-create-$draftId',
+          currentPhase: 'photos',
+          totalMediaCount: 2,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final seenCompletedCounts = <int>[];
+      void onStatusChanged() {
+        final status =
+            PendingSellSubmissionService.instance.statusNotifier.value;
+        if (status != null) {
+          seenCompletedCounts.add(status.completedMediaCount);
+        }
+      }
+
+      PendingSellSubmissionService.instance.statusNotifier.addListener(
+        onStatusChanged,
+      );
+
+      final resumed = await PendingSellSubmissionService.instance
+          .resumeAll();
+
+      PendingSellSubmissionService.instance.statusNotifier.removeListener(
+        onStatusChanged,
+      );
+
+      expect(resumed, isTrue);
+      expect(
+        seenCompletedCounts,
+        anyElement(greaterThan(0)),
+        reason: 'the resumed run must report the 1 already-confirmed image '
+            'at some point during progress, not remain stuck reporting 0 '
+            'throughout the entire run',
+      );
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      expect(
+        (carsById[carId]!['images'] as List).length,
+        2,
+        reason: '1 pre-existing + 1 newly uploaded = 2 total',
+      );
     },
   );
 }

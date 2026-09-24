@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../services/analytics_service.dart';
 import '../../services/api_service.dart';
@@ -10,6 +12,7 @@ import '../../services/connectivity_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_identity.dart' as listing_identity;
+import '../../shared/listings/listing_image_media.dart';
 import '../../shared/listings/listing_status.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_pending_media_prefs.dart';
@@ -75,6 +78,42 @@ class SellSubmissionEvent {
 }
 
 int _mediaListLength(dynamic v) => v is List ? v.length : 0;
+
+/// E-fix (real-device evidence): a `retryable` record used to be retried
+/// unconditionally on every single [PendingSellSubmissionService.resumeAll]
+/// trigger (app bootstrap, lifecycle resume, connectivity restore) forever
+/// -- with no cap and no minimum spacing between attempts -- which is
+/// exactly what a real device observed: the "Uploading listing… 0 of N
+/// media uploaded" banner reappearing on every app launch indefinitely,
+/// because the underlying condition (e.g. a backend that keeps failing the
+/// same way) never actually changes between attempts. Once a record has
+/// been retried this many times, treat it as permanent instead of
+/// retrying forever -- the user can still fix/retry it manually from My
+/// Listings.
+const int kSellSubmissionMaxAutoRetryAttempts = 6;
+
+/// Minimum spacing between automatic retry attempts for a `retryable`
+/// record, keyed by how many attempts have already been made -- simple
+/// exponential backoff capped at 5 minutes, so overlapping triggers close
+/// together (startup + connectivity-restore + lifecycle-resume all firing
+/// within seconds of each other) don't hammer the backend with the exact
+/// same failing request repeatedly.
+Duration sellSubmissionRetryBackoff(int attempts) {
+  final capped = attempts.clamp(0, 5);
+  final seconds = 10 * (1 << capped); // 10s, 20s, 40s, 80s, 160s, 320s
+  return Duration(seconds: seconds.clamp(10, 300));
+}
+
+/// Test-only override for [sellSubmissionRetryBackoff] -- real backoff
+/// delays (seconds to minutes) are impractical to exercise with actual
+/// wall-clock waits in a unit test. Tests that are not specifically about
+/// backoff timing should set this to `(_) => Duration.zero` in `setUp()`
+/// (matching this file's pre-existing zero-delay-between-resumes
+/// semantics); tests that ARE about backoff/cap behavior can set it to a
+/// large fixed [Duration] to deterministically prove a too-soon retry is
+/// skipped, without waiting. Must be reset to `null` in `tearDown()`.
+@visibleForTesting
+Duration Function(int attempts)? debugSellSubmissionRetryBackoffOverride;
 
 /// Opaque account id for the currently signed-in session, or `''` when
 /// unknown (no session, or the profile hasn't loaded yet — see
@@ -420,13 +459,57 @@ class PendingSellSubmissionService {
 
     int nowMs() => DateTime.now().millisecondsSinceEpoch;
 
-    record = record.copyWith(
-      status: SellSubmissionStatus.inProgress,
-      attempts: record.attempts + 1,
-      updatedAt: nowMs(),
-      clearLastError: true,
-    );
-    await SellSubmissionStatePrefs.upsert(record);
+    // E-fix (real-device evidence): stop retrying a `retryable` record
+    // forever. Once it has already been attempted
+    // [kSellSubmissionMaxAutoRetryAttempts] times, treat it as permanent
+    // instead of letting every future app launch/lifecycle-resume/
+    // connectivity-restore trigger retry the exact same failing request
+    // again -- this is the "banner stuck at 0 of N across restarts,
+    // forever" symptom. `needsAttention` records are already excluded
+    // from [resumeAll], so this alone stops the loop.
+    if (record.status == SellSubmissionStatus.retryable &&
+        record.attempts >= kSellSubmissionMaxAutoRetryAttempts) {
+      final exhausted = record.copyWith(
+        status: SellSubmissionStatus.needsAttention,
+        updatedAt: nowMs(),
+      );
+      await SellSubmissionStatePrefs.upsert(exhausted);
+      logNonFatal(
+        StateError(
+          'Sell submission $draftId exceeded '
+          '$kSellSubmissionMaxAutoRetryAttempts auto-retry attempts '
+          '(lastError: ${exhausted.lastErrorMessage})',
+        ),
+        StackTrace.current,
+        'PendingSellSubmissionService.retryExhausted',
+      );
+      _emit(SellSubmissionEvent(
+        draftId: draftId,
+        success: false,
+        needsAttention: true,
+        message: exhausted.lastErrorMessage,
+        carId: (exhausted.carId?.trim().isNotEmpty ?? false)
+            ? exhausted.carId
+            : null,
+      ));
+      return null;
+    }
+    // E-fix: minimum spacing between automatic retries of the SAME record
+    // (exponential backoff), so overlapping triggers close together
+    // (startup + connectivity-restore + lifecycle-resume within seconds of
+    // each other -- req. F) don't all immediately retry the same
+    // still-failing request; a later trigger picks it up once the backoff
+    // window has elapsed. `pending`/`inProgress` records (first attempt,
+    // or interrupted mid-run) are never delayed by this.
+    if (record.status == SellSubmissionStatus.retryable) {
+      final backoffFn =
+          debugSellSubmissionRetryBackoffOverride ?? sellSubmissionRetryBackoff;
+      final backoff = backoffFn(record.attempts);
+      final elapsed = Duration(milliseconds: nowMs() - record.updatedAt);
+      if (elapsed < backoff) {
+        return null;
+      }
+    }
 
     final carData = Map<String, dynamic>.from(record.carData);
     final imagesCount = _mediaListLength(carData['images']);
@@ -435,6 +518,43 @@ class PendingSellSubmissionService {
     final totalMedia = record.totalMediaCount > 0
         ? record.totalMediaCount
         : imagesCount + videosCount + damageCount;
+
+    // E-fix: a required LOCAL media file that no longer exists (app
+    // storage cleared, durable copy deleted out from under a resumed
+    // draft, etc.) can never succeed no matter how many times it's
+    // retried -- fail closed to `needsAttention` immediately instead of
+    // silently dropping the file or retrying forever. Retained server
+    // references (already-uploaded URLs/paths) are untouched by this
+    // check; only genuinely local, not-yet-uploaded media is examined.
+    final missingLocalMedia = await _firstUnreachableLocalMediaPath(carData);
+    if (missingLocalMedia != null) {
+      final failed = record.copyWith(
+        status: SellSubmissionStatus.needsAttention,
+        lastErrorMessage:
+            'Local media file is no longer available: $missingLocalMedia',
+        lastErrorRetryable: false,
+        updatedAt: nowMs(),
+      );
+      await SellSubmissionStatePrefs.upsert(failed);
+      _emit(SellSubmissionEvent(
+        draftId: draftId,
+        success: false,
+        needsAttention: true,
+        message: failed.lastErrorMessage,
+        carId: (failed.carId?.trim().isNotEmpty ?? false)
+            ? failed.carId
+            : null,
+      ));
+      return null;
+    }
+
+    record = record.copyWith(
+      status: SellSubmissionStatus.inProgress,
+      attempts: record.attempts + 1,
+      updatedAt: nowMs(),
+      clearLastError: true,
+    );
+    await SellSubmissionStatePrefs.upsert(record);
 
     void reportPhase(SellSubmissionPhase phase, {required int completed}) {
       onPhase?.call(phase);
@@ -447,6 +567,12 @@ class PendingSellSubmissionService {
     }
 
     var carId = (record.carId ?? '').trim();
+    // D-fix (real-device evidence): remember whether this run is resuming
+    // an already-created listing (vs. creating one for the first time in
+    // THIS attempt), so the media-upload progress baseline below can
+    // reflect media the server already has instead of always starting the
+    // "X of Y media uploaded" banner back at 0 on every resume.
+    final carIdAlreadyExisted = carId.isNotEmpty;
     var pendingReview = record.pendingReview;
 
     try {
@@ -545,6 +671,26 @@ class PendingSellSubmissionService {
       }
 
       var completedSoFar = 0;
+      // D-fix: on a resumed run (listing already existed before this
+      // attempt), reflect whatever media the server already confirmed
+      // instead of always reporting "0 of N" while `uploadForCar` below
+      // re-discovers and skips the media that already landed. `uploadForCar`
+      // itself always re-queries the server before uploading anything, so
+      // this is a display-only correction, not a behavior change.
+      if (carIdAlreadyExisted && totalMedia > 0) {
+        completedSoFar = await _confirmedServerMediaCount(
+          carId,
+          imagesCount: imagesCount,
+          videosCount: videosCount,
+          damageCount: damageCount,
+        );
+        if (completedSoFar > 0) {
+          reportPhase(
+            SellSubmissionPhase.uploadingPhotos,
+            completed: completedSoFar,
+          );
+        }
+      }
       final listingMediaConfirmed = await SellListingMediaUpload.uploadForCar(
         carId: carId,
         carData: carData,
@@ -644,6 +790,95 @@ class PendingSellSubmissionService {
         carId: carId.isEmpty ? null : carId,
       ));
       rethrow;
+    }
+  }
+
+  /// E-fix helper: true when [file] genuinely cannot be read right now.
+  /// Mirrors `SellListingMediaUpload._localUploadFileExists`'s exact
+  /// existence check (`File.existsSync()`, falling back to `XFile.length()`
+  /// for content:// / sandboxed paths where `dart:io` lies) so this
+  /// preflight never flags a file as "missing" that the actual upload
+  /// code would have happily read.
+  Future<bool> _localMediaFileExists(XFile file) async {
+    final path = file.path.trim();
+    if (path.isEmpty) return false;
+    try {
+      if (File(path).existsSync()) return true;
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+    try {
+      final len = await file.length();
+      return len > 0;
+    } catch (e, st) {
+      logNonFatal(e, st);
+      return false;
+    }
+  }
+
+  /// E-fix: scans `images` / `videos` / `damage_images` for the first
+  /// entry that is a genuinely LOCAL, not-yet-uploaded reference (per
+  /// [ListingImageMedia.localFile] -- already-attached server references
+  /// like `http(s)://…`/`uploads/…`/`static/…` are skipped) whose backing
+  /// file can no longer be read. Returns that path, or `null` when every
+  /// local reference is still readable (including when there are none).
+  Future<String?> _firstUnreachableLocalMediaPath(
+    Map<String, dynamic> carData,
+  ) async {
+    for (final key in const ['images', 'videos', 'damage_images']) {
+      final raw = carData[key];
+      if (raw is! List) continue;
+      for (final item in raw) {
+        final local = ListingImageMedia.localFile(item);
+        if (local == null) continue;
+        if (await _localMediaFileExists(local)) continue;
+        return local.path;
+      }
+    }
+    return null;
+  }
+
+  /// D-fix: how much of [carId]'s expected media (clamped per-bucket to
+  /// what THIS draft actually submits, so leftover media from an unrelated
+  /// earlier attempt on the same listing never over-reports) is already
+  /// confirmed on the server right now. Best-effort — any failure reports
+  /// 0 (the pre-existing "assume nothing landed yet" display behavior),
+  /// never blocks or fails the actual upload.
+  Future<int> _confirmedServerMediaCount(
+    String carId, {
+    required int imagesCount,
+    required int videosCount,
+    required int damageCount,
+  }) async {
+    try {
+      final fresh = await ApiService.getCar(carId);
+      final inner = fresh['car'];
+      final car = inner is Map
+          ? Map<String, dynamic>.from(inner.cast<String, dynamic>())
+          : fresh;
+      var listingImages = 0;
+      var damageImages = 0;
+      final imgs = car['images'];
+      if (imgs is List) {
+        for (final it in imgs) {
+          final kind = it is Map
+              ? (it['kind'] ?? 'listing').toString().toLowerCase()
+              : 'listing';
+          if (kind == 'damage') {
+            damageImages++;
+          } else {
+            listingImages++;
+          }
+        }
+      }
+      final vids = car['videos'];
+      final videos = vids is List ? vids.length : 0;
+      return listingImages.clamp(0, imagesCount) +
+          videos.clamp(0, videosCount) +
+          damageImages.clamp(0, damageCount);
+    } catch (e, st) {
+      logNonFatal(e, st, 'PendingSellSubmissionService.confirmedServerMediaCount');
+      return 0;
     }
   }
 

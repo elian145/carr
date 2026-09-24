@@ -57,6 +57,30 @@ mixin _SellCarPagePlateBlur on _SellCarPageDraftPersist {
     }
   }
 
+  /// OOM-fix follow-up (real-device evidence): this used to call
+  /// `AiService.processCarImagesToServerPayload()` -- the fully synchronous
+  /// `POST /api/process-car-images` (no `async=1`), plus `inline_base64=1`
+  /// -- which ran the entire PIL decode / OpenCV plate-detection / Roboflow
+  /// / blur / re-encode pipeline directly inside the `carr` web process's
+  /// request handler, AND base64-encoded the full-size output for the JSON
+  /// response on top of that. Unlike `SellPhotoPrestage` (the Submit-time
+  /// prestage path, already fixed to use the async Celery job), THIS call
+  /// fires on every single photo pick -- see the `unawaited(parentState?.
+  /// startBackgroundPlateBlur())` calls in `sell_step4_logic.dart` -- so
+  /// simply attaching one photo, before ever pressing Submit, was already
+  /// enough to run that heavy pipeline synchronously in `carr` and OOM a
+  /// 512MB instance. Moved onto the SAME async Celery job path
+  /// (`AiService.enqueueCarImagesAsync` + `SellImageJobPolling`) that
+  /// `SellPhotoPrestage` already uses and this repo already has passing
+  /// tests for, so the actual decode/blur work now runs on
+  /// `carr-worker-fra`, never in the web process. The returned `rel_path`
+  /// is a server reference (URL, or a Flask-relative path resolved
+  /// client-side by `buildLegacyFullImageUrl`/`_buildFullImageUrl`) --
+  /// stored directly as the blurred entry's `source`, exactly like
+  /// `SellPhotoPrestage` already does for staged photos; no local
+  /// base64-decode/file-write step is needed any more. This requires no UI
+  /// change: `_blurPreviewGrid` (`sell_step_blur_choice_build.dart`)
+  /// already renders any non-local `source` via `_listingNetworkImage`.
   Future<List<dynamic>> _blurMediaList({
     required List<dynamic> originals,
     required String namePrefix,
@@ -72,44 +96,44 @@ mixin _SellCarPagePlateBlur on _SellCarPageDraftPersist {
       return List<dynamic>.from(originals);
     }
 
-    final payload = await AiService.processCarImagesToServerPayload(local);
+    List<String>? jobIds;
+    try {
+      jobIds = await AiService.enqueueCarImagesAsync(local, skipBlur: false);
+    } catch (e, st) {
+      logNonFatal(e, st, 'SellCarPage.blurMediaList.$namePrefix');
+    }
     if (jobId != _plateBlurJobId) return const [];
+    // A short/absent result means the enqueue itself failed for at least
+    // one file -- the same "abandon the whole batch rather than guess
+    // positional correspondence" safety choice `SellPhotoPrestage` already
+    // makes for the identical ambiguity (see its `urls.length != files.length`
+    // check). The UI already handles a not-ready blur result via the
+    // "Blur plates now" retry action, so failing closed here is safe.
+    if (jobIds == null || jobIds.length != local.length) {
+      return const [];
+    }
 
-    final paths = payload?['paths'] ?? const <String>[];
-    final b64 = payload?['base64'] ?? const <String>[];
-    if (paths.isEmpty) return const [];
-
-    final draftId = _currentDraftId.isNotEmpty ? _currentDraftId : 'default';
     final blurredLocal = <dynamic>[];
-    for (var i = 0; i < paths.length; i++) {
+    for (var i = 0; i < jobIds.length; i++) {
+      final relPath = await SellImageJobPolling.awaitImageJobRelPath(
+        jobIds[i],
+        logTag: 'SellCarPage.blurMediaList.$namePrefix',
+      );
       if (jobId != _plateBlurJobId) return const [];
-      final dataUri = (i < b64.length) ? b64[i].toString() : null;
-      final previous = i < originals.length ? originals[i] : paths[i].toString();
-      if (dataUri != null &&
-          dataUri.startsWith('data:') &&
-          dataUri.contains('base64,')) {
-        final idx = dataUri.indexOf('base64,');
-        final raw = base64Decode(dataUri.substring(idx + 7));
-        final stored = await SellDraftMediaPersistence.persistBytesToDraft(
-          raw,
-          draftId: draftId,
-          namePrefix: namePrefix,
+      final previous = i < originals.length ? originals[i] : null;
+      if (previous == null) continue;
+      if (relPath != null && relPath.isNotEmpty) {
+        blurredLocal.add(
+          ListingImageMedia.map(
+            previous,
+            source: relPath,
+            focusY: ListingImageMedia.focusY(previous),
+            width: ListingImageMedia.width(previous),
+            height: ListingImageMedia.height(previous),
+          ),
         );
-        if (stored != null && stored.isNotEmpty) {
-          blurredLocal.add(
-            ListingImageMedia.map(
-              previous,
-              source: stored,
-              focusY: ListingImageMedia.focusY(previous),
-              width: ListingImageMedia.width(previous),
-              height: ListingImageMedia.height(previous),
-            ),
-          );
-          continue;
-        }
-      }
-      if (i < originals.length) {
-        blurredLocal.add(originals[i]);
+      } else {
+        blurredLocal.add(previous);
       }
     }
     return blurredLocal.isNotEmpty

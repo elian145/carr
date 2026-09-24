@@ -70,6 +70,7 @@ import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import 'pending_sell_submission_service.dart';
+import 'sell_image_job_polling.dart';
 import 'sell_photo_prestage.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/listings/drive_type_assets.dart';

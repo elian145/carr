@@ -401,16 +401,59 @@ mixin _SellStep5Build on _SellStep5Logic {
       }
     } catch (e) {
       if (!mounted) return;
+      // C-fix (real-device evidence: create succeeded, media completion
+      // failed, but this page showed a plain "could not submit listing"
+      // error even though the listing genuinely exists -- visible in My
+      // Listings as Under Review). `PendingSellSubmissionService` already
+      // preserves `carId` and emits the correct contextual event on its
+      // `events` stream (consumed globally by
+      // `SellSubmissionStatusBanner`, which already shows the right
+      // "listing created, media incomplete -- open My Listings" message
+      // with an action button) -- but THIS local catch block used to show
+      // a second, generic, listing-agnostic error on top of that
+      // regardless, which is what the user actually saw/remembered. Check
+      // whether a listing now exists for this draft before falling back
+      // to the generic "submit failed" message, so this page never
+      // contradicts the service's own, more accurate state.
+      final resolvedPageState =
+          parentState ?? context.findAncestorStateOfType<_SellCarPageState>();
+      final draftId = resolvedPageState?._currentDraftId.isNotEmpty == true
+          ? resolvedPageState!._currentDraftId
+          : 'default';
+      var hasListing = false;
+      try {
+        hasListing = await PendingSellSubmissionService.instance
+            .hasCreatedListing(draftId);
+      } catch (_) {
+        // Best-effort only; fall back to the generic message below.
+      }
+      if (!mounted) return;
+      final loc = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            userErrorText(
-              context,
-              e,
-              fallback: AppLocalizations.of(context)!.couldNotSubmitListing,
-            ),
+            hasListing
+                ? loc.sellSubmissionNeedsAttention
+                : userErrorText(
+                    context,
+                    e,
+                    fallback: loc.couldNotSubmitListing,
+                  ),
           ),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: hasListing ? 8 : 4),
+          action: hasListing
+              ? SnackBarAction(
+                  label: loc.sellSubmissionOpenMyListingsAction,
+                  textColor: Colors.white,
+                  onPressed: () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed('/my_listings');
+                  },
+                )
+              : null,
         ),
       );
     } finally {
