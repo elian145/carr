@@ -104,7 +104,7 @@ services:
     region: frankfurt
     numInstances: 1
     buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
-    startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2 --max-tasks-per-child=50 --max-memory-per-child=200000
+    startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=1 --max-tasks-per-child=50 --max-memory-per-child=200000
     envVars:
       - key: APP_ENV
         value: production
