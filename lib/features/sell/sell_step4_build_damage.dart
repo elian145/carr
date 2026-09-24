@@ -68,15 +68,13 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: localFile != null
-                                  ? Image.file(
-                                      File(localFile.path),
+                                  ? listingLocalFileImage(
+                                      localFile,
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,
                                       key: ValueKey(localFile.path),
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
+                                      errorWidget: Container(
                                         color: Colors.grey.shade200,
                                         child: Icon(
                                           Icons.broken_image_outlined,

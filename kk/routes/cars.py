@@ -43,7 +43,7 @@ from ..response_cache import (
 )
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
 from ..time_utils import utcnow
-from .media import _normalize_car_image_kind, _pick_primary_listing_url
+from .media import _normalize_car_image_kind, _pick_primary_listing_url, _r2_public_base
 from .user import assert_listing_phones_verified, parse_listing_contact_phones
 
 bp = Blueprint("cars", __name__)
@@ -396,8 +396,25 @@ def _static_exists(rel: str) -> bool:
 
 def _resolve_rel(rel: str) -> str:
     """
-    Resolve stored image path to an existing file.
-    If DB stored 'uploads/<name>', try 'uploads/car_photos/<name>' as a fallback.
+    Resolve stored image path to an existing file, or to its R2 public URL.
+
+    If DB stored 'uploads/<name>', try 'uploads/car_photos/<name>' as a
+    fallback.
+
+    Bug fix (production placeholder-image incident): a bare R2 object key
+    (e.g. ``car_photos/<owner_tag>/<file>.jpg``, no scheme) is written to
+    ``image_url`` by ``persist_jpeg_bytes()`` whenever R2 is configured but
+    ``R2_PUBLIC_URL`` is unset at *write* time (see
+    ``kk/media_processing.py::persist_jpeg_bytes``). Such a value is neither
+    an absolute URL nor a file that exists on this web process's local
+    disk (the bytes are on R2, not local disk), so before this fix it fell
+    through to the final ``return ""`` below -- silently dropping the
+    image entirely (``_with_media_compat`` skips any image whose resolved
+    value is empty) even though the object genuinely exists in R2 and the
+    upload succeeded. If R2 is configured with a public base URL *right
+    now* (e.g. the env var was fixed after the row was written), treat an
+    otherwise-unresolvable relative value as a bare R2 key and reconstruct
+    its public URL instead of dropping the image.
     """
     try:
         if not rel:
@@ -412,6 +429,9 @@ def _resolve_rel(rel: str) -> str:
         alt = os.path.join("uploads", "car_photos", base).replace("\\", "/")
         if _static_exists(alt):
             return alt
+        public_base = _r2_public_base()
+        if public_base:
+            return f"{public_base}/{norm}"
         return ""
     except Exception:
         return ""

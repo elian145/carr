@@ -3,6 +3,7 @@ import 'dart:io';
 import '../theme/app_colors.dart';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../l10n/app_localizations.dart';
 import '../navigation/app_page_route.dart';

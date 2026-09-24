@@ -44,8 +44,8 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: localFile != null
-                    ? Image.file(
-                        File(localFile.path),
+                    ? listingLocalFileImage(
+                        localFile,
                         fit: BoxFit.cover,
                         width: double.infinity,
                         height: double.infinity,

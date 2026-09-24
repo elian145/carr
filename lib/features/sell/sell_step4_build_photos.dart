@@ -84,8 +84,8 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                               ),
                               clipBehavior: Clip.antiAlias,
                               child: localFile != null
-                                  ? Image.file(
-                                      File(localFile.path),
+                                  ? listingLocalFileImage(
+                                      localFile,
                                       fit: BoxFit.cover,
                                       alignment:
                                           ListingImageMedia.coverAlignment(
@@ -94,9 +94,7 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                       width: double.infinity,
                                       height: double.infinity,
                                       key: ValueKey(localFile.path),
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
+                                      errorWidget: Container(
                                         color: Colors.grey.shade200,
                                         child: Icon(
                                           Icons.broken_image_outlined,

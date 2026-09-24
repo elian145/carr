@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -217,7 +216,7 @@ class _ListingPreviewGalleryPageState extends State<ListingPreviewGalleryPage> {
 
   Widget _buildImage(BuildContext context, dynamic item) {
     if (item is XFile) {
-      return Image.file(File(item.path), fit: BoxFit.contain);
+      return listingLocalFileImage(item, fit: BoxFit.contain);
     }
     final url = item.toString().trim();
     final fullUrl = url.startsWith('http') ? url : buildLegacyFullImageUrl(url);

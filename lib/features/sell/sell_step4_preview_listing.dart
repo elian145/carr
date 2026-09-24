@@ -95,8 +95,8 @@ class _ListingPreviewWidgetState extends State<ListingPreviewWidget> {
                           item,
                         );
                         if (local != null) {
-                          return Image.file(
-                            File(local.path),
+                          return listingLocalFileImage(
+                            local,
                             fit: BoxFit.cover,
                             alignment: alignment,
                             width: double.infinity,

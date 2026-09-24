@@ -212,4 +212,65 @@ void main() {
       ],
     );
   });
+
+  group('regression: Sell media Android content:// rendering bug', () {
+    // These cover the "selected photo shows as a placeholder" / "created
+    // listing still shows a placeholder" production bug: Android's picker
+    // (or the "My Listings" recently-submitted-draft preview) can hand back
+    // a `content://` path that `File.existsSync()` cannot confirm, even
+    // though the file is genuinely readable via `XFile.readAsBytes()`. Card
+    // media collection must not silently drop such an item -- dropping it
+    // is indistinguishable, in the UI, from "no photo was ever selected".
+
+    test(
+      'collectFromCar keeps a content:// local image slot even though '
+      'File.existsSync() cannot confirm it on this (non-Android) host',
+      () {
+        const contentUri = 'content://media/external/images/media/99';
+        final slots = ListingCardMedia.collectFromCar(
+          {
+            'image_url': contentUri,
+            'images': [contentUri],
+          },
+          resolveNetworkUrl: (value) => 'https://example.test/$value',
+        );
+
+        expect(slots, hasLength(1));
+        expect(slots.single.filePath, contentUri);
+        expect(slots.single.url, isNull);
+      },
+    );
+
+    test(
+      'collectFromCar keeps a content:// XFile image item (not just bare '
+      'string sources)',
+      () {
+        const contentUri = 'content://media/external/images/media/100';
+        final slots = ListingCardMedia.collectFromCar(
+          {
+            'images': [XFile(contentUri)],
+          },
+          resolveNetworkUrl: (value) => 'https://example.test/$value',
+        );
+
+        expect(slots, hasLength(1));
+        expect(slots.single.filePath, contentUri);
+      },
+    );
+
+    test(
+      'collectFromCar still drops a local path that is neither on disk nor '
+      'a content:// URI (genuinely missing file, not a picker quirk)',
+      () {
+        final slots = ListingCardMedia.collectFromCar(
+          {
+            'images': ['/data/sell_draft_media/default/definitely_missing.jpg'],
+          },
+          resolveNetworkUrl: (value) => 'https://example.test/$value',
+        );
+
+        expect(slots, isEmpty);
+      },
+    );
+  });
 }

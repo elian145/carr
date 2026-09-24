@@ -43,6 +43,7 @@ Widget _listingImagePlaceholderShell(Widget? placeholder) {
 /// [Image.file] / [File.existsSync]; fall back to [XFile.readAsBytes].
 class _ListingXFileImage extends StatefulWidget {
   const _ListingXFileImage({
+    super.key,
     required this.file,
     required this.fit,
     required this.alignment,
@@ -129,6 +130,39 @@ class _ListingXFileImageState extends State<_ListingXFileImage> {
       errorBuilder: (context, error, stackTrace) => _fromXFileBytes(),
     );
   }
+}
+
+/// Renders a locally-picked/draft photo represented as an [XFile].
+///
+/// Android `content://` URIs and picker cache paths often fail [Image.file] /
+/// [File.existsSync] even though the picker's [XFile] can still read them via
+/// [XFile.readAsBytes]; this falls back to that path automatically. Use this
+/// (instead of a raw `Image.file(File(file.path))`) for any locally selected
+/// photo that originated from `image_picker` / a Sell draft, so a picker path
+/// that `dart:io` can't stat doesn't silently render as a broken-image
+/// placeholder.
+Widget listingLocalFileImage(
+  XFile file, {
+  Key? key,
+  BoxFit fit = BoxFit.cover,
+  Alignment alignment = Alignment.center,
+  double? width,
+  double? height,
+  FilterQuality filterQuality = FilterQuality.low,
+  Widget? errorWidget,
+  Widget? placeholder,
+}) {
+  return _ListingXFileImage(
+    key: key,
+    file: file,
+    fit: fit,
+    alignment: alignment,
+    width: width,
+    height: height,
+    filterQuality: filterQuality,
+    errorWidget: errorWidget,
+    placeholder: placeholder,
+  );
 }
 
 Widget _listingImageErrorShell(Widget? errorWidget) {

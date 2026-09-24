@@ -89,9 +89,18 @@ class _GalleryEmbeddedVideoPlayerState extends State<GalleryEmbeddedVideoPlayer>
     try {
       final bool isNetwork =
           url.startsWith('http://') || url.startsWith('https://');
+      // Android's image/video pickers can hand back a `content://` URI
+      // (e.g. from cloud-backed gallery providers) instead of a real
+      // filesystem path. `VideoPlayerController.file` wraps the path in a
+      // `dart:io` `File`, which cannot resolve `content://` and fails to
+      // initialize; use the dedicated content-URI constructor instead so
+      // locally selected videos still play.
+      final bool isContentUri = url.startsWith('content://');
       final VideoPlayerController c = isNetwork
           ? VideoPlayerController.networkUrl(Uri.parse(url))
-          : VideoPlayerController.file(File(url));
+          : isContentUri
+              ? VideoPlayerController.contentUri(Uri.parse(url))
+              : VideoPlayerController.file(File(url));
       await c.initialize();
       if (!mounted) {
         await c.dispose();

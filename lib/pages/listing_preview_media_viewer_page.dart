@@ -206,18 +206,16 @@ class _ZoomableFileImageState extends State<_ZoomableFileImage> {
         width: s.width,
         height: s.height,
         child: Center(
-          child: Image.file(
-            File(widget.path),
+          child: listingLocalFileImage(
+            XFile(widget.path),
             fit: BoxFit.contain,
             width: s.width,
             height: s.height,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.broken_image,
-                color: Colors.white38,
-                size: 48,
-              );
-            },
+            errorWidget: const Icon(
+              Icons.broken_image,
+              color: Colors.white38,
+              size: 48,
+            ),
           ),
         ),
       ),

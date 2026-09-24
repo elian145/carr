@@ -59,7 +59,10 @@ class ListingCardMedia {
     if (raw.isEmpty) return null;
     if (SellDraftMediaPersistence.isLocalMediaPath(raw)) {
       final path = SellDraftMediaPersistence.localMediaPath(raw);
-      if (File(path).existsSync()) {
+      // Android `content://` picker/cache paths often fail File.existsSync
+      // even though the file is still readable via XFile; don't drop the
+      // slot outright in that case (listingLocalFileImage handles the read).
+      if (File(path).existsSync() || path.startsWith('content://')) {
         return ListingCardImageSlot.file(path, metadata: metadata);
       }
       return null;
@@ -108,7 +111,7 @@ class ListingCardMedia {
         continue;
       }
       if (it is XFile) {
-        if (File(it.path).existsSync()) {
+        if (File(it.path).existsSync() || it.path.startsWith('content://')) {
           _addSlot(slots, seen, ListingCardImageSlot.file(it.path));
         }
         continue;
@@ -130,7 +133,7 @@ class ListingCardMedia {
           continue;
         }
         if (e is XFile) {
-          if (File(e.path).existsSync()) {
+          if (File(e.path).existsSync() || e.path.startsWith('content://')) {
             _addSlot(slots, seen, ListingCardImageSlot.file(e.path));
           }
           break;
@@ -237,12 +240,11 @@ class _SmartListingCardImageState extends State<_SmartListingCardImage> {
     final alignment = ListingImageMedia.coverAlignment(metadata);
     final path = widget.slot.filePath;
     if (path != null) {
-      return Image.file(
-        File(path),
+      return listingLocalFileImage(
+        XFile(path),
         fit: widget.fit,
         alignment: alignment,
-        errorBuilder: (context, error, stackTrace) =>
-            Icon(Icons.broken_image, size: 48, color: Colors.grey[500]),
+        errorWidget: Icon(Icons.broken_image, size: 48, color: Colors.grey[500]),
       );
     }
     return widget.networkBuilder(
