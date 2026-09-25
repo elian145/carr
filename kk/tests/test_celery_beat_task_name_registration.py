@@ -62,3 +62,34 @@ def test_cleanup_stale_staging_beat_entry_name_is_a_real_registered_task():
         "not present in celery_app.tasks (the live task registry a worker "
         "consults before running a task)."
     )
+
+
+def test_every_beat_schedule_entry_names_a_real_registered_task():
+    """Generic guard covering every current AND future Beat entry (not just
+    the one that was actually broken) -- so a future task added with the
+    same short-name-vs-module-path-name mistake (e.g. the video-staging
+    cleanup sweep added right after this fix) is caught the same way,
+    without needing a new hardcoded test per task.
+
+    ``celery_app.tasks`` is only fully populated once every module listed
+    in ``include=[...]`` has actually been imported -- a real worker does
+    this at startup (``celery.loader.import_default_modules()``), but a
+    plain ``import celery_app`` alone does not, so this explicitly forces
+    the same import step a worker would do, rather than relying on
+    whichever task modules other test files happened to import first in
+    this pytest process.
+    """
+    from kk.tasks.celery_app import celery_app
+
+    celery_app.loader.import_default_modules()
+
+    schedule = celery_app.conf.beat_schedule
+    assert schedule, "expected at least one Beat schedule entry"
+
+    for entry_name, entry in schedule.items():
+        scheduled_name = entry["task"]
+        assert scheduled_name in celery_app.tasks, (
+            f"Beat entry {entry_name!r} references task name "
+            f"{scheduled_name!r}, which is not in celery_app.tasks -- the "
+            "worker would log 'Received unregistered task' for this entry."
+        )

@@ -60,6 +60,7 @@ def make_celery() -> Celery:
             "kk.tasks.alert_tasks",
             "kk.tasks.notification_tasks",
             "kk.tasks.listing_tasks",
+            "kk.tasks.video_tasks",
         ],
     )
     c.Task = FlaskContextTask
@@ -104,6 +105,19 @@ def make_celery() -> Celery:
             # the registered name, not the module path.
             "cleanup-stale-image-staging-objects": {
                 "task": "kk.cleanup_stale_image_staging_objects",
+                "schedule": 3600.0,  # hourly
+            },
+            # Phase 1 of the server-side video transcode fallback: backstop
+            # sweep for R2 source-video-staging objects abandoned before
+            # (or after) finalize (see
+            # kk/tasks/video_tasks.py::cleanup_stale_video_staging_objects
+            # and kk/media_processing.py::VIDEO_SOURCE_STAGING_KEY_PREFIX).
+            # Registered name and this schedule's "task" string are written
+            # identically on purpose -- see that task's own docstring for
+            # why (the sibling image-staging entry above was just fixed for
+            # exactly this kind of mismatch).
+            "cleanup-stale-video-staging-objects": {
+                "task": "kk.cleanup_stale_video_staging_objects",
                 "schedule": 3600.0,  # hourly
             },
         },

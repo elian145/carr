@@ -14,10 +14,12 @@ from ..job_ownership import register_job_owner
 from ..media_processing import (
     DecompressionBombRejected,
     PlateBlurRequiredRejected,
+    is_valid_draft_media_id,
     media_key_owner_prefix_matches,
     media_owner_tag,
     process_and_store_image,
     stage_upload_for_async_job,
+    video_source_staging_key,
 )
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
@@ -109,6 +111,49 @@ _ALLOWED_VIDEO_CONTENT_TYPES = frozenset(
 )
 _R2_IMAGE_MAX_BYTES = 25 * 1024 * 1024
 _R2_VIDEO_MAX_BYTES = 200 * 1024 * 1024
+
+# Phase 1 of the server-side video transcode fallback (audit: "SECURE
+# DIRECT-TO-R2 SOURCE-VIDEO STAGING"). This is a SEPARATE, temporary
+# SOURCE-upload cap -- deliberately NOT the same constant as
+# _R2_VIDEO_MAX_BYTES above (the disabled-by-default *final*-media presign
+# cap) and completely unrelated to the 100MB final-listing-video cap
+# enforced by upload_car_videos() (validate_file_upload(max_size_mb=100)).
+# A staged source object is never a listing video by itself -- it must
+# still go through a (not-yet-implemented) transcode step, which is the
+# only thing that will ever produce a <=100MB final video. 500 MiB gives
+# headroom for a real high-bitrate 4K/Dolby-Vision clip within the Sell
+# picker's existing 5-minute duration cap (see
+# lib/features/sell/sell_step4_logic.dart's `pickMultiVideo(maxDuration:
+# Duration(minutes: 5))`) without being unbounded.
+_R2_VIDEO_SOURCE_STAGING_MAX_BYTES = 500 * 1024 * 1024
+
+# Short-lived: long enough for a mobile upload of a large file to
+# complete, short enough to bound a leaked-URL exposure window. Matches
+# the "~15 minutes" target from the audit.
+_VIDEO_SOURCE_STAGING_URL_EXPIRES_SECONDS = 900
+
+_ALLOWED_VIDEO_SOURCE_EXTENSIONS = frozenset({".mp4", ".mov", ".avi", ".mkv", ".webm"})
+
+
+def _video_source_staging_enabled() -> bool:
+    """
+    Gate for the two Phase-1 video-source-staging endpoints below.
+
+    Mirrors ``_presigned_upload_enabled()``'s precedent immediately above
+    (H-03 audit): a direct-to-R2 write path whose bytes this process never
+    sees is new attack surface, and this feature is intentionally
+    incomplete as of Phase 1 -- there is no transcode consumer yet and no
+    Sell-flow client caller yet (see the audit report). Default OFF until
+    the end-to-end feature (transcode + client fallback) actually exists,
+    so shipping this backend groundwork alone can never silently expose a
+    live, unused upload path in production.
+    """
+    return (os.environ.get("VIDEO_SOURCE_STAGING_ENABLED") or "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
 MAX_DAMAGE_PHOTOS = 10
 # M-06: cumulative-per-car cap on listing (non-damage) photos, mirroring the
 # existing Flutter client cap (`_kSellMaxPhotos` in
@@ -800,6 +845,241 @@ def r2_sign_upload():
     except Exception as e:
         current_app.logger.warning("R2 sign-upload failed: %s", e)
         return jsonify({"message": "Failed to generate upload URL"}), 500
+
+
+@bp.route("/api/media/r2/sign-video-source-upload", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=30, window_minutes=60, per_ip=False)
+def sign_video_source_upload():
+    """
+    Phase 1 of the server-side video transcode fallback: issue a short-lived
+    presigned PUT URL so an authenticated seller can upload an OVERSIZED
+    SOURCE video directly to temporary R2 staging, without proxying the
+    bytes through this Flask process.
+
+    This is temporary SOURCE storage only -- NOT final listing media. The
+    final-listing-video cap (100MB, enforced by ``upload_car_videos()`` via
+    ``validate_file_upload(max_size_mb=100)``) is completely separate and is
+    NOT touched by this endpoint. A staged source object never becomes a
+    listing video by itself -- this endpoint never creates a ``CarVideo``
+    row, and a staged key is never visible on any listing. A later (not yet
+    implemented) transcode step is what will actually consume a staged
+    object and produce a real, <=100MB listing video.
+
+    SECURITY NOTE (content validation limitation): this endpoint cannot run
+    the magic-byte/codec content validation that every multipart upload
+    endpoint in this file performs (``validate_file_upload`` ->
+    ``sniff_bytes``), because the video bytes are PUT directly to R2 and
+    this process never sees them. It only validates the CLIENT'S DECLARED
+    ``content_type``/``content_length`` here (cryptographically bound into
+    the presigned URL, so R2 itself rejects a PUT whose real
+    Content-Type/Content-Length don't match), plus -- at finalize time --
+    the object's ACTUAL size and stored content-type metadata. Neither this
+    endpoint nor finalize can prove the staged bytes are a structurally
+    valid, decodable video; that authoritative check only happens later, in
+    the not-yet-built transcode step's ffprobe validation, before any
+    decode is attempted. Callers must never treat "staged" as "verified
+    playable video".
+
+    Body: {
+        "draft_media_id": "<stable per-video id chosen by the client>",
+        "filename": "clip.mov",            (optional; used only to infer a default content-type)
+        "content_type": "video/quicktime",
+        "content_length": 123456789
+    }
+    Response: {
+        "upload_url": "<presigned PUT URL>",
+        "staging_key": "<deterministic, owner-scoped R2 key>",
+        "expires_in": 900,
+        "max_bytes": 524288000
+    }
+    """
+    try:
+        current_user = get_current_user()
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
+    except Exception:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    if not _video_source_staging_enabled():
+        return jsonify({"message": "Not found"}), 404
+
+    if not _r2_configured():
+        return jsonify({"message": "R2 storage is not configured"}), 503
+
+    try:
+        data = request.get_json(silent=True) or {}
+
+        draft_media_id = str(data.get("draft_media_id") or "").strip()
+        if not is_valid_draft_media_id(draft_media_id):
+            return jsonify({"message": "Invalid or missing draft_media_id"}), 400
+
+        raw_name = (data.get("filename") or "").strip()
+        ext = os.path.splitext(raw_name)[1].lower()
+        if ext not in _ALLOWED_VIDEO_SOURCE_EXTENSIONS:
+            # Only used to pick a sensible default Content-Type below -- the
+            # staging key itself never varies by extension (see
+            # video_source_staging_key()'s docstring for why).
+            ext = ".mp4"
+
+        content_type = _normalize_signed_content_type(
+            data.get("content_type") or "",
+            asset="video",
+            default_ct=_video_content_type_for_ext(ext),
+        )
+        if not content_type:
+            return jsonify({"message": "Unsupported content_type for a video upload"}), 400
+
+        # Required, not optional -- see the identical comment on
+        # r2_sign_upload() above: ContentLength is only bound into the
+        # presigned signature when passed to boto3 here.
+        raw_len = data.get("content_length")
+        if raw_len is None:
+            raw_len = data.get("size")
+        if raw_len is None:
+            return jsonify({"message": "content_length is required"}), 400
+        try:
+            claimed = int(raw_len)
+        except (TypeError, ValueError):
+            return jsonify({"message": "Invalid content_length"}), 400
+        if claimed < 1 or claimed > _R2_VIDEO_SOURCE_STAGING_MAX_BYTES:
+            return jsonify(
+                {
+                    "message": (
+                        "content_length must be between 1 and "
+                        f"{_R2_VIDEO_SOURCE_STAGING_MAX_BYTES} bytes"
+                    )
+                }
+            ), 400
+
+        key = video_source_staging_key(current_user.public_id, draft_media_id)
+        if not key:
+            return jsonify({"message": "Unable to derive a staging key"}), 400
+
+        from ..r2_ops import r2_presign_put
+
+        presigned_url = r2_presign_put(
+            key=key,
+            content_type=content_type,
+            expires_in=_VIDEO_SOURCE_STAGING_URL_EXPIRES_SECONDS,
+            content_length=claimed,
+        )
+
+        return jsonify(
+            {
+                "upload_url": presigned_url,
+                "staging_key": key,
+                "expires_in": _VIDEO_SOURCE_STAGING_URL_EXPIRES_SECONDS,
+                "max_bytes": _R2_VIDEO_SOURCE_STAGING_MAX_BYTES,
+            }
+        ), 200
+    except Exception as e:
+        current_app.logger.warning("sign_video_source_upload failed: %s", e)
+        return jsonify({"message": "Failed to generate upload URL"}), 500
+
+
+@bp.route("/api/media/r2/finalize-video-source-upload", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=30, window_minutes=60, per_ip=False)
+def finalize_video_source_upload():
+    """
+    Phase 1 of the server-side video transcode fallback: verify that a
+    seller's direct-to-R2 source-video upload actually completed, before
+    anything downstream is allowed to treat it as staged.
+
+    Never trusts the client: the expected key is always RECONSTRUCTED
+    server-side from the authenticated caller's identity + ``draft_media_id``
+    (see ``video_source_staging_key()``). If the client also supplies
+    ``staging_key``, it must exactly equal the reconstructed key or the
+    request is rejected -- this is what stops one seller from finalizing
+    (and later having transcoded) a foreign/arbitrary key.
+
+    Does NOT enqueue a transcode task yet (Phase 1 stops at verified
+    staging). Does NOT and CANNOT prove the object is a valid, decodable
+    video -- see ``sign_video_source_upload()``'s docstring for the same
+    content-validation limitation; only ``content_type`` metadata is
+    checked here, not the actual bytes.
+
+    Body: { "draft_media_id": "...", "staging_key": "..." (optional) }
+    Response (200): {"status": "staged", "staging_key": "...", "size": <int>}
+
+    Safely idempotent: this endpoint only reads/verifies R2 state, it never
+    mutates it -- calling it repeatedly for the same already-staged object
+    returns the same result every time.
+    """
+    try:
+        current_user = get_current_user()
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
+    except Exception:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    if not _video_source_staging_enabled():
+        return jsonify({"message": "Not found"}), 404
+
+    if not _r2_configured():
+        return jsonify({"message": "R2 storage is not configured"}), 503
+
+    try:
+        data = request.get_json(silent=True) or {}
+
+        draft_media_id = str(data.get("draft_media_id") or "").strip()
+        if not is_valid_draft_media_id(draft_media_id):
+            return jsonify({"message": "Invalid or missing draft_media_id"}), 400
+
+        expected_key = video_source_staging_key(current_user.public_id, draft_media_id)
+        if not expected_key:
+            return jsonify({"message": "Unable to derive a staging key"}), 400
+
+        claimed_key = str(data.get("staging_key") or "").strip()
+        if claimed_key and claimed_key != expected_key:
+            # Never trust a client-supplied key that doesn't match the
+            # server-reconstructed, owner-scoped key -- this is exactly
+            # what stops one seller from finalizing another seller's (or
+            # any other arbitrary/foreign) staged object.
+            return (
+                jsonify({"message": "staging_key does not match this draft_media_id"}),
+                403,
+            )
+
+        from ..r2_ops import r2_head_object
+
+        meta = r2_head_object(key=expected_key)
+        if not meta or not meta.get("exists"):
+            return (
+                jsonify({"message": "Staged video not found. Has the upload finished?"}),
+                404,
+            )
+
+        size = int(meta.get("size") or 0)
+        if size <= 0:
+            return jsonify({"message": "Staged object is empty"}), 400
+        if size > _R2_VIDEO_SOURCE_STAGING_MAX_BYTES:
+            return (
+                jsonify(
+                    {
+                        "message": (
+                            "Staged object exceeds the "
+                            f"{_R2_VIDEO_SOURCE_STAGING_MAX_BYTES}-byte source cap"
+                        )
+                    }
+                ),
+                400,
+            )
+
+        stored_ct = (meta.get("content_type") or "").strip().lower().split(";")[0].strip()
+        if stored_ct and stored_ct not in _ALLOWED_VIDEO_CONTENT_TYPES:
+            return (
+                jsonify({"message": "Staged object content-type is not an allowed video type"}),
+                400,
+            )
+
+        return jsonify({"status": "staged", "staging_key": expected_key, "size": size}), 200
+    except Exception as e:
+        current_app.logger.warning("finalize_video_source_upload failed: %s", e)
+        return jsonify({"message": "Failed to finalize staged upload"}), 500
 
 
 def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):

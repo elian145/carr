@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import logging
 import os
+import re
 import secrets
 import tempfile
 from dataclasses import dataclass
@@ -218,6 +219,79 @@ def media_key_owner_prefix_matches(key: str, owner_public_id: str | None) -> boo
     if len(parts) < 3:
         return False
     return hmac.compare_digest(parts[1], expected)
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 of the server-side video transcode fallback: temporary SOURCE
+# video staging (see kk/routes/media.py::sign_video_source_upload /
+# finalize_video_source_upload, and kk/tasks/video_tasks.py's cleanup
+# sweep). This is temporary storage for an oversized ORIGINAL video only --
+# it is NOT final listing media, has no CarVideo row, and is completely
+# separate from the unrelated 100MB final-listing-video cap
+# (kk/routes/media.py::upload_car_videos ->
+# validate_file_upload(max_size_mb=100)), which this feature never touches.
+# Deliberately namespaced away from both real listing videos
+# (``car_videos/<owner_segment><token>.<ext>``) and the image staging
+# prefix above, so the periodic backstop sweep can target it precisely by
+# prefix without ever matching a real listing video or an image staging
+# object.
+# ---------------------------------------------------------------------------
+VIDEO_SOURCE_STAGING_KEY_PREFIX = "car_videos/_staging/"
+
+# A client-chosen "stable draft media id" identifies one picked video across
+# retries/app-restarts so the derived staging key is idempotent. This value
+# is used directly as an R2 key path segment, so its charset/length must be
+# tightly bounded -- it must never be able to contain "/", "..", or any
+# other path-control sequence that could let a client influence which key
+# it resolves to beyond its own owner-scoped directory.
+_DRAFT_MEDIA_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+
+def is_valid_draft_media_id(draft_media_id: str | None) -> bool:
+    """True when ``draft_media_id`` is a safe, bounded path-segment value."""
+    return bool(draft_media_id) and bool(_DRAFT_MEDIA_ID_RE.match(draft_media_id))
+
+
+def video_source_staging_key(
+    owner_public_id: str | None, draft_media_id: str | None
+) -> str | None:
+    """
+    Deterministic, owner-scoped R2 key for one seller's staged SOURCE video.
+
+    Idempotency: the SAME ``(owner_public_id, draft_media_id)`` pair always
+    yields the SAME key -- a client retrying a sign-upload call (network
+    failure, app restart, etc.) with the same draft media id reuses the
+    exact same staging object instead of creating an unbounded number of
+    orphan objects.
+
+    Ownership isolation: a DIFFERENT owner using the same ``draft_media_id``
+    string always yields a DIFFERENT key, because the owner-tag path
+    segment (:func:`media_owner_tag`, an HMAC of the owner's public id
+    keyed by ``SECRET_KEY``) differs. This holds even though
+    ``draft_media_id`` itself is client-chosen and not secret -- ownership
+    isolation comes entirely from the owner-tag segment, never from
+    ``draft_media_id`` being unguessable.
+
+    A fixed ``.src`` extension is used regardless of the real source
+    container format. The actual content-type is instead (a) bound into
+    the presigned PUT's signature at sign time, and (b) read back from R2
+    object metadata and verified at finalize time (see
+    ``finalize_video_source_upload()``). Deriving the key from a
+    client-declared extension would let two calls with the same
+    ``draft_media_id`` but a different claimed filename/content-type
+    resolve to two different keys, breaking the idempotency guarantee this
+    function exists to provide.
+
+    Returns ``None`` if either input is missing/invalid -- callers must
+    treat that as "cannot stage this upload" and never fall back to an
+    unscoped or client-supplied key.
+    """
+    if not is_valid_draft_media_id(draft_media_id):
+        return None
+    owner_tag = media_owner_tag(owner_public_id)
+    if not owner_tag:
+        return None
+    return f"{VIDEO_SOURCE_STAGING_KEY_PREFIX}{owner_tag}/{draft_media_id}.src"
 
 
 def _allow_local_upload_fallback() -> bool:

@@ -241,6 +241,39 @@ def r2_get_file(
     _run_r2_op(payload, timeout=timeout)
 
 
+def r2_head_object(*, key: str, timeout: float = 30) -> dict[str, Any] | None:
+    """
+    Metadata-only check for one object in the listing-media R2 bucket --
+    never downloads the body.
+
+    Returns ``{"exists": False, "size": None, "content_type": None}`` if the
+    key does not exist (this is a normal outcome, e.g. the client's direct
+    PUT hasn't finished yet -- not an error), or
+    ``{"exists": True, "size": <int>, "content_type": <str | None>}`` if it
+    does. Returns ``None`` if ``key`` is empty.
+
+    Used by the video-source-staging finalize endpoint
+    (``kk/routes/media.py::finalize_video_source_upload``, Phase 1 of the
+    server-side video transcode fallback) to verify a client's direct-to-R2
+    PUT actually landed -- and to read back the REAL size/content-type --
+    before trusting anything the client claims about a staged object.
+    """
+    if not key:
+        return None
+    creds = _cred_payload()
+    payload: dict[str, Any] = {
+        **creds,
+        "op": "head_object",
+        "key": key,
+    }
+    result = _run_r2_op(payload, timeout=timeout)
+    return {
+        "exists": bool(result.get("exists")),
+        "size": result.get("size"),
+        "content_type": result.get("content_type"),
+    }
+
+
 def r2_cleanup_stale_staging(
     *,
     prefix: str,

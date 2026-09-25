@@ -7,7 +7,7 @@ boto3 SSL context — avoids RecursionError from eventlet monkey-patching ssl.
 
 Stdin JSON:
   op: "put_object" | "get_object" | "presign_put" | "presign_get" |
-      "delete_object" | "list_and_delete_stale"
+      "delete_object" | "list_and_delete_stale" | "head_object"
   account_id, bucket, access_key, secret_key, region (optional, default auto)
   key, content_type
   put_object: body_path (path to local file) -- uploaded via boto3's
@@ -27,6 +27,13 @@ Stdin JSON:
     ago. Used to sweep abandoned R2 staging objects (see
     kk/tasks/image_tasks.py::cleanup_stale_image_staging_objects) if a Celery
     job was lost/never ran to completion.
+  head_object: metadata-only check -- does the object exist, and if so what
+    is its real size/content-type. Never downloads the body. Used by the
+    video-source-staging finalize endpoint (kk/routes/media.py) to verify a
+    client's direct-to-R2 PUT actually landed before trusting anything the
+    client claims about it. A missing key is NOT an error here (it is the
+    normal "upload hasn't finished yet" outcome) -- it is reported as
+    ``{"ok": true, "exists": false}``, not ``{"error": ...}``.
 
 Stdout: {"ok": true, ...} or {"error": "..."}
 """
@@ -161,6 +168,29 @@ def main() -> None:
                 ExpiresIn=expires_in,
             )
             json.dump({"ok": True, "download_url": url, "key": key}, sys.stdout)
+            return
+
+        if op == "head_object":
+            from botocore.exceptions import ClientError
+
+            try:
+                resp = client.head_object(Bucket=bucket, Key=key)
+            except ClientError as e:
+                code = str(e.response.get("Error", {}).get("Code", ""))
+                status = e.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+                if code in ("404", "NoSuchKey", "NotFound") or status == 404:
+                    json.dump({"ok": True, "exists": False}, sys.stdout)
+                    return
+                raise
+            json.dump(
+                {
+                    "ok": True,
+                    "exists": True,
+                    "size": int(resp.get("ContentLength") or 0),
+                    "content_type": resp.get("ContentType"),
+                },
+                sys.stdout,
+            )
             return
 
         if op == "delete_object":
