@@ -90,8 +90,20 @@ def make_celery() -> Celery:
             # kk/tasks/image_tasks.py::cleanup_stale_image_staging_objects).
             # Normal jobs always clean up their own staging object; this
             # only catches the rare abandoned case.
+            #
+            # Bugfix: this task is registered with the explicit SHORT name
+            # "kk.cleanup_stale_image_staging_objects" (see the
+            # @celery_app.task(name=...) decorator in image_tasks.py) --
+            # unlike the sibling entries above, which use the
+            # dotted-module-path form because that is the name their own
+            # tasks are registered under. Beat previously sent the
+            # dotted-module-path-style name here too
+            # ("kk.tasks.image_tasks.cleanup_stale_image_staging_objects"),
+            # which was never a registered task name, so the worker logged
+            # "Received unregistered task of type ...". Must exactly match
+            # the registered name, not the module path.
             "cleanup-stale-image-staging-objects": {
-                "task": "kk.tasks.image_tasks.cleanup_stale_image_staging_objects",
+                "task": "kk.cleanup_stale_image_staging_objects",
                 "schedule": 3600.0,  # hourly
             },
         },
