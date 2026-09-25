@@ -103,7 +103,26 @@ services:
     name: carr-worker-fra
     region: frankfurt
     numInstances: 1
-    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== build OK ==="
+    # Operational hardening: static-ffmpeg==3.0 (kk/requirements.txt) does NOT
+    # download its ffmpeg/ffprobe binaries at pip-install time or at bare
+    # `import static_ffmpeg` time -- only on the FIRST call to
+    # get_or_fetch_platform_executables_else_raise() (verified via a real
+    # Linux/WSL run: ~15s, ~188 MiB each for ffmpeg/ffprobe). Without this
+    # build-time step, that download would happen unexpectedly during the
+    # FIRST real video-transcode Celery task in production. This calls the
+    # SAME kk.video_transcoding.resolve_ffmpeg_paths() production code path
+    # (respecting FFMPEG_PATH/FFPROBE_PATH overrides) during build, so the
+    # binaries are already cached on disk before the worker ever starts.
+    # Deliberately does NOT run a transcode -- only proves both executables
+    # exist on disk after resolution. Any resolution failure (missing
+    # static-ffmpeg, unsupported platform, network failure fetching the
+    # binaries, etc.) raises FfmpegUnavailableError, which is an unhandled
+    # Python exception here -- exits non-zero -- and, chained with `&&`,
+    # fails the whole buildCommand (Render will not deploy a build that
+    # failed). Worker-only: the web service (carr) never imports
+    # kk.video_transcoding directly (it only enqueues the Celery task via
+    # kk.routes.media), so it does not need this step.
+    buildCommand: echo "=== pip upgrade ===" && pip install --upgrade pip setuptools wheel && echo "=== pip install ===" && pip install --no-cache-dir -r kk/requirements.txt && echo "=== ffmpeg prefetch (static-ffmpeg) ===" && python -c "import os, kk.video_transcoding as vt; ffmpeg_path, ffprobe_path = vt.resolve_ffmpeg_paths(); assert os.path.isfile(ffmpeg_path), 'ffmpeg missing after resolve -- ' + ffmpeg_path; assert os.path.isfile(ffprobe_path), 'ffprobe missing after resolve -- ' + ffprobe_path; print('ffmpeg prefetch OK', ffmpeg_path); print('ffprobe prefetch OK', ffprobe_path)" && echo "=== build OK ==="
     startCommand: celery -A kk.tasks.celery_app.celery_app worker --loglevel=info --concurrency=1 --max-tasks-per-child=50 --max-memory-per-child=200000
     envVars:
       - key: APP_ENV
