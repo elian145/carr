@@ -136,13 +136,39 @@ def test_render_yaml_carr_beat_fra_is_pinned_to_frankfurt():
 
 
 def test_render_yaml_carr_worker_fra_start_command_has_memory_safe_flags():
+    """
+    carr-worker-fra intentionally runs with ``--concurrency=1`` in
+    render.yaml (a deliberate, separate operational decision from the
+    Procfile's generic ``--concurrency=2`` -- see
+    kk/tasks/video_tasks.py/celery_app.py's own reliability-audit
+    comments). This is NOT the same expected command as the Procfile
+    worker: it is derived here as an explicit, render-specific
+    transformation of the shared constants (concurrency flag swapped from
+    2 to 1) rather than by mutating ``_EXPECTED_WORKER_COMMAND`` /
+    ``_EXPECTED_WORKER_FLAGS`` themselves, which the Procfile tests above
+    still rely on unchanged. All other memory-safety flags
+    (``--max-tasks-per-child=50``, ``--max-memory-per-child=200000``) must
+    still match exactly -- this must not be weakened into merely checking
+    that *some* concurrency flag exists.
+    """
+    expected_render_command = _EXPECTED_WORKER_COMMAND.replace(
+        "--concurrency=2", "--concurrency=1", 1
+    )
+    expected_render_flags = tuple(
+        "--concurrency=1" if flag == "--concurrency=2" else flag
+        for flag in _EXPECTED_WORKER_FLAGS
+    )
+
     text = _read("render.yaml")
     block = _render_yaml_service_block(text, "carr-worker-fra")
     start_cmd = _render_yaml_start_command(block)
 
-    assert start_cmd == _EXPECTED_WORKER_COMMAND, f"unexpected carr-worker-fra startCommand: {start_cmd!r}"
-    for flag in _EXPECTED_WORKER_FLAGS:
+    assert start_cmd == expected_render_command, f"unexpected carr-worker-fra startCommand: {start_cmd!r}"
+    for flag in expected_render_flags:
         assert flag in start_cmd, f"missing {flag!r} in carr-worker-fra startCommand: {start_cmd!r}"
+    # Explicitly confirm this is NOT the Procfile's concurrency setting --
+    # the two are intentionally different, not accidentally out of sync.
+    assert "--concurrency=2" not in start_cmd
 
 
 def test_render_yaml_carr_beat_fra_start_command_is_exact():
