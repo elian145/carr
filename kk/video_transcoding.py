@@ -101,13 +101,30 @@ _MIN_VIDEO_BITRATE_BPS = 300_000
 # no unbounded retry loop. See kk/tasks/video_tasks.py's orchestration.
 OVERSHOOT_RETRY_BITRATE_FACTOR = 0.6
 
-# A sane ceiling on SOURCE resolution, checked BEFORE ffmpeg ever attempts
-# to decode a frame. Deliberately generous (above any real phone camera,
-# e.g. 8K) -- its purpose is to reject malformed/adversarial metadata (a
-# crafted header claiming an absurd width/height, which could otherwise be
-# used to try to trigger a decoder memory blowup), not to reject legitimate
-# 4K/8K footage.
-MAX_SOURCE_DIMENSION_PX = 8192
+# Operational ceiling on SOURCE resolution, checked BEFORE ffmpeg ever
+# attempts to decode a frame, against the RAW ENCODED stream
+# width/height (i.e. before any rotation-based display-dimension swap --
+# see validate_source_media()). Sized for normal phone 4K video, NOT for
+# 8K: the real measured 3840x2160/120fps/10-bit-HDR fixture already peaked
+# at ~1.77 GiB ffmpeg RSS on this worker's zscale/tonemap HDR pipeline: an
+# 8K-class source could exceed a 4GB worker substantially, and this
+# worker's Celery reliability options deliberately do NOT include a hard
+# time_limit as a resource backstop (see kk/tasks/video_tasks.py), so this
+# input-side bound is the operative safety control instead.
+#
+# Two independent checks are applied together (both against the raw
+# encoded dimensions):
+#   MAX_SOURCE_LONG_EDGE: neither raw dimension may exceed this by itself
+#     -- catches an oversized/pathological single edge (e.g. 7680x4320).
+#   MAX_SOURCE_PIXELS: the raw width*height area may not exceed this even
+#     when BOTH individual edges are each <= MAX_SOURCE_LONG_EDGE -- catches
+#     a pathological high-area/square input (e.g. 4096x4096) that the
+#     long-edge check alone would not reject.
+# Together these accept all normal phone 4K orientations/aspect ratios
+# (3840x2160, 2160x3840, 4096x2160, 2160x4096, 4096x2304, ...) while
+# rejecting 8K-class and pathological square/high-area sources.
+MAX_SOURCE_LONG_EDGE = 4096
+MAX_SOURCE_PIXELS = 4096 * 2304
 
 # ffprobe's color_transfer values for SMPTE ST 2084 (PQ) and HLG.
 _HDR_TRANSFER_FUNCTIONS = frozenset({"smpte2084", "arib-std-b67"})
@@ -543,13 +560,21 @@ def validate_source_media(path: str, *, max_bytes: int = MAX_SOURCE_BYTES) -> So
             f"{MAX_SOURCE_DURATION_SECONDS}s cap"
         )
 
+    # Checked against the RAW ENCODED width/height (not yet rotation-swapped
+    # -- see below for the separate display-dimension computation used for
+    # scaling/rendering, not for this input-side safety bound).
     width, height = video.width, video.height
     if not width or not height or width <= 0 or height <= 0:
         raise VideoValidationError("Source video dimensions are missing or not positive")
-    if width > MAX_SOURCE_DIMENSION_PX or height > MAX_SOURCE_DIMENSION_PX:
+    if width > MAX_SOURCE_LONG_EDGE or height > MAX_SOURCE_LONG_EDGE:
         raise VideoValidationError(
-            f"Source resolution {width}x{height} exceeds the sane maximum "
-            f"({MAX_SOURCE_DIMENSION_PX}px per side)"
+            f"Source resolution {width}x{height} exceeds the maximum "
+            f"supported edge length ({MAX_SOURCE_LONG_EDGE}px)"
+        )
+    if width * height > MAX_SOURCE_PIXELS:
+        raise VideoValidationError(
+            f"Source resolution {width}x{height} ({width * height} px) exceeds "
+            f"the maximum supported pixel count ({MAX_SOURCE_PIXELS} px)"
         )
 
     rotation = video.rotation_degrees

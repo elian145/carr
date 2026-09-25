@@ -367,6 +367,78 @@ class TestValidateSourceMedia:
         with pytest.raises(vt.VideoValidationError, match="maximum"):
             vt.validate_source_media(path)
 
+    # -----------------------------------------------------------------
+    # Explicit 4K-class source resolution/pixel-count bounds
+    # (MAX_SOURCE_LONG_EDGE=4096, MAX_SOURCE_PIXELS=4096*2304). Checked
+    # against the RAW ENCODED width/height, i.e. before any rotation-based
+    # display-dimension swap.
+    # -----------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        "width,height",
+        [
+            (3840, 2160),  # common landscape 4K
+            (2160, 3840),  # common portrait 4K (phone)
+            (4096, 2160),  # DCI 4K landscape
+            (2160, 4096),  # DCI 4K portrait
+            (4096, 2304),  # exactly at MAX_SOURCE_PIXELS (boundary, accepted)
+        ],
+    )
+    def test_accepts_normal_4k_class_resolutions(self, tmp_path, monkeypatch, width, height):
+        path = self._write_tmp(tmp_path)
+        raw = json.loads(_probe_json_bytes([_video_stream(width=width, height=height)]))
+        media = vt._parse_probe_json(raw)
+        self._patch_ffprobe(monkeypatch, media)
+        result = vt.validate_source_media(path)
+        assert (result.primary_video.width, result.primary_video.height) == (width, height)
+
+    def test_rejects_4096x4096_due_to_pixel_count_even_though_each_edge_is_at_the_limit(
+        self, tmp_path, monkeypatch
+    ):
+        # Each individual edge (4096) is NOT above MAX_SOURCE_LONG_EDGE, but
+        # the area (4096*4096 = 16,777,216) exceeds MAX_SOURCE_PIXELS
+        # (4096*2304 = 9,437,184) -- must be rejected on pixel count, not
+        # edge length.
+        path = self._write_tmp(tmp_path)
+        raw = json.loads(_probe_json_bytes([_video_stream(width=4096, height=4096)]))
+        media = vt._parse_probe_json(raw)
+        self._patch_ffprobe(monkeypatch, media)
+        with pytest.raises(vt.VideoValidationError, match="pixel count"):
+            vt.validate_source_media(path)
+
+    def test_rejects_8k_class_long_edge(self, tmp_path, monkeypatch):
+        path = self._write_tmp(tmp_path)
+        raw = json.loads(_probe_json_bytes([_video_stream(width=7680, height=4320)]))
+        media = vt._parse_probe_json(raw)
+        self._patch_ffprobe(monkeypatch, media)
+        with pytest.raises(vt.VideoValidationError):
+            vt.validate_source_media(path)
+
+    def test_rejects_8192x8192(self, tmp_path, monkeypatch):
+        path = self._write_tmp(tmp_path)
+        raw = json.loads(_probe_json_bytes([_video_stream(width=8192, height=8192)]))
+        media = vt._parse_probe_json(raw)
+        self._patch_ffprobe(monkeypatch, media)
+        with pytest.raises(vt.VideoValidationError):
+            vt.validate_source_media(path)
+
+    def test_rejects_pixel_count_exceeded_even_when_both_edges_under_long_edge_limit(
+        self, tmp_path, monkeypatch
+    ):
+        # A pathological case where BOTH edges are individually under
+        # MAX_SOURCE_LONG_EDGE (4096) but the area is still too large --
+        # confirms the pixel-count check is not merely redundant with the
+        # long-edge check.
+        width, height = 4090, 4090
+        assert width < vt.MAX_SOURCE_LONG_EDGE and height < vt.MAX_SOURCE_LONG_EDGE
+        assert width * height > vt.MAX_SOURCE_PIXELS
+        path = self._write_tmp(tmp_path)
+        raw = json.loads(_probe_json_bytes([_video_stream(width=width, height=height)]))
+        media = vt._parse_probe_json(raw)
+        self._patch_ffprobe(monkeypatch, media)
+        with pytest.raises(vt.VideoValidationError, match="pixel count"):
+            vt.validate_source_media(path)
+
     def test_accepts_valid_sdr_source(self, tmp_path, monkeypatch):
         path = self._write_tmp(tmp_path)
         raw = json.loads(_probe_json_bytes([_video_stream(), _audio_stream()]))

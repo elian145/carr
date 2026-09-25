@@ -72,6 +72,23 @@ def make_celery() -> Celery:
         enable_utc=True,
         task_track_started=True,
         broker_connection_retry_on_startup=True,
+        # Operational hardening: carr-worker-fra runs at --concurrency=1 and
+        # now includes a long-running task (video transcode, up to ~470s
+        # for a legitimate worst-case source -- see
+        # kk/tasks/video_tasks.py's VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS).
+        # Celery's default worker_prefetch_multiplier=4 would let this
+        # single worker process reserve up to 4 messages from the broker
+        # at once, even though it can only ever execute one at a time --
+        # those reserved-but-unstarted messages sit invisible to any other
+        # worker and are not released back to the queue until this worker
+        # restarts, which is unnecessary and only matters for throughput
+        # tuning on multi-task-at-once workers, not this one. Setting this
+        # to 1 makes the worker fetch (and therefore visibly queue-block
+        # other consumers on) at most one message at a time, matching its
+        # actual execution concurrency. Deliberately does NOT change
+        # --concurrency itself (that remains 1, set on the Render
+        # startCommand, not here).
+        worker_prefetch_multiplier=1,
         beat_schedule={
             "process-due-scheduled-notifications": {
                 "task": "kk.tasks.notification_tasks.process_due_scheduled_notifications",

@@ -57,6 +57,70 @@ _PROCESSED_VIDEO_STAGING_STALE_AFTER_SECONDS = 48 * 3600
 # stale is safer than transcoding a possibly-already-swept source.
 VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS = 2 * 3600
 
+# ---------------------------------------------------------------------------
+# Operational hardening (real-device verification): a real 6.95s 4K/120fps
+# HDR (Dolby Vision Profile 8.4) fixture measured ~108.82s of real ffmpeg
+# wall-clock time on Linux (static-ffmpeg==3.0) -- roughly 15.65x realtime
+# for this worker's zscale/tonemap HDR pipeline. Extrapolated to this
+# module's own ``MAX_SOURCE_DURATION_SECONDS`` (30s, see
+# ``kk/video_transcoding.py``) worst case, a single legitimate transcode can
+# need on the order of ~470s of ffmpeg time. ``vt.run_ffmpeg()``'s own
+# default timeout (180s) is too short for that worst case -- this task
+# passes its own, explicit, materially larger timeout at the call site
+# instead of changing that shared default (other/future callers of
+# ``run_ffmpeg`` may have very different -- shorter -- legitimate runtimes,
+# so the shared default is intentionally left alone).
+# ---------------------------------------------------------------------------
+
+# Passed explicitly to ``vt.run_ffmpeg(argv, timeout=...)`` at this task's
+# own call site (see ``_encode`` in ``_transcode_video_source_impl``).
+# Comfortably above the ~470s extrapolated worst case, while still bounding
+# a genuinely stuck ffmpeg process. ``subprocess.run(..., timeout=...)``
+# (which this wraps) already terminates and waits for its direct child
+# cleanly on timeout, so the NORMAL "ffmpeg is just slow" path never
+# orphans a subprocess. This subprocess timeout is currently the ONLY
+# bounded-execution mechanism for the expensive part of this task -- see
+# below for why a Celery-level hard time_limit is deliberately NOT also
+# used here.
+VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS = 600
+
+# ---------------------------------------------------------------------------
+# Deliberately NO Celery ``time_limit``/``soft_time_limit`` on this task.
+#
+# A prior revision added a hard ``time_limit`` (660s) as a "backstop above
+# the subprocess timeout". That was incorrect: Celery's hard time_limit
+# works by SIGKILLing the worker CHILD PROCESS running the task, not by
+# cooperating with it -- if that fires while ``vt.run_ffmpeg()``'s own
+# ``subprocess.run(..., timeout=...)`` has an ffmpeg grandchild running,
+# the ffmpeg process can be ORPHANED (left running/writing temp output)
+# rather than cleanly terminated. Combined with ``reject_on_worker_lost``
+# (see below), that SIGKILL is itself indistinguishable, from the broker's
+# point of view, from an external OOM/crash -- so it would also trigger a
+# requeue of this same task while the previous attempt's ffmpeg could
+# still be alive. That made the "a redelivered execution cannot overlap
+# the prior attempt" claim unprovable, so it has been removed.
+#
+# A ``soft_time_limit`` is not used either (per explicit instruction):
+# it relies on this task catching ``SoftTimeLimitExceeded`` and itself
+# cleanly terminating the already-spawned ffmpeg child, which this module
+# has no SIGCHLD/process-group plumbing to prove happens reliably -- an
+# unproven "soft" cleanup would be misleading.
+#
+# ``VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS`` (600s, above) is therefore
+# the ONLY bounded-execution mechanism for the expensive ffmpeg step:
+# ``subprocess.run(timeout=...)`` terminates and waits for its own direct
+# child on expiry, which does not have the orphaning risk a Celery-level
+# SIGKILL does. Genuine catastrophic worker/container loss (OOM kill,
+# host eviction, etc.) is still handled by ``acks_late`` +
+# ``reject_on_worker_lost`` below, but whether an ffmpeg grandchild
+# actually dies alongside the worker child in that case depends on the
+# HOSTING ENVIRONMENT reaping the whole process group/container -- this
+# module does not claim otherwise (see the task docstring's redelivery
+# section). This is also why the worker needs sufficient RAM headroom
+# (measured ~1.77 GiB peak ffmpeg RSS) rather than relying on a hard
+# time_limit to bound resource usage.
+# ---------------------------------------------------------------------------
+
 
 class VideoTranscodeTaskError(RuntimeError):
     """User-safe, durable Celery task failure for
@@ -176,7 +240,32 @@ def cleanup_stale_processed_video_staging_objects():
     return {"ok": True, "deleted": deleted}
 
 
-@celery_app.task(bind=True, name="kk.transcode_car_video_source")
+@celery_app.task(
+    bind=True,
+    name="kk.transcode_car_video_source",
+    # Operational hardening -- these three are set on THIS task only, not
+    # globally (see kk/tasks/celery_app.py; other tasks are not audited for
+    # the same idempotency guarantees this one has, see docstring below):
+    #   acks_late=True + reject_on_worker_lost=True: if the prefork worker
+    #     child running this task is abruptly lost (OOM-killed, crashed,
+    #     host/container terminated), the message is requeued instead of
+    #     silently dropped. acks_late ALONE does not guarantee this for an
+    #     abruptly-killed child -- Celery still acks early in that case
+    #     unless reject_on_worker_lost is also set; both are required
+    #     together for this specific failure mode.
+    #   track_started=True: makes this task's own STARTED-state reporting
+    #     explicit/robust at the task level (already implied by the global
+    #     task_track_started=True in celery_app.py, but set here too so
+    #     this task's contract does not silently depend on that global
+    #     never changing).
+    # Deliberately NO time_limit/soft_time_limit here -- see the
+    # module-level comment above VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS for
+    # why a Celery hard time_limit was removed (SIGKILL-orphan risk that
+    # made "no overlapping redelivery" unprovable).
+    acks_late=True,
+    reject_on_worker_lost=True,
+    track_started=True,
+)
 def transcode_car_video_source(
     self, source_staging_key: str, owner_public_id: str, draft_media_id: str
 ):
@@ -212,6 +301,66 @@ def transcode_car_video_source(
     removed in a ``finally`` block, success or failure. No partial
     PROCESSED object is ever uploaded -- the upload only happens after the
     encoded output has already passed full contract re-validation.
+
+    Idempotent under redelivery (required by ``acks_late``/
+    ``reject_on_worker_lost`` above -- a worker-lost event requeues this
+    EXACT same task_id/args to run again from scratch):
+      - ``source_staging_key``/``processed_key`` are BOTH deterministically
+        re-derived from ``(owner_public_id, draft_media_id)`` on every
+        invocation (see ``video_source_staging_key``/
+        ``processed_video_staging_key``) -- a redelivered run reconstructs
+        the exact same keys, not new ones.
+      - The source object is only ever deleted in two places: (a) a
+        PERMANENT validation failure, before any encoding starts, or (b)
+        after a fully successful upload. If the worker is lost mid-encode
+        (the long/expensive part), by construction neither branch has run
+        yet, so the source object is still present in R2 for the
+        redelivered attempt to download and process again.
+      - Re-uploading to the same ``processed_key`` (``r2_put_file``) is a
+        plain overwrite (S3/R2 PUT semantics), not a create-only/append
+        operation -- a redelivered run's upload safely replaces any
+        partial/previous attempt's object at that same key, and Phase 3
+        (not implemented yet) will only ever read the final object at that
+        key, so no duplicate permanent media can result.
+      - The enqueue-time HTTP-layer dedupe (``video_job_dedupe_key`` /
+        ``get_idempotent_job_task_id`` in ``kk/job_ownership.py``) prevents
+        ``finalize_video_source_upload`` from ever creating a SECOND
+        task_id for the same (owner, draft) -- there is only ever one
+        logical task_id per draft to begin with.
+      - Celery's own broker-level redelivery (triggered by
+        ``reject_on_worker_lost`` on an abrupt worker-child loss) re-runs
+        that SAME already-enqueued task_id from scratch. Because the
+        object keys above are deterministic, that re-run is safe AT THE
+        OBJECT-KEY level regardless of how many times it happens.
+      - The NORMAL bounded-execution mechanism for the expensive ffmpeg
+        step is the plain subprocess timeout
+        (``VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS``, 600s) -- ffmpeg is
+        terminated and waited on by ``subprocess.run(timeout=...)`` itself
+        before this task ever reaches a FAILURE/redelivery decision, so
+        the common "ffmpeg is just slow/stuck" case never overlaps with a
+        redelivery at all.
+      - What this task does NOT prove: that an ffmpeg subprocess is always
+        gone before a redelivered attempt starts in the CATASTROPHIC
+        worker/container-loss case (OOM kill, host eviction, etc.) that
+        ``reject_on_worker_lost`` exists for. Whether the ffmpeg
+        grandchild is also reaped in that case is a property of the
+        HOSTING ENVIRONMENT (process-group/container teardown killing all
+        descendants), not of this application code -- this module makes
+        no stronger process-lifetime guarantee than that. This is also
+        why the deployed worker needs sufficient RAM headroom above the
+        measured ~1.77 GiB peak ffmpeg RSS: a hard Celery time_limit is
+        deliberately not used as a substitute resource bound (see above).
+      - Given this worker's ``--concurrency=1``, at least no TWO
+        redelivered attempts of this task can run inside THIS worker
+        process concurrently -- but that says nothing about an ffmpeg
+        grandchild left behind by a previous, externally-killed attempt.
+      - Normal (non-worker-loss) failures -- e.g. a permanently invalid
+        source, or a transient output-validation failure -- are handled by
+        Celery as an ordinary single FAILURE state once this function
+        raises; ``reject_on_worker_lost`` only affects the abrupt
+        process-loss case above, and no automatic retry/``autoretry_for``
+        is configured on this task, so a normal handled failure is acked
+        exactly once and does NOT loop.
     """
     owner = (owner_public_id or "").strip()
     draft = (draft_media_id or "").strip()
@@ -342,7 +491,11 @@ def _transcode_video_source_impl(
                 video_bitrate_bps=bps,
                 has_audio=has_audio,
             )
-            vt.run_ffmpeg(argv)
+            # Explicit, task-local override of vt.run_ffmpeg()'s 180s
+            # default -- see VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS's
+            # module-level comment for why 180s is too short for this
+            # task's real worst-case (~470s) source duration.
+            vt.run_ffmpeg(argv, timeout=VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS)
 
         _encode(bitrate_bps)
 
