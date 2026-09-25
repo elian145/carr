@@ -72,6 +72,22 @@ def make_celery() -> Celery:
         enable_utc=True,
         task_track_started=True,
         broker_connection_retry_on_startup=True,
+        # Phase 3A durability hardening: Celery's own default
+        # ``result_expires`` (1 day) was SHORTER than the processed-video
+        # staging TTL (48h -- see
+        # kk/tasks/video_tasks.py::_PROCESSED_VIDEO_STAGING_STALE_AFTER_SECONDS)
+        # that ``attach_transcoded_video()`` (kk/routes/media.py) depends
+        # on the transcode task's own result staying readable for (it reads
+        # ``AsyncResult.state``/``.result`` as part of its authorization
+        # check). Raised to match
+        # kk/tasks/video_tasks.py::VIDEO_JOB_AUTH_TTL_SECONDS (72h) --
+        # see that constant's docstring for the full TTL-alignment
+        # rationale. There is no supported per-task override for this
+        # backend-wide setting, so this applies to every task's result, not
+        # just the video one; a longer result TTL is a strictly safe change
+        # for any task (more forgiving client-side polling, a little extra
+        # Redis memory), never a correctness/security concern.
+        result_expires=72 * 3600,
         # Operational hardening: carr-worker-fra runs at --concurrency=1 and
         # now includes a long-running task (video transcode, up to ~470s
         # for a legitimate worst-case source -- see

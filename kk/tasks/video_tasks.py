@@ -58,6 +58,53 @@ _PROCESSED_VIDEO_STAGING_STALE_AFTER_SECONDS = 48 * 3600
 VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS = 2 * 3600
 
 # ---------------------------------------------------------------------------
+# Phase 3A durability hardening: server-side AUTHORIZATION durability for
+# ``attach_transcoded_video()`` (kk/routes/media.py).
+#
+# That endpoint's authorization for "may this caller attach THIS processed
+# video" depends on THREE separate server-side records all still being
+# readable at attach time:
+#   1. the enqueue-time job-ownership registration (``register_job_owner``
+#      -- kk/job_ownership.py)
+#   2. the enqueue-time idempotent dedupe-key -> task_id binding
+#      (``register_idempotent_job_task_id`` -- same module) -- this is the
+#      one that authoritatively proves task_id<->draft_media_id
+#   3. the Celery RESULT backend still reporting this task_id's state as
+#      SUCCESS (``AsyncResult.state``/``.result``)
+#
+# All three were previously written with a plain 24h TTL (job_ownership.py's
+# own defaults) / Celery's own default ``result_expires`` (also 1 day) --
+# SHORTER than ``_PROCESSED_VIDEO_STAGING_STALE_AFTER_SECONDS`` (48h). A
+# seller who finished transcoding but did not return to actually submit the
+# listing until, say, hour 30 would find the PROCESSED VIDEO OBJECT still
+# present (staging TTL not yet expired) but the attach endpoint unable to
+# authorize attaching it (job ownership / dedupe binding / Celery result all
+# already expired at ~24h) -- an avoidable dead end that would force a full
+# re-upload/re-transcode for no reason other than an TTL mismatch.
+#
+# Chosen policy: AUTH/RESULT TTL (72h) >= PROCESSED_STAGING_TTL (48h) + a
+# 24h safety margin (covers clock/scheduling skew and the up-to-1h
+# staging-cleanup sweep interval, see ``celery_app.py``'s
+# ``beat_schedule``). ``_PROCESSED_VIDEO_STAGING_STALE_AFTER_SECONDS``
+# itself is left UNCHANGED (extending durability by raising the SHORTER
+# side is strictly less disruptive than shortening the processed-staging
+# window a returning seller already relies on).
+#
+# This constant is passed EXPLICITLY as ``ttl_s=`` to
+# ``register_job_owner`` / ``register_idempotent_job_task_id`` at THIS
+# task's own enqueue call site only (``finalize_video_source_upload()`` in
+# kk/routes/media.py) -- it deliberately does NOT change either function's
+# own default ``ttl_s``, which other, unrelated callers (e.g. the async
+# image-processing job registration in the same route module) still use
+# unchanged. Celery's global ``result_expires`` IS changed (see
+# ``celery_app.py``) to this same value, since Celery has no supported
+# per-task override for that backend-wide setting -- a longer result TTL
+# is a strictly safe change for every task type (more forgiving client
+# polling, at the cost of a little extra Redis memory), not a
+# correctness/security concern.
+VIDEO_JOB_AUTH_TTL_SECONDS = 72 * 3600
+
+# ---------------------------------------------------------------------------
 # Operational hardening (real-device verification): a real 6.95s 4K/120fps
 # HDR (Dolby Vision Profile 8.4) fixture measured ~108.82s of real ffmpeg
 # wall-clock time on Linux (static-ffmpeg==3.0) -- roughly 15.65x realtime

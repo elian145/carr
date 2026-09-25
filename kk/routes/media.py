@@ -12,6 +12,8 @@ from werkzeug.utils import safe_join
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
 from ..job_ownership import (
     get_idempotent_job_task_id,
+    get_registered_job_owner,
+    is_valid_task_id,
     register_idempotent_job_task_id,
     register_job_owner,
 )
@@ -22,13 +24,17 @@ from ..media_processing import (
     media_key_owner_prefix_matches,
     media_owner_tag,
     process_and_store_image,
+    processed_video_staging_key,
     stage_upload_for_async_job,
+    transcoded_video_permanent_key,
     video_source_staging_key,
 )
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
 from ..tasks.image_tasks import process_car_image_file
+from .. import video_transcoding as vt
 from ..tasks.video_tasks import (
+    VIDEO_JOB_AUTH_TTL_SECONDS,
     VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS,
     celery_state_to_video_job_state,
     transcode_car_video_source,
@@ -171,6 +177,20 @@ MAX_DAMAGE_PHOTOS = 10
 # precedent. Enforced server-side so it cannot be bypassed by a modified
 # client or a direct API call.
 MAX_LISTING_PHOTOS = 20
+
+# Phase 3A (server-side video transcode fallback -- promotion/attach):
+# cumulative-per-car cap on listing videos, mirroring the existing Flutter
+# client cap (`_kSellMaxVideos = 3` in lib/features/sell/sell_step4_logic.dart).
+#
+# NOTE (audit finding): the older, pre-existing multipart
+# `upload_car_videos()` endpoint below does NOT currently enforce any
+# server-side video-count cap at all (unlike the photo caps above) -- that
+# is a separate, pre-existing gap, out of scope for this Phase 3A change,
+# which only implements the new transcoded-video promotion/attach
+# endpoint. This constant/check is enforced by `attach_transcoded_video()`
+# only, so a modified client (or a direct API call) cannot use THAT path
+# to exceed the same cap the shipped Sell UI already assumes.
+MAX_LISTING_VIDEOS = 3
 
 
 def _normalize_signed_content_type(raw: str, *, asset: str, default_ct: str) -> str | None:
@@ -355,6 +375,26 @@ def _listing_photo_limit_error(existing: int, incoming: int):
             {
                 "message": (
                     f"You can add up to {MAX_LISTING_PHOTOS} photos per listing."
+                )
+            }
+        ),
+        400,
+    )
+
+
+def _video_limit_error(existing: int, incoming: int):
+    """Phase 3A: mirrors ``_damage_photo_limit_error``/``_listing_photo_limit_error``
+    exactly (same all-or-nothing shape/response), for ``MAX_LISTING_VIDEOS``.
+    Only used by ``attach_transcoded_video()`` -- see ``MAX_LISTING_VIDEOS``'s
+    own comment for why the older multipart video-upload endpoint is
+    unaffected."""
+    if existing + incoming <= MAX_LISTING_VIDEOS:
+        return None
+    return (
+        jsonify(
+            {
+                "message": (
+                    f"You can add up to {MAX_LISTING_VIDEOS} videos per listing."
                 )
             }
         ),
@@ -1124,8 +1164,17 @@ def finalize_video_source_upload():
                 expires=VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS,
             )
             task_id = async_result.id
-            register_job_owner(task_id, current_user.public_id)
-            register_idempotent_job_task_id(dedupe_key, task_id)
+            # Phase 3A durability hardening: explicit, video-specific TTL --
+            # see kk/tasks/video_tasks.py::VIDEO_JOB_AUTH_TTL_SECONDS's
+            # docstring for why this must be >= the processed-staging TTL
+            # attach_transcoded_video() depends on, and why this does NOT
+            # change either helper's own default ttl_s (used unchanged by
+            # unrelated callers, e.g. the async image job registration
+            # below).
+            register_job_owner(task_id, current_user.public_id, ttl_s=VIDEO_JOB_AUTH_TTL_SECONDS)
+            register_idempotent_job_task_id(
+                dedupe_key, task_id, ttl_s=VIDEO_JOB_AUTH_TTL_SECONDS
+            )
 
         try:
             job_state = celery_state_to_video_job_state(
@@ -1146,6 +1195,396 @@ def finalize_video_source_upload():
     except Exception as e:
         current_app.logger.warning("finalize_video_source_upload failed: %s", e)
         return jsonify({"message": "Failed to finalize staged upload"}), 500
+
+
+@bp.route("/api/media/r2/attach-transcoded-video", methods=["POST"])
+@jwt_required()
+@rate_limit(max_requests=30, window_minutes=60, per_ip=False)
+def attach_transcoded_video():
+    """
+    Phase 3A of the server-side video transcode fallback: promote a
+    successful ``kk.transcode_car_video_source`` result
+    (PROCESSED-video-staging object) to permanent listing-video storage and
+    create the actual ``CarVideo`` row -- the final step this feature has
+    been missing since Phase 2.
+
+    Body: { "car_id": "...", "draft_media_id": "...", "task_id": "..." }
+    Response (200/201): {
+        "message": "...", "video": <CarVideo.to_dict()>, "videos": [<same>]
+    }
+
+    NEVER trusts a client-supplied R2 key, owner tag, file size, or
+    content-type -- every one of those is either reconstructed
+    server-side from the authenticated caller's identity + the request's
+    ``draft_media_id``, or read back from R2 object metadata (HEAD), never
+    from anything the client claims.
+
+    Identity / task<->draft binding (no new DB/Redis schema needed): this
+    reuses the EXACT existing Redis-backed idempotent-enqueue map
+    (``kk/job_ownership.py``'s ``get_idempotent_job_task_id`` --
+    ``video_job_dedupe_key(owner_public_id, draft_media_id)`` -> task_id).
+    That mapping is populated ONLY by ``finalize_video_source_upload()``,
+    ONLY when it enqueues ``kk.transcode_car_video_source`` for that EXACT
+    ``(owner_public_id, draft_media_id)`` pair -- so reconstructing the
+    dedupe key from THIS authenticated caller's own public_id (never a
+    client-supplied owner tag) + the request's ``draft_media_id``, and
+    requiring it to resolve to EXACTLY the client-supplied ``task_id``,
+    proves all of: (a) ``task_id`` belongs to this caller, (b) ``task_id``
+    corresponds to this specific ``draft_media_id``, and (c) ``task_id`` is
+    specifically a ``kk.transcode_car_video_source`` task (nothing else
+    could ever have populated that mapping). ``get_registered_job_owner``
+    is also checked explicitly as defense-in-depth. The task's own
+    structured SUCCESS result (which already includes ``owner_public_id``/
+    ``draft_media_id`` -- see ``_transcode_video_source_impl``'s return
+    value) is cross-checked ONLY as an extra safety net when present, never
+    as the primary/sole proof of identity (a stronger, stored ownership
+    record is always available and preferred -- see above).
+
+    Processed-object validation (deliberately HEAD-only, no re-download/
+    re-probe): the worker's own ``validate_output_media()`` (real ffprobe
+    contract check -- h264/<=1920 long edge/<=30fps/yuv420p/aac-if-audio/
+    <100MiB) ALREADY ran, successfully, on this exact file, BEFORE the
+    worker ever uploaded it to processed staging (the upload call in
+    ``_transcode_video_source_impl`` is unconditionally AFTER that
+    validation passes -- there is no code path that uploads first and
+    validates after). Re-downloading the (up to ~100MiB) object here and
+    re-running ffprobe on it would duplicate that already-expensive check
+    for no additional confidence beyond "did the object get corrupted
+    after upload", which a HEAD's real, R2-reported size + content-type
+    already reasonably covers -- and would add an ffmpeg/ffprobe runtime
+    dependency to the WEB process that only the worker currently needs.
+    This endpoint therefore only HEADs the object (exists, size in
+    (0, FINAL_MAX_BYTES), content-type is ``video/mp4`` when reported --
+    the transcode task always uploads with that exact content-type).
+
+    Idempotency (CRITICAL): a repeated call for the same
+    (owner, car_id, draft_media_id) must NEVER create a second ``CarVideo``
+    row. This is checked FIRST, before any task/job validation -- a
+    retry (timeout, app restart, lost response, duplicate tap, resume)
+    with ANY task_id (even a stale/expired one) for a draft that was
+    already successfully attached to this car short-circuits straight to
+    returning the existing row. A DB-level unique constraint on
+    ``(car_id, source_draft_media_id)`` (see the migration adding that
+    column) additionally protects against two concurrent requests racing
+    a plain "check then insert" -- the second commit's ``IntegrityError``
+    is caught and re-resolved to the same existing-row response rather
+    than erroring.
+
+    Ordering / failure recovery (Phase 3A durability hardening -- the
+    permanent key is now DETERMINISTIC, see
+    ``transcoded_video_permanent_key()``, which is what makes every one of
+    these crash points below safely retryable without ever accumulating an
+    orphaned permanent object):
+
+      A. Crash BEFORE the R2 copy call: nothing has happened yet -- a
+         retry starts clean, from the top.
+      B. Crash DURING the R2 copy (or the copy call raises): no DB row is
+         created; the processed staging object is left untouched; the
+         (still-in-progress or now-failed) destination write is simply
+         retried from the top on the next call, targeting the SAME
+         deterministic key.
+      C. Crash AFTER a successful copy but BEFORE this endpoint's own
+         destination-HEAD verification: a retry's destination-HEAD (now
+         run FIRST, before deciding whether to copy at all -- see below)
+         finds the destination already present with the correct size, so
+         it skips the redundant copy entirely and proceeds straight to the
+         DB insert.
+      D. Crash AFTER the destination HEAD verification but BEFORE the DB
+         commit: identical recovery to (C) -- the retry's own destination
+         check finds the SAME deterministic key already correctly
+         populated, skips re-copying, and creates the DB row. No second
+         destination key is ever generated.
+      E. Crash AFTER the DB commit but BEFORE the staging delete: the
+         video IS already durably attached. A retry's idempotency
+         short-circuit (``CarVideo`` row keyed by
+         ``(car_id, source_draft_media_id)``, checked FIRST -- see above)
+         finds that row immediately and returns it, regardless of whether
+         the processed staging object still exists.
+      F. Crash/lost-response AFTER the staging delete (or any retry that
+         simply never saw the first response): same as (E) -- the
+         idempotency short-circuit returns the existing row. This is the
+         normal "delayed resume" case (see
+         ``VIDEO_JOB_AUTH_TTL_SECONDS``'s docstring for how long the
+         job/dedupe/result records this depends on stay valid).
+
+      This endpoint therefore NEVER deletes a permanent destination object
+      merely because a later step (DB commit, staging delete) failed --
+      with a deterministic key, an already-correct destination is always
+      safe and useful for the next retry to build on, never something to
+      undo. The DB-level unique constraint on
+      ``(car_id, source_draft_media_id)`` remains the final protection
+      against two genuinely CONCURRENT requests both reaching the insert
+      at once (see the idempotency section above) -- this ordering only
+      protects against SEQUENTIAL crash-then-retry, not a true race.
+    """
+    try:
+        current_user = get_current_user()
+        verify_err = phone_verification_required_response(current_user)
+        if verify_err:
+            return verify_err
+    except Exception:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    if not _video_source_staging_enabled():
+        return jsonify({"message": "Not found"}), 404
+
+    if not _r2_configured():
+        return jsonify({"message": "R2 storage is not configured"}), 503
+
+    try:
+        data = request.get_json(silent=True) or {}
+
+        car_id_raw = str(data.get("car_id") or "").strip()
+        draft_media_id = str(data.get("draft_media_id") or "").strip()
+        task_id = str(data.get("task_id") or "").strip()
+
+        if not car_id_raw:
+            return jsonify({"message": "car_id is required"}), 400
+        if not is_valid_draft_media_id(draft_media_id):
+            return jsonify({"message": "Invalid or missing draft_media_id"}), 400
+        if not is_valid_task_id(task_id):
+            return jsonify({"message": "Invalid or missing task_id"}), 400
+
+        car = _get_car_by_any_id(car_id_raw)
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            return (
+                jsonify({"message": "Not authorized to attach video for this listing"}),
+                403,
+            )
+
+        def _idempotent_response(existing_video: CarVideo, *, status: int):
+            return (
+                jsonify(
+                    {
+                        "message": "Video already attached",
+                        "video": existing_video.to_dict(),
+                        "videos": [existing_video.to_dict()],
+                    }
+                ),
+                status,
+            )
+
+        # Idempotency short-circuit -- see docstring. Must run before ANY
+        # task/job validation so a retry never depends on the supplied
+        # task_id still being valid/resolvable.
+        existing = CarVideo.query.filter_by(
+            car_id=car.id, source_draft_media_id=draft_media_id
+        ).first()
+        if existing:
+            return _idempotent_response(existing, status=200)
+
+        # --- Not yet attached: validate the job before promoting anything ---
+
+        # Defense-in-depth (see docstring -- the dedupe-key check below is
+        # the primary/authoritative binding).
+        registered_owner = get_registered_job_owner(task_id)
+        if not registered_owner or registered_owner != current_user.public_id:
+            return jsonify({"message": "task_id does not belong to this account"}), 403
+
+        # Authoritative task_id <-> (owner, draft_media_id) binding -- see
+        # docstring for why this single check also proves the task is
+        # specifically kk.transcode_car_video_source.
+        dedupe_key = video_job_dedupe_key(current_user.public_id, draft_media_id)
+        bound_task_id = get_idempotent_job_task_id(dedupe_key)
+        if not bound_task_id or bound_task_id != task_id:
+            return (
+                jsonify({"message": "task_id does not correspond to this draft_media_id"}),
+                403,
+            )
+
+        try:
+            async_result = transcode_car_video_source.AsyncResult(task_id)
+            state = async_result.state
+        except Exception as e:
+            current_app.logger.warning("attach_transcoded_video: unable to read job state: %s", e)
+            return jsonify({"message": "Unable to read transcode job state"}), 503
+
+        if state == "FAILURE":
+            return jsonify({"message": "Transcode job failed"}), 400
+        if state != "SUCCESS":
+            return jsonify({"message": "Transcode job has not finished yet"}), 409
+
+        # Defense-in-depth only -- see docstring. Never the sole/authoritative
+        # identity check; a missing/non-dict result never blocks the (already
+        # proven, above) authoritative path.
+        try:
+            result_payload = async_result.result
+        except Exception:
+            result_payload = None
+        if isinstance(result_payload, dict):
+            result_owner = result_payload.get("owner_public_id")
+            if result_owner is not None and result_owner != current_user.public_id:
+                return (
+                    jsonify({"message": "Transcode job result does not match this account"}),
+                    403,
+                )
+            result_draft = result_payload.get("draft_media_id")
+            if result_draft is not None and result_draft != draft_media_id:
+                return (
+                    jsonify(
+                        {"message": "Transcode job result does not match this draft_media_id"}
+                    ),
+                    403,
+                )
+
+        # Reconstruct the expected processed key server-side -- NEVER
+        # accept a client-supplied key (there isn't one in the request body
+        # to begin with; this is derived purely from trusted server state).
+        expected_key = processed_video_staging_key(current_user.public_id, draft_media_id)
+        if not expected_key:
+            return jsonify({"message": "Unable to derive the processed staging key"}), 400
+
+        # Media/video limit -- checked AFTER the idempotency short-circuit
+        # above, so a draft already attached before the listing became
+        # full stays retrievable (per this endpoint's own contract).
+        existing_count = CarVideo.query.filter_by(car_id=car.id).count()
+        limit_err = _video_limit_error(existing_count, 1)
+        if limit_err:
+            return limit_err
+
+        from ..r2_ops import r2_head_object
+
+        meta = r2_head_object(key=expected_key)
+        if not meta or not meta.get("exists"):
+            return (
+                jsonify({"message": "Processed video not found. Is the transcode finished?"}),
+                404,
+            )
+
+        size = int(meta.get("size") or 0)
+        if size <= 0:
+            return jsonify({"message": "Processed video object is empty"}), 400
+        if size >= vt.FINAL_MAX_BYTES:
+            return (
+                jsonify({"message": "Processed video exceeds the final size limit"}),
+                400,
+            )
+
+        stored_ct = (meta.get("content_type") or "").strip().lower().split(";")[0].strip()
+        if stored_ct and stored_ct != "video/mp4":
+            # The transcode task always uploads with content_type="video/mp4"
+            # explicitly -- any other reported type means this object was
+            # never actually produced by that task.
+            return (
+                jsonify({"message": "Processed video content-type is not video/mp4"}),
+                400,
+            )
+
+        # Permanent key -- Phase 3A durability hardening: DETERMINISTIC
+        # (HMAC-derived from owner/car/draft_media_id), NOT a fresh random
+        # token per call -- see transcoded_video_permanent_key()'s own
+        # docstring. This is what makes every crash point below safely
+        # retryable: a retry for the same (owner, car, draft_media_id)
+        # always targets the exact same permanent object instead of
+        # accumulating a new orphan on every attempt. Still lives directly
+        # under the same car_videos/ namespace the normal multipart
+        # upload_car_videos() endpoint uses (that endpoint's own
+        # random-token scheme is UNCHANGED -- this key scheme is used ONLY
+        # here).
+        permanent_key = transcoded_video_permanent_key(
+            current_user.public_id, car.public_id, draft_media_id
+        )
+        if not permanent_key:
+            return jsonify({"message": "Unable to derive the permanent video key"}), 400
+
+        from ..r2_ops import r2_copy_object
+
+        # Crash-recovery fast path (crash points C/D below): a PREVIOUS
+        # attempt may already have copied successfully to this exact same
+        # deterministic key and then crashed/lost its response before the
+        # DB commit. If the destination already exists with the expected
+        # size, it is already correct -- skip the redundant R2 copy
+        # round-trip entirely and go straight to creating the DB row.
+        # Otherwise (first attempt, or a stale/mismatched leftover from a
+        # differently-sized transcode of the same draft) (re-)copy so the
+        # destination is freshly re-established from the current staging
+        # object.
+        dest_meta = r2_head_object(key=permanent_key)
+        dest_already_correct = bool(
+            dest_meta
+            and dest_meta.get("exists")
+            and int(dest_meta.get("size") or 0) == size
+        )
+        if not dest_already_correct:
+            try:
+                r2_copy_object(
+                    source_key=expected_key, dest_key=permanent_key, content_type="video/mp4"
+                )
+            except Exception as e:
+                current_app.logger.warning("attach_transcoded_video: R2 copy failed: %s", e)
+                return jsonify({"message": "Failed to promote the processed video"}), 502
+
+            dest_meta = r2_head_object(key=permanent_key)
+            if (
+                not dest_meta
+                or not dest_meta.get("exists")
+                or int(dest_meta.get("size") or 0) != size
+            ):
+                current_app.logger.warning(
+                    "attach_transcoded_video: destination verification failed after copy "
+                    "(car=%s)",
+                    car.public_id,
+                )
+                return jsonify({"message": "Failed to verify the promoted video"}), 502
+
+        public_base = _r2_public_base()
+        video_url = f"{public_base}/{permanent_key}" if public_base else permanent_key
+
+        car_video = CarVideo(
+            car_id=car.id,
+            video_url=video_url,
+            order=existing_count,
+            source_draft_media_id=draft_media_id,
+        )
+        db.session.add(car_video)
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            # Concurrent duplicate attach for the same (car_id,
+            # draft_media_id) -- the DB unique constraint protects against
+            # the race a plain check-then-insert cannot. Resolve to the
+            # same idempotent success response rather than erroring.
+            existing_after_race = CarVideo.query.filter_by(
+                car_id=car.id, source_draft_media_id=draft_media_id
+            ).first()
+            if existing_after_race:
+                return _idempotent_response(existing_after_race, status=200)
+            current_app.logger.exception("attach_transcoded_video: DB commit failed")
+            return jsonify({"message": "Failed to attach video"}), 500
+
+        log_user_action(current_user, "attach_transcoded_video", "car", car.public_id)
+
+        # Best-effort cleanup -- never rolls back the successful attach
+        # above (see docstring).
+        try:
+            from ..r2_ops import r2_delete_object
+
+            r2_delete_object(key=expected_key)
+        except Exception:
+            current_app.logger.warning(
+                "attach_transcoded_video: failed to delete processed staging object "
+                "after a successful attach (car=%s); the existing "
+                "cleanup_stale_processed_video_staging_objects sweep will eventually "
+                "reclaim it",
+                car.public_id,
+            )
+
+        return (
+            jsonify(
+                {
+                    "message": "Video attached successfully",
+                    "video": car_video.to_dict(),
+                    "videos": [car_video.to_dict()],
+                }
+            ),
+            201,
+        )
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to attach video"}), 500
 
 
 def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):

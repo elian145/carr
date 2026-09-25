@@ -785,6 +785,75 @@ class TestFinalizeEnqueuesTranscode:
         owner = get_registered_job_owner(task_id)
         assert owner == seller_ctx[1]
 
+    def test_finalize_registers_job_ownership_and_dedupe_with_video_auth_ttl(
+        self, client, r2_configured, seller_ctx, monkeypatch
+    ):
+        """Phase 3A durability hardening: ``finalize_video_source_upload()``
+        must register BOTH the job-ownership AND the idempotent-dedupe
+        binding with the explicit, longer-than-default
+        ``VIDEO_JOB_AUTH_TTL_SECONDS`` -- NOT either helper's own (shorter)
+        default ``ttl_s`` -- so ``attach_transcoded_video()`` can still
+        authorize an attach for as long as the processed-staging object it
+        depends on is guaranteed to still exist. See
+        ``kk/tasks/video_tasks.py::VIDEO_JOB_AUTH_TTL_SECONDS``'s docstring
+        for the full TTL-alignment rationale."""
+        from kk import job_ownership as job_ownership_module
+        from kk.tasks import video_tasks
+        from kk.tasks.video_tasks import VIDEO_JOB_AUTH_TTL_SECONDS
+
+        _mock_head_object(monkeypatch, exists=True, size=2048)
+
+        class _FakeAsyncResult:
+            id = "fake-task-id-0000000000000099"
+            state = "PENDING"
+
+        monkeypatch.setattr(
+            video_tasks.transcode_car_video_source,
+            "apply_async",
+            lambda *, kwargs, expires: _FakeAsyncResult(),
+        )
+        monkeypatch.setattr(
+            video_tasks.transcode_car_video_source,
+            "AsyncResult",
+            lambda tid: _FakeAsyncResult(),
+        )
+
+        owner_calls: list[dict] = []
+        idempotent_calls: list[dict] = []
+        real_register_job_owner = job_ownership_module.register_job_owner
+        real_register_idempotent_job_task_id = (
+            job_ownership_module.register_idempotent_job_task_id
+        )
+
+        def spy_register_job_owner(task_id, owner_public_id, **kwargs):
+            owner_calls.append(kwargs)
+            return real_register_job_owner(task_id, owner_public_id, **kwargs)
+
+        def spy_register_idempotent_job_task_id(dedupe_key, task_id, **kwargs):
+            idempotent_calls.append(kwargs)
+            return real_register_idempotent_job_task_id(dedupe_key, task_id, **kwargs)
+
+        # media.py imports these two names directly, so patch them there.
+        from kk.routes import media as media_routes
+
+        monkeypatch.setattr(media_routes, "register_job_owner", spy_register_job_owner)
+        monkeypatch.setattr(
+            media_routes,
+            "register_idempotent_job_task_id",
+            spy_register_idempotent_job_task_id,
+        )
+
+        token = _login(client, seller_ctx[0])
+        resp = client.post(
+            _FINALIZE_URL, headers=_auth(token), json={"draft_media_id": "ttl-check"}
+        )
+        assert resp.status_code == 200, resp.data
+
+        assert len(owner_calls) == 1
+        assert owner_calls[0].get("ttl_s") == VIDEO_JOB_AUTH_TTL_SECONDS
+        assert len(idempotent_calls) == 1
+        assert idempotent_calls[0].get("ttl_s") == VIDEO_JOB_AUTH_TTL_SECONDS
+
     def test_job_state_mapping_covers_all_celery_states(self):
         from kk.tasks.video_tasks import celery_state_to_video_job_state
 

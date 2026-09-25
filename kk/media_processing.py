@@ -347,6 +347,90 @@ def processed_video_staging_key(
     return f"{PROCESSED_VIDEO_STAGING_KEY_PREFIX}{owner_tag}/{draft_media_id}.mp4"
 
 
+# ---------------------------------------------------------------------------
+# Phase 3A durability hardening: the PERMANENT destination key a promoted
+# (transcoded) video is copied to (see
+# kk/routes/media.py::attach_transcoded_video). Previously this was
+# ``car_videos/{secrets.token_hex(16)}.mp4`` -- a fresh random key on every
+# call. That created a crash window: if the R2 copy succeeded but the
+# process died before the DB commit, the permanent object was orphaned
+# (never referenced by any CarVideo row), and a retry would copy AGAIN to a
+# brand new random key, leaving the first orphan behind forever (only ever
+# reclaimed by nothing -- there is no sweep for the permanent namespace,
+# unlike the two staging namespaces above).
+#
+# Making the destination key a DETERMINISTIC function of
+# (owner_public_id, car_id, draft_media_id) instead fixes this: a retry for
+# the exact same (owner, car, draft) always targets the exact SAME
+# permanent key, so a server-side R2 CopyObject on retry simply
+# overwrites/re-establishes the same destination instead of creating a new
+# orphan -- see attach_transcoded_video()'s own crash-point-by-crash-point
+# recovery docstring for how each ordering case (before/during/after copy,
+# before/after the DB commit) is now safe.
+# ---------------------------------------------------------------------------
+_TRANSCODED_VIDEO_PERMANENT_KEY_VERSION = "v1"
+
+
+def transcoded_video_permanent_key(
+    owner_public_id: str | None, car_id: str | int | None, draft_media_id: str | None
+) -> str | None:
+    """
+    Deterministic, opaque permanent R2 key for one successfully-promoted
+    transcoded video -- the Phase 3A "final destination" counterpart of
+    :func:`processed_video_staging_key`.
+
+    Construction: ``HMAC-SHA256(SECRET_KEY, "transcoded-video:v1:<owner>:
+    <car_id>:<draft_media_id>")``, truncated to the first 32 hex chars
+    (128 bits -- ample collision resistance for this namespace's size),
+    formatted as ``car_videos/<hex>.mp4``.
+
+    Properties (all required by attach_transcoded_video()'s idempotent
+    retry/crash-recovery contract):
+      - Deterministic: the SAME ``(owner_public_id, car_id,
+        draft_media_id)`` triple always yields the SAME key, on every call,
+        forever (as long as ``SECRET_KEY`` does not change) -- a retry
+        after ANY crash point targets the exact same permanent object
+        instead of accumulating a new orphan.
+      - Opaque: the output is a bare hex digest -- it never contains the
+        raw ``owner_public_id``, ``car_id``, or ``draft_media_id`` as a
+        readable substring (unlike, say, naively joining them with `-`),
+        so a leaked/scraped permanent video URL cannot be used to infer any
+        of those three values.
+      - Isolated: changing ANY one of the three inputs changes the output
+        key (standard HMAC input-avalanche property) -- a different owner,
+        car, or draft_media_id never collides with another's permanent
+        object.
+      - Namespace-preserving: still lives directly under the existing
+        ``car_videos/`` prefix used by the normal multipart
+        ``upload_car_videos()`` endpoint (that endpoint's own random-token
+        key scheme is UNCHANGED by this -- this function is used ONLY by
+        the transcoded-video promotion/attach path).
+      - The ``v1`` version segment lets this scheme be revised later (e.g.
+        a v2 with different inputs) without ever colliding with a v1 key,
+        should that become necessary.
+
+    Returns ``None`` if any input is missing/invalid, or if ``SECRET_KEY``
+    is not configured (mirrors :func:`media_owner_tag`'s same fail-closed
+    contract) -- callers must treat that as "cannot derive a permanent key"
+    and never fall back to a client-supplied or unscoped key.
+    """
+    if not is_valid_draft_media_id(draft_media_id):
+        return None
+    owner = (owner_public_id or "").strip()
+    car = str(car_id if car_id is not None else "").strip()
+    if not owner or not car:
+        return None
+    secret = (current_app.config.get("SECRET_KEY") or "").encode("utf-8")
+    if not secret:
+        return None
+    payload = (
+        f"transcoded-video:{_TRANSCODED_VIDEO_PERMANENT_KEY_VERSION}:"
+        f"{owner}:{car}:{draft_media_id}"
+    ).encode("utf-8")
+    digest = hmac.new(secret, payload, hashlib.sha256).hexdigest()[:32]
+    return f"car_videos/{digest}.mp4"
+
+
 def _allow_local_upload_fallback() -> bool:
     """
     Whether writing listing images to local disk is allowed.

@@ -450,6 +450,47 @@ def r2_presign_get(
     return url
 
 
+def r2_copy_object(
+    *,
+    source_key: str,
+    dest_key: str,
+    content_type: str | None = None,
+    timeout: float = 60,
+) -> None:
+    """
+    Server-side copy of one object to another key WITHIN THE SAME
+    listing-media R2 bucket (eventlet-safe) -- a single S3 ``CopyObject``
+    API call, never downloads the body through this process.
+
+    Phase 3A (server-side video transcode fallback -- promotion/attach):
+    used by ``kk/routes/media.py::attach_transcoded_video`` to promote a
+    PROCESSED-video-staging object (``car_videos/_processed_staging/...``)
+    to a permanent listing-video key (``car_videos/<token>.mp4``) without
+    ever downloading/re-uploading the (up to ~100MiB) file through Flask.
+
+    ``content_type``, if given, is applied to the DESTINATION object (S3
+    requires ``MetadataDirective=REPLACE`` to actually change it on copy --
+    otherwise the source object's own metadata, which the transcode task
+    already set correctly, would simply be preserved as-is).
+
+    Both ``source_key`` and ``dest_key`` are always fully server-derived by
+    the caller (never a client-supplied key) -- see that endpoint's own
+    docstring for why.
+    """
+    if not source_key or not dest_key:
+        raise RuntimeError("Missing source_key/dest_key")
+    creds = _cred_payload()
+    payload: dict[str, Any] = {
+        **creds,
+        "op": "copy_object",
+        "key": dest_key,
+        "source_key": source_key,
+    }
+    if content_type:
+        payload["content_type"] = content_type
+    _run_r2_op(payload, timeout=timeout)
+
+
 def r2_delete_object(*, key: str, timeout: float = 30) -> None:
     """Delete one object from the listing-media R2 bucket (eventlet-safe).
 

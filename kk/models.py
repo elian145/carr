@@ -869,7 +869,22 @@ class CarImage(db.Model):
 
 class CarVideo(db.Model):
     __tablename__ = 'car_video'
-    
+    __table_args__ = (
+        # Phase 3A (server-side video transcode fallback -- promotion/attach):
+        # idempotency at the DB level for
+        # POST /api/media/r2/attach-transcoded-video. A repeated attach call
+        # for the same (car_id, source_draft_media_id) must NEVER create a
+        # second CarVideo row -- see kk/routes/media.py::attach_transcoded_video.
+        # NULL values (every pre-existing row, and every row created by the
+        # unrelated multipart upload_car_videos() endpoint, which never sets
+        # this column) do not conflict with each other or with a real value
+        # under standard SQL unique-constraint semantics (NULL is never
+        # considered equal to NULL), so this is fully backwards-compatible.
+        db.UniqueConstraint(
+            'car_id', 'source_draft_media_id', name='uq_car_video_car_id_source_draft_media_id'
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
     # Full R2/CDN URLs can exceed 200 chars
@@ -877,6 +892,13 @@ class CarVideo(db.Model):
     thumbnail_url = db.Column(db.String(2048), nullable=True)
     duration = db.Column(db.Integer, nullable=True)  # Duration in seconds
     order = db.Column(db.Integer, default=0)
+    # Phase 3A: the client-chosen draft_media_id this row was promoted from
+    # (see kk/media_processing.py::processed_video_staging_key), when this
+    # row was created via the transcode-attach endpoint. NULL for every
+    # video attached via the older, unrelated multipart upload_car_videos()
+    # endpoint (which has no draft_media_id concept at all). Internal
+    # bookkeeping only -- deliberately never exposed in to_dict().
+    source_draft_media_id = db.Column(db.String(128), nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     
     def to_dict(self):

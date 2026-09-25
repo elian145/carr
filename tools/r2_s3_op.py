@@ -7,7 +7,8 @@ boto3 SSL context — avoids RecursionError from eventlet monkey-patching ssl.
 
 Stdin JSON:
   op: "put_object" | "get_object" | "presign_put" | "presign_get" |
-      "delete_object" | "list_and_delete_stale" | "head_object"
+      "delete_object" | "list_and_delete_stale" | "head_object" |
+      "copy_object"
   account_id, bucket, access_key, secret_key, region (optional, default auto)
   key, content_type
   put_object: body_path (path to local file) -- uploaded via boto3's
@@ -34,6 +35,13 @@ Stdin JSON:
     client claims about it. A missing key is NOT an error here (it is the
     normal "upload hasn't finished yet" outcome) -- it is reported as
     ``{"ok": true, "exists": false}``, not ``{"error": ...}``.
+  copy_object: source_key (the object to copy FROM, same bucket),
+    content_type (optional -- if given, replaces the destination object's
+    Content-Type; otherwise the source object's own metadata is preserved).
+    A single server-side S3 CopyObject call -- never downloads the body
+    through this subprocess. Phase 3A (server-side video transcode
+    fallback): promotes a processed-video-staging object to a permanent
+    listing-video key (kk/routes/media.py::attach_transcoded_video).
 
 Stdout: {"ok": true, ...} or {"error": "..."}
 """
@@ -191,6 +199,31 @@ def main() -> None:
                 },
                 sys.stdout,
             )
+            return
+
+        if op == "copy_object":
+            source_key = (inp.get("source_key") or "").strip()
+            if not source_key:
+                json.dump({"error": "missing source_key"}, sys.stdout)
+                sys.exit(1)
+            copy_source = {"Bucket": bucket, "Key": source_key}
+            extra_args: dict = {}
+            declared_content_type = (inp.get("content_type") or "").strip()
+            if declared_content_type:
+                # S3 only applies a new Content-Type on copy when the
+                # metadata directive is explicitly REPLACE -- otherwise the
+                # source object's own existing metadata is preserved as-is
+                # (boto3/S3 default), which would silently ignore this
+                # field.
+                extra_args["ContentType"] = declared_content_type
+                extra_args["MetadataDirective"] = "REPLACE"
+            client.copy_object(
+                Bucket=bucket,
+                Key=key,
+                CopySource=copy_source,
+                **extra_args,
+            )
+            json.dump({"ok": True, "key": key, "source_key": source_key}, sys.stdout)
             return
 
         if op == "delete_object":
