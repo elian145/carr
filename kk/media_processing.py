@@ -294,6 +294,59 @@ def video_source_staging_key(
     return f"{VIDEO_SOURCE_STAGING_KEY_PREFIX}{owner_tag}/{draft_media_id}.src"
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 of the server-side video transcode fallback: PROCESSED (transcoded)
+# video staging. IMPORTANT ARCHITECTURE RULE: a successful transcode is
+# NEVER written directly to the permanent/final ``car_videos/`` namespace --
+# at transcode time the car/listing this video will eventually belong to may
+# not exist yet. Instead it is written here, to owner-scoped processed
+# staging. A later Phase 3 "attach" endpoint (not implemented yet) will
+# verify ownership/job result, promote/copy this object to permanent
+# storage, create the actual ``CarVideo`` row, then delete this staging
+# object. Deliberately namespaced under ``car_videos/`` (not a sibling of
+# it) but with its own ``_processed_staging/`` segment, distinct from both
+# real listing videos and ``car_videos/_staging/`` (Phase 1 SOURCE
+# staging) -- so a periodic sweep can target exactly one of the three by
+# prefix without ever matching either of the other two.
+# ---------------------------------------------------------------------------
+PROCESSED_VIDEO_STAGING_KEY_PREFIX = "car_videos/_processed_staging/"
+
+
+def processed_video_staging_key(
+    owner_public_id: str | None, draft_media_id: str | None
+) -> str | None:
+    """
+    Deterministic, owner-scoped R2 key for one seller's PROCESSED
+    (transcoded) staged video -- the Phase 2 counterpart of
+    :func:`video_source_staging_key`, mirroring its exact ownership /
+    idempotency principles:
+
+    - Idempotency: the SAME ``(owner_public_id, draft_media_id)`` pair
+      always yields the SAME key, so re-running (or retrying) the
+      transcode task for the same draft video overwrites the same object
+      rather than accumulating orphans.
+    - Ownership isolation: a DIFFERENT owner using the same
+      ``draft_media_id`` string always yields a DIFFERENT key, because the
+      owner-tag path segment differs (same HMAC mechanism as
+      :func:`media_owner_tag`).
+    - ``draft_media_id`` is validated with the exact same
+      :func:`is_valid_draft_media_id` helper used for source staging --
+      same bounded charset, same path-injection protection.
+
+    A fixed ``.mp4`` extension is used, matching the output contract every
+    successful transcode must produce (MP4 container, H.264 video) -- see
+    ``kk/video_transcoding.py``.
+
+    Returns ``None`` if either input is missing/invalid.
+    """
+    if not is_valid_draft_media_id(draft_media_id):
+        return None
+    owner_tag = media_owner_tag(owner_public_id)
+    if not owner_tag:
+        return None
+    return f"{PROCESSED_VIDEO_STAGING_KEY_PREFIX}{owner_tag}/{draft_media_id}.mp4"
+
+
 def _allow_local_upload_fallback() -> bool:
     """
     Whether writing listing images to local disk is allowed.

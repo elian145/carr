@@ -10,7 +10,11 @@ from flask_jwt_extended import jwt_required
 from werkzeug.utils import safe_join
 
 from ..auth import get_current_user, log_user_action, phone_verification_required_response
-from ..job_ownership import register_job_owner
+from ..job_ownership import (
+    get_idempotent_job_task_id,
+    register_idempotent_job_task_id,
+    register_job_owner,
+)
 from ..media_processing import (
     DecompressionBombRejected,
     PlateBlurRequiredRejected,
@@ -24,6 +28,12 @@ from ..media_processing import (
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
 from ..tasks.image_tasks import process_car_image_file
+from ..tasks.video_tasks import (
+    VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS,
+    celery_state_to_video_job_state,
+    transcode_car_video_source,
+    video_job_dedupe_key,
+)
 from ..time_utils import utcnow
 
 bp = Blueprint("media", __name__)
@@ -995,18 +1005,42 @@ def finalize_video_source_upload():
     request is rejected -- this is what stops one seller from finalizing
     (and later having transcoded) a foreign/arbitrary key.
 
-    Does NOT enqueue a transcode task yet (Phase 1 stops at verified
-    staging). Does NOT and CANNOT prove the object is a valid, decodable
-    video -- see ``sign_video_source_upload()``'s docstring for the same
+    Does NOT and CANNOT prove the object is a valid, decodable video -- see
+    ``sign_video_source_upload()``'s docstring for the same
     content-validation limitation; only ``content_type`` metadata is
-    checked here, not the actual bytes.
+    checked here, not the actual bytes. The authoritative check happens in
+    the transcode task's own ffprobe validation
+    (``kk/video_transcoding.py::validate_source_media``).
+
+    Phase 2: once the existing HEAD/ownership/size checks above succeed,
+    this ALSO enqueues the server-side transcode task
+    (``kk.tasks.video_tasks.transcode_car_video_source``) and registers its
+    ownership (``register_job_owner``), returning the task id + a small
+    job-state string.
+
+    Idempotent enqueue (CRITICAL): repeated finalize calls for the same
+    (owner, draft_media_id) must NOT enqueue a new task every time. This is
+    NOT solved with an in-memory Python dict -- it reuses the smallest
+    existing durable mechanism already in this codebase for exactly this
+    shape of problem: the same Redis-backed store
+    (``kk/job_ownership.py``'s ``_redis_client()``) that
+    ``register_job_owner`` already uses for job-ownership, extended with a
+    small, generic dedupe-key -> task-id mapping
+    (``get_idempotent_job_task_id`` / ``register_idempotent_job_task_id``).
+    This survives a web-process restart and is shared across every web
+    instance, unlike an in-memory dict. No new DB model/migration was
+    needed for this.
 
     Body: { "draft_media_id": "...", "staging_key": "..." (optional) }
-    Response (200): {"status": "staged", "staging_key": "...", "size": <int>}
+    Response (200): {
+        "status": "staged", "staging_key": "...", "size": <int>,
+        "task_id": "...", "job_state": "queued"|"processing"|"succeeded"|"failed"
+    }
 
-    Safely idempotent: this endpoint only reads/verifies R2 state, it never
-    mutates it -- calling it repeatedly for the same already-staged object
-    returns the same result every time.
+    Safely idempotent: the source-verification portion only reads R2
+    state; the enqueue portion returns the SAME ``task_id`` (and its
+    current live state) on every repeated call for the same
+    (owner, draft_media_id) instead of creating a new job.
     """
     try:
         current_user = get_current_user()
@@ -1076,7 +1110,39 @@ def finalize_video_source_upload():
                 400,
             )
 
-        return jsonify({"status": "staged", "staging_key": expected_key, "size": size}), 200
+        # Phase 2: enqueue the transcode task, idempotently, now that the
+        # staged source object is confirmed to exist/be in-bounds.
+        dedupe_key = video_job_dedupe_key(current_user.public_id, draft_media_id)
+        task_id = get_idempotent_job_task_id(dedupe_key)
+        if not task_id:
+            async_result = transcode_car_video_source.apply_async(
+                kwargs={
+                    "source_staging_key": expected_key,
+                    "owner_public_id": current_user.public_id,
+                    "draft_media_id": draft_media_id,
+                },
+                expires=VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS,
+            )
+            task_id = async_result.id
+            register_job_owner(task_id, current_user.public_id)
+            register_idempotent_job_task_id(dedupe_key, task_id)
+
+        try:
+            job_state = celery_state_to_video_job_state(
+                transcode_car_video_source.AsyncResult(task_id).state
+            )
+        except Exception:
+            job_state = "queued"
+
+        return jsonify(
+            {
+                "status": "staged",
+                "staging_key": expected_key,
+                "size": size,
+                "task_id": task_id,
+                "job_state": job_state,
+            }
+        ), 200
     except Exception as e:
         current_app.logger.warning("finalize_video_source_upload failed: %s", e)
         return jsonify({"message": "Failed to finalize staged upload"}), 500

@@ -16,6 +16,11 @@ kk/instance/
 **/*.sqlite3
 **/*.log
 
+# Phase 2 server-side video transcode: real-device repro fixture used for
+# local-only manual/integration verification. Never commit this (112MB
+# real user-device recording).
+/repro_samsung_dolby.mov
+
 # Model weights and large binaries
 *.pt
 kk/**/*.zip

@@ -30,3 +30,11 @@ firebase-admin>=6.0.0
 # License plate detection + blurring
 opencv-python-headless
 numpy
+# Phase 2 of the server-side video transcode fallback: bundled ffmpeg+ffprobe
+# provider for the Celery worker (kk/video_transcoding.py). Pinned exact
+# version -- see that module's docstring for why this package (not
+# imageio-ffmpeg) was chosen. Present on the web service's requirements too
+# (there is no separate per-service requirements file today) but inert
+# there: it only downloads/resolves binaries lazily on first actual use,
+# which the web process never triggers.
+static-ffmpeg==3.0

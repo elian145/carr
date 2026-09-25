@@ -568,7 +568,12 @@ class TestCleanupStaleVideoStagingObjects:
 
         assert out == {"ok": True, "deleted": 3}
         assert captured["prefix"] == "car_videos/_staging/"
-        assert captured["older_than_seconds"] == 6 * 3600
+        # Phase 2 follow-up: raised from 6h to 24h to avoid a race between
+        # this sweep and a transcode task that is queued (not yet running)
+        # when the sweep runs -- see
+        # kk/tasks/video_tasks.py::_VIDEO_SOURCE_STAGING_STALE_AFTER_SECONDS's
+        # docstring.
+        assert captured["older_than_seconds"] == 24 * 3600
 
     def test_video_staging_prefix_never_matches_image_staging_prefix(self):
         """Safety check for the cleanup sweep's own targeting: the video

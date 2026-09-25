@@ -120,3 +120,94 @@ def _purge_expired_memory() -> None:
 def clear_job_owners_for_tests() -> None:
     """Test helper: wipe in-memory ownership map."""
     _memory_owners.clear()
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 of the server-side video transcode fallback: durable job-enqueue
+# idempotency.
+#
+# ``POST /api/media/r2/finalize-video-source-upload`` must NOT enqueue a new
+# Celery transcode task every time it is called for the same
+# (owner, draft_media_id) -- a client may legitimately call finalize more
+# than once (retry after a dropped response, app restart, duplicate submit).
+# This is explicitly NOT solved with a plain in-memory Python dict (that
+# would not survive a web-process restart and would not be shared across
+# multiple web workers/instances) -- it reuses this EXACT module's existing
+# Redis-backed pattern (``_redis_client()``, with the same in-process
+# fallback already used by ``register_job_owner`` above for dev/test/Redis
+# outage) rather than introducing a new, separate persistence mechanism or a
+# new DB model. A dedup record is keyed by a caller-chosen string (see
+# ``kk/tasks/video_tasks.py``'s ``_video_job_dedupe_key()``) and simply maps
+# to the Celery task id that was enqueued for it -- looking that task id up
+# again via Celery's own ``AsyncResult`` (see
+# ``kk/routes/media.py::finalize_video_source_upload``) is what lets the
+# response also report a live job state, without this module needing to
+# know anything about Celery task state itself.
+# ---------------------------------------------------------------------------
+_IDEMPOTENCY_KEY_PREFIX = "job:idempotent:"
+_DEFAULT_IDEMPOTENCY_TTL_S = 60 * 60 * 24  # 24h -- see kk/tasks/video_tasks.py's TTL rationale
+
+# In-process fallback: dedupe_key -> (task_id, expires_at_epoch)
+_memory_idempotent_jobs: dict[str, tuple[str, float]] = {}
+
+
+def get_idempotent_job_task_id(dedupe_key: str) -> str | None:
+    """Return the previously-enqueued task id for ``dedupe_key``, if any."""
+    key = (dedupe_key or "").strip()
+    if not key:
+        return None
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            val = r.get(f"{_IDEMPOTENCY_KEY_PREFIX}{key}")
+            if val:
+                return str(val).strip() or None
+        except Exception:
+            logger.exception("Failed to read idempotent job id from Redis for %s", key)
+
+    entry = _memory_idempotent_jobs.get(key)
+    if not entry:
+        return None
+    task_id, expires_at = entry
+    if time.time() > expires_at:
+        _memory_idempotent_jobs.pop(key, None)
+        return None
+    return task_id
+
+
+def register_idempotent_job_task_id(
+    dedupe_key: str,
+    task_id: str,
+    *,
+    ttl_s: int = _DEFAULT_IDEMPOTENCY_TTL_S,
+) -> None:
+    """Record that ``dedupe_key`` has already enqueued ``task_id``.
+
+    Callers must call :func:`get_idempotent_job_task_id` first and only
+    call this when it returned ``None`` -- this function itself does not
+    perform a check-then-set; a benign race (two near-simultaneous finalize
+    calls both missing the initial read) can at worst enqueue two tasks,
+    exactly the same benign-duplicate-work race Celery/idempotency designs
+    of this size normally accept, and is not the primary abuse case this
+    guards against (repeated/retried calls from ONE client over time).
+    """
+    key = (dedupe_key or "").strip()
+    tid = (task_id or "").strip()
+    if not key or not tid:
+        return
+
+    r = _redis_client()
+    if r is not None:
+        try:
+            r.setex(f"{_IDEMPOTENCY_KEY_PREFIX}{key}", int(ttl_s), tid)
+            return
+        except Exception:
+            logger.exception("Failed to register idempotent job id in Redis for %s", key)
+
+    _memory_idempotent_jobs[key] = (tid, time.time() + max(60, int(ttl_s)))
+
+
+def clear_idempotent_jobs_for_tests() -> None:
+    """Test helper: wipe in-memory idempotency map."""
+    _memory_idempotent_jobs.clear()

@@ -118,7 +118,18 @@ def make_celery() -> Celery:
             # exactly this kind of mismatch).
             "cleanup-stale-video-staging-objects": {
                 "task": "kk.cleanup_stale_video_staging_objects",
-                "schedule": 3600.0,  # hourly
+                "schedule": 3600.0,  # hourly sweep; see video_tasks.py for the (now 24h) stale-age threshold
+            },
+            # Phase 2 of the server-side video transcode fallback: backstop
+            # sweep for R2 PROCESSED-video-staging objects abandoned before
+            # a (not-yet-implemented) Phase 3 attach step consumes them
+            # (see kk/tasks/video_tasks.py::cleanup_stale_processed_video_staging_objects
+            # and kk/media_processing.py::PROCESSED_VIDEO_STAGING_KEY_PREFIX).
+            # Same "registered name == Beat 'task' string" precaution as
+            # its Phase 1 sibling immediately above.
+            "cleanup-stale-processed-video-staging-objects": {
+                "task": "kk.cleanup_stale_processed_video_staging_objects",
+                "schedule": 3600.0,  # hourly sweep; see video_tasks.py for the 48h stale-age threshold
             },
         },
     )
