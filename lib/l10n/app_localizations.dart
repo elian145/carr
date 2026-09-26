@@ -1582,6 +1582,36 @@ abstract class AppLocalizations {
   /// **'Video is too large. Please choose a shorter video.'**
   String get sellVideoTooLargeAfterCompression;
 
+  /// No description provided for @sellVideoTooLong.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos must be 30 seconds or shorter.'**
+  String get sellVideoTooLong;
+
+  /// No description provided for @sellVideoServerProcessingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This video can\'t be processed on this device. Try a shorter or lower-resolution video.'**
+  String get sellVideoServerProcessingUnavailable;
+
+  /// No description provided for @sellVideoUploadingSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading video…'**
+  String get sellVideoUploadingSource;
+
+  /// No description provided for @sellVideoProcessingOnServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing video…'**
+  String get sellVideoProcessingOnServer;
+
+  /// No description provided for @sellVideoFinishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Finishing video…'**
+  String get sellVideoFinishing;
+
   /// No description provided for @pleaseFixHighlightedFields.
   ///
   /// In en, this message translates to:

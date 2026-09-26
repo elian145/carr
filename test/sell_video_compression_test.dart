@@ -438,6 +438,72 @@ void main() {
     );
   });
 
+  group(
+    'Phase 3B: SellVideoCompression.prepare -- requiresServerTranscode',
+    () {
+      test(
+        'scenario B: the plugin reporting a TYPED UnsupportedVideoException '
+        '(never a string match) is mapped to requiresServerTranscode, with '
+        'the UNTOUCHED original source returned as `file` (never dropped, '
+        'never routed through the old <=100MB endpoint)',
+        () async {
+          final sourcePath = p.join(tempDir.path, 'unsupported_codec.mov');
+          final originalBytes = List<int>.filled(2048, 0x7);
+          File(sourcePath).writeAsBytesSync(originalBytes);
+
+          SellVideoCompression.debugProberOverride = (_) async =>
+              const SellVideoProbe(sizeBytes: 150 * 1024 * 1024);
+          SellVideoCompression.debugCompressorOverride = (_) async {
+            throw SellVideoUnsupportedSourceException(
+              'video/dolby-vision error 0xfffffffe (NAME_NOT_FOUND)',
+            );
+          };
+
+          final result = await SellVideoCompression.prepare(
+            XFile(sourcePath),
+          );
+
+          expect(
+            result.status,
+            SellVideoPrepareStatus.requiresServerTranscode,
+          );
+          expect(result.needsServerTranscode, isTrue);
+          expect(result.ok, isFalse);
+          expect(result.file, isNotNull);
+          expect(result.file!.path, sourcePath);
+          expect(result.didAttemptCompression, isTrue);
+          // Original untouched: same bytes, same path, still on disk.
+          expect(File(sourcePath).existsSync(), isTrue);
+          expect(File(sourcePath).readAsBytesSync(), originalBytes);
+        },
+      );
+
+      test(
+        'an ordinary (non-unsupported) compressor failure still maps to '
+        'the plain `failed` status, never requiresServerTranscode -- only '
+        'the genuine unsupported-codec signal triggers the server '
+        'fallback',
+        () async {
+          final sourcePath = p.join(tempDir.path, 'corrupt.mov');
+          File(sourcePath).writeAsBytesSync(List<int>.filled(1024, 0x1));
+
+          SellVideoCompression.debugProberOverride = (_) async =>
+              const SellVideoProbe(sizeBytes: 150 * 1024 * 1024);
+          SellVideoCompression.debugCompressorOverride = (_) async {
+            throw SellVideoCompressorFailure('media info read failed');
+          };
+
+          final result = await SellVideoCompression.prepare(
+            XFile(sourcePath),
+          );
+
+          expect(result.status, SellVideoPrepareStatus.failed);
+          expect(result.needsServerTranscode, isFalse);
+        },
+      );
+    },
+  );
+
   group('SellVideoCompression.probe() -- general behavior', () {
     test(
       'probe() (the public helper `_pickVideos` uses for the 30-second '

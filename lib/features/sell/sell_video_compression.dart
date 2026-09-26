@@ -245,6 +245,26 @@ class SellVideoCompressorFailure implements Exception {
   String toString() => 'SellVideoCompressorFailure: $message';
 }
 
+/// Phase 3B: thrown internally, ONLY for the genuine "this device cannot
+/// decode/re-encode this source at all" case -- i.e. exactly when the
+/// underlying plugin reports a TYPED [lc.UnsupportedVideoException], or an
+/// [lc.OnFailure] whose structured `failureType` is
+/// [lc.CompressionFailureType.unsupported]. This is a distinct exception
+/// TYPE, not a string match on any exception's `message` -- the plugin
+/// already classifies this case explicitly (see
+/// `packages/light_compressor_v2_local/lib/src/exceptions.dart` /
+/// `compression_result.dart`), so [prepare] never has to guess from free
+/// text. Always caught by [SellVideoCompression.prepare] and turned into
+/// [SellVideoPrepareStatus.requiresServerTranscode] -- never leaks past
+/// this file.
+class SellVideoUnsupportedSourceException implements Exception {
+  SellVideoUnsupportedSourceException(this.message);
+  final String message;
+
+  @override
+  String toString() => 'SellVideoUnsupportedSourceException: $message';
+}
+
 /// Runs the actual compression for [request], returning the output
 /// location or throwing [SellVideoCompressorFailure]. Production uses the
 /// native plugin (`_defaultCompress`); tests inject a deterministic fake
@@ -272,12 +292,27 @@ enum SellVideoPrepareStatus {
   /// [kSellVideoBackendMaxBytes]. The oversized output is deleted
   /// (best-effort); the original source is left untouched.
   stillTooLarge,
+
+  /// Phase 3B: the native on-device compressor reports (via a TYPED
+  /// signal -- see [SellVideoUnsupportedSourceException] -- never a
+  /// string match) that this source's codec/container/resolution simply
+  /// cannot be decoded/re-encoded on this device at all. The ORIGINAL
+  /// source file is left completely untouched (same guarantee as
+  /// [failed]) and is exactly what the caller should stage for the
+  /// server-side transcode fallback instead of dropping it. Distinct from
+  /// [failed] (corrupt/missing/timeout/other unclassified errors), which
+  /// remains an ordinary user-facing failure -- NOT a server-fallback
+  /// candidate.
+  requiresServerTranscode,
 }
 
 /// Result of [SellVideoCompression.prepare]. [file] is non-null when
 /// [status] is [SellVideoPrepareStatus.unchanged] or
 /// [SellVideoPrepareStatus.compressed] (i.e. [ok] is true, and [file] is
-/// what the caller should use in place of the original picked file).
+/// what the caller should use in place of the original picked file), OR
+/// [SellVideoPrepareStatus.requiresServerTranscode] (i.e.
+/// [needsServerTranscode] is true, and [file] is the UNTOUCHED original
+/// source to stage for the server-side fallback).
 @immutable
 class SellVideoPrepareResult {
   const SellVideoPrepareResult({
@@ -301,6 +336,15 @@ class SellVideoPrepareResult {
   bool get ok =>
       status == SellVideoPrepareStatus.unchanged ||
       status == SellVideoPrepareStatus.compressed;
+
+  /// True when this source cannot be handled by the normal on-device path
+  /// at all and must go through the server-side transcode fallback
+  /// instead (see [SellVideoPrepareStatus.requiresServerTranscode]).
+  /// [file] is still populated in this case -- the UNTOUCHED original
+  /// source, which the caller stages/uploads verbatim (the server, not
+  /// this device, does the actual transcode).
+  bool get needsServerTranscode =>
+      status == SellVideoPrepareStatus.requiresServerTranscode;
 }
 
 /// Decides whether a Sell listing video needs compressing and, if so, runs
@@ -457,6 +501,18 @@ class SellVideoCompression {
     SellVideoCompressOutput output;
     try {
       output = await (debugCompressorOverride ?? _defaultCompress)(request);
+    } on SellVideoUnsupportedSourceException catch (e, st) {
+      // Phase 3B: genuine device-cannot-decode-this case, signalled by a
+      // distinct exception TYPE (never a string match) -- see that
+      // exception's doc comment. The original source is untouched; the
+      // caller stages it for the server-side transcode fallback.
+      logNonFatal(e, st, 'SellVideoCompression.prepare.unsupportedSource');
+      return SellVideoPrepareResult(
+        status: SellVideoPrepareStatus.requiresServerTranscode,
+        file: source,
+        originalBytes: sizeBytes,
+        didAttemptCompression: true,
+      );
     } catch (e, st) {
       logNonFatal(e, st, 'SellVideoCompression.prepare.compress');
       return SellVideoPrepareResult(
@@ -665,7 +721,11 @@ class SellVideoCompression {
         isMinBitrateCheckEnabled: false,
       );
     } on lc.UnsupportedVideoException catch (e) {
-      throw SellVideoCompressorFailure(e.message);
+      // Phase 3B: a TYPED signal from the plugin (unsupported format/codec
+      // or a missing track), never a string match -- translate to the
+      // distinct exception type `prepare()` maps to
+      // `requiresServerTranscode`.
+      throw SellVideoUnsupportedSourceException(e.message);
     } on lc.LightCompressorException catch (e) {
       throw SellVideoCompressorFailure(e.message);
     }
@@ -677,6 +737,12 @@ class SellVideoCompression {
       throw SellVideoCompressorFailure('Video compression was cancelled.');
     }
     final failure = result as lc.OnFailure;
+    // Phase 3B: the batch-style result also carries the SAME structured
+    // failure category as the exception above -- check it the same way
+    // (typed enum comparison, never a string match on `failure.message`).
+    if (failure.failureType == lc.CompressionFailureType.unsupported) {
+      throw SellVideoUnsupportedSourceException(failure.message);
+    }
     throw SellVideoCompressorFailure(failure.message);
   }
 }

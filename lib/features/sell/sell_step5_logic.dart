@@ -49,6 +49,12 @@ mixin _SellStep5Logic on _SellStep5Fields {
         return loc.uploadingVideos;
       case SellSubmissionPhase.uploadingDamagePhotos:
         return loc.uploadingDamagePhotos;
+      case SellSubmissionPhase.uploadingVideoSource:
+        return loc.sellVideoUploadingSource;
+      case SellSubmissionPhase.processingVideoOnServer:
+        return loc.sellVideoProcessingOnServer;
+      case SellSubmissionPhase.finishingVideoUpload:
+        return loc.sellVideoFinishing;
       case SellSubmissionPhase.done:
         return isEdit ? loc.submitting : loc.creatingListing;
     }

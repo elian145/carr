@@ -12,6 +12,8 @@ import '../../shared/listings/listing_image_media.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import 'sell_image_job_polling.dart';
 import 'sell_photo_prestage.dart';
+import 'sell_server_transcode_runner.dart';
+import 'sell_server_transcode_video.dart';
 import 'sell_video_helpers.dart';
 
 /// Phases reported while [SellListingMediaUpload.uploadForCar] runs.
@@ -19,6 +21,41 @@ enum SellMediaUploadPhase {
   photos,
   videos,
   damagePhotos,
+
+  /// Phase 3B: finer-grained sub-phases for the server-transcode video
+  /// pipeline (`sell_server_transcode_runner.dart`'s own
+  /// `SellServerTranscodePhase`, mapped 1:1 here) -- reported INSTEAD OF
+  /// the coarse [videos] value while a `server_transcode_videos` entry is
+  /// being processed, so callers that want finer UI text (see
+  /// `PendingSellSubmissionService`'s `onPhase` switch and the global
+  /// `SellSubmissionStatusBanner`) can distinguish "uploading the
+  /// original source", "processing on the server", and "attaching the
+  /// result" instead of one generic "uploading videos" label for the
+  /// whole pipeline. Callers that only switch on the pre-existing three
+  /// values above are unaffected by this addition to a *new* dart
+  /// enum -- Dart requires an exhaustive switch to be updated at compile
+  /// time, which is intentional here (see the call site below).
+  serverTranscodeUploading,
+  serverTranscodeProcessing,
+  serverTranscodeFinishing,
+}
+
+/// Maps the server-transcode runner's own phase enum to the
+/// [SellMediaUploadPhase] values above -- kept here (not inside the
+/// runner) so `sell_server_transcode_runner.dart` itself never needs to
+/// know about [SellMediaUploadPhase] or any UI concern, preserving its
+/// existing, already-verified resume/idempotency logic untouched.
+SellMediaUploadPhase _mediaUploadPhaseForTranscode(
+  SellServerTranscodePhase phase,
+) {
+  switch (phase) {
+    case SellServerTranscodePhase.uploadingSource:
+      return SellMediaUploadPhase.serverTranscodeUploading;
+    case SellServerTranscodePhase.processing:
+      return SellMediaUploadPhase.serverTranscodeProcessing;
+    case SellServerTranscodePhase.finishing:
+      return SellMediaUploadPhase.serverTranscodeFinishing;
+  }
 }
 
 /// Uploads listing / damage / video media for a car that already exists on the server.
@@ -850,6 +887,62 @@ class SellListingMediaUpload {
             logNonFatal(diagError, diagStack);
           }
         }
+      }
+    }
+
+    // Phase 3B: videos that could not be compressed locally
+    // (`SellVideoPrepareStatus.requiresServerTranscode` at pick time --
+    // see `sell_step4_logic.dart:_pickVideos`) go through the separate
+    // sign -> PUT -> finalize -> poll -> attach pipeline here, entirely
+    // independent of the normal multipart video path above. Safe to run
+    // after the normal video block regardless of whether it succeeded --
+    // one video type's failure must never block the other's progress,
+    // exactly like the videoError/photos/damage-photos independence
+    // already documented above. Requires [draftId] (durable per-video
+    // progress is keyed by it) -- `uploadForCar`'s only current caller
+    // (`PendingSellSubmissionService._runSubmission`) always supplies a
+    // real one, but this degrades to "skip" rather than crash if it
+    // somehow doesn't, matching this function's existing defensive style.
+    final serverTranscodeSpecs = ServerTranscodeVideoSpec.listFromJson(
+      carData['server_transcode_videos'],
+    );
+    if (serverTranscodeSpecs.isNotEmpty &&
+        draftId != null &&
+        draftId.isNotEmpty) {
+      onPhase?.call(SellMediaUploadPhase.videos);
+      try {
+        final beforeAttached = await SellServerTranscodeVideoRunner
+            .attachedCount(draftId: draftId, specs: serverTranscodeSpecs);
+        await SellServerTranscodeVideoRunner.processAll(
+          draftId: draftId,
+          carId: carId,
+          specs: serverTranscodeSpecs,
+          // Forwards the runner's own already-existing (previously
+          // unconsumed) per-step phase callback straight to this
+          // function's own `onPhase` -- see `_mediaUploadPhaseForTranscode`
+          // above. Fires on EVERY call, including a resume that starts
+          // mid-pipeline (e.g. straight at `_attach`), so a resumed
+          // submission's very first `onPhase` call already reports the
+          // correct current sub-phase instead of a stale/generic one.
+          onPhase: (_, phase) =>
+              onPhase?.call(_mediaUploadPhaseForTranscode(phase)),
+        );
+        final afterAttached = await SellServerTranscodeVideoRunner
+            .attachedCount(draftId: draftId, specs: serverTranscodeSpecs);
+        final delta = afterAttached - beforeAttached;
+        if (delta > 0) {
+          await onMediaConfirmed?.call(delta);
+        }
+      } catch (e, st) {
+        // Never abort remaining (damage-photo) work for this -- same
+        // independence guarantee as the normal video block above. Most
+        // per-video failures (transient network, feature disabled,
+        // permanent rejection) are already captured as durable STATE by
+        // the runner itself and never reach this catch at all; only a
+        // genuinely unexpected failure (e.g. durable-prefs I/O) does.
+        logNonFatal(e, st, 'SellListingMediaUpload.serverTranscodeVideos');
+        videoError ??= e;
+        videoStack ??= st;
       }
     }
 

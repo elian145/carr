@@ -5,6 +5,15 @@ const int _kSellMaxPhotos = 20;
 const int _kSellMaxVideos = 3;
 const int _kSellMaxDamagePhotos = 10;
 
+/// Phase 3B: mirrors the EXACT backend hard cap
+/// (`kk/video_transcoding.py::MAX_SOURCE_DURATION_SECONDS`) for a video
+/// source accepted by the server-side transcode fallback. Also enforced
+/// here, client-side, for EVERY picked video (not just ones needing
+/// server transcode) -- never silently trimmed, never uploaded over this
+/// limit through any path. If the backend limit ever changes, update
+/// both together.
+const int _kSellVideoMaxDurationMs = 30 * 1000;
+
 /// Downscale/re-encode listing photos at pick time. A modern phone camera
 /// produces 10-25MB frames; uploading 20 of those times out or hits the
 /// server's 25MB-per-file limit. This still exceeds what the gallery displays.
@@ -736,7 +745,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
   /// Real-device evidence: a 6-second `.mov` at 112,329,351 bytes was
   /// rejected by the backend's exact 100MB hard limit
   /// (`kk/routes/media.py::upload_car_videos`, unchanged by this fix --
-  /// see sell_video_compression.dart's file-level doc comment for the
+  /// see `sell_video_compression.dart`'s file-level doc comment for the
   /// full audit). Every newly-picked video that is over that limit, or
   /// "obviously excessive" (4K/very-high-bitrate) even if it barely fits,
   /// is compressed to ~1080p/30fps H.264(+AAC) HERE -- before it is added
@@ -745,8 +754,18 @@ mixin _SellStep4Logic on _SellStep4Fields {
   /// `sell_draft_media/<draftId>/`. A video that fails to compress, or is
   /// still too large afterward, is never added -- the untouched oversized
   /// original is never submitted.
+  ///
+  /// Phase 3B: a source whose codec/resolution genuinely cannot be
+  /// decoded on this device (`SellVideoPrepareStatus.requiresServerTranscode`,
+  /// signalled by a TYPED exception -- see `sell_video_compression.dart`,
+  /// never a string match) is durably staged for the server-side
+  /// transcode fallback instead of being dropped -- see
+  /// `_stageServerTranscodeVideo` and `sell_server_transcode_runner.dart`.
+  /// It is NEVER routed through the old <=100MB multipart endpoint.
   Future<void> _pickVideos() async {
-    const maxDur = Duration(minutes: 5);
+    // Task section 1: server contract is exactly
+    // `MAX_SOURCE_DURATION_SECONDS = 30` -- was 5 minutes.
+    const maxDur = Duration(seconds: 30);
     try {
       List<XFile> picked;
       try {
@@ -781,12 +800,29 @@ mixin _SellStep4Logic on _SellStep4Fields {
         return;
       }
 
+      final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+      final draftId = parentState?._currentDraftId ?? 'default';
+
       setState(() => _isImportingMedia = true);
       try {
         final prepared = <XFile>[];
+        final serverTranscodeAdds = <ServerTranscodeVideoSpec>[];
         var anyStillTooLarge = false;
         var anyFailed = false;
+        var anyTooLong = false;
         for (final candidate in candidates) {
+          // Task section 1: reject (never silently trim) any source over
+          // 30s BEFORE attempting compression or the server fallback --
+          // `pickMultiVideo(maxDuration:)` above only constrains a NEW
+          // camera recording, not an already-existing gallery video, so
+          // this probe-based check is the actual enforcement for picks.
+          final durationProbe = await SellVideoCompression.probe(candidate);
+          final durationMs = durationProbe.durationMs;
+          if (durationMs != null && durationMs > _kSellVideoMaxDurationMs) {
+            anyTooLong = true;
+            continue;
+          }
+
           final result = await SellVideoCompression.prepare(
             candidate,
             onStatus: (phase) {
@@ -801,6 +837,18 @@ mixin _SellStep4Logic on _SellStep4Fields {
               anyStillTooLarge = true;
             case SellVideoPrepareStatus.failed:
               anyFailed = true;
+            case SellVideoPrepareStatus.requiresServerTranscode:
+              final spec = await _stageServerTranscodeVideo(
+                result.file!,
+                draftId: draftId,
+              );
+              if (spec != null) {
+                serverTranscodeAdds.add(spec);
+              } else {
+                // Durable-copy of the original itself failed -- an
+                // ordinary failure, not a server-fallback candidate.
+                anyFailed = true;
+              }
           }
         }
         if (mounted) setState(() => _videoPrepPhase = null);
@@ -818,7 +866,20 @@ mixin _SellStep4Logic on _SellStep4Fields {
           await _syncMediaDraftToParent();
           unawaited(_saveDraft());
         }
+        if (serverTranscodeAdds.isNotEmpty && parentState != null) {
+          final existingSpecs = ServerTranscodeVideoSpec.listFromJson(
+            parentState.carData['server_transcode_videos'],
+          );
+          final mergedSpecs = <ServerTranscodeVideoSpec>[
+            ...existingSpecs,
+            ...serverTranscodeAdds,
+          ];
+          parentState.carData['server_transcode_videos'] =
+              ServerTranscodeVideoSpec.listToJson(mergedSpecs);
+          unawaited(parentState._saveSellDraftSnapshot());
+        }
         if (overLimit) _showListingMediaLimitSnack(isVideo: true);
+        if (anyTooLong) _showVideoTooLongSnack();
         if (anyStillTooLarge) _showVideoTooLargeSnack();
         if (anyFailed) _showVideoCompressionFailedSnack();
       } finally {
@@ -832,6 +893,63 @@ mixin _SellStep4Logic on _SellStep4Fields {
     } catch (e) {
       _showMediaPickError(e);
     }
+  }
+
+  /// Phase 3B: durably copies the UNTOUCHED original [source] into
+  /// `sell_draft_media/<draftId>/` (same mechanism/location every other
+  /// Sell media file already uses -- namePrefix `video_src` keeps it
+  /// distinguishable from a normal, already-on-device-compressed video),
+  /// then builds the [ServerTranscodeVideoSpec] that
+  /// `SellServerTranscodeVideoRunner` needs to sign/upload/finalize/poll/
+  /// attach it later (during Submit, after the car exists -- see
+  /// `sell_listing_media_upload.dart:uploadForCar`). Returns `null` (an
+  /// ordinary failure, never a server-fallback candidate) only if the
+  /// durable copy itself fails.
+  Future<ServerTranscodeVideoSpec?> _stageServerTranscodeVideo(
+    XFile source, {
+    required String draftId,
+  }) async {
+    try {
+      final persisted = await SellDraftMediaPersistence.persistDynamicMediaList(
+        [source],
+        draftId: draftId,
+        namePrefix: 'video_src',
+      );
+      if (persisted.isEmpty) return null;
+      final localPath = ListingImageMedia.source(persisted.first);
+      if (localPath.isEmpty) return null;
+      final diagnostics = await sell_video_helpers.videoUploadDiagnostics(
+        source,
+      );
+      return ServerTranscodeVideoSpec(
+        draftMediaId: _newServerTranscodeDraftMediaId(),
+        localSourcePath: localPath,
+        sourceByteSize: diagnostics.bytes,
+        sourceMimeType: diagnostics.mime,
+      );
+    } catch (e, st) {
+      logNonFatal(e, st);
+      return null;
+    }
+  }
+
+  /// Stable id satisfying the backend's `^[A-Za-z0-9_-]{1,128}$`
+  /// `is_valid_draft_media_id` contract. Generated once per staged video
+  /// and persisted from that point on (via `carData['server_transcode_videos']`
+  /// / the eventual `SellSubmissionRecord`) -- never regenerated on retry.
+  String _newServerTranscodeDraftMediaId() {
+    final ts = DateTime.now().microsecondsSinceEpoch;
+    final rand = math.Random().nextInt(0x7fffffff);
+    return 'vst_${ts}_$rand';
+  }
+
+  void _showVideoTooLongSnack() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.sellVideoTooLong),
+      ),
+    );
   }
 
   void _showVideoTooLargeSnack() {

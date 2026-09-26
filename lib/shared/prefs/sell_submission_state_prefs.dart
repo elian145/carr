@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/sell/sell_server_transcode_video.dart';
 import '../debug/app_log.dart';
 
 /// Lifecycle of one Sell-flow "Submit" action, tracked independently of the
@@ -116,7 +117,10 @@ class SellSubmissionRecord {
     this.attempts = 0,
     this.ownerUserId,
     Map<String, String>? pendingAsyncImageJobs,
-  }) : pendingAsyncImageJobs = pendingAsyncImageJobs ?? const <String, String>{};
+    Map<String, ServerTranscodeVideoState>? serverTranscodeVideos,
+  }) : pendingAsyncImageJobs = pendingAsyncImageJobs ?? const <String, String>{},
+       serverTranscodeVideos =
+           serverTranscodeVideos ?? const <String, ServerTranscodeVideoState>{};
 
   final String draftId;
   final SellSubmissionStatus status;
@@ -181,6 +185,12 @@ class SellSubmissionRecord {
   /// resolve)", never "definitely done".
   final Map<String, String> pendingAsyncImageJobs;
 
+  /// Phase 3B: durable per-video progress for the server-side video
+  /// transcode fallback, keyed by [ServerTranscodeVideoSpec.draftMediaId].
+  /// See `sell_server_transcode_video.dart`'s file-level doc comment for
+  /// the full state-machine contract. Never contains a presigned URL.
+  final Map<String, ServerTranscodeVideoState> serverTranscodeVideos;
+
   SellSubmissionRecord copyWith({
     SellSubmissionStatus? status,
     String? carId,
@@ -196,6 +206,7 @@ class SellSubmissionRecord {
     int? updatedAt,
     bool clearLastError = false,
     Map<String, String>? pendingAsyncImageJobs,
+    Map<String, ServerTranscodeVideoState>? serverTranscodeVideos,
   }) {
     return SellSubmissionRecord(
       draftId: draftId,
@@ -222,6 +233,8 @@ class SellSubmissionRecord {
       ownerUserId: ownerUserId,
       pendingAsyncImageJobs:
           pendingAsyncImageJobs ?? this.pendingAsyncImageJobs,
+      serverTranscodeVideos:
+          serverTranscodeVideos ?? this.serverTranscodeVideos,
     );
   }
 
@@ -247,6 +260,9 @@ class SellSubmissionRecord {
         if (ownerUserId != null) 'ownerUserId': ownerUserId,
         if (pendingAsyncImageJobs.isNotEmpty)
           'pendingAsyncImageJobs': pendingAsyncImageJobs,
+        if (serverTranscodeVideos.isNotEmpty)
+          'serverTranscodeVideos':
+              ServerTranscodeVideoState.mapToJson(serverTranscodeVideos),
       };
 
   static SellSubmissionRecord? fromJson(dynamic raw) {
@@ -293,6 +309,9 @@ class SellSubmissionRecord {
             : null,
         pendingAsyncImageJobs: _pendingAsyncImageJobsFromJson(
           map['pendingAsyncImageJobs'],
+        ),
+        serverTranscodeVideos: ServerTranscodeVideoState.mapFromJson(
+          map['serverTranscodeVideos'],
         ),
       );
     } catch (e, st) {

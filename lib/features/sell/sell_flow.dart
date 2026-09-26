@@ -72,6 +72,7 @@ import '../../shared/prefs/sell_draft_step.dart';
 import 'pending_sell_submission_service.dart';
 import 'sell_image_job_polling.dart';
 import 'sell_photo_prestage.dart';
+import 'sell_server_transcode_video.dart';
 import 'sell_video_compression.dart';
 import '../../shared/text/pretty_title_case.dart';
 import '../../shared/listings/drive_type_assets.dart';

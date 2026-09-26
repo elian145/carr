@@ -778,6 +778,22 @@ class AppLocalizationsAr extends AppLocalizations {
       'الفيديو كبير جدًا. يرجى اختيار فيديو أقصر.';
 
   @override
+  String get sellVideoTooLong => 'يجب أن لا تتجاوز مدة الفيديو 30 ثانية.';
+
+  @override
+  String get sellVideoServerProcessingUnavailable =>
+      'لا يمكن معالجة هذا الفيديو على هذا الجهاز. جرّب فيديو أقصر أو بدقة أقل.';
+
+  @override
+  String get sellVideoUploadingSource => 'جارٍ رفع الفيديو…';
+
+  @override
+  String get sellVideoProcessingOnServer => 'جارٍ معالجة الفيديو…';
+
+  @override
+  String get sellVideoFinishing => 'جارٍ إنهاء الفيديو…';
+
+  @override
   String get pleaseFixHighlightedFields => 'يرجى إصلاح الحقول المحددة';
 
   @override

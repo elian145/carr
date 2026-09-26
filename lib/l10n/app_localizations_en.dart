@@ -780,6 +780,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Video is too large. Please choose a shorter video.';
 
   @override
+  String get sellVideoTooLong => 'Videos must be 30 seconds or shorter.';
+
+  @override
+  String get sellVideoServerProcessingUnavailable =>
+      'This video can\'t be processed on this device. Try a shorter or lower-resolution video.';
+
+  @override
+  String get sellVideoUploadingSource => 'Uploading video…';
+
+  @override
+  String get sellVideoProcessingOnServer => 'Processing video…';
+
+  @override
+  String get sellVideoFinishing => 'Finishing video…';
+
+  @override
   String get pleaseFixHighlightedFields => 'Please fix the highlighted fields';
 
   @override

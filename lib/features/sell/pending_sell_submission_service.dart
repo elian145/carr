@@ -23,6 +23,7 @@ import 'sell_listing_media_upload.dart';
 import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
 import 'sell_photo_prestage.dart';
+import 'sell_server_transcode_video.dart';
 import 'sell_video_helpers.dart';
 
 /// Coarse phase reported while a submission runs, for UI display only.
@@ -34,6 +35,17 @@ enum SellSubmissionPhase {
   uploadingVideos,
   uploadingDamagePhotos,
   done,
+
+  /// Phase 3B: finer-grained sub-phases of [uploadingVideos] specific to
+  /// the server-transcode fallback pipeline (see
+  /// `SellListingMediaUpload.SellMediaUploadPhase`'s matching
+  /// `serverTranscodeUploading`/`serverTranscodeProcessing`/
+  /// `serverTranscodeFinishing` values, mapped 1:1 in the `onPhase`
+  /// switch below). UI-only, exactly like every other value in this
+  /// enum -- never affects correctness/resume/idempotency.
+  uploadingVideoSource,
+  processingVideoOnServer,
+  finishingVideoUpload,
 }
 
 /// Live progress snapshot for the global "Uploading listing…" banner.
@@ -130,6 +142,7 @@ String _currentAccountId() =>
 /// everything else (validation, auth, permission, rejected media) is a
 /// permanent failure the user must act on.
 bool isRetryableSellSubmissionError(Object error) {
+  if (error is _ServerTranscodeStillInProgressException) return true;
   if (error is TimeoutException) return true;
   if (error is ApiException) {
     final code = error.statusCode;
@@ -141,6 +154,42 @@ bool isRetryableSellSubmissionError(Object error) {
         code == 504;
   }
   return isTransientNetworkError(error);
+}
+
+/// Phase 3B test-hardening fix: thrown by [PendingSellSubmissionService.
+/// _runSubmission] when [SellListingMediaUpload.uploadForCar] returns
+/// (normally, no exception) while one or more `server_transcode_videos`
+/// entries have not yet reached `attached`. This is expected and NORMAL
+/// -- a single run only advances each video's resumable state machine as
+/// far as it can get in one call (see `SellServerTranscodeVideoRunner`'s
+/// doc comment); a transient hiccup on just one poll/finalize call is
+/// captured as durable per-video state, not as a thrown exception, so
+/// `uploadForCar` never throws for it on its own.
+///
+/// Before this fix, `_runSubmission` had no such check at all: it
+/// unconditionally treated the whole submission as `done` and deleted
+/// this draft's ENTIRE durable record (including every other video's
+/// per-video progress, since `serverTranscodeVideos` is nested inside the
+/// same [SellSubmissionRecord]) the instant `uploadForCar` returned --
+/// even with a video still mid-pipeline. That permanently stranded that
+/// video: no later `resumeAll()` could ever find it again, yet the user
+/// still saw a successful "listing created" result. Images already guard
+/// the equivalent case (see the `if (imagesCount > 0 && '
+/// '!listingMediaConfirmed)` retry-then-throw block below); this gives
+/// server-transcode videos the same guarantee.
+///
+/// Always classified `retryable` (never `needsAttention`): the runner's
+/// own durable state means a later automatic `resumeAll()` -- subject to
+/// the same backoff as any other retryable record -- can pick up exactly
+/// where this attempt left off with zero duplicate network calls, so
+/// this must never require manual user action.
+class _ServerTranscodeStillInProgressException implements Exception {
+  const _ServerTranscodeStillInProgressException();
+
+  @override
+  String toString() =>
+      'Video is still being processed on the server; it will finish '
+      'automatically.';
 }
 
 /// Application-level coordinator that owns creating the listing and
@@ -265,7 +314,8 @@ class PendingSellSubmissionService {
         : existing?.editListingId;
     final totalMedia = _mediaListLength(safeCarData['images']) +
         _mediaListLength(safeCarData['videos']) +
-        _mediaListLength(safeCarData['damage_images']);
+        _mediaListLength(safeCarData['damage_images']) +
+        _mediaListLength(safeCarData['server_transcode_videos']);
     // Account isolation: stamp the CURRENT account as this draft's owner
     // once, the first time Submit is pressed for it, and never overwrite
     // it on a later resubmit/resume of the SAME draft — otherwise a
@@ -633,9 +683,11 @@ class PendingSellSubmissionService {
     final imagesCount = _mediaListLength(carData['images']);
     final videosCount = _mediaListLength(carData['videos']);
     final damageCount = _mediaListLength(carData['damage_images']);
+    final serverTranscodeCount =
+        _mediaListLength(carData['server_transcode_videos']);
     final totalMedia = record.totalMediaCount > 0
         ? record.totalMediaCount
-        : imagesCount + videosCount + damageCount;
+        : imagesCount + videosCount + damageCount + serverTranscodeCount;
     appLog('[SELL RUN] restored media count=$totalMedia');
     appLog('[SELL RUN] media expected=$totalMedia');
 
@@ -647,7 +699,10 @@ class PendingSellSubmissionService {
     // excluded from the denominator -- this is specifically about local
     // sources that could have depended on a non-durable (cache/temp/
     // content://-permission) path disappearing.
-    final localSourceCounts = await _localMediaSourceCounts(carData);
+    final localSourceCounts = await _localMediaSourceCounts(
+      carData,
+      draftId: draftId,
+    );
     appLog(
       '[SELL RUN] restored local sources existing='
       '${localSourceCounts.existing}/${localSourceCounts.total}',
@@ -660,7 +715,10 @@ class PendingSellSubmissionService {
     // silently dropping the file or retrying forever. Retained server
     // references (already-uploaded URLs/paths) are untouched by this
     // check; only genuinely local, not-yet-uploaded media is examined.
-    final missingLocalMedia = await _firstUnreachableLocalMediaPath(carData);
+    final missingLocalMedia = await _firstUnreachableLocalMediaPath(
+      carData,
+      draftId: draftId,
+    );
     if (missingLocalMedia != null) {
       final failed = record.copyWith(
         status: SellSubmissionStatus.needsAttention,
@@ -741,6 +799,27 @@ class PendingSellSubmissionService {
       if (completed <= completedSoFar) return;
       completedSoFar = completed;
       record = record.copyWith(completedMediaCount: completed, updatedAt: nowMs());
+      // Phase 3B test-hardening fix: `record` is a snapshot captured once
+      // earlier in this method and never otherwise refreshed, but
+      // `SellServerTranscodeVideoRunner` persists each video's progress
+      // into this SAME draft's `serverTranscodeVideos` map independently
+      // (its own fresh-read/merge/write cycle -- see `_saveState`) WHILE
+      // `uploadForCar` above is still running/just returned. Blindly
+      // upserting the stale snapshot here -- which almost always fires
+      // via `onMediaConfirmed` right after a server-transcode video makes
+      // progress, since that's exactly when a positive `completed` delta
+      // shows up -- would silently roll back that already-durable
+      // per-video progress the instant this call lands. Re-merge the
+      // freshest on-disk value for that one field immediately before
+      // writing, so this function's own job (persisting
+      // `completedMediaCount`) never regresses a DIFFERENT field it
+      // doesn't own.
+      final freshestForMerge = await SellSubmissionStatePrefs.load(draftId);
+      if (freshestForMerge != null) {
+        record = record.copyWith(
+          serverTranscodeVideos: freshestForMerge.serverTranscodeVideos,
+        );
+      }
       await SellSubmissionStatePrefs.upsert(record);
       appLog(
         '[SELL RUN] persisted progress=$completed/$totalMedia '
@@ -846,6 +925,11 @@ class PendingSellSubmissionService {
           updatedAt: nowMs(),
         );
         await SellSubmissionStatePrefs.upsert(record);
+        appLog(
+          '[SELL RUN] persisted progress=${record.completedMediaCount}/'
+          '${record.totalMediaCount} status=${record.status.name} '
+          'record=$draftId carId=$carId',
+        );
         // Matches the pre-existing timing: the legacy draft snapshot/
         // archive entry is cleared as soon as the listing exists (not only
         // once media finishes) so a killed-and-resumed media phase never
@@ -921,6 +1005,21 @@ class PendingSellSubmissionService {
                 SellSubmissionPhase.uploadingDamagePhotos,
                 completed: completedSoFar,
               );
+            case SellMediaUploadPhase.serverTranscodeUploading:
+              reportPhase(
+                SellSubmissionPhase.uploadingVideoSource,
+                completed: completedSoFar,
+              );
+            case SellMediaUploadPhase.serverTranscodeProcessing:
+              reportPhase(
+                SellSubmissionPhase.processingVideoOnServer,
+                completed: completedSoFar,
+              );
+            case SellMediaUploadPhase.serverTranscodeFinishing:
+              reportPhase(
+                SellSubmissionPhase.finishingVideoUpload,
+                completed: completedSoFar,
+              );
           }
         },
         // Issue-2 fix: called after EVERY confirmed successful server
@@ -948,7 +1047,29 @@ class PendingSellSubmissionService {
         }
       }
 
-      completedSoFar = imagesCount + videosCount + damageCount;
+      // Phase 3B test-hardening fix: mirror the images check just above
+      // for `server_transcode_videos` -- `uploadForCar` returning is NOT
+      // proof every transcode video reached `attached` (see
+      // `_ServerTranscodeStillInProgressException`'s doc comment above).
+      // Checked directly off this record's own durably-persisted
+      // per-video state (same source `_attachedServerTranscodeDraftMediaIds`
+      // already reads elsewhere in this file), so it reflects exactly
+      // what a later `resumeAll()` would also see.
+      if (serverTranscodeCount > 0) {
+        final transcodeSpecsForCheck = ServerTranscodeVideoSpec.listFromJson(
+          carData['server_transcode_videos'],
+        );
+        final terminalTranscodeCount = await _terminalServerTranscodeCount(
+          draftId,
+          transcodeSpecsForCheck,
+        );
+        if (terminalTranscodeCount < transcodeSpecsForCheck.length) {
+          throw const _ServerTranscodeStillInProgressException();
+        }
+      }
+
+      completedSoFar =
+          imagesCount + videosCount + damageCount + serverTranscodeCount;
       reportPhase(SellSubmissionPhase.done, completed: completedSoFar);
 
       try {
@@ -1050,8 +1171,9 @@ class PendingSellSubmissionService {
   /// file can no longer be read. Returns that path, or `null` when every
   /// local reference is still readable (including when there are none).
   Future<String?> _firstUnreachableLocalMediaPath(
-    Map<String, dynamic> carData,
-  ) async {
+    Map<String, dynamic> carData, {
+    String? draftId,
+  }) async {
     for (final key in const ['images', 'videos', 'damage_images']) {
       final raw = carData[key];
       if (raw is! List) continue;
@@ -1062,7 +1184,86 @@ class PendingSellSubmissionService {
         return local.path;
       }
     }
+    // Phase 3B: `server_transcode_videos` entries carry their own
+    // `local_source_path` (a `ServerTranscodeVideoSpec`, not a
+    // `ListingImageMedia` shape) -- same E-fix fail-closed guard applies:
+    // a durably-required source file that has disappeared can never
+    // succeed no matter how many times the sign/upload step is retried.
+    // Skip any entry already `attached` -- its local source is no longer
+    // load-bearing once the server has the final transcoded video.
+    final specs = ServerTranscodeVideoSpec.listFromJson(
+      carData['server_transcode_videos'],
+    );
+    if (specs.isNotEmpty) {
+      final attachedIds = await _attachedServerTranscodeDraftMediaIds(
+        draftId,
+        specs,
+      );
+      for (final spec in specs) {
+        if (attachedIds.contains(spec.draftMediaId)) continue;
+        if (await _localMediaFileExists(XFile(spec.localSourcePath))) continue;
+        return spec.localSourcePath;
+      }
+    }
     return null;
+  }
+
+  /// Phase 3B test-hardening fix support: counts how many of [specs] have
+  /// reached a TERMINAL per-video state -- `attached` (succeeded) OR
+  /// `failedPermanent` (e.g. rejected/unsupported even server-side) -- per
+  /// [ServerTranscodeVideoState.isTerminal]. Deliberately broader than
+  /// [_attachedServerTranscodeDraftMediaIds] (which only counts `attached`,
+  /// for a different purpose: deciding whether a local source file is
+  /// still load-bearing): a permanently-failed video will NEVER become
+  /// `attached` no matter how many times it's resumed, so gating overall
+  /// submission completion on `attached` alone would retry such a
+  /// submission forever. A permanently-failed video must never block the
+  /// rest of the listing (same independence guarantee documented on the
+  /// normal-video/damage-photo blocks in `sell_listing_media_upload.dart`).
+  Future<int> _terminalServerTranscodeCount(
+    String? draftId,
+    List<ServerTranscodeVideoSpec> specs,
+  ) async {
+    if (draftId == null || draftId.isEmpty || specs.isEmpty) return 0;
+    try {
+      final record = await SellSubmissionStatePrefs.load(draftId);
+      if (record == null) return 0;
+      var count = 0;
+      for (final spec in specs) {
+        final state = record.serverTranscodeVideos[spec.draftMediaId];
+        if (state?.isTerminal ?? false) count++;
+      }
+      return count;
+    } catch (e, st) {
+      logNonFatal(
+        e,
+        st,
+        'PendingSellSubmissionService.terminalServerTranscodeCount',
+      );
+      return 0;
+    }
+  }
+
+  Future<Set<String>> _attachedServerTranscodeDraftMediaIds(
+    String? draftId,
+    List<ServerTranscodeVideoSpec> specs,
+  ) async {
+    if (draftId == null || draftId.isEmpty || specs.isEmpty) return const {};
+    try {
+      final record = await SellSubmissionStatePrefs.load(draftId);
+      if (record == null) return const {};
+      final out = <String>{};
+      for (final spec in specs) {
+        final state = record.serverTranscodeVideos[spec.draftMediaId];
+        if (state?.status == ServerTranscodeVideoStatus.attached) {
+          out.add(spec.draftMediaId);
+        }
+      }
+      return out;
+    } catch (e, st) {
+      logNonFatal(e, st, 'PendingSellSubmissionService.attachedServerTranscodeIds');
+      return const {};
+    }
   }
 
   /// Bug-2/3 instrumentation: counts every genuinely local (not-yet-
@@ -1073,8 +1274,9 @@ class PendingSellSubmissionService {
   /// delete anything itself; see [_firstUnreachableLocalMediaPath] for the
   /// actual fail-closed behavior.
   Future<({int existing, int total})> _localMediaSourceCounts(
-    Map<String, dynamic> carData,
-  ) async {
+    Map<String, dynamic> carData, {
+    String? draftId,
+  }) async {
     var total = 0;
     var existing = 0;
     for (final key in const ['images', 'videos', 'damage_images']) {
@@ -1085,6 +1287,22 @@ class PendingSellSubmissionService {
         if (local == null) continue;
         total++;
         if (await _localMediaFileExists(local)) existing++;
+      }
+    }
+    final specs = ServerTranscodeVideoSpec.listFromJson(
+      carData['server_transcode_videos'],
+    );
+    if (specs.isNotEmpty) {
+      final attachedIds = await _attachedServerTranscodeDraftMediaIds(
+        draftId,
+        specs,
+      );
+      for (final spec in specs) {
+        if (attachedIds.contains(spec.draftMediaId)) continue;
+        total++;
+        if (await _localMediaFileExists(XFile(spec.localSourcePath))) {
+          existing++;
+        }
       }
     }
     return (existing: existing, total: total);

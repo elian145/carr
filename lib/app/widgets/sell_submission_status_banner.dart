@@ -114,6 +114,28 @@ class _SellSubmissionStatusBannerState
     AppLocalizations? loc,
     SellSubmissionUiStatus status,
   ) {
+    // Phase 3B: the server-transcode fallback's three sub-phases get their
+    // own short, already-localized labels (added alongside the rest of
+    // this feature's strings) instead of the generic count-based message
+    // below -- never exposes HTTP status, task ids, R2 keys, or any
+    // upload internals, exactly like every other label this banner
+    // already shows. Every other phase (including the coarse
+    // `uploadingVideos` used by the normal <=100MB video path) keeps its
+    // EXACT pre-existing behavior below, unchanged.
+    switch (status.phase) {
+      case SellSubmissionPhase.uploadingVideoSource:
+        return loc?.sellVideoUploadingSource ?? 'Uploading video…';
+      case SellSubmissionPhase.processingVideoOnServer:
+        return loc?.sellVideoProcessingOnServer ?? 'Processing video…';
+      case SellSubmissionPhase.finishingVideoUpload:
+        return loc?.sellVideoFinishing ?? 'Finishing video…';
+      case SellSubmissionPhase.creating:
+      case SellSubmissionPhase.uploadingPhotos:
+      case SellSubmissionPhase.uploadingVideos:
+      case SellSubmissionPhase.uploadingDamagePhotos:
+      case SellSubmissionPhase.done:
+        break;
+    }
     if (status.totalMediaCount > 0) {
       return loc?.sellSubmissionUploadingProgress(
             status.completedMediaCount.clamp(0, status.totalMediaCount),

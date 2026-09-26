@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -22,6 +23,7 @@ part 'api/api_auth.dart';
 part 'api/api_listings.dart';
 part 'api/api_chat.dart';
 part 'api/api_admin.dart';
+part 'api/api_video_transcode.dart';
 
 class ApiService {
   /// Warm path: typical Render response when the service is already awake.
@@ -572,6 +574,52 @@ class ApiService {
   /// P-01: poll one Celery image-processing job's status.
   static Future<Map<String, dynamic>> getJobStatus(String taskId) =>
       _ApiServiceListings.getJobStatus(taskId);
+
+  /// Phase 3B: server-side video transcode fallback -- see
+  /// `api/api_video_transcode.dart` for the full contract of each.
+  static Future<Map<String, dynamic>> signVideoSourceUpload({
+    required String draftMediaId,
+    required int contentLength,
+    required String contentType,
+    String? filename,
+  }) => _ApiServiceVideoTranscode.signVideoSourceUpload(
+    draftMediaId: draftMediaId,
+    contentLength: contentLength,
+    contentType: contentType,
+    filename: filename,
+  );
+
+  static Future<void> uploadVideoSourceToR2({
+    required String uploadUrl,
+    required String localPath,
+    required int contentLength,
+    required String contentType,
+    void Function(int sent, int total)? onProgress,
+  }) => _ApiServiceVideoTranscode.uploadVideoSourceToR2(
+    uploadUrl: uploadUrl,
+    localPath: localPath,
+    contentLength: contentLength,
+    contentType: contentType,
+    onProgress: onProgress,
+  );
+
+  static Future<Map<String, dynamic>> finalizeVideoSourceUpload({
+    required String draftMediaId,
+    String? stagingKey,
+  }) => _ApiServiceVideoTranscode.finalizeVideoSourceUpload(
+    draftMediaId: draftMediaId,
+    stagingKey: stagingKey,
+  );
+
+  static Future<Map<String, dynamic>> attachTranscodedVideo({
+    required String carId,
+    required String draftMediaId,
+    required String taskId,
+  }) => _ApiServiceVideoTranscode.attachTranscodedVideo(
+    carId: carId,
+    draftMediaId: draftMediaId,
+    taskId: taskId,
+  );
 
   static Future<Map<String, dynamic>> attachCarImages(
     String carId,

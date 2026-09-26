@@ -780,6 +780,22 @@ class AppLocalizationsKu extends AppLocalizations {
       'ڤیدیۆکە زۆر گەورەیە. تکایە ڤیدیۆیەکی کەمتر هەڵبژێرە.';
 
   @override
+  String get sellVideoTooLong => 'پێویستە ماوەی ڤیدیۆ ٣٠ چرکە یان کەمتر بێت.';
+
+  @override
+  String get sellVideoServerProcessingUnavailable =>
+      'ئەم ڤیدیۆیە ناتوانرێت لەسەر ئەم ئامێرە ئامادە بکرێت. ڤیدیۆیەکی کەمتر یان بە کوالیتی نزمتر تاقی بکەرەوە.';
+
+  @override
+  String get sellVideoUploadingSource => 'ڤیدیۆ بار دەکرێت…';
+
+  @override
+  String get sellVideoProcessingOnServer => 'ڤیدیۆ ئامادە دەکرێت…';
+
+  @override
+  String get sellVideoFinishing => 'تەواوکردنی ڤیدیۆ…';
+
+  @override
   String get pleaseFixHighlightedFields =>
       'تکایە ئەو خانانە چاک بکە کە دیاریکراون';
 
