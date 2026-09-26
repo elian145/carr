@@ -36,6 +36,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
+import 'package:car_listing_app/features/sell/sell_video_compression.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/services/config.dart';
@@ -44,6 +45,7 @@ import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
 import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart' show XFile;
 import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -118,6 +120,13 @@ void main() {
   late List<int> imagesEnqueueFileCounts; // one entry per enqueue call
   late List<List<String>> attachCallsLog; // one entry per attach call
   late List<String> videoUploadLog; // carId per videos-upload call
+  // Sell-video-compression regression (real-device evidence: 112,329,351-
+  // byte .mov rejected at the exact 100MB backend limit): the filename +
+  // Content-Type actually sent for the "files" multipart part of every
+  // POST /api/cars/<id>/videos call, extracted best-effort from the raw
+  // multipart body -- purely additive logging, never affects the response
+  // any existing test asserts on.
+  late List<Map<String, String>> videoUploadPartLog;
   late int jobIdCounter;
   // Section 3 regression (async media -> listing refresh ordering): records
   // the relative order of every media-upload step and the `GET /api/cars`
@@ -148,6 +157,7 @@ void main() {
     imagesEnqueueFileCounts = <int>[];
     attachCallsLog = <List<String>>[];
     videoUploadLog = <String>[];
+    videoUploadPartLog = <Map<String, String>>[];
     jobIdCounter = 0;
     callOrderLog = <String>[];
     deleteCallsLog = <String>[];
@@ -277,6 +287,35 @@ void main() {
         callOrderLog.add('video_upload');
         final id = videoMatch.group(1)!;
         videoUploadLog.add(id);
+        try {
+          final bodyText = latin1.decode(request.bodyBytes);
+          // Multipart part headers are lowercased by `http.MultipartFile`
+          // and their order isn't guaranteed (observed:
+          // "content-type" before "content-disposition") -- split into
+          // per-part header blocks (up to the blank line) on any boundary
+          // line, then find the one carrying `name="files"`.
+          for (final part in bodyText.split(RegExp(r'--[-\w]+\r?\n'))) {
+            final headerEnd = part.indexOf('\r\n\r\n');
+            if (headerEnd == -1) continue;
+            final headers = part.substring(0, headerEnd);
+            if (!headers.contains('name="files"')) continue;
+            final filenameMatch = RegExp(
+              r'filename="([^"]*)"',
+            ).firstMatch(headers);
+            final contentTypeMatch = RegExp(
+              r'content-type:\s*([^\r\n]+)',
+              caseSensitive: false,
+            ).firstMatch(headers);
+            videoUploadPartLog.add({
+              'filename': filenameMatch?.group(1) ?? '',
+              'contentType': contentTypeMatch?.group(1)?.trim() ?? '',
+            });
+            break;
+          }
+        } catch (_) {
+          // Best-effort diagnostics only -- must never break the fake
+          // server response any other test depends on.
+        }
         final override = videoUploadOverride;
         if (override != null) return override(id);
         final car = carsById.putIfAbsent(
@@ -2750,6 +2789,111 @@ void main() {
         );
         expect(await SellSubmissionStatePrefs.load(draftId), isNull);
         expect((carsById[carId]!['images'] as List).length, 1);
+      },
+    );
+  });
+
+  // ---- K. Sell-video compression durability -------------------------------
+  // Real-device evidence: a 6s .mov at 112,329,351 bytes was rejected by the
+  // backend's exact 100MB `validate_file_upload(..., max_size_mb=100)`
+  // check. `SellVideoCompression.prepare()` (see
+  // `lib/features/sell/sell_video_compression.dart`) now runs BEFORE this
+  // service ever sees the file, replacing the oversized source with a
+  // compressed `.mp4`. These tests prove the replacement is transparent to
+  // `PendingSellSubmissionService`: the compressed file is uploaded with
+  // the correct (re-encoded) extension/MIME -- never the original picker
+  // extension -- and a completed submission is never re-uploaded on a
+  // later resume.
+  group('K. Sell-video compression durability', () {
+    test(
+      'a video that went through SellVideoCompression.prepare() (source '
+      '.mov -> compressed .mp4) is uploaded with the RE-ENCODED container\'s '
+      'filename/Content-Type ("*.mp4" / "video/mp4"), never the original '
+      '.mov picker extension -- and a later resumeAll() never re-uploads it '
+      '(no duplicate video on resume)',
+      () async {
+        const draftId = 'video_compression_durable';
+
+        // The "oversized .mov" from the picker -- content doesn't matter,
+        // only that `prepare()` decides to compress because of declared
+        // probe size/bitrate, exactly like the real 112,329,351-byte case.
+        final sourceMov = File('${tempDir.path}/original_source.mov')
+          ..writeAsBytesSync(List<int>.filled(64, 7));
+
+        SellVideoCompression.debugProberOverride = (path) async => SellVideoProbe(
+          sizeBytes: 112329351,
+          width: 1920,
+          height: 1080,
+          bitrateBps: 20 * 1000 * 1000,
+          durationMs: 6000,
+        );
+        addTearDown(() => SellVideoCompression.debugProberOverride = null);
+
+        final compressedOut = File('${tempDir.path}/compressed_output.mp4')
+          ..writeAsBytesSync(List<int>.filled(32, 9));
+        SellVideoCompression.debugCompressorOverride = (req) async =>
+            SellVideoCompressOutput(compressedOut.path);
+        addTearDown(() => SellVideoCompression.debugCompressorOverride = null);
+
+        final prepared = await SellVideoCompression.prepare(
+          XFile(sourceMov.path),
+        );
+        expect(
+          prepared.status,
+          SellVideoPrepareStatus.compressed,
+          reason: 'the 112,329,351-byte / 20Mbps probe must trigger '
+              'compression, mirroring the real-device report',
+        );
+        expect(prepared.file, isNotNull);
+        expect(
+          p.extension(prepared.file!.path),
+          '.mp4',
+          reason: 'the compressed output container is .mp4, regardless of '
+              'the original .mov source extension',
+        );
+
+        // Exactly the state right after `_pickVideos()` -- the compressed
+        // file is what goes into `carData['videos']`, not the original
+        // `.mov` source path.
+        final result = await PendingSellSubmissionService.instance.submit(
+          draftId: draftId,
+          carData: _baseCarData(videos: [prepared.file!.path]),
+        );
+        expect(result, isNotNull);
+
+        expect(videoUploadLog.length, 1);
+        expect(
+          videoUploadPartLog.length,
+          1,
+          reason: 'the multipart "files" part for the video upload must '
+              'have been captured',
+        );
+        expect(
+          videoUploadPartLog.single['filename'],
+          endsWith('.mp4'),
+          reason: 'the uploaded filename must reflect the RE-ENCODED '
+              'container, never the original .mov picker extension',
+        );
+        expect(
+          videoUploadPartLog.single['contentType'],
+          'video/mp4',
+          reason: 'the correct MIME type for the compressed container '
+              'must reach the uploader',
+        );
+
+        // Simulate a later resume (e.g. a stray background/foreground
+        // trigger, or an app relaunch that still had the draftId around).
+        // The submission already completed and its record was removed --
+        // resuming again must be a no-op, never re-uploading the video.
+        final resumedAgain = await PendingSellSubmissionService.instance
+            .resumeAll();
+        expect(resumedAgain, isFalse);
+        expect(
+          videoUploadLog.length,
+          1,
+          reason: 'no duplicate video upload must happen on a later '
+              'resume of an already-completed submission',
+        );
       },
     );
   });

@@ -767,6 +767,17 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get sellPreparingVideo => 'جارٍ تجهيز الفيديو…';
+
+  @override
+  String get sellVideoCompressionFailed =>
+      'تعذّر تجهيز هذا الفيديو. يرجى تجربة فيديو آخر أو مقطع أقصر.';
+
+  @override
+  String get sellVideoTooLargeAfterCompression =>
+      'الفيديو كبير جدًا. يرجى اختيار فيديو أقصر.';
+
+  @override
   String get pleaseFixHighlightedFields => 'يرجى إصلاح الحقول المحددة';
 
   @override

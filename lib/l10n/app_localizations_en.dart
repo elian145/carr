@@ -769,6 +769,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get sellPreparingVideo => 'Preparing video…';
+
+  @override
+  String get sellVideoCompressionFailed =>
+      'Couldn\'t prepare this video. Please try a different one or a shorter clip.';
+
+  @override
+  String get sellVideoTooLargeAfterCompression =>
+      'Video is too large. Please choose a shorter video.';
+
+  @override
   String get pleaseFixHighlightedFields => 'Please fix the highlighted fields';
 
   @override

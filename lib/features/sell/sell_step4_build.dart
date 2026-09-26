@@ -95,8 +95,27 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
             child: AbsorbPointer(
               child: ColoredBox(
                 color: Colors.black.withValues(alpha: 0.35),
-                child: const Center(
-                  child: CircularProgressIndicator(),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(),
+                      // Distinct "Preparing video…" state while a picked
+                      // video is being probed/compressed (task
+                      // requirement) -- never shown for a plain photo
+                      // import, and never counted as upload progress
+                      // (upload progress only starts once
+                      // `PendingSellSubmissionService` runs, well after
+                      // this overlay is gone).
+                      if (_videoPrepPhase != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          AppLocalizations.of(context)!.sellPreparingVideo,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),

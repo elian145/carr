@@ -733,6 +733,18 @@ mixin _SellStep4Logic on _SellStep4Fields {
     }
   }
 
+  /// Real-device evidence: a 6-second `.mov` at 112,329,351 bytes was
+  /// rejected by the backend's exact 100MB hard limit
+  /// (`kk/routes/media.py::upload_car_videos`, unchanged by this fix --
+  /// see sell_video_compression.dart's file-level doc comment for the
+  /// full audit). Every newly-picked video that is over that limit, or
+  /// "obviously excessive" (4K/very-high-bitrate) even if it barely fits,
+  /// is compressed to ~1080p/30fps H.264(+AAC) HERE -- before it is added
+  /// to [_selectedVideos] and therefore before the EXISTING
+  /// `_syncMediaDraftToParent()` call below durably copies it into
+  /// `sell_draft_media/<draftId>/`. A video that fails to compress, or is
+  /// still too large afterward, is never added -- the untouched oversized
+  /// original is never submitted.
   Future<void> _pickVideos() async {
     const maxDur = Duration(minutes: 5);
     try {
@@ -748,29 +760,99 @@ mixin _SellStep4Logic on _SellStep4Fields {
         picked = single != null ? <XFile>[single] : <XFile>[];
       }
       if (picked.isEmpty || !mounted) return;
+
+      // Resolve which picked videos are new AND fit the per-listing cap
+      // BEFORE compressing any of them -- compressing a video that would
+      // just be dropped as a duplicate/over-cap wastes battery and time.
+      final existingPaths = _selectedVideos.map((e) => e.path).toSet();
+      final candidates = <XFile>[];
+      var overLimit = false;
+      for (final v in picked) {
+        if (existingPaths.contains(v.path)) continue;
+        if (_selectedVideos.length + candidates.length >= _kSellMaxVideos) {
+          overLimit = true;
+          break;
+        }
+        candidates.add(v);
+        existingPaths.add(v.path);
+      }
+      if (candidates.isEmpty) {
+        if (overLimit) _showListingMediaLimitSnack(isVideo: true);
+        return;
+      }
+
       setState(() => _isImportingMedia = true);
       try {
-        bool overLimit = false;
-        setState(() {
-          final existing = _selectedVideos.map((e) => e.path).toSet();
-          for (final v in picked) {
-            if (existing.contains(v.path)) continue;
-            if (_selectedVideos.length >= _kSellMaxVideos) {
-              overLimit = true;
-              break;
-            }
-            _selectedVideos.add(v);
-            existing.add(v.path);
+        final prepared = <XFile>[];
+        var anyStillTooLarge = false;
+        var anyFailed = false;
+        for (final candidate in candidates) {
+          final result = await SellVideoCompression.prepare(
+            candidate,
+            onStatus: (phase) {
+              if (mounted) setState(() => _videoPrepPhase = phase);
+            },
+          );
+          switch (result.status) {
+            case SellVideoPrepareStatus.unchanged:
+            case SellVideoPrepareStatus.compressed:
+              prepared.add(result.file!);
+            case SellVideoPrepareStatus.stillTooLarge:
+              anyStillTooLarge = true;
+            case SellVideoPrepareStatus.failed:
+              anyFailed = true;
           }
-        });
-        await _syncMediaDraftToParent();
-        unawaited(_saveDraft());
+        }
+        if (mounted) setState(() => _videoPrepPhase = null);
+
+        if (prepared.isNotEmpty) {
+          setState(() {
+            _selectedVideos.addAll(prepared);
+          });
+          // Existing durable-copy pipeline (unchanged) -- copies whatever
+          // is now in `_selectedVideos` (the COMPRESSED file, for anything
+          // that needed compressing) into
+          // `sell_draft_media/<draftId>/`, awaited here exactly like every
+          // other Sell media pick, so a kill right after this call still
+          // finds a durable copy on disk.
+          await _syncMediaDraftToParent();
+          unawaited(_saveDraft());
+        }
         if (overLimit) _showListingMediaLimitSnack(isVideo: true);
+        if (anyStillTooLarge) _showVideoTooLargeSnack();
+        if (anyFailed) _showVideoCompressionFailedSnack();
       } finally {
-        if (mounted) setState(() => _isImportingMedia = false);
+        if (mounted) {
+          setState(() {
+            _isImportingMedia = false;
+            _videoPrepPhase = null;
+          });
+        }
       }
     } catch (e) {
       _showMediaPickError(e);
     }
+  }
+
+  void _showVideoTooLargeSnack() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.sellVideoTooLargeAfterCompression,
+        ),
+      ),
+    );
+  }
+
+  void _showVideoCompressionFailedSnack() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context)!.sellVideoCompressionFailed,
+        ),
+      ),
+    );
   }
 }

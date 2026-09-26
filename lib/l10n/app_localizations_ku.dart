@@ -769,6 +769,17 @@ class AppLocalizationsKu extends AppLocalizations {
   }
 
   @override
+  String get sellPreparingVideo => 'ڤیدیۆ ئامادە دەکرێت...';
+
+  @override
+  String get sellVideoCompressionFailed =>
+      'ئامادەکردنی ئەم ڤیدیۆیە سەرکەوتوو نەبوو. تکایە ڤیدیۆیەکی تر یان بەشێکی کەمتر تاقی بکەرەوە.';
+
+  @override
+  String get sellVideoTooLargeAfterCompression =>
+      'ڤیدیۆکە زۆر گەورەیە. تکایە ڤیدیۆیەکی کەمتر هەڵبژێرە.';
+
+  @override
   String get pleaseFixHighlightedFields =>
       'تکایە ئەو خانانە چاک بکە کە دیاریکراون';
 

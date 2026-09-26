@@ -25,6 +25,14 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   bool _imagesProcessed = false;
   /// True while chosen photos/videos are being processed into the draft.
   bool _isImportingMedia = false;
+  /// Non-null while a just-picked video is being probed/compressed (see
+  /// `SellVideoCompression.prepare`) -- drives the "Preparing video…"
+  /// overlay text so compression looks distinct from a plain photo import
+  /// (task requirement: a user-visible "Preparing video…" state, and
+  /// compression must never read as upload progress). Value itself
+  /// ('probing'/'compressing') is not shown verbatim; only its
+  /// null-ness matters to the UI.
+  String? _videoPrepPhase;
 
   void _clampPrimaryImageIndex() {
     if (_selectedImages.isEmpty) {

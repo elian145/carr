@@ -1,0 +1,38 @@
+name: light_compressor_v2
+description: >-
+  LOCAL FORK (see FORK_NOTES.md) of native light video compression for
+  Flutter (No FFmpeg) — single or batch, H.264/H.265, target size, trim,
+  rotate and colour, with live progress and cancellation.
+version: 1.9.1+carnet.1
+repository: https://github.com/Farid023/light_compressor_v2
+issue_tracker: https://github.com/Farid023/light_compressor_v2/issues
+
+topics:
+  - video
+  - compression
+  - video-compression
+  - media
+  - compressor
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.gurfdev.light_compressor_v2
+        pluginClass: LightCompressorPlugin
+      ios:
+        pluginClass: SwiftLightCompressorPlugin
+      macos:
+        pluginClass: LightCompressorPlugin

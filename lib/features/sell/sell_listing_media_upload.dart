@@ -827,6 +827,29 @@ class SellListingMediaUpload {
         logNonFatal(e, st, 'SellListingMediaUpload.videos');
         videoError = e;
         videoStack = st;
+        // Issue-3 instrumentation (real-device trace: `POST
+        // /api/cars/<id>/videos` -> HTTP 400): safe (no auth/token/file
+        // content) diagnostics for exactly what was sent and exactly why
+        // the server rejected it, using the SAME sniffing logic
+        // `buildVideoMultipartFile` used to build the actual request.
+        final statusCode = e is ApiException ? e.statusCode : null;
+        final backendCode = e is ApiException ? (e.errorCode ?? 'none') : 'none';
+        final safeMessage = e is ApiException
+            ? e.message.replaceAll(RegExp(r'\s+'), ' ').trim()
+            : e.runtimeType.toString();
+        for (final f in videosToUpload) {
+          try {
+            final diag = await videoUploadDiagnostics(f);
+            appLog(
+              '[SELL MEDIA] video upload failed carId=$carId '
+              'status=${statusCode ?? 'unknown'} backendCode=$backendCode '
+              'message=$safeMessage filenameExtension=.${diag.extension} '
+              'mime=${diag.mime} bytes=${diag.bytes}',
+            );
+          } catch (diagError, diagStack) {
+            logNonFatal(diagError, diagStack);
+          }
+        }
       }
     }
 

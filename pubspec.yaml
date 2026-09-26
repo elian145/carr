@@ -48,6 +48,21 @@ dependencies:
   permission_handler: ^12.0.1
   video_thumbnail: ^0.5.3
   video_player: ^2.9.2
+  # Sell-video oversized/high-bitrate compression fix (real-device evidence:
+  # a 6s .mov at 112,329,351 bytes rejected by the backend's 100MB hard
+  # limit). Native-encoder compression (Android `MediaCodec`/`MediaMuxer`,
+  # iOS/macOS `AVFoundation`) -- no FFmpeg, no GPL. See
+  # `lib/features/sell/sell_video_compression.dart` for the full audit
+  # trail of why this package (vs. writing custom platform channels) and
+  # why not the older/abandoned `video_compress`.
+  #
+  # LOCAL FORK (not the hosted pub.dev package) as of the Dolby Vision /
+  # dual-track real-device failure fix -- see
+  # `packages/light_compressor_v2_local/FORK_NOTES.md` for the exact root
+  # cause and diff vs. upstream 1.9.1. The Dart-facing API/import path
+  # (`package:light_compressor_v2/light_compressor_v2.dart`) is unchanged.
+  light_compressor_v2:
+    path: packages/light_compressor_v2_local
   chewie: ^1.8.5
   path: ^1.9.0
 

@@ -1564,6 +1564,24 @@ abstract class AppLocalizations {
   /// **'Add video ({count})'**
   String addVideoCount(Object count);
 
+  /// No description provided for @sellPreparingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing video…'**
+  String get sellPreparingVideo;
+
+  /// No description provided for @sellVideoCompressionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t prepare this video. Please try a different one or a shorter clip.'**
+  String get sellVideoCompressionFailed;
+
+  /// No description provided for @sellVideoTooLargeAfterCompression.
+  ///
+  /// In en, this message translates to:
+  /// **'Video is too large. Please choose a shorter video.'**
+  String get sellVideoTooLargeAfterCompression;
+
   /// No description provided for @pleaseFixHighlightedFields.
   ///
   /// In en, this message translates to:
