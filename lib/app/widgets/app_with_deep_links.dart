@@ -111,6 +111,7 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    appLog('[SELL RUN] lifecycle=${state.name}');
     if (state == AppLifecycleState.resumed) {
       ApiService.recycleProductionHttpClient();
       _refreshProfileAfterResume();

@@ -11,6 +11,7 @@ import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import '../../theme_provider.dart';
+import 'pending_sell_submission_service.dart';
 import 'sell_draft_helpers.dart';
 import 'sell_wizard_steps.dart';
 
@@ -70,6 +71,24 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
 
   Future<void> _loadDrafts() async {
     try {
+      // Resume-after-reopen fix (real-device evidence): a durably-recorded
+      // Sell submission (Submit was pressed, `PendingSellSubmissionRecord`
+      // exists) is no longer an ordinary editable draft -- but the ordinary
+      // draft snapshot for that same draftId is only cleared once the
+      // listing is actually created (see `discardSellDraftById`, called
+      // from `PendingSellSubmissionService._runSubmission`), so there is a
+      // real window (Submit pressed -> app killed -> reopened before the
+      // create call finishes) where this page would otherwise show that
+      // submission as a plain, freely "Continue"/"Discard"-able draft.
+      // Kick resume off (idempotent / deduped / already the same trigger
+      // used by app bootstrap, lifecycle-resume, and `MyListingsPage`) so a
+      // fast resume clears the stale snapshot before it is even read
+      // below, and additionally filter by an explicit pending-record check
+      // (below) so a still-in-flight resume never causes a flash of the
+      // wrong UI.
+      appLog('[SELL RESUME] draft gate: loading, triggering resume check');
+      unawaited(PendingSellSubmissionService.instance.resumeAll());
+
       final sp = await SharedPreferences.getInstance();
       final activeRaw = sp.getString(_draftSnapshotKey);
       final archive = decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
@@ -84,9 +103,19 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
             final active = normalizeSellDraftSnapshot(
               Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
             );
-            if (isVisibleSellDraft(active)) {
+            final activeId = active['draftId'].toString();
+            final pending =
+                await PendingSellSubmissionService.instance.peek(activeId);
+            if (pending != null) {
+              appLog(
+                '[SELL RESUME] draft gate: hiding active draft '
+                'id=$activeId -- pending submission exists '
+                '(status=${pending.status.name})',
+              );
+              seenIds.add(activeId);
+            } else if (isVisibleSellDraft(active)) {
               drafts.add(<String, dynamic>{...active, 'isActive': true});
-              seenIds.add(active['draftId'].toString());
+              seenIds.add(activeId);
               activeVisible = true;
             } else {
               // Drop shell/meta-only active snapshots (e.g. only sell_wizard_v2).
@@ -102,9 +131,23 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         if (!isVisibleSellDraft(draft)) continue;
         final id = draft['draftId'].toString();
         if (seenIds.contains(id)) continue;
+        // Keep it in storage (do not drop it from the archive) even when
+        // hidden below -- once the pending submission resolves (success or
+        // needsAttention) it either no longer exists (discarded on
+        // success) or the user is directed to My Listings instead, so
+        // nothing needs to reappear here; but we must never destructively
+        // lose the archived draft data just because it was hidden once.
         prunedArchive.add(draft);
-        drafts.add(<String, dynamic>{...draft, 'isActive': false});
         seenIds.add(id);
+        final pending = await PendingSellSubmissionService.instance.peek(id);
+        if (pending != null) {
+          appLog(
+            '[SELL RESUME] draft gate: hiding archived draft id=$id -- '
+            'pending submission exists (status=${pending.status.name})',
+          );
+          continue;
+        }
+        drafts.add(<String, dynamic>{...draft, 'isActive': false});
       }
       if (prunedArchive.length != archive.length) {
         await sp.setString(

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/debug/app_log.dart';
+import 'pending_sell_submission_service.dart';
 import 'sell_draft_helpers.dart';
 
 class SellEntryRouterPage extends StatefulWidget {
@@ -19,6 +20,16 @@ class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
 
   Future<void> _resolve() async {
     try {
+      // Resume-after-reopen fix (see `SellDraftGatePage._loadDrafts` for the
+      // full explanation): kick off resume so a fast one clears a stale
+      // draft snapshot before it's read below, and never count a draftId
+      // that has an active `PendingSellSubmissionRecord` as an ordinary,
+      // routable "has a draft" signal -- that submission is already being
+      // auto-resumed in the background and surfaced via the global
+      // `SellSubmissionStatusBanner`, not this ordinary-draft flow.
+      appLog('[SELL RESUME] entry router: resolving, triggering resume check');
+      unawaited(PendingSellSubmissionService.instance.resumeAll());
+
       final sp = await SharedPreferences.getInstance();
       final activeRaw = sp.getString(_draftSnapshotKey);
       final archive = decodeSellDraftArchive(sp.getString(kSellDraftArchiveKey));
@@ -29,7 +40,16 @@ class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
           final active = normalizeSellDraftSnapshot(
             Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
           );
-          if (isVisibleSellDraft(active)) {
+          final activeId = active['draftId'].toString();
+          final pending =
+              await PendingSellSubmissionService.instance.peek(activeId);
+          if (pending != null) {
+            appLog(
+              '[SELL RESUME] entry router: active draft id=$activeId has a '
+              'pending submission (status=${pending.status.name}); not '
+              'counting it as an ordinary draft',
+            );
+          } else if (isVisibleSellDraft(active)) {
             hasAnyDraft = true;
           } else {
             await sp.remove(_draftSnapshotKey);
@@ -49,7 +69,21 @@ class _SellEntryRouterPageState extends State<SellEntryRouterPage> {
           );
         }
       }
-      hasAnyDraft = hasAnyDraft || visibleArchive.isNotEmpty;
+      var routableArchiveCount = 0;
+      for (final draft in visibleArchive) {
+        final id = draft['draftId'].toString();
+        final pending = await PendingSellSubmissionService.instance.peek(id);
+        if (pending != null) {
+          appLog(
+            '[SELL RESUME] entry router: archived draft id=$id has a '
+            'pending submission (status=${pending.status.name}); not '
+            'counting it as an ordinary draft',
+          );
+          continue;
+        }
+        routableArchiveCount++;
+      }
+      hasAnyDraft = hasAnyDraft || routableArchiveCount > 0;
       if (!mounted) return;
       Navigator.pushReplacementNamed(
         context,

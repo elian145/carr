@@ -124,6 +124,28 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     if (_skipDraftPersistOnDispose || LegacySellDraftPrefs.suppressPersist) {
       return;
     }
+    // Resume-after-reopen fix (real-device evidence): once Submit has
+    // durably recorded a `PendingSellSubmissionRecord` for this draftId,
+    // that submission is no longer merely an ordinary editable draft (see
+    // `PendingSellSubmissionService.hasCreatedListing`'s doc comment). An
+    // in-flight submission's own draftId should not normally reach this
+    // save path at all (the Sell entry points now skip re-offering it as a
+    // continuable draft -- see `SellDraftGatePage`/`SellEntryRouterPage`),
+    // but guard here too as defense-in-depth: never let a leftover
+    // autosave silently resurrect/overwrite the ordinary draft snapshot
+    // for a submission that is already being resumed elsewhere.
+    if (_currentDraftId.isNotEmpty) {
+      final pending =
+          await PendingSellSubmissionService.instance.peek(_currentDraftId);
+      if (pending != null) {
+        appLog(
+          '[SELL RESUME] draft save attempted for pending '
+          'record=$_currentDraftId (status=${pending.status.name}); '
+          'skipping ordinary draft persist',
+        );
+        return;
+      }
+    }
     final epoch = LegacySellDraftPrefs.persistEpoch;
     try {
       final sp = await SharedPreferences.getInstance();

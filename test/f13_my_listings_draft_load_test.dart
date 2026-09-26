@@ -30,6 +30,7 @@ import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/shared/debug/app_log.dart';
 import 'package:car_listing_app/shared/prefs/legacy_sell_draft_prefs.dart';
 import 'package:car_listing_app/shared/prefs/sell_listing_draft_prefs.dart';
+import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 
 import 'fake_api_server.dart';
 
@@ -263,6 +264,48 @@ void main() {
       expect(debugMyListingsLoadDraftsError, isNull);
     },
   );
+
+  testWidgets(
+    'resume-after-reopen fix: a legacy draft whose draftId has an active '
+    'pending submission is hidden from My Listings\' Draft tab, while an '
+    'unrelated ordinary draft still renders normally',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'push_enabled': false,
+        LegacySellDraftPrefs.archiveKey:
+            '[${_validLegacyDraftJson()}, ${_pendingLegacyDraftJson()}]',
+      });
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: 'f13_pending_submission_draft',
+          status: SellSubmissionStatus.pending,
+          carData: const {'brand': 'kia', 'images': <dynamic>[]},
+          idempotencyKey: 'sell-create-f13_pending_submission_draft',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      await pumpToDraftTab(tester);
+
+      expect(
+        find.text('DRAFT'),
+        findsOneWidget,
+        reason: 'only the unrelated ordinary draft should render as a '
+            'continuable draft card',
+      );
+      expect(
+        find.textContaining('Kia'),
+        findsNothing,
+        reason: 'the draftId with an active pending submission must not be '
+            'offered as an ordinary continuable draft here -- it is '
+            'already being auto-resumed by PendingSellSubmissionService '
+            'and surfaced via the global submission status banner instead',
+      );
+      expect(find.textContaining('Toyota'), findsOneWidget);
+    },
+  );
 }
 
 /// A minimal, valid, visible legacy sell-draft archive entry (JSON object
@@ -272,6 +315,18 @@ String _validLegacyDraftJson() => '''
   "draftId": "f13_valid_draft",
   "currentStep": 1,
   "carData": {"brand": "Toyota", "model": "Camry"},
+  "isPlaceholder": false,
+  "updatedAt": 1700000000000
+}
+''';
+
+/// Same shape as [_validLegacyDraftJson] but with a distinct draftId/brand
+/// so a test can tell the two apart in assertions.
+String _pendingLegacyDraftJson() => '''
+{
+  "draftId": "f13_pending_submission_draft",
+  "currentStep": 5,
+  "carData": {"brand": "Kia", "model": "Sportage"},
   "isPlaceholder": false,
   "updatedAt": 1700000000000
 }

@@ -312,21 +312,79 @@ class PendingSellSubmissionService {
   /// the old `SellPendingMediaResume.tryResume()` contract; callers that
   /// must not block (lifecycle/connectivity hooks) already wrap this in
   /// `unawaited(...)`.
+  /// Architecture fix (real-device evidence, Issue 1 -- "global bulk resume
+  /// lock blocks lifecycle recovery"): [_bulkResumeRunning] must ONLY guard
+  /// the short enumerate-and-dispatch section below (reading every durable
+  /// record off disk and starting/joining a runner for each one) -- never
+  /// the full lifetime of the upload runners it dispatches.
+  ///
+  /// Before this fix, the guard stayed held (via the enclosing `finally`)
+  /// until every dispatched runner's Future resolved, which could be
+  /// minutes for a large media upload. A real device log showed exactly
+  /// this: `bulkResumeRunning=true` / `skipped reason=bulk-resume-already-
+  /// running` repeating on every `lifecycle=resumed` trigger while OLDER,
+  /// unrelated `inProgress` submissions were still uploading -- meaning a
+  /// lifecycle resume could not even enumerate records (let alone start a
+  /// DIFFERENT, not-yet-running one) while ANY historical submission was
+  /// slow. One slow record must never block another record's recovery.
+  ///
+  /// [_activeRuns] (keyed per draftId, see [_ensureRunning]) remains the
+  /// sole authority for preventing a duplicate runner for the SAME draft --
+  /// unchanged by this fix. This flag's only remaining job is to stop two
+  /// concurrent [resumeAll] callers from redundantly re-reading/
+  /// re-dispatching the same on-disk record list at once; `_ensureRunning`
+  /// is synchronous up to (and including) registering the future in
+  /// `_activeRuns`, so by the time the loop below finishes, every eligible
+  /// record's runner is already dispatched/joined and it is safe to release
+  /// the guard immediately, well before any of those runs actually finish.
   Future<bool> resumeAll() async {
-    if (_bulkResumeRunning) return false;
+    appLog('[SELL RESUME] resumeAll invoked');
+    appLog('[SELL RUN] resumeAll called');
+    appLog('[SELL RUN] bulkResumeRunning=$_bulkResumeRunning');
+    if (_bulkResumeRunning) {
+      appLog('[SELL RESUME] skipped reason=bulk-resume-already-running');
+      return false;
+    }
     _bulkResumeRunning = true;
+    List<Future<SellListingSubmitResult?>> dispatched;
     try {
       final token = ApiService.accessToken;
-      if (token == null || token.isEmpty) return false;
+      if (token == null || token.isEmpty) {
+        appLog('[SELL RESUME] skipped reason=no-auth-token');
+        return false;
+      }
       await _migrateLegacyPendingMediaRecord();
       final records = await SellSubmissionStatePrefs.loadAll();
+      appLog('[SELL RESUME] records found=${records.length}');
+      appLog('[SELL RUN] startup records=${records.length}');
       final currentOwner = _currentAccountId();
-      final futures = <Future<SellListingSubmitResult?>>[];
+      final started = <Future<SellListingSubmitResult?>>[];
       for (final r in records) {
-        if (r.status == SellSubmissionStatus.completed) continue;
+        appLog(
+          '[SELL RESUME] record id=${r.draftId} state=${r.status.name} '
+          'carId=${(r.carId ?? '').trim().isEmpty ? 'null' : r.carId}',
+        );
+        appLog(
+          '[SELL RUN] record=${r.draftId} state=${r.status.name} '
+          'carId=${(r.carId ?? '').trim().isEmpty ? 'null' : r.carId}',
+        );
+        appLog(
+          '[SELL RUN] restored carId=${(r.carId ?? '').trim().isEmpty ? 'null' : r.carId}',
+        );
+        appLog(
+          '[SELL RUN] restored media count='
+          '${_mediaListLength(r.carData['images']) + _mediaListLength(r.carData['videos']) + _mediaListLength(r.carData['damage_images'])}',
+        );
+        if (r.status == SellSubmissionStatus.completed) {
+          appLog('[SELL RESUME] skipped reason=already-completed record=${r.draftId}');
+          continue;
+        }
         // Permanent failures need the user to reopen the draft — never
         // auto-retried (req. #11).
-        if (r.status == SellSubmissionStatus.needsAttention) continue;
+        if (r.status == SellSubmissionStatus.needsAttention) {
+          appLog('[SELL RESUME] skipped reason=needs-attention record=${r.draftId}');
+          continue;
+        }
         // Account isolation: a submission recorded under a different
         // account than the one currently signed in is not "eligible" for
         // this call at all (see the matching guard in [_runSubmission],
@@ -335,26 +393,44 @@ class PendingSellSubmissionService {
         // for THIS account resumed" signal instead of reporting true for
         // a no-op skip.
         final owner = (r.ownerUserId ?? '').trim();
-        if (owner.isNotEmpty && owner != currentOwner) continue;
-        futures.add(_ensureRunning(r.draftId));
+        appLog(
+          '[SELL RESUME] owner current=${currentOwner.isEmpty ? 'null' : currentOwner} '
+          'record=${owner.isEmpty ? 'null' : owner}',
+        );
+        if (owner.isNotEmpty && owner != currentOwner) {
+          appLog('[SELL RESUME] skipped reason=owner-mismatch record=${r.draftId}');
+          continue;
+        }
+        appLog('[SELL RESUME] starting record=${r.draftId}');
+        // `_ensureRunning` dedupes per-draftId via `_activeRuns` and is
+        // synchronous up to that registration -- a record whose runner is
+        // already active simply joins the existing Future here instead of
+        // starting a duplicate one.
+        started.add(_ensureRunning(r.draftId));
       }
-      if (futures.isEmpty) return false;
-      try {
-        await Future.wait(futures, eagerError: false);
-      } catch (e, st) {
-        // Individual failures already persisted their own retryable/
-        // needsAttention state and emitted an [events] entry above; this
-        // catch only prevents one draft's error from stopping the bulk
-        // scan itself from reporting "something was resumed".
-        logNonFatal(e, st, 'PendingSellSubmissionService.resumeAll.wait');
-      }
-      return true;
+      dispatched = started;
     } catch (e, st) {
       logNonFatal(e, st, 'PendingSellSubmissionService.resumeAll');
       return false;
     } finally {
+      // Released right after enumeration/dispatch -- NOT after the awaited
+      // upload work below -- so a concurrent/later `resumeAll()` trigger
+      // (another lifecycle resume, connectivity restore, or a fresh manual
+      // Submit) can immediately enumerate and start/join whatever it needs,
+      // even while every record dispatched by THIS call is still uploading.
       _bulkResumeRunning = false;
     }
+    if (dispatched.isEmpty) return false;
+    try {
+      await Future.wait(dispatched, eagerError: false);
+    } catch (e, st) {
+      // Individual failures already persisted their own retryable/
+      // needsAttention state and emitted an [events] entry above; this
+      // catch only prevents one draft's error from stopping the bulk
+      // scan itself from reporting "something was resumed".
+      logNonFatal(e, st, 'PendingSellSubmissionService.resumeAll.wait');
+    }
+    return true;
   }
 
   /// One-time migration of the older, narrower `SellPendingMediaPrefs`
@@ -408,8 +484,32 @@ class PendingSellSubmissionService {
     void Function(SellSubmissionPhase phase)? onPhase,
   }) {
     final existing = _activeRuns[draftId];
+    // Bug-2 instrumentation (real-device trace): proves/disproves whether a
+    // stale `_activeRuns` entry is refusing to start a fresh runner while
+    // the original one is no longer making progress. If `contains=true`
+    // appears repeatedly across separate `resumeAll` triggers with no
+    // matching `runner end=` in between, the original runner is genuinely
+    // stuck (never completed, never threw) rather than merely slow.
+    appLog(
+      '[SELL RUN] activeRuns contains=${existing != null} record=$draftId',
+    );
     if (existing != null) return existing;
-    final future = _runSubmission(draftId, onPhase: onPhase).whenComplete(() {
+    appLog('[SELL RUN] runner start=$draftId');
+    final future = _runSubmission(draftId, onPhase: onPhase)
+        .then((result) {
+          appLog(
+            '[SELL RUN] runner end=$draftId reason=${result != null ? 'success' : 'no-op'}',
+          );
+          return result;
+        }, onError: (Object e, StackTrace st) {
+          appLog(
+            '[SELL RUN] runner end=$draftId reason=error '
+            'exception=${e.runtimeType}',
+          );
+          appLog('[SELL RUN] runner exception=${e.runtimeType}');
+          throw e;
+        })
+        .whenComplete(() {
       _activeRuns.remove(draftId);
     });
     _activeRuns[draftId] = future;
@@ -421,8 +521,14 @@ class PendingSellSubmissionService {
     void Function(SellSubmissionPhase phase)? onPhase,
   }) async {
     final loaded = await SellSubmissionStatePrefs.load(draftId);
-    if (loaded == null) return null;
-    if (loaded.status == SellSubmissionStatus.needsAttention) return null;
+    if (loaded == null) {
+      appLog('[SELL RESUME] skipped reason=no-record record=$draftId');
+      return null;
+    }
+    if (loaded.status == SellSubmissionStatus.needsAttention) {
+      appLog('[SELL RESUME] skipped reason=needs-attention record=$draftId');
+      return null;
+    }
     // Rebind as a non-nullable local: this is reassigned at each
     // checkpoint below, including inside the `catch` block on failure, and
     // a `SellSubmissionRecord?`-typed variable loses its null-check
@@ -433,6 +539,7 @@ class PendingSellSubmissionService {
     if (token == null || token.isEmpty) {
       // Cannot proceed without auth. Leave the record as-is; the next
       // login-completion trigger (see `app_with_deep_links.dart`) retries.
+      appLog('[SELL RESUME] skipped reason=no-auth-token record=$draftId');
       return null;
     }
 
@@ -448,11 +555,16 @@ class PendingSellSubmissionService {
     final recordOwner = (record.ownerUserId ?? '').trim();
     if (recordOwner.isNotEmpty) {
       final currentOwner = _currentAccountId();
+      appLog(
+        '[SELL RESUME] owner current=${currentOwner.isEmpty ? 'null' : currentOwner} '
+        'record=$recordOwner',
+      );
       if (currentOwner.isEmpty || currentOwner != recordOwner) {
         appLog(
           'PendingSellSubmissionService: skipping $draftId -- owned by a '
           'different account than the one currently signed in',
         );
+        appLog('[SELL RESUME] skipped reason=owner-mismatch record=$draftId');
         return null;
       }
     }
@@ -492,6 +604,8 @@ class PendingSellSubmissionService {
             ? exhausted.carId
             : null,
       ));
+      appLog('[SELL RESUME] needsAttention record=$draftId reason=retry-exhausted');
+      appLog('[SELL RESUME] skipped reason=retry-exhausted record=$draftId');
       return null;
     }
     // E-fix: minimum spacing between automatic retries of the SAME record
@@ -507,6 +621,10 @@ class PendingSellSubmissionService {
       final backoff = backoffFn(record.attempts);
       final elapsed = Duration(milliseconds: nowMs() - record.updatedAt);
       if (elapsed < backoff) {
+        appLog(
+          '[SELL RESUME] skipped reason=backoff-not-elapsed record=$draftId '
+          '(elapsed=${elapsed.inSeconds}s < backoff=${backoff.inSeconds}s)',
+        );
         return null;
       }
     }
@@ -518,6 +636,22 @@ class PendingSellSubmissionService {
     final totalMedia = record.totalMediaCount > 0
         ? record.totalMediaCount
         : imagesCount + videosCount + damageCount;
+    appLog('[SELL RUN] restored media count=$totalMedia');
+    appLog('[SELL RUN] media expected=$totalMedia');
+
+    // Bug-2/3 instrumentation (real-device trace, "IMPORTANT DATA
+    // DURABILITY CHECK"): counts how many of this record's genuinely
+    // local (not-yet-uploaded) media references still point at a readable
+    // file right now, out of how many local references exist in total.
+    // Anything already durable-server-side (http(s)/uploads/static) is
+    // excluded from the denominator -- this is specifically about local
+    // sources that could have depended on a non-durable (cache/temp/
+    // content://-permission) path disappearing.
+    final localSourceCounts = await _localMediaSourceCounts(carData);
+    appLog(
+      '[SELL RUN] restored local sources existing='
+      '${localSourceCounts.existing}/${localSourceCounts.total}',
+    );
 
     // E-fix: a required LOCAL media file that no longer exists (app
     // storage cleared, durable copy deleted out from under a resumed
@@ -545,9 +679,12 @@ class PendingSellSubmissionService {
             ? failed.carId
             : null,
       ));
+      appLog('[SELL RESUME] needsAttention record=$draftId reason=missing-local-media');
+      appLog('[SELL RESUME] skipped reason=missing-local-media record=$draftId');
       return null;
     }
 
+    appLog('[SELL RESUME] starting record=$draftId');
     record = record.copyWith(
       status: SellSubmissionStatus.inProgress,
       attempts: record.attempts + 1,
@@ -555,12 +692,63 @@ class PendingSellSubmissionService {
       clearLastError: true,
     );
     await SellSubmissionStatePrefs.upsert(record);
+    appLog(
+      '[SELL RUN] persisted progress=${record.completedMediaCount}/'
+      '${record.totalMediaCount} status=${record.status.name} '
+      'record=$draftId',
+    );
+
+    // Issue-2 fix (real-device evidence: "persisted progress incorrectly
+    // resets to 0/N"): tracks whichever phase is currently being reported,
+    // purely so [_persistProgress] below can include an accurate phase in
+    // the UI status it also refreshes -- correctness of progress
+    // durability never depends on this, only display.
+    var currentUiPhase = SellSubmissionPhase.creating;
+    // Declared here (before [reportPhase]/[persistProgress], both of which
+    // close over it) rather than down near the media-upload section below
+    // -- Dart resolves a local variable by lexical position, so a closure
+    // defined earlier in this method could not otherwise see it.
+    var completedSoFar = 0;
 
     void reportPhase(SellSubmissionPhase phase, {required int completed}) {
+      currentUiPhase = phase;
       onPhase?.call(phase);
       statusNotifier.value = SellSubmissionUiStatus(
         draftId: draftId,
         phase: phase,
+        completedMediaCount: completed,
+        totalMediaCount: totalMedia,
+      );
+      appLog(
+        '[SELL RUN] UI progress=$completed/$totalMedia phase=${phase.name} '
+        'record=$draftId',
+      );
+    }
+
+    // Issue-2 fix: durably persists [completed] as this record's
+    // `completedMediaCount` the moment it is known, instead of only ever
+    // tracking it in an in-memory local variable that was discarded on
+    // failure. Called after EVERY confirmed successful server operation
+    // (listing image attach/upload, video upload, damage image
+    // attach/upload -- see the `onMediaConfirmed` callback wired into
+    // `SellListingMediaUpload.uploadForCar` below), so a crash/kill/
+    // exception at any point afterward finds the LAST confirmed count on
+    // disk, never 0 -- and the `catch` block below never overwrites this
+    // with zero, since `record.copyWith(...)` there omits
+    // `completedMediaCount` and therefore preserves whatever `record`
+    // (reassigned here) already holds.
+    Future<void> persistProgress(int completed) async {
+      if (completed <= completedSoFar) return;
+      completedSoFar = completed;
+      record = record.copyWith(completedMediaCount: completed, updatedAt: nowMs());
+      await SellSubmissionStatePrefs.upsert(record);
+      appLog(
+        '[SELL RUN] persisted progress=$completed/$totalMedia '
+        'status=${record.status.name} record=$draftId',
+      );
+      statusNotifier.value = SellSubmissionUiStatus(
+        draftId: draftId,
+        phase: currentUiPhase,
         completedMediaCount: completed,
         totalMediaCount: totalMedia,
       );
@@ -670,21 +858,41 @@ class PendingSellSubmissionService {
         }
       }
 
-      var completedSoFar = 0;
-      // D-fix: on a resumed run (listing already existed before this
-      // attempt), reflect whatever media the server already confirmed
-      // instead of always reporting "0 of N" while `uploadForCar` below
-      // re-discovers and skips the media that already landed. `uploadForCar`
-      // itself always re-queries the server before uploading anything, so
-      // this is a display-only correction, not a behavior change.
+      // D-fix / Issue-2 fix (crash-window follow-up): on a resumed run
+      // (listing already existed before this attempt -- true for EVERY
+      // edit-mode submission from its very first attempt, and for any
+      // create-mode submission resumed after an interruption), fetch
+      // current server media and reconcile confirmed progress from SERVER
+      // state BEFORE continuing any media upload work -- never trust the
+      // locally-persisted `completedMediaCount` alone, since a process
+      // kill between a confirmed server attach and this record's own
+      // `persistProgress()` call would otherwise leave it stale (e.g.
+      // server truly has 3/5 confirmed, local record still says 1/5 from
+      // before the crash). `confirmedServerMediaCount` uses the SAME
+      // per-item identity semantics (`ListingImageMedia.id`, then a
+      // same-kind source match) that `uploadForCar`'s own
+      // `_dropAlreadyAttached`/already-attached-skip logic uses, so
+      // reconciliation can never disagree with what upload actually
+      // treats as "already there" -- and it only ever counts items THIS
+      // submission's own `carData` describes, so it can't be inflated by
+      // unrelated/pre-existing edit-mode media on the same car. This
+      // baseline is durably PERSISTED immediately (via `persistProgress`,
+      // which is itself monotonic -- see its doc comment -- so a lower
+      // reconciliation can never erase real, already-persisted progress,
+      // e.g. from a local file having since disappeared), so "process
+      // restart reconstructs progress from server state" holds even if
+      // the process is killed again immediately after this resume starts.
       if (carIdAlreadyExisted && totalMedia > 0) {
-        completedSoFar = await _confirmedServerMediaCount(
-          carId,
-          imagesCount: imagesCount,
-          videosCount: videosCount,
-          damageCount: damageCount,
+        final confirmed = await SellListingMediaUpload.confirmedServerMediaCount(
+          carId: carId,
+          carData: carData,
         );
-        if (completedSoFar > 0) {
+        appLog(
+          '[SELL RUN] media attached=$confirmed (server-confirmed on '
+          'resume) record=$draftId carId=$carId',
+        );
+        if (confirmed > 0) {
+          await persistProgress(confirmed);
           reportPhase(
             SellSubmissionPhase.uploadingPhotos,
             completed: completedSoFar,
@@ -704,18 +912,26 @@ class PendingSellSubmissionService {
                 completed: completedSoFar,
               );
             case SellMediaUploadPhase.videos:
-              completedSoFar += imagesCount;
               reportPhase(
                 SellSubmissionPhase.uploadingVideos,
                 completed: completedSoFar,
               );
             case SellMediaUploadPhase.damagePhotos:
-              completedSoFar += videosCount;
               reportPhase(
                 SellSubmissionPhase.uploadingDamagePhotos,
                 completed: completedSoFar,
               );
           }
+        },
+        // Issue-2 fix: called after EVERY confirmed successful server
+        // operation (listing image attach/upload, video upload, damage
+        // image attach/upload) with how many NEW items that operation just
+        // confirmed -- durably persisted immediately (awaited, not
+        // fire-and-forget), so a failure/kill right after still finds the
+        // accurate attached count on disk, never 0.
+        onMediaConfirmed: (delta) async {
+          if (delta <= 0) return;
+          await persistProgress(completedSoFar + delta);
         },
       );
 
@@ -759,6 +975,7 @@ class PendingSellSubmissionService {
         carId: carId,
         pendingReview: pendingReview,
       ));
+      appLog('[SELL RESUME] completed record=$draftId carId=$carId');
       return SellListingSubmitResult(id: carId, pendingReview: pendingReview);
     } catch (e, st) {
       statusNotifier.value = null;
@@ -776,6 +993,12 @@ class PendingSellSubmissionService {
         updatedAt: nowMs(),
       );
       await SellSubmissionStatePrefs.upsert(updated);
+      appLog(
+        '[SELL RUN] persisted progress=${updated.completedMediaCount}/'
+        '${updated.totalMediaCount} status=${updated.status.name} '
+        'record=$draftId',
+      );
+      appLog('[SELL RUN] runner exception=${e.runtimeType} record=$draftId');
       // Permanent failures (req. #11): do not infinite-retry, but do not
       // swallow them either — surfaced via Sentry like every other
       // non-fatal, and via [events] for the global "needs attention" UI.
@@ -789,6 +1012,10 @@ class PendingSellSubmissionService {
         message: e.toString(),
         carId: carId.isEmpty ? null : carId,
       ));
+      appLog(
+        '[SELL RESUME] ${retryable ? 'retry' : 'needsAttention'} '
+        'record=$draftId',
+      );
       rethrow;
     }
   }
@@ -838,49 +1065,40 @@ class PendingSellSubmissionService {
     return null;
   }
 
-  /// D-fix: how much of [carId]'s expected media (clamped per-bucket to
-  /// what THIS draft actually submits, so leftover media from an unrelated
-  /// earlier attempt on the same listing never over-reports) is already
-  /// confirmed on the server right now. Best-effort — any failure reports
-  /// 0 (the pre-existing "assume nothing landed yet" display behavior),
-  /// never blocks or fails the actual upload.
-  Future<int> _confirmedServerMediaCount(
-    String carId, {
-    required int imagesCount,
-    required int videosCount,
-    required int damageCount,
-  }) async {
-    try {
-      final fresh = await ApiService.getCar(carId);
-      final inner = fresh['car'];
-      final car = inner is Map
-          ? Map<String, dynamic>.from(inner.cast<String, dynamic>())
-          : fresh;
-      var listingImages = 0;
-      var damageImages = 0;
-      final imgs = car['images'];
-      if (imgs is List) {
-        for (final it in imgs) {
-          final kind = it is Map
-              ? (it['kind'] ?? 'listing').toString().toLowerCase()
-              : 'listing';
-          if (kind == 'damage') {
-            damageImages++;
-          } else {
-            listingImages++;
-          }
-        }
+  /// Bug-2/3 instrumentation: counts every genuinely local (not-yet-
+  /// uploaded) media reference across `images` / `videos` /
+  /// `damage_images`, and how many of those still have a readable backing
+  /// file right now. Purely diagnostic (log-only) -- never mutates
+  /// [carData] and never treats a missing file as a reason to drop or
+  /// delete anything itself; see [_firstUnreachableLocalMediaPath] for the
+  /// actual fail-closed behavior.
+  Future<({int existing, int total})> _localMediaSourceCounts(
+    Map<String, dynamic> carData,
+  ) async {
+    var total = 0;
+    var existing = 0;
+    for (final key in const ['images', 'videos', 'damage_images']) {
+      final raw = carData[key];
+      if (raw is! List) continue;
+      for (final item in raw) {
+        final local = ListingImageMedia.localFile(item);
+        if (local == null) continue;
+        total++;
+        if (await _localMediaFileExists(local)) existing++;
       }
-      final vids = car['videos'];
-      final videos = vids is List ? vids.length : 0;
-      return listingImages.clamp(0, imagesCount) +
-          videos.clamp(0, videosCount) +
-          damageImages.clamp(0, damageCount);
-    } catch (e, st) {
-      logNonFatal(e, st, 'PendingSellSubmissionService.confirmedServerMediaCount');
-      return 0;
     }
+    return (existing: existing, total: total);
   }
+
+  // NOTE: server-derived confirmed-media-count reconciliation now lives in
+  // `SellListingMediaUpload.confirmedServerMediaCount()` (identity-based --
+  // matches per-item against server-attached sources of the same kind,
+  // exactly like `uploadForCar`'s own already-attached-skip logic), used
+  // from `_runSubmission` above. The old count-only version that lived
+  // here was replaced, not duplicated (see the call site's doc comment for
+  // the correctness gap it fixed: a raw server-side item COUNT can't tell
+  // "N images on the server" apart from "N images on the server, only some
+  // of which are actually in THIS carData's list").
 
   Future<void> _clearDurableDraftMedia(String draftId) async {
     try {

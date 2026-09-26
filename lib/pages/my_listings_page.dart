@@ -16,6 +16,7 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_draft_helpers.dart';
 import '../features/sell/sell_pending_media_resume.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
@@ -238,6 +239,15 @@ class _MyListingsPageState extends State<MyListingsPage> {
         throw injectedError;
       }
       // Finish interrupted submit media before showing drafts/listings.
+      // This already covers the common case (resume finishes before the
+      // list below is read, so a just-created listing's draft is already
+      // discarded by the time `LegacySellDraftList.loadVisible()` runs) --
+      // but resume can legitimately leave a record un-resumed for now
+      // (e.g. `needsAttention`, or the owner/auth-timing guard in
+      // `PendingSellSubmissionService._runSubmission`), so also explicitly
+      // filter by an active pending-submission record below (see
+      // `SellDraftGatePage._loadDrafts` for the full explanation) rather
+      // than relying solely on resume timing to keep this list correct.
       final resumed = await SellPendingMediaResume.tryResume();
       final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();
@@ -250,7 +260,20 @@ class _MyListingsPageState extends State<MyListingsPage> {
           'isModern': true,
         });
       }
-      drafts.addAll(await LegacySellDraftList.loadVisible());
+      for (final draft in await LegacySellDraftList.loadVisible()) {
+        final id = (draft['draftId'] ?? '').toString();
+        final pending = id.isEmpty
+            ? null
+            : await PendingSellSubmissionService.instance.peek(id);
+        if (pending != null) {
+          appLog(
+            '[SELL RESUME] my listings: hiding draft id=$id -- pending '
+            'submission exists (status=${pending.status.name})',
+          );
+          continue;
+        }
+        drafts.add(draft);
+      }
       if (!mounted) return;
       setState(() {
         _drafts = drafts;

@@ -45,6 +45,7 @@ import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -123,6 +124,12 @@ void main() {
   // list-refresh call so a test can assert the refresh happens strictly
   // AFTER all image/video work completes, never before/interleaved.
   late List<String> callOrderLog;
+  // Bug-3 regression instrumentation: EVERY DELETE request the mock server
+  // observes, for any path -- resume/background/foreground/force-close
+  // code must never produce a single one of these for already-attached
+  // media (see the "Bug-3: resume/background/foreground never deletes"
+  // group near the end of this file).
+  late List<String> deleteCallsLog;
 
   setUp(() async {
     tempDir = Directory.systemTemp.createTempSync('pending_sell_sub_');
@@ -143,6 +150,7 @@ void main() {
     videoUploadLog = <String>[];
     jobIdCounter = 0;
     callOrderLog = <String>[];
+    deleteCallsLog = <String>[];
 
     TokenStore.testMode = true;
     setRuntimeApiBaseOverride('http://127.0.0.1:1');
@@ -316,6 +324,43 @@ void main() {
         callOrderLog.add('list_refresh');
         return http.Response(
           '{"cars": []}',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+
+      // ---- DELETE (any car image/video removal endpoint) --------------------
+      // Bug-3 regression instrumentation: records EVERY delete request seen,
+      // regardless of exact path shape, so a test can assert none ever
+      // happen during resume/background/foreground/force-close flows.
+      if (method == 'DELETE') {
+        deleteCallsLog.add(path);
+        // Still remove the row from the fake server state, so a test that
+        // DOES want to see a real user-initiated delete succeed (unrelated
+        // to this file's resume-only scope) behaves realistically.
+        final delImgMatch = RegExp(
+          r'^/api/cars/([^/]+)/images/(\d+)$',
+        ).firstMatch(path);
+        final delVidMatch = RegExp(
+          r'^/api/cars/([^/]+)/videos/(\d+)$',
+        ).firstMatch(path);
+        if (delImgMatch != null) {
+          final id = delImgMatch.group(1)!;
+          final imgId = int.parse(delImgMatch.group(2)!);
+          carsById[id]?['images'] =
+              ((carsById[id]?['images'] as List?) ?? [])
+                  .where((row) => row['id'] != imgId)
+                  .toList();
+        } else if (delVidMatch != null) {
+          final id = delVidMatch.group(1)!;
+          final vidId = int.parse(delVidMatch.group(2)!);
+          carsById[id]?['videos'] =
+              ((carsById[id]?['videos'] as List?) ?? [])
+                  .where((row) => row['id'] != vidId)
+                  .toList();
+        }
+        return http.Response(
+          json.encode({'message': 'deleted'}),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -1580,6 +1625,122 @@ void main() {
     },
   );
 
+  // ---- C-fix: resuming a submission must never re-attach an already- -----
+  // attached staged photo (real-device evidence: production logs showed
+  // TWO successful `image attach -> 201` calls for the SAME carId, seconds
+  // apart -- `attachCarImages` has no dedupe of its own, so calling it
+  // again for a source the server already attached creates a duplicate
+  // image row). This exercises the pre-existing `toAttach` path (staged
+  // `uploads/...` sources with no server `id` yet in `carData`, as
+  // `SellPhotoPrestage` leaves them) which, unlike the neighboring
+  // `toUpload` path, previously had no "already on server" guard at all.
+  test(
+    'C-fix: resuming a draft whose staged listing photo was already '
+    'attached to the server (its attach ack was lost/killed before the '
+    'record could persist a server image id) does NOT call '
+    'attachCarImages again for that source',
+    () async {
+      const draftId = 'draft_c_fix_dup_attach';
+      const carId = 'car_c_fix_dup_attach';
+      const stagedSource = 'uploads/car_photos/already_staged.jpg';
+
+      // Server already has this staged photo attached (from an earlier,
+      // interrupted attempt) -- but carData below still describes it with
+      // NO server `id` (exactly what a resumed record whose attach ack
+      // never reached the client would look like).
+      carsById[carId] = {
+        'id': carId,
+        'images': [
+          {'id': 901, 'kind': 'listing', 'image_url': stagedSource},
+        ],
+        'videos': <dynamic>[],
+      };
+
+      final carData = _baseCarData(images: [
+        {'source': stagedSource},
+      ]);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.inProgress,
+          carId: carId,
+          carData: carData,
+          idempotencyKey: 'sell-create-$draftId',
+          currentPhase: 'photos',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final resumed = await PendingSellSubmissionService.instance.resumeAll();
+
+      expect(resumed, isTrue);
+      expect(createCarCalls, isEmpty);
+      expect(
+        attachCallsLog,
+        isEmpty,
+        reason: 'the already-attached staged source must be skipped, never '
+            'sent to attachCarImages again',
+      );
+      expect(
+        (carsById[carId]!['images'] as List).length,
+        1,
+        reason: 'still exactly one image row -- no duplicate was created',
+      );
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+    },
+  );
+
+  test(
+    'C-fix: resuming a draft with TWO staged photos, only ONE of which is '
+    'already attached, attaches only the missing one',
+    () async {
+      const draftId = 'draft_c_fix_partial_attach';
+      const carId = 'car_c_fix_partial_attach';
+      const alreadyAttached = 'uploads/car_photos/staged_a.jpg';
+      const stillMissing = 'uploads/car_photos/staged_b.jpg';
+
+      carsById[carId] = {
+        'id': carId,
+        'images': [
+          {'id': 902, 'kind': 'listing', 'image_url': alreadyAttached},
+        ],
+        'videos': <dynamic>[],
+      };
+
+      final carData = _baseCarData(images: [
+        {'source': alreadyAttached},
+        {'source': stillMissing},
+      ]);
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.inProgress,
+          carId: carId,
+          carData: carData,
+          idempotencyKey: 'sell-create-$draftId',
+          currentPhase: 'photos',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final resumed = await PendingSellSubmissionService.instance.resumeAll();
+
+      expect(resumed, isTrue);
+      expect(attachCallsLog, hasLength(1));
+      expect(
+        attachCallsLog.single,
+        [stillMissing],
+        reason: 'only the not-yet-attached source should be sent',
+      );
+      expect((carsById[carId]!['images'] as List).length, 2);
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+    },
+  );
+
   // ---- D-fix: resumed progress banner reflects already-confirmed server ---
   // media instead of always restarting at "0 of N".
   test(
@@ -1660,4 +1821,936 @@ void main() {
       );
     },
   );
+
+  // ===========================================================================
+  // Bug-2 regression (real-device report: "background/foreground and
+  // force-close leave submission stuck at 0/N"). `_activeRuns` is private,
+  // so this exercises the only externally observable behavior it can
+  // affect: a concurrent trigger for the same draft while the FIRST
+  // attempt's request is genuinely still pending must join that SAME
+  // worker (never spawn a duplicate `POST /api/cars`), and the moment that
+  // pending request actually finishes (here: with an error, simulating an
+  // OS-suspended socket eventually failing), the marker must be released
+  // immediately -- proving staleness can never outlive the real in-flight
+  // request, which is exactly what the existing `.whenComplete()` guard in
+  // `_ensureRunning` is supposed to guarantee.
+  // ===========================================================================
+  group(
+    'Bug-2: _activeRuns dedup never outlives the real in-flight request',
+    () {
+      test(
+        'a resumeAll() trigger firing while POST /api/cars is genuinely '
+        'still pending (simulating a background/foreground overlap) joins '
+        'the SAME worker -- no duplicate create call -- and the instant '
+        'that pending request finally fails, a brand-new submit() for the '
+        'same draft is free to start immediately (not blocked by a stale '
+        'marker)',
+        () async {
+          const draftId = 'draft_stale_guard';
+          final firstCreateGate = Completer<void>();
+          var createAttempts = 0;
+          final localCarsById = <String, Map<String, dynamic>>{};
+
+          ApiService.testHttpClient = MockClient((request) async {
+            final method = request.method.toUpperCase();
+            final path = request.url.path;
+            if (method == 'POST' && path == '/api/cars') {
+              createAttempts++;
+              if (createAttempts == 1) {
+                // Simulate a genuinely stuck request (e.g. an
+                // OS-suspended socket while the app is backgrounded):
+                // never resolves until the test says so.
+                await firstCreateGate.future;
+                throw Exception('simulated suspended-socket failure');
+              }
+              carIdCounter++;
+              final id = 'car_$carIdCounter';
+              localCarsById[id] = {
+                'id': id,
+                'images': <dynamic>[],
+                'videos': <dynamic>[],
+              };
+              return http.Response(
+                json.encode({'car': localCarsById[id]}),
+                201,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            return http.Response(
+              '{"cars": []}',
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          });
+
+          final firstSubmit = PendingSellSubmissionService.instance.submit(
+            draftId: draftId,
+            carData: _baseCarData(),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+
+          // Simulate a background->foreground trigger firing while the
+          // request is still genuinely stuck.
+          final joinedResume =
+              PendingSellSubmissionService.instance.resumeAll();
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          expect(
+            createAttempts,
+            1,
+            reason: 'still only ONE create attempt while genuinely stuck -- '
+                'the concurrent trigger must join the same worker, never '
+                'spawn a duplicate',
+          );
+
+          // Now let the stuck request finally fail (simulating the OS
+          // eventually tearing down the suspended socket / a bounded
+          // timeout firing).
+          firstCreateGate.complete();
+
+          // Neither await may hang forever. `resumeAll()` swallows
+          // per-draft errors internally (by design, so one draft's
+          // failure never stops the bulk scan), so only the direct
+          // `submit()` future is expected to surface the error.
+          await joinedResume;
+          await expectLater(firstSubmit, throwsA(anything));
+
+          // The marker must already be cleared -- a brand-new attempt for
+          // the SAME draft starts (and succeeds) immediately, proving the
+          // first, now-dead run never blocks it.
+          final secondResult = await PendingSellSubmissionService.instance
+              .submit(draftId: draftId, carData: _baseCarData());
+
+          expect(
+            secondResult,
+            isNotNull,
+            reason: 'a fresh attempt right after the stuck one finally '
+                'failed must succeed normally -- _activeRuns must not '
+                'still be "blocking" this draftId',
+          );
+          expect(
+            createAttempts,
+            2,
+            reason: 'exactly one retry create call for the fresh attempt',
+          );
+        },
+      );
+    },
+  );
+
+  // ===========================================================================
+  // Bug-3 regression (real-device report, HIGHEST RISK: "media already
+  // attached to listing gets deleted" after backgrounding or force-close/
+  // resume). Every client call that can mutate media during resume is
+  // exercised here against a server that records every DELETE it ever
+  // sees -- proving resume/background/foreground/force-close code paths
+  // never issue one, even when the local pending list no longer describes
+  // an already-attached item (the exact "missing local source" scenario
+  // the report calls out).
+  // ===========================================================================
+  group('Bug-3: resume never deletes already-attached server media', () {
+    test(
+      'resuming a draft whose server already has an image AND a video '
+      'attached, and whose carData ALSO still fully describes both (the '
+      'ordinary already-attached-skip case), issues zero DELETE requests',
+      () async {
+        const draftId = 'draft_no_delete_normal';
+        const carId = 'car_no_delete_normal';
+        const stagedImage = 'uploads/car_photos/normal_img.jpg';
+        carsById[carId] = {
+          'id': carId,
+          'images': [
+            {'id': 950, 'kind': 'listing', 'image_url': stagedImage},
+          ],
+          'videos': [
+            {'id': 5},
+          ],
+        };
+        final carData = _baseCarData(
+          images: [
+            {'source': stagedImage},
+          ],
+        );
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.inProgress,
+            carId: carId,
+            carData: carData,
+            idempotencyKey: 'sell-create-$draftId',
+            currentPhase: 'photos',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final resumed =
+            await PendingSellSubmissionService.instance.resumeAll();
+
+        expect(resumed, isTrue);
+        expect(
+          deleteCallsLog,
+          isEmpty,
+          reason: 'resuming an already-fully-attached draft must never '
+              'issue any DELETE request',
+        );
+        expect((carsById[carId]!['images'] as List).length, 1);
+        expect((carsById[carId]!['videos'] as List).length, 1);
+      },
+    );
+
+    test(
+      'resuming a draft whose carData is MISSING a local source the '
+      'server already has attached (simulating a durable file that '
+      'disappeared, or a resumed record whose in-memory pending list no '
+      'longer lists everything) still issues zero DELETE requests, and '
+      'the pre-existing server image/video rows are left completely '
+      'untouched',
+      () async {
+        const draftId = 'draft_no_delete_missing_local';
+        const carId = 'car_no_delete_missing_local';
+        carsById[carId] = {
+          'id': carId,
+          'images': [
+            {
+              'id': 951,
+              'kind': 'listing',
+              'image_url': 'uploads/car_photos/missing_local_img.jpg',
+            },
+          ],
+          'videos': [
+            {'id': 6},
+          ],
+        };
+        // carData describes NO images/videos at all -- the local pending
+        // list "lost" every reference to what the server already has.
+        final carData = _baseCarData();
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.inProgress,
+            carId: carId,
+            carData: carData,
+            idempotencyKey: 'sell-create-$draftId',
+            currentPhase: 'photos',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final resumed =
+            await PendingSellSubmissionService.instance.resumeAll();
+
+        expect(resumed, isTrue);
+        expect(
+          deleteCallsLog,
+          isEmpty,
+          reason: 'a local pending list missing a reference to '
+              'already-attached server media must NEVER be interpreted as '
+              '"delete it from the server" -- it must simply be left '
+              'alone',
+        );
+        expect(
+          (carsById[carId]!['images'] as List).length,
+          1,
+          reason: 'the pre-existing server image row must survive '
+              'untouched',
+        );
+        expect(
+          (carsById[carId]!['videos'] as List).length,
+          1,
+          reason: 'the pre-existing server video row must survive '
+              'untouched',
+        );
+      },
+    );
+
+    test(
+      'static: sell_listing_media_upload.dart (the module that performs '
+      'ALL resume-time media attach/upload work) never issues an HTTP '
+      'DELETE, and never calls ApiService.deleteCarImage/deleteCarVideo',
+      () {
+        final content = File(
+          p.join(
+            'lib',
+            'features',
+            'sell',
+            'sell_listing_media_upload.dart',
+          ),
+        ).readAsStringSync();
+        expect(content.contains('deleteCarImage'), isFalse);
+        expect(content.contains('deleteCarVideo'), isFalse);
+        expect(content.contains("method: 'DELETE'"), isFalse);
+        expect(content.contains('.delete('), isFalse);
+      },
+    );
+
+    test(
+      'static: the ONLY two client call sites for deleteCarImage/'
+      'deleteCarVideo in the entire Sell flow (sell_step4_logic.dart) are '
+      'gated behind an explicit user-initiated remove action in edit mode '
+      '-- never reachable from PendingSellSubmissionService resume/'
+      'background/foreground/force-close code',
+      () {
+        final content = File(
+          p.join('lib', 'features', 'sell', 'sell_step4_logic.dart'),
+        ).readAsStringSync();
+
+        final imageDeleteIdx = content.indexOf('ApiService.deleteCarImage(');
+        final videoDeleteIdx = content.indexOf('ApiService.deleteCarVideo(');
+        expect(imageDeleteIdx, greaterThanOrEqualTo(0));
+        expect(videoDeleteIdx, greaterThanOrEqualTo(0));
+
+        // Exactly one call site each in the whole Sell flow.
+        expect(
+          RegExp('ApiService.deleteCarImage\\(').allMatches(content).length,
+          1,
+        );
+        expect(
+          RegExp('ApiService.deleteCarVideo\\(').allMatches(content).length,
+          1,
+        );
+
+        final removePhotoIdx = content.indexOf('_removePhotoAt(');
+        final removeVideoIdx = content.indexOf('_removeExistingVideoAt(');
+        expect(removePhotoIdx, greaterThanOrEqualTo(0));
+        expect(removeVideoIdx, greaterThanOrEqualTo(0));
+        expect(
+          imageDeleteIdx,
+          greaterThan(removePhotoIdx),
+          reason: 'the image delete call must live inside '
+              '_removePhotoAt -- the explicit, user-tap-only removal '
+              'method',
+        );
+        expect(
+          videoDeleteIdx,
+          greaterThan(removeVideoIdx),
+          reason: 'the video delete call must live inside '
+              '_removeExistingVideoAt -- the explicit, user-tap-only '
+              'removal method',
+        );
+      },
+    );
+  });
+
+  // ===========================================================================
+  // Issue 1 & 5 regression (real-device evidence: "global bulk resume lock
+  // blocks lifecycle recovery" + "multiple historical submissions run
+  // concurrently"). Real logs showed `bulkResumeRunning=true` staying set
+  // for the ENTIRE lifetime of every dispatched upload runner (because the
+  // old `resumeAll()` awaited every runner's Future *inside* the
+  // `bulkResumeRunning` guard), so a second, independent, already-eligible
+  // record could never even be *discovered* while an older record was
+  // still (slowly) uploading. Proves the fixed structure: the bulk guard
+  // only protects the short enumerate-and-dispatch loop; `_activeRuns`
+  // alone prevents a duplicate runner for the SAME draft; and one
+  // permanently-stalled record can never block another, independent
+  // record from being discovered, started, and finished.
+  // ===========================================================================
+  group(
+    'Issue 1 & 5: bulkResumeRunning only guards enumeration -- a stalled '
+    'record never blocks an independent record, and is never duplicated',
+    () {
+      test(
+        'record A (create request genuinely never returns) and record B '
+        '(create request returns normally) are both persisted as pending; '
+        'a single resumeAll() call discovers and finishes B while A is '
+        'still stuck; a SECOND, overlapping resumeAll() trigger (simulating '
+        'a repeated lifecycle=resumed event) joins A\'s existing runner '
+        'instead of starting a duplicate create call for A; once A\'s '
+        'stuck request finally resolves, A finishes too, with exactly one '
+        'car created for each of A and B',
+        () async {
+          const slowDraftId = 'issue1_slow_record_a';
+          const fastDraftId = 'issue1_fast_record_b';
+          final slowGate = Completer<void>();
+          var slowCreateAttempts = 0;
+          var fastCreateAttempts = 0;
+          final localCarsById = <String, Map<String, dynamic>>{};
+          var localCarIdCounter = 0;
+
+          ApiService.testHttpClient = MockClient((request) async {
+            final method = request.method.toUpperCase();
+            final path = request.url.path;
+            if (method == 'POST' && path == '/api/cars') {
+              String? idKey;
+              request.headers.forEach((k, v) {
+                if (k.toLowerCase() == 'idempotency-key') idKey = v;
+              });
+              if (idKey == 'sell-create-$slowDraftId') {
+                slowCreateAttempts++;
+                // Simulates the exact real-device shape: a record whose
+                // runner is genuinely still in flight (e.g. a slow/
+                // suspended upload), for a long, indeterminate time --
+                // never resolves until this test says so.
+                await slowGate.future;
+              } else {
+                fastCreateAttempts++;
+              }
+              localCarIdCounter++;
+              final id = 'car_${idKey ?? 'unknown'}_$localCarIdCounter';
+              localCarsById[id] = {
+                'id': id,
+                'images': <dynamic>[],
+                'videos': <dynamic>[],
+              };
+              return http.Response(
+                json.encode({'car': localCarsById[id]}),
+                201,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            return http.Response(
+              '{"cars": []}',
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          });
+
+          final now = DateTime.now().millisecondsSinceEpoch;
+          await SellSubmissionStatePrefs.upsert(
+            SellSubmissionRecord(
+              draftId: slowDraftId,
+              status: SellSubmissionStatus.pending,
+              carData: _baseCarData(),
+              idempotencyKey: 'sell-create-$slowDraftId',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+          await SellSubmissionStatePrefs.upsert(
+            SellSubmissionRecord(
+              draftId: fastDraftId,
+              status: SellSubmissionStatus.pending,
+              carData: _baseCarData(),
+              idempotencyKey: 'sell-create-$fastDraftId',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+          // Trigger 1: e.g. app startup / `lifecycle=resumed`. Fired
+          // without awaiting, exactly like the real callers do.
+          final resumeFuture1 = PendingSellSubmissionService.instance
+              .resumeAll();
+
+          // Record B must be discovered, started, AND finish completely
+          // while record A's create call is still genuinely stuck -- this
+          // is the exact invariant the old code violated (bulkResumeRunning
+          // stayed true for A's entire runtime, so B was never even
+          // enumerated until A finished).
+          await _waitUntil(
+            () async =>
+                (await SellSubmissionStatePrefs.load(fastDraftId)) == null,
+            timeout: const Duration(seconds: 5),
+          );
+          expect(fastCreateAttempts, 1);
+          expect(
+            slowCreateAttempts,
+            1,
+            reason: 'A must still be genuinely stuck at this point -- only '
+                'the ORIGINAL attempt, no duplicate yet',
+          );
+          final stillA = await SellSubmissionStatePrefs.load(slowDraftId);
+          expect(
+            stillA,
+            isNotNull,
+            reason: 'A must still be present/in-progress -- not abandoned, '
+                'not age-expired, just genuinely still running',
+          );
+
+          // Trigger 2: a repeated/overlapping resumeAll() call (simulating
+          // another `lifecycle=resumed`/connectivity-restored event) fired
+          // WHILE record A is still stuck. With the old bug this either
+          // hung waiting for the bulk lock or was silently skipped with
+          // `bulk-resume-already-running` and never even looked at the
+          // record list; the fix must let it enumerate immediately and
+          // simply JOIN A's already-active runner instead of starting a
+          // second `POST /api/cars` for A.
+          final resumeFuture2 = PendingSellSubmissionService.instance
+              .resumeAll();
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          expect(
+            slowCreateAttempts,
+            1,
+            reason: 'the second, overlapping resumeAll() trigger must join '
+                "A's existing runner via _activeRuns, never start a "
+                'duplicate create call',
+          );
+
+          // Let A's genuinely-stuck request finally resolve (e.g. the OS
+          // finally delivers the response) and let both resumeAll() calls
+          // finish.
+          slowGate.complete();
+          await resumeFuture1;
+          await resumeFuture2;
+
+          expect(
+            slowCreateAttempts,
+            1,
+            reason: 'record A must never be duplicated no matter how many '
+                'overlapping resumeAll() triggers fired while it was stuck',
+          );
+          expect(
+            await SellSubmissionStatePrefs.load(slowDraftId),
+            isNull,
+            reason: 'A must eventually finish successfully once its '
+                'request resolves',
+          );
+          expect(
+            localCarsById.length,
+            2,
+            reason: 'exactly one independent car for A and one for B -- '
+                'never zero, never duplicated',
+          );
+        },
+      );
+    },
+  );
+
+  // ===========================================================================
+  // Issue 2 regression (real-device evidence: "persisted progress
+  // incorrectly resets to 0/N"). Real logs showed actual UI progress
+  // ticking up correctly in memory (e.g. 0/7 -> 3/7 -> 4/7), but the
+  // record PERSISTED to disk on failure always showed `progress=0/N` --
+  // because the persisted record's `completedMediaCount` was never updated
+  // incrementally, only ever reset via the generic failure handler. Proves
+  // the fix: progress is durably persisted after EVERY confirmed
+  // successful server media operation, and a later failure preserves the
+  // last confirmed count instead of overwriting it with zero.
+  // ===========================================================================
+  group('Issue 2: persisted progress reflects every confirmed media item, '
+      'never resets to 0/N', () {
+    test(
+      'listing photos (3), a video, and damage photos (2) are all part of '
+      'one submission; the video upload permanently fails, but the '
+      'persisted record still shows completedMediaCount = 5 (3 photos + 2 '
+      'damage photos actually confirmed on the server), never 0, and '
+      'retains the carId that really exists on the backend',
+      () async {
+        const draftId = 'issue2_partial_progress';
+        final img1 = File('${tempDir.path}/i2_img1.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 1]);
+        final img2 = File('${tempDir.path}/i2_img2.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 2]);
+        final img3 = File('${tempDir.path}/i2_img3.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 3]);
+        final video = File('${tempDir.path}/i2_video.mp4')
+          ..writeAsBytesSync(List<int>.filled(16, 1));
+        final dmg1 = File('${tempDir.path}/i2_dmg1.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 4]);
+        final dmg2 = File('${tempDir.path}/i2_dmg2.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 5]);
+
+        videoUploadOverride = (_) => http.Response(
+          json.encode({'message': 'Unsupported video format'}),
+          400,
+          headers: {'content-type': 'application/json'},
+        );
+
+        final carData = _baseCarData(
+          images: [img1.path, img2.path, img3.path],
+          videos: [video.path],
+          damageImages: [dmg1.path, dmg2.path],
+        );
+
+        try {
+          await PendingSellSubmissionService.instance.submit(
+            draftId: draftId,
+            carData: carData,
+          );
+          fail(
+            'expected the injected permanent video-upload failure to '
+            'propagate',
+          );
+        } catch (_) {}
+
+        final failed = await SellSubmissionStatePrefs.load(draftId);
+        expect(failed, isNotNull);
+        expect(failed!.status, SellSubmissionStatus.needsAttention);
+        expect(
+          failed.completedMediaCount,
+          5,
+          reason: '3 confirmed listing photos + 2 confirmed damage photos '
+              '= 5 truly-attached media items, even though the video '
+              'failed -- must never be reported/persisted as 0',
+        );
+        expect(failed.totalMediaCount, 6);
+        expect(
+          failed.carId,
+          isNotNull,
+          reason: 'the listing that really exists on the backend must be '
+              'preserved',
+        );
+        expect(failed.carId, isNotEmpty);
+      },
+    );
+
+    test(
+      'resuming a draft with an existing carId that already has 2 of 3 '
+      'listing images confirmed on the server durably persists that '
+      'server-confirmed baseline (completedMediaCount=2) to disk -- not '
+      'just in an in-memory variable -- before the remaining upload work '
+      'even finishes, so a process kill immediately after resume starts '
+      'still reconstructs progress from server state rather than 0',
+      () async {
+        const draftId = 'issue2_baseline_persisted';
+        const carId = 'car_issue2_baseline';
+        final img3 = File('${tempDir.path}/i2b_img3.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 9]);
+        final video = File('${tempDir.path}/i2b_video.mp4')
+          ..writeAsBytesSync(List<int>.filled(16, 2));
+
+        // Server already confirmed 2 of the 3 listing images this draft
+        // describes.
+        carsById[carId] = {
+          'id': carId,
+          'images': [
+            {'id': 801, 'kind': 'listing'},
+            {'id': 802, 'kind': 'listing'},
+          ],
+          'videos': <dynamic>[],
+        };
+
+        // Stall the video upload indefinitely so the run cannot reach
+        // completion (and therefore cannot remove the record from disk)
+        // before this test inspects the persisted baseline.
+        final videoGate = Completer<void>();
+        ApiService.testHttpClient = MockClient((request) async {
+          final method = request.method.toUpperCase();
+          final path = request.url.path;
+          final videoMatch = RegExp(
+            r'^/api/cars/([^/]+)/videos$',
+          ).firstMatch(path);
+          if (method == 'POST' && videoMatch != null) {
+            await videoGate.future;
+            return http.Response(
+              json.encode({'videos': []}),
+              201,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          final getMatch = RegExp(r'^/api/cars/([^/]+)$').firstMatch(path);
+          if (method == 'GET' && getMatch != null) {
+            final id = getMatch.group(1)!;
+            return http.Response(
+              json.encode({'car': carsById[id]}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          final attachMatch = RegExp(
+            r'^/api/cars/([^/]+)/images/attach$',
+          ).firstMatch(path);
+          if (method == 'POST' && attachMatch != null) {
+            final id = attachMatch.group(1)!;
+            final decoded = json.decode(request.body) as Map;
+            final paths = List<String>.from(decoded['paths'] as List);
+            final car = carsById.putIfAbsent(
+              id,
+              () => {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]},
+            );
+            final rows = <Map<String, dynamic>>[];
+            for (final p in paths) {
+              imageRowIdCounter++;
+              final row = {
+                'id': imageRowIdCounter,
+                'kind': 'listing',
+                'source': p,
+              };
+              rows.add(row);
+              (car['images'] as List).add(row);
+            }
+            return http.Response(
+              json.encode({
+                'images': rows
+                    .map((r) => {'id': r['id'], 'image_url': r['source']})
+                    .toList(),
+              }),
+              201,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (method == 'POST' && path == '/api/cars/$carId/images') {
+            final bodyText = latin1.decode(request.bodyBytes);
+            final fileCount = RegExp(
+              'name="images"',
+            ).allMatches(bodyText).length;
+            final jobIds = <String>[];
+            for (var i = 0; i < fileCount; i++) {
+              jobIdCounter++;
+              jobIds.add('job_$jobIdCounter');
+            }
+            return http.Response(
+              json.encode({'job_ids': jobIds}),
+              202,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (method == 'GET' && path.startsWith('/api/jobs/')) {
+            final jobId = path.substring('/api/jobs/'.length);
+            return http.Response(
+              json.encode({
+                'task_id': jobId,
+                'state': 'SUCCESS',
+                'result': {'rel_path': 'uploads/car_photos/$jobId.jpg'},
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response(
+            '{"cars": []}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        });
+
+        final carData = _baseCarData(
+          images: [
+            {'id': 801, 'source': 'uploads/car_photos/existing_801.jpg'},
+            {'id': 802, 'source': 'uploads/car_photos/existing_802.jpg'},
+            img3.path,
+          ],
+          videos: [video.path],
+        );
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.inProgress,
+            carId: carId,
+            carData: carData,
+            idempotencyKey: 'sell-create-$draftId',
+            currentPhase: 'photos',
+            totalMediaCount: 4,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final resumeFuture = PendingSellSubmissionService.instance
+            .resumeAll();
+
+        // Poll the ON-DISK record (not just statusNotifier) until it
+        // reflects at least the server-confirmed baseline of 2 -- proving
+        // this was durably persisted, not just held in memory -- and then
+        // until it reaches 3 once the new 3rd photo also gets confirmed,
+        // all while the video step is still stalled and the run has not
+        // finished.
+        await _waitUntil(() async {
+          final r = await SellSubmissionStatePrefs.load(draftId);
+          return r != null && r.completedMediaCount >= 2;
+        });
+        final duringBaseline = await SellSubmissionStatePrefs.load(draftId);
+        expect(duringBaseline, isNotNull);
+        expect(
+          duringBaseline!.status,
+          SellSubmissionStatus.inProgress,
+          reason: 'the run has not finished yet -- the video step is still '
+              'stalled',
+        );
+
+        await _waitUntil(() async {
+          final r = await SellSubmissionStatePrefs.load(draftId);
+          return r != null && r.completedMediaCount >= 3;
+        });
+        final afterNewPhoto = await SellSubmissionStatePrefs.load(draftId);
+        expect(
+          afterNewPhoto!.completedMediaCount,
+          3,
+          reason: '2 pre-existing + 1 newly confirmed photo = 3, durably '
+              'persisted to disk before the video step (still stalled) '
+              'has any chance to finish',
+        );
+
+        // Let the video step finish so the test can clean up without a
+        // dangling stalled future.
+        videoGate.complete();
+        await resumeFuture;
+      },
+    );
+
+    // ---- Crash-window follow-up: reconcile from SERVER state, not the ----
+    // stale locally-persisted count. Real gap: server attach succeeds ->
+    // process is killed BEFORE persistProgress() runs -> the on-disk
+    // record still shows the OLD (stale) completedMediaCount. Proves
+    // `SellListingMediaUpload.confirmedServerMediaCount()` (identity-based,
+    // same semantics `uploadForCar` itself uses to skip already-attached
+    // media) is used to recompute -- and durably re-persist -- the correct
+    // count from the server BEFORE any further upload work, every time a
+    // record with an existing carId is resumed.
+    test(
+      'crash-window fix: a record whose LOCAL persisted completedMediaCount '
+      'is stale (1/5) because the process died before persistProgress() '
+      'ran is reconciled from ACTUAL SERVER state (2 listing photos + 1 '
+      'video already confirmed = 3/5) BEFORE any further upload work; the '
+      'already-confirmed photos and video are never re-attached/re-'
+      'uploaded, and only the 2 remaining damage photos upload to reach '
+      '5/5',
+      () async {
+        const draftId = 'issue2_reconcile_from_server';
+        const carId = 'car_issue2_reconcile';
+        final video = File('${tempDir.path}/reconcile_video.mp4')
+          ..writeAsBytesSync(List<int>.filled(16, 1));
+        final dmg1 = File('${tempDir.path}/reconcile_dmg1.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 1]);
+        final dmg2 = File('${tempDir.path}/reconcile_dmg2.jpg')
+          ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 2]);
+
+        // Server ALREADY has both listing images and the video confirmed
+        // (landed before a simulated crash) -- 3 of the eventual 5 media
+        // items -- but zero damage photos yet.
+        carsById[carId] = {
+          'id': carId,
+          'images': [
+            {'id': 701, 'kind': 'listing'},
+            {'id': 702, 'kind': 'listing'},
+          ],
+          'videos': [
+            {'id': 9},
+          ],
+        };
+
+        final carData = _baseCarData(
+          images: [
+            {'id': 701, 'source': 'uploads/car_photos/e701.jpg'},
+            {'id': 702, 'source': 'uploads/car_photos/e702.jpg'},
+          ],
+          videos: [video.path],
+          damageImages: [dmg1.path, dmg2.path],
+        );
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.inProgress,
+            carId: carId,
+            carData: carData,
+            idempotencyKey: 'sell-create-$draftId',
+            currentPhase: 'photos',
+            // Stale: a crash after the server-side attach succeeded but
+            // BEFORE this record's own persistProgress() call ever landed.
+            completedMediaCount: 1,
+            totalMediaCount: 5,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final seenCompletedCounts = <int>[];
+        void onStatusChanged() {
+          final status =
+              PendingSellSubmissionService.instance.statusNotifier.value;
+          if (status != null) {
+            seenCompletedCounts.add(status.completedMediaCount);
+          }
+        }
+
+        PendingSellSubmissionService.instance.statusNotifier.addListener(
+          onStatusChanged,
+        );
+
+        final resumed = await PendingSellSubmissionService.instance
+            .resumeAll();
+
+        PendingSellSubmissionService.instance.statusNotifier.removeListener(
+          onStatusChanged,
+        );
+
+        expect(resumed, isTrue);
+        expect(
+          seenCompletedCounts,
+          contains(3),
+          reason: 'the server-confirmed baseline (2 photos + 1 video = 3) '
+              'must be reported/persisted BEFORE the remaining damage '
+              'photos upload -- never left at the stale local value of 1',
+        );
+        expect(
+          seenCompletedCounts.any((c) => c < 1),
+          isFalse,
+          reason: 'progress must never regress below the previously-'
+              'persisted value, even transiently',
+        );
+
+        // The 2 already-confirmed listing photos must never be re-
+        // attached/re-uploaded -- only the 2 damage photos go through the
+        // attach endpoint (via the async job pipeline).
+        expect(attachCallsLog, hasLength(1));
+        expect(attachCallsLog.single, hasLength(2));
+        // The already-confirmed video must never be re-uploaded.
+        expect(videoUploadLog, isEmpty);
+        // Only the 2 NOT-yet-confirmed damage photos are enqueued.
+        expect(imagesEnqueueFileCounts, [2]);
+
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+        expect(
+          (carsById[carId]!['images'] as List).length,
+          4,
+          reason: '2 pre-existing listing + 2 newly uploaded damage = 4 '
+              'image rows',
+        );
+        expect((carsById[carId]!['videos'] as List).length, 1);
+      },
+    );
+
+    test(
+      'crash-window fix: a record whose local completedMediaCount is still '
+      '0 because the process was killed right after the FIRST-EVER server '
+      'attach succeeded (before persistProgress() ever ran even once) is '
+      'reconciled to the correct server-derived count (1/1) by the next '
+      'resumeAll() -- simulating a fresh app launch / new service instance '
+      '-- and never re-attaches the already-confirmed photo',
+      () async {
+        const draftId = 'issue2_crash_before_first_persist';
+        const carId = 'car_issue2_crash_before_first_persist';
+
+        // The server really does already have this photo attached -- as
+        // if the attach HTTP call succeeded right before the process
+        // died, with no chance for the client to ever call
+        // persistProgress() even a single time.
+        carsById[carId] = {
+          'id': carId,
+          'images': [
+            {'id': 801, 'kind': 'listing'},
+          ],
+          'videos': <dynamic>[],
+        };
+
+        final carData = _baseCarData(
+          images: [
+            {'id': 801, 'source': 'uploads/car_photos/crash801.jpg'},
+          ],
+        );
+        final now = DateTime.now().millisecondsSinceEpoch;
+        await SellSubmissionStatePrefs.upsert(
+          SellSubmissionRecord(
+            draftId: draftId,
+            status: SellSubmissionStatus.inProgress,
+            carId: carId,
+            carData: carData,
+            idempotencyKey: 'sell-create-$draftId',
+            currentPhase: 'photos',
+            completedMediaCount: 0,
+            totalMediaCount: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+        final resumed = await PendingSellSubmissionService.instance
+            .resumeAll();
+
+        expect(resumed, isTrue);
+        expect(
+          attachCallsLog,
+          isEmpty,
+          reason: 'the already-confirmed photo must never be re-attached',
+        );
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+        expect((carsById[carId]!['images'] as List).length, 1);
+      },
+    );
+  });
 }

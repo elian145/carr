@@ -202,6 +202,7 @@ void _runZonedApp(Widget app) {
         // startup work this ran concurrently with.
         await authInit;
         // Finish media upload if the app was killed mid-submit.
+        appLog('[SELL RESUME] startup');
         try {
           await SellPendingMediaResume.tryResume();
         } catch (e, st) { logNonFatal(e, st); }

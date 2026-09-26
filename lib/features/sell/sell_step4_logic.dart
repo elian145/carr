@@ -461,6 +461,16 @@ mixin _SellStep4Logic on _SellStep4Fields {
     final isEditMode = parentState?._isEditMode == true;
 
     if (imageId != null && isEditMode && editListingId != null) {
+      // Bug-3 instrumentation (real-device trace): this is the ONLY place
+      // in the Sell flow that deletes a server-attached image, and it only
+      // ever runs from this explicit, user-initiated "remove photo" tap in
+      // the edit-mode wizard grid -- never from `PendingSellSubmissionService`
+      // resume/background-foreground/force-close logic, which never calls
+      // any delete endpoint (see that file's docs).
+      _debugLog(
+        '[SELL MEDIA] delete image carId=$editListingId mediaId=$imageId '
+        'reason=user_removed_in_edit_mode',
+      );
       try {
         await ApiService.deleteCarImage(editListingId, imageId);
       } catch (e, st) {
@@ -524,6 +534,13 @@ mixin _SellStep4Logic on _SellStep4Fields {
     final videoId = ListingImageMedia.id(video);
     if (videoId == null) return;
 
+    // Bug-3 instrumentation (real-device trace): same explicit,
+    // user-initiated-only delete guarantee as `_removePhotoAt` above --
+    // never reachable from resume/background/foreground logic.
+    _debugLog(
+      '[SELL MEDIA] delete video carId=$editListingId mediaId=$videoId '
+      'reason=user_removed_in_edit_mode',
+    );
     try {
       await ApiService.deleteCarVideo(editListingId, videoId);
     } catch (e, st) {

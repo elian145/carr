@@ -185,6 +185,69 @@ class SellListingMediaUpload {
     return _imageCountOfKind(car, kind);
   }
 
+  /// C-fix (real-device evidence): sources (URL/path) of every [kind] image
+  /// the server already has attached to [carId], right now.
+  ///
+  /// Used to skip re-attaching a staged/already-uploaded source on a
+  /// resumed run -- `attachCarImages` itself performs no dedupe, so
+  /// calling it again for a source the server already attached (e.g. a
+  /// `resumeAll` re-running a submission whose "attach succeeded" ack was
+  /// lost client-side, or an earlier run in the same process that already
+  /// finished this step) creates a duplicate image row for the same
+  /// carId. Best-effort — any failure returns an empty set (the pre-
+  /// existing "assume nothing landed yet" behavior), never blocks upload.
+  static Future<Set<String>> _existingAttachedSources(
+    String carId,
+    String kind,
+  ) async {
+    final car = await _fetchCarMap(carId);
+    final imgs = car?['images'];
+    if (imgs is! List) return const <String>{};
+    final result = <String>{};
+    for (final it in imgs) {
+      if (it is! Map) continue;
+      final itemKind = (it['kind'] ?? 'listing').toString().toLowerCase();
+      final matchesKind = kind == 'damage'
+          ? itemKind == 'damage'
+          : itemKind != 'damage';
+      if (!matchesKind) continue;
+      final url = _imageUrlFromApiDict(it);
+      if (url != null && url.isNotEmpty) result.add(url);
+    }
+    return result;
+  }
+
+  /// Removes entries from [sources]/[items] (parallel lists, filtered
+  /// in-place so both stay index-aligned) whose source is already in
+  /// [existing]. Returns how many were removed, for logging.
+  static int _dropAlreadyAttached(
+    List<String> sources,
+    List<dynamic> items,
+    Set<String> existing,
+  ) {
+    if (existing.isEmpty || sources.isEmpty) return 0;
+    final keepSources = <String>[];
+    final keepItems = <dynamic>[];
+    var dropped = 0;
+    for (var i = 0; i < sources.length; i++) {
+      if (existing.contains(sources[i])) {
+        dropped++;
+      } else {
+        keepSources.add(sources[i]);
+        keepItems.add(items[i]);
+      }
+    }
+    if (dropped > 0) {
+      sources
+        ..clear()
+        ..addAll(keepSources);
+      items
+        ..clear()
+        ..addAll(keepItems);
+    }
+    return dropped;
+  }
+
   static bool _isTransientUploadError(Object error) {
     if (error is TimeoutException) return true;
     if (error is ApiException) {
@@ -453,6 +516,89 @@ class SellListingMediaUpload {
     );
   }
 
+  /// Issue-2 follow-up fix (real-device correctness audit: "progress must
+  /// reconcile from SERVER on resume" -- crash window between a confirmed
+  /// server attach and the client persisting that confirmation locally).
+  ///
+  /// Computes exactly how many of THIS submission's own [carData] media
+  /// items -- listing images, damage images, videos -- are ALREADY
+  /// confirmed on the server for [carId], using the EXACT SAME identity
+  /// semantics [uploadForCar] itself uses to decide what NOT to
+  /// re-upload/re-attach (`ListingImageMedia.id(item) != null`, or a
+  /// per-item `source` match against [_existingAttachedSources] of the
+  /// SAME kind):
+  ///   - an item that already carries a server `id` is always confirmed;
+  ///   - otherwise an item is confirmed ONLY if its own `source` matches a
+  ///     server-attached source of the same kind (listing vs damage).
+  /// This deliberately does NOT use a raw server-side item COUNT (the
+  /// previous approach) -- a count can't tell "5 images on the server"
+  /// apart from "5 images on the server, only 2 of which are actually in
+  /// THIS carData's list" (e.g. an edit session where photos were removed,
+  /// or unrelated media on the same car from a different context). Only
+  /// items this submission's OWN carData actually describes are ever
+  /// counted, so pre-existing/unrelated edit-mode server media can never
+  /// inflate this submission's progress.
+  ///
+  /// Videos have no per-item identity in `carData` (plain local file
+  /// paths, never annotated with a server id/url the way images are), so
+  /// -- exactly like the existing-video count guard already used inside
+  /// [uploadForCar] -- video progress is the server's video count, capped
+  /// at how many videos THIS submission's carData describes.
+  static Future<int> confirmedServerMediaCount({
+    required String carId,
+    required Map<String, dynamic> carData,
+  }) async {
+    final car = await _fetchCarMap(carId);
+    if (car == null) return 0;
+
+    Set<String> existingSourcesOfKind(String kind) {
+      final imgs = car['images'];
+      if (imgs is! List) return const <String>{};
+      final result = <String>{};
+      for (final it in imgs) {
+        if (it is! Map) continue;
+        final itemKind = (it['kind'] ?? 'listing').toString().toLowerCase();
+        final matchesKind = kind == 'damage'
+            ? itemKind == 'damage'
+            : itemKind != 'damage';
+        if (!matchesKind) continue;
+        final url = _imageUrlFromApiDict(it);
+        if (url != null && url.isNotEmpty) result.add(url);
+      }
+      return result;
+    }
+
+    int confirmedForKey(String carDataKey, String kind) {
+      final dynamic raw = carData[carDataKey];
+      final List<dynamic> items = (raw is List) ? raw : const [];
+      if (items.isEmpty) return 0;
+      final existingSources = existingSourcesOfKind(kind);
+      var confirmed = 0;
+      for (final item in items) {
+        if (ListingImageMedia.id(item) != null) {
+          confirmed++;
+          continue;
+        }
+        final source = ListingImageMedia.source(item);
+        if (source.isNotEmpty && existingSources.contains(source)) {
+          confirmed++;
+        }
+      }
+      return confirmed;
+    }
+
+    final listingConfirmed = confirmedForKey('images', 'listing');
+    final damageConfirmed = confirmedForKey('damage_images', 'damage');
+
+    final dynamic rawVideos = carData['videos'];
+    final videosExpected = rawVideos is List ? rawVideos.length : 0;
+    final vids = car['videos'];
+    final videosOnServer = vids is List ? vids.length : 0;
+    final videosConfirmed = videosOnServer.clamp(0, videosExpected);
+
+    return listingConfirmed + damageConfirmed + videosConfirmed;
+  }
+
   /// True when the server listing already has any listing media.
   static Future<bool> listingAlreadyHasMedia(String carId) async {
     final car = await _fetchCarMap(carId);
@@ -470,6 +616,15 @@ class SellListingMediaUpload {
     required Map<String, dynamic> carData,
     Future<http.MultipartFile> Function(XFile video)? multipartFileBuilder,
     void Function(SellMediaUploadPhase phase)? onPhase,
+    // Issue-2 fix (real-device evidence: "persisted progress incorrectly
+    // resets to 0/N"): invoked (and awaited by the caller) after EVERY
+    // confirmed successful server operation -- a listing-image attach
+    // call, a listing-image upload call, the video upload call, a
+    // damage-image attach call, or a damage-image upload call -- with how
+    // many NEW media items that specific call just confirmed on the
+    // server. This lets the caller durably persist progress incrementally
+    // instead of only estimating it from coarse phase transitions.
+    Future<void> Function(int confirmedDelta)? onMediaConfirmed,
     String? draftId,
   }) async {
     final dynamic maybeImgs = carData['images'];
@@ -480,6 +635,14 @@ class SellListingMediaUpload {
     );
     final dynamic maybeVideos = carData['videos'];
     final List<dynamic> vids = (maybeVideos is List) ? maybeVideos : const [];
+    // Bug-3 instrumentation (real-device trace): the "desired" set this
+    // resume/run intends to have attached for [carId], captured BEFORE any
+    // network call below -- compare against `existing server images=` /
+    // `existing server videos=` (logged just before the actual
+    // attach/upload calls) to prove whether a resume is only ever adding
+    // to what the server already has, never shrinking it.
+    appLog('[SELL MEDIA] resume desired images=${imgs.length} carId=$carId');
+    appLog('[SELL MEDIA] resume desired videos=${vids.length} carId=$carId');
     final List<XFile> toUpload = <XFile>[];
     final List<String> toAttach = <String>[];
     final List<dynamic> uploadItems = <dynamic>[];
@@ -541,11 +704,43 @@ class SellListingMediaUpload {
       onPhase?.call(SellMediaUploadPhase.photos);
     }
     if (toAttach.isNotEmpty) {
+      // C-fix (real-device evidence): a resumed run must never re-attach a
+      // source the server already has -- this call used to run
+      // unconditionally on every resume, with no equivalent of the
+      // `toUpload` skip-if-already-landed check above.
+      final existingSources =
+          await _existingAttachedSources(carId, 'listing');
+      // Issue-4 fix (real-device evidence): this was previously logged as
+      // the ambiguous `existing server images=<N>`, which could be
+      // misread as "all server images", when it is actually scoped to
+      // LISTING-kind images only (`_existingAttachedSources(carId,
+      // 'listing')` filters `kind != 'damage'`). Made explicit so a
+      // log reader can never conflate this with the damage-only count
+      // logged separately below.
+      appLog(
+        '[SELL MEDIA] existing server listing images=${existingSources.length} '
+        'carId=$carId',
+      );
+      final dropped = _dropAlreadyAttached(toAttach, attachItems, existingSources);
+      if (dropped > 0) {
+        appLog(
+          'SellListingMediaUpload: skipping $dropped already-attached '
+          'listing photo(s) for $carId',
+        );
+        if (toAttach.isEmpty) listingMediaConfirmed = true;
+      }
+    }
+    if (toAttach.isNotEmpty) {
+      for (final s in toAttach) {
+        appLog('[SELL MEDIA] attach image carId=$carId sourceKey=$s');
+      }
       final attachResponse = await CarService().attachCarImages(carId, toAttach);
       latestMediaResponse = attachResponse;
       _collectUploadedImageIds(imageIdsBySource, attachItems, attachResponse);
-      if (_attachedRowCount(attachResponse) > 0) {
+      final attachedCount = _attachedRowCount(attachResponse);
+      if (attachedCount > 0) {
         listingMediaConfirmed = true;
+        await onMediaConfirmed?.call(attachedCount);
       } else {
         final recovered = await _recoverRejectedAttach(
           carId: carId,
@@ -553,16 +748,19 @@ class SellListingMediaUpload {
           kind: 'listing',
           draftId: draftId,
         );
-        if (recovered != null) {
+        final recoveredCount = _attachedRowCount(recovered);
+        if (recoveredCount > 0) {
           latestMediaResponse = recovered;
           _collectUploadedImageIds(imageIdsBySource, attachItems, recovered);
-          if (_attachedRowCount(recovered) > 0) {
-            listingMediaConfirmed = true;
-          }
+          listingMediaConfirmed = true;
+          await onMediaConfirmed?.call(recoveredCount);
         }
       }
     }
     if (toUpload.isNotEmpty) {
+      for (final f in toUpload) {
+        appLog('[SELL MEDIA] attach image carId=$carId sourceKey=${f.path}');
+      }
       final uploadResponse = await _uploadImagesResilient(
         carId: carId,
         files: toUpload,
@@ -571,9 +769,17 @@ class SellListingMediaUpload {
       );
       latestMediaResponse = uploadResponse;
       _collectUploadedImageIds(imageIdsBySource, uploadItems, uploadResponse);
-      if (_attachedRowCount(uploadResponse) > 0 ||
-          imageIdsBySource.isNotEmpty) {
+      final uploadedCount = _attachedRowCount(uploadResponse);
+      if (uploadedCount > 0 || imageIdsBySource.isNotEmpty) {
         listingMediaConfirmed = true;
+      }
+      // Only report a progress delta from an actual confirmed row count in
+      // THIS call's response -- `imageIdsBySource` also accumulates
+      // already-had-a-server-id images from earlier in this function that
+      // the caller's initial server-confirmed baseline already counted,
+      // so using it here would double-count progress.
+      if (uploadedCount > 0) {
+        await onMediaConfirmed?.call(uploadedCount);
       }
     }
     if (imageIdsBySource.isNotEmpty && toUpload.isEmpty && toAttach.isEmpty) {
@@ -597,12 +803,18 @@ class SellListingMediaUpload {
       final existingVideos = car?['videos'];
       final existingVideoCount =
           existingVideos is List ? existingVideos.length : 0;
+      appLog(
+        '[SELL MEDIA] existing server videos=$existingVideoCount carId=$carId',
+      );
       if (existingVideoCount >= videosToUpload.length) {
         videosToUpload.clear();
       }
     }
     if (videosToUpload.isNotEmpty) {
       onPhase?.call(SellMediaUploadPhase.videos);
+      for (final f in videosToUpload) {
+        appLog('[SELL MEDIA] attach video carId=$carId sourceKey=${f.path}');
+      }
       try {
         await ApiService.uploadCarVideos(
           carId,
@@ -610,6 +822,7 @@ class SellListingMediaUpload {
           multipartFileBuilder:
               multipartFileBuilder ?? buildVideoMultipartFile,
         );
+        await onMediaConfirmed?.call(videosToUpload.length);
       } catch (e, st) {
         logNonFatal(e, st, 'SellListingMediaUpload.videos');
         videoError = e;
@@ -650,28 +863,79 @@ class SellListingMediaUpload {
       onPhase?.call(SellMediaUploadPhase.damagePhotos);
     }
     if (damageToAttach.isNotEmpty) {
+      // C-fix (real-device evidence): same already-attached guard as the
+      // listing-photo `toAttach` path above.
+      final existingDamageSources =
+          await _existingAttachedSources(carId, 'damage');
+      // Issue-4 fix (real-device evidence): previously logged as the
+      // ambiguous `existing server images=<N> (damage)`, which real-device
+      // logs showed could be misread as "all server images = 0" right
+      // after normal listing images had already been attached. Confirmed
+      // by code reading that `_existingAttachedSources(carId, 'damage')`
+      // is correctly scoped to damage-kind images ONLY (`kind == 'damage'`)
+      // -- the classification itself was always correct; only the log
+      // wording was ambiguous. Made explicit and unambiguous.
+      appLog(
+        '[SELL MEDIA] existing server damage images='
+        '${existingDamageSources.length} carId=$carId',
+      );
+      final droppedDamage = _dropAlreadyAttached(
+        damageToAttach,
+        damageAttachItems,
+        existingDamageSources,
+      );
+      if (droppedDamage > 0) {
+        appLog(
+          'SellListingMediaUpload: skipping $droppedDamage already-attached '
+          'damage photo(s) for $carId',
+        );
+      }
+    }
+    if (damageToAttach.isNotEmpty) {
+      for (final s in damageToAttach) {
+        appLog(
+          '[SELL MEDIA] attach image carId=$carId sourceKey=$s kind=damage',
+        );
+      }
       final damageAttachResponse = await CarService().attachCarImages(
         carId,
         damageToAttach,
         kind: 'damage',
       );
-      if (_attachedRowCount(damageAttachResponse) == 0) {
-        await _recoverRejectedAttach(
+      final damageAttachedCount = _attachedRowCount(damageAttachResponse);
+      if (damageAttachedCount == 0) {
+        final recovered = await _recoverRejectedAttach(
           carId: carId,
           attachItems: damageAttachItems,
           kind: 'damage',
           draftId: draftId,
         );
+        final recoveredCount = _attachedRowCount(recovered);
+        if (recoveredCount > 0) {
+          await onMediaConfirmed?.call(recoveredCount);
+        }
+      } else {
+        await onMediaConfirmed?.call(damageAttachedCount);
       }
     }
     if (damageToUpload.isNotEmpty) {
-      await _uploadImagesResilient(
+      for (final f in damageToUpload) {
+        appLog(
+          '[SELL MEDIA] attach image carId=$carId sourceKey=${f.path} '
+          'kind=damage',
+        );
+      }
+      final damageUploadResponse = await _uploadImagesResilient(
         carId: carId,
         files: damageToUpload,
         imageKind: 'damage',
         alreadyOnServer: remoteDamageCount,
         draftId: draftId,
       );
+      final damageUploadedCount = _attachedRowCount(damageUploadResponse);
+      if (damageUploadedCount > 0) {
+        await onMediaConfirmed?.call(damageUploadedCount);
+      }
     }
 
     try {
