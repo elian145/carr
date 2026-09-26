@@ -199,4 +199,12 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // HEIC/HEIF Sell-photo preview fix: bundles its OWN native
+    // libheif/libde265 (Android decode independent of BitmapFactory/
+    // ImageDecoder, which already fail to decode some real-device HEIF
+    // files -- see HeifPreviewDecoder.kt and
+    // lib/shared/listings/heic_preview_converter.dart for the full
+    // root-cause trail). Pinned to the stable 2.2.1 release (no
+    // 3.0.0-alpha).
+    implementation("io.github.awxkee:avif-coder:2.2.1")
 }

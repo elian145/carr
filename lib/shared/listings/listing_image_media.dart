@@ -66,6 +66,7 @@ abstract final class ListingImageMedia {
     int? width,
     int? height,
     bool preserveFocus = true,
+    String? previewSource,
   }) {
     final existing = item is Map
         ? Map<String, dynamic>.from(
@@ -88,6 +89,22 @@ abstract final class ListingImageMedia {
     }
     if (width != null && width > 0) existing['image_width'] = width;
     if (height != null && height > 0) existing['image_height'] = height;
+    // `preview_source` (HEIC/HEIF local-rendering fix): a locally-generated
+    // JPEG copy consumed ONLY by `previewSource()`/`previewLocalFile()`
+    // below -- never by `source()`/`localFile()`, so upload/submission
+    // code is unaffected. Only set when explicitly provided; otherwise any
+    // value already on `item` is preserved as-is (same "leave alone unless
+    // explicitly overridden" behavior as every other field here), so a
+    // preview generated at pick time survives later `map()` calls made for
+    // unrelated reasons (e.g. the durable-copy step rewriting `source`).
+    if (previewSource != null) {
+      final trimmed = previewSource.trim();
+      if (trimmed.isEmpty) {
+        existing.remove('preview_source');
+      } else {
+        existing['preview_source'] = trimmed;
+      }
+    }
     return existing;
   }
 
@@ -98,6 +115,32 @@ abstract final class ListingImageMedia {
     height: height(item),
     preserveFocus: false,
   );
+
+  /// A locally-generated JPEG preview path for [item], if one exists --
+  /// see `heic_preview_converter.dart`. This is ONLY ever populated for
+  /// HEIC/HEIF originals that Flutter's own decoders can't render; for
+  /// JPEG/PNG/etc. it's always absent (no conversion happens, no field is
+  /// set). This is deliberately separate from [source]: it exists purely
+  /// so local rendering (Step4 grid, blur-choice "Original photos" grid)
+  /// has something Skia can display -- upload/submission must keep using
+  /// [source]/[localFile], never this.
+  static String? previewSource(dynamic item) {
+    if (item is! Map) return null;
+    final raw = (item['preview_source'] ?? '').toString().trim();
+    return raw.isEmpty ? null : raw;
+  }
+
+  /// [previewSource] as an [XFile], falling back to [localFile] when no
+  /// preview exists yet (JPEG/PNG originals, or a HEIC/HEIF original whose
+  /// conversion hasn't finished/failed) -- so every existing call site that
+  /// switches from [localFile] to this keeps rendering exactly as before
+  /// for every case except "HEIC/HEIF preview is ready", which is strictly
+  /// additive.
+  static XFile? previewLocalFile(dynamic item) {
+    final preview = previewSource(item);
+    if (preview != null) return XFile(preview);
+    return localFile(item);
+  }
 
   static XFile? localFile(dynamic item) {
     if (item is XFile) return item;

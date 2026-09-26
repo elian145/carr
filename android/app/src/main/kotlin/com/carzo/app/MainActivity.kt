@@ -60,5 +60,26 @@ class MainActivity : FlutterActivity() {
                 result.notImplemented()
             }
         }
+
+        // HEIC/HEIF Sell-photo preview fix -- see HeifPreviewDecoder.kt for
+        // why this exists and why it deliberately avoids BitmapFactory/
+        // ImageDecoder.
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "carzo/heif_preview",
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "decodeHeifToJpeg") {
+                val bytes = call.argument<ByteArray>("bytes")
+                val maxDimension = call.argument<Int>("maxDimension") ?: 2048
+                val quality = call.argument<Int>("quality") ?: 90
+                if (bytes == null || bytes.isEmpty()) {
+                    result.error("heif_preview_invalid_args", "bytes is null/empty", null)
+                } else {
+                    decodeHeifToJpeg(bytes, maxDimension, quality, result)
+                }
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 }

@@ -436,21 +436,160 @@ mixin _SellStep4Logic on _SellStep4Fields {
     }
   }
 
-  Future<Map<String, dynamic>> _pickedImageMedia(XFile file) async {
-    int? width;
-    int? height;
+  /// [logContext] is purely a diagnostic-log tag (e.g. `'[DAMAGE]'` for
+  /// damage photos) appended after `[HEIC PREVIEW]` -- it has no effect on
+  /// behavior. Defaults to empty so the listing-photo call site below logs
+  /// exactly as before.
+  Future<Map<String, dynamic>> _pickedImageMedia(
+    XFile file, {
+    required String draftId,
+    String logContext = '',
+  }) async {
+    Uint8List? bytes;
     try {
-      final bytes = await file.readAsBytes();
-      final codec = await ui.instantiateImageCodec(bytes);
-      final frame = await codec.getNextFrame();
-      width = frame.image.width;
-      height = frame.image.height;
-      frame.image.dispose();
-      codec.dispose();
+      bytes = await file.readAsBytes();
     } catch (e, st) {
       logNonFatal(e, st);
     }
-    return ListingImageMedia.map(file, width: width, height: height);
+    final isHeic = HeicPreviewConverter.isHeic(file.path);
+    // HEIC/HEIF fix (real-device evidence): Flutter's Skia decoders --
+    // `ui.instantiateImageCodec` below, and the `Image.file`/`Image.memory`
+    // widgets the Step4 grid / blur-choice "Original photos" grid use --
+    // cannot decode HEIC/HEIF at all, even though `readAsBytes()` above
+    // succeeds. Generate a JPEG preview via the OS's own native decoder so
+    // local rendering has something Skia can actually display. The
+    // original HEIC/HEIF file/path is completely untouched here -- it
+    // stays the only thing `ListingImageMedia.source()`/`localFile()`
+    // (and therefore upload/submission) ever return.
+    //
+    // Reused as-is for damage photos (via `logContext: '[DAMAGE]'` from
+    // `_backfillDamageImagePreviews`) -- this function has no listing-only
+    // behavior, so there is nothing damage-specific to branch on here.
+    String? previewSource;
+    if (bytes != null && isHeic) {
+      previewSource = await HeicPreviewConverter.ensureJpegPreview(
+        bytes,
+        draftId: draftId,
+      );
+    }
+    int? width;
+    int? height;
+    if (bytes != null) {
+      try {
+        final codec = await ui.instantiateImageCodec(bytes);
+        final frame = await codec.getNextFrame();
+        width = frame.image.width;
+        height = frame.image.height;
+        frame.image.dispose();
+        codec.dispose();
+      } catch (e, st) {
+        // Expected/harmless for HEIC/HEIF -- Skia can't decode it either,
+        // same root cause `previewSource` above just worked around. Width/
+        // height simply stay null, which every consumer already tolerates
+        // (aspect-ratio hinting only). Only report non-fatals for
+        // unexpected decode failures on non-HEIC files.
+        if (!isHeic) logNonFatal(e, st);
+      }
+    }
+    _debugLog(
+      '[HEIC PREVIEW]$logContext originalSource=${file.path}',
+    );
+    _debugLog(
+      '[HEIC PREVIEW]$logContext previewSource=$previewSource',
+    );
+    return ListingImageMedia.map(
+      file,
+      width: width,
+      height: height,
+      previewSource: previewSource,
+    );
+  }
+
+  /// Decodes width/height (and, for HEIC/HEIF, generates a local JPEG
+  /// preview -- see `HeicPreviewConverter`) for freshly-picked photos and
+  /// backfills them onto the matching `_selectedImages` entry (matched by
+  /// path, so it stays correct even if the user removes/reorders photos
+  /// while this is still running -- see A-fix item 9, "removing/reordering
+  /// images keeps mappings correct"). Never blocks or delays the original's
+  /// first render -- that already happened in `_pickImages`'s first
+  /// `setState`, before this is ever called.
+  ///
+  /// Must run, and be awaited, BEFORE `_syncMediaDraftToParent()`: that
+  /// durable-copies each file, which *rewrites* `ListingImageMedia.source`
+  /// to a new `sell_draft_media/...` path -- if this ran afterward (as it
+  /// used to, unawaited), the by-path match below would already always
+  /// fail to find the (renamed) entry, silently dropping the backfill.
+  Future<void> _backfillImageDimensions(
+    List<XFile> files, {
+    required String draftId,
+  }) async {
+    for (final file in files) {
+      if (!mounted) return;
+      final enriched = await _pickedImageMedia(file, draftId: draftId);
+      if (!mounted) return;
+      final idx = _selectedImages.indexWhere(
+        (item) => ListingImageMedia.source(item) == file.path,
+      );
+      _debugLog('[HEIC PREVIEW] applying path=${file.path}');
+      _debugLog(
+        '[HEIC PREVIEW] previewSource before='
+        '${idx == -1 ? null : ListingImageMedia.previewSource(_selectedImages[idx])}',
+      );
+      _debugLog(
+        '[HEIC PREVIEW] previewSource after='
+        '${ListingImageMedia.previewSource(enriched)}',
+      );
+      _debugLog('[HEIC PREVIEW] matched=${idx != -1}');
+      if (idx == -1) continue;
+      setState(() => _selectedImages[idx] = enriched);
+    }
+  }
+
+  /// Damage-photo counterpart to [_backfillImageDimensions] above: reuses
+  /// the exact same [_pickedImageMedia] helper (and therefore the exact
+  /// same [HeicPreviewConverter]) to generate a JPEG preview for HEIC/HEIF
+  /// damage photos, then backfills it onto the matching `_damageImages`
+  /// entry by path.
+  ///
+  /// Damage photos previously never went through `_pickedImageMedia` at
+  /// all -- `_pickDamageImages` inserted the raw picked `XFile`s directly,
+  /// so no `preview_source` was ever generated for them, which is why a
+  /// HEIC/HEIF damage photo never rendered even after the equivalent fix
+  /// already shipped for listing photos.
+  ///
+  /// Must run, and be awaited, BEFORE `_syncMediaDraftToParent()` for the
+  /// exact same reason documented on `_backfillImageDimensions`: that call
+  /// durable-copies each file and rewrites `source`, so a by-path match
+  /// here would silently fail to find the (renamed) entry if this ran
+  /// afterward.
+  Future<void> _backfillDamageImagePreviews(
+    List<XFile> files, {
+    required String draftId,
+  }) async {
+    for (final file in files) {
+      if (!mounted) return;
+      final enriched = await _pickedImageMedia(
+        file,
+        draftId: draftId,
+        logContext: '[DAMAGE]',
+      );
+      if (!mounted) return;
+      final idx = _damageImages.indexWhere(
+        (item) => ListingImageMedia.source(item) == file.path,
+      );
+      _debugLog('[HEIC PREVIEW][DAMAGE] applying path=${file.path}');
+      _debugLog(
+        '[HEIC PREVIEW][DAMAGE] previewSource before='
+        '${idx == -1 ? null : ListingImageMedia.previewSource(_damageImages[idx])}',
+      );
+      _debugLog(
+        '[HEIC PREVIEW][DAMAGE] previewSource after='
+        '${ListingImageMedia.previewSource(enriched)}',
+      );
+      _debugLog('[HEIC PREVIEW][DAMAGE] matched=${idx != -1}');
+      if (idx == -1) continue;
+      setState(() => _damageImages[idx] = enriched);
+    }
   }
 
   /// Removes the photo at [index] from the wizard's local media state.
@@ -655,7 +794,26 @@ mixin _SellStep4Logic on _SellStep4Fields {
       }
       setState(() => _isImportingMedia = true);
       try {
-        final additions = await Future.wait(newFiles.map(_pickedImageMedia));
+        // A-fix (real-device evidence): insert the ORIGINAL picked photos
+        // into state IMMEDIATELY -- no `await` between the picker
+        // returning and this `setState`, exactly like `_pickDamageImages`
+        // already does below. This used to `await Future.wait(newFiles.
+        // map(_pickedImageMedia))` first -- an image decode per file, for
+        // width/height metadata only -- BEFORE the very first setState,
+        // which delayed the original's first render by however long that
+        // decode took (worse for `content://` sources, which must read
+        // through `XFile.readAsBytes()`). Width/height are cosmetic
+        // (aspect-ratio hinting only; every consumer already tolerates
+        // them being absent), so they're now backfilled in the background
+        // via `_backfillImageDimensions`, after the original is already
+        // visible -- never blocking it.
+        for (final f in newFiles) {
+          _debugLog(
+            'PHOTO PICK: path=${f.path} name=${f.name} '
+            'contentUri=${f.path.startsWith('content://')}',
+          );
+        }
+        final additions = newFiles.map(ListingImageMedia.map).toList();
         if (!mounted || additions.isEmpty) return;
         final parentState = context.findAncestorStateOfType<_SellCarPageState>();
         setState(() {
@@ -664,9 +822,22 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _blurredImages = [];
           _isProcessingImages = false;
         });
+        _debugLog(
+          'IMMEDIATE PREVIEW: _selectedImages.length=${_selectedImages.length} '
+          '(inserted with no decode/await before this setState)',
+        );
         parentState?.carData.remove('use_blurred_plates');
         parentState?.invalidatePlateBlurJob();
         parentState?.invalidatePhotoPrestage();
+        // Width/height + HEIC/HEIF preview backfill must run (and finish)
+        // BEFORE the durable-copy step below, which rewrites each entry's
+        // `source` -- see `_backfillImageDimensions`'s doc comment. The
+        // original is already visible from the setState above; this only
+        // delays the durable copy/background blur trigger, never the
+        // original's first render.
+        final draftId = parentState?._currentDraftId ?? 'default';
+        await _backfillImageDimensions(newFiles, draftId: draftId);
+        if (!mounted) return;
         await _syncMediaDraftToParent();
         unawaited(_saveDraft());
         unawaited(parentState?.startBackgroundPlateBlur());
@@ -723,12 +894,25 @@ mixin _SellStep4Logic on _SellStep4Fields {
       setState(() => _isImportingMedia = true);
       try {
         final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+        // Insert the ORIGINAL picked damage photos into state immediately
+        // -- exactly like `_pickImages` -- so the picked photo (HEIC/HEIF
+        // or not) shows up without waiting on preview generation or the
+        // durable copy below. `localFile()`/`previewLocalFile()` both
+        // already resolve a raw `XFile` entry fine.
         setState(() {
           _damageImages = [..._damageImages, ...additions];
         });
         parentState?.carData.remove('use_blurred_plates');
         parentState?.invalidatePlateBlurJob();
         parentState?.invalidatePhotoPrestage();
+        // HEIC/HEIF preview fix (damage photos): must run, and be
+        // awaited, BEFORE `_syncMediaDraftToParent()` below -- see
+        // `_backfillDamageImagePreviews`'s doc comment for why order
+        // matters here (same durable-copy path-rewrite hazard already
+        // fixed for listing photos).
+        final draftId = parentState?._currentDraftId ?? 'default';
+        await _backfillDamageImagePreviews(additions, draftId: draftId);
+        if (!mounted) return;
         await _syncMediaDraftToParent();
         unawaited(_saveDraft());
         unawaited(parentState?.startBackgroundPlateBlur());

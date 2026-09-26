@@ -270,7 +270,10 @@ class _SellReviewCarDetailScrollViewState
       AppPageRoute(
         builder: (_) => ListingPreviewMediaGridPage(
           imageFilesOrUrls: images.map((item) {
-            final local = ListingImageMedia.localFile(item);
+            // Same fix as `_buildMediaSlide` above -- prefer the HEIC/HEIF
+            // JPEG preview (if one exists) for local rendering in the
+            // full-screen gallery too.
+            final local = ListingImageMedia.previewLocalFile(item);
             return local ?? ListingImageMedia.source(item);
           }).toList(),
           videoFilesOrUrls: videos,
@@ -332,10 +335,33 @@ class _SellReviewCarDetailScrollViewState
   Widget _buildMediaSlide(_PreviewMediaEntry slot) {
     if (slot.isVideo) return _buildVideoCarouselSlide(slot.item);
     final item = slot.item;
+    final alignment = ListingImageMedia.coverAlignment(item);
+    // Final-review bug fix (real-device evidence): this used to always call
+    // `_listingNetworkImage(ListingImageMedia.source(item), ...)` -- passing
+    // only the bare `source()` string, which throws away the item's
+    // `preview_source` entirely (it's only readable from the original
+    // Map/XFile). For a not-yet-uploaded HEIF original with no server URL
+    // yet, that string is a local `.heif` path; `listingNetworkImage`'s own
+    // local-file fallback (`ListingImageMedia.localFile`) would then hand
+    // Flutter's Skia decoder the raw HEIF bytes, which it cannot decode --
+    // exactly the failure already fixed elsewhere via
+    // `previewLocalFile()`/`preview_source`. Resolve the preview/local file
+    // from the full `item` FIRST (same pattern as
+    // `sell_step4_build_photos.dart` / `sell_step_blur_choice_build.dart`),
+    // and only fall back to a network image for genuine remote URLs.
+    final local = ListingImageMedia.previewLocalFile(item);
+    if (local != null) {
+      return listingLocalFileImage(
+        local,
+        fit: BoxFit.cover,
+        alignment: alignment,
+        width: double.infinity,
+      );
+    }
     return _listingNetworkImage(
       ListingImageMedia.source(item),
       fit: BoxFit.cover,
-      alignment: ListingImageMedia.coverAlignment(item),
+      alignment: alignment,
       width: double.infinity,
     );
   }

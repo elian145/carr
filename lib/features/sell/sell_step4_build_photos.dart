@@ -50,7 +50,26 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                     itemBuilder: (context, index) {
                       final image = _selectedImages[index];
                       final keyStr = ListingImageMedia.source(image);
-                      final localFile = ListingImageMedia.localFile(image);
+                      // Prefer the HEIC/HEIF JPEG preview (if one exists)
+                      // for local rendering; falls back to `localFile`
+                      // unchanged for every other case (JPEG/PNG, or no
+                      // preview yet). Submission/upload elsewhere still
+                      // reads `source()`/`localFile()` directly, never
+                      // this.
+                      appLog(
+                        '[HEIC PREVIEW] render originalSource='
+                        '${ListingImageMedia.source(image)}',
+                      );
+                      appLog(
+                        '[HEIC PREVIEW] render previewSource='
+                        '${ListingImageMedia.previewSource(image)}',
+                      );
+                      final localFile = ListingImageMedia.previewLocalFile(
+                        image,
+                      );
+                      appLog(
+                        '[HEIC PREVIEW] render chosenPath=${localFile?.path}',
+                      );
                       final isPrimary = index == _primaryImageIndex;
                       return Stack(
                         key: ValueKey(keyStr),
@@ -63,7 +82,9 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                     imageFilesOrUrls:
                                         _selectedImages.map((item) {
                                       final local =
-                                          ListingImageMedia.localFile(item);
+                                          ListingImageMedia.previewLocalFile(
+                                        item,
+                                      );
                                       return local ??
                                           ListingImageMedia.source(item);
                                     }).toList(),

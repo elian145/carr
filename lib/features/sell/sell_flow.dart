@@ -20,6 +20,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import '../../theme/app_colors.dart';
 
@@ -63,6 +64,7 @@ import '../../shared/i18n/region_spec_labels.dart' as region_spec_labels;
 import '../../shared/listings/body_type_assets.dart' as body_type_assets;
 import '../../shared/listings/plate_city_assets.dart';
 import '../../shared/listings/engine_size_filter_options.dart';
+import '../../shared/listings/heic_preview_converter.dart';
 import '../../shared/listings/listing_uploaded_ago.dart';
 import '../../shared/listings/listing_image_media.dart';
 import '../../shared/media/media_url.dart';

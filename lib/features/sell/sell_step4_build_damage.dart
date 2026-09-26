@@ -39,7 +39,17 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                     itemBuilder: (context, index) {
                       final image = _damageImages[index];
                       final keyStr = ListingImageMedia.source(image);
-                      final localFile = ListingImageMedia.localFile(image);
+                      // Prefer the HEIC/HEIF JPEG preview (if one exists)
+                      // for local rendering -- same fix already applied to
+                      // the listing-photo grid in
+                      // `sell_step4_build_photos.dart`. Falls back to
+                      // `localFile` unchanged for every other case
+                      // (JPEG/PNG, or no preview yet). Submission still
+                      // reads `source()`/`localFile()` directly elsewhere,
+                      // never this.
+                      final localFile = ListingImageMedia.previewLocalFile(
+                        image,
+                      );
                       return Stack(
                         key: ValueKey('dmg_$keyStr'),
                         children: [
@@ -50,7 +60,9 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                                   builder: (_) => ListingPreviewGalleryPage(
                                     imageFilesOrUrls: _damageImages.map((item) {
                                       final local =
-                                          ListingImageMedia.localFile(item);
+                                          ListingImageMedia.previewLocalFile(
+                                        item,
+                                      );
                                       return local ??
                                           ListingImageMedia.source(item);
                                     }).toList(),

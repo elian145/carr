@@ -55,7 +55,14 @@ class _ListingPreviewMediaViewerPageState
   }
 
   Widget _buildImage(dynamic item) {
-    final local = ListingImageMedia.localFile(item);
+    // Same fix as `ListingPreviewMediaGridPage._buildImageTile` (real-device
+    // evidence, Bug 1) -- this full-screen viewer is pushed straight from
+    // that grid, so a HEIC/HEIF item that renders fine as a thumbnail via
+    // `previewLocalFile()` must resolve the same way here, or tapping the
+    // tile just swaps one broken-image placeholder for another. Falls back
+    // to `localFile()` unchanged for JPEG/PNG originals or when no preview
+    // exists yet.
+    final local = ListingImageMedia.previewLocalFile(item);
     if (local != null) {
       return _ZoomableFileImage(path: local.path);
     }

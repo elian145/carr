@@ -6,7 +6,13 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
       return const SizedBox.shrink();
     }
     final galleryItems = images.map((item) {
-      final local = ListingImageMedia.localFile(item);
+      // Prefer the HEIC/HEIF JPEG preview (if one exists) for local
+      // rendering -- this grid renders BOTH the "Original photos" and the
+      // "Blurred" lists; blurred images are always server-produced JPEGs
+      // (never HEIC), so this is a no-op fallback to `localFile`/`source`
+      // for them. Submission uses `original_images`/`blurred_images`
+      // (i.e. `source()`/`localFile()`) directly elsewhere, never this.
+      final local = ListingImageMedia.previewLocalFile(item);
       return local ?? ListingImageMedia.source(item);
     }).toList();
     return LayoutBuilder(
@@ -25,7 +31,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
           itemBuilder: (context, index) {
             final image = images[index];
             final keyStr = ListingImageMedia.source(image);
-            final localFile = ListingImageMedia.localFile(image);
+            final localFile = ListingImageMedia.previewLocalFile(image);
             return GestureDetector(
               onTap: () {
                 Navigator.of(context).push(
