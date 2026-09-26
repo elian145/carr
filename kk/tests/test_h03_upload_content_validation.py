@@ -49,6 +49,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import struct
 import subprocess
 import sys
 import tempfile
@@ -71,6 +72,23 @@ if str(_REPO_ROOT) not in sys.path:
 JPEG_HEADER = b"\xff\xd8\xff\xe0" + b"\x00" * 28
 PNG_HEADER = b"\x89PNG\r\n\x1a\n" + b"\x00" * 24
 MP4_HEADER = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 16
+# Issue-3 fix (real-device evidence: `POST /api/cars/<id>/videos` -> HTTP
+# 400 for genuinely valid .mov files): three real shapes a `.mov` file's
+# first bytes can legitimately take.
+#   1. The "canonical" QuickTime ftyp brand `"qt  "` (already accepted
+#      before this fix).
+MOV_QT_BRAND_HEADER = b"\x00\x00\x00\x14ftypqt  " + b"\x00" * 16
+#   2. An MP4-family ftyp brand (e.g. "isom") with a `.mov` extension --
+#      MOV and MP4 are the SAME underlying ISO-BMFF container format, and
+#      real export/picker pipelines can legitimately produce this. Was
+#      INCORRECTLY rejected before this fix.
+MOV_ISOM_BRAND_HEADER = b"\x00\x00\x00\x14ftypisom" + b"\x00" * 16
+#   3. A "classic" pre-ftyp QuickTime movie that starts directly with a
+#      top-level atom (here: `moov`) instead of an ISO-BMFF `ftyp` box at
+#      all -- the exact durable-storage shape
+#      `sell_draft_media/<draftId>/video_XXXXXXXX.mov` real devices were
+#      observed producing. Was INCORRECTLY rejected before this fix.
+MOV_CLASSIC_ATOM_HEADER = b"\x00\x00\x00\x08moov" + b"\x00" * 24
 WEBM_HEADER = b"\x1a\x45\xdf\xa3" + b"\x00" * 28
 WAV_HEADER = b"RIFF\x00\x00\x00\x00WAVEfmt " + b"\x00" * 16
 MP3_HEADER = b"ID3\x03\x00\x00\x00" + b"\x00" * 24
@@ -117,6 +135,147 @@ class TestSniffBytes:
         from kk.security import sniff_bytes
 
         assert sniff_bytes(HTML_PAYLOAD, "mp4") is False
+
+    # -- Issue-3 fix: .mov content validation (real-device HTTP 400) -------
+
+    def test_valid_mov_with_qt_brand_accepted(self):
+        """The canonical QuickTime ftyp brand -- already worked before the
+        fix; guards against a future change accidentally narrowing this
+        back."""
+        from kk.security import sniff_bytes
+
+        assert sniff_bytes(MOV_QT_BRAND_HEADER, "mov") is True
+
+    def test_valid_mov_with_mp4_family_brand_accepted(self):
+        """Real-device root cause: a `.mov` file whose ftyp major_brand is
+        an MP4-family code (e.g. "isom") instead of the exact "qt  " code
+        -- MOV and MP4 share the same ISO-BMFF container format, so this is
+        a genuinely valid, playable .mov file that must not be rejected."""
+        from kk.security import sniff_bytes
+
+        assert sniff_bytes(MOV_ISOM_BRAND_HEADER, "mov") is True
+
+    def test_valid_classic_pre_ftyp_mov_accepted(self):
+        """Real-device root cause: a "classic" QuickTime movie that predates
+        the ftyp box entirely and starts directly with a top-level atom
+        (`moov`) -- the exact shape seen in durable storage paths like
+        `sell_draft_media/<draftId>/video_XXXXXXXX.mov`."""
+        from kk.security import sniff_bytes
+
+        assert sniff_bytes(MOV_CLASSIC_ATOM_HEADER, "mov") is True
+
+    def test_html_disguised_as_mov_rejected(self):
+        """Still narrow/safe: arbitrary non-video content disguised with a
+        `.mov` extension has neither a real ISO-BMFF ftyp box with an
+        MP4/QuickTime brand nor one of the specific classic atom names at
+        the exact expected offset, so it is still rejected."""
+        from kk.security import sniff_bytes
+
+        assert sniff_bytes(HTML_PAYLOAD, "mov") is False
+
+    def test_mp4_family_ftyp_with_unrelated_atom_name_still_rejected(self):
+        """A ftyp box whose brand is neither QuickTime nor a known MP4-
+        family brand must still be rejected -- proves the fix only widened
+        acceptance to genuine MP4/QuickTime container brands, not to any
+        arbitrary 4-byte value."""
+        from kk.security import sniff_bytes
+
+        bogus_brand_header = b"\x00\x00\x00\x14ftypzzzz" + b"\x00" * 16
+        assert sniff_bytes(bogus_brand_header, "mov") is False
+
+    # -- Spoofability follow-up: classic-atom acceptance must validate the --
+    # -- atom's SIZE field too, not just match the 4-byte type name. -------
+
+    def test_classic_atom_with_impossibly_small_size_is_rejected(self):
+        """`moov` at the right offset is not enough on its own -- the size
+        field immediately before it must also be a structurally plausible
+        atom size. An atom can never be smaller than its own 8-byte
+        `size+type` header, so a declared size of 3 is impossible for a
+        genuine atom and must be rejected even though the type name
+        matches exactly."""
+        from kk.security import sniff_bytes
+
+        random_bytes_with_moov_type = (
+            struct.pack(">I", 3) + b"moov" + bytes(range(16))
+        )
+        assert sniff_bytes(random_bytes_with_moov_type, "mov") is False
+
+    def test_classic_atom_with_invalid_length_and_mdat_type_is_rejected(self):
+        """Same structural-size check, for a different atom type (`mdat`)
+        and a different impossible size (5) -- proves this isn't special-
+        cased to just `moov`."""
+        from kk.security import sniff_bytes
+
+        invalid_length_mdat = struct.pack(">I", 5) + b"mdat" + bytes(range(16))
+        assert sniff_bytes(invalid_length_mdat, "mov") is False
+
+    def test_classic_atom_size_zero_extends_to_eof_is_accepted(self):
+        """Size 0 is a legitimate, well-defined ISO-BMFF/QuickTime meaning
+        ("this atom extends to the end of the file") -- commonly used for
+        a trailing `mdat` -- and must still be accepted."""
+        from kk.security import sniff_bytes
+
+        size_zero_mdat = struct.pack(">I", 0) + b"mdat" + bytes(range(16))
+        assert sniff_bytes(size_zero_mdat, "mov") is True
+
+    def test_classic_atom_valid_64_bit_extended_size_is_accepted(self):
+        """Size == 1 is the ISO-BMFF escape code for a 64-bit extended size
+        in the next 8 bytes -- a real, legal atom shape (used for atoms
+        too large for a 32-bit size field) -- and must be accepted when
+        that 64-bit value is itself plausible."""
+        from kk.security import sniff_bytes
+
+        valid_extended_size_moov = (
+            struct.pack(">I", 1)
+            + b"moov"
+            + struct.pack(">Q", 5_000_000_000)
+            + bytes(range(8))
+        )
+        assert sniff_bytes(valid_extended_size_moov, "mov") is True
+
+    def test_classic_atom_malformed_64_bit_extended_size_is_rejected(self):
+        """Size == 1 (extended-size escape code) but the 64-bit value that
+        follows is itself impossibly small (< 16, the minimum possible
+        length of an extended-size atom header) -- structurally invalid,
+        must be rejected."""
+        from kk.security import sniff_bytes
+
+        malformed_extended_size_moov = (
+            struct.pack(">I", 1)
+            + b"moov"
+            + struct.pack(">Q", 4)
+            + bytes(range(8))
+        )
+        assert sniff_bytes(malformed_extended_size_moov, "mov") is False
+
+    def test_classic_atom_truncated_extended_size_header_is_rejected(self):
+        """Size == 1 (extended-size escape code) but the header is too
+        short to even contain the 8-byte extended size field at all --
+        must be rejected, not treated as a match."""
+        from kk.security import sniff_bytes
+
+        truncated_extended_size_moov = struct.pack(">I", 1) + b"moov" + b"\x00\x00"
+        assert sniff_bytes(truncated_extended_size_moov, "mov") is False
+
+    def test_truncated_ftyp_box_missing_brand_bytes_is_rejected(self):
+        """A `ftyp` box header cut off before its 4-byte major_brand field
+        is fully present must fail closed (no brand to validate at all),
+        not be coincidentally treated as a classic atom either (`ftyp` is
+        not itself a recognized classic QuickTime atom type)."""
+        from kk.security import sniff_bytes
+
+        truncated_ftyp = b"\x00\x00\x00\x14ftypqt"
+        assert sniff_bytes(truncated_ftyp, "mov") is False
+
+    def test_random_payload_renamed_mov_is_rejected(self):
+        """A payload with no recognizable ISO-BMFF/QuickTime structure at
+        all, merely renamed with a `.mov` extension, must still be
+        rejected -- the classic-atom/ftyp widening does not turn this into
+        an "accept everything" check."""
+        from kk.security import sniff_bytes
+
+        random_payload = bytes((i * 37 + 11) % 256 for i in range(32))
+        assert sniff_bytes(random_payload, "mov") is False
 
     def test_valid_webm_accepted(self):
         """Same EBML container check backs both video .webm and audio .webm."""

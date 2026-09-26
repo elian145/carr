@@ -637,8 +637,91 @@ def _is_mp4(h: bytes) -> bool:
     return b in ("isom", "iso2", "mp41", "mp42", "avc1", "dash")
 
 
+#: Top-level QuickTime atom types that can legitimately open a "classic"
+#: QuickTime movie file -- these predate the ISO-BMFF `ftyp` box entirely
+#: (the `ftyp` box was introduced later, by the ISO/MPEG-4 file format that
+#: QuickTime's container format itself inspired). A real, playable .mov
+#: recorded by many camera/export pipelines can start directly with one of
+#: these instead of `ftyp`. This is the same well-established heuristic
+#: general-purpose file-type sniffers (e.g. `file(1)`/libmagic) use to
+#: detect classic QuickTime movies.
+_QT_CLASSIC_ATOMS = (b"moov", b"mdat", b"free", b"skip", b"wide", b"pnot", b"junk")
+
+
+def _valid_bmff_atom_size(h: bytes) -> bool:
+    """True when the 32-bit (or 64-bit extended) atom/box size field at
+    ``h[0:4]`` is a STRUCTURALLY plausible ISO-BMFF/QuickTime atom size --
+    not merely "some 4 bytes are present".
+
+    Correctness follow-up (spoofability review): the classic-atom branch of
+    ``_is_mov()`` originally accepted anything whose bytes[4:8] spelled a
+    known atom name (``moov``/``mdat``/etc.), with NO check at all on the
+    size field that precedes it -- so 4 arbitrary/malformed bytes glued in
+    front of a real atom name would still pass. A real ISO-BMFF atom's size
+    field must be one of exactly three shapes:
+
+      - ``0``            -- "this atom extends to the end of the file"
+                             (legal; commonly used for a trailing `mdat`).
+      - ``1``             -- the 32-bit field is an escape code: the REAL
+                             size is a 64-bit big-endian integer in the
+                             next 8 bytes (``h[8:16]``), which must itself
+                             be large enough to hold that 16-byte extended
+                             header (`size(4)+type(4)+largesize(8)`).
+      - ``>= 8``          -- an ordinary atom length; an atom can never be
+                             smaller than its own 8-byte `size+type`
+                             header, so anything from 2..7 is structurally
+                             impossible and rejected.
+    """
+    if len(h) < 8:
+        return False
+    size = int.from_bytes(h[0:4], byteorder="big", signed=False)
+    if size == 0:
+        return True
+    if size == 1:
+        if len(h) < 16:
+            return False
+        ext_size = int.from_bytes(h[8:16], byteorder="big", signed=False)
+        return ext_size >= 16
+    return size >= 8
+
+
 def _is_mov(h: bytes) -> bool:
-    return _ftyp_brand(h) == "qt  "
+    # Real-device evidence (Issue 3, video upload HTTP 400): this used to
+    # require the ISO-BMFF `ftyp` box's major_brand to be the EXACT
+    # 4-byte QuickTime code `"qt  "` -- rejecting two classes of genuinely
+    # valid, playable .mov files real pickers/cameras produce:
+    #   1. .mov files whose ftyp major_brand is an MP4-family code (e.g.
+    #      "isom"/"mp42") instead of "qt  " -- MOV and MP4 are the SAME
+    #      underlying ISO-BMFF container format, so a muxer/re-encoder is
+    #      free to declare either brand while still writing a `.mov`
+    #      filename; this is not a different (let alone unsafe) format,
+    #      it is byte-for-byte the format `.mp4` uploads already accept.
+    #   2. "classic" QuickTime movies that predate the `ftyp` box
+    #      entirely and start directly with a top-level atom like `moov`/
+    #      `mdat`/`free`/`wide` -- `_ftyp_brand()` returns "" for these
+    #      (no ftyp box present at all), so the old exact-match check
+    #      rejected every single one of them, no matter how genuine.
+    # Still narrow/safe: arbitrary non-video content (HTML, executables,
+    # etc.) disguised with a `.mov` extension has neither a real ISO-BMFF
+    # `ftyp` box with a real MP4/QuickTime brand NOR one of these specific
+    # classic atom names at this exact offset, so it is still rejected.
+    #
+    # Spoofability follow-up: BOTH branches below also require
+    # `_valid_bmff_atom_size()` -- matching the atom TYPE name alone (e.g.
+    # bytes[4:8] == b"moov") is not sufficient; the size field ahead of it
+    # must also be a structurally plausible atom size, not arbitrary/
+    # malformed bytes. This does not weaken acceptance of any genuine
+    # video: every real encoder/muxer writes a valid size field by
+    # definition -- only content that isn't really an ISO-BMFF/QuickTime
+    # atom at all (garbage, or a deliberately malformed size) is affected.
+    brand = _ftyp_brand(h)
+    if brand:
+        if not _valid_bmff_atom_size(h):
+            return False
+        return brand == "qt  " or _is_mp4(h)
+    if len(h) >= 8 and h[4:8] in _QT_CLASSIC_ATOMS:
+        return _valid_bmff_atom_size(h)
+    return False
 
 
 def _is_avi(h: bytes) -> bool:
