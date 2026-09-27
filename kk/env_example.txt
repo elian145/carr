@@ -123,7 +123,11 @@ UPLOAD_IMAGE_MAX_DIM=2048
 UPLOAD_IMAGE_JPEG_QUALITY=92
 
 # Trust & support (mobile Help / Terms / Contact)
-SUPPORT_EMAIL=support@carnetiq.app
+# Required in production (validate_required_secrets() fails boot if unset --
+# see kk/config.py). This is the single support/contact inbox used by
+# /privacy, /terms, /delete-account, and POST /api/account-deletion-request.
+# Do not use the retired support@carzo.app / support@carnetiq.app addresses.
+SUPPORT_EMAIL=carzo@mycarzoiq.com
 SUPPORT_PHONE=
 # E.164 or wa.me link, e.g. https://wa.me/9647XXXXXXXX
 SUPPORT_WHATSAPP=

@@ -27,6 +27,9 @@ class BackendFactorySmokeTest(unittest.TestCase):
         os.environ["APP_ENV"] = "testing"
         os.environ["SMS_PROVIDER"] = "console"
         os.environ["ALLOW_DEV_CODE_IN_RESPONSE"] = "1"  # M-01: required to read dev_code
+        # Real monitored inbox; SUPPORT_EMAIL has no hardcoded fallback (see
+        # kk/legal_pages.py / kk/app_settings.py) and is required in production.
+        os.environ["SUPPORT_EMAIL"] = "carzo@mycarzoiq.com"
         os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
         os.environ["DB_PATH"] = os.path.join(self._tmp.name, "t.db")
 
@@ -1152,7 +1155,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
         trust = self.client.get("/api/config/trust")
         self.assertEqual(trust.status_code, 200, trust.data)
         payload = trust.get_json() or {}
-        self.assertEqual(payload.get("support_email"), "support@carzo.app")
+        self.assertEqual(payload.get("support_email"), "carzo@mycarzoiq.com")
         self.assertTrue((payload.get("privacy_url") or "").strip())
         self.assertTrue((payload.get("terms_url") or "").strip())
 
