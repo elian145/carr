@@ -138,6 +138,63 @@ class TestWorkerPrefetchMultiplier:
 
 
 # ---------------------------------------------------------------------------
+# 2b) Broker-level redelivery for a WHOLE-CONTAINER loss (not just a
+#     worker-child crash the surviving parent process can detect and
+#     reject/requeue itself). acks_late/reject_on_worker_lost do nothing
+#     if the entire process tree -- parent included -- is killed (exactly
+#     what Render's "Ran out of memory... Instance failed" event means);
+#     redelivery in that case depends entirely on the Redis broker's own
+#     "visibility_timeout". See kk/tasks/celery_app.py's module-level
+#     comment for the full mechanism.
+# ---------------------------------------------------------------------------
+
+
+class TestBrokerVisibilityTimeout:
+    def test_visibility_timeout_is_configured(self):
+        opts = celery_app.conf.broker_transport_options
+        assert isinstance(opts, dict)
+        assert "visibility_timeout" in opts
+
+    def test_visibility_timeout_is_far_below_the_redis_transport_default(self):
+        """kombu's Redis transport default (verified directly against the
+        installed version) is 3600s (1 hour) -- exactly what produced the
+        "task never reaches SUCCESS/FAILURE, client polls forever"
+        production symptom for a whole-container-killed worker. This must
+        be materially lower."""
+        import kombu.transport.redis as redis_transport
+
+        kombu_default = redis_transport.Channel.visibility_timeout
+        assert kombu_default == 3600  # documents the exact default being improved on
+        configured = celery_app.conf.broker_transport_options["visibility_timeout"]
+        assert configured < kombu_default
+
+    def test_visibility_timeout_exceeds_the_absolute_worst_case_single_attempt_wall_time(self):
+        """Must never be so low that a still-legitimately-running attempt
+        (not actually lost) gets redelivered while it is still working --
+        that would risk two overlapping executions. Sum every internal
+        step timeout this task could hit back-to-back (the true upper
+        bound before the task's OWN code would already have raised/
+        returned): r2_get_file (120s) + source ffprobe (30s) + the ffmpeg
+        subprocess itself (600s) + output ffprobe (30s) + r2_put_file
+        (120s) + the best-effort source r2_delete_object (30s) = 930s."""
+        configured = celery_app.conf.broker_transport_options["visibility_timeout"]
+        worst_case_internal_timeouts_seconds = 120 + 30 + 600 + 30 + 120 + 30
+        assert worst_case_internal_timeouts_seconds == 930
+        assert configured > worst_case_internal_timeouts_seconds
+        assert configured > video_tasks.VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS
+
+    def test_visibility_timeout_applies_broker_wide_not_just_to_the_video_task(self):
+        """Documents that this is a broker-connection-wide Celery setting
+        (no supported per-task override exists) -- harmless for every
+        OTHER task registered here, since none of them use acks_late and
+        so are acked immediately on delivery, long before
+        visibility_timeout could ever matter for them."""
+        assert celery_app.conf.task_acks_late is not True
+        opts = celery_app.conf.broker_transport_options
+        assert "visibility_timeout" in opts
+
+
+# ---------------------------------------------------------------------------
 # 3) Task message expiry stays safely above the real worst-case execution
 #    window. With the Celery hard time_limit removed, the operative bound
 #    on the expensive step is VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS (the

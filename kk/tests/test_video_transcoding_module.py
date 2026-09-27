@@ -646,6 +646,30 @@ class TestCommandConstruction:
         assert "tonemap=" in chain
         assert "scale=640:360" in chain
 
+    def test_hdr_filter_chain_scales_and_caps_fps_before_the_tonemap_stage(self):
+        """OOM-fix: ``scale``/``fps`` must run BEFORE ``zscale``/``tonemap``,
+        not after -- the float32 linear-light intermediate
+        (``format=gbrpf32le``) this chain uses is what actually drove the
+        real-device OOM (~95 MiB/frame at native 4K, unsubsampled). Doing
+        the downscale/fps-cap first means that expensive stage only ever
+        touches already-shrunk frames. See build_video_filter_chain's
+        docstring for the full rationale."""
+        chain = vt.build_video_filter_chain(target_width=640, target_height=360, is_hdr=True)
+        scale_idx = chain.index("scale=640:360")
+        fps_idx = chain.index("fps=")
+        zscale_idx = chain.index("zscale=")
+        tonemap_idx = chain.index("tonemap=")
+        assert scale_idx < zscale_idx
+        assert scale_idx < tonemap_idx
+        assert fps_idx < zscale_idx
+        assert fps_idx < tonemap_idx
+
+    def test_sdr_filter_chain_unaffected_by_hdr_reordering(self):
+        """The SDR branch never had a tonemap stage to reorder around --
+        confirm it is untouched (scale/fps/format only, in that order)."""
+        chain = vt.build_video_filter_chain(target_width=640, target_height=360, is_hdr=False)
+        assert chain == "scale=640:360,fps=30,format=yuv420p"
+
     def test_transcode_argv_is_plain_list_not_shell_string(self):
         argv = vt.build_transcode_argv(
             ffmpeg_path="/bin/ffmpeg",
@@ -695,6 +719,82 @@ class TestCommandConstruction:
         assert "libx264" in argv
         assert "yuv420p" in argv
         assert "+faststart" in argv
+
+
+class TestOomHardeningThreadCaps:
+    """OOM-fix: this worker runs at 0.5 CPU / limited RAM on Render --
+    every ffmpeg thread pool (decode, ``-vf`` filter-graph, libx264
+    encode) must be explicitly capped rather than left on ffmpeg's own
+    (memory-hungry) autodetection. See build_transcode_argv's docstring
+    for exactly where/why each flag below is placed."""
+
+    def test_default_thread_cap_is_one(self):
+        assert vt.SERVER_TRANSCODE_THREADS == 1
+
+    def _build(self, **overrides):
+        kwargs = dict(
+            ffmpeg_path="/bin/ffmpeg",
+            source_path="/tmp/src.mov",
+            output_path="/tmp/out.mp4",
+            video_filter_chain="scale=640:360,fps=30,format=yuv420p",
+            video_bitrate_bps=1_000_000,
+            has_audio=False,
+        )
+        kwargs.update(overrides)
+        return vt.build_transcode_argv(**kwargs)
+
+    def test_global_filter_thread_options_present_before_input(self):
+        argv = self._build()
+        i_idx = argv.index("-i")
+        assert "-filter_threads" in argv[:i_idx]
+        assert "-filter_complex_threads" in argv[:i_idx]
+
+    def test_decoder_threads_flag_is_before_the_input_file(self):
+        """A bare ``-threads`` placed AFTER ``-i`` would not bind to the
+        decoder at all -- must appear before ``-i`` to constrain the
+        SOURCE decoder's own thread pool."""
+        argv = self._build()
+        i_idx = argv.index("-i")
+        threads_before_i = [j for j, a in enumerate(argv[:i_idx]) if a == "-threads"]
+        assert len(threads_before_i) == 1
+
+    def test_encoder_threads_flag_is_after_the_video_codec(self):
+        argv = self._build()
+        c_v_idx = argv.index("-c:v")
+        threads_after_c_v = [j for j, a in enumerate(argv) if a == "-threads" and j > c_v_idx]
+        assert len(threads_after_c_v) == 1
+
+    def test_exactly_two_threads_flags_total(self):
+        """One for the decoder (before -i), one for the encoder (after
+        -c:v) -- never a third/duplicate, never zero."""
+        argv = self._build()
+        assert sum(1 for a in argv if a == "-threads") == 2
+
+    def test_both_threads_flags_use_the_requested_value(self):
+        argv = self._build(threads=1)
+        idxs = [j for j, a in enumerate(argv) if a == "-threads"]
+        assert len(idxs) == 2
+        for j in idxs:
+            assert argv[j + 1] == "1"
+
+    def test_filter_thread_values_match_requested_threads(self):
+        argv = self._build(threads=1)
+        ft_idx = argv.index("-filter_threads")
+        fct_idx = argv.index("-filter_complex_threads")
+        assert argv[ft_idx + 1] == "1"
+        assert argv[fct_idx + 1] == "1"
+
+    def test_custom_thread_count_is_honored_everywhere(self):
+        # Not the production default, but confirms the parameter (not a
+        # hardcoded literal) drives all four occurrences.
+        argv = self._build(threads=3)
+        assert argv.count("3") >= 4
+
+    def test_omitting_threads_uses_the_module_default(self):
+        argv = self._build()
+        threads_positions = [j for j, a in enumerate(argv) if a == "-threads"]
+        for j in threads_positions:
+            assert argv[j + 1] == str(vt.SERVER_TRANSCODE_THREADS)
 
 
 class TestRunFfmpeg:

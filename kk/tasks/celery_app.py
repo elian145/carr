@@ -105,6 +105,56 @@ def make_celery() -> Celery:
         # --concurrency itself (that remains 1, set on the Render
         # startCommand, not here).
         worker_prefetch_multiplier=1,
+        # OOM-fix (real production repro): acks_late+reject_on_worker_lost
+        # (see kk/tasks/video_tasks.py::transcode_car_video_source) only
+        # covers ONE of the two ways this worker can lose a task mid-run:
+        #   1. Only the worker CHILD process is killed while the
+        #      PARENT/arbiter process survives -- Celery's own
+        #      reject_on_worker_lost handling fires immediately (the
+        #      surviving parent notices the child died and rejects/
+        #      requeues the message). Fast; no broker-side timeout
+        #      involved.
+        #   2. The ENTIRE worker instance/container is killed -- this is
+        #      exactly what Render's "Ran out of memory... Instance
+        #      failed" event means (the whole process tree, parent
+        #      included, is gone). No Celery process survives to
+        #      reject/requeue anything, so redelivery depends ENTIRELY on
+        #      the Redis broker's own "visibility_timeout": a delivered-
+        #      but-unacked message stays invisible until this many
+        #      seconds have elapsed since delivery, at which point any
+        #      connected consumer's periodic restore-unacked check
+        #      (kombu's ``QoS.restore_visible``, driven off
+        #      ``visibility_timeout``) puts it back on the queue.
+        #      kombu's own default for the Redis transport (verified
+        #      directly against the installed version:
+        #      ``kombu.transport.redis.Channel.visibility_timeout``) is
+        #      3600 -- ONE HOUR. That default is exactly what produced
+        #      this production symptom: Render restarted the OOM-killed
+        #      instance within ~13s, but the already-delivered task
+        #      message itself would not have become visible for
+        #      redelivery for up to another hour, during which the task
+        #      never reaches SUCCESS/FAILURE and the Flutter client polls
+        #      a permanently-PENDING task_id.
+        #
+        # Lowered to 1200s (20 min): comfortably above this task's own
+        # absolute worst-case single-attempt wall-clock time if every one
+        # of its internal step timeouts were hit back-to-back --
+        # r2_get_file (120s default) + ffprobe source validation (30s) +
+        # the ffmpeg subprocess itself
+        # (VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS, 600s -- see
+        # kk/tasks/video_tasks.py) + ffprobe output validation (30s) +
+        # r2_put_file (120s default) + the best-effort source
+        # r2_delete_object (30s) = 930s -- while still cutting a
+        # genuinely-lost (whole-container-killed) task's redelivery
+        # latency from "up to 3600s" down to "up to 1200s". Applies to
+        # every task on this one broker connection, not just the video
+        # task -- harmless for every OTHER task registered here, none of
+        # which use acks_late, so they ack immediately on delivery and are
+        # never in the "unacked, waiting on visibility_timeout" state this
+        # setting governs in the first place.
+        broker_transport_options={
+            "visibility_timeout": 1200,
+        },
         beat_schedule={
             "process-due-scheduled-notifications": {
                 "task": "kk.tasks.notification_tasks.process_due_scheduled_notifications",

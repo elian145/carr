@@ -676,9 +676,33 @@ def build_video_filter_chain(
     HDR source (PQ/HLG): a REAL pixel-domain tone-map pipeline --
     ``zscale`` to a linear-light intermediate, ``tonemap`` (Hable operator)
     to actually compress the dynamic range, then ``zscale`` back to
-    BT.709/SDR/limited-range -- BEFORE the final scale/fps/format. This
-    never merely relabels HDR metadata as SDR (the exact mistake this
-    Phase 2 work exists to avoid repeating).
+    BT.709/SDR/limited-range. This never merely relabels HDR metadata as
+    SDR (the exact mistake this Phase 2 work exists to avoid repeating).
+
+    OOM-fix (real 4K/120fps HDR device repro): ``scale``/``fps`` run
+    FIRST here, BEFORE the zscale/tonemap chain -- NOT after, as a
+    prior revision had it. The float32 linear-light intermediate this
+    chain uses (``format=gbrpf32le``: 3 channels * 4 bytes, unsubsampled)
+    is what actually drove this worker's OOM: at native 4K
+    (3840x2160) that is ~95 MiB for a SINGLE frame, and ffmpeg's
+    filter-graph threading can have several such frames in flight at
+    once (measured ~1.77 GiB peak ffmpeg RSS on the real repro fixture --
+    see ``kk/tasks/video_tasks.py``'s module-level comment). Running
+    ``scale``/``fps`` first shrinks BOTH the per-frame size (by the same
+    ratio the OUTPUT contract already downscales by -- >=4x for a 4K
+    source going to the <=1920 long-edge cap) and the number of frames
+    per second (120fps source -> <=30fps here, so ~4x fewer frames ever
+    reach the expensive stage) that the linear-light/tonemap stage has
+    to touch at all. ``zscale``/``tonemap`` are per-pixel (pointwise)
+    operations -- applying them to a smaller, already-decimated frame
+    does not change what the OUTPUT CONTRACT promises (still a real
+    pixel-domain PQ/HLG -> BT.709 conversion, never a metadata relabel),
+    only how much data that conversion has to process. Verified against
+    a real ffmpeg build (manual smoke test + this module's own
+    ``kk/tests/test_video_transcoding_real_ffmpeg_integration.py``) to
+    still produce a valid, output-contract-passing result -- and
+    measurably faster, since far fewer pixels flow through the float32
+    stage.
 
     Callers MUST have already confirmed
     ``FfmpegCapabilities.supports_hdr_tonemap`` is ``True`` before calling
@@ -693,13 +717,33 @@ def build_video_filter_chain(
         return f"{scale_filter},{fps_filter},format=yuv420p"
 
     return (
+        f"{scale_filter},{fps_filter},"
         "zscale=t=linear:npl=100,"
         "format=gbrpf32le,"
         "zscale=p=bt709,"
         "tonemap=tonemap=hable:desat=0,"
         "zscale=t=bt709:m=bt709:r=tv,"
-        f"{scale_filter},{fps_filter},format=yuv420p"
+        "format=yuv420p"
     )
+
+
+# OOM-fix: conservative, explicit thread cap applied uniformly to
+# decode/filter/encode (see build_transcode_argv's docstring for exactly
+# WHERE each of the three placements below applies). This worker
+# (carr-worker-fra) runs at 0.5 CPU on Render -- ffmpeg's own automatic
+# thread-count autodetection is based on the number of CPUs the
+# container's kernel reports, which is commonly the HOST's full logical
+# core count (cgroup CPU-share limits like "0.5 CPU" are not the same
+# thing as a reduced CPU_COUNT for this purpose), not the fractional
+# entitlement actually available. Extra decoder/filter/encoder threads on
+# an instance this small mean extra concurrent per-thread frame
+# buffers/lookahead -- i.e. more PEAK MEMORY -- without any real
+# parallelism gain (there is less than 1 physical core to share), which
+# is exactly the mechanism behind this worker's measured ~1.77 GiB peak
+# ffmpeg RSS OOM. Previously only the ENCODER thread count was set
+# (``-threads 2`` after ``-c:v``); the decoder and the ``-vf``
+# filter-graph were left on ffmpeg's own autodetection.
+SERVER_TRANSCODE_THREADS = 1
 
 
 def build_transcode_argv(
@@ -710,7 +754,7 @@ def build_transcode_argv(
     video_filter_chain: str,
     video_bitrate_bps: int,
     has_audio: bool,
-    threads: int = 2,
+    threads: int = SERVER_TRANSCODE_THREADS,
 ) -> list[str]:
     """
     Build the ffmpeg argv list for one transcode attempt. Always a plain
@@ -720,11 +764,48 @@ def build_transcode_argv(
     (filter chain, bitrate, paths already resolved server-side) -- no
     argument is ever built from an arbitrary user-provided filter/command
     string.
+
+    ``threads`` (default :data:`SERVER_TRANSCODE_THREADS`, 1) is applied
+    at THREE separate places, each governing a DIFFERENT ffmpeg thread
+    pool -- setting only one would leave the others on ffmpeg's own
+    (memory-hungry, on this worker's 0.5-CPU instance) autodetection:
+      - ``-filter_threads``/``-filter_complex_threads`` (GLOBAL options,
+        so placed before ``-i``): bound the ``-vf`` filter-graph's own
+        thread pool. This module only ever builds a SIMPLE filtergraph
+        (``-vf``, never ``-filter_complex`` -- see
+        :func:`build_video_filter_chain`), so ``-filter_complex_threads``
+        is a documented no-op for this module's own pipeline today; it is
+        set anyway (harmless -- ffmpeg ignores it when ``-filter_complex``
+        is not used) so this stays correct if a future caller ever adds
+        one.
+      - ``-threads`` BEFORE ``-i`` (an INPUT-file option): bounds the
+        SOURCE DECODER's thread count. Must be placed before ``-i`` --
+        ffmpeg attaches a per-file ``-threads`` value to whichever
+        file/stream context follows it, so a bare ``-threads`` placed
+        after ``-i`` would not affect the decoder.
+      - ``-threads`` AFTER ``-c:v libx264`` (an OUTPUT/per-stream
+        option): bounds the ENCODER's (libx264's own) thread count --
+        ffmpeg's libx264 wrapper maps this directly onto libx264's own
+        ``threads`` parameter, so no separate ``-x264-params threads=``
+        is needed to also constrain libx264 specifically. This is the
+        one placement the PRIOR revision already had (with a default of
+        2, now 1).
+    Using both an input-side and an output-side ``-threads`` in the same
+    command (two different attachment points, not a conflicting
+    duplicate) is valid ffmpeg usage -- verified against a real,
+    resolved ffmpeg build (manual smoke test) before this change was
+    made.
     """
     argv = [
         ffmpeg_path,
         "-y",
         "-nostdin",
+        "-filter_threads",
+        str(threads),
+        "-filter_complex_threads",
+        str(threads),
+        "-threads",
+        str(threads),
         "-i",
         source_path,
         "-map",
