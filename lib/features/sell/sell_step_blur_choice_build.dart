@@ -140,6 +140,27 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
     );
   }
 
+  /// UI restore (real-device feedback): an earlier fix (see the now-removed
+  /// `sell_blur_choice_shows_both_originals_test.dart`) made this ALWAYS
+  /// show both the "Original photos" and "Blurred photos" grids
+  /// simultaneously, regardless of which radio tile was selected -- so the
+  /// two `_choiceTile`s above were purely cosmetic and never actually
+  /// changed what was rendered here. The user does not want that: exactly
+  /// ONE side must be visible at a time, matching the selected choice --
+  /// "No, keep original photos" shows only the original grid; "Yes, use
+  /// blurred photos" shows only the blurred grid (or its
+  /// blurring/not-ready states); no choice made yet shows neither (the
+  /// original, pre-existing behavior before either tile is tapped).
+  ///
+  /// This is a presentation-only change. `applySellPlateBlurChoice` in
+  /// `sell_plate_blur_choice.dart` (covered by
+  /// `sell_plate_blur_choice_test.dart`, untouched by this fix) still reads
+  /// BOTH `original_images` and `blurred_images` when committing a choice,
+  /// and neither list is ever cleared or overwritten here -- only which one
+  /// is rendered changes. The original/unblurred grid still renders through
+  /// `_blurPreviewGrid`, which already resolves
+  /// `ListingImageMedia.previewLocalFile()` (not the raw `localFile()`), so
+  /// HEIF originals keep working exactly as before.
   Widget _previewSection({
     required _SellCarPageState? parent,
     required List<dynamic> originals,
@@ -147,7 +168,14 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
     required List<dynamic> damageOriginals,
     required List<dynamic> damageBlurred,
   }) {
-    if (_useBlurredPlates == null) {
+    final loc = AppLocalizations.of(context)!;
+    final showMainOriginals = originals.isNotEmpty;
+    final showDamageOriginals = damageOriginals.isNotEmpty;
+    if (!showMainOriginals && !showDamageOriginals) {
+      _debugLog(
+        'BLUR CHOICE SCREEN: no original photos to preview yet '
+        '(originals=${originals.length}, damageOriginals=${damageOriginals.length})',
+      );
       return const SizedBox.shrink();
     }
 
@@ -155,8 +183,13 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
     final blurReady = parent?.hasBlurredPlatesReady == true;
     final showMainBlurred = blurred.isNotEmpty;
     final showDamageBlurred = damageBlurred.isNotEmpty;
-    final showMainOriginals = originals.isNotEmpty;
-    final showDamageOriginals = damageOriginals.isNotEmpty;
+
+    _debugLog(
+      'BLUR CHOICE SCREEN: originals=${originals.length} '
+      'damageOriginals=${damageOriginals.length} blurred=${blurred.length} '
+      'damageBlurred=${damageBlurred.length} blurring=$blurring '
+      'blurReady=$blurReady choice=$_useBlurredPlates',
+    );
 
     Widget labeledGrid(String title, List<dynamic> images) {
       if (images.isEmpty) return const SizedBox.shrink();
@@ -178,100 +211,89 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
       );
     }
 
-    if (_useBlurredPlates == true) {
+    // No choice made yet -- show neither grid (matches the original,
+    // pre-"always show both" behavior).
+    if (_useBlurredPlates == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (_useBlurredPlates == false) {
+      // "No, keep original photos" -- ONLY the original/unblurred grid.
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 16),
-          if (blurring)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: kFilterAccentColor.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: kFilterAccentColor.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)!.stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (blurReady) ...[
-            labeledGrid(
-              AppLocalizations.of(context)!.blurredPhotos,
-              blurred,
-            ),
-            labeledGrid(
-              AppLocalizations.of(context)!.blurredDamagePhotos,
-              damageBlurred,
-            ),
-            if (!showMainBlurred && !showDamageBlurred)
-              Text(
-                AppLocalizations.of(context)!.noPhotosAvailable,
-                style: TextStyle(color: Colors.grey[700], fontSize: 13),
-              ),
-          ] else ...[
-            Text(
-              AppLocalizations.of(context)!.blurredPhotosAreNotReadyYet,
-              style: TextStyle(color: Colors.grey[700], fontSize: 13),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _retryBackgroundBlur,
-                icon: const Icon(Icons.refresh),
-                label: Text(
-                  AppLocalizations.of(context)!.blurPlatesNow,
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kFilterAccentColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          labeledGrid(loc.originalPhotos, originals),
+          labeledGrid(loc.originalDamagePhotos, damageOriginals),
         ],
       );
     }
 
-    // Original photos choice
+    // _useBlurredPlates == true: "Yes, use blurred photos" -- ONLY the
+    // blurred grid (or its blurring/not-ready state), never the originals.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        labeledGrid(
-          AppLocalizations.of(context)!.originalPhotos,
-          originals,
-        ),
-        labeledGrid(
-          AppLocalizations.of(context)!.originalDamagePhotos,
-          damageOriginals,
-        ),
-        if (!showMainOriginals && !showDamageOriginals)
+        if (blurring)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: kFilterAccentColor.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: kFilterAccentColor.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    loc.stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (blurReady) ...[
+          labeledGrid(loc.blurredPhotos, blurred),
+          labeledGrid(loc.blurredDamagePhotos, damageBlurred),
+          if (!showMainBlurred && !showDamageBlurred)
+            Text(
+              loc.noPhotosAvailable,
+              style: TextStyle(color: Colors.grey[700], fontSize: 13),
+            ),
+        ] else ...[
           Text(
-            AppLocalizations.of(context)!.noPhotosAvailable,
+            loc.blurredPhotosAreNotReadyYet,
             style: TextStyle(color: Colors.grey[700], fontSize: 13),
           ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _retryBackgroundBlur,
+              icon: const Icon(Icons.refresh),
+              label: Text(loc.blurPlatesNow),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kFilterAccentColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
