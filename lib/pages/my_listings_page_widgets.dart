@@ -253,6 +253,52 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     );
   }
 
+  /// Optimistic-submission fix (task item #13): subtle, non-blocking
+  /// indicator shown on a listing card while its background media
+  /// upload/server-transcode pipeline is still running on this device
+  /// (`OwnerPendingMediaMerge.isMediaProcessing`/`processingCarIds`).
+  /// Deliberately NOT a spinner/overlay and never disables the card tap
+  /// -- the listing itself is fully usable (open, edit, share) the moment
+  /// it is created; this only informs, never blocks.
+  Widget _buildProcessingMediaBadge(BuildContext context) {
+    final text = _text(
+      'Processing media',
+      ar: 'جارٍ معالجة الوسائط',
+      ku: 'میدیا لە ئامادەکاریدایە',
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.62),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 10,
+              height: 10,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState({required _MyListingsFilter filter}) {
     final loc = AppLocalizations.of(context);
     final (title, hint) = switch (filter) {

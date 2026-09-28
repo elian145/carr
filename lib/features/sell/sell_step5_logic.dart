@@ -75,6 +75,19 @@ mixin _SellStep5Logic on _SellStep5Fields {
   /// method or in the service ever checks this widget's `mounted` to
   /// decide whether to *continue* the submission, only whether it is still
   /// safe to touch this widget's own state.
+  ///
+  /// Fast optimistic submission: calls [PendingSellSubmissionService.
+  /// submitFast] (NOT [PendingSellSubmissionService.submit]) so this
+  /// method — and therefore the Submit button's success navigation —
+  /// returns as soon as the backend listing itself exists, without
+  /// waiting for image/video upload or a `requiresServerTranscode`
+  /// video's 60-120s server-side transcode. That media work keeps running
+  /// in the background via the SAME durable [PendingSellSubmissionService]
+  /// worker regardless of this page navigating away; see
+  /// `owner_pending_media_merge.dart` for how My Listings / the listing
+  /// detail page show the seller their locally-selected photos/videos in
+  /// the meantime, and `submitFast`'s own doc comment for the full
+  /// contract.
   Future<SellListingSubmitResult?> _submitListing(
     Map<String, dynamic> carData, {
     _SellCarPageState? parentState,
@@ -125,7 +138,7 @@ mixin _SellStep5Logic on _SellStep5Fields {
     }
 
     try {
-      final result = await PendingSellSubmissionService.instance.submit(
+      final result = await PendingSellSubmissionService.instance.submitFast(
         draftId: draftId,
         carData: carData,
         editListingId: isEdit ? editId : null,

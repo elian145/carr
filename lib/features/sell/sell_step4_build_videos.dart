@@ -15,8 +15,15 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
   List<Widget> _sellStep4BuildVideosSection() {
     final loc = AppLocalizations.of(context)!;
     final hasVideos = _selectedVideos.isNotEmpty;
-    final countLabel = hasVideos
-        ? loc.addVideoCount(_selectedVideos.length)
+    // Preview-decoupling fix: the displayed count includes pending
+    // server-transcode videos too -- they are just as much a "selected
+    // video" from the seller's point of view (previewable/playable right
+    // now, counted against the same `_kSellMaxVideos` cap -- see
+    // `_pickVideos`) even though they are not in `_selectedVideos` itself.
+    final totalVideoCount =
+        _selectedVideos.length + _pendingServerTranscodeVideos.length;
+    final countLabel = totalVideoCount > 0
+        ? loc.addVideoCount(totalVideoCount)
         : loc.tapToSelect;
 
     return [
@@ -223,13 +230,136 @@ mixin _SellStep4BuildVideos on _SellStep4BuildDamage {
                 },
               ),
             if (hasVideos) const SizedBox(height: 12),
+            // Preview-decoupling fix: videos that local compression
+            // determined `requiresServerTranscode` are NEVER added to
+            // `_selectedVideos` (that list drives the normal <=100MB
+            // multipart upload -- see `sell_listing_media_upload.dart`),
+            // but their ORIGINAL local source is still fully previewable/
+            // playable right now -- rendered here from
+            // `_pendingServerTranscodeVideos` using the EXACT SAME tile
+            // pattern (thumbnail + tap-to-play) as the grid above, just
+            // sourced from `ServerTranscodeVideoSpec.localSourcePath`
+            // instead of a plain `XFile`. Classification only ever
+            // affects the SUBMISSION path -- never hides/removes this
+            // preview (task requirement 6/7).
+            if (_pendingServerTranscodeVideos.isNotEmpty) ...[
+              GridView.builder(
+                key: ValueKey(
+                  'pending_transcode_videos_'
+                  '${_pendingServerTranscodeVideos.map((s) => s.draftMediaId).join('|')}',
+                ),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1.25,
+                ),
+                itemCount: _pendingServerTranscodeVideos.length,
+                itemBuilder: (context, index) {
+                  final spec = _pendingServerTranscodeVideos[index];
+                  final previewFile = XFile(spec.localSourcePath);
+                  return Stack(
+                    key: ValueKey('pending_transcode_${spec.draftMediaId}'),
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            AppPageRoute(
+                              builder: (_) => ListingPreviewGalleryPage(
+                                imageFilesOrUrls: const [],
+                                videoFilesOrUrls: <dynamic>[previewFile],
+                                initialIndex: 0,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: FutureBuilder<String?>(
+                            future: generateVideoThumbnail(previewFile.path),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData && snapshot.data != null) {
+                                return Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.file(
+                                      File(snapshot.data!),
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Center(
+                                      child: Container(
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        padding: const EdgeInsets.all(16),
+                                        child: const Icon(
+                                          Icons.play_arrow,
+                                          color: Colors.white,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return Container(
+                                color: Colors.grey.shade200,
+                                child: Icon(
+                                  Icons.videocam,
+                                  color: Colors.grey.shade600,
+                                  size: 48,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: Semantics(
+                          button: true,
+                          label: AppLocalizations.of(context)!.removeAction,
+                          child: InkWell(
+                            onTap: () {
+                              _removePendingServerTranscodeVideoAt(index);
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(6),
+                              child: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: _isImportingMedia ? null : _pickVideos,
                 icon: const Icon(Icons.videocam),
                 label: Text(
-                  hasVideos
+                  totalVideoCount > 0
                       ? AppLocalizations.of(context)!.addMoreVideos
                       : AppLocalizations.of(context)!.addVideos,
                   maxLines: 1,

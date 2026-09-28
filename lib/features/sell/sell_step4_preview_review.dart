@@ -82,6 +82,24 @@ class _SellReviewCarDetailScrollViewState
     return _lastNonEmptyCar ?? widget.carData;
   }
 
+  /// Preview-decoupling fix (Review & Submit step -- real-device evidence:
+  /// a video classified `requiresServerTranscode` appeared correctly in
+  /// the Step4 media grid, immediately after selection, but was
+  /// completely absent from the final Review & Submit carousel).
+  ///
+  /// Root cause: `_pickVideos()` (see `sell_step4_logic.dart`) MOVES a
+  /// `requiresServerTranscode` video OUT of `carData['videos']` (the only
+  /// key this method used to read) and into
+  /// `carData['server_transcode_videos']` -- which drives the actual
+  /// server sign/upload/finalize/poll/attach pipeline
+  /// (`sell_listing_media_upload.dart` -> `SellServerTranscodeVideoRunner`)
+  /// but, until now, was never read by ANY review/preview UI. This method
+  /// merges in the ORIGINAL local source of every pending server-
+  /// transcode video, for DISPLAY ONLY: `carData['videos']` itself is
+  /// never touched here, so the actual submission/upload path is
+  /// completely unaffected by this merge -- it is exactly the same "read
+  /// an extra key just to render a tile" pattern already used by
+  /// `sell_step4_build_videos.dart`'s pending-transcode grid section.
   List<_PreviewMediaEntry> _buildMediaList(Map<String, dynamic> car) {
     final imgs = car['images'];
     final vids = car['videos'];
@@ -92,11 +110,32 @@ class _SellReviewCarDetailScrollViewState
           )
         : const <dynamic>[];
     final vl = vids is List ? List<dynamic>.from(vids) : const <dynamic>[];
+
+    // Every entry here is backed by `ServerTranscodeVideoSpec
+    // .localSourcePath` -- the same untouched original local file the
+    // seller selected -- wrapped in an `XFile` so it flows through every
+    // existing helper (`ListingImageMedia.source`, `generateVideoThumbnail`,
+    // `GalleryEmbeddedVideoPlayer`'s `VideoPlayerController.file` branch)
+    // completely unchanged. Never uploaded/transcoded merely to build
+    // this preview. Deduped by path against `vl` so a video that
+    // TEMPORARILY exists in both lists (should not normally happen --
+    // `_pickVideos` always migrates atomically -- but this is cheap
+    // insurance) is never rendered twice.
+    final existingVideoPaths = vl.map(ListingImageMedia.source).toSet();
+    final pendingVideoItems = ServerTranscodeVideoSpec.listFromJson(
+      car['server_transcode_videos'],
+    ).where((s) => !existingVideoPaths.contains(s.localSourcePath)).map(
+          (s) => XFile(s.localSourcePath),
+        );
+
     return [
       ...il
           .where((e) => ListingImageMedia.source(e).isNotEmpty)
           .map((e) => _PreviewMediaEntry(isVideo: false, item: e)),
       ...vl
+          .where((e) => ListingImageMedia.source(e).isNotEmpty)
+          .map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
+      ...pendingVideoItems
           .where((e) => ListingImageMedia.source(e).isNotEmpty)
           .map((e) => _PreviewMediaEntry(isVideo: true, item: e)),
     ];

@@ -278,21 +278,16 @@ class PendingSellSubmissionService {
   Future<SellSubmissionRecord?> peek(String draftId) =>
       SellSubmissionStatePrefs.load(draftId);
 
-  /// Called once when the user presses Submit. Durably records that this
-  /// draft is now being submitted (before any network call), copies any
+  /// Shared by [submit] and [submitFast]: durably records that this draft
+  /// is now being submitted (before any network call), copying any
   /// still-local media into durable app-controlled storage (no-op for
-  /// media that is already durable — see `SellDraftMediaPersistence`), then
-  /// starts (or joins) the worker for this draft.
-  ///
-  /// The returned Future resolves when this run finishes — callers may
-  /// await it for the common "stay on this page" UX, but the underlying
-  /// work is NOT cancelled if the caller stops awaiting (e.g. the widget
-  /// that called this is disposed because the user navigated away).
-  Future<SellListingSubmitResult?> submit({
+  /// media that is already durable — see `SellDraftMediaPersistence`).
+  /// Returns the freshly-upserted record; callers decide separately how to
+  /// wait for the resulting worker.
+  Future<SellSubmissionRecord> _prepareSubmissionRecord({
     required String draftId,
     required Map<String, dynamic> carData,
     String? editListingId,
-    void Function(SellSubmissionPhase phase)? onPhase,
   }) async {
     final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
 
@@ -344,7 +339,158 @@ class PendingSellSubmissionService {
       updatedAt: now,
     );
     await SellSubmissionStatePrefs.upsert(record);
-    return _ensureRunning(id, onPhase: onPhase);
+    return record;
+  }
+
+  /// Called once when the user presses Submit. Durably records that this
+  /// draft is now being submitted (before any network call), copies any
+  /// still-local media into durable app-controlled storage (no-op for
+  /// media that is already durable — see `SellDraftMediaPersistence`), then
+  /// starts (or joins) the worker for this draft.
+  ///
+  /// The returned Future resolves when the ENTIRE submission finishes —
+  /// listing create AND every image/video (including a `requiresServer
+  /// Transcode` video's full sign->upload->finalize->poll->attach
+  /// pipeline, which can take 60-120s). Callers may await it for the
+  /// "stay on this page until everything is done" UX, but the underlying
+  /// work is NOT cancelled if the caller stops awaiting (e.g. the widget
+  /// that called this is disposed because the user navigated away).
+  ///
+  /// Prefer [submitFast] for the Sell UI's Submit button — see its doc
+  /// comment. This method's full-completion contract is kept unchanged
+  /// (and still exercised by the existing `pending_sell_submission_service
+  /// _test.dart` suite) for any caller that genuinely needs to wait for
+  /// media to finish.
+  Future<SellListingSubmitResult?> submit({
+    required String draftId,
+    required Map<String, dynamic> carData,
+    String? editListingId,
+    void Function(SellSubmissionPhase phase)? onPhase,
+  }) async {
+    final record = await _prepareSubmissionRecord(
+      draftId: draftId,
+      carData: carData,
+      editListingId: editListingId,
+    );
+    return _ensureRunning(record.draftId, onPhase: onPhase);
+  }
+
+  /// Per-draftId signals resolved by [_runSubmission] the moment the
+  /// backend listing itself exists (create succeeded, or already existed
+  /// from an earlier attempt) — see [submitFast]. A list (not a single
+  /// `Completer`) because more than one [submitFast] caller could in
+  /// principle be waiting on the SAME draft at once (e.g. a rapid
+  /// double-press before the Submit button's own `isSubmitting` guard
+  /// disables it); every registered signal for a draftId is resolved (or
+  /// rejected) together, exactly once.
+  final Map<String, List<Completer<SellListingSubmitResult>>>
+      _carReadySignals = {};
+
+  Completer<SellListingSubmitResult> _registerCarReadySignal(String draftId) {
+    final c = Completer<SellListingSubmitResult>();
+    (_carReadySignals[draftId] ??= <Completer<SellListingSubmitResult>>[])
+        .add(c);
+    return c;
+  }
+
+  void _resolveCarReadySignals(String draftId, SellListingSubmitResult result) {
+    final signals = _carReadySignals.remove(draftId);
+    if (signals == null) return;
+    for (final c in signals) {
+      if (!c.isCompleted) c.complete(result);
+    }
+  }
+
+  void _rejectCarReadySignals(String draftId, Object error, StackTrace st) {
+    final signals = _carReadySignals.remove(draftId);
+    if (signals == null) return;
+    for (final c in signals) {
+      if (!c.isCompleted) c.completeError(error, st);
+    }
+  }
+
+  /// Fast-return variant of [submit] for the Sell UI's "optimistic
+  /// submission" flow.
+  ///
+  /// Behaves identically to [submit] for every durable-record/
+  /// idempotency/resume guarantee — it is the SAME underlying worker
+  /// ([_ensureRunning]/[_runSubmission]); the full media pipeline
+  /// (image/video upload, and any `requiresServerTranscode` video's
+  /// 60-120s server-side transcode) keeps running to completion in the
+  /// background exactly as before, unaffected by whether/how long this
+  /// method's caller keeps awaiting the Future it returns.
+  ///
+  /// The difference is only WHEN the returned Future resolves: as soon as
+  /// the backend listing record itself exists (create succeeded, or
+  /// already existed from an earlier attempt) — NOT once every image/
+  /// video has finished uploading/attaching. This is what lets the Sell
+  /// UI navigate to My Listings / show submission success the moment the
+  /// listing is safely persisted, without making the user wait on
+  /// image/video upload or a long server-side video transcode.
+  ///
+  /// Returns `null` in the same situations [submit] would (e.g. signed out
+  /// between validation and this call). Rethrows only when the listing
+  /// itself could never be created (validation/auth/permanent failure
+  /// before any carId existed) — the same error [submit] would have
+  /// thrown in that case. A failure AFTER the listing exists (e.g. a
+  /// video upload permanently failing) is never thrown here — it is
+  /// surfaced only via [events]/[statusNotifier], like any other
+  /// background media failure, because the seller must still see their
+  /// listing succeed and continue past Submit.
+  Future<SellListingSubmitResult?> submitFast({
+    required String draftId,
+    required Map<String, dynamic> carData,
+    String? editListingId,
+    void Function(SellSubmissionPhase phase)? onPhase,
+  }) async {
+    final record = await _prepareSubmissionRecord(
+      draftId: draftId,
+      carData: carData,
+      editListingId: editListingId,
+    );
+    final id = record.draftId;
+
+    final existingCarId = (record.carId ?? '').trim();
+    if (existingCarId.isNotEmpty) {
+      // Listing already exists from an earlier attempt (retry/resume of a
+      // `retryable`/`needsAttention` draft whose create step already
+      // succeeded) -- nothing to wait for. Kick off/join the background
+      // worker for any remaining media and return immediately.
+      unawaited(_ensureRunning(id, onPhase: onPhase));
+      return SellListingSubmitResult(
+        id: existingCarId,
+        pendingReview: record.pendingReview,
+      );
+    }
+
+    final signal = _registerCarReadySignal(id);
+    // Deliberately not awaited directly here -- the worker must keep
+    // running in the background regardless of whether/how long this
+    // method's caller keeps awaiting the Future this method returns
+    // (identical guarantee to [submit]).
+    final runFuture = _ensureRunning(id, onPhase: onPhase);
+    // Defensive fallback only: `_runSubmission` resolves/rejects `signal`
+    // (via `_resolveCarReadySignals`/`_rejectCarReadySignals`) as soon as
+    // the create step's outcome is known, which is always well before
+    // `runFuture` itself settles. This just guarantees `submitFast` can
+    // never hang forever even in a case that never reaches those calls at
+    // all (e.g. no auth token -- `_runSubmission` returns `null`
+    // immediately without ever attempting to create anything). A no-op
+    // once the signal has already been settled the normal way.
+    unawaited(runFuture.then((result) {
+      if (signal.isCompleted) return;
+      if (result != null) {
+        signal.complete(result);
+      } else {
+        signal.completeError(
+          ApiException(statusCode: 401, message: 'Authentication required'),
+        );
+      }
+    }, onError: (Object e, StackTrace st) {
+      if (!signal.isCompleted) signal.completeError(e, st);
+    }));
+
+    return signal.future;
   }
 
   /// Scans every durably-recorded submission and resumes anything eligible
@@ -930,6 +1076,18 @@ class PendingSellSubmissionService {
           '${record.totalMediaCount} status=${record.status.name} '
           'record=$draftId carId=$carId',
         );
+        // Fast-submission fix: the listing itself now durably exists --
+        // resolve any [submitFast] caller waiting on THIS draftId right
+        // now, before any media upload/server-transcode work below even
+        // starts. This is the entire mechanism behind [submitFast]
+        // returning as soon as the listing is created instead of once
+        // every image/video has finished: this call is a no-op unless a
+        // [submitFast] caller actually registered a signal for this
+        // draftId (see [_registerCarReadySignal]/[_carReadySignals]).
+        _resolveCarReadySignals(
+          draftId,
+          SellListingSubmitResult(id: carId, pendingReview: pendingReview),
+        );
         // Matches the pre-existing timing: the legacy draft snapshot/
         // archive entry is cleared as soon as the listing exists (not only
         // once media finishes) so a killed-and-resumed media phase never
@@ -1100,6 +1258,13 @@ class PendingSellSubmissionService {
       return SellListingSubmitResult(id: carId, pendingReview: pendingReview);
     } catch (e, st) {
       statusNotifier.value = null;
+      // Fast-submission fix: reject any [submitFast] caller still waiting
+      // on THIS draftId -- a no-op if the listing was already created
+      // (the signal was already resolved and removed above), which is
+      // exactly the "never throw from submitFast after the listing
+      // exists" guarantee its doc comment promises: a media-only failure
+      // here finds no signal left to reject.
+      _rejectCarReadySignals(draftId, e, st);
       final retryable = isRetryableSellSubmissionError(e);
       final statusCode = e is ApiException ? e.statusCode : null;
       final updated = record.copyWith(

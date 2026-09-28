@@ -9,11 +9,15 @@
 // the server" (Bug 3).
 //
 // Confirmed by reading `pending_sell_submission_service.dart`:
-// `submit()` calls `SellDraftMediaPersistence.prepareCarDataForStorage()`
-// (which durably copies every local media reference) BEFORE creating or
-// persisting the `SellSubmissionRecord` -- this is the sole entry point
-// for creating a pending record, so every local reference inside a
-// persisted record's `carData` is guaranteed durable.
+// `_prepareSubmissionRecord()` calls
+// `SellDraftMediaPersistence.prepareCarDataForStorage()` (which durably
+// copies every local media reference) BEFORE creating or persisting the
+// `SellSubmissionRecord` -- both `submit()` (full-completion contract)
+// AND `submitFast()` (fast-optimistic-submission entry point, added for
+// the "submit without waiting on media/transcode" fix) delegate to this
+// SAME shared helper, so every local reference inside a persisted
+// record's `carData` is guaranteed durable no matter which entry point
+// the caller uses.
 import 'dart:io';
 
 import 'package:car_listing_app/shared/listings/listing_image_media.dart';
@@ -37,7 +41,7 @@ void main() {
   group('static wiring: submit() durably copies media before persisting '
       'the pending record', () {
     test(
-      'PendingSellSubmissionService.submit() calls '
+      'PendingSellSubmissionService._prepareSubmissionRecord() calls '
       'SellDraftMediaPersistence.prepareCarDataForStorage() BEFORE the '
       'first SellSubmissionStatePrefs.upsert() call',
       () {
@@ -50,17 +54,18 @@ void main() {
           ),
         ).readAsStringSync();
 
-        final submitStart = content.indexOf(
-          'Future<SellListingSubmitResult?> submit({',
+        final prepareRecordStart = content.indexOf(
+          'Future<SellSubmissionRecord> _prepareSubmissionRecord({',
         );
-        expect(submitStart, greaterThanOrEqualTo(0));
-        // Bounded to just this method's body (next top-level method).
-        final submitEnd = content.indexOf(
-          '\n  Future<bool> resumeAll()',
-          submitStart,
+        expect(prepareRecordStart, greaterThanOrEqualTo(0));
+        // Bounded to just this method's body (next top-level method --
+        // `submit()`, the first caller of this shared helper).
+        final prepareRecordEnd = content.indexOf(
+          '\n  Future<SellListingSubmitResult?> submit(',
+          prepareRecordStart,
         );
-        expect(submitEnd, greaterThan(submitStart));
-        final body = content.substring(submitStart, submitEnd);
+        expect(prepareRecordEnd, greaterThan(prepareRecordStart));
+        final body = content.substring(prepareRecordStart, prepareRecordEnd);
 
         final prepareIdx = body.indexOf(
           'SellDraftMediaPersistence\n        .prepareCarDataForStorage(',
@@ -71,7 +76,7 @@ void main() {
         expect(
           prepareIdxAlt,
           greaterThanOrEqualTo(0),
-          reason: 'submit() must durably copy media via '
+          reason: '_prepareSubmissionRecord() must durably copy media via '
               'prepareCarDataForStorage()',
         );
         final firstUpsertIdx = body.indexOf('SellSubmissionStatePrefs.upsert(');
@@ -83,6 +88,41 @@ void main() {
               'persisted" and "media copied" could durably record a '
               'cache/temp path that disappears later',
         );
+      },
+    );
+
+    test(
+      'both submit() and submitFast() delegate to the SAME '
+      '_prepareSubmissionRecord() helper -- the fast-optimistic-'
+      'submission entry point added for immediate navigation-away must '
+      'not bypass the durable-copy-before-persist guarantee above',
+      () {
+        final content = File(
+          p.join(
+            'lib',
+            'features',
+            'sell',
+            'pending_sell_submission_service.dart',
+          ),
+        ).readAsStringSync();
+
+        for (final signature in [
+          'Future<SellListingSubmitResult?> submit({',
+          'Future<SellListingSubmitResult?> submitFast({',
+        ]) {
+          final start = content.indexOf(signature);
+          expect(start, greaterThanOrEqualTo(0), reason: 'missing $signature');
+          final nextMethod = content.indexOf('\n  Future<', start + 1);
+          final body = content.substring(
+            start,
+            nextMethod > start ? nextMethod : content.length,
+          );
+          expect(
+            body.contains('_prepareSubmissionRecord('),
+            isTrue,
+            reason: '$signature must call _prepareSubmissionRecord()',
+          );
+        }
       },
     );
   });

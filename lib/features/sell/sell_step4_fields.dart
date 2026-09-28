@@ -21,6 +21,22 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   /// editing a listing can see and delete videos that are already live on
   /// the server (backend `DELETE /api/cars/<id>/videos/<video_id>`).
   List<Map<String, dynamic>> _existingServerVideos = [];
+  /// Preview-decoupling fix: pending server-transcode video specs whose
+  /// ORIGINAL local source (`ServerTranscodeVideoSpec.localSourcePath`)
+  /// is still previewable/playable, mirrored from
+  /// `parentState.carData['server_transcode_videos']` purely so the video
+  /// grid can render/play them immediately -- see
+  /// `sell_step4_build_videos.dart` -- well BEFORE the actual server
+  /// sign/upload/finalize/poll/attach pipeline
+  /// (`sell_listing_media_upload.dart`) ever runs, exactly like
+  /// [_existingServerVideos] mirrors already-uploaded server videos for
+  /// display. NEVER used as an upload/submission source itself --
+  /// `carData['server_transcode_videos']` (kept in sync alongside this
+  /// field) remains the single source of truth the actual upload
+  /// pipeline reads; this field exists ONLY so the Sell UI has something
+  /// local to render from without re-deriving it from `carData` on every
+  /// build.
+  List<ServerTranscodeVideoSpec> _pendingServerTranscodeVideos = [];
   bool _isProcessingImages = false;
   bool _imagesProcessed = false;
   /// True while chosen photos/videos are being processed into the draft.

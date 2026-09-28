@@ -38,6 +38,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           _damageImages = [];
           _selectedVideos.clear();
           _existingServerVideos = [];
+          _pendingServerTranscodeVideos = [];
           _primaryImageIndex = 0;
           _imagesProcessed = false;
           _isProcessingImages = false;
@@ -52,6 +53,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData.remove('blurred_damage_images');
         parentState.carData.remove('videos');
         parentState.carData.remove('existing_video_records');
+        parentState.carData.remove('server_transcode_videos');
         parentState.carData.remove('images_processed');
         parentState.carData.remove('processed_image_paths');
         parentState.carData.remove('use_blurred_plates');
@@ -157,6 +159,16 @@ mixin _SellStep4Logic on _SellStep4Fields {
                     .map((e) => Map<String, dynamic>.from(e))
                     .toList()
               : [];
+          // Preview-decoupling fix: resume/edit-mode reload must restore
+          // any pending server-transcode video previews from THIS draft's
+          // own carData (item 10 -- "keep the original local path
+          // available throughout the sell flow until submission
+          // completes or the user removes the video"), exactly like
+          // `_existingServerVideos` just above restores already-uploaded
+          // server videos.
+          _pendingServerTranscodeVideos = ServerTranscodeVideoSpec.listFromJson(
+            parentState?.carData['server_transcode_videos'],
+          );
           _clampPrimaryImageIndex();
           _isProcessingImages = false;
         });
@@ -946,6 +958,51 @@ mixin _SellStep4Logic on _SellStep4Fields {
   /// transcode fallback instead of being dropped -- see
   /// `_stageServerTranscodeVideo` and `sell_server_transcode_runner.dart`.
   /// It is NEVER routed through the old <=100MB multipart endpoint.
+  ///
+  /// ============================================================================
+  /// PREVIEW-DECOUPLING FIX (real-device evidence: Samsung Galaxy A17 /
+  /// Dolby Vision 4K source)
+  /// ============================================================================
+  /// PREVIEW and SUBMISSION-PATH RESOLUTION are deliberately two separate
+  /// concerns here, exactly like the existing photo-pick pattern
+  /// (`_pickImages`'s "insert original immediately, backfill
+  /// width/height/HEIC-preview afterward" comment) already established
+  /// for photos:
+  ///   - SELECTION: every [candidate] (already deduped/within-cap) is
+  ///     added to [_selectedVideos] IMMEDIATELY below -- no `await`
+  ///     (probe/compress/stage) between the picker returning and that
+  ///     `setState` -- so the EXISTING video-grid tile-rendering code in
+  ///     `sell_step4_build_videos.dart` (thumbnail via
+  ///     `generateVideoThumbnail`, tap-to-play via
+  ///     `ListingPreviewGalleryPage` -> `GalleryEmbeddedVideoPlayer` ->
+  ///     `VideoPlayerController.file`) shows/plays the ORIGINAL local
+  ///     file right away, with zero new preview-rendering code needed.
+  ///   - SUBMISSION: the loop below still runs the EXISTING duration
+  ///     check + `SellVideoCompression.prepare()` for each candidate,
+  ///     unchanged, and reconciles [_selectedVideos] once the outcome is
+  ///     known:
+  ///       * unchanged: entry already correct (same file) -- no-op.
+  ///       * compressed: entry is swapped in place for the compressed
+  ///         file (this IS the file that gets uploaded; the tile simply
+  ///         starts reflecting the final asset once ready).
+  ///       * stillTooLarge/failed/tooLong: the immediate-preview entry is
+  ///         removed (same end state as before this fix -- these videos
+  ///         were never added at all previously; now they briefly preview
+  ///         then are removed alongside the existing error snackbar).
+  ///       * requiresServerTranscode: the entry is removed from
+  ///         [_selectedVideos] (it must NEVER also be uploaded via the
+  ///         normal multipart path -- see `sell_listing_media_upload.dart`)
+  ///         and, IN THE SAME `setState`, added to
+  ///         [_pendingServerTranscodeVideos] (backed by the SAME
+  ///         durably-copied original source path
+  ///         `ServerTranscodeVideoSpec.localSourcePath`) -- so the tile
+  ///         never visibly disappears, it just switches which backing
+  ///         list renders it (task requirement 6/7: classification only
+  ///         ever affects the SUBMISSION path, never hides/removes the
+  ///         preview).
+  /// Nothing here uploads or server-transcodes anything merely to build a
+  /// preview -- `generateVideoThumbnail`/`VideoPlayerController.file` both
+  /// read the local file directly, fully offline.
   Future<void> _pickVideos() async {
     // Task section 1: server contract is exactly
     // `MAX_SOURCE_DURATION_SECONDS = 30` -- was 5 minutes.
@@ -967,12 +1024,22 @@ mixin _SellStep4Logic on _SellStep4Fields {
       // Resolve which picked videos are new AND fit the per-listing cap
       // BEFORE compressing any of them -- compressing a video that would
       // just be dropped as a duplicate/over-cap wastes battery and time.
+      //
+      // Preview-decoupling fix: the cap must count BOTH `_selectedVideos`
+      // AND `_pendingServerTranscodeVideos` -- a video that ends up
+      // `requiresServerTranscode` is later MOVED OUT of `_selectedVideos`
+      // (see the reconciliation loop below), so counting only
+      // `_selectedVideos` here would silently let a seller add more than
+      // `_kSellMaxVideos` total videos across multiple picks once one or
+      // more videos have already migrated to the pending-transcode list.
       final existingPaths = _selectedVideos.map((e) => e.path).toSet();
+      final existingTotalCount =
+          _selectedVideos.length + _pendingServerTranscodeVideos.length;
       final candidates = <XFile>[];
       var overLimit = false;
       for (final v in picked) {
         if (existingPaths.contains(v.path)) continue;
-        if (_selectedVideos.length + candidates.length >= _kSellMaxVideos) {
+        if (existingTotalCount + candidates.length >= _kSellMaxVideos) {
           overLimit = true;
           break;
         }
@@ -987,7 +1054,18 @@ mixin _SellStep4Logic on _SellStep4Fields {
       final parentState = context.findAncestorStateOfType<_SellCarPageState>();
       final draftId = parentState?._currentDraftId ?? 'default';
 
-      setState(() => _isImportingMedia = true);
+      // PREVIEW-DECOUPLING FIX: insert every candidate's ORIGINAL local
+      // file into `_selectedVideos` right now -- no `await` between the
+      // picker returning (above) and this `setState` -- so the existing
+      // video-grid tile (thumbnail + tap-to-play) renders it immediately,
+      // completely independent of whatever the compression/server-
+      // transcode classification below eventually decides. See this
+      // method's file-level doc comment for the full before/after
+      // reconciliation contract.
+      setState(() {
+        _selectedVideos.addAll(candidates);
+        _isImportingMedia = true;
+      });
       try {
         final prepared = <XFile>[];
         final serverTranscodeAdds = <ServerTranscodeVideoSpec>[];
@@ -1004,6 +1082,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
           final durationMs = durationProbe.durationMs;
           if (durationMs != null && durationMs > _kSellVideoMaxDurationMs) {
             anyTooLong = true;
+            _removeSelectedVideoByPath(candidate.path);
             continue;
           }
 
@@ -1015,22 +1094,48 @@ mixin _SellStep4Logic on _SellStep4Fields {
           );
           switch (result.status) {
             case SellVideoPrepareStatus.unchanged:
+              // Immediate-preview entry is already the correct (only)
+              // file -- `result.file` is the same untouched source.
+              prepared.add(result.file!);
             case SellVideoPrepareStatus.compressed:
+              // Swap the immediate-preview (original) entry for the
+              // COMPRESSED file that will actually be uploaded -- the
+              // tile keeps showing content throughout, it just starts
+              // reflecting the final asset once compression finishes.
+              _replaceSelectedVideoByPath(candidate.path, result.file!);
               prepared.add(result.file!);
             case SellVideoPrepareStatus.stillTooLarge:
               anyStillTooLarge = true;
+              _removeSelectedVideoByPath(candidate.path);
             case SellVideoPrepareStatus.failed:
               anyFailed = true;
+              _removeSelectedVideoByPath(candidate.path);
             case SellVideoPrepareStatus.requiresServerTranscode:
               final spec = await _stageServerTranscodeVideo(
                 result.file!,
                 draftId: draftId,
               );
+              // Move the entry from `_selectedVideos` (must NEVER also be
+              // uploaded via the normal multipart path -- see
+              // `sell_listing_media_upload.dart`) to
+              // `_pendingServerTranscodeVideos` IN ONE `setState`, so the
+              // preview tile never visibly disappears -- it only switches
+              // which backing list renders it (requirement 6/7: this
+              // classification affects the SUBMISSION path only).
+              if (mounted) {
+                setState(() {
+                  _selectedVideos.removeWhere((f) => f.path == candidate.path);
+                  if (spec != null) {
+                    _pendingServerTranscodeVideos.add(spec);
+                  }
+                });
+              }
               if (spec != null) {
                 serverTranscodeAdds.add(spec);
               } else {
                 // Durable-copy of the original itself failed -- an
-                // ordinary failure, not a server-fallback candidate.
+                // ordinary failure, not a server-fallback candidate. The
+                // immediate-preview entry was already removed above.
                 anyFailed = true;
               }
           }
@@ -1038,15 +1143,15 @@ mixin _SellStep4Logic on _SellStep4Fields {
         if (mounted) setState(() => _videoPrepPhase = null);
 
         if (prepared.isNotEmpty) {
-          setState(() {
-            _selectedVideos.addAll(prepared);
-          });
-          // Existing durable-copy pipeline (unchanged) -- copies whatever
-          // is now in `_selectedVideos` (the COMPRESSED file, for anything
-          // that needed compressing) into
-          // `sell_draft_media/<draftId>/`, awaited here exactly like every
-          // other Sell media pick, so a kill right after this call still
-          // finds a durable copy on disk.
+          // `_selectedVideos` already holds the correct (possibly
+          // in-place-replaced) entries from the loop above -- this just
+          // durably copies + persists them (existing behavior, unchanged
+          // shape). Existing durable-copy pipeline copies whatever is now
+          // in `_selectedVideos` (the COMPRESSED file, for anything that
+          // needed compressing) into `sell_draft_media/<draftId>/`,
+          // awaited here exactly like every other Sell media pick, so a
+          // kill right after this call still finds a durable copy on
+          // disk.
           await _syncMediaDraftToParent();
           unawaited(_saveDraft());
         }
@@ -1076,6 +1181,62 @@ mixin _SellStep4Logic on _SellStep4Fields {
       }
     } catch (e) {
       _showMediaPickError(e);
+    }
+  }
+
+  /// Preview-decoupling fix: removes the `_selectedVideos` entry matching
+  /// [path] (a no-op if it is not currently present -- e.g. already
+  /// removed by a concurrent call, or duplicated logic). Used ONLY to
+  /// retract an immediate-preview entry once the real classification
+  /// (too long / still too large / failed / requires-server-transcode)
+  /// is known -- never called for a video that is actually going to be
+  /// uploaded.
+  void _removeSelectedVideoByPath(String path) {
+    if (!mounted) return;
+    setState(() {
+      _selectedVideos.removeWhere((f) => f.path == path);
+    });
+  }
+
+  /// Preview-decoupling fix: swaps the `_selectedVideos` entry matching
+  /// [oldPath] (the immediate-preview original) for [newFile] (the
+  /// compressed output) IN PLACE, preserving grid position/order. Adds
+  /// [newFile] instead if no matching entry is found (defensive -- should
+  /// not normally happen, since the immediate-preview insert always runs
+  /// before this).
+  void _replaceSelectedVideoByPath(String oldPath, XFile newFile) {
+    if (!mounted) return;
+    setState(() {
+      final idx = _selectedVideos.indexWhere((f) => f.path == oldPath);
+      if (idx != -1) {
+        _selectedVideos[idx] = newFile;
+      } else {
+        _selectedVideos.add(newFile);
+      }
+    });
+  }
+
+  /// Preview-decoupling fix: removes a not-yet-submitted pending
+  /// server-transcode video preview (see
+  /// [_SellStep4Fields._pendingServerTranscodeVideos]'s doc comment).
+  /// Safe to do at any point before Submit -- this is purely local draft
+  /// state; nothing has been signed/uploaded/finalized on the server yet
+  /// for an entry the user can still see and remove at this stage (that
+  /// only starts during `SellListingMediaUpload.uploadForCar` ->
+  /// `SellServerTranscodeVideoRunner`, i.e. after Submit is pressed and
+  /// the car already exists), so no server-side cleanup call is needed --
+  /// exactly like removing a not-yet-uploaded entry from
+  /// [_selectedVideos].
+  void _removePendingServerTranscodeVideoAt(int index) {
+    if (index < 0 || index >= _pendingServerTranscodeVideos.length) return;
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    setState(() {
+      _pendingServerTranscodeVideos.removeAt(index);
+    });
+    if (parentState != null) {
+      parentState.carData['server_transcode_videos'] =
+          ServerTranscodeVideoSpec.listToJson(_pendingServerTranscodeVideos);
+      unawaited(parentState._saveSellDraftSnapshot());
     }
   }
 

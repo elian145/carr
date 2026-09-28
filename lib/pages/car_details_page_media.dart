@@ -1,6 +1,22 @@
 part of 'car_details_page.dart';
 
 mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
+  /// Optimistic-submission fix (task item #14): true for a raw media
+  /// reference that is a local device file (from this device's own
+  /// still-in-flight Sell submission -- see `owner_pending_media_merge
+  /// .dart`), as opposed to a genuine server URL/relative path. Local
+  /// references must never be passed through [buildLegacyFullImageUrl]
+  /// (which assumes every input is server-relative and would mangle an
+  /// absolute device path into a broken URL) -- they are used AS-IS, since
+  /// every renderer that ends up consuming them
+  /// (`listingCachedNetworkImageProvider` / `listingNetworkImage` /
+  /// `NetworkVideoThumbnailPreview` / `GalleryEmbeddedVideoPlayer`)
+  /// already auto-detects and renders a local path directly.
+  bool _isLocalMediaPath(String raw) => ListingImageMedia.localFile(raw) != null;
+
+  String _resolveHeroMediaUrl(String raw) =>
+      _isLocalMediaPath(raw) ? raw : buildLegacyFullImageUrl(raw);
+
   List<String> get _imageUrls {
     return _heroImageEntries.map((e) => e.url).toList(growable: false);
   }
@@ -15,7 +31,7 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
 
     void addUrl(String raw, Map<String, dynamic>? meta) {
       if (raw.isEmpty) return;
-      final full = buildLegacyFullImageUrl(raw);
+      final full = _resolveHeroMediaUrl(raw);
       if (full.isEmpty) return;
       if (entries.any((e) => e.url == full)) return;
       entries.add((url: full, meta: meta));
@@ -35,10 +51,7 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
       Map<String, dynamic>? primaryMeta;
       for (final dynamic it in imgs) {
         if (isDamage(it)) continue;
-        final s = it is Map
-            ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-                .toString()
-            : it.toString();
+        final s = ListingImageMedia.source(it);
         if (s.isNotEmpty &&
             (buildLegacyFullImageUrl(s) == buildLegacyFullImageUrl(primary) ||
                 s == primary)) {
@@ -59,10 +72,7 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
 
     for (final dynamic it in imgs) {
       if (isDamage(it)) continue;
-      final s = it is Map
-          ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-              .toString()
-          : it.toString();
+      final s = ListingImageMedia.source(it);
       addUrl(s, metaFrom(it));
     }
 
@@ -70,10 +80,7 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
     if (entries.isEmpty && imgs.isNotEmpty) {
       for (final dynamic it in imgs) {
         if (isDamage(it)) continue;
-        final s = it is Map
-            ? (it['image_url'] ?? it['url'] ?? it['path'] ?? it['src'] ?? '')
-                .toString()
-            : it.toString();
+        final s = ListingImageMedia.source(it);
         if (s.isNotEmpty) {
           addUrl(s, metaFrom(it));
           break;
@@ -95,7 +102,7 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
         s = it.trim();
       } else if (it is Map) {
         final map = Map<String, dynamic>.from(it);
-        s = (map['video_url'] ?? map['url'] ?? map['path'] ?? '')
+        s = (map['video_url'] ?? map['url'] ?? map['path'] ?? map['source'] ?? '')
             .toString()
             .trim();
       } else {
@@ -119,7 +126,7 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
     if (car == null) return urls;
     final paths = _normalizeVideoPaths(car!['videos']);
     for (final String s in paths) {
-      final full = buildLegacyFullImageUrl(s);
+      final full = _resolveHeroMediaUrl(s);
       if (full.isNotEmpty && !urls.contains(full)) urls.add(full);
     }
     return urls;

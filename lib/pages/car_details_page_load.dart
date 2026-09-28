@@ -34,6 +34,29 @@ class _CarDetailLoadError {
 }
 
 mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
+  /// Optimistic-submission fix (task item #14): merges this device's own
+  /// still-in-flight local Sell-submission media into a freshly-loaded
+  /// listing map, for the OWNER only -- see
+  /// `owner_pending_media_merge.dart` for the full contract/safety
+  /// guarantees. A no-op (returns [loaded] unchanged) for every other
+  /// viewer, and for the owner too once the background media pipeline has
+  /// actually finished (the durable record it reads is removed then).
+  Future<Map<String, dynamic>> _mergeOwnerPendingMedia(
+    Map<String, dynamic> loaded,
+  ) async {
+    try {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final owner = isListingOwner(loaded, auth.userId);
+      return await OwnerPendingMediaMerge.mergeIfOwner(
+        loaded,
+        isOwner: owner,
+      );
+    } catch (e, st) {
+      logNonFatal(e, st, 'CarDetailsPage._mergeOwnerPendingMedia');
+      return loaded;
+    }
+  }
+
   Future<void> _loadCar() async {
     // F-06: abort any still-in-flight load from a previous call (e.g. an
     // earlier retry) before starting a new one, and genuinely cancel this
@@ -86,8 +109,16 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
       }
 
       if (loaded != null && mounted) {
+        final normalized = _normalizeCarDetailMap(loaded);
+        // Cache the SERVER truth (never the owner-pending-media-merged
+        // version below) -- a locally-merged local file path would be
+        // meaningless (and could point at a file that no longer exists)
+        // if this cache is later read back as an offline fallback.
+        unawaited(sp.setString(cacheKey, json.encode(normalized)));
+        final merged = await _mergeOwnerPendingMedia(normalized);
+        if (!mounted) return;
         setState(() {
-          car = _normalizeCarDetailMap(loaded!);
+          car = merged;
           loading = false;
           loadError = null;
         });
@@ -95,7 +126,6 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
         _precacheListingImages();
         unawaited(_loadFavoriteStatus());
         _loadSimilar();
-        unawaited(sp.setString(cacheKey, json.encode(car)));
         _trackView();
         return;
       }
@@ -121,9 +151,13 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
           try {
             final data = json.decode(cached);
             if (data is Map) {
+              final normalized = _normalizeCarDetailMap(
+                Map<String, dynamic>.from(data),
+              );
+              final merged = await _mergeOwnerPendingMedia(normalized);
               if (mounted) {
                 setState(() {
-                  car = _normalizeCarDetailMap(Map<String, dynamic>.from(data));
+                  car = merged;
                   loading = false;
                   loadError = null;
                 });
@@ -134,11 +168,13 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
               unawaited(_trackView());
               return;
             } else if (data is List && data.isNotEmpty) {
+              final normalized = _normalizeCarDetailMap(
+                Map<String, dynamic>.from(data.first),
+              );
+              final merged = await _mergeOwnerPendingMedia(normalized);
               if (mounted) {
                 setState(() {
-                  car = _normalizeCarDetailMap(
-                    Map<String, dynamic>.from(data.first),
-                  );
+                  car = merged;
                   loading = false;
                   loadError = null;
                 });

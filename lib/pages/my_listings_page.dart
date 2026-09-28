@@ -16,6 +16,7 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/listings/owner_pending_media_merge.dart';
 import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_draft_helpers.dart';
 import '../features/sell/sell_pending_media_resume.dart';
@@ -63,6 +64,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
   bool _routeFilterApplied = false;
 
   final List<Map<String, dynamic>> _cars = <Map<String, dynamic>>[];
+
+  /// Optimistic-submission fix: listing ids (this account's own, per
+  /// `GET /api/my-listings`) that still have a durable pending-submission
+  /// record on THIS device -- i.e. `mediaStatus == processing` (see
+  /// `owner_pending_media_merge.dart`). Drives the subtle "Processing
+  /// media" card badge below; never gates/blocks anything.
+  Set<String> _processingCarIds = <String>{};
 
   String _text(String en, {String? ar, String? ku}) {
     final code = Localizations.localeOf(context).languageCode;
@@ -122,6 +130,33 @@ class _MyListingsPageState extends State<MyListingsPage> {
     setState(() {
       _cars.removeWhere((c) => listingMatchesId(c, id));
     });
+  }
+
+  /// Optimistic-submission fix: every listing in [_cars] came from
+  /// `GET /api/my-listings`, so it is already known to be this account's
+  /// own -- merge in local pending fallback media (and recompute which
+  /// listings still have unfinished background media work) without any
+  /// extra owner check. [requestGeneration] guards against a stale merge
+  /// (from an OLDER `_fetch` call still finishing this async work)
+  /// clobbering a newer refresh's `_cars`, mirroring `_fetch`'s own
+  /// generation guard.
+  Future<void> _applyOwnerPendingMediaMerge(int requestGeneration) async {
+    try {
+      final snapshot = List<Map<String, dynamic>>.from(_cars);
+      final merged = await OwnerPendingMediaMerge.mergeOwnedListings(snapshot);
+      final processing = await OwnerPendingMediaMerge.processingCarIds(
+        snapshot,
+      );
+      if (!mounted || requestGeneration != _fetchGeneration) return;
+      setState(() {
+        _cars
+          ..clear()
+          ..addAll(merged);
+        _processingCarIds = processing;
+      });
+    } catch (e, st) {
+      logNonFatal(e, st, 'MyListingsPage._applyOwnerPendingMediaMerge');
+    }
   }
 
   Future<void> _fetch({required bool refresh}) async {
@@ -199,6 +234,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
         _loading = false;
         _loadingMore = false;
       });
+      unawaited(_applyOwnerPendingMediaMerge(requestGeneration));
     } catch (e) {
       if (!mounted || requestGeneration != _fetchGeneration) return;
       setState(() {
@@ -536,11 +572,27 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                   context,
                                   car,
                                 );
-                                return buildGlobalCarCard(
+                                final cardWidget = buildGlobalCarCard(
                                   context,
                                   mapped,
                                   listLayout: listingColumns == 1,
                                   allowOwnerManagementOnOpen: true,
+                                );
+                                final isProcessing = _processingCarIds
+                                    .contains(listingPrimaryId(car));
+                                if (!isProcessing) return cardWidget;
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    cardWidget,
+                                    Positioned(
+                                      bottom: listingColumns == 1 ? 12 : 8,
+                                      left: listingColumns == 1 ? 12 : 8,
+                                      child: _buildProcessingMediaBadge(
+                                        context,
+                                      ),
+                                    ),
+                                  ],
                                 );
                               },
                             );
