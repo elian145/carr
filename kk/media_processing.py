@@ -49,7 +49,7 @@ class PlateBlurStatus(str, Enum):
 
     BLURRED_SUCCESS = "blurred_success"  # plate(s) detected and blurred
     NO_PLATES = "no_plates"  # detection ran successfully; genuinely no plates found
-    SKIPPED = "skipped"  # skip_blur honored (fail-open mode only; see plate_blur_require_success_enabled())
+    SKIPPED = "skipped"  # skip_blur honored -- ALWAYS, unconditionally, regardless of plate_blur_require_success_enabled() (see _run_plate_blur()'s docstring)
     NOT_CONFIGURED = "not_configured"  # PLATE_BLUR_ENABLED=0, or detector missing ROBOFLOW_API_KEY/project/version
     DETECTION_FAILED = "detection_failed"  # Roboflow request failed (network/API/timeout/quota/bad response)
     PROCESSING_FAILED = "processing_failed"  # image could not be decoded, or detected boxes were unusable
@@ -61,8 +61,16 @@ class PlateBlurStatus(str, Enum):
 # PLATE_BLUR_REQUIRE_SUCCESS=1 is enabled. Every other status --
 # including any future/unknown status string this process doesn't
 # recognize -- is rejected. See `_map_blur_meta_status()`.
+#
+# SKIPPED is included here (2026 real-device fix): `_run_plate_blur()` now
+# ALWAYS honors an explicit `skip_blur=True` request unconditionally, even
+# when `PLATE_BLUR_REQUIRE_SUCCESS=1` -- see its docstring. An explicit
+# skip is the caller's own deliberate, confirmed choice (never an
+# unconfirmed/ambiguous outcome), so it must not be rejected here; doing so
+# would turn every legitimate "seller chose UNBLURRED" submission into a
+# hard failure under M-08 enforcement, which is not what that flag is for.
 _PLATE_BLUR_CONFIRMED_SAFE = frozenset(
-    {PlateBlurStatus.BLURRED_SUCCESS, PlateBlurStatus.NO_PLATES}
+    {PlateBlurStatus.BLURRED_SUCCESS, PlateBlurStatus.NO_PLATES, PlateBlurStatus.SKIPPED}
 )
 
 
@@ -623,16 +631,36 @@ def _run_plate_blur(
     whether the operation was BLURRED_SUCCESS / NO_PLATES / NOT_CONFIGURED /
     DETECTION_FAILED / PROCESSING_FAILED / ENCODING_FAILED / OTHER_FAILURE.
 
-    ``force_attempt``: M-08 -- when the caller is enforcing
-    ``PLATE_BLUR_REQUIRE_SUCCESS``, an ordinary client-controlled
-    ``skip_blur=1`` request parameter must not be able to bypass the
-    requirement, so detection still actually runs even if the caller asked
-    to skip it. ``skip_requested`` is honored as an outright skip only when
-    ``force_attempt`` is False (i.e. in the default fail-open mode), which
-    preserves the exact original ``skip_blur`` product behavior for every
-    deployment that has not explicitly opted into M-08 enforcement.
+    CORRECTNESS-CRITICAL CONTRACT (2026 real-device investigation):
+    ``skip_requested=True`` MUST ALWAYS result in ``PlateBlurStatus.SKIPPED``
+    -- detection must never even run, regardless of ``force_attempt``. This
+    is an unconditional guarantee the sell-listing "Blur/Unblur choice"
+    feature depends on: when a seller explicitly chooses UNBLURRED as their
+    final, informed submission choice, the server sends
+    ``skip_blur=true`` for that image, and the resulting listing photo must
+    be provably byte-identical in outcome to "blur never attempted" -- never
+    silently blurred anyway.
+
+    ``force_attempt`` (M-08, ``PLATE_BLUR_REQUIRE_SUCCESS``) previously
+    overrode ``skip_requested`` -- the original rationale was that an
+    ordinary client-controlled ``skip_blur=1`` request parameter should not
+    be able to bypass a server-enforced blur requirement. That rationale
+    predates the current product contract, under which ``skip_blur`` is no
+    longer an arbitrary/untrusted bypass flag but the seller's own
+    deliberate final choice (see ``SellMediaIdentity.
+    skipBlurForFinalSubmission`` on the Flutter side) -- forcing a blur the
+    seller explicitly declined is itself the defect, confirmed on a real
+    device: production logged ``skip_blur=True`` together with
+    ``plate_blur_applied=True`` and a processed-image hash IDENTICAL to a
+    separately-run ``skip_blur=False`` preview job for the same source,
+    proving detection ran (and blurred) despite the explicit skip request.
+    ``force_attempt`` now ONLY affects the ``skip_requested=False`` (blur
+    genuinely wanted) path below -- it still makes THAT path fail closed
+    (reject rather than silently persist an unconfirmed outcome) exactly as
+    before; it can no longer force detection to run when the caller asked
+    to skip it outright.
     """
-    if skip_requested and not force_attempt:
+    if skip_requested:
         return PlateBlurOutcome(PlateBlurStatus.SKIPPED, raw_bytes, "skip_blur requested")
 
     enabled = (os.getenv("PLATE_BLUR_ENABLED", "1").strip() != "0")
@@ -705,16 +733,20 @@ def blur_image_bytes_with_status(
 def blur_image_bytes(raw_bytes: bytes, ext: str, *, skip_blur: bool = False) -> bytes:
     """Run license-plate blur on in-memory image bytes; return blurred bytes.
 
-    M-08: when ``plate_blur_require_success_enabled()`` is False (the
-    default), this preserves the original fail-open behavior byte-for-byte
-    -- any detector/network/processing failure, or an explicit
-    ``skip_blur=True``, returns the original bytes unchanged and never
-    raises. When ``PLATE_BLUR_REQUIRE_SUCCESS=1`` is set, this instead
-    raises ``PlateBlurRequiredRejected`` for any outcome other than a
-    confirmed ``BLURRED_SUCCESS`` or ``NO_PLATES`` -- including
-    ``skip_blur=True``, which is no longer honored as a way to bypass the
-    requirement (see ``_run_plate_blur()``'s ``force_attempt`` docstring and
-    ``PRODUCTION_AUDIT.md`` M-08 for the rationale).
+    ``skip_blur=True`` ALWAYS returns the original bytes unchanged and never
+    raises, and detection is never even attempted -- unconditionally,
+    regardless of ``plate_blur_require_success_enabled()`` (see
+    ``_run_plate_blur()``'s docstring for the 2026 real-device fix that made
+    this an absolute contract rather than a fail-open-mode-only behavior).
+
+    When ``skip_blur=False`` and ``PLATE_BLUR_REQUIRE_SUCCESS`` is unset
+    (the default), this preserves the original fail-open behavior
+    byte-for-byte -- any detector/network/processing failure returns the
+    original bytes unchanged and never raises. When
+    ``PLATE_BLUR_REQUIRE_SUCCESS=1`` is set, this instead raises
+    ``PlateBlurRequiredRejected`` for any outcome other than a confirmed
+    ``BLURRED_SUCCESS`` or ``NO_PLATES`` (see ``PRODUCTION_AUDIT.md`` M-08
+    for the original rationale).
     """
     out_bytes, _status = blur_image_bytes_with_status(raw_bytes, ext, skip_blur=skip_blur)
     return out_bytes

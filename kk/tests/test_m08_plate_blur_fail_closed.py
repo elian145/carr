@@ -31,10 +31,17 @@ original bytes) for every status except ``BLURRED_SUCCESS`` and
     OTHER_FAILURE       -- any unexpected/ambiguous outcome          -> REJECT (fail-closed mode only)
 
 Also covered:
-  - M-08's explicit security requirement that an ordinary client-controlled
-    ``skip_blur=1`` request parameter must NOT be able to bypass
-    ``PLATE_BLUR_REQUIRE_SUCCESS=1`` (it still bypasses the attempt
-    entirely in the default fail-open mode, unchanged).
+  - 2026 CONTRACT REVERSAL (real-device fix): ``skip_blur=True`` is now an
+    ABSOLUTE, unconditional skip -- it bypasses detection entirely in BOTH
+    modes (fail-open AND ``PLATE_BLUR_REQUIRE_SUCCESS=1``). The original
+    M-08 design intentionally forced detection to run despite
+    ``skip_blur=1`` under fail-closed mode, on the assumption that
+    ``skip_blur`` was an arbitrary/untrusted client bypass flag; production
+    evidence proved this assumption is no longer valid under the current
+    product contract (``skip_blur`` is the seller's own deliberate,
+    informed Blur/Unblur choice -- see
+    ``SellMediaIdentity.skipBlurForFinalSubmission`` on the Flutter side).
+    See ``TestSkipBlurSemantics`` below for the full before/after story.
   - The async Celery path (``kk/tasks/image_tasks.py::_process_image_path()``)
     obeys the identical policy, since both call the same
     ``blur_image_bytes()`` choke point and read the same plain environment
@@ -176,10 +183,15 @@ class TestRunPlateBlurUnit:
         assert outcome.out_bytes == raw
         fake_get_detector.assert_not_called()
 
-    def test_skip_requested_with_force_attempt_still_runs_detection(self, monkeypatch):
-        """M-08 security requirement: when fail-closed mode is enforcing,
-        skip_blur=True must NOT bypass detection -- the detector is still
-        invoked."""
+    def test_skip_requested_with_force_attempt_is_still_skipped_no_detector_call(
+        self, monkeypatch
+    ):
+        """2026 real-device fix (superseded contract): skip_requested=True
+        must be honored unconditionally, even when force_attempt=True (the
+        PLATE_BLUR_REQUIRE_SUCCESS=1 caller) -- the detector must never be
+        invoked either way. This test previously asserted the OPPOSITE
+        (force_attempt overriding an explicit skip); see
+        `TestSkipBlurSemantics` for the full rationale."""
         monkeypatch.setenv("PLATE_BLUR_ENABLED", "1")
         detector = _fake_detector(configured=True, meta={"detect_status": "ok"})
         monkeypatch.setattr("kk.license_plate_blur.get_plate_detector", lambda: detector)
@@ -188,8 +200,9 @@ class TestRunPlateBlurUnit:
         outcome = media_processing._run_plate_blur(
             raw, ".jpg", skip_requested=True, force_attempt=True
         )
-        detector.detect_with_meta.assert_called_once()
-        assert outcome.status == PlateBlurStatus.NO_PLATES
+        detector.detect_with_meta.assert_not_called()
+        assert outcome.status == PlateBlurStatus.SKIPPED
+        assert outcome.out_bytes == raw
 
     def test_plate_blur_disabled_globally_is_not_configured(self, monkeypatch):
         monkeypatch.setenv("PLATE_BLUR_ENABLED", "0")
@@ -429,33 +442,84 @@ class TestSkipBlurSemantics:
         assert out == raw
         fake_get_detector.assert_not_called()
 
-    def test_fail_closed_mode_skip_blur_does_not_bypass_requirement(self, monkeypatch):
-        """M-08 security requirement: once PLATE_BLUR_REQUIRE_SUCCESS=1 is
-        set, an ordinary client-controlled skip_blur=1 must NOT be able to
-        make an unconfirmed image pass through -- detection is still forced
-        to run, and failure still rejects the upload."""
+    def test_fail_closed_mode_skip_blur_still_bypasses_unconditionally(self, monkeypatch):
+        """2026 real-device fix (contract reversal from the original M-08
+        design): ``skip_blur=True`` is now an ABSOLUTE, unconditional skip
+        -- it must bypass detection entirely even when
+        PLATE_BLUR_REQUIRE_SUCCESS=1 is set, and must never raise
+        ``PlateBlurRequiredRejected`` merely because the (never-attempted)
+        detector happens to be unconfigured.
+
+        Superseded test: this file previously asserted the OPPOSITE (that
+        fail-closed mode forced detection to run despite skip_blur=1, and
+        rejected on an unconfigured detector) -- that was M-08's original,
+        intentional design under the assumption that ``skip_blur`` was an
+        arbitrary/untrusted client bypass flag. Production evidence proved
+        this assumption is no longer valid: under the current product
+        contract, ``skip_blur`` is the seller's own deliberate, final
+        Blur/Unblur choice (see `SellMediaIdentity.
+        skipBlurForFinalSubmission` on the Flutter side), and forcing a
+        blur the seller explicitly declined -- confirmed on a real device,
+        where a `skip_blur=True` final-submission task logged
+        `plate_blur_applied=True` -- is itself the defect this test now
+        guards against."""
         monkeypatch.setenv("PLATE_BLUR_REQUIRE_SUCCESS", "1")
         monkeypatch.setenv("PLATE_BLUR_ENABLED", "1")
-        detector = _fake_detector(configured=False)
-        monkeypatch.setattr("kk.license_plate_blur.get_plate_detector", lambda: detector)
+        # Detector deliberately unconfigured -- under the OLD behavior this
+        # would have raised PlateBlurRequiredRejected once detection was
+        # force-attempted. It must not even be constructed/queried now.
+        fake_get_detector = MagicMock()
+        monkeypatch.setattr("kk.license_plate_blur.get_plate_detector", fake_get_detector)
 
-        with pytest.raises(PlateBlurRequiredRejected):
-            media_processing.blur_image_bytes(_tiny_jpeg_bytes(), ".jpg", skip_blur=True)
+        raw = _tiny_jpeg_bytes()
+        out = media_processing.blur_image_bytes(raw, ".jpg", skip_blur=True)
+        assert out == raw
+        fake_get_detector.assert_not_called()
 
-    def test_fail_closed_mode_skip_blur_still_persists_on_confirmed_success(self, monkeypatch):
-        """Complement of the above: if fail-closed mode forces a detection
-        attempt despite skip_blur=1, and that attempt genuinely finds no
-        plates, the image is still accepted (this is not a punitive mode --
-        it only rejects unconfirmed outcomes)."""
+    def test_fail_closed_mode_skip_blur_bypasses_even_with_guaranteed_detection(
+        self, monkeypatch
+    ):
+        """Complement of the above, using a detector that WOULD definitely
+        find (and blur) a plate if invoked: skip_blur=True must still
+        return the original bytes unchanged, and the detector must never
+        even be called -- proving this isn't merely "rejection avoided" but
+        "detection never attempted at all", exactly the production
+        contract violation (`plate_blur_applied=True` despite
+        `skip_blur=True`) this fix closes."""
         monkeypatch.setenv("PLATE_BLUR_REQUIRE_SUCCESS", "1")
         monkeypatch.setenv("PLATE_BLUR_ENABLED", "1")
-        detector = _fake_detector(configured=True, boxes=[], meta={"detect_status": "ok"})
+        PlateBox = __import__("kk.license_plate_blur", fromlist=["PlateBox"]).PlateBox
+        detector = _fake_detector(
+            configured=True,
+            boxes=[PlateBox(x1=2, y1=2, x2=15, y2=10, confidence=0.9)],
+            meta={"detect_status": "ok"},
+        )
         monkeypatch.setattr("kk.license_plate_blur.get_plate_detector", lambda: detector)
 
         raw = _tiny_jpeg_bytes()
         out = media_processing.blur_image_bytes(raw, ".jpg", skip_blur=True)
         assert out == raw
-        detector.detect_with_meta.assert_called_once()
+        detector.detect_with_meta.assert_not_called()
+
+    def test_fail_closed_mode_skip_blur_reports_skipped_status_not_rejected(
+        self, monkeypatch
+    ):
+        """`blur_image_bytes_with_status()` (used by the real task pipeline
+        for `plate_blur_applied` tracing) must report `PlateBlurStatus.
+        SKIPPED` for this case -- never raise `PlateBlurRequiredRejected`.
+        SKIPPED is a deliberately-confirmed outcome (the caller's own
+        explicit choice), not an unconfirmed/ambiguous one, so M-08
+        enforcement must treat it as safe."""
+        monkeypatch.setenv("PLATE_BLUR_REQUIRE_SUCCESS", "1")
+        monkeypatch.setenv("PLATE_BLUR_ENABLED", "1")
+        fake_get_detector = MagicMock()
+        monkeypatch.setattr("kk.license_plate_blur.get_plate_detector", fake_get_detector)
+
+        out, status = media_processing.blur_image_bytes_with_status(
+            _tiny_jpeg_bytes(), ".jpg", skip_blur=True
+        )
+        assert status == media_processing.PlateBlurStatus.SKIPPED
+        fake_get_detector.assert_not_called()
 
 
 # ===========================================================================
@@ -654,33 +718,39 @@ class TestAsyncImageTaskFailClosed:
         mock_persist.assert_not_called()
         assert _stored_files(upload_env) == []
 
-    def test_process_image_path_skip_blur_does_not_bypass_fail_closed(
+    def test_process_image_path_skip_blur_bypasses_unconditionally(
         self, upload_env, monkeypatch, tmp_path
     ):
-        """Same skip_blur security requirement (item J), exercised through
-        the async task's own entrypoint."""
+        """2026 real-device fix (superseded contract): the async task's own
+        entrypoint must honor `skip_blur=True` unconditionally, even under
+        PLATE_BLUR_REQUIRE_SUCCESS=1 -- it must succeed (not raise), and
+        the detector must never even be invoked. See
+        `kk/tests/test_plate_blur_task_pipeline_contract.py` for the
+        full task-level `plate_blur_applied` proof (this test only covers
+        the `PlateBlurRequiredRejected` interaction)."""
         from kk.tasks import image_tasks
 
         monkeypatch.setenv("PLATE_BLUR_REQUIRE_SUCCESS", "1")
         monkeypatch.setenv("PLATE_BLUR_ENABLED", "1")
-        detector = _fake_detector(configured=False)
-        monkeypatch.setattr("kk.license_plate_blur.get_plate_detector", lambda: detector)
+        fake_get_detector = MagicMock()
+        monkeypatch.setattr(
+            "kk.license_plate_blur.get_plate_detector", fake_get_detector
+        )
 
         temp_abs = str(tmp_path / "incoming2.jpg")
         with open(temp_abs, "wb") as fh:
             fh.write(_tiny_jpeg_bytes())
 
-        mock_persist = MagicMock()
-        monkeypatch.setattr(media_processing, "persist_jpeg_bytes", mock_persist)
-
-        with pytest.raises(media_processing.PlateBlurRequiredRejected):
-            image_tasks._process_image_path(
-                temp_abs=temp_abs,
-                original_filename="photo.jpg",
-                inline_base64=False,
-                skip_blur=True,  # client asked to skip -- must NOT succeed
-            )
-        mock_persist.assert_not_called()
+        result = image_tasks._process_image_path(
+            temp_abs=temp_abs,
+            original_filename="photo.jpg",
+            inline_base64=False,
+            skip_blur=True,  # seller's own deliberate final choice
+        )
+        fake_get_detector.assert_not_called()
+        assert result["_trace_plate_blur_applied"] is False
+        assert result["rel_path"]
+        assert len(_stored_files(upload_env)) == 1
 
     def test_process_image_path_succeeds_under_fail_closed_when_confirmed_safe(
         self, upload_env, monkeypatch, tmp_path
@@ -869,11 +939,17 @@ class TestHttpFailClosedUploadRoute:
         assert "api_key" not in body_text
         assert _image_count(app_ctx, ctx["car_id"]) == 0
 
-    def test_upload_rejected_even_with_client_skip_blur_when_fail_closed(
+    def test_upload_succeeds_with_client_skip_blur_even_when_fail_closed(
         self, app_ctx, client, monkeypatch
     ):
-        """J (route-level): the ordinary client-controlled ?skip_blur=1
-        parameter must not bypass PLATE_BLUR_REQUIRE_SUCCESS=1."""
+        """2026 real-device fix (superseded contract): the ordinary
+        seller-facing ``?skip_blur=1`` parameter -- now the seller's own
+        deliberate final Blur/Unblur choice, not an arbitrary untrusted
+        bypass -- MUST succeed and persist the photo UNBLURRED, even under
+        PLATE_BLUR_REQUIRE_SUCCESS=1 with no Roboflow API key configured at
+        all (which, without ``skip_blur=1``, would correctly still reject
+        per the sibling test above -- detection is never even attempted
+        when skip_blur is set, so an unconfigured detector cannot matter)."""
         monkeypatch.setenv("PLATE_BLUR_REQUIRE_SUCCESS", "1")
         ctx = _setup_seller(app_ctx, client)
 
@@ -883,8 +959,8 @@ class TestHttpFailClosedUploadRoute:
             headers=_auth(ctx["token"]),
             content_type="multipart/form-data",
         )
-        assert resp.status_code == 400, resp.get_json()
-        assert _image_count(app_ctx, ctx["car_id"]) == 0
+        assert resp.status_code == 201, resp.get_json()
+        assert _image_count(app_ctx, ctx["car_id"]) == 1
 
     def test_upload_succeeds_when_fail_open_default(self, app_ctx, client, monkeypatch):
         """Regression: default (no PLATE_BLUR_REQUIRE_SUCCESS set) must
