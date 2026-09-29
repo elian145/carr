@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import secrets
 import tempfile
@@ -1788,6 +1789,27 @@ def _enqueue_async_car_image_uploads(
             skip_reasons.append(msg or "Invalid file")
             continue
 
+        # TEMPORARY DEBUG TRACE (plate-blur real-device investigation --
+        # safe to delete once diagnosis is complete). Hashes the exact bytes
+        # this request carried for this file, before any staging/processing
+        # touches them. Never logs bytes, only a digest + size. Must
+        # seek(0) back afterward so stage_upload_for_async_job() below still
+        # streams the full file to disk.
+        try:
+            _trace_raw = fs.stream.read()
+            fs.stream.seek(0)
+            current_app.logger.warning(
+                "[BLUR TRACE SERVER] received car_id=%s client_media_id=%s "
+                "skip_blur=%s input_sha256=%s input_size=%s",
+                (car.id if car is not None else None),
+                client_media_id,
+                skip_blur,
+                hashlib.sha256(_trace_raw).hexdigest(),
+                len(_trace_raw),
+            )
+        except Exception:
+            current_app.logger.exception("[BLUR TRACE SERVER] received: failed to hash input")
+
         filename = generate_secure_filename(fs.filename)
         # OOM-fix follow-up: stage via R2 when configured (production), since
         # carr-worker-fra runs as a separate Render service and cannot read a
@@ -2059,11 +2081,24 @@ def upload_car_images(car_id: str):
         return jsonify({"message": "Failed to upload images"}), 500
 
 
-def attach_processed_car_image(car: Car, *, kind: str, rel_path: str, source_media_id: str) -> CarImage:
+def attach_processed_car_image(
+    car: Car,
+    *,
+    kind: str,
+    rel_path: str,
+    source_media_id: str,
+    _trace_skip_blur: bool | None = None,
+    _trace_processed_sha256: str | None = None,
+) -> CarImage:
     """
     Server-side (Celery-task-driven) idempotent CarImage attach -- the
     trusted-input counterpart of ``attach_car_images()`` used by the
     media-readiness self-attach path (``kk/tasks/image_tasks.py``).
+
+    ``_trace_skip_blur``/``_trace_processed_sha256`` are TEMPORARY DEBUG-only
+    parameters (plate-blur real-device investigation) -- purely for logging
+    at the self-attach point, default ``None``, no effect on behavior. Safe
+    to remove along with the log line below once diagnosis is complete.
 
     ``rel_path`` is always server-generated here (the Celery task's own
     ``persist_jpeg_bytes()`` result), never client input, so this
@@ -2084,6 +2119,19 @@ def attach_processed_car_image(car: Car, *, kind: str, rel_path: str, source_med
     commits; the caller's lock + final commit is what makes this safe
     under concurrent completions for the same car.
     """
+    if _trace_skip_blur is not None or _trace_processed_sha256 is not None:
+        try:
+            current_app.logger.warning(
+                "[BLUR TRACE SERVER] attached client_media_id=%s "
+                "skip_blur_or_processing_mode=%s processed_sha256=%s final_rel_path=%s",
+                source_media_id,
+                _trace_skip_blur,
+                _trace_processed_sha256,
+                rel_path,
+            )
+        except Exception:
+            pass
+
     existing = CarImage.query.filter_by(
         car_id=car.id, source_media_id=source_media_id
     ).first()

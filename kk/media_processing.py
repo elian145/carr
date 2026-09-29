@@ -675,6 +675,33 @@ def _run_plate_blur(
     return PlateBlurOutcome(status, out_bytes, str(meta.get("status") or "unknown"))
 
 
+def blur_image_bytes_with_status(
+    raw_bytes: bytes, ext: str, *, skip_blur: bool = False
+) -> tuple[bytes, PlateBlurStatus]:
+    """Same behavior as ``blur_image_bytes()``, but also returns the
+    definitive ``PlateBlurStatus`` for the attempt (e.g. so a caller can log
+    whether the blur was actually applied, vs. skipped/failed-open).
+
+    TEMPORARY DEBUG plumbing (2026 plate-blur real-device trace): factored
+    out of ``blur_image_bytes()`` so callers that need ``plate_blur_applied``
+    for tracing can share this exact one-call code path instead of running
+    detection twice. Pure refactor -- no behavior change vs. the previous
+    inline body of ``blur_image_bytes()`` below.
+    """
+    require_success = plate_blur_require_success_enabled()
+    outcome = _run_plate_blur(
+        raw_bytes, ext, skip_requested=skip_blur, force_attempt=require_success
+    )
+    if require_success and outcome.status not in _PLATE_BLUR_CONFIRMED_SAFE:
+        logger.warning(
+            "M-08: rejecting upload -- plate blur not confirmed safe (status=%s, detail=%s)",
+            outcome.status.value,
+            outcome.detail,
+        )
+        raise PlateBlurRequiredRejected(outcome.status, outcome.detail)
+    return outcome.out_bytes, outcome.status
+
+
 def blur_image_bytes(raw_bytes: bytes, ext: str, *, skip_blur: bool = False) -> bytes:
     """Run license-plate blur on in-memory image bytes; return blurred bytes.
 
@@ -689,18 +716,8 @@ def blur_image_bytes(raw_bytes: bytes, ext: str, *, skip_blur: bool = False) -> 
     requirement (see ``_run_plate_blur()``'s ``force_attempt`` docstring and
     ``PRODUCTION_AUDIT.md`` M-08 for the rationale).
     """
-    require_success = plate_blur_require_success_enabled()
-    outcome = _run_plate_blur(
-        raw_bytes, ext, skip_requested=skip_blur, force_attempt=require_success
-    )
-    if require_success and outcome.status not in _PLATE_BLUR_CONFIRMED_SAFE:
-        logger.warning(
-            "M-08: rejecting upload -- plate blur not confirmed safe (status=%s, detail=%s)",
-            outcome.status.value,
-            outcome.detail,
-        )
-        raise PlateBlurRequiredRejected(outcome.status, outcome.detail)
-    return outcome.out_bytes
+    out_bytes, _status = blur_image_bytes_with_status(raw_bytes, ext, skip_blur=skip_blur)
+    return out_bytes
 
 
 def process_and_store_image(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import logging
 import os
 import tempfile
@@ -116,12 +117,17 @@ def _process_image_bytes_from_path(
     pre-existing inline implementation."""
     from kk.media_processing import (
         DecompressionBombRejected,
-        blur_image_bytes,
+        PlateBlurStatus,
+        blur_image_bytes_with_status,
         persist_jpeg_bytes,
     )
 
     with open(source_path, "rb") as fp:
         raw_bytes = fp.read()
+
+    # TEMPORARY DEBUG TRACE (plate-blur real-device investigation -- safe to
+    # delete once diagnosis is complete). Never logs bytes, only a digest.
+    _trace_source_sha256 = hashlib.sha256(raw_bytes).hexdigest()
 
     # Optional: blur plates (fallback to original on any failure, unless
     # M-08's PLATE_BLUR_REQUIRE_SUCCESS=1 is set -- in that case
@@ -134,7 +140,13 @@ def _process_image_bytes_from_path(
     # is ever reached, so a rejected image is never persisted via the async
     # path either -- mirroring the M-06 DecompressionBombRejected handling
     # immediately below.
-    out_bytes = blur_image_bytes(raw_bytes, ".jpg", skip_blur=skip_blur)
+    out_bytes, _trace_blur_status = blur_image_bytes_with_status(
+        raw_bytes, ".jpg", skip_blur=skip_blur
+    )
+    # TEMPORARY DEBUG: deterministic proof of whether the plate-blur
+    # detector actually ran and produced a blurred result, independent of
+    # what skip_blur was merely *requested* as.
+    _trace_plate_blur_applied = _trace_blur_status == PlateBlurStatus.BLURRED_SUCCESS
 
     # Downscale/compress
     #
@@ -198,6 +210,12 @@ def _process_image_bytes_from_path(
     except Exception:
         pass
 
+    # TEMPORARY DEBUG TRACE: hash of the final bytes actually persisted
+    # (post blur/resize/re-encode). A mismatch vs. _trace_source_sha256 is
+    # EXPECTED and fine on its own (resize/re-encode always changes bytes)
+    # -- the meaningful signal is _trace_plate_blur_applied above.
+    _trace_processed_sha256 = hashlib.sha256(out_bytes).hexdigest()
+
     final_rel = persist_jpeg_bytes(
         out_bytes,
         object_filename=final_filename,
@@ -228,7 +246,17 @@ def _process_image_bytes_from_path(
         except Exception:
             b64 = None
 
-    return {"rel_path": final_rel, "base64": b64}
+    return {
+        "rel_path": final_rel,
+        "base64": b64,
+        # TEMPORARY DEBUG TRACE fields (plate-blur real-device investigation
+        # -- safe to remove once diagnosis is complete). Never contain
+        # bytes, only digests/paths/booleans.
+        "_trace_source_path": source_path,
+        "_trace_source_sha256": _trace_source_sha256,
+        "_trace_processed_sha256": _trace_processed_sha256,
+        "_trace_plate_blur_applied": _trace_plate_blur_applied,
+    }
 
 
 @celery_app.task(bind=True, name="kk.process_car_image_file")
@@ -291,6 +319,25 @@ def process_car_image_file(
         if owner:
             out["owner_public_id"] = owner
 
+        # TEMPORARY DEBUG TRACE (plate-blur real-device investigation --
+        # safe to delete once diagnosis is complete). Never logs bytes,
+        # only digests/paths/booleans; no signed URLs or credentials.
+        try:
+            logger.warning(
+                "[BLUR TRACE SERVER] processing client_media_id=%s skip_blur=%s "
+                "source_sha256=%s processed_sha256=%s source_key=%s processed_key=%s "
+                "plate_blur_applied=%s",
+                client_media_id,
+                bool(skip_blur),
+                res.get("_trace_source_sha256"),
+                res.get("_trace_processed_sha256"),
+                res.get("_trace_source_path"),
+                res.get("rel_path"),
+                res.get("_trace_plate_blur_applied"),
+            )
+        except Exception:
+            pass
+
         if car_id and client_media_id:
             # Lazy imports: kk.routes.media imports THIS module at module
             # load time, so importing it back here at module scope would
@@ -308,6 +355,10 @@ def process_car_image_file(
                     kind=kind or "listing",
                     rel_path=res["rel_path"],
                     source_media_id=client_media_id,
+                    # TEMPORARY DEBUG TRACE args -- see attach_processed_car_image()
+                    # docstring; safe to remove once diagnosis is complete.
+                    _trace_skip_blur=bool(skip_blur),
+                    _trace_processed_sha256=res.get("_trace_processed_sha256"),
                 ),
             )
         return out
