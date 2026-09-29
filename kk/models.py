@@ -969,6 +969,17 @@ class CarMediaItem(db.Model):
         db.Index('ix_car_media_item_car_status', 'car_id', 'status'),
     )
 
+    # Every value `status` can ever hold (see kk/media_readiness.py's
+    # module docstring for the full state-machine contract). Kept here as
+    # a single source of truth so both the DB column width and any
+    # regression test asserting "the column is wide enough" derive from
+    # the same list instead of duplicating the four literals -- see the
+    # 2026-09-29 production incident (`StringDataRightTruncation` on
+    # `awaiting_upload`, 15 chars, into what was then a VARCHAR(12)
+    # column; fixed by migration s7t8u9v0w1x2) that this constant exists
+    # to prevent from recurring silently.
+    ALL_STATUSES = ('awaiting_upload', 'processing', 'attached', 'failed')
+
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
     kind = db.Column(db.String(10), nullable=False)  # 'image' | 'video'
@@ -980,8 +991,14 @@ class CarMediaItem(db.Model):
     # correctness dependency (see kk/media_readiness.py's at-least-once
     # design note).
     job_task_id = db.Column(db.String(64), nullable=True)
-    # 'awaiting_upload' | 'processing' | 'attached' | 'failed'
-    status = db.Column(db.String(12), nullable=False, default='awaiting_upload')
+    # 'awaiting_upload' | 'processing' | 'attached' | 'failed'.
+    # NOTE: 'awaiting_upload' is 15 chars -- this MUST stay >= the
+    # longest value in ALL_STATUSES above (32 gives headroom for future
+    # states without needing another migration for a while). Widened
+    # from VARCHAR(12) -> VARCHAR(32) by migration s7t8u9v0w1x2 after a
+    # production 500 on POST /api/cars (StringDataRightTruncation
+    # inserting 'awaiting_upload' into the original, too-narrow column).
+    status = db.Column(db.String(32), nullable=False, default='awaiting_upload')
     # Write-once, monotonic: set the first time Phase A completes for this
     # item (source bytes server/R2-owned AND the async job was durably
     # accepted -- or, for a normal video, the same atomic request that
