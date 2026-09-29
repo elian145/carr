@@ -92,6 +92,61 @@ def _find_car(car_id: str) -> Car | None:
     return None
 
 
+def _find_car_locked(car_id: str) -> Car | None:
+    """Row-locked variant of `_find_car`, used ONLY by the two
+    activation-capable endpoints below (`update_car_status` /
+    `bulk_update_car_status`) -- `SELECT ... FOR UPDATE` before the
+    media-readiness activation-gate check, so a concurrent Phase-B
+    completion recomputing `Car.media_status` for the same car can never
+    race an admin's activation decision (see kk/media_readiness.py)."""
+    cid = (car_id or "").strip()
+    if not cid:
+        return None
+    car = Car.query.filter_by(public_id=cid).with_for_update().first()
+    if car:
+        return car
+    if cid.isdigit():
+        return Car.query.filter_by(id=int(cid)).with_for_update().first()
+    return None
+
+
+def _blocked_by_media_readiness(is_active: bool, status: str | None, media_status: str) -> bool:
+    """
+    Pure predicate behind the media-readiness admin activation gate (see
+    kk/media_readiness.py): True exactly when this (is_active, status)
+    pair would make a listing publicly visible -- matching the EXACT same
+    formula `_car_moderation_state()`/kk/routes/cars.py's public listing
+    filter already use -- while its `media_status` is not yet "ready". No
+    force/override parameter exists by design; an admin can still hide/
+    deactivate/edit any other field regardless of media_status.
+    """
+    if not is_active:
+        return False
+    if (status or "active").strip().lower() not in ("", "active"):
+        return False
+    return media_status != "ready"
+
+
+def _media_not_ready_block_response(car: Car):
+    """`_blocked_by_media_readiness()` applied to an already-mutated `Car`
+    ORM object -- used by the single-listing endpoint. Returns a 409
+    response, or ``None`` when activation is allowed."""
+    if not _blocked_by_media_readiness(car.is_active, car.status, car.media_status):
+        return None
+    return (
+        jsonify(
+            {
+                "message": (
+                    "Cannot activate this listing: its media is still "
+                    "processing or failed to attach."
+                ),
+                "media_status": car.media_status,
+            }
+        ),
+        409,
+    )
+
+
 def _car_moderation_state(is_active: bool, status: str | None) -> str | None:
     """Classify a Car's (is_active, status) pair into the seller-facing
     moderation bucket this batch notifies for. Returns ``None`` for any
@@ -1516,7 +1571,7 @@ def update_car_status(car_id: str):
         if denied:
             return denied
         admin_user = get_current_user()
-        car = _find_car(car_id)
+        car = _find_car_locked(car_id)
         if not car:
             return jsonify({"message": "Listing not found"}), 404
         data = request.get_json(silent=True) or {}
@@ -1561,6 +1616,15 @@ def update_car_status(car_id: str):
                     car.featured_until = parsed
 
         car.updated_at = utcnow()
+
+        # Media-readiness admin activation gate -- checked AFTER applying
+        # every requested field above (so the check sees the FINAL
+        # resulting (is_active, status) pair), but BEFORE commit, and
+        # under the row lock acquired above. No force/override exists.
+        block = _media_not_ready_block_response(car)
+        if block is not None:
+            db.session.rollback()
+            return block
 
         # CarNet V1 batch-3: notify the seller only when the visible
         # moderation bucket actually changed into "active" or "hidden" --
@@ -1650,11 +1714,26 @@ def bulk_update_car_status():
 
         updated = []
         missing = []
+        blocked = []
         for raw_id in ids:
-            car = _find_car(str(raw_id))
+            car = _find_car_locked(str(raw_id))
             if not car:
                 missing.append(str(raw_id))
                 continue
+
+            # Media-readiness admin activation gate -- checked per-row,
+            # BEFORE applying any field, against the resulting
+            # (is_active, status) this patch WOULD produce for THIS car.
+            # A blocked row is skipped entirely (no field of this patch is
+            # applied to it) rather than failing the whole bulk request;
+            # it is reported back in `blocked` alongside `updated`/
+            # `missing`. No force/override exists.
+            would_be_active = patch.get("is_active", car.is_active)
+            would_be_status = patch.get("status", car.status)
+            if _blocked_by_media_readiness(would_be_active, would_be_status, car.media_status):
+                blocked.append(car.public_id or str(car.id))
+                continue
+
             old_moderation_state = _car_moderation_state(car.is_active, car.status)
             if "is_active" in patch:
                 car.is_active = patch["is_active"]
@@ -1692,7 +1771,16 @@ def bulk_update_car_status():
             updated.append(car.public_id or str(car.id))
 
         if not updated:
-            return jsonify({"message": "No matching listings found", "missing": missing}), 404
+            return (
+                jsonify(
+                    {
+                        "message": "No matching listings found",
+                        "missing": missing,
+                        "blocked": blocked,
+                    }
+                ),
+                404,
+            )
 
         db.session.commit()
         invalidate_filter_facets_cache()
@@ -1704,7 +1792,12 @@ def bulk_update_car_status():
                 "admin_bulk_update_listings",
                 target_type="car",
                 target_id=",".join(updated[:10]),
-                metadata={"patch": patch, "updated_count": len(updated), "missing": missing},
+                metadata={
+                    "patch": patch,
+                    "updated_count": len(updated),
+                    "missing": missing,
+                    "blocked": blocked,
+                },
             )
         return (
             jsonify(
@@ -1712,6 +1805,7 @@ def bulk_update_car_status():
                     "message": f"Updated {len(updated)} listing(s)",
                     "updated": updated,
                     "missing": missing,
+                    "blocked": blocked,
                 }
             ),
             200,

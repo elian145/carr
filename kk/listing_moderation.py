@@ -67,8 +67,21 @@ def initial_listing_status(
     description: str | None = None,
     price: float | None = None,
     brand: str | None = None,
+    has_expected_media: bool = False,
 ) -> str:
-    """Server-controlled status for a newly created listing."""
+    """Server-controlled status for a newly created listing.
+
+    Media-readiness fix: a listing that declares any `expected_media`
+    (see kk/media_readiness.py) must NEVER auto-publish directly to
+    "active" at create time -- regardless of `LISTING_REQUIRE_APPROVAL`
+    or the spam/price heuristic below. It must start "pending" so the
+    only way it can ever become "active" is the normal (now media-status-
+    gated -- see kk/routes/admin.py) admin activation path. A listing with
+    zero expected media is unaffected and keeps the exact pre-existing
+    auto-publish behavior.
+    """
+    if has_expected_media:
+        return "pending"
     if listing_require_approval():
         return "pending"
     if listing_needs_manual_review(

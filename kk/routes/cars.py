@@ -24,6 +24,13 @@ from ..listing_visibility import (
     listing_visible_to_viewer as _listing_visible_to_viewer,
     public_listings_filter as _public_listings_filter,
 )
+from ..media_readiness import (
+    ExpectedMediaValidationError,
+    build_expected_media_items,
+    media_summary,
+    remove_expected_media_item_locked,
+    validate_expected_media,
+)
 from ..models import (
     Car,
     ListingReport,
@@ -1058,11 +1065,25 @@ def create_car():
         currency = _s(raw.get("currency"), "USD")[:3] or "USD"
         trim = _s(raw.get("trim"), "base")
         seating = _i(raw.get("seating"), 5)
+
+        # Media-readiness (see kk/media_readiness.py): the client declares,
+        # up front, every media item this submission will transfer --
+        # registered atomically with the Car row below, never later.
+        try:
+            expected_media = validate_expected_media(raw.get("expected_media"))
+        except ExpectedMediaValidationError as e:
+            return jsonify({"message": str(e)}), 400
+        has_expected_media = bool(expected_media)
+
         # Clients cannot self-publish past moderation; status is server-controlled.
+        # A listing with any expected_media is FORCED pending regardless of
+        # LISTING_REQUIRE_APPROVAL -- it must never become active before its
+        # media_status reaches "ready" (see initial_listing_status()).
         status = initial_listing_status(
             description=description,
             price=price,
             brand=brand,
+            has_expected_media=has_expected_media,
         )
         title_status_raw = _s(raw.get("title_status"), "clean").lower()
         # Persist title status submitted by sell flows; default to clean for unknown values.
@@ -1146,9 +1167,20 @@ def create_car():
             plate_city=plate_city_val,
             contact_phone=contact_phones[0] if contact_phones else None,
             contact_phones=contact_phones or None,
+            media_status="processing" if has_expected_media else "ready",
         )
 
         db.session.add(car)
+        # Media-readiness: flush (not commit) to obtain car.id, then add
+        # every expected-media manifest row to the SAME transaction, so
+        # the Car row and its full manifest are committed together, or
+        # neither is -- there is no window where the car exists with
+        # media_status="ready" while its declared media has not yet been
+        # registered.
+        db.session.flush()
+        for item in build_expected_media_items(expected_media):
+            item.car_id = car.id
+            db.session.add(item)
         db.session.commit()
         _bump_filter_facets_cache()
         log_user_action(current_user, "create_listing", "car", car.public_id)
@@ -1172,6 +1204,90 @@ def create_car():
         return jsonify(payload), 201
     except Exception as e:
         return _listing_db_error_response(e, action="create car listing")
+
+
+def _find_car_for_media_locked(car_id: str):
+    """Row-locked car lookup for the media-readiness endpoints below --
+    mirrors `_resolve_car_for_user`'s public_id/numeric-id resolution, but
+    with `SELECT ... FOR UPDATE` (required before any write that can
+    change `Car.media_status` -- see kk/media_readiness.py's locking
+    contract)."""
+    q = Car.query.filter_by(public_id=car_id)
+    car = q.with_for_update().first()
+    if not car and str(car_id).isdigit():
+        try:
+            car = Car.query.filter_by(id=int(car_id)).with_for_update().first()
+        except (TypeError, ValueError):
+            car = None
+    return car
+
+
+@bp.route("/api/cars/<car_id>/media-items/<client_media_id>", methods=["DELETE"])
+@jwt_required()
+def remove_expected_media_item(car_id: str, client_media_id: str):
+    """
+    Phase-A cleanup: remove a declared `expected_media` item that never
+    completed Phase A (synchronous rejection -- malformed source, upload
+    itself failed). Never removes an item that already completed Phase A
+    (processing/attached/failed) -- see kk/media_readiness.py.
+
+    Authenticated + ownership-checked; idempotent (repeat calls on an
+    already-removed id return 200, never an error).
+    """
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        car = _find_car_for_media_locked(car_id)
+        if not car:
+            db.session.rollback()
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            db.session.rollback()
+            return (
+                jsonify({"message": "Not authorized to modify this listing's media"}),
+                403,
+            )
+
+        result = remove_expected_media_item_locked(
+            car=car, client_media_id=client_media_id
+        )
+        db.session.commit()
+        status_code = 200 if result.get("removed") or result.get("reason") == "not_found" else 409
+        return jsonify(result), status_code
+    except Exception:
+        db.session.rollback()
+        return jsonify({"message": "Failed to remove media item"}), 500
+
+
+@bp.route("/api/cars/<car_id>/media-summary", methods=["GET"])
+@jwt_required()
+def get_car_media_summary(car_id: str):
+    """
+    Server-authoritative per-item Phase-A/media-readiness summary, used by
+    the Flutter resume path instead of trusting local-only state (see
+    kk/media_readiness.py::media_summary).
+    """
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+
+        car = Car.query.filter_by(public_id=car_id).first()
+        if not car and str(car_id).isdigit():
+            try:
+                car = Car.query.filter_by(id=int(car_id)).first()
+            except (TypeError, ValueError):
+                car = None
+        if not car:
+            return jsonify({"message": "Car not found"}), 404
+        if car.seller_id != current_user.id and not current_user.is_admin:
+            return jsonify({"message": "Not authorized to view this listing's media"}), 403
+
+        return jsonify(media_summary(car)), 200
+    except Exception:
+        return jsonify({"message": "Failed to load media summary"}), 500
 
 
 def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True, require_active: bool = True):

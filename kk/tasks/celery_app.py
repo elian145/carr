@@ -61,6 +61,7 @@ def make_celery() -> Celery:
             "kk.tasks.notification_tasks",
             "kk.tasks.listing_tasks",
             "kk.tasks.video_tasks",
+            "kk.tasks.media_readiness_tasks",
         ],
     )
     c.Task = FlaskContextTask
@@ -213,6 +214,16 @@ def make_celery() -> Celery:
             "cleanup-stale-processed-video-staging-objects": {
                 "task": "kk.cleanup_stale_processed_video_staging_objects",
                 "schedule": 3600.0,  # hourly sweep; see video_tasks.py for the 48h stale-age threshold
+            },
+            # Media-readiness backstop sweep (see
+            # kk/media_readiness.py::sweep_stuck_processing_items and
+            # kk/tasks/media_readiness_tasks.py for the mandatory
+            # never-fabricate-Phase-A-completion rule this task obeys).
+            # Same "registered name == Beat 'task' string" precaution as
+            # the sweeps above.
+            "sweep-stuck-media-readiness-items": {
+                "task": "kk.sweep_stuck_media_readiness_items",
+                "schedule": 3600.0,  # hourly; see media_readiness.py for the 6h stale-age threshold
             },
         },
     )

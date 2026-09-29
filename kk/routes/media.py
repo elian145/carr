@@ -29,6 +29,7 @@ from ..media_processing import (
     transcoded_video_permanent_key,
     video_source_staging_key,
 )
+from ..media_readiness import mark_item_phase_a_accepted, mark_normal_video_attached_locked
 from ..models import Car, CarImage, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
 from ..tasks.image_tasks import process_car_image_file
@@ -1103,6 +1104,25 @@ def finalize_video_source_upload():
         if not is_valid_draft_media_id(draft_media_id):
             return jsonify({"message": "Invalid or missing draft_media_id"}), 400
 
+        # Media-readiness (optional, back-compat): binds this transcode job
+        # to a manifest row registered at create_car() time (see
+        # kk/media_readiness.py) so the task can self-attach on completion
+        # and so submitFast()'s Phase-A signal can advance for this item.
+        # Callers that omit car_id (older app builds, or any car-less use
+        # of this endpoint) get EXACTLY the pre-existing behavior -- no
+        # manifest lookup, no self-attach wiring.
+        car_id_raw = str(data.get("car_id") or "").strip()
+        car = None
+        if car_id_raw:
+            car = _get_car_by_any_id(car_id_raw)
+            if not car:
+                return jsonify({"message": "Car not found"}), 404
+            if car.seller_id != current_user.id and not current_user.is_admin:
+                return (
+                    jsonify({"message": "Not authorized to upload video for this listing"}),
+                    403,
+                )
+
         expected_key = video_source_staging_key(current_user.public_id, draft_media_id)
         if not expected_key:
             return jsonify({"message": "Unable to derive a staging key"}), 400
@@ -1160,6 +1180,7 @@ def finalize_video_source_upload():
                     "source_staging_key": expected_key,
                     "owner_public_id": current_user.public_id,
                     "draft_media_id": draft_media_id,
+                    "car_id": (car.id if car is not None else None),
                 },
                 expires=VIDEO_TRANSCODE_TASK_EXPIRES_SECONDS,
             )
@@ -1175,6 +1196,24 @@ def finalize_video_source_upload():
             register_idempotent_job_task_id(
                 dedupe_key, task_id, ttl_s=VIDEO_JOB_AUTH_TTL_SECONDS
             )
+
+        # Media-readiness: the enqueue-durability boundary (see
+        # kk/media_readiness.py) is `apply_async()` returning without
+        # raising, above -- ONLY once that has happened (fresh enqueue OR
+        # an already-registered task_id reused via the dedupe map, either
+        # way proving the task was accepted) do we advance this manifest
+        # item past "awaiting_upload". Idempotent/no-op if already advanced.
+        if car is not None:
+            try:
+                mark_item_phase_a_accepted(
+                    car_id=car.id,
+                    client_media_id=draft_media_id,
+                    job_task_id=task_id,
+                )
+            except Exception:
+                current_app.logger.exception(
+                    "finalize_video_source_upload: mark_item_phase_a_accepted failed"
+                )
 
         try:
             job_state = celery_state_to_video_job_state(
@@ -1195,6 +1234,125 @@ def finalize_video_source_upload():
     except Exception as e:
         current_app.logger.warning("finalize_video_source_upload failed: %s", e)
         return jsonify({"message": "Failed to finalize staged upload"}), 500
+
+
+def attach_one_transcoded_video(car: Car, *, owner_public_id: str, draft_media_id: str) -> CarVideo:
+    """
+    Server-side (Celery-task-driven) idempotent CarVideo attach -- the
+    trusted-input, no-HTTP-round-trip counterpart of
+    ``attach_transcoded_video()`` below, used by the media-readiness
+    self-attach path (``kk/tasks/video_tasks.py``). Called ONLY after
+    ``_transcode_video_source_impl`` has ALREADY successfully produced and
+    uploaded the processed object to R2 under
+    ``processed_video_staging_key(owner_public_id, draft_media_id)`` in
+    THIS SAME task execution (or a prior, at-least-once-redelivered
+    execution of the identical task) -- there is no client ``task_id``/job-
+    state to (re-)validate here, unlike the HTTP endpoint, because this
+    function IS the producer confirming its own completed work.
+
+    Idempotent (mirrors ``attach_transcoded_video()``'s exact crash-matrix
+    -- see that function's docstring for the full point-by-point reasoning,
+    which applies unchanged here):
+      - Checked-then-insert on ``(car_id, source_draft_media_id)``.
+      - Deterministic destination key -- a retry (this task redelivered,
+        or a genuinely duplicate at-least-once task) always targets the
+        SAME permanent object.
+      - Destination-HEAD-first skips a redundant copy when a previous
+        (possibly duplicate) execution already completed it.
+      - The DB unique constraint on ``(car_id, source_draft_media_id)`` is
+        the final protection against two truly concurrent callers.
+
+    Raises on any unrecoverable step (missing/oversized/wrong-type
+    processed object, failed copy, failed verification) -- the caller
+    (``transition_media_item_terminal``) rolls back and re-raises, which
+    is deliberately treated as a TRANSIENT failure by the calling task
+    (see kk/tasks/video_tasks.py): Celery's at-least-once redelivery, or a
+    future run of this same task, gets another chance.
+
+    MUST be called only from inside
+    ``kk.media_readiness.transition_media_item_terminal``'s per-car
+    ``SELECT ... FOR UPDATE`` lock -- it only ``flush()``es, it never
+    commits. Staging-object cleanup after a successful attach is left to
+    the existing ``cleanup_stale_processed_video_staging_objects`` sweep
+    rather than duplicated here.
+    """
+    existing = CarVideo.query.filter_by(
+        car_id=car.id, source_draft_media_id=draft_media_id
+    ).first()
+    if existing:
+        return existing
+
+    expected_key = processed_video_staging_key(owner_public_id, draft_media_id)
+    if not expected_key:
+        raise RuntimeError(
+            "attach_one_transcoded_video: unable to derive the processed staging key"
+        )
+
+    from ..r2_ops import r2_head_object
+
+    meta = r2_head_object(key=expected_key)
+    if not meta or not meta.get("exists"):
+        raise RuntimeError("attach_one_transcoded_video: processed object not found")
+
+    size = int(meta.get("size") or 0)
+    if size <= 0:
+        raise RuntimeError("attach_one_transcoded_video: processed object is empty")
+    if size >= vt.FINAL_MAX_BYTES:
+        raise RuntimeError(
+            "attach_one_transcoded_video: processed object exceeds the final size limit"
+        )
+
+    existing_count = CarVideo.query.filter_by(car_id=car.id).count()
+
+    permanent_key = transcoded_video_permanent_key(
+        owner_public_id, car.public_id, draft_media_id
+    )
+    if not permanent_key:
+        raise RuntimeError(
+            "attach_one_transcoded_video: unable to derive the permanent video key"
+        )
+
+    from ..r2_ops import r2_copy_object
+
+    dest_meta = r2_head_object(key=permanent_key)
+    dest_already_correct = bool(
+        dest_meta and dest_meta.get("exists") and int(dest_meta.get("size") or 0) == size
+    )
+    if not dest_already_correct:
+        r2_copy_object(
+            source_key=expected_key, dest_key=permanent_key, content_type="video/mp4"
+        )
+        dest_meta = r2_head_object(key=permanent_key)
+        if (
+            not dest_meta
+            or not dest_meta.get("exists")
+            or int(dest_meta.get("size") or 0) != size
+        ):
+            raise RuntimeError(
+                "attach_one_transcoded_video: destination verification failed after copy"
+            )
+
+    public_base = _r2_public_base()
+    video_url = f"{public_base}/{permanent_key}" if public_base else permanent_key
+
+    car_video = CarVideo(
+        car_id=car.id,
+        video_url=video_url,
+        order=existing_count,
+        source_draft_media_id=draft_media_id,
+    )
+    db.session.add(car_video)
+    try:
+        db.session.flush()
+    except Exception:
+        db.session.rollback()
+        existing_after_race = CarVideo.query.filter_by(
+            car_id=car.id, source_draft_media_id=draft_media_id
+        ).first()
+        if existing_after_race:
+            return existing_after_race
+        raise
+    return car_video
 
 
 @bp.route("/api/media/r2/attach-transcoded-video", methods=["POST"])
@@ -1587,7 +1745,15 @@ def attach_transcoded_video():
         return jsonify({"message": "Failed to attach video"}), 500
 
 
-def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
+def _enqueue_async_car_image_uploads(
+    files,
+    *,
+    current_user,
+    skip_blur: bool,
+    car=None,
+    kind: str = "listing",
+    client_media_ids=None,
+):
     """
     P-01: validate + stream each file to a temp path, then enqueue the
     existing ``process_car_image_file`` Celery task (blur + downscale +
@@ -1604,8 +1770,11 @@ def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
     """
     job_ids = []
     skip_reasons = []
+    client_media_ids = list(client_media_ids or [])
 
-    for fs in files:
+    for idx, fs in enumerate(files):
+        client_media_id = client_media_ids[idx] if idx < len(client_media_ids) else None
+        client_media_id = (client_media_id or "").strip() or None
         if not fs or not fs.filename:
             skip_reasons.append("Missing filename")
             continue
@@ -1635,6 +1804,12 @@ def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
             skip_reasons.append("Upload failed; please retry")
             continue
 
+        # Media-readiness: `.delay()` is the enqueue-durability boundary
+        # (see kk/media_readiness.py) -- only after the broker has
+        # accepted the task (this call returns without raising) do we
+        # advance the manifest item past "awaiting_upload". If `.delay()`
+        # itself raises, this file's manifest item (if any) is correctly
+        # left untouched at "awaiting_upload" and the caller sees a 500.
         res = process_car_image_file.delay(
             temp_abs,
             fs.filename,
@@ -1642,9 +1817,24 @@ def _enqueue_async_car_image_uploads(files, *, current_user, skip_blur: bool):
             skip_blur,
             owner_public_id=current_user.public_id,
             source_r2_key=source_r2_key,
+            car_id=(car.id if car is not None else None),
+            kind=kind,
+            client_media_id=client_media_id,
         )
         register_job_owner(res.id, current_user.public_id)
         job_ids.append(res.id)
+
+        if car is not None and client_media_id:
+            try:
+                mark_item_phase_a_accepted(
+                    car_id=car.id,
+                    client_media_id=client_media_id,
+                    job_task_id=res.id,
+                )
+            except Exception:
+                current_app.logger.exception(
+                    "_enqueue_async_car_image_uploads: mark_item_phase_a_accepted failed"
+                )
 
     if not job_ids:
         detail = skip_reasons[0] if skip_reasons else "file type/size"
@@ -1734,10 +1924,22 @@ def upload_car_images(car_id: str):
             "on",
         )
         if want_async:
+            # Media-readiness: the caller may pass a `client_media_id` form
+            # field once per file, in the SAME order as the files listed
+            # above, to bind each upload to a manifest row registered at
+            # `create_car()` time (see kk/media_readiness.py). Callers that
+            # don't send these (e.g. adding extra photos to an existing,
+            # already-ready listing) are unaffected -- car_id/client_media_id
+            # simply stay unset for those files and no manifest wiring
+            # happens, exactly like before this feature existed.
+            client_media_ids = request.form.getlist("client_media_id")
             return _enqueue_async_car_image_uploads(
                 incoming_files,
                 current_user=current_user,
                 skip_blur=skip_blur,
+                car=car,
+                kind=upload_kind,
+                client_media_ids=client_media_ids,
             )
 
         for fs in incoming_files:
@@ -1857,6 +2059,65 @@ def upload_car_images(car_id: str):
         return jsonify({"message": "Failed to upload images"}), 500
 
 
+def attach_processed_car_image(car: Car, *, kind: str, rel_path: str, source_media_id: str) -> CarImage:
+    """
+    Server-side (Celery-task-driven) idempotent CarImage attach -- the
+    trusted-input counterpart of ``attach_car_images()`` used by the
+    media-readiness self-attach path (``kk/tasks/image_tasks.py``).
+
+    ``rel_path`` is always server-generated here (the Celery task's own
+    ``persist_jpeg_bytes()`` result), never client input, so this
+    deliberately skips the ownership/URL-allow-list checks
+    ``attach_car_images()`` needs for client-supplied paths.
+
+    Idempotent: checked-then-insert keyed on ``(car_id, source_media_id)``
+    -- the same unique constraint added for ``CarVideo.source_draft_media_id``
+    is mirrored onto ``CarImage.source_media_id`` (see the media-readiness
+    migration), so a duplicate/redelivered Celery task can never create a
+    second ``CarImage`` row for the same manifest item; a race that slips
+    past the initial SELECT is caught via the resulting ``IntegrityError``
+    and re-resolved to the existing row rather than erroring.
+
+    MUST be called only from inside
+    ``kk.media_readiness.transition_media_item_terminal``'s per-car
+    ``SELECT ... FOR UPDATE`` lock -- it only ``flush()``es, it never
+    commits; the caller's lock + final commit is what makes this safe
+    under concurrent completions for the same car.
+    """
+    existing = CarImage.query.filter_by(
+        car_id=car.id, source_media_id=source_media_id
+    ).first()
+    if existing:
+        return existing
+
+    normalized_kind = _normalize_car_image_kind(kind)
+    if normalized_kind == "damage":
+        listing_n = _count_images_of_kind(car, "damage")
+    else:
+        listing_n = _count_listing_images(car)
+    is_primary = normalized_kind == "listing" and listing_n == 0
+
+    image = CarImage(
+        car_id=car.id,
+        image_url=rel_path,
+        is_primary=is_primary,
+        kind=normalized_kind,
+        source_media_id=source_media_id,
+    )
+    db.session.add(image)
+    try:
+        db.session.flush()
+    except Exception:
+        db.session.rollback()
+        existing_after_race = CarImage.query.filter_by(
+            car_id=car.id, source_media_id=source_media_id
+        ).first()
+        if existing_after_race:
+            return existing_after_race
+        raise
+    return image
+
+
 @bp.route("/api/cars/<car_id>/images/attach", methods=["POST"])
 @jwt_required()
 def attach_car_images(car_id: str):
@@ -1902,14 +2163,30 @@ def attach_car_images(car_id: str):
         upload_root = os.path.abspath(os.path.join(current_app.root_path, "static", "uploads"))
         # OOM-fix follow-up (item #3, media-attachment idempotency): a
         # retried/duplicated async image job (e.g. after an ambiguous
-        # network failure during enqueue) is the one case that could ever
-        # ask this endpoint to attach the exact same already-processed
-        # image path twice for this car. Cheap, safe backstop: never add a
-        # second CarImage row for a URL/path already attached to this car,
-        # regardless of kind -- a listing photo and a damage photo never
-        # legitimately share the same processed-image URL, so this can
-        # never accidentally suppress a distinct, intentional attach.
-        existing_urls = {img.image_url for img in car.images if img.image_url}
+        # network failure during enqueue, OR -- media-readiness -- the
+        # SAME image having already been self-attached server-side by
+        # `attach_processed_car_image()` before this client-driven call
+        # even runs, see `kk/tasks/image_tasks.py`) is the one case that
+        # could ever ask this endpoint to attach the exact same
+        # already-processed image path twice for this car. Cheap, safe
+        # backstop: never add a second CarImage row for a URL/path already
+        # attached to this car, regardless of kind -- a listing photo and
+        # a damage photo never legitimately share the same
+        # processed-image URL, so this can never accidentally suppress a
+        # distinct, intentional attach.
+        #
+        # Media-readiness fix: the already-attached CASE must still
+        # APPEND the existing row to `attached` (not skip it outright) --
+        # callers (`SellListingMediaUpload._collectUploadedImageIds`) read
+        # `id`s out of this response by POSITION, matched 1:1 against the
+        # `paths` they sent, to drive primary-image/layout calls right
+        # after. Silently omitting an already-attached row here would
+        # misalign that zip and could drop id lookups for it entirely --
+        # this happens on EVERY call for a client_media_id-tracked image,
+        # since the self-attach above always completes (it's the same
+        # Celery task, before the task is even marked SUCCESS) before the
+        # client's own poll-driven call to this endpoint can land.
+        existing_by_url = {img.image_url: img for img in car.images if img.image_url}
         for rel in paths:
             try:
                 rel_str = str(rel or "").strip().lstrip("/").replace("\\", "/")
@@ -1925,7 +2202,8 @@ def attach_car_images(car_id: str):
                         )
                     ):
                         continue
-                    if rel_str in existing_urls:
+                    if rel_str in existing_by_url:
+                        attached.append(existing_by_url[rel_str])
                         continue
                     listing_n = _count_listing_images(car)
                     is_primary = attach_kind == "listing" and listing_n == 0
@@ -1937,7 +2215,7 @@ def attach_car_images(car_id: str):
                     )
                     db.session.add(ci)
                     attached.append(ci)
-                    existing_urls.add(rel_str)
+                    existing_by_url[rel_str] = ci
                     continue
                 if not rel_str.lower().startswith("uploads/"):
                     continue
@@ -1951,7 +2229,8 @@ def attach_car_images(car_id: str):
                 if not os.path.isfile(abs_path):
                     continue
                 rel_str = f"uploads/{subpath}".replace("\\", "/")
-                if rel_str in existing_urls:
+                if rel_str in existing_by_url:
+                    attached.append(existing_by_url[rel_str])
                     continue
                 listing_n = _count_listing_images(car)
                 is_primary = attach_kind == "listing" and listing_n == 0
@@ -1963,7 +2242,7 @@ def attach_car_images(car_id: str):
                 )
                 db.session.add(ci)
                 attached.append(ci)
-                existing_urls.add(rel_str)
+                existing_by_url[rel_str] = ci
             except Exception:
                 continue
 
@@ -2016,9 +2295,110 @@ def upload_car_videos(car_id: str):
         uploaded_videos = []
         rejected = []
 
-        for f in files:
+        # Media-readiness: normal (already client-compressed) video is the
+        # ONE item kind whose Phase A and Phase B are the same atomic
+        # request -- see kk/media_readiness.py::mark_normal_video_attached_locked.
+        # `client_media_id` is optional, positional-by-index against
+        # `files`, same convention as the image async-upload path above.
+        client_media_ids = request.form.getlist("client_media_id")
+        if client_media_ids:
+            # Re-fetch with a row lock BEFORE mutating any manifest state --
+            # mark_normal_video_attached_locked() requires the caller to
+            # already hold this car's row lock (serializes against any
+            # concurrent terminal transition/recompute for the same car).
+            car = Car.query.filter_by(id=car.id).with_for_update().one()
+
+        # Two-video regression fix (real-device evidence): when a
+        # `client_media_id`-tracked normal video is re-sent -- e.g. a
+        # sibling video in the same original batch was rejected, so a
+        # later Phase-A/Phase-B/resume pass re-sends the WHOLE batch
+        # including this already-successful video, since nothing here
+        # previously let the client detect "this exact one already
+        # landed" -- this endpoint used to happily create a SECOND
+        # `CarVideo` row for it every time, because `source_draft_media_id`
+        # was never set on the row it created (so the column's own unique
+        # constraint, `uq_car_video_car_id_source_draft_media_id`, could
+        # never fire). Building this lookup ONCE, up front, lets the loop
+        # below skip re-uploading/re-saving any file whose id is already
+        # attached, and set the column going forward so the constraint is
+        # real protection, not dead weight, for every future request.
+        existing_by_client_media_id: dict[str, CarVideo] = {}
+        if client_media_ids:
+            existing_rows = CarVideo.query.filter(
+                CarVideo.car_id == car.id,
+                CarVideo.source_draft_media_id.isnot(None),
+            ).all()
+            existing_by_client_media_id = {
+                row.source_draft_media_id: row for row in existing_rows
+            }
+
+        # Section C audit fix (cross-endpoint cap consistency): this
+        # endpoint used to enforce NO server-side video-count cap at all,
+        # while `attach_transcoded_video()` (the server-transcode promote/
+        # attach path) always enforced `MAX_LISTING_VIDEOS` via
+        # `_video_limit_error(existing_count, 1)`. A listing could
+        # therefore end up with more videos than the transcode path would
+        # ever allow, purely depending on which of the two upload paths a
+        # given video happened to take -- the SAME cap/constant/rule is
+        # now applied here too, per NEW video, using the identical
+        # `existing + incoming <= MAX_LISTING_VIDEOS` check. `existing_count`
+        # is tracked as a running tally across this request's own loop
+        # (mirroring how a second, sequential `attach_transcoded_video`
+        # call for the same car would see the just-created row): only
+        # videos this request is ABOUT TO CREATE count against it -- an
+        # idempotent re-send of an already-attached `client_media_id`
+        # (handled by the short-circuit branch below, which is checked
+        # BEFORE this) never counts twice and is never itself blocked by
+        # the cap, exactly matching `attach_transcoded_video()`'s own
+        # "already attached stays retrievable even once the listing is
+        # full" contract.
+        existing_count = CarVideo.query.filter_by(car_id=car.id).count()
+
+        for idx, f in enumerate(files):
+            client_media_id = (
+                client_media_ids[idx].strip()
+                if idx < len(client_media_ids) and client_media_ids[idx]
+                else None
+            )
             if not f or not f.filename:
                 continue
+
+            if client_media_id and client_media_id in existing_by_client_media_id:
+                # Already attached under this exact id (e.g. a retried
+                # send of a video a sibling's earlier failure caused to
+                # be re-batched) -- never re-upload/re-save it, just
+                # re-report the existing row so the caller's response
+                # still reflects it as present, and re-run the (idempotent
+                # no-op once terminal) manifest transition for safety.
+                car_video = existing_by_client_media_id[client_media_id]
+                uploaded_videos.append(car_video.to_dict())
+                try:
+                    mark_normal_video_attached_locked(
+                        car=car, client_media_id=client_media_id
+                    )
+                except Exception:
+                    current_app.logger.exception(
+                        "upload_car_videos: mark_normal_video_attached_locked "
+                        "failed for already-attached video (car_id=%s "
+                        "client_media_id=%s)",
+                        car.id,
+                        client_media_id,
+                    )
+                continue
+
+            limit_err = _video_limit_error(existing_count, 1)
+            if limit_err:
+                rejected.append(
+                    {
+                        "filename": f.filename,
+                        "reason": (
+                            f"You can add up to {MAX_LISTING_VIDEOS} videos "
+                            "per listing."
+                        ),
+                    }
+                )
+                continue
+
             # Some mobile pickers provide filenames without extension.
             # Infer a safe extension from MIME type so validation can pass.
             if "." not in f.filename:
@@ -2054,7 +2434,11 @@ def upload_car_videos(car_id: str):
                         {"filename": f.filename, "reason": f"R2 upload failed: {e!s}"}
                     )
                     continue
-                car_video = CarVideo(car_id=car.id, video_url=stored_url)
+                car_video = CarVideo(
+                    car_id=car.id,
+                    video_url=stored_url,
+                    source_draft_media_id=client_media_id,
+                )
             else:
                 filename = generate_secure_filename(f.filename)
                 file_path = os.path.join(
@@ -2063,11 +2447,38 @@ def upload_car_videos(car_id: str):
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)
                 f.save(file_path)
                 car_video = CarVideo(
-                    car_id=car.id, video_url=f"uploads/car_videos/{filename}"
+                    car_id=car.id,
+                    video_url=f"uploads/car_videos/{filename}",
+                    source_draft_media_id=client_media_id,
                 )
 
             db.session.add(car_video)
+            # Flush now so `car_video.id` (autoincrement PK) is populated
+            # before `.to_dict()` below reads it -- without this, a
+            # brand-new row's `id` in the response is always `None` (the
+            # PK is only assigned by the DB on flush/commit, and
+            # `.to_dict()` is a plain attribute read, never an
+            # autoflush-triggering query), which would make it impossible
+            # for a caller to reconcile the response against this exact
+            # row (e.g. by `id`) for anything created in this call.
+            db.session.flush()
             uploaded_videos.append(car_video.to_dict())
+            existing_count += 1
+            if client_media_id:
+                existing_by_client_media_id[client_media_id] = car_video
+
+            if client_media_id:
+                try:
+                    mark_normal_video_attached_locked(
+                        car=car, client_media_id=client_media_id
+                    )
+                except Exception:
+                    current_app.logger.exception(
+                        "upload_car_videos: mark_normal_video_attached_locked failed "
+                        "(car_id=%s client_media_id=%s)",
+                        car.id,
+                        client_media_id,
+                    )
 
         if not uploaded_videos:
             db.session.rollback()

@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import tempfile
 from uuid import uuid4
 
 from PIL.Image import DecompressionBombError
 
+from ..media_processing import DecompressionBombRejected, PlateBlurRequiredRejected
 from ..time_utils import utcnow
 from .celery_app import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 def _process_image_path(
@@ -236,6 +240,9 @@ def process_car_image_file(
     skip_blur: bool = False,
     owner_public_id: str | None = None,
     source_r2_key: str | None = None,
+    car_id: int | None = None,
+    kind: str | None = None,
+    client_media_id: str | None = None,
 ):
     """
     Process a car image under the shared Celery Flask app context (P-06).
@@ -249,6 +256,20 @@ def process_car_image_file(
     ``temp_abs``, so it is a harmless no-op in that case; the R2 staging
     object and the worker's own downloaded copy are cleaned up inside
     ``_process_image_path`` itself, success or failure.
+
+    Media-readiness (``car_id``/``kind``/``client_media_id``, all optional):
+    when present, this task performs the FULL Phase B lifecycle for its
+    manifest item itself -- no further Flutter call is required for
+    correctness. On success it self-attaches the processed image (creating
+    the ``CarImage`` row) and transitions the manifest item to
+    ``"attached"``. On a PERMANENT rejection (``DecompressionBombRejected``/
+    ``PlateBlurRequiredRejected`` -- both deterministic given these exact
+    bytes; retrying identical input cannot succeed) it transitions the item
+    to ``"failed"``. Any OTHER exception (network/R2/broker/OOM/transient
+    processing failure) is deliberately NOT treated as terminal -- it
+    propagates, Celery's at-least-once redelivery may retry it, and the
+    manifest item is correctly left at ``"processing"`` in the meantime
+    (see kk/media_readiness.py's module docstring for the full rule).
     """
     owner = (owner_public_id or "").strip() or None
     if owner:
@@ -269,7 +290,45 @@ def process_car_image_file(
         out = {"ok": True, **res}
         if owner:
             out["owner_public_id"] = owner
+
+        if car_id and client_media_id:
+            # Lazy imports: kk.routes.media imports THIS module at module
+            # load time, so importing it back here at module scope would
+            # be circular -- deferring to call time (well after both
+            # modules have finished loading) breaks the cycle.
+            from ..media_readiness import transition_media_item_terminal
+            from ..routes.media import attach_processed_car_image
+
+            transition_media_item_terminal(
+                car_id=int(car_id),
+                client_media_id=client_media_id,
+                to_status="attached",
+                attach_fn=lambda car: attach_processed_car_image(
+                    car,
+                    kind=kind or "listing",
+                    rel_path=res["rel_path"],
+                    source_media_id=client_media_id,
+                ),
+            )
         return out
+    except (DecompressionBombRejected, PlateBlurRequiredRejected):
+        if car_id and client_media_id:
+            try:
+                from ..media_readiness import transition_media_item_terminal
+
+                transition_media_item_terminal(
+                    car_id=int(car_id),
+                    client_media_id=client_media_id,
+                    to_status="failed",
+                )
+            except Exception:
+                logger.exception(
+                    "process_car_image_file: terminal-fail transition failed "
+                    "(car_id=%s client_media_id=%s)",
+                    car_id,
+                    client_media_id,
+                )
+        raise
     finally:
         try:
             if temp_abs and os.path.isfile(temp_abs):

@@ -652,6 +652,20 @@ class Car(db.Model):
     condition = db.Column(db.String(20), nullable=False)  # New, Used, Certified
     body_type = db.Column(db.String(30), nullable=False)  # Sedan, SUV, Hatchback, etc.
     status = db.Column(db.String(20), nullable=False, default='active', index=True)
+    # Media-readiness gate (independent of `status`/`is_active`): tracks
+    # whether every media item this listing's owner declared at submit
+    # time (see `CarMediaItem` below) has finished server-side processing.
+    # 'ready'      -- no expected media was ever registered, OR every
+    #                 registered CarMediaItem row has reached 'attached'.
+    # 'processing' -- at least one CarMediaItem row is 'awaiting_upload' or
+    #                 'processing' (not yet terminal), none are 'failed'.
+    # 'failed'     -- at least one CarMediaItem row is 'failed'.
+    # Default 'ready' so a listing with no declared media (including every
+    # pre-existing row, via the migration's server_default) is never
+    # blocked by this gate. See kk/media_readiness.py for the only code
+    # allowed to transition this column, and kk/routes/admin.py for the
+    # activation gate that reads it.
+    media_status = db.Column(db.String(20), nullable=False, default='ready', server_default='ready', index=True)
     
     # Pricing and location
     # C-11: exact money storage (was Float/IEEE-754 double, which cannot
@@ -837,7 +851,22 @@ class Car(db.Model):
 
 class CarImage(db.Model):
     __tablename__ = 'car_image'
-    
+    __table_args__ = (
+        # Media-readiness: idempotent server-side attach (see
+        # kk/media_readiness.py::attach_processed_car_image) must never
+        # create a second CarImage row for the same (car_id,
+        # source_media_id) -- mirrors CarVideo's own
+        # uq_car_video_car_id_source_draft_media_id exactly, including the
+        # NULL-safe backwards-compatibility argument: every existing row,
+        # and every row attached via the older client-driven
+        # `/images/attach` path with no client_media_id, leaves this NULL,
+        # and standard SQL unique-constraint semantics never treat two
+        # NULLs as equal.
+        db.UniqueConstraint(
+            'car_id', 'source_media_id', name='uq_car_image_car_id_source_media_id'
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
     # Full R2/CDN HTTPS URLs exceed VARCHAR(200); keep aligned with car_video.video_url.
@@ -850,6 +879,13 @@ class CarImage(db.Model):
     focus_y = db.Column(db.Float, nullable=True)
     image_width = db.Column(db.Integer, nullable=True)
     image_height = db.Column(db.Integer, nullable=True)
+    # Media-readiness: the client-chosen `image_media_id` this row was
+    # attached from (see CarMediaItem.client_media_id), when attached via
+    # the server-side Celery-task attach path. NULL for every row attached
+    # via the older client-driven `/images/attach` endpoint with no
+    # per-item identity. Internal bookkeeping only -- never exposed in
+    # to_dict().
+    source_media_id = db.Column(db.String(128), nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     
     def to_dict(self):
@@ -912,6 +948,62 @@ class CarVideo(db.Model):
     
     def __repr__(self):
         return f'<CarVideo {self.video_url}>'
+
+
+class CarMediaItem(db.Model):
+    """Media-readiness manifest row -- one per media item a seller declared
+    as part of a listing submission (see kk/media_readiness.py).
+
+    Registered atomically with the `Car` row itself at create time
+    (`status='awaiting_upload'`, `phase_a_completed_at=NULL`) -- never
+    created later by an upload/enqueue/finalize endpoint, so there is no
+    window where the server has forgotten a media item the client already
+    committed to. See kk/media_readiness.py's module docstring for the
+    full state-machine contract this table backs.
+    """
+    __tablename__ = 'car_media_item'
+    __table_args__ = (
+        db.UniqueConstraint(
+            'car_id', 'client_media_id', name='uq_car_media_item_car_client'
+        ),
+        db.Index('ix_car_media_item_car_status', 'car_id', 'status'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='CASCADE'), nullable=False, index=True)
+    kind = db.Column(db.String(10), nullable=False)  # 'image' | 'video'
+    # Client-chosen stable identity: `image_media_id` for images,
+    # `draft_media_id` for videos (both validated by
+    # kk.media_processing.is_valid_client_media_id).
+    client_media_id = db.Column(db.String(128), nullable=False)
+    # Last-known Celery task id -- observability/debugging ONLY, never a
+    # correctness dependency (see kk/media_readiness.py's at-least-once
+    # design note).
+    job_task_id = db.Column(db.String(64), nullable=True)
+    # 'awaiting_upload' | 'processing' | 'attached' | 'failed'
+    status = db.Column(db.String(12), nullable=False, default='awaiting_upload')
+    # Write-once, monotonic: set the first time Phase A completes for this
+    # item (source bytes server/R2-owned AND the async job was durably
+    # accepted -- or, for a normal video, the same atomic request that
+    # attaches it). NEVER cleared once set. Independent of `status` --
+    # `status` may race ahead to 'attached'/'failed' before/after this is
+    # written; submitFast's readiness check reads THIS field, not
+    # `status`. See kk/media_readiness.py.
+    phase_a_completed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            'client_media_id': self.client_media_id,
+            'kind': self.kind,
+            'status': self.status,
+            'phase_a_complete': self.phase_a_completed_at is not None,
+        }
+
+    def __repr__(self):
+        return f'<CarMediaItem car_id={self.car_id} kind={self.kind} status={self.status}>'
+
 
 class ListingAnalytics(db.Model):
     __tablename__ = 'listing_analytics'

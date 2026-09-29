@@ -171,10 +171,47 @@ VIDEO_TRANSCODE_FFMPEG_TIMEOUT_SECONDS = 600
 
 class VideoTranscodeTaskError(RuntimeError):
     """User-safe, durable Celery task failure for
-    ``transcode_car_video_source`` -- covers both input-validation
-    rejections and environment/capability failures. Message text must
-    never leak internal paths/stack traces (mirrors
-    ``kk.video_transcoding.VideoValidationError``'s same contract)."""
+    ``transcode_car_video_source``. Message text must never leak internal
+    paths/stack traces (mirrors ``kk.video_transcoding.VideoValidationError``'s
+    same contract).
+
+    Base class for TRANSIENT/environmental failures ONLY (network/R2
+    timeout, missing ffmpeg capability on this worker build, an
+    output-contract validation failure after the one allowed overshoot
+    retry, misconfiguration) -- raising this class directly means: do NOT
+    call ``transition_media_item_terminal(to_status="failed")`` for this
+    item; let Celery's normal FAILURE/at-least-once-redelivery handling
+    apply, leaving the manifest item at 'processing' so a later attempt
+    (redelivery, a fixed/redeployed worker) can still succeed. See
+    ``PermanentVideoTranscodeError`` below for the narrow opposite case.
+    """
+
+
+class PermanentVideoTranscodeError(VideoTranscodeTaskError):
+    """
+    DETERMINISTIC, unrecoverable failure -- retrying the identical input
+    can never succeed. This is the ONLY exception type
+    ``transcode_car_video_source`` treats as license to call
+    ``transition_media_item_terminal(to_status="failed")`` for its
+    media-readiness manifest item (see kk/media_readiness.py's narrow
+    permanent-vs-transient rule).
+
+    Raised ONLY at the exact call sites that already set
+    ``delete_source_on_exit = True`` in ``_transcode_video_source_impl``
+    (a structurally-invalid/oversized source -- the SAME condition that
+    already causes the source staging object itself to be deleted, since
+    retrying it is pointless), plus the two purely-defensive
+    invalid-argument checks at the top of that function (a caller-supplied
+    owner_public_id/draft_media_id/source_staging_key combination that
+    does not even self-consistently match is a caller/programming error,
+    not a transient one -- identical arguments will deterministically
+    fail the same way every time).
+
+    Every OTHER ``VideoTranscodeTaskError`` raise site in this module
+    (missing R2 config, unable to derive a key, missing ffmpeg
+    encoder/HDR-tonemap capability, output-contract validation failure)
+    is deliberately left as the plain (transient) base class.
+    """
 
 
 def celery_state_to_video_job_state(celery_state: str | None) -> str:
@@ -314,7 +351,11 @@ def cleanup_stale_processed_video_staging_objects():
     track_started=True,
 )
 def transcode_car_video_source(
-    self, source_staging_key: str, owner_public_id: str, draft_media_id: str
+    self,
+    source_staging_key: str,
+    owner_public_id: str,
+    draft_media_id: str,
+    car_id: int | None = None,
 ):
     """
     Phase 2: download a Phase-1-staged SOURCE video, validate it, transcode
@@ -408,6 +449,20 @@ def transcode_car_video_source(
         process-loss case above, and no automatic retry/``autoretry_for``
         is configured on this task, so a normal handled failure is acked
         exactly once and does NOT loop.
+
+    Media-readiness (``car_id``, optional): when present, this task
+    performs the FULL Phase B lifecycle for its manifest item itself --
+    no further Flutter call is required for correctness (see
+    kk/media_readiness.py). On success it self-attaches the processed
+    video (creating the ``CarVideo`` row via
+    ``kk.routes.media.attach_one_transcoded_video``) and transitions the
+    manifest item to ``"attached"``. On a ``PermanentVideoTranscodeError``
+    (deterministic, unrecoverable -- see that class's docstring) it
+    transitions the item to ``"failed"``. Any OTHER exception (plain
+    ``VideoTranscodeTaskError`` for a transient/environmental cause, or an
+    unexpected error) is NOT treated as terminal -- it propagates
+    unchanged, Celery's at-least-once redelivery may retry it, and the
+    manifest item is correctly left at ``"processing"`` in the meantime.
     """
     owner = (owner_public_id or "").strip()
     draft = (draft_media_id or "").strip()
@@ -419,11 +474,50 @@ def transcode_car_video_source(
         except Exception:
             pass
 
-    return _transcode_video_source_impl(
-        source_staging_key=source_staging_key,
-        owner_public_id=owner_public_id,
-        draft_media_id=draft_media_id,
-    )
+    try:
+        result = _transcode_video_source_impl(
+            source_staging_key=source_staging_key,
+            owner_public_id=owner_public_id,
+            draft_media_id=draft_media_id,
+        )
+    except PermanentVideoTranscodeError:
+        if car_id:
+            try:
+                from ..media_readiness import transition_media_item_terminal
+
+                transition_media_item_terminal(
+                    car_id=int(car_id),
+                    client_media_id=draft,
+                    to_status="failed",
+                )
+            except Exception:
+                logger.exception(
+                    "transcode_car_video_source: terminal-fail transition failed "
+                    "(car_id=%s draft_media_id=%s)",
+                    car_id,
+                    draft,
+                )
+        raise
+
+    if car_id:
+        # Lazy imports: kk.routes.media imports THIS module at module load
+        # time, so importing it back here at module scope would be
+        # circular -- deferring to call time (well after both modules have
+        # finished loading) breaks the cycle. Any exception here (transient
+        # DB/R2 problem) propagates unchanged -- see docstring above.
+        from ..media_readiness import transition_media_item_terminal
+        from ..routes.media import attach_one_transcoded_video
+
+        transition_media_item_terminal(
+            car_id=int(car_id),
+            client_media_id=draft,
+            to_status="attached",
+            attach_fn=lambda car: attach_one_transcoded_video(
+                car, owner_public_id=owner, draft_media_id=draft
+            ),
+        )
+
+    return result
 
 
 def _transcode_video_source_impl(
@@ -448,22 +542,28 @@ def _transcode_video_source_impl(
     draft = (draft_media_id or "").strip()
 
     if not owner or not is_valid_draft_media_id(draft):
-        raise VideoTranscodeTaskError("Invalid owner_public_id/draft_media_id")
+        # Deterministic caller/programming error -- PERMANENT (see
+        # PermanentVideoTranscodeError's docstring).
+        raise PermanentVideoTranscodeError("Invalid owner_public_id/draft_media_id")
 
     expected_source_key = video_source_staging_key(owner, draft)
     if not expected_source_key or expected_source_key != (source_staging_key or "").strip():
         # Never process a key this process did not itself derive -- see
         # docstring. Deliberately the same "reconstruct, compare, reject on
         # mismatch" shape as finalize_video_source_upload()'s 403 branch.
-        raise VideoTranscodeTaskError(
+        # Deterministic given these exact arguments -- PERMANENT.
+        raise PermanentVideoTranscodeError(
             "source_staging_key does not match owner_public_id/draft_media_id"
         )
 
     if not _r2_configured():
+        # Environment/config issue, not the source's fault -- TRANSIENT.
         raise VideoTranscodeTaskError("R2 storage is not configured")
 
     processed_key = processed_video_staging_key(owner, draft)
     if not processed_key:
+        # Environment/config issue (e.g. SECRET_KEY unavailable), not the
+        # source's fault -- TRANSIENT.
         raise VideoTranscodeTaskError("Unable to derive processed staging key")
 
     tmp_dir = tempfile.mkdtemp(prefix="video_transcode_")
@@ -481,7 +581,8 @@ def _transcode_video_source_impl(
         actual_size = os.path.getsize(source_path)
         if actual_size > vt.MAX_SOURCE_BYTES:
             delete_source_on_exit = True
-            raise VideoTranscodeTaskError(
+            # Deterministic given this exact source object -- PERMANENT.
+            raise PermanentVideoTranscodeError(
                 f"Downloaded source ({actual_size} bytes) exceeds the "
                 f"{vt.MAX_SOURCE_BYTES}-byte cap"
             )
@@ -490,13 +591,15 @@ def _transcode_video_source_impl(
             source_validation = vt.validate_source_media(source_path)
         except vt.VideoValidationError as e:
             # Structural problem with the source content itself -- see
-            # docstring's retention policy. Permanent.
+            # docstring's retention policy. Deterministic given this exact
+            # source object -- PERMANENT.
             delete_source_on_exit = True
-            raise VideoTranscodeTaskError(str(e)) from e
+            raise PermanentVideoTranscodeError(str(e)) from e
 
         caps = vt.probe_ffmpeg_capabilities()
         if not caps.has_libx264 or not caps.has_aac_encoder:
             # Environment/capability failure -- NOT the source's fault.
+            # TRANSIENT (a different/fixed worker build could succeed).
             raise VideoTranscodeTaskError(
                 "Server ffmpeg build is missing a required encoder "
                 "(libx264/aac)"
@@ -506,7 +609,7 @@ def _transcode_video_source_impl(
             # SDR -- refuse instead. Environment/capability failure, not a
             # permanently-invalid source (a capable worker build could
             # still process this exact object later), so the source is
-            # retained.
+            # retained. TRANSIENT.
             raise VideoTranscodeTaskError(
                 "Server ffmpeg build lacks HDR tone-mapping support "
                 "(zscale/tonemap); refusing to transcode an HDR source "
@@ -563,7 +666,7 @@ def _transcode_video_source_impl(
             # Output-contract failure (including still-oversized after the
             # one allowed retry) -- treated as transient/environmental per
             # the docstring's retention policy: the SOURCE passed its own
-            # validation, so it is retained rather than deleted.
+            # validation, so it is retained rather than deleted. TRANSIENT.
             raise VideoTranscodeTaskError(str(e)) from e
 
         from ..r2_ops import r2_put_file
