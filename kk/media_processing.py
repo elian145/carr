@@ -23,6 +23,66 @@ from .time_utils import utcnow
 
 logger = logging.getLogger(__name__)
 
+# 2026 real-device fix (5-images-become-1 investigation): register Pillow's
+# HEIC/HEIF opener ONCE, here, at module import time -- unconditionally, in
+# every process that imports this module (both the web process and the
+# Celery worker, since kk/tasks/image_tasks.py imports from this module).
+#
+# ROOT CAUSE this fixes: `pillow_heif.register_heif_opener()` is a GLOBAL
+# Pillow plugin registration, not scoped to one call. Before this fix, the
+# ONLY code that ever called it was `kk/license_plate_blur.py`'s internal
+# decode helpers -- which only run when plate-blur detection actually
+# executes, i.e. only when `skip_blur=False`. A fresh worker process that
+# received a HEIC-sourced photo (iPhone default camera format, uploaded
+# with a `.jpg`/`.jpeg` filename/extension -- extension alone is NOT a
+# reliable format signal) together with an explicit `skip_blur=True`
+# request would therefore have NO HEIC decoder registered anywhere yet:
+# `_process_image_bytes_from_path()`'s (and `process_and_store_image()`'s)
+# downscale/re-encode step's `Image.open()` call would raise
+# `PIL.UnidentifiedImageError`, which the old code silently swallowed
+# (bare `except Exception: pass`), leaving the RAW, un-decoded HEIC bytes
+# to be persisted straight to R2 under a `.jpg` filename and
+# `Content-Type: image/jpeg`. Confirmed on a real production listing: 4 of
+# 5 uploaded photos were raw HEIC (magic bytes `....ftypheic`) served with
+# a `.jpg` URL, and Flutter's image decoder correctly refused to render
+# them ("Could not decompress image"), while the 1 genuinely-JPEG photo
+# rendered fine -- exactly matching the "only 1 of 5 visible" report.
+#
+# This eager, unconditional registration decouples HEIC decode capability
+# from whether plate-blur detection happens to run first, closing that
+# race/ordering hole entirely. `normalize_to_canonical_jpeg()` below is the
+# second half of this fix: a hard failure (never a silent bytes-passthrough)
+# if decode/re-encode still cannot produce valid JPEG output for any other
+# reason.
+try:
+    import pillow_heif  # type: ignore
+
+    pillow_heif.register_heif_opener()
+except Exception:
+    pass
+
+
+class ImageNormalizationFailed(Exception):
+    """2026 real-device fix: raised by :func:`normalize_to_canonical_jpeg`
+    when the canonical decode -> EXIF-orientation -> RGB -> JPEG-re-encode
+    step cannot produce genuine JPEG output bytes for the given source --
+    including "Pillow does not recognize this format at all" (e.g. HEIC
+    with no opener registered, a truly corrupt file, or an unsupported
+    container).
+
+    CORRECTNESS-CRITICAL CONTRACT: this must ALWAYS be a hard failure that
+    propagates out of the caller (route handler / Celery task), never
+    silently swallowed to fall back to the original, un-normalized bytes.
+    Doing so previously let raw HEIC bytes be persisted to R2/local disk
+    under a `.jpg` filename and `Content-Type: image/jpeg` -- a listing
+    photo that no client could ever render, self-attached as if processing
+    had fully succeeded. Callers must treat this exactly like
+    :class:`DecompressionBombRejected`: reject/skip the individual file
+    (route handlers) or transition the media-readiness item to the
+    terminal ``failed`` status (the async Celery task) -- never persist or
+    self-attach the unconfirmed bytes.
+    """
+
 
 class DecompressionBombRejected(Exception):
     """Raised when Pillow's built-in decompression-bomb guard
@@ -559,6 +619,99 @@ def heic_to_jpeg(raw_bytes: bytes) -> Tuple[bytes, bool]:
         return raw_bytes, False
 
 
+def normalize_to_canonical_jpeg(raw_bytes: bytes) -> bytes:
+    """The ONE canonical image-normalization step every uploaded listing
+    photo must go through before persistence -- deliberately independent of
+    whether plate-blur ran (see the module-level HEIC-eager-registration
+    comment above, and ``_run_plate_blur()``'s docstring: ``skip_blur``
+    must only ever skip plate detection/blur, never decode/normalize/
+    resize/encode).
+
+    Decodes ``raw_bytes`` in WHATEVER format they actually are -- JPEG,
+    PNG, WEBP, HEIC/HEIF, ... (content-based, via Pillow/``pillow_heif``'s
+    globally-registered opener; never inferred from a filename extension,
+    which is not a reliable format signal -- this is exactly how 4 raw HEIC
+    files ended up served under a `.jpg` URL on a real production
+    listing), applies EXIF orientation into the pixels, converts to RGB/L,
+    resizes to ``UPLOAD_IMAGE_MAX_DIM``, and re-encodes as a genuine JPEG
+    at ``UPLOAD_IMAGE_JPEG_QUALITY``. Also verifies the final bytes' magic
+    header truly is JPEG (defense in depth) before returning.
+
+    Raises :class:`DecompressionBombRejected` (M-06, propagated from
+    Pillow's own decompression-bomb guard) or
+    :class:`ImageNormalizationFailed` (any other decode/encode failure, or
+    a final-bytes magic-header mismatch). NEVER silently returns the
+    original, un-normalized bytes on failure -- a caller that catches and
+    discards these exceptions would reintroduce the exact real-device bug
+    (raw HEIC bytes persisted under a `.jpg` filename/Content-Type) this
+    function exists to close off. Callers must let both exceptions
+    propagate (reject/skip the file, or fail the Celery task) rather than
+    falling back to unconfirmed bytes.
+    """
+    try:
+        from PIL import Image, ImageOps
+
+        im = Image.open(BytesIO(raw_bytes))
+        im = ImageOps.exif_transpose(im)
+        if im.mode not in ("RGB", "L"):
+            im = im.convert("RGB")
+        max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "2048") or "2048")
+        if max(im.size) > max_dim:
+            im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+        quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "92") or "92")
+        save_kwargs = dict(
+            format="JPEG",
+            quality=quality,
+            exif=b"",
+            subsampling=0,  # 4:4:4 -- preserve chroma/detail
+        )
+        try:
+            # ``optimize=True`` runs libjpeg-turbo's 2-pass Huffman-table
+            # optimization. On very high-entropy/incompressible pixel data
+            # (confirmed via a targeted repro: uniform random noise at
+            # quality>=92, subsampling=0) this specific Pillow/libjpeg-turbo
+            # build can raise ``OSError: broken data stream when writing
+            # image file`` on Windows -- a real, deterministic libjpeg-turbo
+            # encoder limitation, unrelated to the HEIC root-cause fix above.
+            # It was previously invisible because the old inline code's bare
+            # ``except Exception: pass`` silently swallowed it (leaving
+            # un-normalized bytes persisted). Real camera photos are not
+            # adversarially high-entropy like this, so this path is expected
+            # to be rare, but a single retry WITHOUT ``optimize`` (same
+            # quality/subsampling, still a full genuine re-encode -- never a
+            # raw-bytes passthrough) keeps rare pathological inputs from
+            # being needlessly rejected.
+            buf = BytesIO()
+            im.save(buf, optimize=True, **save_kwargs)
+            out_bytes = buf.getvalue()
+        except OSError:
+            buf = BytesIO()
+            im.save(buf, optimize=False, **save_kwargs)
+            out_bytes = buf.getvalue()
+    except DecompressionBombError as e:
+        # M-06: never swallow -- the original, bomb-flagged bytes must
+        # never be persisted as if normalization had succeeded.
+        raise DecompressionBombRejected(
+            "normalize_to_canonical_jpeg: image rejected by decompression-bomb guard"
+        ) from e
+    except Exception as e:
+        raise ImageNormalizationFailed(
+            "normalize_to_canonical_jpeg: could not decode/re-encode source "
+            f"bytes as JPEG ({type(e).__name__})"
+        ) from e
+
+    # Belt-and-suspenders (Section 5 output-validation guard): even a
+    # "successful" PIL save must genuinely be a JPEG. Guards against any
+    # future change to this function accidentally producing something else
+    # while a caller still persists it under a `.jpg` filename.
+    if out_bytes[:3] != b"\xff\xd8\xff":
+        raise ImageNormalizationFailed(
+            "normalize_to_canonical_jpeg: final bytes are not valid JPEG "
+            "(magic bytes mismatch)"
+        )
+    return out_bytes
+
+
 def plate_blur_require_success_enabled() -> bool:
     """
     M-08: whether a listing photo must be confirmed ``BLURRED_SUCCESS`` or
@@ -798,64 +951,19 @@ def process_and_store_image(
             except Exception:
                 pass
 
-        # Downscale/compress (best-effort).
+        # Downscale/compress + canonicalize (2026 real-device fix: this is
+        # now the SAME `normalize_to_canonical_jpeg()` every listing photo
+        # goes through regardless of `skip_blur` or source format -- see
+        # that function's docstring, and `DecompressionBombRejected`/
+        # `ImageNormalizationFailed` are both hard failures that propagate
+        # out of this function; neither is ever swallowed here. This is the
+        # ONE encode every listing photo (blurred or not) goes through, so
+        # the two paths stay visibly equivalent (requirement F).
         #
-        # L-03: normalize EXIF orientation into the pixels (ImageOps.exif_transpose)
-        # *before* stripping metadata, then save with exif=b"" so no source EXIF --
-        # GPS, camera/device model, timestamps, or the orientation tag itself -- is
-        # ever written to the stored JPEG. exif_transpose() is a no-op when there is
-        # no orientation tag (e.g. the plate-blur/OpenCV branch above already
-        # produces EXIF-free bytes), so it is safe to always apply here regardless
-        # of which branch of blur_image_bytes() produced ``out_bytes``.
-        try:
-            from PIL import Image, ImageOps
-
-            im = Image.open(BytesIO(out_bytes))
-            im = ImageOps.exif_transpose(im)
-            if im.mode not in ("RGB", "L"):
-                im = im.convert("RGB")
-            # Quality-audit benchmark (see the plate-blur image-quality report):
-            # raised from 1200 to 2048 -- 2048 matches Flutter's own
-            # image_picker maxWidth/maxHeight cap exactly, so most uploads
-            # need NO further backend resize at all (avoiding a second,
-            # non-integer-ratio lossy resize on top of Flutter's own
-            # downscale, which the benchmark showed can locally increase
-            # both file size and artifacting). Measured average PSNR/SSIM
-            # vs. the true original improved from 26.6dB/0.587 (1200) to
-            # 28.6dB/0.621 (2048) across the benchmark sample set, for a
-            # ~2.4x average file-size cost (still capped -- large sources
-            # are still downscaled if they exceed this).
-            max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "2048") or "2048")
-            if max(im.size) > max_dim:
-                im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
-            buf = BytesIO()
-            # Quality-audit fix: this is the ONE encode every listing photo
-            # (blurred or not) goes through here, so raising the default
-            # keeps the two paths visibly equivalent (requirement F) while
-            # fixing the previous low default (80) that softened every
-            # upload, not just plate-blurred ones (requirement D).
-            quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "92") or "92")
-            im.save(
-                buf,
-                format="JPEG",
-                quality=quality,
-                optimize=True,
-                exif=b"",
-                subsampling=0,  # 4:4:4 -- preserve chroma/detail (requirement D)
-            )
-            out_bytes = buf.getvalue()
-        except DecompressionBombError as e:
-            # M-06: this is the last line of defense before persistence --
-            # never fall through to persisting the original, unprocessed,
-            # bomb-flagged ``out_bytes`` (which can happen either because
-            # skip_blur was requested, or because blur_image_bytes() itself
-            # already failed open and returned the original bytes). Reject
-            # the whole file instead.
-            raise DecompressionBombRejected(
-                "process_and_store_image: image rejected by decompression-bomb guard"
-            ) from e
-        except Exception:
-            pass
+        # L-03: EXIF orientation is normalized into the pixels before
+        # stripping metadata; the final JPEG carries no source EXIF (GPS,
+        # camera/device model, timestamps, or the orientation tag itself).
+        out_bytes = normalize_to_canonical_jpeg(out_bytes)
 
         # Persist the optimized bytes: prefer Cloudflare R2 when configured,
         # otherwise fall back to local filesystem under /static/uploads.

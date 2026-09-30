@@ -7,9 +7,11 @@ import os
 import tempfile
 from uuid import uuid4
 
-from PIL.Image import DecompressionBombError
-
-from ..media_processing import DecompressionBombRejected, PlateBlurRequiredRejected
+from ..media_processing import (
+    DecompressionBombRejected,
+    ImageNormalizationFailed,
+    PlateBlurRequiredRejected,
+)
 from ..time_utils import utcnow
 from .celery_app import celery_app
 
@@ -116,9 +118,9 @@ def _process_image_bytes_from_path(
     wrapper above stays simple. Behavior is byte-for-byte identical to the
     pre-existing inline implementation."""
     from kk.media_processing import (
-        DecompressionBombRejected,
         PlateBlurStatus,
         blur_image_bytes_with_status,
+        normalize_to_canonical_jpeg,
         persist_jpeg_bytes,
     )
 
@@ -148,67 +150,25 @@ def _process_image_bytes_from_path(
     # what skip_blur was merely *requested* as.
     _trace_plate_blur_applied = _trace_blur_status == PlateBlurStatus.BLURRED_SUCCESS
 
-    # Downscale/compress
+    # Downscale/compress + canonicalize (2026 real-device fix: HEIC-
+    # mislabeled-as-.jpg root cause). This now calls the SAME
+    # `normalize_to_canonical_jpeg()` helper as
+    # `kk/media_processing.py::process_and_store_image()`, instead of a
+    # duplicated inline block that used to silently swallow ANY decode
+    # failure (bare `except Exception: pass`) and fall through to
+    # persisting the original, un-normalized ``out_bytes`` -- which is
+    # exactly how raw HEIC bytes (produced by ``blur_image_bytes_with_status
+    # ()``'s SKIPPED branch returning the untouched source when
+    # ``skip_blur=True``) ended up persisted to R2 under a `.jpg`
+    # filename/Content-Type on a real production listing.
     #
-    # L-03: normalize EXIF orientation into the pixels (ImageOps.exif_transpose)
-    # *before* stripping metadata, then save with exif=b"" so no source EXIF --
-    # GPS, camera/device model, timestamps, or the orientation tag itself -- is
-    # ever written to the stored JPEG. exif_transpose() is a no-op when there is
-    # no orientation tag (e.g. the plate-blur/OpenCV branch above already
-    # produces EXIF-free bytes), so it is safe to always apply here regardless
-    # of which branch of blur_image_bytes() produced ``out_bytes``. Kept
-    # consistent with kk/media_processing.py::process_and_store_image(), which
-    # this function duplicates.
-    #
-    # M-06 follow-up: this duplicate downscale step must reject a
-    # decompression-bomb image the same way process_and_store_image() does --
-    # PIL.Image.DecompressionBombError must never be swallowed here, because
-    # doing so would leave ``out_bytes`` as the original, un-downscaled,
-    # bomb-flagged bytes, which the unconditional persist_jpeg_bytes() call
-    # right below would then persist to R2/local disk.
-    try:
-        from io import BytesIO
-
-        from PIL import Image, ImageOps
-
-        im = Image.open(BytesIO(out_bytes))
-        im = ImageOps.exif_transpose(im)
-        if im.mode not in ("RGB", "L"):
-            im = im.convert("RGB")
-        # Quality-audit benchmark: kept consistent with
-        # media_processing.py::process_and_store_image() -- raised from 1200
-        # to 2048 (matches Flutter's own image_picker cap, see that
-        # function's comment for the measured PSNR/SSIM/file-size numbers).
-        max_dim = int(os.getenv("UPLOAD_IMAGE_MAX_DIM", "2048") or "2048")
-        if max(im.size) > max_dim:
-            im.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
-
-        buf = BytesIO()
-        # Quality-audit fix: kept consistent with
-        # media_processing.py::process_and_store_image(), which this
-        # function duplicates -- same higher default quality + chroma
-        # preservation, for the same reason (requirements D and F).
-        quality = int(os.getenv("UPLOAD_IMAGE_JPEG_QUALITY", "92") or "92")
-        im.save(
-            buf,
-            format="JPEG",
-            quality=quality,
-            optimize=True,
-            exif=b"",
-            subsampling=0,  # 4:4:4 -- preserve chroma/detail (requirement D)
-        )
-        out_bytes = buf.getvalue()
-    except DecompressionBombError as e:
-        # M-06 follow-up: reuse the exact same rejection mechanism as
-        # process_and_store_image() -- raise, do not fall through. This
-        # propagates out of _process_image_path() (and out of the Celery
-        # task body) before persist_jpeg_bytes() is ever reached; the
-        # caller's `finally:` temp-file cleanup still runs regardless.
-        raise DecompressionBombRejected(
-            "_process_image_path: image rejected by decompression-bomb guard"
-        ) from e
-    except Exception:
-        pass
+    # `DecompressionBombRejected` (M-06) and `ImageNormalizationFailed`
+    # (2026 fix) are both hard failures that propagate out of this
+    # function, out of `_process_image_path()`, and out of the Celery task
+    # body (see `process_car_image_file`'s exception handling, which
+    # transitions the media-readiness item to the terminal ``failed``
+    # status for both -- never self-attaches unconfirmed bytes).
+    out_bytes = normalize_to_canonical_jpeg(out_bytes)
 
     # TEMPORARY DEBUG TRACE: hash of the final bytes actually persisted
     # (post blur/resize/re-encode). A mismatch vs. _trace_source_sha256 is
@@ -291,13 +251,23 @@ def process_car_image_file(
     correctness. On success it self-attaches the processed image (creating
     the ``CarImage`` row) and transitions the manifest item to
     ``"attached"``. On a PERMANENT rejection (``DecompressionBombRejected``/
-    ``PlateBlurRequiredRejected`` -- both deterministic given these exact
-    bytes; retrying identical input cannot succeed) it transitions the item
-    to ``"failed"``. Any OTHER exception (network/R2/broker/OOM/transient
-    processing failure) is deliberately NOT treated as terminal -- it
-    propagates, Celery's at-least-once redelivery may retry it, and the
-    manifest item is correctly left at ``"processing"`` in the meantime
-    (see kk/media_readiness.py's module docstring for the full rule).
+    ``PlateBlurRequiredRejected``/``ImageNormalizationFailed`` -- all three
+    deterministic given these exact bytes; retrying identical input cannot
+    succeed) it transitions the item to ``"failed"``. Any OTHER exception
+    (network/R2/broker/OOM/transient processing failure) is deliberately
+    NOT treated as terminal -- it propagates, Celery's at-least-once
+    redelivery may retry it, and the manifest item is correctly left at
+    ``"processing"`` in the meantime (see kk/media_readiness.py's module
+    docstring for the full rule).
+
+    ``ImageNormalizationFailed`` (2026 real-device fix) is the hard-failure
+    counterpart of the bug that let raw HEIC bytes self-attach as a
+    `.jpg`-named ``CarImage`` on a real production listing: if the source
+    bytes genuinely cannot be decoded/normalized into JPEG at all (not even
+    after the module-level eager HEIC-opener registration -- e.g. still
+    missing the ``pillow_heif`` dependency, or a truly corrupt upload),
+    this task now fails the item instead of silently self-attaching
+    unrenderable bytes.
     """
     owner = (owner_public_id or "").strip() or None
     if owner:
@@ -362,7 +332,11 @@ def process_car_image_file(
                 ),
             )
         return out
-    except (DecompressionBombRejected, PlateBlurRequiredRejected):
+    except (
+        DecompressionBombRejected,
+        PlateBlurRequiredRejected,
+        ImageNormalizationFailed,
+    ):
         if car_id and client_media_id:
             try:
                 from ..media_readiness import transition_media_item_terminal

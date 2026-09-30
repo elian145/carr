@@ -20,6 +20,7 @@ from ..job_ownership import (
 )
 from ..media_processing import (
     DecompressionBombRejected,
+    ImageNormalizationFailed,
     PlateBlurRequiredRejected,
     is_valid_draft_media_id,
     media_key_owner_prefix_matches,
@@ -1999,6 +2000,14 @@ def upload_car_images(car_id: str):
                 # just this one file -- never persist the unconfirmed bytes,
                 # and never leak the internal status/reason to the client.
                 skip_reasons.append("Image could not be verified as safe to publish")
+                continue
+            except ImageNormalizationFailed:
+                # 2026 real-device fix: the source bytes could not be
+                # decoded/normalized into genuine JPEG output at all (e.g.
+                # an unsupported/corrupt file). Skip just this one file --
+                # never persist raw/un-normalized bytes under a `.jpg`
+                # filename (the exact real-device bug this guards against).
+                skip_reasons.append("Image could not be processed (unsupported or corrupt file)")
                 continue
             listing_n = _count_listing_images(car)
             is_primary = upload_kind == "listing" and listing_n == 0
