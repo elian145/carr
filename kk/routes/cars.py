@@ -444,18 +444,36 @@ def _resolve_rel(rel: str) -> str:
         return ""
 
 
-def _serialize_videos(car: Car) -> list[dict]:
+def _serialize_videos(car: Car, *, include_private: bool = False) -> list[dict]:
     """Structured video objects (id, video_url, thumbnail_url, ...) so the
     Flutter edit flow can populate `existing_video_records` and the DELETE
     /cars/<id>/videos/<video_id> endpoint has a real video id to target.
     Kept consistent across every listing response path (list/detail/create/
     update) -- do not flatten this back to plain URL strings.
+
+    Optimistic-local-media fix: when [include_private] (the listing owner,
+    or an admin -- see `get_car()`'s own `include_private` computation),
+    also includes `client_media_id` -- `CarVideo.source_draft_media_id`,
+    the SAME client-chosen id already durably stored at self-attach time
+    (see `kk/media_readiness.py`), just not previously surfaced in any
+    response. Never exposed to a non-owner: this is purely a
+    reconciliation aid for the owner's own still-in-flight optimistic
+    local media display (`OwnerMediaOverlay` on the Flutter side), and
+    `source_draft_media_id` is client-chosen/non-secret in the first
+    place. `None` for every video attached via the legacy multipart
+    upload path (no draft_media_id concept at all) or for a public
+    (non-owner) view -- Flutter's overlay already treats a missing id as
+    "fall back to positional pairing" (legacy listings never regress).
     """
     videos = sorted(
         car.videos or [],
         key=lambda v: (int(getattr(v, "order", 0) or 0), int(getattr(v, "id", 0) or 0)),
     )
-    return [v.to_dict() for v in videos]
+    out = [v.to_dict() for v in videos]
+    if include_private:
+        for row, v in zip(out, videos):
+            row["client_media_id"] = getattr(v, "source_draft_media_id", None)
+    return out
 
 
 def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
@@ -469,18 +487,29 @@ def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
         if not resolved:
             continue
         kind = _normalize_car_image_kind(getattr(img, "kind", None))
-        image_objs.append(
-            {
-                "id": img.id,
-                "image_url": resolved,
-                "is_primary": bool(getattr(img, "is_primary", False)),
-                "order": int(getattr(img, "order", 0) or 0),
-                "kind": kind,
-                "focus_y": getattr(img, "focus_y", None),
-                "image_width": getattr(img, "image_width", None),
-                "image_height": getattr(img, "image_height", None),
-            }
-        )
+        image_obj = {
+            "id": img.id,
+            "image_url": resolved,
+            "is_primary": bool(getattr(img, "is_primary", False)),
+            "order": int(getattr(img, "order", 0) or 0),
+            "kind": kind,
+            "focus_y": getattr(img, "focus_y", None),
+            "image_width": getattr(img, "image_width", None),
+            "image_height": getattr(img, "image_height", None),
+        }
+        if include_private:
+            # Optimistic-local-media fix: same rationale/contract as
+            # `_serialize_videos`'s own `client_media_id` -- exposes
+            # `CarImage.source_media_id` (already durably stored, never
+            # previously surfaced) ONLY to the owner/admin, so
+            # `OwnerMediaOverlay` can reconcile local<->remote by exact id
+            # instead of guessing from position. `None` for any image
+            # attached via the legacy client-driven `/images/attach` path
+            # (no client_media_id concept) -- the Flutter overlay treats a
+            # missing id as "fall back to positional pairing" so those
+            # listings are entirely unaffected.
+            image_obj["client_media_id"] = getattr(img, "source_media_id", None)
+        image_objs.append(image_obj)
 
     raw_primary = _pick_primary_listing_url(car)
     primary_rel = ""
@@ -500,7 +529,7 @@ def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
     # Structured video objects (id/video_url/thumbnail_url/...) -- required by the
     # Flutter edit-listing flow to populate existing_video_records and by the
     # DELETE /cars/<id>/videos/<video_id> endpoint, which needs a real video id.
-    d["videos"] = _serialize_videos(car)
+    d["videos"] = _serialize_videos(car, include_private=include_private)
     return d
 
 
