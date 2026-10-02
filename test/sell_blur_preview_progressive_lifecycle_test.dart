@@ -37,6 +37,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'cached_image_store_test_support.dart';
 import 'fake_api_server.dart';
 import 'legacy_test_support.dart';
 
@@ -179,12 +180,23 @@ List<String> _renderedNetworkImageUrls(WidgetTester tester) {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late Directory cacheStoreDir;
+
   setUpAll(() async {
     await FakeApiServer.ensureStarted();
+    // Build CachedNetworkImage's process-wide cache manager once, here,
+    // against a dir that outlives every test -- see
+    // `primeCachedImageStoreForTests` for the macOS-only failure this avoids.
+    cacheStoreDir = Directory.systemTemp.createTempSync('sell_blur_cache_');
+    PathProviderPlatform.instance = _FakeDocsPathProvider(cacheStoreDir.path);
+    primeCachedImageStoreForTests();
   });
 
   tearDownAll(() async {
     await FakeApiServer.stop();
+    try {
+      cacheStoreDir.deleteSync(recursive: true);
+    } catch (_) {}
   });
 
   late Directory tempDir;
@@ -298,6 +310,26 @@ void main() {
     return controlled;
   }
 
+  /// Pumps frames (fake time only -- no wall-clock sleeping) until [ready]
+  /// reports the exact widget-tree state the next assertion needs, instead of
+  /// assuming "N pumps after the tap" is enough on every machine.
+  Future<void> pumpUntilUi(
+    WidgetTester tester,
+    bool Function() ready, {
+    required String description,
+  }) async {
+    for (var i = 0; i < 200; i++) {
+      if (ready()) return;
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    if (!ready()) {
+      throw TestFailure('UI never reached expected state: $description');
+    }
+  }
+
+  int loadingOverlays() =>
+      find.text('Generating blurred preview…').evaluate().length;
+
   /// See `settleControlledJobs` in `sell_blur_choice_ui_and_race_test.dart`
   /// for why this needs several real-event-loop `runAsync` rounds, not
   /// just one `pump()`: each resolved job's continuation chain (including
@@ -378,6 +410,13 @@ void main() {
         await tester.tap(find.text('Yes, use blurred photos'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
+        // Wait for the EXACT state asserted below: the loading overlay on
+        // every tile, not merely "the model says pending".
+        await pumpUntilUi(
+          tester,
+          () => loadingOverlays() == 2,
+          description: 'both tiles show "Generating blurred preview…"',
+        );
 
         // Initial state: both jobs still pending -- both tiles must show
         // the "Generating blurred preview…" overlay, and NEITHER tile has

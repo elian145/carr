@@ -9,6 +9,7 @@ import 'package:car_listing_app/features/home/home_flow.dart' show HomePage;
 import 'package:car_listing_app/l10n/app_localizations.dart';
 import 'package:car_listing_app/services/car_spec_index.dart';
 
+import 'cached_image_store_test_support.dart';
 import 'fake_api_server.dart';
 
 /// Drives the REAL Search/Filters state (`HomePage.searchFilters()`), loading
@@ -34,6 +35,10 @@ void main() {
       const MethodChannel('plugins.flutter.io/path_provider'),
       (call) async => tmp,
     );
+    // Build CachedNetworkImage's process-wide cache manager here, outside the
+    // test body (macOS-only failure otherwise -- see
+    // `primeCachedImageStoreForTests`).
+    primeCachedImageStoreForTests();
     await FakeApiServer.ensureStarted();
     final raw = File('assets/car_spec_dataset.json').readAsStringSync();
     idx = parseCarSpecDatasetJsonString(raw).index!;
@@ -58,17 +63,39 @@ void main() {
   Set<String> real(dynamic list) =>
       (list as List).cast<String>().where((e) => e != 'Any').toSet();
 
-  /// The state loads the catalog asynchronously (isolate parse). Poll until the
-  /// model-aware list appears, which also proves the catalog-load hook fired.
-  Future<void> waitForCatalog(WidgetTester tester, dynamic s) async {
-    for (var i = 0; i < 240; i++) {
-      if (real(s.getAvailableCylinderCounts()).length < 8) return;
+  bool sameSet(Set<String> a, Set<String> b) =>
+      a.length == b.length && a.containsAll(b);
+
+  /// The state loads the catalog asynchronously (isolate parse + asset read, a
+  /// few seconds on a fast box, much longer on a loaded CI runner). Wait for the
+  /// EXACT observable state the following assertions check -- every dependent
+  /// list equal to the catalog's answer for the selected vehicle -- rather than
+  /// a proxy ("some list got shorter") or a fixed delay. Bounded by a generous
+  /// wall-clock deadline, never by an iteration-count guess.
+  Future<void> waitForCatalog(
+    WidgetTester tester,
+    dynamic s,
+    CatalogSellFieldOptions expected,
+  ) async {
+    bool ready() =>
+        sameSet(real(s.getAvailableCylinderCounts()), expected.cylinderCounts) &&
+        sameSet(real(s.getAvailableBodyTypes()), expected.bodyTypes) &&
+        sameSet(real(s.getAvailableFuelTypes()), expected.fuelTypes) &&
+        sameSet(real(s.getAvailableDriveTypes()), expected.driveTypes) &&
+        sameSet(real(s.getAvailableTransmissions()), expected.transmissions) &&
+        sameSet(real(s.getAvailableSeatings()), expected.seatings) &&
+        sameSet(real(s.getAvailableEngineSizes()), expected.engineSizes);
+
+    final deadline = DateTime.now().add(const Duration(seconds: 90));
+    while (!ready()) {
+      if (DateTime.now().isAfter(deadline)) {
+        fail('catalog never loaded into the Search filters state');
+      }
       await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 500)),
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
       );
       await tester.pump();
     }
-    fail('catalog never loaded into the Search filters state');
   }
 
   testWidgets(
@@ -91,9 +118,9 @@ void main() {
       // ---- A/J. Chevrolet -> Camaro narrows every dependent field like Sell. ----
       s.selectedBrand = 'Chevrolet';
       s.selectedModel = 'Camaro';
-      await waitForCatalog(tester, s);
-
       final camaro = idx.homeFilterFieldOptions('Chevrolet', 'Camaro', '')!;
+      await waitForCatalog(tester, s, camaro);
+
       expect(real(s.getAvailableCylinderCounts()), camaro.cylinderCounts);
       expect(real(s.getAvailableBodyTypes()), camaro.bodyTypes);
       expect(real(s.getAvailableFuelTypes()), camaro.fuelTypes);
