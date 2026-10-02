@@ -66,8 +66,13 @@ void main() {
 
       final body = content.substring(pickImagesStart, pickDamageImagesStart);
 
+      // Stale-media-after-delete fix (`_ui_media_id` tagging) turned the
+      // one-line `.map(ListingImageMedia.map)` into a small inline
+      // closure that also assigns each addition a fresh per-pick
+      // identity -- still zero `await`s, just more lines; anchor on its
+      // still-present start.
       final additionsIdx = body.indexOf(
-        'final additions = newFiles.map(ListingImageMedia.map).toList();',
+        'final uiMediaIdsByPath = <String, String>{};',
       );
       expect(
         additionsIdx,
@@ -120,7 +125,7 @@ void main() {
       final body = content.substring(pickImagesStart, pickDamageImagesStart);
 
       final backfillCallIdx = body.indexOf(
-        'await _backfillImageDimensions(newFiles',
+        'await _backfillImageDimensions(',
       );
       final syncCallIdx = body.indexOf('await _syncMediaDraftToParent();');
       expect(
@@ -155,9 +160,9 @@ void main() {
       expect(backfillStart, greaterThanOrEqualTo(0));
       final backfillBody = content.substring(
         backfillStart,
-        backfillStart + 900 > content.length
+        backfillStart + 1600 > content.length
             ? content.length
-            : backfillStart + 900,
+            : backfillStart + 1600,
       );
       expect(
         backfillBody.contains(

@@ -8,6 +8,37 @@ mixin _SellStep4Fields on State<SellStep4Page> {
   List<dynamic> _selectedImages = [];
   /// Parallel blurred versions produced by auto plate blur.
   List<dynamic> _blurredImages = [];
+  /// Original (picker) paths of HEIC/HEIF photos whose JPEG preview
+  /// generation (`HeicPreviewConverter.ensureJpegPreview`, via
+  /// `_backfillImageDimensions`) is currently in flight -- lets the grid
+  /// tile (`sell_step4_build_photos.dart`) show a loading spinner instead
+  /// of the raw, Skia-undecodable HEIC file (which would otherwise render
+  /// as a "broken image" icon for the few seconds conversion takes).
+  /// A path is removed once that item's backfill attempt finishes,
+  /// regardless of success or failure -- so a path absent from this set
+  /// with no `preview_source` set means "already tried and gave up"
+  /// (falls through to the pre-existing broken-image fallback), never
+  /// "still pending" forever.
+  final Set<String> _heicPreviewPending = {};
+  /// Monotonic counter folded into every freshly-picked item's
+  /// `_ui_media_id` seed (see `ListingImageMedia.map`'s doc comment) so
+  /// re-picking the exact same file path after deleting it is always
+  /// treated as a brand-new identity, never the deleted one's -- per-path
+  /// seeding alone would otherwise produce the SAME id both times.
+  int _uiMediaSeq = 0;
+  /// Generation token for `_syncMediaDraftToParent` (stale-media-after-
+  /// delete fix): that method is fire-and-forget (`unawaited`) from
+  /// several call sites (every pick's background chain, plus every
+  /// delete handler) and durable-copies files over real, multi-second
+  /// I/O -- two overlapping calls are a realistic scenario (e.g. delete
+  /// one of several just-picked photos before their OWN pick's sync has
+  /// finished), and whichever one's `setState` happens to land LAST would
+  /// otherwise silently overwrite `_selectedImages`/`_blurredImages`/
+  /// `_damageImages` with its own (possibly older/stale) resolved
+  /// snapshot -- resurrecting an item deleted in the meantime. Only the
+  /// MOST RECENTLY STARTED call's result is ever applied; every earlier,
+  /// now-superseded call's result is silently discarded once it finishes.
+  int _mediaSyncGeneration = 0;
   /// Cover photo index into [_selectedImages] (grid order is not changed).
   int _primaryImageIndex = 0;
   /// Local picks and/or server-relative paths for damage / crash disclosure.

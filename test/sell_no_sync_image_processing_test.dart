@@ -109,11 +109,16 @@ void main() {
             'job pipeline',
       );
       expect(
-        content.contains('SellImageJobPolling.awaitImageJobRelPath('),
+        content.contains('SellImageJobPolling.awaitImageJobRelPath(') ||
+            content.contains('SellImageJobPolling.awaitImageJobResult('),
         isTrue,
         reason:
             'startBackgroundPlateBlur must poll job results the same way '
-            'SellPhotoPrestage / SellListingMediaUpload already do',
+            'SellPhotoPrestage / SellListingMediaUpload already do -- '
+            'either the plain `awaitImageJobRelPath` wrapper, or '
+            '`awaitImageJobResult` directly (needed here to also read '
+            '`plateBlurApplied` for the truthful per-photo "not blurred" '
+            'badge -- see `sell_plate_blur_merge.dart`)',
       );
       expect(
         content.contains('processCarImagesToServerPayload'),

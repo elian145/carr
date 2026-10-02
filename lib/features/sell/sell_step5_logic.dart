@@ -112,15 +112,24 @@ mixin _SellStep5Logic on _SellStep5Fields {
 
     _setSubmitStatus(isEdit ? loc.submitting : loc.creatingListing);
 
-    // Finish background photo upload started when leaving the photos step,
-    // and adopt whatever it staged. This is a same-session optimization
-    // only available while this widget is mounted; a headless resume (app
-    // restart, no SellStep5 in the tree) simply skips it — the service's
-    // own staging inside `PendingSellSubmissionService.submit` covers that
-    // case idempotently.
-    if (_listingPhotoCount(carData) > 0 ||
-        (parentState?.carData['images'] is List &&
-            (parentState!.carData['images'] as List).isNotEmpty)) {
+    // Media-readiness contract fix (new-listing submission must not wait
+    // on image processing before `create_car()`): this pre-create
+    // "prestage" upload+poll-to-completion step is EDIT-MODE ONLY now.
+    // For a new listing, `submitFast()`'s own Phase A (raw bytes
+    // durably server-owned + async job accepted, NOT full processing --
+    // see `SellListingMediaUpload.runPhaseAOnly`) is what makes
+    // `create_car()` + media transfer fast without ever blocking on
+    // resize/blur completion; awaiting this pre-create prestage job here
+    // would defeat that entirely by making the seller wait on the exact
+    // same (or, worse, redundant/duplicate) processing work before
+    // `submitFast()` even gets a chance to run. Edit-mode submissions are
+    // explicitly out of scope for this fix (left byte-for-byte unchanged,
+    // including this wait) -- see `PendingSellSubmissionService`'s own
+    // Phase-A gate, which is create-mode only for the same reason.
+    if (isEdit &&
+        (_listingPhotoCount(carData) > 0 ||
+            (parentState?.carData['images'] is List &&
+                (parentState!.carData['images'] as List).isNotEmpty))) {
       _setSubmitStatus(loc.uploadingPhotos);
       await parentState?.awaitBackgroundPhotoPrestage();
       if (mounted && parentState != null) {

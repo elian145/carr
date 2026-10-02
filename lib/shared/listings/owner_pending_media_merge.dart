@@ -67,6 +67,16 @@ abstract final class OwnerPendingMediaMerge {
     return byCarId[id];
   }
 
+  /// Public accessor for [_findRecordForCarId] -- lets other owner-only
+  /// media modules (e.g. `owner_media_overlay.dart`'s per-item local/remote
+  /// reconciliation) reuse the EXACT SAME durable-record lookup this file's
+  /// own [isMediaProcessing]/[mergeIfOwner] use, instead of re-reading
+  /// [SellSubmissionStatePrefs] independently. Same safety contract as
+  /// every other method here: callers must already know [carId] belongs to
+  /// the current account before treating a non-null result as meaningful.
+  static Future<SellSubmissionRecord?> recordForCarId(String carId) =>
+      _findRecordForCarId(carId);
+
   /// True while [carId] still has a durable pending-submission record on
   /// THIS device -- i.e. `mediaStatus == processing` in the conceptual
   /// model from the task (`userFacingStatus` stays `submitted`
@@ -171,16 +181,31 @@ abstract final class OwnerPendingMediaMerge {
         .toList();
     if (localPendingImages.isNotEmpty &&
         remoteListingCount < localPendingImages.length) {
-      // Approximation (documented limitation): images have no per-item
-      // server identity the way `draft_media_id` gives server-transcode
-      // videos exact per-item status, so this assumes local pick order
-      // roughly matches upload/attach order and simply skips however many
-      // the server already reports -- good enough for a few seconds of
-      // optimistic display, never a source of duplicate images (the
-      // dedupe pass below is the actual duplicate-prevention guarantee).
-      final skip = remoteListingCount.clamp(0, localPendingImages.length);
-      final fallback = localPendingImages.sublist(skip);
-      merged['images'] = _dedupeAppend(remoteImages, fallback);
+      // Placeholder-regression fix (real-device evidence): images have
+      // no per-item server identity exposed to the client
+      // (`CarImage.source_media_id` is internal-bookkeeping-only, never
+      // in `to_dict()`), unlike `requiresServerTranscode` videos' exact
+      // `draft_media_id`-keyed status below. The previous heuristic
+      // ASSUMED local pick order matches server attach order and
+      // "skipped" however many of the FIRST local picks the server
+      // already reported -- but Phase-A images upload/self-attach
+      // concurrently on independent Celery workers and routinely land
+      // OUT OF pick order, so that assumption breaks in practice: it can
+      // skip (silently drop, showing neither the local nor any remote
+      // copy of it) a picked photo that is NOT actually attached yet,
+      // while simultaneously duplicating a different photo that IS
+      // attached (shown once as the real remote row, once again as a
+      // stale local fallback the skip failed to exclude). Never skipping
+      // by count -- showing every still-listed local pick unconditionally
+      // alongside whatever the server already has -- trades that
+      // (permanent, until the seller notices) DROPPED-photo failure mode
+      // for, at worst, a brief duplicate thumbnail for whichever pick(s)
+      // happen to have already landed; the dedupe pass below still
+      // collapses any exact identity match, and the whole fallback
+      // disappears on the very next refresh once `remoteListingCount`
+      // reaches `localPendingImages.length` (or the durable record is
+      // removed entirely on submission success).
+      merged['images'] = _dedupeAppend(remoteImages, localPendingImages);
     }
 
     // ---- Videos: normal videos use the same count-based approximation;
@@ -211,8 +236,15 @@ abstract final class OwnerPendingMediaMerge {
     final videoFallback = <dynamic>[];
     if (normalPendingVideos.isNotEmpty &&
         remoteNormalCount < normalPendingVideos.length) {
-      final skip = remoteNormalCount.clamp(0, normalPendingVideos.length);
-      videoFallback.addAll(normalPendingVideos.sublist(skip));
+      // Two-video-regression fix: same reasoning as the images fix
+      // above -- a normal video's manifest attach can land out of pick
+      // order relative to a sibling normal video (e.g. one fails
+      // permanently while another later-picked one succeeds first), so
+      // skipping the FIRST `remoteNormalCount` local picks can drop the
+      // wrong (still-pending) one. Show every still-listed local pick
+      // unconditionally instead; the dedupe pass below still collapses
+      // any exact identity match once it is truly remote.
+      videoFallback.addAll(normalPendingVideos);
     }
     for (final spec in transcodeSpecs) {
       final attached = record.serverTranscodeVideos[spec.draftMediaId]?.status ==

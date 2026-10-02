@@ -1,5 +1,6 @@
 import '../../models/online_spec_variant.dart';
 import '../../shared/i18n/region_spec_labels.dart';
+import 'sell_media_identity.dart';
 
 const double _kmPerMile = 1.609344;
 
@@ -233,5 +234,15 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
     ..._sellContactPhonePayload(carData),
     if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
       'vin': carData['vin'].toString().trim(),
+    // Media-readiness (see `kk/media_readiness.py`): declares up front
+    // every media item this submission will eventually upload, so the
+    // backend can register one manifest row per item atomically with car
+    // creation and force `media_status=processing`/listing status
+    // `pending` for as long as any of them hasn't finished Phase A --
+    // closing the admin-can-activate-while-media-still-uploading race.
+    // Omitted/empty is fully backwards compatible: the backend treats an
+    // absent field the same as "no expected media" (today's `ready`
+    // behavior).
+    'expected_media': SellMediaIdentity.buildExpectedMedia(carData),
   }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 }

@@ -105,6 +105,11 @@ dev_dependencies:
   # depending on the real path_provider platform channel, which is
   # unavailable under `flutter test`.
   path_provider_platform_interface: ^2.1.2
+  # Lets sell_step4_pick_images_behavior_test.dart install a deterministic
+  # fake ImagePickerPlatform.instance (caller-controlled XFile lists)
+  # instead of depending on the real image_picker platform channel/native
+  # OS picker, which is unavailable under `flutter test`.
+  image_picker_platform_interface: ^2.11.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

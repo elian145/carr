@@ -10,17 +10,20 @@
 // underlying worker via a new Completer-based "car ready" signal.
 //
 // Scenarios covered here (see the task's test-matrix items):
-//   - `submitFast()` resolves as soon as the listing exists, strictly
-//     BEFORE a still-in-flight `requiresServerTranscode` video's transcode
-//     job finishes (proven with a server-controlled gate on the poll
-//     endpoint).
+//   - `submitFast()` resolves once the listing exists AND every expected
+//     media item has completed "Phase A" -- for a `requiresServerTranscode`
+//     video, Phase A is sign -> PUT -> finalize ONLY -- strictly BEFORE
+//     that video's transcode job/poll/attach ("Phase B") finishes (proven
+//     with a server-controlled gate on the poll endpoint that
+//     `submitFast()` must never touch).
 //   - the durable pending-submission record still exists (media considered
 //     "processing") immediately after that fast resolution.
 //   - the background pipeline keeps running after the fast return and,
 //     once the gate is released, completes the transcode video and clears
 //     the durable record -- no duplicate listing, no re-signing/re-upload.
-//   - a no-video (images-only) submission still fast-returns and completes
-//     normally end to end.
+//   - a no-video (images-only) submission still fast-returns (once each
+//     image's Phase-A enqueue is durably accepted) and completes normally
+//     end to end.
 //   - a permanent create failure surfaces as an error from `submitFast()`
 //     itself (never silently swallowed) when the car never got created.
 import 'dart:async';
@@ -127,13 +130,15 @@ void main() {
   });
 
   test(
-    'submitFast() resolves as soon as the listing is created -- strictly '
-    'BEFORE a requiresServerTranscode video finishes its (gated) transcode '
-    'poll -- and the durable record survives that fast resolution '
-    '("mediaStatus" stays processing even though userFacingStatus is '
-    'already submitted); the background pipeline then keeps running and '
-    'clears the record once the transcode completes, without re-creating '
-    'the listing or re-uploading the source',
+    'submitFast() resolves once the listing is created AND the '
+    'requiresServerTranscode video has completed Phase A (sign -> PUT -> '
+    'finalize, confirmed via GET media-summary) -- strictly BEFORE that '
+    'video\'s transcode job/poll/attach ("Phase B") finishes -- and the '
+    'durable record survives that resolution ("mediaStatus" stays '
+    'processing even though userFacingStatus is already submitted); the '
+    'background pipeline then keeps running and clears the record once '
+    'the transcode completes, without re-creating the listing, re-signing, '
+    'or re-uploading the source',
     () async {
       const draftId = 'draft_fast_1';
       final sourcePath = p.join(tempDir.path, 'source.mov');
@@ -150,6 +155,7 @@ void main() {
       var finalizeCalls = 0;
       var pollCalls = 0;
       var attachCalls = 0;
+      var mediaSummaryCalls = 0;
       final transcodeGate = Completer<void>();
 
       ApiService.testHttpClient = MockClient((request) async {
@@ -188,7 +194,10 @@ void main() {
           pollCalls++;
           // The gate: never resolves SUCCESS until the test explicitly
           // completes [transcodeGate] -- this is what proves
-          // `submitFast()` does not (and must not) wait for this.
+          // `submitFast()` does not (and must not) wait for this. Phase A
+          // never polls at all -- see the `pollCalls == 0` assertion
+          // right after `submitFast()` resolves below -- so this gate is
+          // only ever reached by Phase B, after resolution.
           await transcodeGate.future;
           return jsonOk({'task_id': 'task-fast-1', 'state': 'SUCCESS'});
         }
@@ -198,6 +207,24 @@ void main() {
             'message': 'attached',
             'video': {'id': 1, 'video_url': 'https://cdn/final.mp4'},
           }, 201);
+        }
+        // Media-readiness: `GET /api/cars/<id>/media-summary` -- the
+        // server-authoritative Phase-A confirmation `submitFast()` must
+        // check before resolving. By the time this is ever called here,
+        // `runPhaseAOnly()` has already awaited sign+PUT+finalize to
+        // completion for real, so it is always correct to report Phase A
+        // complete -- exactly mirroring the real backend's guarantee that
+        // `finalize-video-source-upload` durably advances
+        // `phase_a_completed_at` synchronously, before that call's own
+        // response returns.
+        if (method == 'GET' &&
+            RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
+          mediaSummaryCalls++;
+          return jsonOk({
+            'media_status': 'processing',
+            'items': <dynamic>[],
+            'phase_a_complete': true,
+          });
         }
         if (method == 'GET' && path == '/api/cars') {
           return jsonOk({'cars': []});
@@ -214,16 +241,44 @@ void main() {
         carData: carData,
       );
 
-      // 1. Fast return already happened with the real carId, while the
-      //    transcode poll is still blocked on the gate.
+      // 1. Fast return already happened with the real carId, once Phase A
+      //    (sign -> PUT -> finalize, confirmed via media-summary) finished
+      //    -- but strictly BEFORE the transcode poll/attach (Phase B),
+      //    which is still blocked on the gate.
       expect(result, isNotNull);
       expect(result!.id, 'car_fast_1');
       expect(
+        signCalls,
+        1,
+        reason: 'Phase A (sign) must have already happened by the time '
+            'submitFast() resolves',
+      );
+      expect(
+        finalizeCalls,
+        1,
+        reason: 'Phase A (finalize) must have already happened by the time '
+            'submitFast() resolves -- this is the whole point of the new '
+            'media-readiness contract',
+      );
+      expect(
+        mediaSummaryCalls,
+        greaterThanOrEqualTo(1),
+        reason: 'submitFast() must check server-authoritative Phase-A '
+            'state via GET media-summary before resolving -- never rely '
+            'purely on a local "the call above returned" assumption',
+      );
+      expect(
         pollCalls,
         0,
-        reason: 'submitFast() must not itself wait on the poll loop -- if '
-            'this is >0 already, the fast path accidentally awaited the '
-            'full pipeline instead of returning early',
+        reason: 'submitFast() must not itself wait on the poll loop (Phase '
+            'B) -- if this is >0 already, the fast path accidentally '
+            'awaited the full pipeline instead of returning at Phase A',
+      );
+      expect(
+        attachCalls,
+        0,
+        reason: 'submitFast() must not wait for the transcoded video to be '
+            'attached (Phase B) either',
       );
 
       // 2. The durable pending-submission record is still there right
@@ -240,11 +295,8 @@ void main() {
       );
       expect(record!.carId, 'car_fast_1');
 
-      // Background pipeline is genuinely still working in the meantime.
-      await _waitUntil(() => signCalls >= 1 && finalizeCalls >= 1);
-
-      // 3. Release the gate -- the background pipeline finishes the
-      //    transcode video and attaches it.
+      // 3. Release the gate -- the background pipeline (Phase B) finishes
+      //    the transcode video and attaches it.
       transcodeGate.complete();
       await _waitUntil(() => attachCalls >= 1);
 
@@ -306,6 +358,14 @@ void main() {
             'task_id': 'img_job_1',
             'state': 'SUCCESS',
             'result': {'rel_path': 'uploads/car_photos/img_job_1.jpg'},
+          });
+        }
+        if (method == 'GET' &&
+            RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
+          return jsonOk({
+            'media_status': 'processing',
+            'items': <dynamic>[],
+            'phase_a_complete': true,
           });
         }
         if (method == 'GET' && path == '/api/cars') {

@@ -60,11 +60,6 @@ abstract final class HeicPreviewConverter {
   /// never be run through conversion -- they already render fine.
   static bool isHeic(String path) {
     final detected = _heicExtensions.contains(p.extension(path).toLowerCase());
-    // TEMPORARY diagnostic logging -- narrow pass to determine why the
-    // JPEG preview path isn't showing up on real devices. Remove once the
-    // root cause is confirmed.
-    appLog('[HEIC PREVIEW] inputPath=$path');
-    appLog('[HEIC PREVIEW] detected=$detected');
     return detected;
   }
 
@@ -90,8 +85,6 @@ abstract final class HeicPreviewConverter {
     int quality = 90,
   }) async {
     if (bytes.isEmpty) return null;
-    // TEMPORARY diagnostic logging -- see isHeic() above.
-    appLog('[HEIC PREVIEW] conversion start bytes=${bytes.length}');
     try {
       final jpeg = await _channel.invokeMethod<Uint8List>(
         'decodeHeifToJpeg',

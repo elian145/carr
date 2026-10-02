@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import '../theme/app_colors.dart';
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -8,9 +9,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_thumbnail/video_thumbnail.dart';
 
 import '../app/widgets/listing_hero_image.dart';
 import '../app/widgets/listing_network_image.dart';
+import '../app/widgets/owner_fallback_hero_image.dart';
+import '../app/widgets/owner_fallback_video_thumbnail.dart';
 import '../data/car_name_translations.dart';
 import '../features/listing/car_details_listing_fields.dart';
 import '../features/listing/car_details_recommendations.dart';
@@ -31,6 +35,7 @@ import '../models/analytics_model.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/ui/app_haptics.dart';
+import '../shared/ui/processing_media_badge.dart';
 import '../shared/i18n/listing_value_labels.dart';
 import '../shared/i18n/locale_formatting.dart';
 import '../shared/listings/listing_identity.dart';
@@ -42,6 +47,8 @@ import '../shared/listings/listing_management.dart'
         setListingSoldStatus;
 import '../shared/listings/listing_image_media.dart';
 import '../shared/listings/listing_owner.dart';
+import '../shared/listings/owner_media_overlay.dart';
+import '../shared/listings/owner_optimistic_media_cleanup.dart';
 import '../shared/listings/owner_pending_media_merge.dart';
 import '../shared/listings/listing_share.dart';
 import '../shared/listings/listing_share_urls.dart';
@@ -91,6 +98,7 @@ class _CarDetailsPageState extends _CarDetailsPageFields
         _CarDetailsPageTitles,
         _CarDetailsPageOwner,
         _CarDetailsPageMedia,
+        WidgetsBindingObserver,
         _CarDetailsPageLifecycle,
         _CarDetailsPageLoad,
         _CarDetailsPageInit,

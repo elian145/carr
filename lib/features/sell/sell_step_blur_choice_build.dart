@@ -32,6 +32,30 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
             final image = images[index];
             final keyStr = ListingImageMedia.source(image);
             final localFile = ListingImageMedia.previewLocalFile(image);
+            // Preview-truthfulness fix (Section 3: "if plate detection/blur
+            // processing completes but no blur was actually applied, do
+            // not pretend there is a distinct blurred result"): only ever
+            // set on an item inside `blurred_images` by
+            // `mergeBlurResultsIntoOriginals` when that ONE photo's blur
+            // job succeeded but genuinely found no plate -- never set on a
+            // genuine `original_images` item, so this only ever surfaces
+            // on the "Blurred photos" grid.
+            final blurNotApplied =
+                image is Map && image['blur_not_applied'] == true;
+            // Async preview-lifecycle fix (real-device evidence: "the
+            // Blurred section ALSO visually shows originals, even after
+            // selecting Blurred"): this ONE tile's job hasn't resolved yet
+            // (`pendingBlurSkeleton`, `sell_plate_blur_merge.dart`) --
+            // render the original with a live "Generating blurred
+            // preview…" overlay instead of a static, indistinguishable
+            // original.
+            final blurPending = image is Map && image['blur_pending'] == true;
+            // This ONE tile's job genuinely failed (network/timeout/Celery
+            // FAILURE/404 -- `SellImageJobResult.failed`), distinct from
+            // "succeeded, no plate found" above -- a truthful
+            // failure/retry state, never silently presented as blurred.
+            final blurFailed = image is Map && image['blur_failed'] == true;
+
             return GestureDetector(
               onTap: () {
                 Navigator.of(context).push(
@@ -49,21 +73,117 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
                   border: Border.all(color: Colors.grey.shade300),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: localFile != null
-                    ? listingLocalFileImage(
-                        localFile,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    localFile != null
+                        ? listingLocalFileImage(
+                            localFile,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          )
+                        : _listingNetworkImage(
+                            keyStr.startsWith('http')
+                                ? keyStr
+                                : _buildFullImageUrl(keyStr),
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          ),
+                    // Section 3 UX contract: while THIS tile's own preview
+                    // job is still pending, show the original (already
+                    // painted above) with a visible loading overlay --
+                    // never a static, indistinguishable "looks unblurred"
+                    // tile with no explanation.
+                    if (blurPending)
+                      Positioned.fill(
+                        child: Container(
+                          color: Colors.black.withValues(alpha: 0.35),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.generatingBlurredPreview,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       )
-                    : _listingNetworkImage(
-                        keyStr.startsWith('http')
-                            ? keyStr
-                            : _buildFullImageUrl(keyStr),
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
+                    else if (blurFailed)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          color: Colors.red.withValues(alpha: 0.75),
+                          child: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.blurPreviewFailedRetryBelow,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    else if (blurNotApplied)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          color: Colors.black.withValues(alpha: 0.6),
+                          child: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.notBlurredNoPlateDetected,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       ),
+                  ],
+                ),
               ),
             );
           },
@@ -231,11 +351,65 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
 
     // _useBlurredPlates == true: "Yes, use blurred photos" -- ONLY the
     // blurred grid (or its blurring/not-ready state), never the originals.
+    //
+    // Async preview-lifecycle fix (Section 3: "the screen must update live
+    // as each preview job completes"): `blurred`/`damageBlurred` are no
+    // longer only ever populated once the ENTIRE batch finishes --
+    // `_blurMediaList`'s `onProgress` callback publishes a per-tile
+    // `blur_pending`/`blur_failed`/genuine-result skeleton the instant
+    // blurring starts and after each individual job resolves (see
+    // `sell_car_page_plate_blur.dart`). So this grid is rendered whenever
+    // there is ANYTHING to show (pending, done, or failed tiles alike) --
+    // `_blurPreviewGrid`'s own per-tile state (pending spinner / failed
+    // badge / not-applied badge / genuine blurred image) is what actually
+    // reflects each photo's live progress, not this outer branch.
+    final hasAnyBlurredEntries = showMainBlurred || showDamageBlurred;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        if (blurring)
+        if (hasAnyBlurredEntries) ...[
+          labeledGrid(loc.blurredPhotos, blurred),
+          labeledGrid(loc.blurredDamagePhotos, damageBlurred),
+          if (blurring)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      loc.stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (!blurReady)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _retryBackgroundBlur,
+                icon: const Icon(Icons.refresh),
+                label: Text(loc.blurPlatesNow),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kFilterAccentColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+        ] else if (blurring)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -263,15 +437,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               ],
             ),
           )
-        else if (blurReady) ...[
-          labeledGrid(loc.blurredPhotos, blurred),
-          labeledGrid(loc.blurredDamagePhotos, damageBlurred),
-          if (!showMainBlurred && !showDamageBlurred)
-            Text(
-              loc.noPhotosAvailable,
-              style: TextStyle(color: Colors.grey[700], fontSize: 13),
-            ),
-        ] else ...[
+        else ...[
           Text(
             loc.blurredPhotosAreNotReadyYet,
             style: TextStyle(color: Colors.grey[700], fontSize: 13),

@@ -63,8 +63,18 @@ mixin _SellStep4Build on _SellStep4BuildVideos {
                 _selectedImages.isNotEmpty) {
               unawaited(parentState.startBackgroundPlateBlur());
             }
-            // Upload photos while the seller fills later steps.
-            unawaited(parentState.startBackgroundPhotoPrestage());
+            // Media-readiness contract fix: this pre-create "prestage"
+            // upload (upload now, poll to completion, rewrite `carData`
+            // to a remote URL, all before `create_car()` even runs) is
+            // EDIT-MODE ONLY now -- kicking it off for a new listing
+            // would just race/duplicate the exact upload+processing work
+            // `submitFast()`'s own Phase A already does AFTER
+            // `create_car()`, for no benefit (Phase A is already fast
+            // enough on its own -- see `sell_step5_logic.dart`'s
+            // `_submitListing`). Edit-mode keeps this exactly as before.
+            if (parentState._isEditMode) {
+              unawaited(parentState.startBackgroundPhotoPrestage());
+            }
             parentState._goToNextStep();
           }
         },

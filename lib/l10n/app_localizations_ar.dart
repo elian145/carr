@@ -2669,6 +2669,16 @@ class AppLocalizationsAr extends AppLocalizations {
       'موّه اللوحات أولاً، أو اختر الإبقاء على الأصلية';
 
   @override
+  String get notBlurredNoPlateDetected => 'غير موّهة — لم يتم اكتشاف لوحة';
+
+  @override
+  String get generatingBlurredPreview => 'جارٍ إنشاء معاينة موّهة…';
+
+  @override
+  String get blurPreviewFailedRetryBelow =>
+      'فشلت المعاينة — اضغط \"موّه اللوحات الآن\" أدناه لإعادة المحاولة';
+
+  @override
   String get callSeller => 'اتصل بالبائع';
 
   @override

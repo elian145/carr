@@ -20,6 +20,15 @@ const int _kSellVideoMaxDurationMs = 30 * 1000;
 const double _kSellPhotoMaxEdge = 2048;
 const int _kSellPhotoQuality = 85;
 
+/// Max simultaneous [_backfillImageDimensions]/[_backfillDamageImagePreviews]
+/// jobs -- bounded so picking a large batch doesn't decode/convert dozens
+/// of large images at once (real per-item memory/CPU cost from
+/// `readAsBytes` + `ui.instantiateImageCodec` + HEIC->JPEG conversion).
+/// High enough that a typical 5-10 photo batch still resolves in roughly
+/// one "wave" of wall-clock time instead of several serial ones -- see
+/// `_backfillImageDimensions`'s doc comment.
+const int _kBackfillConcurrency = 4;
+
 mixin _SellStep4Logic on _SellStep4Fields {
   @override
   void initState() {
@@ -178,15 +187,38 @@ mixin _SellStep4Logic on _SellStep4Fields {
             List<dynamic>.from(mergedImages);
         parentState.carData['blurred_images'] =
             List<dynamic>.from(mergedBlurred);
-        parentState.carData['images'] = List<dynamic>.from(mergedImages);
         parentState.carData['original_damage_images'] =
             List<dynamic>.from(mergedDamage);
         if (parentDamageBlurred is List) {
           parentState.carData['blurred_damage_images'] =
               List<dynamic>.from(parentDamageBlurred);
         }
-        parentState.carData['damage_images'] =
-            List<dynamic>.from(mergedDamage);
+        // Apply-choice-timing fix: re-derive the ACTIVE `images`/
+        // `damage_images` lists from whatever blur choice is already
+        // recorded on `use_blurred_plates`, instead of unconditionally
+        // forcing them back to the originals here. This method
+        // (`_loadMediaDraft`) runs from `initState`, i.e. every time this
+        // Photos step widget is (re)created -- which includes revisiting
+        // Photos (e.g. tapping Previous) after already having chosen
+        // "blurred" on the plate-blur-choice step. Unconditionally
+        // overwriting `images` with the originals here silently reverted
+        // an already-made "blurred" choice back to unblurred (with
+        // `use_blurred_plates` left at `true`, now mismatched with the
+        // active `images` list) purely from revisiting this step, with
+        // no further action from the user. Mirrors the same
+        // choice-respecting pattern already used in
+        // `_writeMediaListsToParent` and the background-blur completion
+        // handler in `sell_car_page_plate_blur.dart`.
+        if (parentState.carData['use_blurred_plates'] is bool) {
+          applySellPlateBlurChoice(
+            parentState.carData,
+            parentState.carData['use_blurred_plates'] == true,
+          );
+        } else {
+          parentState.carData['images'] = List<dynamic>.from(mergedImages);
+          parentState.carData['damage_images'] =
+              List<dynamic>.from(mergedDamage);
+        }
         parentState.carData['videos'] = List<XFile>.from(
           ListingImageMedia.localFiles(mergedVideos),
         );
@@ -326,26 +358,52 @@ mixin _SellStep4Logic on _SellStep4Fields {
   }
 
   Future<void> _syncMediaDraftToParent() async {
+    // Stale-media-after-delete fix (spec test F: "delete while durable
+    // persistence is pending"): this method is fire-and-forget
+    // (`unawaited`) from every pick's background chain AND every delete
+    // handler, and does real, multi-second file I/O below -- so two
+    // calls CAN genuinely overlap (e.g. delete one of several just-
+    // picked photos before their own pick's sync below has finished).
+    // Capture this call's generation NOW; if a NEWER call has since
+    // started by the time this one is about to write its result, this
+    // (now-superseded, possibly built from a pre-deletion snapshot)
+    // result must be discarded rather than applied -- otherwise whichever
+    // overlapping call's `setState` happens to land LAST would silently
+    // resurrect anything removed in the meantime, regardless of which
+    // call actually reflects the CURRENT, authoritative selection.
+    final gen = ++_mediaSyncGeneration;
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     if (parentState == null) return;
     final draftId = parentState._currentDraftId;
+    // Latent concurrency fix, surfaced by the same overlapping-calls
+    // scenario this generation guard exists for: `_selectedImages`/
+    // `_blurredImages`/`_damageImages` are mutated IN PLACE by
+    // `_removePhotoAt`/`_pickImages` etc. (`removeAt`, `[..., ...]`
+    // reassignment followed by further in-place edits elsewhere) --
+    // iterating the LIVE list directly here while a CONCURRENT call (a
+    // delete or another pick) mutates the same list object underneath it
+    // throws `ConcurrentModificationError` deep inside
+    // `persistDynamicMediaList`. Snapshotting with `List.of(...)` here
+    // gives this call's own iteration a stable, private copy, regardless
+    // of what any other overlapping call does to the live fields
+    // afterward.
     final images = await SellDraftMediaPersistence.persistDynamicMediaList(
-      _selectedImages,
+      List<dynamic>.of(_selectedImages),
       draftId: draftId,
       namePrefix: 'listing_orig',
     );
     final blurred = await SellDraftMediaPersistence.persistDynamicMediaList(
-      _blurredImages,
+      List<dynamic>.of(_blurredImages),
       draftId: draftId,
       namePrefix: 'listing_blur',
     );
     final damage = await SellDraftMediaPersistence.persistDynamicMediaList(
-      _damageImages,
+      List<dynamic>.of(_damageImages),
       draftId: draftId,
       namePrefix: 'damage',
     );
     final videos = await SellDraftMediaPersistence.persistDynamicMediaList(
-      _selectedVideos,
+      List<XFile>.of(_selectedVideos),
       draftId: draftId,
       namePrefix: 'video',
     );
@@ -357,6 +415,14 @@ mixin _SellStep4Logic on _SellStep4Fields {
       videos,
     );
     if (!mounted) return;
+    if (gen != _mediaSyncGeneration) {
+      // A newer sync call has started since this one began -- this
+      // result is stale (it may have been built from a `_selectedImages`
+      // snapshot that still included something since deleted). Drop it
+      // silently; the newer call's own result is authoritative and will
+      // write/has already written in its place.
+      return;
+    }
     setState(() {
       _selectedImages = resolvedImages;
       _blurredImages = resolvedBlurred;
@@ -385,6 +451,97 @@ mixin _SellStep4Logic on _SellStep4Fields {
   }
 
   String _imagePathKey(dynamic item) => ListingImageMedia.source(item);
+
+  /// Stale-media-after-delete fix: prunes an async-populated,
+  /// blur-result-shaped list (`_blurredImages`, or any
+  /// `carData['blurred_images']`/`['blurred_damage_images']` snapshot) down
+  /// to only the entries that correspond to a photo in [currentSelection]
+  /// -- by `_ui_media_id` when BOTH sides carry one (the robust,
+  /// identity-based match this fix exists for -- see
+  /// `ListingImageMedia.map`'s doc comment), falling back to matching by
+  /// `source` path for any item that predates this field entirely (e.g.
+  /// already-remote edit-mode photos loaded from the backend, or a draft
+  /// restored before this fix shipped). An entry whose id/path matches
+  /// NEITHER a current id NOR a current path belongs to a photo no longer
+  /// in [currentSelection] -- i.e. a deleted photo -- and is dropped.
+  ///
+  /// Deliberately a FILTER, never a re-sort: every surviving entry keeps
+  /// its original relative order from [blurred], which already matches
+  /// [currentSelection]'s order (both are ultimately derived from the same
+  /// positional `originals` list at blur-merge time) -- see spec item 8,
+  /// "background completion order must never become gallery order".
+  List<dynamic> _pruneBlurredToCurrentSelection(
+    List<dynamic> blurred,
+    List<dynamic> currentSelection,
+  ) {
+    if (blurred.isEmpty) return blurred;
+    final currentIds = currentSelection
+        .map(ListingImageMedia.uiMediaId)
+        .whereType<String>()
+        .toSet();
+    final currentPaths = currentSelection.map(_imagePathKey).toSet();
+    return blurred.where((item) {
+      final id = ListingImageMedia.uiMediaId(item);
+      if (id != null) return currentIds.contains(id);
+      return currentPaths.contains(_imagePathKey(item));
+    }).toList();
+  }
+
+  /// Stale-write-after-resolution fix (spec test D; see the call site in
+  /// `_writeMediaListsToParent`): merges [incoming] (THIS call's own,
+  /// possibly-stale `_blurredImages` snapshot) with [existingRaw]
+  /// (`parentState.carData['blurred_images']` as it stands RIGHT NOW,
+  /// which `_publishBlurProgress` -- a separate, direct writer -- may
+  /// have already resolved further than [incoming] knows about) --
+  /// keyed by [images]' own identity order, so the result is ALSO
+  /// pruned/re-aligned to the CURRENT selection as a side effect (belt-
+  /// and-suspenders with `_pruneBlurredToCurrentSelection`).
+  ///
+  /// Per matched identity: whichever side is already resolved (missing
+  /// `blur_pending`) wins; if BOTH or NEITHER are resolved, [incoming]'s
+  /// entry wins (preserves the original "local/freshly-persisted value
+  /// wins" behavior for the common, non-racing case -- e.g. a genuinely
+  /// NEWER local result that simply hasn't been echoed into
+  /// `carData['blurred_images']` yet). An identity present in [images]
+  /// but in NEITHER source is simply omitted (nothing to show yet).
+  List<dynamic> _preferResolvedBlurred(
+    List<dynamic> incoming,
+    dynamic existingRaw,
+    List<dynamic> images,
+  ) {
+    final existing = existingRaw is List ? existingRaw : const <dynamic>[];
+    bool isResolved(dynamic item) =>
+        !(item is Map && item['blur_pending'] == true);
+    String keyOf(dynamic item) =>
+        ListingImageMedia.uiMediaId(item) ?? _imagePathKey(item);
+
+    final incomingByKey = <String, dynamic>{};
+    for (final item in incoming) {
+      incomingByKey[keyOf(item)] = item;
+    }
+    final existingByKey = <String, dynamic>{};
+    for (final item in existing) {
+      existingByKey[keyOf(item)] = item;
+    }
+
+    final result = <dynamic>[];
+    for (final image in images) {
+      final key = keyOf(image);
+      final incomingItem = incomingByKey[key];
+      final existingItem = existingByKey[key];
+      if (incomingItem != null && isResolved(incomingItem)) {
+        result.add(incomingItem);
+      } else if (existingItem != null && isResolved(existingItem)) {
+        result.add(existingItem);
+      } else if (incomingItem != null) {
+        result.add(incomingItem);
+      } else if (existingItem != null) {
+        result.add(existingItem);
+      }
+      // Else: no entry for this identity on either side yet -- omit.
+    }
+    return result;
+  }
 
   /// Keep live picker files when a persist pass drops unreadable paths.
   List<dynamic> _persistedOrLiveMedia(
@@ -415,10 +572,27 @@ mixin _SellStep4Logic on _SellStep4Fields {
     // when this step still has an empty local blurred cache.
     final parentBlurred = parentState.carData['blurred_images'];
     if (blurred.isNotEmpty) {
-      parentState.carData['blurred_images'] = List<dynamic>.from(blurred);
+      // Stale-write-after-resolution fix (spec test D): [blurred] here is
+      // THIS call's own `_blurredImages` snapshot, captured whenever this
+      // (possibly long-running, delete-triggered) sync started -- it can
+      // still be the PENDING blur skeleton (`blur_pending: true`) even
+      // though `_publishBlurProgress` (an entirely separate, direct-to-
+      // `carData` writer -- see its own doc comment) has, in the
+      // meantime, already resolved some/all of those same photos'
+      // results into `parentBlurred`. Blindly overwriting with [blurred]
+      // would silently revert an already-resolved result back to
+      // "pending", and since nothing re-resolves it afterward, it would
+      // stay visibly wrong (or, worse, if even less fresh, reintroduce a
+      // DELETED photo's leftover entry -- the resurrection bug this whole
+      // fix targets). Prefer whichever side is actually RESOLVED
+      // (missing the `blur_pending` flag) per position; only fall back to
+      // [blurred] when neither side is resolved yet (preserves the
+      // original "local wins" behavior for the common, non-racing case).
+      final merged = _preferResolvedBlurred(blurred, parentBlurred, images);
+      parentState.carData['blurred_images'] = merged;
       parentState.carData['images_processed'] = true;
       _imagesProcessed = true;
-      _blurredImages = List<dynamic>.from(blurred);
+      _blurredImages = merged;
     } else if (parentState.isBlurringPlates) {
       // Keep existing blurred_images / processed flag untouched.
     } else if (parentBlurred is List && parentBlurred.isNotEmpty) {
@@ -456,6 +630,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
     XFile file, {
     required String draftId,
     String logContext = '',
+    String? uiMediaId,
   }) async {
     Uint8List? bytes;
     try {
@@ -514,6 +689,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
       width: width,
       height: height,
       previewSource: previewSource,
+      uiMediaId: uiMediaId,
     );
   }
 
@@ -522,9 +698,28 @@ mixin _SellStep4Logic on _SellStep4Fields {
   /// backfills them onto the matching `_selectedImages` entry (matched by
   /// path, so it stays correct even if the user removes/reorders photos
   /// while this is still running -- see A-fix item 9, "removing/reordering
-  /// images keeps mappings correct"). Never blocks or delays the original's
-  /// first render -- that already happened in `_pickImages`'s first
-  /// `setState`, before this is ever called.
+  /// images keeps mappings correct"; a removed photo's `indexWhere` below
+  /// simply returns -1 and is skipped, so it is never resurrected). Never
+  /// blocks or delays the original's first render -- that already
+  /// happened in `_pickImages`'s first `setState`, before this is ever
+  /// called.
+  ///
+  /// Runs with bounded concurrency (see [_kBackfillConcurrency]) instead
+  /// of one file at a time (one-by-one-appearance fix -- real-device
+  /// evidence: "images appear slowly one-by-one while background
+  /// processing/upload is happening"). Every picked photo's *slot* is
+  /// already visible the instant `_pickImages` returns, but a HEIC/HEIF
+  /// photo specifically has nothing decodable to show in that slot (see
+  /// `sell_step4_build_photos.dart`'s `previewLocalFile` fallback to the
+  /// raw, Skia-undecodable HEIC path) until THIS method reaches it and
+  /// supplies a `previewSource`. A strictly serial loop therefore revealed
+  /// real HEIC thumbnails one at a time, each roughly N x (one file's
+  /// conversion time) after the previous -- visually indistinguishable
+  /// from "appearing slowly one-by-one" even though every grid slot was
+  /// already present from the very first frame. Running several
+  /// conversions concurrently instead means thumbnails resolve close
+  /// together rather than in a strict chain, without decoding/converting
+  /// an unbounded number of large images at once.
   ///
   /// Must run, and be awaited, BEFORE `_syncMediaDraftToParent()`: that
   /// durable-copies each file, which *rewrites* `ListingImageMedia.source`
@@ -534,27 +729,80 @@ mixin _SellStep4Logic on _SellStep4Fields {
   Future<void> _backfillImageDimensions(
     List<XFile> files, {
     required String draftId,
+    required Map<String, String> uiMediaIdsByPath,
   }) async {
-    for (final file in files) {
-      if (!mounted) return;
-      final enriched = await _pickedImageMedia(file, draftId: draftId);
-      if (!mounted) return;
-      final idx = _selectedImages.indexWhere(
-        (item) => ListingImageMedia.source(item) == file.path,
-      );
-      _debugLog('[HEIC PREVIEW] applying path=${file.path}');
-      _debugLog(
-        '[HEIC PREVIEW] previewSource before='
-        '${idx == -1 ? null : ListingImageMedia.previewSource(_selectedImages[idx])}',
-      );
-      _debugLog(
-        '[HEIC PREVIEW] previewSource after='
-        '${ListingImageMedia.previewSource(enriched)}',
-      );
-      _debugLog('[HEIC PREVIEW] matched=${idx != -1}');
-      if (idx == -1) continue;
-      setState(() => _selectedImages[idx] = enriched);
+    var nextIndex = 0;
+    Future<void> worker() async {
+      while (true) {
+        if (!mounted) return;
+        final i = nextIndex++;
+        if (i >= files.length) return;
+        final file = files[i];
+        final uiMediaId = uiMediaIdsByPath[file.path];
+        // Mark pending BEFORE the (possibly multi-second) conversion work
+        // so the grid tile can show a spinner instead of attempting to
+        // decode the raw HEIC file. Non-HEIC files never need a preview,
+        // so skip the extra setState for them.
+        final isHeic = HeicPreviewConverter.isHeic(file.path);
+        if (isHeic && mounted) {
+          setState(() => _heicPreviewPending.add(file.path));
+        }
+        try {
+          final enriched = await _pickedImageMedia(
+            file,
+            draftId: draftId,
+            uiMediaId: uiMediaId,
+          );
+          if (!mounted) return;
+          // Stale-media-after-delete guard (spec item 5/6): even though
+          // the by-path match below already safely no-ops if this item
+          // was deleted (`idx == -1`), ALSO verify by identity -- a
+          // re-pick of the exact same path (spec item 7's "delete then
+          // re-add the same file") would otherwise still path-match the
+          // NEW item's slot and incorrectly apply THIS (old, now-stale)
+          // pick's result onto it.
+          final idx = _selectedImages.indexWhere(
+            (item) =>
+                ListingImageMedia.source(item) == file.path &&
+                (uiMediaId == null ||
+                    ListingImageMedia.uiMediaId(item) == uiMediaId),
+          );
+          _debugLog('[HEIC PREVIEW] applying path=${file.path}');
+          _debugLog(
+            '[HEIC PREVIEW] previewSource before='
+            '${idx == -1 ? null : ListingImageMedia.previewSource(_selectedImages[idx])}',
+          );
+          _debugLog(
+            '[HEIC PREVIEW] previewSource after='
+            '${ListingImageMedia.previewSource(enriched)}',
+          );
+          _debugLog('[HEIC PREVIEW] matched=${idx != -1}');
+          if (idx == -1) continue;
+          // In-place replace only -- never remove/reinsert/reorder, so the
+          // already-visible slot's position and identity never change,
+          // only its content (raw HEIC path -> decodable preview, plus
+          // width/height) once this item's own work finishes. Clear the
+          // pending marker in the SAME setState so the tile never flashes
+          // an intermediate "pending but still raw HEIC" frame.
+          setState(() {
+            _selectedImages[idx] = enriched;
+            _heicPreviewPending.remove(file.path);
+          });
+        } finally {
+          // Safety net: guarantees the pending marker is never left stuck
+          // (which would spin forever) even if something above throws
+          // unexpectedly. Harmless no-op if already removed above.
+          if (isHeic && mounted) {
+            setState(() => _heicPreviewPending.remove(file.path));
+          }
+        }
+      }
     }
+
+    final workerCount = _kBackfillConcurrency < files.length
+        ? _kBackfillConcurrency
+        : files.length;
+    await Future.wait(List.generate(workerCount, (_) => worker()));
   }
 
   /// Damage-photo counterpart to [_backfillImageDimensions] above: reuses
@@ -577,31 +825,54 @@ mixin _SellStep4Logic on _SellStep4Fields {
   Future<void> _backfillDamageImagePreviews(
     List<XFile> files, {
     required String draftId,
+    required Map<String, String> uiMediaIdsByPath,
   }) async {
-    for (final file in files) {
-      if (!mounted) return;
-      final enriched = await _pickedImageMedia(
-        file,
-        draftId: draftId,
-        logContext: '[DAMAGE]',
-      );
-      if (!mounted) return;
-      final idx = _damageImages.indexWhere(
-        (item) => ListingImageMedia.source(item) == file.path,
-      );
-      _debugLog('[HEIC PREVIEW][DAMAGE] applying path=${file.path}');
-      _debugLog(
-        '[HEIC PREVIEW][DAMAGE] previewSource before='
-        '${idx == -1 ? null : ListingImageMedia.previewSource(_damageImages[idx])}',
-      );
-      _debugLog(
-        '[HEIC PREVIEW][DAMAGE] previewSource after='
-        '${ListingImageMedia.previewSource(enriched)}',
-      );
-      _debugLog('[HEIC PREVIEW][DAMAGE] matched=${idx != -1}');
-      if (idx == -1) continue;
-      setState(() => _damageImages[idx] = enriched);
+    // Bounded-concurrency fix, same rationale as `_backfillImageDimensions`
+    // above -- see that method's doc comment.
+    var nextIndex = 0;
+    Future<void> worker() async {
+      while (true) {
+        if (!mounted) return;
+        final i = nextIndex++;
+        if (i >= files.length) return;
+        final file = files[i];
+        final uiMediaId = uiMediaIdsByPath[file.path];
+        final enriched = await _pickedImageMedia(
+          file,
+          draftId: draftId,
+          logContext: '[DAMAGE]',
+          uiMediaId: uiMediaId,
+        );
+        if (!mounted) return;
+        // Same identity re-verification as `_backfillImageDimensions` --
+        // see that method's doc comment (spec item 7: delete-then-re-add
+        // of the same file must not let this stale result attach to the
+        // new pick's entry).
+        final idx = _damageImages.indexWhere(
+          (item) =>
+              ListingImageMedia.source(item) == file.path &&
+              (uiMediaId == null ||
+                  ListingImageMedia.uiMediaId(item) == uiMediaId),
+        );
+        _debugLog('[HEIC PREVIEW][DAMAGE] applying path=${file.path}');
+        _debugLog(
+          '[HEIC PREVIEW][DAMAGE] previewSource before='
+          '${idx == -1 ? null : ListingImageMedia.previewSource(_damageImages[idx])}',
+        );
+        _debugLog(
+          '[HEIC PREVIEW][DAMAGE] previewSource after='
+          '${ListingImageMedia.previewSource(enriched)}',
+        );
+        _debugLog('[HEIC PREVIEW][DAMAGE] matched=${idx != -1}');
+        if (idx == -1) continue;
+        setState(() => _damageImages[idx] = enriched);
+      }
     }
+
+    final workerCount = _kBackfillConcurrency < files.length
+        ? _kBackfillConcurrency
+        : files.length;
+    await Future.wait(List.generate(workerCount, (_) => worker()));
   }
 
   /// Removes the photo at [index] from the wizard's local media state.
@@ -656,23 +927,116 @@ mixin _SellStep4Logic on _SellStep4Fields {
     if (!mounted) return;
     setState(() {
       _selectedImages.removeAt(index);
-      if (index < _blurredImages.length) {
-        _blurredImages.removeAt(index);
-      } else {
-        _blurredImages = [];
-        _imagesProcessed = false;
-      }
       _onImageRemovedAt(index);
-      if (_selectedImages.isEmpty) {
-        _blurredImages = [];
-        _imagesProcessed = false;
-      }
     });
     parentState?.carData.remove('use_blurred_plates');
-    parentState?.invalidatePlateBlurJob();
+    // Stale-media-after-delete fix (PRIMARY root cause -- the async race):
+    // synchronously publish the post-deletion `_selectedImages` into
+    // `carData` BEFORE invalidating/restarting the blur job below. Without
+    // this, `invalidatePlateBlurJob()` + `startBackgroundPlateBlur()` fire
+    // `unawaited` immediately, and the NEW job's `_plateBlurOriginals()`
+    // reads `carData['original_images']` SYNCHRONOUSLY at that instant --
+    // but the only OTHER writer of that key, `_syncMediaDraftToParent()`
+    // below, is itself async (real, multi-second durable-copy file I/O)
+    // and had not run yet by then. The new job therefore started from the
+    // STALE, pre-deletion list, computed (and later published) a blur
+    // result for the deleted photo too, directly reintroducing it into
+    // both `carData['original_images']` and `['blurred_images']`. Writing
+    // synchronously here closes that window: by the time the new job is
+    // even enqueued, `carData` already reflects the deletion.
+    //
+    // `carData['blurred_images']` must be pruned from ITS OWN current
+    // value, NOT from Step4's local `_blurredImages` field: a background
+    // blur job's progress (`_publishBlurProgress`,
+    // `sell_car_page_plate_blur.dart`) writes DIRECTLY into
+    // `carData['blurred_images']` and never touches `_blurredImages` at
+    // all -- so `_blurredImages` can be stale (e.g. still empty/a pending
+    // skeleton) even while `carData['blurred_images']` already holds a
+    // fresh, genuinely-resolved result. Pruning/writing from `_blurredImages`
+    // instead would silently throw that fresh result away.
+    if (parentState != null) {
+      parentState.carData['original_images'] = List<dynamic>.from(
+        _selectedImages,
+      );
+      final currentBlurred = parentState.carData['blurred_images'];
+      if (currentBlurred is List && currentBlurred.isNotEmpty) {
+        final pruned = _pruneBlurredToCurrentSelection(
+          List<dynamic>.from(currentBlurred),
+          _selectedImages,
+        );
+        parentState.carData['blurred_images'] = pruned;
+        if (mounted) setState(() => _blurredImages = pruned);
+      } else if (_selectedImages.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _blurredImages = [];
+            _imagesProcessed = false;
+          });
+        }
+      } else {
+        // `_blurredImages` may still carry its own stale entries (e.g. a
+        // pending skeleton for a now-deleted item) even when the
+        // parent's `blurred_images` is empty -- prune it the same way so
+        // a LATER `_writeMediaListsToParent` call never adopts it as-is.
+        final pruned = _pruneBlurredToCurrentSelection(
+          _blurredImages,
+          _selectedImages,
+        );
+        if (mounted) setState(() => _blurredImages = pruned);
+      }
+    }
+    // `clearBlurred: false` -- unlike its other callers, this one already
+    // correctly PRUNED `carData['blurred_images']` immediately above
+    // (keeping every still-selected photo's genuinely-resolved result);
+    // the default `clearBlurred: true` would otherwise wipe that out
+    // again right here, discarding valid results for photos that were
+    // NOT deleted. The job id still bumps (`_plateBlurJobId++`) and
+    // `isBlurringPlates` still resets, so any OLD in-flight job's
+    // progress is still correctly ignored once it resolves.
+    parentState?.invalidatePlateBlurJob(clearBlurred: false);
     parentState?.invalidatePhotoPrestage();
     unawaited(_syncMediaDraftToParent());
     if (_selectedImages.isNotEmpty) {
+      unawaited(parentState?.startBackgroundPlateBlur());
+    }
+  }
+
+  /// Damage-photo counterpart to [_removePhotoAt] -- same stale-media-
+  /// after-delete fixes (synchronous `carData` pre-write to close the
+  /// async race before restarting the blur job; identity-based pruning of
+  /// any already-blurred damage result for the deleted photo), used by
+  /// `sell_step4_build_damage.dart`'s remove button in place of the
+  /// previous inline `_damageImages.removeAt(index)` handler (which had
+  /// neither protection).
+  void _removeDamagePhotoAt(int index) {
+    if (index < 0 || index >= _damageImages.length) return;
+    final parentState = context.findAncestorStateOfType<_SellCarPageState>();
+    setState(() {
+      _damageImages.removeAt(index);
+    });
+    parentState?.carData.remove('use_blurred_plates');
+    // Same PRIMARY-root-cause race fix as `_removePhotoAt`: publish the
+    // post-deletion damage list (and a prior-blurred-damage-result list
+    // pruned to match it) into `carData` synchronously, before the new
+    // blur job below can read `carData['original_damage_images']`.
+    if (parentState != null) {
+      parentState.carData['original_damage_images'] = List<dynamic>.from(
+        _damageImages,
+      );
+      final existingBlurred =
+          parentState.carData['blurred_damage_images'];
+      if (existingBlurred is List && existingBlurred.isNotEmpty) {
+        parentState.carData['blurred_damage_images'] =
+            _pruneBlurredToCurrentSelection(existingBlurred, _damageImages);
+      }
+    }
+    // `clearBlurred: false` -- see `_removePhotoAt`'s identical comment;
+    // `carData['blurred_damage_images']` was already correctly pruned
+    // immediately above.
+    parentState?.invalidatePlateBlurJob(clearBlurred: false);
+    parentState?.invalidatePhotoPrestage();
+    unawaited(_syncMediaDraftToParent());
+    if (_damageImages.isNotEmpty || _selectedImages.isNotEmpty) {
       unawaited(parentState?.startBackgroundPlateBlur());
     }
   }
@@ -825,41 +1189,120 @@ mixin _SellStep4Logic on _SellStep4Fields {
             'contentUri=${f.path.startsWith('content://')}',
           );
         }
-        final additions = newFiles.map(ListingImageMedia.map).toList();
-        if (!mounted || additions.isEmpty) return;
+        // Stale-media-after-delete fix: assign each freshly-picked file a
+        // permanent `_ui_media_id` NOW, derived from its picker path PLUS
+        // a monotonic sequence number (`_uiMediaSeq`) -- so re-picking the
+        // exact same path after deleting it still gets a brand-new id,
+        // never the deleted one's (spec requirement: add/remove/re-add
+        // must never let an old async result attach to the new pick).
+        // `uiMediaIdsByPath` lets `_backfillImageDimensions` below look up
+        // the SAME id for the SAME file later (recomputing it from the
+        // path alone would be fine for a per-path-only scheme, but NOT
+        // once a sequence number is mixed in, since that number is only
+        // known here, at assignment time).
+        final uiMediaIdsByPath = <String, String>{};
+        final additions = newFiles.map((f) {
+          final id = SellMediaIdentity.stableIdFromSeed(
+            'listing:${f.path}:${_uiMediaSeq++}',
+          );
+          uiMediaIdsByPath[f.path] = id;
+          return ListingImageMedia.map(f, uiMediaId: id);
+        }).toList();
+        if (!mounted) return;
+        if (additions.isEmpty) {
+          setState(() => _isImportingMedia = false);
+          return;
+        }
         final parentState = context.findAncestorStateOfType<_SellCarPageState>();
         setState(() {
           _selectedImages = [..._selectedImages, ...additions];
           _imagesProcessed = false;
           _blurredImages = [];
           _isProcessingImages = false;
+          // One-by-one-appearance fix (real-device evidence: "after I
+          // choose multiple images, they appear slowly one-by-one while
+          // background processing/upload is happening"): publication of
+          // every selected slot is already complete at this point --
+          // nothing above this `setState` awaited any I/O. The "Add more
+          // photos" button / wizard navigation must therefore NOT stay
+          // disabled for the background work scheduled below (durable
+          // copy, HEIC preview/dimension backfill, draft snapshot, blur
+          // prestage) -- see `_prepareImagesInBackground`.
+          _isImportingMedia = false;
         });
         _debugLog(
           'IMMEDIATE PREVIEW: _selectedImages.length=${_selectedImages.length} '
           '(inserted with no decode/await before this setState)',
         );
+        if (overLimit) _showListingMediaLimitSnack(isVideo: false);
+
         parentState?.carData.remove('use_blurred_plates');
         parentState?.invalidatePlateBlurJob();
         parentState?.invalidatePhotoPrestage();
-        // Width/height + HEIC/HEIF preview backfill must run (and finish)
-        // BEFORE the durable-copy step below, which rewrites each entry's
-        // `source` -- see `_backfillImageDimensions`'s doc comment. The
-        // original is already visible from the setState above; this only
-        // delays the durable copy/background blur trigger, never the
-        // original's first render.
         final draftId = parentState?._currentDraftId ?? 'default';
-        await _backfillImageDimensions(newFiles, draftId: draftId);
-        if (!mounted) return;
-        await _syncMediaDraftToParent();
-        unawaited(_saveDraft());
-        unawaited(parentState?.startBackgroundPlateBlur());
-        if (overLimit) _showListingMediaLimitSnack(isVideo: false);
-      } finally {
+
+        // Everything from here on is background-only and fire-and-forget:
+        // it must never gate the gallery (already published above), the
+        // "Add more photos" button, or wizard navigation -- see
+        // `_prepareImagesInBackground`'s doc comment for ordering and
+        // failure-behavior details.
+        unawaited(
+          _prepareImagesInBackground(
+            newFiles,
+            draftId: draftId,
+            parentState: parentState,
+            uiMediaIdsByPath: uiMediaIdsByPath,
+          ),
+        );
+      } catch (e) {
         if (mounted) setState(() => _isImportingMedia = false);
+        rethrow;
       }
     } catch (e, st) {
       logNonFatal(e, st);
       _showMediaPickError(e);
+    }
+  }
+
+  /// Background-only continuation of [_pickImages], run fire-and-forget
+  /// (`unawaited`) right after the newly-picked photos are already visible
+  /// in `_selectedImages`.
+  ///
+  /// Internal ordering still matters: [_backfillImageDimensions] must
+  /// finish before [_syncMediaDraftToParent], which durable-copies every
+  /// entry and rewrites its `source` -- see [_backfillImageDimensions]'s
+  /// doc comment for why a by-path match would otherwise silently fail.
+  /// None of that ordering is visible to the user, though: the gallery,
+  /// the "Add more photos" button, and wizard navigation were already
+  /// unblocked by `_pickImages`'s own `setState` before this was
+  /// scheduled.
+  ///
+  /// Failure behavior: every exception here is caught and reported
+  /// non-fatally. A failure here never removes or hides an
+  /// already-published photo -- at worst a given item's width/height/HEIC
+  /// preview backfill, its durable local copy, its draft snapshot, or its
+  /// blur-prestage upload simply does not complete, and the photo keeps
+  /// showing its original picker-path local preview until the user
+  /// retries (e.g. by removing and re-adding it). It never silently
+  /// disappears from `_selectedImages`.
+  Future<void> _prepareImagesInBackground(
+    List<XFile> newFiles, {
+    required String draftId,
+    required _SellCarPageState? parentState,
+    required Map<String, String> uiMediaIdsByPath,
+  }) async {
+    try {
+      await _backfillImageDimensions(
+        newFiles,
+        draftId: draftId,
+        uiMediaIdsByPath: uiMediaIdsByPath,
+      );
+      if (!mounted) return;
+      await _syncMediaDraftToParent();
+      unawaited(_saveDraft());
+      unawaited(parentState?.startBackgroundPlateBlur());
+    } catch (e, st) {
+      logNonFatal(e, st);
     }
   }
 
@@ -894,15 +1337,25 @@ mixin _SellStep4Logic on _SellStep4Fields {
       );
       if (files.isEmpty || !mounted) return;
       final existing = _damageImages.map(_imagePathKey).toSet();
-      var additions = files.where((f) => !existing.contains(f.path)).toList();
-      final bool overLimit = additions.length > remaining;
+      var rawAdditions = files.where((f) => !existing.contains(f.path)).toList();
+      final bool overLimit = rawAdditions.length > remaining;
       if (overLimit) {
-        additions = additions.take(remaining).toList();
+        rawAdditions = rawAdditions.take(remaining).toList();
       }
-      if (additions.isEmpty) {
+      if (rawAdditions.isEmpty) {
         if (overLimit) _showListingMediaLimitSnack(isDamage: true);
         return;
       }
+      // Same stale-media-after-delete identity tagging as `_pickImages`
+      // above -- see that call site's doc comment for the full rationale.
+      final uiMediaIdsByPath = <String, String>{};
+      final additions = rawAdditions.map((f) {
+        final id = SellMediaIdentity.stableIdFromSeed(
+          'damage:${f.path}:${_uiMediaSeq++}',
+        );
+        uiMediaIdsByPath[f.path] = id;
+        return ListingImageMedia.map(f, uiMediaId: id);
+      }).toList();
       setState(() => _isImportingMedia = true);
       try {
         final parentState = context.findAncestorStateOfType<_SellCarPageState>();
@@ -913,28 +1366,59 @@ mixin _SellStep4Logic on _SellStep4Fields {
         // already resolve a raw `XFile` entry fine.
         setState(() {
           _damageImages = [..._damageImages, ...additions];
+          // See `_pickImages`'s identical reset -- publication is already
+          // complete above, so nothing below this point may keep the
+          // button/navigation disabled.
+          _isImportingMedia = false;
         });
+        if (overLimit) _showListingMediaLimitSnack(isDamage: true);
         parentState?.carData.remove('use_blurred_plates');
         parentState?.invalidatePlateBlurJob();
         parentState?.invalidatePhotoPrestage();
-        // HEIC/HEIF preview fix (damage photos): must run, and be
-        // awaited, BEFORE `_syncMediaDraftToParent()` below -- see
-        // `_backfillDamageImagePreviews`'s doc comment for why order
-        // matters here (same durable-copy path-rewrite hazard already
-        // fixed for listing photos).
         final draftId = parentState?._currentDraftId ?? 'default';
-        await _backfillDamageImagePreviews(additions, draftId: draftId);
-        if (!mounted) return;
-        await _syncMediaDraftToParent();
-        unawaited(_saveDraft());
-        unawaited(parentState?.startBackgroundPlateBlur());
-        if (overLimit) _showListingMediaLimitSnack(isDamage: true);
-      } finally {
+        // Background-only from here -- see `_prepareImagesInBackground`'s
+        // doc comment (same contract, reused for damage photos).
+        unawaited(
+          _prepareDamageImagesInBackground(
+            rawAdditions,
+            draftId: draftId,
+            parentState: parentState,
+            uiMediaIdsByPath: uiMediaIdsByPath,
+          ),
+        );
+      } catch (e) {
         if (mounted) setState(() => _isImportingMedia = false);
+        rethrow;
       }
     } catch (e, st) {
       logNonFatal(e, st);
       _showMediaPickError(e);
+    }
+  }
+
+  /// Damage-photo counterpart to [_prepareImagesInBackground] -- same
+  /// ordering contract (HEIC/dimension backfill must finish before the
+  /// durable-copy sync) and same failure behavior (every exception is
+  /// caught and reported non-fatally; a failure never hides an
+  /// already-published damage photo).
+  Future<void> _prepareDamageImagesInBackground(
+    List<XFile> additions, {
+    required String draftId,
+    required _SellCarPageState? parentState,
+    required Map<String, String> uiMediaIdsByPath,
+  }) async {
+    try {
+      await _backfillDamageImagePreviews(
+        additions,
+        draftId: draftId,
+        uiMediaIdsByPath: uiMediaIdsByPath,
+      );
+      if (!mounted) return;
+      await _syncMediaDraftToParent();
+      unawaited(_saveDraft());
+      unawaited(parentState?.startBackgroundPlateBlur());
+    } catch (e, st) {
+      logNonFatal(e, st);
     }
   }
 

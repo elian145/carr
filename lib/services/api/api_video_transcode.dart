@@ -130,11 +130,23 @@ abstract final class _ApiServiceVideoTranscode {
   static Future<Map<String, dynamic>> finalizeVideoSourceUpload({
     required String draftMediaId,
     String? stagingKey,
+
+    /// Media-readiness: when the destination car already exists (i.e.
+    /// this draft is being finalized as part of a `submitFast()` run
+    /// against an already-created car, not a pre-create draft upload),
+    /// pass its id so the backend can advance the matching
+    /// `CarMediaItem` manifest row (registered via `expected_media` at
+    /// `create_car()` time) to Phase-A-accepted and, later, self-attach
+    /// the finished transcode with zero further client calls. Omitted /
+    /// unresolved car ids are fully backwards compatible -- the backend
+    /// just has no manifest row to advance.
+    String? carId,
   }) async {
     final body = <String, dynamic>{
       'draft_media_id': draftMediaId,
       if (stagingKey != null && stagingKey.isNotEmpty)
         'staging_key': stagingKey,
+      if (carId != null && carId.trim().isNotEmpty) 'car_id': carId.trim(),
     };
     return await ApiService._makeAuthenticatedRequest(
       'POST',

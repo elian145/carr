@@ -33,7 +33,28 @@ class _CarDetailLoadError {
   final int? statusCode;
 }
 
-mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
+mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle, WidgetsBindingObserver {
+  /// Auto-reconciliation fix: pauses the owner-media poll timer while
+  /// backgrounded (no point burning battery/data reconciling a screen
+  /// nobody can see) and resumes it -- with an immediate tick rather than
+  /// waiting a full interval -- on return to the foreground, if there is
+  /// still anything left to reconcile.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        if (_showProcessingMedia) {
+          unawaited(_pollOwnerMediaOnce());
+          _maybeScheduleOwnerMediaPoll();
+        }
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.hidden:
+        _cancelOwnerMediaPoll();
+    }
+  }
+
   /// Optimistic-submission fix (task item #14): merges this device's own
   /// still-in-flight local Sell-submission media into a freshly-loaded
   /// listing map, for the OWNER only -- see
@@ -41,16 +62,89 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
   /// guarantees. A no-op (returns [loaded] unchanged) for every other
   /// viewer, and for the owner too once the background media pipeline has
   /// actually finished (the durable record it reads is removed then).
+  ///
+  /// Real-device acceptance fix ("video stuck in 'Processing media'
+  /// forever even once attached"): [rawCarForOverlay], when provided, is
+  /// the TRUE pre-[_normalizeCarDetailMap] server response -- every call
+  /// site used to pass the already-normalized [loaded] for BOTH the
+  /// merge/owner-check below AND the overlay build, but
+  /// `_normalizeVideoPaths` (which [_normalizeCarDetailMap] applies)
+  /// collapses each `videos[]` entry down to a bare url string,
+  /// discarding its `client_media_id` field entirely. Images have no
+  /// equivalent normalization step, so this silently affected ONLY
+  /// videos: `OwnerMediaOverlay.build`'s exact-id matching always saw an
+  /// empty `client_media_id` pool for videos, forcing every video onto
+  /// the (correctly) more conservative legacy-positional-fallback path --
+  /// confirmed stuck at `matched_by_id=false` on a real device despite
+  /// the server genuinely returning a matching `client_media_id`. Falls
+  /// back to [loaded] itself when omitted (the offline-cache-reload call
+  /// sites below never persisted the raw shape to begin with, so there is
+  /// nothing better to pass there; the legacy-positional fallback those
+  /// already relied on previously is unaffected by this fix).
   Future<Map<String, dynamic>> _mergeOwnerPendingMedia(
-    Map<String, dynamic> loaded,
-  ) async {
+    Map<String, dynamic> loaded, {
+    Map<String, dynamic>? rawCarForOverlay,
+  }) async {
     try {
       final auth = Provider.of<AuthService>(context, listen: false);
       final owner = isListingOwner(loaded, auth.userId);
-      return await OwnerPendingMediaMerge.mergeIfOwner(
+      final merged = await OwnerPendingMediaMerge.mergeIfOwner(
         loaded,
         isOwner: owner,
       );
+      // Optimistic-local-media fix: build the per-item local<->remote
+      // overlay from the RAW server response -- deliberately NOT
+      // [merged]: `OwnerPendingMediaMerge._merge` has already appended
+      // this device's own local fallback items into
+      // `merged['images']`/`merged['videos']` (as plain local-path
+      // strings/maps), and this overlay's own positional-pairing logic
+      // needs to count ONLY genuine server-side remote items to know how
+      // many local slots the server has actually caught up to -- feeding
+      // it the already-merged list would double-count each local
+      // fallback as if it were its own remote counterpart. The whole-
+      // listing legacy signal is used when the overlay itself is empty
+      // (non-owner / edit-mode / no active record) -- see
+      // `_showProcessingMedia`'s doc comment in `car_details_page_media
+      // .dart`. Plain field assignment here is intentional: every call
+      // site wraps this method's result in its own `setState` right
+      // after, which is what actually triggers the rebuild that picks
+      // these up.
+      _ownerMediaOverlay = await OwnerMediaOverlay.build(
+        car: rawCarForOverlay ?? loaded,
+        isOwner: owner,
+      );
+      // A freshly-built overlay has a brand-new `serverStillProcessing`
+      // snapshot -- see `_ownerMediaRecordConfirmedGone`'s own doc
+      // comment (car_details_page_fields.dart) for why this must be
+      // trusted again from scratch rather than keeping any earlier
+      // confirmation around.
+      _ownerMediaRecordConfirmedGone = false;
+      // Optimistic-local-media fix (Critical Issue 1 -- restart safety):
+      // "if remote_display_ready was true previously and the remote URL
+      // is unchanged, it is okay to restore that state on restart" (user's
+      // explicit instruction). `_remoteDisplayReady` only ever lives in
+      // THIS widget's memory otherwise, so without this it would forget
+      // every already-confirmed item on every fresh page open/app
+      // restart -- which would needlessly re-show the local fallback (and
+      // briefly re-show "Processing media") for items already known-good.
+      // Merge (never overwrite an in-session-confirmed `true` back to
+      // unset) rather than replace, since a slot can already have been
+      // confirmed earlier in THIS same session (e.g. a resumed load).
+      if (owner && (_ownerMediaOverlay?.isEmpty ?? true) == false) {
+        final carId = listingPrimaryId(loaded);
+        if (carId.isNotEmpty) {
+          final persistedReady =
+              await OwnerOptimisticMediaCleanup.loadRemoteDisplayReadyMap(
+            carId,
+          );
+          for (final entry in persistedReady.entries) {
+            _remoteDisplayReady[entry.key] = true;
+          }
+        }
+      }
+      _legacyMediaProcessing = owner &&
+          await OwnerPendingMediaMerge.isMediaProcessing(widget.carId);
+      return merged;
     } catch (e, st) {
       logNonFatal(e, st, 'CarDetailsPage._mergeOwnerPendingMedia');
       return loaded;
@@ -115,7 +209,10 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
         // meaningless (and could point at a file that no longer exists)
         // if this cache is later read back as an offline fallback.
         unawaited(sp.setString(cacheKey, json.encode(normalized)));
-        final merged = await _mergeOwnerPendingMedia(normalized);
+        final merged = await _mergeOwnerPendingMedia(
+          normalized,
+          rawCarForOverlay: loaded,
+        );
         if (!mounted) return;
         setState(() {
           car = merged;
@@ -127,6 +224,13 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
         unawaited(_loadFavoriteStatus());
         _loadSimilar();
         _trackView();
+        _maybeScheduleOwnerMediaPoll();
+        // Badge-stuck-until-swiped fix: probe every pending slot's
+        // remote readiness in the background right away too, not only
+        // on the NEXT poll tick -- covers the case where the server is
+        // already fully done by the time this first load completes (see
+        // `_backgroundProbeAllPendingSlots`'s own doc comment).
+        _backgroundProbeAllPendingSlots();
         return;
       }
 
@@ -203,6 +307,81 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle {
           loadError ??= const _CarDetailLoadError(_CarDetailLoadErrorKind.network);
         });
       }
+    }
+  }
+
+  /// Auto-reconciliation fix: how often to re-fetch this listing while
+  /// [_showProcessingMedia] is true. Deliberately NOT aggressive (every
+  /// 2s, not sub-second) -- this is a background reconciliation of a
+  /// normal `GET /api/cars/<id>` request, not a dedicated lightweight
+  /// readiness-check endpoint.
+  static const Duration _ownerMediaPollInterval = Duration(seconds: 2);
+
+  /// Starts the periodic re-fetch timer described on
+  /// [_ownerMediaPollTimer]'s own doc comment -- a no-op if one is
+  /// already scheduled (no duplicate timers) or if there is nothing left
+  /// to reconcile. Safe to call after every successful load/poll tick;
+  /// it only ever creates a timer when [_showProcessingMedia] is
+  /// genuinely still true.
+  void _maybeScheduleOwnerMediaPoll() {
+    if (!mounted || !_showProcessingMedia) {
+      _cancelOwnerMediaPoll();
+      return;
+    }
+    if (_ownerMediaPollTimer != null) return;
+    _ownerMediaPollTimer = Timer.periodic(_ownerMediaPollInterval, (_) {
+      unawaited(_pollOwnerMediaOnce());
+    });
+  }
+
+  /// Stops and clears [_ownerMediaPollTimer] -- called once reconciliation
+  /// is genuinely done ([_showProcessingMedia] false), on `dispose()`, and
+  /// while the app is backgrounded (see
+  /// `_CarDetailsPageLifecycle.didChangeAppLifecycleState`).
+  void _cancelOwnerMediaPoll() {
+    _ownerMediaPollTimer?.cancel();
+    _ownerMediaPollTimer = null;
+  }
+
+  /// One lightweight reconciliation tick: re-fetches this listing and
+  /// re-merges/re-tags it EXACTLY like [_loadCar]'s main success path,
+  /// but skips [_loadCar]'s one-time-per-visit side effects (offline
+  /// cache write, image precache, favorite status, similar listings,
+  /// view tracking) -- those must never repeat every 2 seconds. Silently
+  /// skips a tick on any error (network hiccup, cancellation) and simply
+  /// retries on the next one; never surfaces a poll failure to the owner.
+  Future<void> _pollOwnerMediaOnce() async {
+    // No overlapping requests: a slow response still in flight when the
+    // next tick fires is skipped rather than stacked.
+    if (_ownerMediaPollInFlight) return;
+    if (!mounted || !_showProcessingMedia) {
+      _cancelOwnerMediaPoll();
+      return;
+    }
+    _ownerMediaPollInFlight = true;
+    try {
+      final loaded = await ApiService.getCarDetail(widget.carId);
+      if (!mounted) return;
+      final normalized = _normalizeCarDetailMap(loaded);
+      final merged = await _mergeOwnerPendingMedia(
+        normalized,
+        rawCarForOverlay: loaded,
+      );
+      if (!mounted) return;
+      setState(() => car = merged);
+      _clampHeroMediaIndex();
+      // Badge-stuck-until-swiped fix: see
+      // `_backgroundProbeAllPendingSlots`'s own doc comment -- this is
+      // what lets the badge clear itself purely from polling, without
+      // requiring the owner to ever swipe to an off-screen slide.
+      _backgroundProbeAllPendingSlots();
+    } catch (e, st) {
+      logNonFatal(e, st, 'CarDetailsPage._pollOwnerMediaOnce');
+    } finally {
+      _ownerMediaPollInFlight = false;
+      // Stop as soon as reconciliation is genuinely done, instead of
+      // waiting for one more wasted tick to notice.
+      if (mounted && !_showProcessingMedia) _cancelOwnerMediaPoll();
     }
   }
 

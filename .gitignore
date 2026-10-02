@@ -57,6 +57,7 @@ backend/*.bin
 # Repo-root Python venvs and local tools
 .venv/
 .venv_plate/
+.tmp_flutter_test/
 kk/env.local
 kk/instance/*.bak*
 kk/backend_run.log

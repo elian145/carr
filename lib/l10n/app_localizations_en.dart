@@ -2666,6 +2666,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Blur plates first, or choose to keep originals';
 
   @override
+  String get notBlurredNoPlateDetected => 'Not blurred — no plate detected';
+
+  @override
+  String get generatingBlurredPreview => 'Generating blurred preview…';
+
+  @override
+  String get blurPreviewFailedRetryBelow =>
+      'Preview failed — tap \"Blur plates now\" below to retry';
+
+  @override
   String get callSeller => 'Call Seller';
 
   @override

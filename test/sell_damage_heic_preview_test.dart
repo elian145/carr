@@ -116,7 +116,7 @@ void main() {
             '_damageImages = [..._damageImages, ...additions];',
           );
           final backfillIdx = body.indexOf(
-            'await _backfillDamageImagePreviews(additions',
+            'await _backfillDamageImagePreviews(',
           );
           final syncIdx = body.indexOf('await _syncMediaDraftToParent();');
 

@@ -13,6 +13,32 @@ import '../../shared/prefs/sell_submission_state_prefs.dart';
 /// budget/interval and the same interpretation of the job-status response
 /// shape, instead of maintaining two copies that could silently drift
 /// apart.
+/// The full outcome of one polled image-processing job -- unlike a bare
+/// `rel_path` string, this also carries whether plate-blur was actually
+/// applied (`_trace_plate_blur_applied` in the task's result dict, see
+/// `kk/tasks/image_tasks.py`), so a caller that cares about the DISTINCTION
+/// between "job succeeded, no plate found" and "job genuinely failed" (the
+/// blur-choice preview screen's truthful-state contract -- see
+/// `sell_plate_blur_merge.dart`) can tell them apart instead of collapsing
+/// both into a single `null`/empty `rel_path`.
+class SellImageJobResult {
+  const SellImageJobResult({required this.relPath, required this.plateBlurApplied});
+
+  /// The processed image's server-relative path, or `null` on
+  /// `FAILURE`/timeout/a malformed result/404 -- a genuine job failure.
+  final String? relPath;
+
+  /// Whether plate-blur was actually applied for this job. Only meaningful
+  /// when [relPath] is non-null; defaults to `true` when the job succeeded
+  /// but the result dict is missing the field entirely (e.g. an older
+  /// server response, or a test fixture that only sets `rel_path`) -- this
+  /// matches the PRE-EXISTING behavior of always treating a successful,
+  /// non-empty `rel_path` as "genuinely blurred" before this field existed.
+  final bool plateBlurApplied;
+
+  bool get failed => relPath == null || relPath!.isEmpty;
+}
+
 class SellImageJobPolling {
   SellImageJobPolling._();
 
@@ -33,7 +59,25 @@ class SellImageJobPolling {
   /// rather than attaching/staging a bogus path, mirroring how the old
   /// synchronous path already skipped a single rejected file instead of
   /// failing the whole batch.
+  ///
+  /// Thin wrapper over [awaitImageJobResult] (kept for every pre-existing
+  /// caller that only ever needed the path, not the blur-applied signal --
+  /// behavior here is byte-for-byte unchanged).
   static Future<String?> awaitImageJobRelPath(
+    String jobId, {
+    String logTag = 'SellImageJobPolling',
+  }) async {
+    final result = await awaitImageJobResult(jobId, logTag: logTag);
+    return result.relPath;
+  }
+
+  /// Same polling loop as [awaitImageJobRelPath], but returns the full
+  /// [SellImageJobResult] (including `plateBlurApplied`) instead of just
+  /// the path -- used by the blur-choice preview lifecycle
+  /// (`sell_car_page_plate_blur.dart`) so it can render a truthful
+  /// "not blurred -- no plate detected" state instead of conflating that
+  /// with a genuine job failure.
+  static Future<SellImageJobResult> awaitImageJobResult(
     String jobId, {
     String logTag = 'SellImageJobPolling',
   }) async {
@@ -52,7 +96,7 @@ class SellImageJobPolling {
         // transient network error) is worth retrying within budget.
         if (e is ApiException && e.statusCode == 404) {
           appLog('$logTag: job $jobId not found while polling');
-          return null;
+          return const SellImageJobResult(relPath: null, plateBlurApplied: false);
         }
         logNonFatal(e, st, '$logTag.pollJob');
         continue;
@@ -62,19 +106,26 @@ class SellImageJobPolling {
         final result = status['result'];
         if (result is Map) {
           final relPath = (result['rel_path'] ?? '').toString().trim();
-          if (relPath.isNotEmpty) return relPath;
+          if (relPath.isNotEmpty) {
+            // Missing key (older response shape/test fixture) defaults to
+            // `true` -- see [SellImageJobResult.plateBlurApplied]'s doc.
+            final applied = result.containsKey('_trace_plate_blur_applied')
+                ? result['_trace_plate_blur_applied'] == true
+                : true;
+            return SellImageJobResult(relPath: relPath, plateBlurApplied: applied);
+          }
         }
         appLog('$logTag: job $jobId succeeded with no rel_path');
-        return null;
+        return const SellImageJobResult(relPath: null, plateBlurApplied: false);
       }
       if (state == 'FAILURE') {
         appLog('$logTag: image job $jobId failed');
-        return null;
+        return const SellImageJobResult(relPath: null, plateBlurApplied: false);
       }
       // PENDING / STARTED / UNAVAILABLE -- still processing, keep polling.
     }
     appLog('$logTag: image job $jobId timed out while polling');
-    return null;
+    return const SellImageJobResult(relPath: null, plateBlurApplied: false);
   }
 }
 

@@ -179,6 +179,89 @@ void main() {
         expect(twice['images'], hasLength(1));
       },
     );
+
+    test(
+      'placeholder-regression: 4 picked photos, only the 3rd (out of pick '
+      'order) has attached remotely so far -- every one of the 4 picks is '
+      'still shown (never silently dropped), even though the server '
+      'count-based heuristic cannot know WHICH pick attached',
+      () async {
+        await seedRecord(
+          images: [
+            localImage('/tmp/A.jpg'),
+            localImage('/tmp/B.jpg'),
+            localImage('/tmp/C.jpg'),
+            localImage('/tmp/D.jpg'),
+          ],
+        );
+        // Phase-A images self-attach concurrently and can land OUT OF
+        // pick order -- here only C (3rd picked) has landed so far.
+        final car = {
+          'id': carId,
+          'images': <dynamic>[
+            {'id': 1, 'image_url': 'uploads/C_server.jpg'},
+          ],
+        };
+
+        final merged = await OwnerPendingMediaMerge.mergeIfOwner(
+          car,
+          isOwner: true,
+        );
+
+        final images = merged['images'] as List;
+        final localSources = images
+            .where((it) => it is Map && it.containsKey('source'))
+            .map((it) => (it as Map)['source'])
+            .toSet();
+        expect(
+          localSources,
+          {'/tmp/A.jpg', '/tmp/B.jpg', '/tmp/C.jpg', '/tmp/D.jpg'},
+          reason: 'A must never be silently dropped just because the '
+              'server-reported count (1) happens to be less than A\'s '
+              'pick-order position -- the old count-based "skip the '
+              'first N picks" heuristic wrongly assumed pick order '
+              'matches attach order and dropped A entirely in this '
+              'exact scenario',
+        );
+        expect(
+          images.any((it) => it is Map && it['image_url'] == 'uploads/C_server.jpg'),
+          isTrue,
+          reason: 'the real remote row for C must still be present',
+        );
+      },
+    );
+
+    test(
+      'placeholder-regression: once every picked photo is remotely '
+      'attached, no local fallback (and no duplicate) is shown regardless '
+      'of attach order', () async {
+        await seedRecord(
+          images: [
+            localImage('/tmp/A.jpg'),
+            localImage('/tmp/B.jpg'),
+          ],
+        );
+        final car = {
+          'id': carId,
+          'images': <dynamic>[
+            {'id': 1, 'image_url': 'uploads/B_server.jpg'},
+            {'id': 2, 'image_url': 'uploads/A_server.jpg'},
+          ],
+        };
+
+        final merged = await OwnerPendingMediaMerge.mergeIfOwner(
+          car,
+          isOwner: true,
+        );
+
+        expect(
+          merged['images'],
+          hasLength(2),
+          reason: 'remote already fully covers this submission -- no '
+              'local fallback, no duplicate, regardless of attach order',
+        );
+      },
+    );
   });
 
   group('mergeIfOwner: normal videos', () {
@@ -213,6 +296,39 @@ void main() {
         );
 
         expect(merged['videos'], ['uploads/clip1_server.mp4']);
+      },
+    );
+
+    test(
+      'two-video-regression: 2 normal videos picked, only the 2nd '
+      '(picked later) has attached so far -- the 1st (still pending) '
+      'must still be shown, never dropped just because the server count '
+      '(1) is less than the 1st video\'s pick-order position',
+      () async {
+        await seedRecord(
+          videos: [
+            localVideo('/tmp/video_a.mp4'),
+            localVideo('/tmp/video_b.mp4'),
+          ],
+        );
+        final car = {
+          'id': carId,
+          'videos': <dynamic>['uploads/video_b_server.mp4'],
+        };
+
+        final merged = await OwnerPendingMediaMerge.mergeIfOwner(
+          car,
+          isOwner: true,
+        );
+
+        final videos = List<dynamic>.from(merged['videos'] as List);
+        expect(
+          videos.any((v) => v is Map && v['source'] == '/tmp/video_a.mp4'),
+          isTrue,
+          reason: 'video A (still pending) must not be dropped just '
+              'because video B (picked later) happened to attach first',
+        );
+        expect(videos, contains('uploads/video_b_server.mp4'));
       },
     );
   });
@@ -329,6 +445,118 @@ void main() {
       },
     );
   });
+
+  group(
+    'Real-device incident: 5 self-attached server images must never '
+    'collapse below 5',
+    () {
+      List<Map<String, dynamic>> fiveServerImages() {
+        return List.generate(5, (i) {
+          return {
+            'id': i + 1,
+            // Deliberately NO client_media_id/source_media_id field --
+            // matches the real backend shape exactly (`CarImage.
+            // source_media_id` is "internal bookkeeping only -- never
+            // exposed in to_dict()", per kk/models.py).
+            'image_url': 'uploads/car_photos/photo_$i.jpg',
+            'is_primary': i == 0,
+            'order': i,
+            'kind': 'listing',
+          };
+        });
+      }
+
+      test(
+        'server already has all 5 images, no pending record on this '
+        'device -- result is exactly the 5 server images unchanged',
+        () async {
+          final car = {'id': carId, 'images': fiveServerImages()};
+
+          final merged = await OwnerPendingMediaMerge.mergeIfOwner(
+            car,
+            isOwner: true,
+          );
+
+          expect(merged['images'], hasLength(5));
+          expect(merged, same(car));
+        },
+      );
+
+      test(
+        'server already has all 5 images; a STALE durable record on this '
+        'device still lists only 1 local pending image (e.g. an old '
+        'retry that never got cleaned up) -- result must remain exactly '
+        'the 5 server images, never fewer, and never duplicated',
+        () async {
+          await seedRecord(images: [localImage('/tmp/stale_only_one.jpg')]);
+          final car = {'id': carId, 'images': fiveServerImages()};
+
+          final merged = await OwnerPendingMediaMerge.mergeIfOwner(
+            car,
+            isOwner: true,
+          );
+
+          final images = merged['images'] as List;
+          expect(
+            images,
+            hasLength(5),
+            reason: 'remote already covers (and exceeds) this stale '
+                'record\'s only pending image -- must not be reduced',
+          );
+          expect(
+            images.map((it) => it['image_url']),
+            [
+              'uploads/car_photos/photo_0.jpg',
+              'uploads/car_photos/photo_1.jpg',
+              'uploads/car_photos/photo_2.jpg',
+              'uploads/car_photos/photo_3.jpg',
+              'uploads/car_photos/photo_4.jpg',
+            ],
+          );
+        },
+      );
+
+      test(
+        'server has all 5 images (none carrying client_media_id/'
+        'source_media_id); a durable record with 5 DIFFERENT local '
+        'pending images also exists -- exactly 5 server images remain '
+        '(no merge triggered since remote count already equals pending '
+        'count), proving a Map/Set keyed by a missing '
+        'client_media_id/source_media_id field cannot have collapsed '
+        'them',
+        () async {
+          await seedRecord(
+            images: [
+              localImage('/tmp/A.jpg'),
+              localImage('/tmp/B.jpg'),
+              localImage('/tmp/C.jpg'),
+              localImage('/tmp/D.jpg'),
+              localImage('/tmp/E.jpg'),
+            ],
+          );
+          final car = {'id': carId, 'images': fiveServerImages()};
+
+          final merged = await OwnerPendingMediaMerge.mergeIfOwner(
+            car,
+            isOwner: true,
+          );
+
+          final images = merged['images'] as List;
+          expect(images, hasLength(5));
+          expect(
+            images.map((it) => it['image_url']).toSet(),
+            {
+              'uploads/car_photos/photo_0.jpg',
+              'uploads/car_photos/photo_1.jpg',
+              'uploads/car_photos/photo_2.jpg',
+              'uploads/car_photos/photo_3.jpg',
+              'uploads/car_photos/photo_4.jpg',
+            },
+          );
+        },
+      );
+    },
+  );
 
   group('mergeOwnedListings (bulk, My Listings)', () {
     test(

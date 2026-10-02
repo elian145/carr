@@ -16,6 +16,7 @@ import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
+import '../shared/listings/owner_media_overlay.dart';
 import '../shared/listings/owner_pending_media_merge.dart';
 import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_draft_helpers.dart';
@@ -143,7 +144,18 @@ class _MyListingsPageState extends State<MyListingsPage> {
   Future<void> _applyOwnerPendingMediaMerge(int requestGeneration) async {
     try {
       final snapshot = List<Map<String, dynamic>>.from(_cars);
-      final merged = await OwnerPendingMediaMerge.mergeOwnedListings(snapshot);
+      // Real-device acceptance fix: the live-record-only
+      // `OwnerPendingMediaMerge.mergeOwnedListings` becomes a permanent
+      // no-op for a listing the instant its backend submission finishes
+      // (well before this page ever gets to render it once) -- this
+      // bulk helper ALSO falls back to the durable
+      // `OwnerOptimisticMediaRecord` for that common case, so a
+      // brand-new listing's card shows its just-picked photos/videos
+      // immediately instead of needing the owner to open Car Details
+      // first. See `OwnerMediaOverlay.mergeOwnedListingsForCardDisplay`'s
+      // own doc comment.
+      final merged =
+          await OwnerMediaOverlay.mergeOwnedListingsForCardDisplay(snapshot);
       final processing = await OwnerPendingMediaMerge.processingCarIds(
         snapshot,
       );

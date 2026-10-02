@@ -503,6 +503,23 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                       itemBuilder: (context, index) {
                         if (index < heroEntries.length) {
                           final entry = heroEntries[index];
+                          if (entry.ownerFallbackClientMediaId != null) {
+                            final clientMediaId =
+                                entry.ownerFallbackClientMediaId!;
+                            return OwnerFallbackHeroImage(
+                              key: ValueKey(
+                                'owner_fallback_slot|$clientMediaId',
+                              ),
+                              localUrl: entry.ownerFallbackLocalUrl ??
+                                  entry.url,
+                              remoteUrl: entry.ownerFallbackRemoteUrl,
+                              detectionSource: entry.meta,
+                              onRemoteDisplayReady: () =>
+                                  _markOwnerMediaRemoteDisplayReady(
+                                clientMediaId,
+                              ),
+                            );
+                          }
                           return ListingHeroImage(
                             url: entry.url,
                             detectionSource: entry.meta,
@@ -525,6 +542,18 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     ),
             ),
           ),
+          // Optimistic-local-media fix: owner-only "Processing media"
+          // indicator -- see `_showProcessingMedia`'s own doc comment for
+          // the exact completion rule. Never shown to a non-owner.
+          if (_isListingOwner && _showProcessingMedia)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: const IgnorePointer(
+                ignoring: true,
+                child: ProcessingMediaBadge(),
+              ),
+            ),
           if (_heroMediaCount > 1)
             Positioned(
               // Dots sit just above the title sheet.

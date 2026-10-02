@@ -67,6 +67,7 @@ abstract final class ListingImageMedia {
     int? height,
     bool preserveFocus = true,
     String? previewSource,
+    String? uiMediaId,
   }) {
     final existing = item is Map
         ? Map<String, dynamic>.from(
@@ -105,7 +106,39 @@ abstract final class ListingImageMedia {
         existing['preview_source'] = trimmed;
       }
     }
+    // `_ui_media_id` (stale-media-after-delete fix): a LOCAL-only, UI-side
+    // tracking identity -- deliberately NOT the same value or concept as
+    // `SellMediaIdentity.forImageItem()`'s submission-time
+    // `client_media_id` (that one is derived from the DURABLE source path
+    // at submit time; this one is assigned once at PICK time, from the
+    // original picker path PLUS a per-pick sequence number, specifically
+    // so it survives every later `source` rewrite -- durable copy, blur
+    // merge -- unchanged, and so re-picking the exact same file after
+    // deleting it gets a genuinely NEW id, never the old one). Preserved
+    // across `map()` calls unless explicitly overridden, exactly like
+    // `preview_source` above -- see `sell_step4_logic.dart`'s pick
+    // handlers (where it's first assigned) and `_removePhotoAt`/
+    // `_syncMediaDraftToParent` (where it's used to detect and drop stale
+    // entries for a since-deleted photo).
+    if (uiMediaId != null) {
+      final trimmed = uiMediaId.trim();
+      if (trimmed.isEmpty) {
+        existing.remove('_ui_media_id');
+      } else {
+        existing['_ui_media_id'] = trimmed;
+      }
+    }
     return existing;
+  }
+
+  /// See [map]'s `uiMediaId` doc comment above. `null` for anything that
+  /// never went through a Sell-flow pick handler this session (e.g.
+  /// pre-existing edit-mode server images) -- callers must treat a `null`
+  /// id as "not tracked by this mechanism", never as "stale"/"unmatched".
+  static String? uiMediaId(dynamic item) {
+    if (item is! Map) return null;
+    final raw = (item['_ui_media_id'] ?? '').toString().trim();
+    return raw.isEmpty ? null : raw;
   }
 
   static Map<String, dynamic> withFocusY(dynamic item, double? focusY) => map(

@@ -2665,6 +2665,16 @@ class AppLocalizationsKu extends AppLocalizations {
       'سەرەتا ڕەقەم بشارەوە، یان وێنە ڕەسەنەکان بهێڵەوە';
 
   @override
+  String get notBlurredNoPlateDetected => 'شاراوە نییە — ژمارەیەک نەدۆزرایەوە';
+
+  @override
+  String get generatingBlurredPreview => 'پێشبینینی شاراوە دروست دەکرێت…';
+
+  @override
+  String get blurPreviewFailedRetryBelow =>
+      'پێشبینین سەرکەوتوو نەبوو — لە خوارەوە دەستەکی \"ئێستا ڕەقەم بشارەوە\" دابگرە بۆ هەوڵدانەوە';
+
+  @override
   String get callSeller => 'پەیوەندی بە فرۆشیار';
 
   @override

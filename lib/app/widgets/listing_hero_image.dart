@@ -118,11 +118,6 @@ class _ListingHeroImageState extends State<ListingHeroImage> {
         });
       },
       onError: (error, stack) {
-        try {
-          appLog('Hero listing image failed (attempt=$_attempt)');
-        } catch (e, st) {
-          logNonFatal(e, st, 'ListingHeroImage.error');
-        }
         if (!mounted) return;
         setState(() => _failed = true);
         if (!isPermanentHttpImageError(error) &&

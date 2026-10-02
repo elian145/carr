@@ -109,6 +109,75 @@ class SellServerTranscodeVideoRunner {
     }
   }
 
+  /// Media-readiness: Phase-A-only variant of [processAll] -- advances
+  /// every entry in [specs] through sign -> PUT -> finalize ONLY, then
+  /// stops. Never polls the resulting transcode job and never attaches
+  /// it (the backend task self-attaches -- see
+  /// `kk/tasks/video_tasks.py:transcode_car_video_source` -- and
+  /// [processAll] itself, called later as Phase B, still performs the
+  /// existing idempotent poll+attach as a compatibility backstop).
+  ///
+  /// Safe to call again later (including as part of a later, full
+  /// [processAll] pass) -- every step below is the exact same idempotent
+  /// step [processAll] itself uses; this only ever stops EARLIER, never
+  /// differently.
+  static Future<void> processAllPhaseAOnly({
+    required String draftId,
+    required String carId,
+    required List<ServerTranscodeVideoSpec> specs,
+    void Function(String draftMediaId, SellServerTranscodePhase phase)?
+        onPhase,
+  }) async {
+    for (final spec in specs) {
+      await _processOnePhaseAOnly(
+        draftId: draftId,
+        carId: carId,
+        spec: spec,
+        onPhase: onPhase,
+      );
+    }
+  }
+
+  /// True once [status] is at-or-past "finalize already succeeded" --
+  /// i.e. the transcode job has been durably enqueued (a `task_id` was
+  /// obtained), regardless of whether it has finished or been attached
+  /// yet.
+  static bool _isPhaseAStatus(ServerTranscodeVideoStatus status) => const {
+        ServerTranscodeVideoStatus.transcodeQueued,
+        ServerTranscodeVideoStatus.transcodeProcessing,
+        ServerTranscodeVideoStatus.transcodeSucceeded,
+        ServerTranscodeVideoStatus.attaching,
+        ServerTranscodeVideoStatus.attached,
+      }.contains(status);
+
+  static Future<void> _processOnePhaseAOnly({
+    required String draftId,
+    required String carId,
+    required ServerTranscodeVideoSpec spec,
+    void Function(String draftMediaId, SellServerTranscodePhase phase)?
+        onPhase,
+  }) async {
+    var state = await _loadState(draftId, spec.draftMediaId);
+    if (state.isTerminal) return;
+
+    // Same forward-advance loop as [_processOne], except it stops the
+    // moment `status` crosses into "finalize already succeeded" (or
+    // becomes terminal, or makes no forward progress this call) --
+    // NEVER reaches the poll/attach steps.
+    while (!state.isTerminal && !_isPhaseAStatus(state.status)) {
+      final before = state.status;
+      state = await _advanceOne(
+        carId: carId,
+        spec: spec,
+        state: state,
+        onPhase: onPhase,
+      );
+      await _saveState(draftId, state);
+      if (state.status == before) break;
+      if (state.status == ServerTranscodeVideoStatus.failedRecoverable) break;
+    }
+  }
+
   /// True once every entry in [specs] is durably `attached` per the
   /// submission record for [draftId] -- lets callers skip a whole
   /// re-scan of already-finished work cheaply.
@@ -292,7 +361,7 @@ class SellServerTranscodeVideoRunner {
 
       case ServerTranscodeVideoStatus.sourceStaged:
         onPhase?.call(id, SellServerTranscodePhase.processing);
-        return _finalize(spec: spec, state: state);
+        return _finalize(carId: carId, spec: spec, state: state);
 
       case ServerTranscodeVideoStatus.transcodeQueued:
       case ServerTranscodeVideoStatus.transcodeProcessing:
@@ -365,12 +434,23 @@ class SellServerTranscodeVideoRunner {
   /// rather than enqueueing a second transcode job (never a new
   /// `draft_media_id` is generated client-side for a retry).
   static Future<ServerTranscodeVideoState> _finalize({
+    required String carId,
     required ServerTranscodeVideoSpec spec,
     required ServerTranscodeVideoState state,
   }) async {
     try {
       final result = await ApiService.finalizeVideoSourceUpload(
         draftMediaId: spec.draftMediaId,
+        // Media-readiness: lets the backend advance this video's
+        // `CarMediaItem` manifest row (registered via `expected_media` at
+        // `create_car()` time under this SAME `draft_media_id`) to
+        // Phase-A-accepted, and later self-attach the finished transcode
+        // with zero further client calls -- see
+        // `kk/tasks/video_tasks.py:transcode_car_video_source`. The
+        // existing `_attach` step below is unaffected either way: it's
+        // already idempotent and returns the same `CarVideo` whether it
+        // performs the attach itself or the self-attach already did.
+        carId: carId,
       );
       final taskId = (result['task_id'] ?? '').toString();
       if (taskId.isEmpty) {

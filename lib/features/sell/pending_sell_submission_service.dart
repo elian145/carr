@@ -14,6 +14,8 @@ import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_identity.dart' as listing_identity;
 import '../../shared/listings/listing_image_media.dart';
 import '../../shared/listings/listing_status.dart';
+import '../../shared/listings/owner_media_overlay.dart';
+import '../../shared/listings/owner_optimistic_media_cleanup.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_pending_media_prefs.dart';
 import '../../shared/prefs/sell_submission_state_prefs.dart';
@@ -22,7 +24,6 @@ import 'sell_draft_helpers.dart';
 import 'sell_listing_media_upload.dart';
 import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
-import 'sell_photo_prestage.dart';
 import 'sell_server_transcode_video.dart';
 import 'sell_video_helpers.dart';
 
@@ -415,28 +416,40 @@ class PendingSellSubmissionService {
   /// Behaves identically to [submit] for every durable-record/
   /// idempotency/resume guarantee — it is the SAME underlying worker
   /// ([_ensureRunning]/[_runSubmission]); the full media pipeline
-  /// (image/video upload, and any `requiresServerTranscode` video's
-  /// 60-120s server-side transcode) keeps running to completion in the
-  /// background exactly as before, unaffected by whether/how long this
-  /// method's caller keeps awaiting the Future it returns.
+  /// (image/video processing, server-side transcoding, and final attach —
+  /// "Phase B") keeps running to completion in the background exactly as
+  /// before, unaffected by whether/how long this method's caller keeps
+  /// awaiting the Future it returns.
   ///
-  /// The difference is only WHEN the returned Future resolves: as soon as
-  /// the backend listing record itself exists (create succeeded, or
-  /// already existed from an earlier attempt) — NOT once every image/
-  /// video has finished uploading/attaching. This is what lets the Sell
-  /// UI navigate to My Listings / show submission success the moment the
-  /// listing is safely persisted, without making the user wait on
-  /// image/video upload or a long server-side video transcode.
+  /// The difference is only WHEN the returned Future resolves: once the
+  /// backend listing record exists AND every media item it declared has
+  /// completed "Phase A" (source bytes durably server/R2-owned and the
+  /// required async job durably accepted — see `kk/media_readiness.py`
+  /// and [SellListingMediaUpload.runPhaseAOnly]/[waitForPhaseAComplete])
+  /// — NEVER once every image/video has finished resizing/blurring,
+  /// server-side transcoding, or final attachment (that is Phase B,
+  /// never awaited here). This is what lets the Sell UI navigate to My
+  /// Listings / show submission success as soon as it is contractually
+  /// true that "Flutter may now be killed permanently and backend/Celery
+  /// alone can finish the listing" — without making the user wait for any
+  /// of Phase B.
   ///
   /// Returns `null` in the same situations [submit] would (e.g. signed out
-  /// between validation and this call). Rethrows only when the listing
-  /// itself could never be created (validation/auth/permanent failure
-  /// before any carId existed) — the same error [submit] would have
-  /// thrown in that case. A failure AFTER the listing exists (e.g. a
-  /// video upload permanently failing) is never thrown here — it is
-  /// surfaced only via [events]/[statusNotifier], like any other
-  /// background media failure, because the seller must still see their
-  /// listing succeed and continue past Submit.
+  /// between validation and this call). Rethrows when the listing itself
+  /// could never be created (validation/auth/permanent failure before any
+  /// carId existed) — the same error [submit] would have thrown in that
+  /// case — AND ALSO when the listing was created but Phase A itself could
+  /// not be completed (e.g. every declared image became unreadable before
+  /// its transfer ran): the whole submission attempt is durably marked
+  /// `retryable`/`needsAttention` exactly like any other failure (see the
+  /// `catch` block in [_runSubmission]), and this method's caller sees
+  /// that same rejection rather than a false "submitted successfully". A
+  /// failure DURING Phase B (e.g. a video permanently failing to
+  /// transcode, after Phase A already succeeded) is never thrown here —
+  /// it is surfaced only via [events]/[statusNotifier], like any other
+  /// background media failure, because by that point the contract's
+  /// "submitted successfully" has already correctly fired and the seller
+  /// must still see their listing succeed and continue past Submit.
   Future<SellListingSubmitResult?> submitFast({
     required String draftId,
     required Map<String, dynamic> carData,
@@ -454,13 +467,56 @@ class PendingSellSubmissionService {
     if (existingCarId.isNotEmpty) {
       // Listing already exists from an earlier attempt (retry/resume of a
       // `retryable`/`needsAttention` draft whose create step already
-      // succeeded) -- nothing to wait for. Kick off/join the background
-      // worker for any remaining media and return immediately.
-      unawaited(_ensureRunning(id, onPhase: onPhase));
-      return SellListingSubmitResult(
-        id: existingCarId,
-        pendingReview: record.pendingReview,
-      );
+      // succeeded). Media-readiness contract fix: this must NOT return
+      // immediately unless Phase A has *actually* already completed for
+      // every expected item -- otherwise a `submitFast()` call racing a
+      // still-in-progress (or not-yet-started) Phase A for an
+      // already-created car would report success before the contract's
+      // "zero expected items with phase_a_completed_at == null"
+      // requirement holds. Edit-mode submissions never register a
+      // create-time manifest at all, so they have nothing to check here.
+      // A single quick check (never itself a source of the "wait", just
+      // "is it already done") -- any error/uncertainty falls through to
+      // the same register-a-signal-and-wait path a fresh submission uses,
+      // never the other way around.
+      final alreadyPhaseAReady = record.isEdit ||
+          await SellListingMediaUpload.waitForPhaseAComplete(
+            existingCarId,
+            maxAttempts: 1,
+          );
+      if (alreadyPhaseAReady) {
+        // Kick off/join the background worker for any remaining Phase B
+        // media and return immediately -- there is nothing left to wait
+        // for.
+        unawaited(_ensureRunning(id, onPhase: onPhase));
+        return SellListingSubmitResult(
+          id: existingCarId,
+          pendingReview: record.pendingReview,
+        );
+      }
+      // Phase A is not yet confirmed complete -- join the SAME
+      // register-a-signal-and-wait path a fresh submission uses below;
+      // `_runSubmission`'s own Phase-A gate resolves this signal the
+      // moment it passes (it runs on every pass through here, including
+      // this resumed one -- see the "Media-readiness contract fix"
+      // comment there).
+      final resumeSignal = _registerCarReadySignal(id);
+      // Defensive fallback only, mirroring the fresh-creation branch
+      // below: `_runSubmission` always resolves/rejects `resumeSignal`
+      // itself well before its own Future settles. Without this handler
+      // attached, a resumed retry that ultimately throws (e.g. the SAME
+      // item fails again) would leave `_ensureRunning`'s Future with no
+      // listener at all once `resumeSignal` is already settled -- an
+      // uncaught async zone error for a failure the caller already
+      // learned about through `resumeSignal.future`.
+      unawaited(_ensureRunning(id, onPhase: onPhase).then((result) {
+        if (!resumeSignal.isCompleted && result != null) {
+          resumeSignal.complete(result);
+        }
+      }, onError: (Object e, StackTrace st) {
+        if (!resumeSignal.isCompleted) resumeSignal.completeError(e, st);
+      }));
+      return resumeSignal.future;
     }
 
     final signal = _registerCarReadySignal(id);
@@ -960,10 +1016,26 @@ class PendingSellSubmissionService {
       // writing, so this function's own job (persisting
       // `completedMediaCount`) never regresses a DIFFERENT field it
       // doesn't own.
+      // Multi-photo partial-failure fix: `SellAsyncJobTracker.record()`/
+      // `.clear()` (see `sell_image_job_polling.dart`) is the EXACT same
+      // kind of independent fresh-read/merge/write cycle as the
+      // server-transcode runner's `_saveState` above -- it records each
+      // async image-processing job id into `pendingAsyncImageJobs`
+      // DURING Phase A (`_enqueuePhaseAImages`), which for a photo
+      // always runs BEFORE this callback fires for a normal video's own
+      // atomic Phase-A attach (images are processed first in
+      // `runPhaseAOnly`). Without also re-merging this field, the stale
+      // `record` snapshot's (pre-Phase-A) EMPTY `pendingAsyncImageJobs`
+      // would silently clobber that just-written job id the instant this
+      // upsert lands -- Phase B's own tracker lookup would then find
+      // nothing and enqueue a completely redundant second job for the
+      // SAME still-pending photo (backend-safe, never a duplicate row,
+      // but a wasted upload/Celery task every single time).
       final freshestForMerge = await SellSubmissionStatePrefs.load(draftId);
       if (freshestForMerge != null) {
         record = record.copyWith(
           serverTranscodeVideos: freshestForMerge.serverTranscodeVideos,
+          pendingAsyncImageJobs: freshestForMerge.pendingAsyncImageJobs,
         );
       }
       await SellSubmissionStatePrefs.upsert(record);
@@ -1010,14 +1082,22 @@ class PendingSellSubmissionService {
             logNonFatal(e, st);
           }
         } else {
-          // Small optimization (safe/idempotent): pre-stage local photos to
-          // storage so create->attach is one small call instead of a big
-          // multipart upload landing right after create.
-          try {
-            await SellPhotoPrestage.stageCarData(carData, draftId: draftId);
-          } catch (e, st) {
-            logNonFatal(e, st);
-          }
+          // Media-readiness contract fix: this used to pre-stage local
+          // photos to storage (full upload + poll-to-completion) BEFORE
+          // `create_car()` even ran, so the seller waited on backend image
+          // processing before the listing existed at all -- exactly the
+          // blocking behavior the new-listing submission contract
+          // forbids (see `SellListingMediaUpload.runPhaseAOnly`'s doc
+          // comment). `create_car()` now always runs immediately with
+          // whatever local/staged media [carData] already has; every
+          // still-local image is instead transferred through Phase A
+          // (raw bytes durably server-owned + async job accepted, never
+          // blocking on processing) right after `create_car()` returns.
+          // `SellPhotoPrestage` itself is untouched and still used,
+          // unchanged, by the edit-mode-only UI-layer callers in
+          // `sell_step4_build.dart`/`sell_step5_logic.dart` (this service
+          // never called it for the edit-mode `if` branch above either --
+          // edit mode calls `ApiService.updateCar` directly).
           final payload = buildSellCarCreatePayload(carData);
           Map<String, dynamic> created;
           try {
@@ -1076,25 +1156,14 @@ class PendingSellSubmissionService {
           '${record.totalMediaCount} status=${record.status.name} '
           'record=$draftId carId=$carId',
         );
-        // Fast-submission fix: the listing itself now durably exists --
-        // resolve any [submitFast] caller waiting on THIS draftId right
-        // now, before any media upload/server-transcode work below even
-        // starts. This is the entire mechanism behind [submitFast]
-        // returning as soon as the listing is created instead of once
-        // every image/video has finished: this call is a no-op unless a
-        // [submitFast] caller actually registered a signal for this
-        // draftId (see [_registerCarReadySignal]/[_carReadySignals]).
-        _resolveCarReadySignals(
-          draftId,
-          SellListingSubmitResult(id: carId, pendingReview: pendingReview),
-        );
         // Matches the pre-existing timing: the legacy draft snapshot/
         // archive entry is cleared as soon as the listing exists (not only
         // once media finishes) so a killed-and-resumed media phase never
         // shows both a "draft" and the new listing at once. Durable draft
-        // media itself is kept until upload actually finishes — see
-        // [_clearDurableDraftMedia] below — since `carData` above still
-        // reads local files from it.
+        // media itself is kept until every expected item is confirmed
+        // remote-display-ready on this device -- see
+        // `OwnerOptimisticMediaCleanup`'s doc comment -- since `carData`
+        // above still reads local files from it.
         if (!record.isEdit) {
           unawaited(discardSellDraftById(draftId));
         }
@@ -1124,6 +1193,10 @@ class PendingSellSubmissionService {
       // e.g. from a local file having since disappeared), so "process
       // restart reconstructs progress from server state" holds even if
       // the process is killed again immediately after this resume starts.
+      // Deliberately runs BEFORE the Phase-A gate below (a cheap read,
+      // never itself an upload) so this baseline is captured/persisted
+      // even if Phase A -- which, for a normal video, is a real upload
+      // that can genuinely stall -- has not yet completed.
       if (carIdAlreadyExisted && totalMedia > 0) {
         final confirmed = await SellListingMediaUpload.confirmedServerMediaCount(
           carId: carId,
@@ -1141,10 +1214,109 @@ class PendingSellSubmissionService {
           );
         }
       }
+
+      // Media-readiness contract fix: `submitFast()`'s ready signal must
+      // mean the Car exists AND every expected media item has completed
+      // Phase A (source bytes durably server/R2-owned + the required
+      // async job durably accepted -- see `kk/media_readiness.py`) --
+      // NEVER merely "the Car row was created". This is Phase A ONLY:
+      // it enqueues/finalizes/uploads exactly enough for the backend to
+      // accept every declared item, without waiting for image
+      // resize/blur, server-side transcoding, or any final attach to
+      // finish (those continue independently below, as Phase B, and the
+      // backend task itself self-attaches -- this client never needs to
+      // call back for it). Edit-mode submissions never register a
+      // create-time `expected_media` manifest (only `create_car()` does),
+      // so this gate is create-mode only -- an edit's own media keeps
+      // using the pre-existing synchronous attach/upload semantics
+      // unchanged in the Phase B block below. Runs on EVERY pass through
+      // here (fresh create AND a resumed run after an app kill mid-Phase
+      // A) -- safe/idempotent, see [SellListingMediaUpload.runPhaseAOnly].
+      if (!record.isEdit) {
+        reportPhase(SellSubmissionPhase.creating, completed: completedSoFar);
+        // Deliberately NOT allowed to abort this run (no rethrow below):
+        // Phase A exists ONLY to let [submitFast] resolve early in the
+        // common case -- it must never make the OVERALL submission's
+        // success/failure outcome (which Phase B alone still fully
+        // determines, exactly as before this split existed) any stricter
+        // than it already was. If Phase A hiccups (transiently or
+        // permanently) for one item, Phase B below still gets its normal,
+        // unchanged chance to attach/credit every OTHER item and to retry
+        // (and, for a genuinely permanent failure, fail) that same item
+        // itself -- e.g. a permanently-failing video must still let
+        // already-enqueued photos/damage-photos get their normal Phase B
+        // attach+`persistProgress` credit, matching this method's
+        // pre-existing partial-progress guarantee. Any [submitFast]
+        // caller waiting on THIS draftId is rejected right away, though
+        // (see below) -- "Phase A did not complete" is itself already a
+        // legitimate, accurate rejection reason, regardless of whether
+        // Phase B later happens to still succeed on retry.
+        try {
+          await SellListingMediaUpload.runPhaseAOnly(
+            carId: carId,
+            carData: carData,
+            draftId: draftId,
+            multipartFileBuilder: buildVideoMultipartFile,
+            // A normal video's Phase A call is its full, final atomic
+            // attach (see [SellListingMediaUpload.runPhaseAOnly]'s own doc
+            // comment) -- credit it here, the same way Phase B's own
+            // `onMediaConfirmed` below would have, so this progress is
+            // never silently lost once Phase B later finds it already
+            // attached and skips it.
+            onMediaConfirmed: (delta) async {
+              if (delta <= 0) return;
+              await persistProgress(completedSoFar + delta);
+            },
+          );
+          final phaseAReady =
+              await SellListingMediaUpload.waitForPhaseAComplete(carId);
+          if (!phaseAReady) {
+            throw StateError(
+              'Media did not finish its initial transfer. Please try again.',
+            );
+          }
+          // Fast-submission fix: the listing exists AND every expected
+          // media item has now completed Phase A -- resolve any
+          // [submitFast] caller waiting on THIS draftId. This call is a
+          // no-op unless a [submitFast] caller actually registered a
+          // signal for this draftId (see [_registerCarReadySignal]/
+          // [_carReadySignals]); Phase B (image/video processing, server
+          // transcoding, final attach) continues independently below and
+          // is NEVER awaited by [submitFast].
+          _resolveCarReadySignals(
+            draftId,
+            SellListingSubmitResult(id: carId, pendingReview: pendingReview),
+          );
+        } catch (e, st) {
+          logNonFatal(e, st, 'PendingSellSubmissionService.runPhaseAOnly');
+          _rejectCarReadySignals(draftId, e, st);
+        }
+      } else {
+        // Edit-mode: no create-time `expected_media` manifest exists at
+        // all for this record, so there is nothing for a Phase-A gate to
+        // check -- resolve any (edit-mode) [submitFast]-style caller
+        // immediately, exactly as before this split existed.
+        _resolveCarReadySignals(
+          draftId,
+          SellListingSubmitResult(id: carId, pendingReview: pendingReview),
+        );
+      }
+
       final listingMediaConfirmed = await SellListingMediaUpload.uploadForCar(
         carId: carId,
         carData: carData,
         draftId: draftId,
+        // Architecture fix (Section 1: "the client must not attach
+        // processed image job results for new listings -- the worker
+        // already self-attaches them"): `!record.isEdit` is the exact
+        // same signal that gates `runPhaseAOnly`/`waitForPhaseAComplete`
+        // just above -- a NEW listing declared an `expected_media`
+        // manifest at `create_car()` time and Phase A already ran for
+        // it, so this call must not re-poll/re-attach items Phase A
+        // already owns. Edit-mode records have no such manifest, so this
+        // stays `false` there and every existing edit-mode behavior is
+        // completely unchanged.
+        isNewListing: !record.isEdit,
         multipartFileBuilder: buildVideoMultipartFile,
         onPhase: (phase) {
           switch (phase) {
@@ -1243,7 +1415,44 @@ class PendingSellSubmissionService {
         // call it again here too — idempotent — in case this draft's
         // create step happened in an earlier process/run than this one.
         unawaited(discardSellDraftById(draftId));
-        unawaited(_clearDurableDraftMedia(draftId));
+        // Optimistic-local-media fix (Critical Issue 1): backend success
+        // here is NOT the same thing as "the owner's device has visibly
+        // confirmed every remote photo/video yet" -- unconditionally
+        // wiping this draft's local media directory at this exact moment
+        // (the OLD behavior) could blank a still-loading tile, and is not
+        // restart-safe (kill the app before every remote asset is
+        // confirmed and there would be nothing left to fall back to).
+        // Snapshots/merges the durable `OwnerOptimisticMediaRecord` for
+        // `carId` from this record's own carData (guarantees it exists
+        // even if Car Details was never opened during this submission),
+        // then deletes the whole draft directory ONLY if every expected
+        // item already turns out to be remote-display-ready (e.g. Car
+        // Details was open the whole time and already confirmed
+        // everything, or there was no media at all) -- otherwise leaves
+        // the directory AND the record alone; per-item/whole-record
+        // cleanup then happens later, driven entirely by real on-device
+        // decode/initialization confirmations (see
+        // `owner_optimistic_media_cleanup.dart`).
+        //
+        // Real-device acceptance fix: this USED to be `unawaited(...)` --
+        // a fire-and-forget write racing against whatever the caller
+        // does the instant this method returns (e.g. the UI navigating
+        // straight to Car Details). Confirmed on a real device: Car
+        // Details opening within ~100ms of submission completing could
+        // read `OwnerOptimisticMediaPrefs` BEFORE this write had actually
+        // landed, finding no record at all and silently skipping the
+        // "Processing media" badge entirely even though 4 of 5 images
+        // (and the video) genuinely were not yet server-attached.
+        // Awaiting it here (a single small SharedPreferences write --
+        // consistent with the other awaits already in this exact success
+        // path, e.g. `SellSubmissionStatePrefs.remove` above) guarantees
+        // the durable record exists by the time ANY caller can react to
+        // this submission being done.
+        await OwnerOptimisticMediaCleanup.snapshotAtSubmissionCompleteAndMaybeFinalize(
+          listingId: carId,
+          freshItems: OwnerMediaOverlay.snapshotItemsFromRecord(record),
+          draftId: draftId,
+        );
       }
       unawaited(AppHaptics.success());
       statusNotifier.value = null;
@@ -1267,6 +1476,18 @@ class PendingSellSubmissionService {
       _rejectCarReadySignals(draftId, e, st);
       final retryable = isRetryableSellSubmissionError(e);
       final statusCode = e is ApiException ? e.statusCode : null;
+      // Multi-photo partial-failure fix (same rationale as
+      // `persistProgress`'s identical merge above): this is the LAST
+      // write before the user sees retryable/needsAttention, so a stale
+      // `pendingAsyncImageJobs`/`serverTranscodeVideos` clobbered here --
+      // e.g. an async image job got enqueued and recorded moments ago,
+      // but no `onMediaConfirmed` fired afterward to merge it via
+      // `persistProgress` before THIS exception hit -- would cause the
+      // very next manual retry to enqueue a completely redundant second
+      // job for a photo/video that is already durably in flight.
+      final freshestForTerminalMerge = await SellSubmissionStatePrefs.load(
+        draftId,
+      );
       final updated = record.copyWith(
         status: retryable
             ? SellSubmissionStatus.retryable
@@ -1277,6 +1498,8 @@ class PendingSellSubmissionService {
         lastErrorStatusCode: statusCode,
         lastErrorRetryable: retryable,
         updatedAt: nowMs(),
+        pendingAsyncImageJobs: freshestForTerminalMerge?.pendingAsyncImageJobs,
+        serverTranscodeVideos: freshestForTerminalMerge?.serverTranscodeVideos,
       );
       await SellSubmissionStatePrefs.upsert(updated);
       appLog(
@@ -1482,17 +1705,6 @@ class PendingSellSubmissionService {
   // the correctness gap it fixed: a raw server-side item COUNT can't tell
   // "N images on the server" apart from "N images on the server, only some
   // of which are actually in THIS carData's list").
-
-  Future<void> _clearDurableDraftMedia(String draftId) async {
-    try {
-      final dir = await SellDraftMediaPersistence.draftDirectory(draftId);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
-      }
-    } catch (e, st) {
-      logNonFatal(e, st);
-    }
-  }
 
   /// F-11-style tiny bounded retry (2 attempts total) around the single
   /// `POST /api/cars` create call, reusing the SAME [idempotencyKey] for

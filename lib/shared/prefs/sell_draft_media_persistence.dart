@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -9,6 +10,17 @@ import '../listings/listing_image_media.dart';
 
 /// Copies picked listing media into app documents so sell drafts survive restarts.
 class SellDraftMediaPersistence {
+  /// Test-only interception point: when set, awaited at the very start of
+  /// [_copyOrReadInto] for every file, keyed by its ORIGINAL (pre-copy)
+  /// local path. Lets tests simulate a durable copy that is still
+  /// pending, completes after an arbitrary delay, completes out of
+  /// order, or fails for one specific file -- without depending on real
+  /// file-system timing. Always `null` in production; mirrors this
+  /// repo's existing `@visibleForTesting` override convention (e.g.
+  /// `AuthService.debugProfileRetryDelaysOverride`,
+  /// `debugLogNonFatalOverride`).
+  @visibleForTesting
+  static Future<void> Function(String localPath)? debugBeforeCopyOverride;
   static bool _isRemote(String path) =>
       path.startsWith('http://') || path.startsWith('https://');
 
@@ -90,6 +102,8 @@ class SellDraftMediaPersistence {
   }
 
   static Future<bool> _copyOrReadInto(File dest, String local) async {
+    final hook = debugBeforeCopyOverride;
+    if (hook != null) await hook(local);
     final src = File(local);
     if (await src.exists()) {
       try {

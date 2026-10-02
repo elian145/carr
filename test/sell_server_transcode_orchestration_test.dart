@@ -95,6 +95,13 @@ void main() {
   // test force one video to stall for a whole `processAll()` call without
   // waiting out any real poll budget/delay.
   String? pollFailFirstForTaskId;
+  // Section C/F.4 audit addition: makes EVERY poll for one specific
+  // task_id report a genuine terminal `state: 'FAILURE'` (a real,
+  // permanent server-side transcode failure), while every other task_id
+  // keeps polling SUCCESS normally -- lets a test prove one video's
+  // permanent Phase-B failure never affects a sibling video's own
+  // independent success.
+  String? pollFailureForTaskId;
   late Map<String, int> pollAttemptCountByTaskId;
   // Scenario O2 only: overrides finalize's `job_state` from the default
   // `'queued'` to `'processing'` -- see that test's own comment for why.
@@ -134,6 +141,7 @@ void main() {
     attachTranscodeCallsLog = <Map<String, String>>[];
     finalizeGate = null;
     pollFailFirstForTaskId = null;
+    pollFailureForTaskId = null;
     pollAttemptCountByTaskId = <String, int>{};
     finalizeJobStateOverride = null;
 
@@ -260,6 +268,13 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
+        if (taskId == pollFailureForTaskId) {
+          return http.Response(
+            json.encode({'task_id': taskId, 'state': 'FAILURE'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
         return http.Response(
           json.encode({'task_id': taskId, 'state': 'SUCCESS'}),
           200,
@@ -290,6 +305,28 @@ void main() {
             'video': {'id': videoRowIdCounter, 'video_url': 'https://cdn.fake.test/v.mp4'},
           }),
           201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+
+      // ---- GET /api/cars/<id>/media-summary (media-readiness Phase A) ----
+      // This fake server never registers real `CarMediaItem` manifest
+      // rows -- Phase A here is confirmed complete purely by the sign->
+      // PUT->finalize / upload/attach calls above having already run
+      // (tracked via `signCallsLog`/`putCalls`/`finalizeCallsLog`/
+      // `videoUploadLog`/`imageAttachCallsLog`), matching the real
+      // backend's guarantee that those calls durably advance
+      // `phase_a_completed_at` synchronously before returning.
+      final mediaSummaryMatch =
+          RegExp(r'^/api/cars/([^/]+)/media-summary$').firstMatch(path);
+      if (method == 'GET' && mediaSummaryMatch != null) {
+        return http.Response(
+          json.encode({
+            'media_status': 'processing',
+            'items': <dynamic>[],
+            'phase_a_complete': true,
+          }),
+          200,
           headers: {'content-type': 'application/json'},
         );
       }
@@ -873,6 +910,91 @@ void main() {
         expect(putCalls, 2);
         expect(finalizeCallsLog.length, 2);
         expect(attachTranscodeCallsLog.length, 2);
+      },
+    );
+
+    test(
+      'Section F.4: video A permanently fails at its own Phase-B step '
+      '(the Celery transcode job itself reports FAILURE -- a corrupt/'
+      'unsupported source, never a network blip) while sibling video B '
+      'fully succeeds in the SAME submission -- B ends up attached, A '
+      'ends up failedPermanent (never attached) and is never retried, '
+      "and neither video's outcome corrupts the other's",
+      () async {
+        const draftId = 'two_video_o3_phaseb_failure';
+        const draftMediaIdA = 'vst_o3_a';
+        const draftMediaIdB = 'vst_o3_b';
+        final sourceA = await writeLocalFile('two_video_o3_a.mov');
+        final sourceB = await writeLocalFile('two_video_o3_b.mov');
+
+        // A's Celery job reaches a genuine terminal FAILURE (e.g. the
+        // worker's own ffprobe validation rejected the source after
+        // upload) -- this is a Phase-B failure: A's Phase A (sign -> PUT
+        // -> finalize) already fully succeeded, exactly like B's.
+        pollFailureForTaskId = taskIdFor(draftMediaIdA);
+
+        final carData = _carData(
+          serverTranscodeVideos: ServerTranscodeVideoSpec.listToJson([
+            ServerTranscodeVideoSpec(
+              draftMediaId: draftMediaIdA,
+              localSourcePath: sourceA,
+              sourceByteSize: 256,
+              sourceMimeType: 'video/quicktime',
+            ),
+            ServerTranscodeVideoSpec(
+              draftMediaId: draftMediaIdB,
+              localSourcePath: sourceB,
+              sourceByteSize: 256,
+              sourceMimeType: 'video/quicktime',
+            ),
+          ]),
+        );
+
+        // submit() itself still reports overall completion for the
+        // CLIENT's own submission-tracking purposes once every declared
+        // media item has reached SOME terminal outcome (attached OR
+        // permanently failed -- see `_terminalServerTranscodeCount`) --
+        // there is nothing left this client could usefully retry for A,
+        // and B's own success must never be blocked by A's unrelated
+        // failure. The backend's OWN independent `Car.media_status`
+        // still correctly becomes/stays "failed" for exactly this reason
+        // (see `kk/tests/test_media_readiness_manifest.py`'s
+        // `TestScenario6PermanentFailure`), which is what actually keeps
+        // this listing blocked from admin activation -- that guarantee
+        // is orthogonal to this client-side record's own lifecycle.
+        final result = await PendingSellSubmissionService.instance.submit(
+          draftId: draftId,
+          carData: carData,
+        );
+        expect(result, isNotNull);
+
+        // -- both videos independently reached Phase A (sign/PUT/finalize)
+        expect(signCallsLog, [draftMediaIdA, draftMediaIdB]);
+        expect(putCalls, 2);
+        expect(finalizeCallsLog, [draftMediaIdA, draftMediaIdB]);
+
+        // -- B attached; A never reached attach at all (a FAILURE poll
+        //    result goes straight to failedPermanent, never calls attach).
+        expect(attachTranscodeCallsLog.length, 1);
+        expect(attachTranscodeCallsLog.single['draftMediaId'], draftMediaIdB);
+        expect(
+          attachTranscodeCallsLog.single['carId'],
+          isNotNull,
+          reason: "B's own attach call must have gone through for THIS "
+              'car -- unaffected by A being in the same submission',
+        );
+
+        // -- the durable record is gone (every item reached a terminal
+        //    outcome) -- and a later resumeAll() is a complete no-op,
+        //    proving A's permanent failure is never retried and B is
+        //    never re-attached.
+        expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+        final resumed = await PendingSellSubmissionService.instance.resumeAll();
+        expect(resumed, isFalse);
+        expect(signCallsLog.length, 2);
+        expect(putCalls, 2);
+        expect(finalizeCallsLog.length, 2);
+        expect(attachTranscodeCallsLog.length, 1);
       },
     );
   });

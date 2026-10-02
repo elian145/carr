@@ -563,12 +563,14 @@ class ApiService {
     bool blurPlates = false,
     String imageKind = 'listing',
     bool async = false,
+    List<String?>? clientMediaIds,
   }) => _ApiServiceListings.uploadCarImages(
     carId,
     imageFiles,
     blurPlates: blurPlates,
     imageKind: imageKind,
     async: async,
+    clientMediaIds: clientMediaIds,
   );
 
   /// P-01: poll one Celery image-processing job's status.
@@ -606,9 +608,11 @@ class ApiService {
   static Future<Map<String, dynamic>> finalizeVideoSourceUpload({
     required String draftMediaId,
     String? stagingKey,
+    String? carId,
   }) => _ApiServiceVideoTranscode.finalizeVideoSourceUpload(
     draftMediaId: draftMediaId,
     stagingKey: stagingKey,
+    carId: carId,
   );
 
   static Future<Map<String, dynamic>> attachTranscodedVideo({
@@ -659,14 +663,19 @@ class ApiService {
   static List<String>? getLastProcessedServerPaths() =>
       _ApiServiceListings.getLastProcessedServerPaths();
 
+  static Future<Map<String, dynamic>> getCarMediaSummary(String carId) =>
+      _ApiServiceListings.getCarMediaSummary(carId);
+
   static Future<Map<String, dynamic>> uploadCarVideos(
     String carId,
     List<XFile> videoFiles, {
     Future<http.MultipartFile> Function(XFile file)? multipartFileBuilder,
+    List<String?>? clientMediaIds,
   }) => _ApiServiceListings.uploadCarVideos(
     carId,
     videoFiles,
     multipartFileBuilder: multipartFileBuilder,
+    clientMediaIds: clientMediaIds,
   );
 
   static Future<Map<String, dynamic>> getFavorites({

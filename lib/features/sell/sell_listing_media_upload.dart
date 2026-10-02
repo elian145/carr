@@ -11,6 +11,7 @@ import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_image_media.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import 'sell_image_job_polling.dart';
+import 'sell_media_identity.dart';
 import 'sell_photo_prestage.dart';
 import 'sell_server_transcode_runner.dart';
 import 'sell_server_transcode_video.dart';
@@ -71,6 +72,21 @@ class SellListingMediaUpload {
     return item?.toString().trim();
   }
 
+  /// Placeholder-regression fix (real-device evidence): zips each row of
+  /// the attach response against the ORIGINAL item it actually belongs
+  /// to. [sourceItems] is the caller's FULL original item list, but the
+  /// response's `rows` can be SHORTER than it whenever an upload path
+  /// drops a failed/timed-out item before attaching the rest (see
+  /// [_uploadImagesViaAsyncJobs]'s `relPaths` compaction) -- zipping
+  /// `rows[i]` against `sourceItems[i]` by raw position in that case
+  /// silently misassigns every row from the first failure onward (wrong
+  /// item gets the id, and the true last-successful item gets none at
+  /// all). When the upload path recorded which original item survived
+  /// that compaction (`response['_client_succeeded_sources']`, aligned
+  /// 1:1 with `rows`), use THAT instead of raw position; only fall back
+  /// to positional zipping when it is absent (the pre-existing,
+  /// already-1:1 call sites, e.g. the synchronous `attachCarImages`
+  /// legacy path with no prior compaction).
   static void _collectUploadedImageIds(
     Map<String, int> idsBySource,
     List<dynamic> sourceItems,
@@ -78,6 +94,17 @@ class SellListingMediaUpload {
   ) {
     final rows = response?['images'] ?? response?['uploaded'];
     if (rows is! List) return;
+    final succeededSources = response?['_client_succeeded_sources'];
+    if (succeededSources is List && succeededSources.length == rows.length) {
+      for (var i = 0; i < rows.length; i++) {
+        final row = rows[i];
+        if (row is! Map) continue;
+        final id = int.tryParse((row['id'] ?? '').toString());
+        final source = succeededSources[i].toString();
+        if (id != null && source.isNotEmpty) idsBySource[source] = id;
+      }
+      return;
+    }
     for (var i = 0; i < sourceItems.length && i < rows.length; i++) {
       final row = rows[i];
       if (row is! Map) continue;
@@ -333,6 +360,29 @@ class SellListingMediaUpload {
     required List<XFile> files,
     required String imageKind,
     SellAsyncJobTracker? tracker,
+
+    /// Media-readiness: clientMediaIds[i] is the manifest id for files[i]
+    /// (positionally aligned, same length as [files]) -- see
+    /// [ApiService.uploadCarImages]'s doc for the full contract. A job
+    /// resumed from [tracker] (already enqueued in an earlier, possibly
+    /// killed, process) never re-sends its id -- the manifest row was
+    /// already advanced to `processing` by that earlier enqueue call.
+    List<String?>? clientMediaIds,
+
+    /// Placeholder-regression fix: positionally aligned with [files]
+    /// (same length) when provided -- used ONLY to reconstruct which
+    /// ORIGINAL item each row of the attach response below corresponds
+    /// to, since [relPaths] (built further down) drops any index whose
+    /// job failed/timed out, breaking a naive 1:1 zip against the full
+    /// original item list once any item in the batch fails (see
+    /// `_collectUploadedImageIds`'s doc comment).
+    List<dynamic>? items,
+
+    /// Architecture fix (see [SellMediaIdentity.skipBlurForFinalSubmission]):
+    /// forwarded to the enqueue call below as `blurPlates: !skipBlur`.
+    /// Defaults to `true` (the pre-fix, always-unblurred behavior) so any
+    /// not-yet-updated caller keeps its exact previous behavior.
+    bool skipBlur = true,
   }) async {
     // resolved[i] corresponds to files[i]; filled either by reusing a
     // previously-recorded job or by a fresh enqueue below.
@@ -357,11 +407,19 @@ class SellListingMediaUpload {
 
     if (freshIndexes.isNotEmpty) {
       final freshFiles = [for (final i in freshIndexes) files[i]];
+      final freshClientMediaIds = clientMediaIds == null
+          ? null
+          : [
+              for (final i in freshIndexes)
+                i < clientMediaIds.length ? clientMediaIds[i] : null,
+            ];
       final enqueueResponse = await ApiService.uploadCarImages(
         carId,
         freshFiles,
         imageKind: imageKind,
         async: true,
+        clientMediaIds: freshClientMediaIds,
+        blurPlates: !skipBlur,
       );
       final rawJobIds = enqueueResponse['job_ids'];
       final jobIds = rawJobIds is List
@@ -408,7 +466,27 @@ class SellListingMediaUpload {
       );
     }
 
-    return CarService().attachCarImages(carId, relPaths, kind: imageKind);
+    // Placeholder-regression fix: [relPaths] is a COMPACTED (nulls
+    // dropped) view of [resolved] -- when [items] is available and
+    // aligned with [files], record which ORIGINAL item survived that
+    // compaction, in the SAME order as [relPaths], so the caller can zip
+    // the attach response's rows against the correct original item
+    // instead of blindly against the full, un-compacted original list.
+    final succeededSources = (items != null && items.length == files.length)
+        ? [
+            for (var i = 0; i < resolved.length; i++)
+              if (resolved[i] != null) ListingImageMedia.source(items[i]),
+          ]
+        : null;
+    final response = await CarService().attachCarImages(
+      carId,
+      relPaths,
+      kind: imageKind,
+    );
+    if (succeededSources != null) {
+      response['_client_succeeded_sources'] = succeededSources;
+    }
+    return response;
   }
 
   /// Uploads [files] and treats "client timed out after the server saved them"
@@ -426,11 +504,30 @@ class SellListingMediaUpload {
     String imageKind = 'listing',
     int? alreadyOnServer,
     String? draftId,
+
+    /// Media-readiness: draft-media items positionally aligned with
+    /// [files] (same length), used ONLY to derive each file's stable
+    /// `client_media_id` (see [SellMediaIdentity.forImageItem]) -- never
+    /// read for anything else here. `null`/mismatched length is fully
+    /// backwards compatible (no ids sent, matching pre-existing
+    /// behavior).
+    List<dynamic>? items,
+
+    /// Architecture fix (see [SellMediaIdentity.skipBlurForFinalSubmission]):
+    /// forwarded to [_uploadImagesViaAsyncJobs]. Defaults to `true` (the
+    /// pre-fix, always-unblurred behavior) for any not-yet-updated caller.
+    bool skipBlur = true,
   }) async {
     if (files.isEmpty) return <String, dynamic>{};
     final kind = imageKind.toLowerCase() == 'damage' ? 'damage' : 'listing';
     final before = alreadyOnServer ?? await _remoteImageCount(carId, kind);
     final tracker = SellAsyncJobTracker(draftId);
+    final clientMediaIds = (items != null && items.length == files.length)
+        ? [
+            for (final item in items)
+              SellMediaIdentity.forImageItem(item, kind: kind),
+          ]
+        : null;
     Object? lastError;
     StackTrace? lastStack;
     for (var attempt = 0; attempt < 3; attempt++) {
@@ -452,6 +549,9 @@ class SellListingMediaUpload {
           files: files,
           imageKind: imageKind,
           tracker: tracker,
+          clientMediaIds: clientMediaIds,
+          items: items,
+          skipBlur: skipBlur,
         );
       } catch (e, st) {
         lastError = e;
@@ -533,10 +633,12 @@ class SellListingMediaUpload {
     String? draftId,
   }) async {
     final files = <XFile>[];
+    final matchedItems = <dynamic>[];
     for (final item in attachItems) {
       final local = _stagedLocalFile(item);
       if (local != null && await _localUploadFileExists(local)) {
         files.add(local);
+        matchedItems.add(item);
       }
     }
     if (files.isEmpty) return null;
@@ -550,6 +652,7 @@ class SellListingMediaUpload {
       imageKind: kind,
       alreadyOnServer: 0,
       draftId: draftId,
+      items: matchedItems,
     );
   }
 
@@ -636,6 +739,537 @@ class SellListingMediaUpload {
     return listingConfirmed + damageConfirmed + videosConfirmed;
   }
 
+  // ---------------------------------------------------------------------
+  // Media-readiness: Phase A ONLY.
+  //
+  // Everything below performs JUST the transfer step the backend manifest
+  // (`kk/media_readiness.py`) requires to consider an item's Phase A
+  // complete: source bytes durably server/R2-owned AND (for anything that
+  // needs further server-side work) the async job durably accepted by the
+  // broker -- NEVER waiting for that job to actually finish, and NEVER
+  // polling/attaching a processed result client-side (the backend task
+  // self-attaches -- see `attach_processed_car_image()` /
+  // `attach_one_transcoded_video()`). [uploadForCar] above is UNCHANGED
+  // and still runs afterward as "Phase B": it re-classifies the exact same
+  // `carData` from scratch and, thanks to its own pre-existing
+  // already-attached/already-uploaded skip checks (`_dropAlreadyAttached`,
+  // the remote-count guards, [SellAsyncJobTracker]'s job-id reuse, and
+  // [SellServerTranscodeVideoRunner]'s own resumable state machine), never
+  // duplicates any work Phase A already did -- it simply continues driving
+  // whatever Phase A left in flight through to full completion (polling,
+  // legacy-endpoint attach as an idempotent backstop, primary-image/layout
+  // once ids exist).
+  // ---------------------------------------------------------------------
+
+  /// Phase-A-only classification+transfer for one image list (`images` or
+  /// `damage_images`). Mirrors [uploadForCar]'s own per-item
+  /// classification exactly (same `ListingImageMedia.id`/`localFile`/
+  /// source-prefix checks) so Phase B's later re-classification of the
+  /// SAME list always agrees with what Phase A already did.
+  static Future<void> _runImagePhaseA({
+    required String carId,
+    required List<dynamic> items,
+    required String kind,
+    String? draftId,
+
+    /// Architecture fix (see [SellMediaIdentity.skipBlurForFinalSubmission]):
+    /// forwarded verbatim to the Phase-A upload -- `true` publishes the
+    /// original bytes as-is, `false` lets the backend produce + self-attach
+    /// the blurred output. Never derived from which preview list [items]
+    /// happens to be (always [SellMediaIdentity.finalListingImages]/
+    /// [finalDamageImages], i.e. always original local sources here).
+    required bool skipBlur,
+  }) async {
+    if (items.isEmpty) return;
+    final List<XFile> toUpload = <XFile>[];
+    final List<dynamic> uploadItems = <dynamic>[];
+    var existingIdCount = 0;
+    for (final dynamic img in items) {
+      if (ListingImageMedia.id(img) != null) {
+        existingIdCount++;
+        continue;
+      }
+      final local = ListingImageMedia.localFile(img);
+      if (local != null && await _waitForLocalUploadFile(local)) {
+        toUpload.add(local);
+        uploadItems.add(img);
+      }
+      // Deliberately no `else` branch here for an already-remote source
+      // (`uploads/`/`static/`/http(s) prefix, e.g. one `SellPhotoPrestage`
+      // staged before `create_car()`): such a source was never declared
+      // in `expected_media` at all (see
+      // `SellMediaIdentity.buildExpectedMedia`'s `_looksAlreadyRemote`
+      // check), so it can never affect `phase_a_complete` either way --
+      // it is ALREADY "safely server/R2-owned" (requirement #3), and
+      // attaching the resulting `CarImage` row is Phase B's job, exactly
+      // as before this Phase-A split existed (see [uploadForCar]'s own
+      // `toAttach` handling just below it in this file). Attaching it
+      // here too would just be a duplicate call racing Phase B's own.
+    }
+    if (toUpload.isNotEmpty) {
+      // Multi-photo partial-failure fix (mirrors the analogous fix applied
+      // to [uploadForCar]'s own listing-photo path, and the pre-existing
+      // video-side exclusion just below in [runPhaseAOnly]): exclude, by
+      // exact `client_media_id`, any photo the manifest already reports
+      // `attached` BEFORE the coarse count check below runs -- otherwise
+      // that coarse check (identical class of flaw as the two-video
+      // regression this session already fixed) cannot tell WHICH photo
+      // already landed, so a sibling photo's earlier rejection would
+      // cause an already-successful photo to be re-enqueued here on
+      // every later Phase-A/resume pass. Backend-safe either way (the
+      // `source_media_id` unique constraint prevents an actual duplicate
+      // `CarImage` row), but this avoids the wasted enqueue/Celery-task
+      // entirely.
+      final attachedImageIds = await _attachedMediaClientMediaIds(carId);
+      if (attachedImageIds.isNotEmpty) {
+        final keptFiles = <XFile>[];
+        final keptItems = <dynamic>[];
+        for (var i = 0; i < toUpload.length; i++) {
+          final id = SellMediaIdentity.forImageItem(uploadItems[i], kind: kind);
+          if (id != null && attachedImageIds.contains(id)) {
+            appLog(
+              'SellListingMediaUpload: Phase A skipping already-attached '
+              '$kind photo client_media_id=$id',
+            );
+            continue;
+          }
+          keptFiles.add(toUpload[i]);
+          keptItems.add(uploadItems[i]);
+        }
+        toUpload
+          ..clear()
+          ..addAll(keptFiles);
+        uploadItems
+          ..clear()
+          ..addAll(keptItems);
+        if (toUpload.isEmpty) return;
+      } else {
+        // C-fix parity: [uploadForCar] treats a resumed run's LOCAL
+        // reference as already-satisfied whenever the server already has
+        // at least as many items of this [kind] as this carData describes
+        // by id + about-to-upload count -- a coarse, count-only
+        // reconciliation (NOT identity-based) that exists specifically for
+        // "the server was truly already told about this many, even though
+        // this resumed carData snapshot's own local reference is stale/
+        // unconfirmed" (see `uploadForCar`'s matching `remoteListingCount`/
+        // `remoteDamageCount` checks just below it in this file). Only
+        // used as a fallback here now, when the manifest gave no
+        // per-item signal at all (empty/unavailable) -- otherwise it
+        // would double-count against the already-filtered list above.
+        final remoteCount = await _remoteImageCount(carId, kind);
+        final alreadySatisfied = kind == 'damage'
+            ? remoteCount >= toUpload.length
+            : remoteCount >= existingIdCount + toUpload.length;
+        if (alreadySatisfied) {
+          appLog(
+            'SellListingMediaUpload: Phase A skipping $kind photo enqueue; '
+            'server already has $remoteCount',
+          );
+          return;
+        }
+      }
+      await _enqueuePhaseAImages(
+        carId: carId,
+        files: toUpload,
+        imageKind: kind,
+        items: uploadItems,
+        draftId: draftId,
+        skipBlur: skipBlur,
+      );
+    }
+  }
+
+  /// Enqueues [files] on the async image-processing pipeline (exactly the
+  /// same `?async=1` endpoint [_uploadImagesViaAsyncJobs] uses) WITHOUT
+  /// polling any resulting job to a terminal state -- once the server
+  /// durably accepts the enqueue, `mark_item_phase_a_accepted()` has
+  /// already run (synchronously, inside that same request) and this
+  /// function returns. The backend task itself performs the eventual
+  /// attach (`attach_processed_car_image`); [uploadForCar]'s own
+  /// (unchanged) poll-then-legacy-attach path later either finds it
+  /// already attached (idempotent, see `kk/routes/media.py`'s
+  /// `attach_car_images()`) or performs it, exactly as before.
+  static Future<void> _enqueuePhaseAImages({
+    required String carId,
+    required List<XFile> files,
+    required String imageKind,
+    required List<dynamic> items,
+    String? draftId,
+    required bool skipBlur,
+  }) async {
+    if (files.isEmpty) return;
+    final tracker = SellAsyncJobTracker(draftId);
+    // A job already durably recorded for this exact local path means an
+    // earlier (possibly killed) Phase-A attempt already enqueued it --
+    // the manifest row was already advanced then; nothing further to do
+    // here. (Re-enqueuing anyway would still be SAFE -- the backend's
+    // at-least-once design tolerates a duplicate -- this is purely to
+    // avoid an unnecessary extra request on every resume.)
+    final freshFiles = <XFile>[];
+    final freshItems = <dynamic>[];
+    for (var i = 0; i < files.length; i++) {
+      final existingJobId = await tracker.lookup(files[i].path);
+      if (existingJobId != null) continue;
+      freshFiles.add(files[i]);
+      freshItems.add(items[i]);
+    }
+    if (freshFiles.isEmpty) return;
+
+    final clientMediaIds = [
+      for (final item in freshItems)
+        SellMediaIdentity.forImageItem(item, kind: imageKind),
+    ];
+    Object? lastError;
+    StackTrace? lastStack;
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        ApiService.recycleProductionHttpClient();
+        await Future<void>.delayed(Duration(seconds: attempt * 2));
+      }
+      try {
+        final enqueueResponse = await ApiService.uploadCarImages(
+          carId,
+          freshFiles,
+          imageKind: imageKind,
+          async: true,
+          clientMediaIds: clientMediaIds,
+          // Architecture fix: this is now ALWAYS the ORIGINAL local file
+          // (see [_runImagePhaseA]'s docstring) -- `blurPlates` (inverse of
+          // `skipBlur`) is what tells the backend whether to produce the
+          // blurred output from these exact bytes before self-attaching,
+          // instead of the old design of swapping which bytes got sent.
+          blurPlates: !skipBlur,
+        );
+        final rawJobIds = enqueueResponse['job_ids'];
+        final jobIds = rawJobIds is List
+            ? rawJobIds
+                .map((e) => e.toString())
+                .where((s) => s.isNotEmpty)
+                .toList()
+            : const <String>[];
+        if (jobIds.isEmpty) {
+          throw ApiException(
+            statusCode: 400,
+            message: (enqueueResponse['message'] as String?) ??
+                'No valid images were uploaded.',
+          );
+        }
+        for (var k = 0; k < jobIds.length && k < freshFiles.length; k++) {
+          await tracker.record(freshFiles[k].path, jobIds[k]);
+        }
+        return;
+      } catch (e, st) {
+        lastError = e;
+        lastStack = st;
+        if (!_isTransientUploadError(e) || attempt == 2) {
+          Error.throwWithStackTrace(e, st);
+        }
+        appLog(
+          'SellListingMediaUpload: retrying Phase-A $imageKind enqueue '
+          '(${attempt + 1}/3): $e',
+        );
+      }
+    }
+    Error.throwWithStackTrace(lastError!, lastStack ?? StackTrace.current);
+  }
+
+  /// Media-readiness: performs Phase A -- and ONLY Phase A -- for every
+  /// media item [carData] describes on [carId]. Callers MUST follow this
+  /// with [waitForPhaseAComplete] before treating the submission as ready
+  /// (this function's own successful return means "every transfer call
+  /// was accepted", which in practice already implies Phase A completion
+  /// server-side -- see `kk/media_readiness.py` -- but
+  /// [waitForPhaseAComplete] is the actual authority, never this).
+  ///
+  /// Safe/idempotent to call again later (e.g. on a resumed run after an
+  /// app kill mid-Phase-A) -- every sub-step here re-checks current server
+  /// state (or reuses a durably-recorded job id) before doing anything,
+  /// so it only ever transfers whatever is STILL missing.
+  static Future<void> runPhaseAOnly({
+    required String carId,
+    required Map<String, dynamic> carData,
+    Future<http.MultipartFile> Function(XFile video)? multipartFileBuilder,
+    String? draftId,
+    // Normal video only: for every OTHER kind, Phase A merely enqueues an
+    // async job (no attach yet, so no progress to credit), but a normal
+    // video's Phase A call IS its full, final atomic upload+attach --
+    // exactly what Phase B's own `uploadForCar` would otherwise have
+    // credited via its own (identically-shaped) `onMediaConfirmed`
+    // callback. Without this, that credit would be silently lost: once
+    // Phase B later sees the video already attached, it clears it from
+    // its own to-upload list and never calls its own callback for it.
+    Future<void> Function(int delta)? onMediaConfirmed,
+  }) async {
+    // Architecture fix (real-device evidence: "chose UNBLURRED, final
+    // listing still shows blurred"): Phase A always transfers the
+    // ORIGINAL durable source, and always tells the backend the ACTUAL
+    // choice via `skipBlur` -- never derived from swapping which preview
+    // list happened to be in `carData['images']`. See
+    // [SellMediaIdentity.finalListingImages]/[skipBlurForFinalSubmission].
+    final skipBlur = SellMediaIdentity.skipBlurForFinalSubmission(carData);
+    final imgsRaw = SellMediaIdentity.finalListingImages(carData);
+    await _runImagePhaseA(
+      carId: carId,
+      items: imgsRaw,
+      kind: 'listing',
+      draftId: draftId,
+      skipBlur: skipBlur,
+    );
+
+    final dimgs = SellMediaIdentity.finalDamageImages(carData);
+    await _runImagePhaseA(
+      carId: carId,
+      items: dimgs,
+      kind: 'damage',
+      draftId: draftId,
+      skipBlur: skipBlur,
+    );
+
+    // Normal (already client-compressed) video: Phase A and Phase B are
+    // the SAME atomic request (see `kk/media_readiness.py`'s state-machine
+    // doc comment) -- this call must run to full completion here, there
+    // is no "enqueue only" variant for it.
+    final dynamic maybeVideos = carData['videos'];
+    final List<dynamic> vids = (maybeVideos is List) ? maybeVideos : const [];
+    final videosToUploadRaw = SellDraftMediaPersistence.xFilesForUpload(vids);
+    if (videosToUploadRaw.isNotEmpty) {
+      final car = await _fetchCarMap(carId);
+      final existingVideos = car?['videos'];
+      final existingVideoCount =
+          existingVideos is List ? existingVideos.length : 0;
+      if (existingVideoCount < videosToUploadRaw.length) {
+        final videoClientMediaIdsRaw =
+            videosToUploadRaw.length == vids.length
+            ? [for (final v in vids) SellMediaIdentity.forNormalVideoItem(v)]
+            : null;
+        // Two-video regression fix: a coarse count check above cannot
+        // tell WHICH videos already landed -- exclude any video whose
+        // own `client_media_id` the manifest already reports `attached`,
+        // so a sibling video's earlier permanent Phase-A rejection never
+        // causes an already-successful video to be re-uploaded (a
+        // genuine duplicate `CarVideo` row) on this or a later
+        // Phase-A/resume pass.
+        final attachedIds = await _attachedMediaClientMediaIds(carId);
+        final (videosToUpload, videoClientMediaIds) =
+            _excludeAlreadyAttachedVideos(
+          videosToUploadRaw,
+          videoClientMediaIdsRaw,
+          attachedIds,
+        );
+        if (videosToUpload.isNotEmpty) {
+          final response = await ApiService.uploadCarVideos(
+            carId,
+            videosToUpload,
+            multipartFileBuilder:
+                multipartFileBuilder ?? buildVideoMultipartFile,
+            clientMediaIds: videoClientMediaIds,
+          );
+          // Two-video regression fix: credit ONLY the videos the backend
+          // actually confirmed uploaded (`response['videos']`), never the
+          // requested count -- `upload_car_videos` accepts partial
+          // per-file success (see `kk/routes/media.py`), so blindly
+          // crediting `videosToUpload.length` here previously overcounted
+          // `completedMediaCount` whenever one video in the batch was
+          // rejected while a sibling succeeded.
+          final confirmedVideos = response['videos'];
+          final confirmedCount = confirmedVideos is List
+              ? confirmedVideos.length
+              : videosToUpload.length;
+          if (confirmedCount > 0) {
+            await onMediaConfirmed?.call(confirmedCount);
+          }
+        }
+      }
+    }
+
+    // Server-transcode video: Phase A ends at `finalize` (sign -> PUT ->
+    // finalize) -- never waits for the transcode job or its attach.
+    final serverTranscodeSpecs = ServerTranscodeVideoSpec.listFromJson(
+      carData['server_transcode_videos'],
+    );
+    if (serverTranscodeSpecs.isNotEmpty &&
+        draftId != null &&
+        draftId.isNotEmpty) {
+      await SellServerTranscodeVideoRunner.processAllPhaseAOnly(
+        draftId: draftId,
+        carId: carId,
+        specs: serverTranscodeSpecs,
+      );
+    }
+  }
+
+  /// Media-readiness: server-authoritative confirmation that every
+  /// expected media item for [carId] has completed Phase A -- see
+  /// `GET /api/cars/<id>/media-summary`
+  /// (`kk/media_readiness.py::media_summary`'s `phase_a_complete` field).
+  /// This is the ONLY thing `submitFast()`'s ready signal may depend on
+  /// once any `expected_media` was declared for this car -- never a local
+  /// assumption ("the transfer call above returned, therefore we're
+  /// done"). A listing with no expected media (or whose only media was
+  /// already pre-staged/attached before `create_car()`) trivially
+  /// satisfies this (`phase_a_complete` is `true` over an empty/attached
+  /// manifest), so a zero-media submission is unaffected.
+  ///
+  /// A short bounded retry absorbs a single transient network hiccup on
+  /// this cheap GET itself -- NOT a wait for the backend to finish
+  /// anything: every Phase-A transfer call [runPhaseAOnly] makes already
+  /// advances `phase_a_completed_at` synchronously, server-side, before
+  /// that call's own HTTP response returns (see
+  /// `kk/media_readiness.py:mark_item_phase_a_accepted` /
+  /// `mark_normal_video_attached_locked`), so in the overwhelmingly common
+  /// case this succeeds on the very first read.
+  static Future<bool> waitForPhaseAComplete(
+    String carId, {
+    int maxAttempts = 5,
+    Duration retryDelay = const Duration(milliseconds: 400),
+  }) async {
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) await Future<void>.delayed(retryDelay);
+      try {
+        final summary = await ApiService.getCarMediaSummary(carId);
+        if (summary['phase_a_complete'] == true) return true;
+      } catch (e, st) {
+        logNonFatal(e, st, 'SellListingMediaUpload.waitForPhaseAComplete');
+      }
+    }
+    return false;
+  }
+
+  /// Two-video regression fix (real-device evidence): per-item
+  /// `client_media_id`s already `attached` for [carId], read from the
+  /// SAME authoritative manifest `waitForPhaseAComplete` uses
+  /// (`GET /api/cars/{carId}/media-summary`'s `items[].status`) -- never
+  /// a coarse "existing server videos = count" comparison. A count comparison
+  /// cannot tell WHICH of several videos already landed, so when one
+  /// video in a multi-video batch is rejected server-side (bad codec,
+  /// oversized file, etc) while a sibling succeeds, a count check like
+  /// `existingVideoCount >= videosToUpload.length` stays false forever
+  /// for that car and keeps re-sending the WHOLE batch on every
+  /// Phase-A/Phase-B/resume pass -- re-uploading the already-successful
+  /// sibling video every time (a genuine duplicate `CarVideo` row: see
+  /// `kk/routes/media.py::upload_car_videos`, which never sets
+  /// `CarVideo.source_draft_media_id`, so its unique constraint gives no
+  /// protection against this) while the permanently-rejected video keeps
+  /// failing the same way forever. Comparing this exact per-id set
+  /// against each video's own `client_media_id` lets the caller exclude
+  /// only the ones that are truly already attached, and retry only the
+  /// one(s) that are not -- best-effort: any failure returns an empty
+  /// set (the pre-existing, less-precise count-based skip elsewhere is
+  /// the safety net, not this).
+  static Future<Set<String>> _attachedMediaClientMediaIds(
+    String carId,
+  ) async {
+    try {
+      final summary = await ApiService.getCarMediaSummary(carId);
+      final items = summary['items'];
+      if (items is! List) return <String>{};
+      return <String>{
+        for (final it in items)
+          if (it is Map &&
+              (it['status'] ?? '').toString() == 'attached' &&
+              (it['client_media_id'] ?? '').toString().isNotEmpty)
+            (it['client_media_id'] ?? '').toString(),
+      };
+    } catch (e, st) {
+      logNonFatal(e, st, 'SellListingMediaUpload._attachedMediaClientMediaIds');
+      return <String>{};
+    }
+  }
+
+  /// Architecture fix (real-device evidence: "chose UNBLURRED, final
+  /// listing still shows blurred" -- traced to Phase B re-driving an
+  /// image Phase A already durably owned, racing the worker's own
+  /// self-attach): unlike [_attachedMediaClientMediaIds] (status EXACTLY
+  /// `'attached'` only), this returns every `client_media_id` for which
+  /// the server reports Phase A as durably complete.
+  ///
+  /// CORRECTNESS-CRITICAL: Phase-A completeness is tracked SEPARATELY
+  /// from `status` in the backend's own manifest contract (see
+  /// `kk/media_readiness.py`'s module docstring and `CarMediaItem.
+  /// phase_a_completed_at` in `kk/models.py`) via the write-once
+  /// `phase_a_completed_at` timestamp -- non-null means the source bytes
+  /// were confirmed server/R2-owned AND the required async job was
+  /// durably accepted by the broker. `status` alone is NOT a reliable
+  /// proxy for this: it is mutable, can move through transient/retry
+  /// states, and per the backend's own contract must never be used to
+  /// infer Phase-A completion. The server exposes the derived boolean
+  /// directly as `items[].phase_a_complete` (see `CarMediaItem.to_dict()`
+  /// -- `'phase_a_complete': self.phase_a_completed_at is not None`)
+  /// specifically so clients check exactly that, never raw `status`.
+  ///
+  /// `uploadForCar` (new-listing path) uses this to recognize "Phase A
+  /// already owns this item" the moment `phase_a_complete` flips true
+  /// (which happens as soon as the transfer is durably accepted, before
+  /// the worker necessarily finishes self-attaching) -- closing exactly
+  /// the race window that let the old, unconditional Phase-B code
+  /// re-poll/re-attach an item the worker was already about to
+  /// self-attach.
+  /// Best-effort: any failure returns an empty set (falls back to the
+  /// pre-existing per-item classification, never blocks progress).
+  static Future<Set<String>> _phaseAAcceptedClientMediaIds(
+    String carId,
+  ) async {
+    try {
+      final summary = await ApiService.getCarMediaSummary(carId);
+      final items = summary['items'];
+      if (items is! List) return <String>{};
+      return <String>{
+        for (final it in items)
+          if (it is Map &&
+              it['phase_a_complete'] == true &&
+              (it['client_media_id'] ?? '').toString().isNotEmpty)
+            (it['client_media_id'] ?? '').toString(),
+      };
+    } catch (e, st) {
+      logNonFatal(
+        e,
+        st,
+        'SellListingMediaUpload._phaseAAcceptedClientMediaIds',
+      );
+      return <String>{};
+    }
+  }
+
+  /// Filters [videosToUpload]/[videoClientMediaIds] (kept 1:1 aligned, per
+  /// their shared caller's own invariant) down to only the videos whose
+  /// `client_media_id` is NOT already in [attachedIds]. When
+  /// [videoClientMediaIds] is null (the rare case where
+  /// `videosToUpload.length != vids.length`, so no reliable 1:1 id
+  /// mapping exists), returns the inputs unchanged -- best-effort only,
+  /// never a correctness dependency for that edge case.
+  static (List<XFile>, List<String?>?) _excludeAlreadyAttachedVideos(
+    List<XFile> videosToUpload,
+    List<String?>? videoClientMediaIds,
+    Set<String> attachedIds,
+  ) {
+    if (videoClientMediaIds == null ||
+        videoClientMediaIds.length != videosToUpload.length ||
+        attachedIds.isEmpty) {
+      // Bug fix: must return a NEW list, never the same [videosToUpload]
+      // reference -- a caller that does `videosToUpload..clear()
+      // ..addAll(result)` (to keep using one variable name throughout the
+      // rest of its function) would otherwise clear THIS return value
+      // too, since it would be the exact same List object, silently
+      // turning "nothing needs filtering" into "upload nothing at all".
+      return (List<XFile>.from(videosToUpload), videoClientMediaIds);
+    }
+    final keptFiles = <XFile>[];
+    final keptIds = <String?>[];
+    for (var i = 0; i < videosToUpload.length; i++) {
+      final id = (videoClientMediaIds[i] ?? '').trim();
+      if (id.isNotEmpty && attachedIds.contains(id)) {
+        appLog(
+          'SellListingMediaUpload: skipping already-attached video '
+          'client_media_id=$id',
+        );
+        continue;
+      }
+      keptFiles.add(videosToUpload[i]);
+      keptIds.add(videoClientMediaIds[i]);
+    }
+    return (keptFiles, keptIds);
+  }
+
   /// True when the server listing already has any listing media.
   static Future<bool> listingAlreadyHasMedia(String carId) async {
     final car = await _fetchCarMap(carId);
@@ -663,13 +1297,43 @@ class SellListingMediaUpload {
     // instead of only estimating it from coarse phase transitions.
     Future<void> Function(int confirmedDelta)? onMediaConfirmed,
     String? draftId,
+
+    /// Architecture fix (real-device evidence: "chose UNBLURRED, final
+    /// listing still shows blurred"): `true` for a brand-new listing that
+    /// declared an `expected_media` manifest at `create_car()` time (i.e.
+    /// `!record.isEdit` -- see `PendingSellSubmissionService`). For such a
+    /// listing, [runPhaseAOnly] already fully transferred every local
+    /// image/damage-photo (upload/enqueue, with `client_media_id`) BEFORE
+    /// this function ever runs, and the backend worker self-attaches the
+    /// result on its own (`attach_processed_car_image`) -- so this
+    /// function must never independently re-poll/re-attach an item Phase A
+    /// already owns (that legacy "backstop" is exactly what caused a
+    /// stale/duplicate/racy second attach in production). Left `false`
+    /// (the default) for edit-mode, where no `expected_media` manifest
+    /// exists at all and this function's pre-existing synchronous
+    /// upload/attach behavior remains the ONLY path -- completely
+    /// unchanged.
+    bool isNewListing = false,
   }) async {
-    final dynamic maybeImgs = carData['images'];
-    final List<dynamic> imgsRaw = (maybeImgs is List) ? maybeImgs : const [];
+    final imgsRaw = SellMediaIdentity.finalListingImages(carData);
     final List<dynamic> imgs = _imagesWithPrimaryFirst(
       imgsRaw,
       primaryIndex: _primaryImageIndex(carData, length: imgsRaw.length),
     );
+    // Architecture fix: the actual skip_blur choice for any image THIS
+    // function still needs to transfer itself (edit-mode, or a Phase-A
+    // retry/backstop) -- see [SellMediaIdentity.skipBlurForFinalSubmission].
+    final skipBlur = SellMediaIdentity.skipBlurForFinalSubmission(carData);
+    // For a new listing, every local image/damage-photo was already
+    // declared in `expected_media` and handed to Phase A -- fetch ONCE
+    // which of those the manifest already reports `phase_a_complete` (the
+    // server-authoritative boolean derived from `phase_a_completed_at`,
+    // NOT `status` -- see `_phaseAAcceptedClientMediaIds`'s doc comment)
+    // so the classification loops below can skip them entirely instead
+    // of re-driving them.
+    final Set<String> phaseAOwnedIds = isNewListing
+        ? await _phaseAAcceptedClientMediaIds(carId)
+        : const <String>{};
     final dynamic maybeVideos = carData['videos'];
     final List<dynamic> vids = (maybeVideos is List) ? maybeVideos : const [];
     // Bug-3 instrumentation (real-device trace): the "desired" set this
@@ -688,12 +1352,31 @@ class SellListingMediaUpload {
     final List<XFile> videosToUpload =
         SellDraftMediaPersistence.xFilesForUpload(vids);
 
+    // Architecture fix: counts items skipped below because Phase A
+    // already durably owns them (new-listing path only) -- these are
+    // legitimately neither uploaded, attached, nor carrying a server
+    // `existingId` in [carData] yet (that only lands once the worker's
+    // self-attach is reflected back into a later car refresh), so the
+    // "could not be read" guard just below must not treat them as
+    // missing/corrupt photos.
+    var phaseAOwnedSkipCount = 0;
     for (final dynamic img in imgs) {
       final existingId = ListingImageMedia.id(img);
       final source = ListingImageMedia.source(img);
       if (existingId != null) {
         if (source.isNotEmpty) imageIdsBySource[source] = existingId;
         continue;
+      }
+      // Architecture fix: for a new listing, any item the server reports
+      // as `phase_a_complete: true` is fully owned by the backend
+      // worker's self-attach from here -- this function must not
+      // enqueue/poll/attach it a second time.
+      if (isNewListing) {
+        final id = SellMediaIdentity.forImageItem(img, kind: 'listing');
+        if (id != null && phaseAOwnedIds.contains(id)) {
+          phaseAOwnedSkipCount++;
+          continue;
+        }
       }
       final local = ListingImageMedia.localFile(img);
       if (local != null && await _waitForLocalUploadFile(local)) {
@@ -716,16 +1399,89 @@ class SellListingMediaUpload {
     if (imgs.isNotEmpty &&
         toUpload.isEmpty &&
         toAttach.isEmpty &&
-        imageIdsBySource.isEmpty) {
+        imageIdsBySource.isEmpty &&
+        phaseAOwnedSkipCount == 0) {
       throw StateError(
         'Listing photos could not be read for upload. Please re-add the photos and try again.',
       );
     }
 
+    // Multi-photo partial-failure fix (mirrors the two-video regression
+    // fix applied to `videosToUpload` further down): the coarse count
+    // check further below cannot tell WHICH specific photos already
+    // landed -- e.g. if photo B's earlier attempt was rejected while
+    // sibling photo A already attached, `remoteListingCount` (1) stays
+    // less than `toUpload.length` (2), so that check never fires and
+    // BOTH photos -- including the already-successful A -- get resent on
+    // every later resume pass. Exclude, by exact `client_media_id`, any
+    // photo the manifest already reports `attached`, BEFORE the coarse
+    // check runs, so a resume only ever re-drives the genuinely missing
+    // photo(s) (the backend's own `source_media_id` unique constraint
+    // already prevented a literal duplicate `CarImage` row either way,
+    // but this avoids the wasted upload/enqueue call entirely, exactly
+    // like `_excludeAlreadyAttachedVideos` does for videos).
+    //
+    // `idFilterIsAuthoritative` is true only when the manifest actually
+    // reported at least one attached item for this car -- i.e. this
+    // listing IS using the media-readiness system, so the (precise,
+    // per-item) result above is trustworthy on its own. When it's false
+    // (manifest empty/unavailable -- e.g. a car created before this
+    // system existed, or a transient media-summary error), the OLD
+    // coarse `remoteListingCount` check below remains the only signal and
+    // must still run exactly as before; running BOTH checks in sequence
+    // in that true case would double-count (the coarse check would then
+    // compare the ALREADY-FILTERED remaining length against the FULL
+    // server count, which can misfire and wrongly skip the real upload).
+    var idFilterIsAuthoritative = false;
+    if (toUpload.isNotEmpty) {
+      final attachedImageIds = await _attachedMediaClientMediaIds(carId);
+      if (attachedImageIds.isNotEmpty) {
+        idFilterIsAuthoritative = true;
+        final keptFiles = <XFile>[];
+        final keptItems = <dynamic>[];
+        for (var i = 0; i < toUpload.length; i++) {
+          final id = SellMediaIdentity.forImageItem(
+            uploadItems[i],
+            kind: 'listing',
+          );
+          if (id != null && attachedImageIds.contains(id)) {
+            appLog(
+              'SellListingMediaUpload: skipping already-attached listing '
+              'photo client_media_id=$id',
+            );
+            continue;
+          }
+          keptFiles.add(toUpload[i]);
+          keptItems.add(uploadItems[i]);
+        }
+        toUpload
+          ..clear()
+          ..addAll(keptFiles);
+        uploadItems
+          ..clear()
+          ..addAll(keptItems);
+      }
+    }
+
     Map<String, dynamic>? latestMediaResponse;
     var remoteListingCount = 0;
-    var listingMediaConfirmed = imgs.isEmpty;
-    if (toUpload.isNotEmpty) {
+    // Architecture fix: an item skipped above because Phase A already
+    // durably owns it counts as "confirmed" from this function's
+    // perspective too -- there is nothing left for it to upload/attach,
+    // and the backend worker's self-attach is the authoritative
+    // completion signal `waitForPhaseAComplete` already waited on before
+    // this function ever ran.
+    var listingMediaConfirmed =
+        imgs.isEmpty || (imgs.length == phaseAOwnedSkipCount);
+    if (idFilterIsAuthoritative) {
+      // The per-item filter above already determined the precise
+      // remaining set -- still fetch the count (cheap, and other code
+      // below uses it as `alreadyOnServer` for retry-recovery
+      // heuristics), but never let it override/clear an authoritative,
+      // already-correct `toUpload`.
+      remoteListingCount = await _remoteImageCount(carId, 'listing');
+      if (toUpload.isEmpty) listingMediaConfirmed = true;
+    } else if (toUpload.isNotEmpty) {
       remoteListingCount = await _remoteImageCount(carId, 'listing');
       if (remoteListingCount >= imageIdsBySource.length + toUpload.length) {
         appLog(
@@ -803,6 +1559,8 @@ class SellListingMediaUpload {
         files: toUpload,
         alreadyOnServer: remoteListingCount,
         draftId: draftId,
+        items: uploadItems,
+        skipBlur: skipBlur,
       );
       latestMediaResponse = uploadResponse;
       _collectUploadedImageIds(imageIdsBySource, uploadItems, uploadResponse);
@@ -847,19 +1605,64 @@ class SellListingMediaUpload {
         videosToUpload.clear();
       }
     }
+    // Two-video regression fix: the coarse count check above cannot tell
+    // WHICH videos already landed -- exclude, by exact `client_media_id`,
+    // any video the manifest already reports `attached`, so a sibling
+    // video's earlier Phase-A rejection never causes an already-successful
+    // video to be re-uploaded here (a genuine duplicate `CarVideo` row;
+    // see `_attachedMediaClientMediaIds`'s doc comment).
+    List<String?>? videoClientMediaIds;
+    if (videosToUpload.isNotEmpty) {
+      // Media-readiness: ids are derived from the RAW `carData['videos']`
+      // list (the SAME list `SellMediaIdentity.buildExpectedMedia` reads
+      // when building the `create_car` payload), so a given video's id
+      // here always matches the manifest row registered for it -- but
+      // only when [videosToUpload] (after
+      // `SellDraftMediaPersistence.xFilesForUpload`'s own
+      // resolve/dedupe/missing-file filtering) is still 1:1 positionally
+      // aligned with [vids]. A mismatched length (dedup/missing-file
+      // edge case) simply sends no ids -- this upload is otherwise
+      // completely unaffected, it just isn't tracked by the manifest.
+      final videoClientMediaIdsRaw = videosToUpload.length == vids.length
+          ? [for (final v in vids) SellMediaIdentity.forNormalVideoItem(v)]
+          : null;
+      final attachedIds = await _attachedMediaClientMediaIds(carId);
+      final (filteredVideos, filteredIds) = _excludeAlreadyAttachedVideos(
+        videosToUpload,
+        videoClientMediaIdsRaw,
+        attachedIds,
+      );
+      videoClientMediaIds = filteredIds;
+      videosToUpload
+        ..clear()
+        ..addAll(filteredVideos);
+    }
     if (videosToUpload.isNotEmpty) {
       onPhase?.call(SellMediaUploadPhase.videos);
       for (final f in videosToUpload) {
         appLog('[SELL MEDIA] attach video carId=$carId sourceKey=${f.path}');
       }
       try {
-        await ApiService.uploadCarVideos(
+        final response = await ApiService.uploadCarVideos(
           carId,
           videosToUpload,
           multipartFileBuilder:
               multipartFileBuilder ?? buildVideoMultipartFile,
+          clientMediaIds: videoClientMediaIds,
         );
-        await onMediaConfirmed?.call(videosToUpload.length);
+        // Two-video regression fix: credit ONLY the videos the backend
+        // actually confirmed uploaded (`response['videos']`), never the
+        // requested count -- `upload_car_videos` accepts partial per-file
+        // success (see `kk/routes/media.py`), so blindly crediting
+        // `videosToUpload.length` here previously overcounted
+        // `completedMediaCount` whenever one video in the batch was
+        // rejected while a sibling succeeded.
+        final confirmedVideos = response['videos'];
+        final confirmedCount =
+            confirmedVideos is List ? confirmedVideos.length : videosToUpload.length;
+        if (confirmedCount > 0) {
+          await onMediaConfirmed?.call(confirmedCount);
+        }
       } catch (e, st) {
         logNonFatal(e, st, 'SellListingMediaUpload.videos');
         videoError = e;
@@ -946,16 +1749,23 @@ class SellListingMediaUpload {
       }
     }
 
-    final dynamic maybeDmg = carData['damage_images'];
-    final List<dynamic> dimgs = (maybeDmg is List) ? maybeDmg : const [];
+    final dimgs = SellMediaIdentity.finalDamageImages(carData);
     final List<XFile> damageToUpload = <XFile>[];
+    final List<dynamic> damageUploadItems = <dynamic>[];
     final List<String> damageToAttach = <String>[];
     final List<dynamic> damageAttachItems = <dynamic>[];
     for (final dynamic img in dimgs) {
       if (ListingImageMedia.id(img) != null) continue;
+      // Architecture fix: same Phase-A-owned skip as the listing-photo
+      // loop above.
+      if (isNewListing) {
+        final id = SellMediaIdentity.forImageItem(img, kind: 'damage');
+        if (id != null && phaseAOwnedIds.contains(id)) continue;
+      }
       final local = ListingImageMedia.localFile(img);
       if (local != null && await _waitForLocalUploadFile(local)) {
         damageToUpload.add(local);
+        damageUploadItems.add(img);
         continue;
       }
       final s = ListingImageMedia.source(img);
@@ -973,6 +1783,7 @@ class SellListingMediaUpload {
       remoteDamageCount = await _remoteImageCount(carId, 'damage');
       if (remoteDamageCount >= damageToUpload.length) {
         damageToUpload.clear();
+        damageUploadItems.clear();
       }
     }
     if (damageToAttach.isNotEmpty || damageToUpload.isNotEmpty) {
@@ -1047,6 +1858,8 @@ class SellListingMediaUpload {
         imageKind: 'damage',
         alreadyOnServer: remoteDamageCount,
         draftId: draftId,
+        items: damageUploadItems,
+        skipBlur: skipBlur,
       );
       final damageUploadedCount = _attachedRowCount(damageUploadResponse);
       if (damageUploadedCount > 0) {

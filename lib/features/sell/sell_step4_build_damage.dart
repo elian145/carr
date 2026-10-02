@@ -113,22 +113,8 @@ mixin _SellStep4BuildDamage on _SellStep4BuildPhotos {
                               label: AppLocalizations.of(context)!.removeAction,
                               child: InkWell(
                               onTap: () {
-                                final parentState = context
-                                    .findAncestorStateOfType<_SellCarPageState>();
-                                setState(() {
-                                  _damageImages.removeAt(index);
-                                });
-                                parentState?.carData.remove('use_blurred_plates');
-                                parentState?.invalidatePlateBlurJob();
-                                parentState?.invalidatePhotoPrestage();
-                                unawaited(_syncMediaDraftToParent());
+                                _removeDamagePhotoAt(index);
                                 unawaited(_saveDraft());
-                                if (_damageImages.isNotEmpty ||
-                                    _selectedImages.isNotEmpty) {
-                                  unawaited(
-                                    parentState?.startBackgroundPlateBlur(),
-                                  );
-                                }
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: Container(

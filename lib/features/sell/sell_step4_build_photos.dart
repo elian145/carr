@@ -70,6 +70,23 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                       appLog(
                         '[HEIC PREVIEW] render chosenPath=${localFile?.path}',
                       );
+                      // While a HEIC/HEIF original's JPEG preview is still
+                      // being generated in the background, `previewLocalFile`
+                      // above falls back to the raw (Skia-undecodable) HEIC
+                      // path -- rendering that would just show the same
+                      // broken-image icon used for genuine failures.
+                      // `_heicPreviewPending` (set/cleared by
+                      // `_backfillImageDimensions`) lets this tile show a
+                      // "processing" spinner instead for exactly that
+                      // window, so it reads as "loading" rather than
+                      // "broken". A path only ever lands in that set if
+                      // it's HEIC/HEIF and has no preview yet, so this
+                      // never shadows a real decode failure (those are
+                      // never added, or are already removed by the time
+                      // their attempt finishes).
+                      final isHeicPreviewPending =
+                          ListingImageMedia.previewSource(image) == null &&
+                          _heicPreviewPending.contains(keyStr);
                       final isPrimary = index == _primaryImageIndex;
                       return Stack(
                         key: ValueKey(keyStr),
@@ -104,7 +121,19 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                 ),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: localFile != null
+                              child: isHeicPreviewPending
+                                  ? Container(
+                                      color: Colors.grey.shade200,
+                                      alignment: Alignment.center,
+                                      child: const SizedBox(
+                                        width: 28,
+                                        height: 28,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                        ),
+                                      ),
+                                    )
+                                  : localFile != null
                                   ? listingLocalFileImage(
                                       localFile,
                                       fit: BoxFit.cover,

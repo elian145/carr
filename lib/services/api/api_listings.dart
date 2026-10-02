@@ -302,6 +302,17 @@ abstract final class _ApiServiceListings {
     /// `SUCCESS`, attach the resulting `result.rel_path`s via
     /// [attachCarImages] (see `SellListingMediaUpload._uploadImagesResilient`).
     bool async = false,
+
+    /// Media-readiness (see `kk/media_readiness.py`): one stable id per
+    /// entry in [imageFiles], SAME order/length -- binds this upload to a
+    /// manifest row registered at `create_car()` time so the backend can
+    /// track Phase-A completion and self-attach the processed result with
+    /// zero further client calls. Sent as repeated multipart FIELD parts
+    /// (no filename -- server reads via `request.form.getlist(...)`), not
+    /// file parts. `null`/shorter-than-[imageFiles] is fully backwards
+    /// compatible -- the server simply has no manifest row to advance for
+    /// any file missing one.
+    List<String?>? clientMediaIds,
   }) async {
     // App-default behavior: do NOT blur unless user explicitly requests it.
     // FORCE_SKIP_BLUR remains a hard override for dev/testing builds.
@@ -318,19 +329,29 @@ abstract final class _ApiServiceListings {
         Uri.parse('${ApiService.baseUrl}/cars/$id/images$query'),
       );
       // Add files once under 'images' (backend accepts 'files', 'images', 'image', etc. and extends one list — do not send same file under multiple keys or backend gets duplicates)
-      for (final file in imageFiles) {
+      for (var i = 0; i < imageFiles.length; i++) {
+        final file = imageFiles[i];
         var filename = file.name.trim();
         if (filename.isEmpty) {
           final path = file.path.replaceAll('\\', '/');
           filename = path.split('/').last;
         }
         if (filename.isEmpty) filename = 'photo.jpg';
+        final clientMediaId = (clientMediaIds != null && i < clientMediaIds.length)
+            ? (clientMediaIds[i] ?? '').trim()
+            : '';
         request.files.add(
           await http.MultipartFile.fromPath(
             'images',
             file.path,
             filename: filename,
           ),
+        );
+        // Positionally aligned with the 'images' file part just added
+        // above -- the server matches these back up by index, in the
+        // exact order both lists were iterated here.
+        request.files.add(
+          http.MultipartFile.fromString('client_media_id', clientMediaId),
         );
       }
       return request;
@@ -461,24 +482,57 @@ abstract final class _ApiServiceListings {
     return null;
   }
 
+  /// Media-readiness: `GET /api/cars/<id>/media-summary` -- the
+  /// server-authoritative per-item Phase-A summary
+  /// (`kk/media_readiness.py::media_summary`). Response shape:
+  /// `{"media_status": str, "items": [{"client_media_id", "kind",
+  /// "status", "phase_a_complete"}, ...], "phase_a_complete": bool}` --
+  /// the top-level `phase_a_complete` is `true` iff EVERY item is (an
+  /// empty manifest -- no `expected_media` was ever declared, or every
+  /// declared item already exists via some other route -- trivially
+  /// satisfies this too). See [SellListingMediaUpload.waitForPhaseAComplete].
+  static Future<Map<String, dynamic>> getCarMediaSummary(String carId) async {
+    final id = Uri.encodeComponent(carId.trim());
+    return await ApiService._makeAuthenticatedRequest(
+      'GET',
+      '/cars/$id/media-summary',
+    );
+  }
+
   static Future<Map<String, dynamic>> uploadCarVideos(
     String carId,
     List<XFile> videoFiles, {
     Future<http.MultipartFile> Function(XFile file)? multipartFileBuilder,
+
+    /// Media-readiness: one stable id per entry in [videoFiles], same
+    /// order/length -- see [uploadCarImages]'s `clientMediaIds` doc for the
+    /// full contract. `null`/shorter is fully backwards compatible.
+    List<String?>? clientMediaIds,
   }) async {
     final buildFile =
         multipartFileBuilder ??
         (file) => http.MultipartFile.fromPath('files', file.path);
-    final data = await ApiService._sendAuthenticatedMultipart(() async {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiService.baseUrl}/cars/$carId/videos'),
-      );
-      for (final file in videoFiles) {
-        request.files.add(await buildFile(file));
-      }
-      return request;
-    });
+    Map<String, dynamic> data;
+    try {
+      data = await ApiService._sendAuthenticatedMultipart(() async {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('${ApiService.baseUrl}/cars/$carId/videos'),
+        );
+        for (var i = 0; i < videoFiles.length; i++) {
+          request.files.add(await buildFile(videoFiles[i]));
+          final clientMediaId = (clientMediaIds != null && i < clientMediaIds.length)
+              ? (clientMediaIds[i] ?? '').trim()
+              : '';
+          request.files.add(
+            http.MultipartFile.fromString('client_media_id', clientMediaId),
+          );
+        }
+        return request;
+      });
+    } catch (_) {
+      rethrow;
+    }
     // Normalize { uploaded: [...] } -> { videos: [...] }
     if (!data.containsKey('videos') && data.containsKey('uploaded')) {
       data['videos'] = List.from(data['uploaded'] as List);

@@ -4963,6 +4963,24 @@ abstract class AppLocalizations {
   /// **'Blur plates first, or choose to keep originals'**
   String get blurPlatesFirstOrChooseToKeepOriginals;
 
+  /// No description provided for @notBlurredNoPlateDetected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not blurred — no plate detected'**
+  String get notBlurredNoPlateDetected;
+
+  /// No description provided for @generatingBlurredPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating blurred preview…'**
+  String get generatingBlurredPreview;
+
+  /// No description provided for @blurPreviewFailedRetryBelow.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview failed — tap \"Blur plates now\" below to retry'**
+  String get blurPreviewFailedRetryBelow;
+
   /// No description provided for @callSeller.
   ///
   /// In en, this message translates to:

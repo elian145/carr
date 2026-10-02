@@ -54,7 +54,30 @@ abstract class _SellCarPageFields extends State<SellCarPage> {
       case SellWizardSteps.pricingContact:
         return const SellStep3Page();
       case SellWizardSteps.plateBlur:
-        return const SellStepBlurChoicePage();
+        // Async preview-lifecycle fix (real-device evidence: "the Blurred
+        // section ALSO visually shows originals, even after selecting
+        // Blurred"): this MUST NOT be `const`. `SellStepBlurChoicePage()`
+        // has no constructor parameters, so `const SellStepBlurChoicePage()`
+        // is canonicalized by Dart to a single, permanently-identical
+        // instance -- every subsequent call here (on every
+        // `_SellCarPageState.build()`, e.g. from
+        // `startBackgroundPlateBlur`'s progressive `onProgress`/
+        // `_publishBlurProgress` `setState` calls) returns the EXACT SAME
+        // object reference. `Element.updateChild`'s
+        // `if (child.widget == newWidget) return child;` fast path (`==`
+        // on `Widget` is identity) then sees "the same widget" and SKIPS
+        // calling `update()`/rebuilding this element ENTIRELY -- so this
+        // step's OWN `State.build()` (and therefore `_previewSection`'s
+        // live per-photo preview state) never re-runs from an
+        // ANCESTOR-triggered rebuild, no matter how many times
+        // `carData['blurred_images']` changes; it only ever rebuilds when
+        // this step's OWN internal state changes (e.g. tapping a choice
+        // tile, which calls `_selectChoice`'s own `setState`). A plain,
+        // non-`const` `SellStepBlurChoicePage()` is a fresh object
+        // reference on every call, so `Widget.canUpdate` + `update()` +
+        // `rebuild(force: true)` run normally, exactly like every other
+        // step in this same `switch` that is not tagged `const`.
+        return SellStepBlurChoicePage();
       default:
         return const SizedBox.shrink();
     }

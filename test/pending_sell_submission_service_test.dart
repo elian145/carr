@@ -41,6 +41,8 @@ import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/services/config.dart';
 import 'package:car_listing_app/shared/auth/token_store.dart';
+import 'package:car_listing_app/shared/listings/owner_optimistic_media_cleanup.dart';
+import 'package:car_listing_app/shared/prefs/owner_optimistic_media_prefs.dart';
 import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
 import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -326,6 +328,28 @@ void main() {
         return http.Response(
           json.encode({'videos': [{'id': videoUploadLog.length}]}),
           201,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+
+      // ---- GET /api/cars/<id>/media-summary (media-readiness Phase A) -------
+      // This fake server never actually registers `CarMediaItem` manifest
+      // rows -- every test in this file exercises Phase B (upload/attach)
+      // behavior, not Phase-A gating itself (see
+      // `pending_sell_submission_fast_submit_test.dart` for THAT), so
+      // Phase A is always already "complete" here, matching a listing
+      // whose `expected_media` was empty/already satisfied.
+      final mediaSummaryMatch = RegExp(
+        r'^/api/cars/([^/]+)/media-summary$',
+      ).firstMatch(path);
+      if (method == 'GET' && mediaSummaryMatch != null) {
+        return http.Response(
+          json.encode({
+            'media_status': 'ready',
+            'items': <dynamic>[],
+            'phase_a_complete': true,
+          }),
+          200,
           headers: {'content-type': 'application/json'},
         );
       }
@@ -1195,9 +1219,12 @@ void main() {
   );
 
   test(
-    'Section 5: a fully successful submission (photo + video) deletes the '
-    'durable sell_draft_media directory only after the media upload AND '
-    'the list refresh have completed',
+    'Section 5 (Critical Issue 1 rework): a fully successful submission '
+    '(photo + video) does NOT delete the durable sell_draft_media '
+    'directory just because the backend finished -- it stays intact, '
+    'backed by a durable OwnerOptimisticMediaRecord, until every '
+    'expected item is confirmed remote-display-ready on this device; '
+    'only then is it actually deleted',
     () async {
       const draftId = 'draft_cleanup_on_success';
       final draftDir = await SellDraftMediaPersistence.draftDirectory(
@@ -1215,16 +1242,70 @@ void main() {
         carData: _baseCarData(images: [img.path], videos: [video.path]),
       );
       expect(result, isNotNull);
+      final carId = result!.id;
 
-      // `_clearDurableDraftMedia` is fire-and-forget (`unawaited(...)`) from
-      // `submit()`'s point of view, so poll rather than asserting instantly.
-      await _waitUntil(() async => !(await draftDir.exists()));
+      // `snapshotAtSubmissionCompleteAndMaybeFinalize` is fire-and-forget
+      // (`unawaited(...)`) from `submit()`'s point of view, so poll for
+      // the durable overlay record to land rather than asserting
+      // instantly.
+      OwnerOptimisticMediaRecord? record;
+      await _waitUntil(() async {
+        record = await OwnerOptimisticMediaPrefs.load(carId);
+        return record != null;
+      });
+      expect(
+        record!.items.length,
+        2,
+        reason: 'one image + one video expected',
+      );
+      expect(
+        record!.items.every((i) => !i.remoteDisplayReady),
+        isTrue,
+        reason: 'nothing has been visually confirmed on this device yet',
+      );
 
-      // And it must not have happened before the media/refresh work above
-      // -- already proven strictly ordered by the "Section 3" test; this
-      // additionally confirms the directory is ACTUALLY gone afterward
-      // (not merely emptied, and not merely scheduled).
+      // THE CORE CONTRACT (Critical Issue 1): backend success alone must
+      // NEVER delete local optimistic media -- "Backend full success !=
+      // remote media visibly usable on this device." Give any
+      // fire-and-forget work a moment to (not) run, then assert the
+      // directory is still fully intact.
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(
+        await draftDir.exists(),
+        isTrue,
+        reason: 'backend-done must never alone trigger local-file '
+            'cleanup -- only a confirmed on-device remote decode may',
+      );
+      expect(await File('${draftDir.path}/marker.txt').exists(), isTrue);
+
+      // Now simulate this device confirming the FIRST expected item's
+      // remote decode/initialization (e.g. `OwnerFallbackHeroImage`'s own
+      // success callback) -- only that one item becomes eligible for
+      // cleanup; the whole record/directory must still survive since the
+      // second item is not confirmed yet.
+      await OwnerOptimisticMediaCleanup.markRemoteDisplayReadyAndCleanup(
+        listingId: carId,
+        clientMediaId: record!.items.first.clientMediaId,
+      );
+      expect(
+        await draftDir.exists(),
+        isTrue,
+        reason: 'directory must survive while any expected item remains '
+            'unconfirmed',
+      );
+      final partial = await OwnerOptimisticMediaPrefs.load(carId);
+      expect(partial, isNotNull);
+      expect(partial!.allRemoteDisplayReady, isFalse);
+
+      // Confirming the LAST expected item finally makes whole-record
+      // cleanup allowed -- only now is the durable directory actually
+      // deleted, and the overlay record itself removed.
+      await OwnerOptimisticMediaCleanup.markRemoteDisplayReadyAndCleanup(
+        listingId: carId,
+        clientMediaId: record!.items.last.clientMediaId,
+      );
       expect(await draftDir.exists(), isFalse);
+      expect(await OwnerOptimisticMediaPrefs.load(carId), isNull);
     },
   );
 
@@ -1915,6 +1996,18 @@ void main() {
                 headers: {'content-type': 'application/json'},
               );
             }
+            if (method == 'GET' &&
+                RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
+              return http.Response(
+                json.encode({
+                  'media_status': 'ready',
+                  'items': <dynamic>[],
+                  'phase_a_complete': true,
+                }),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
             return http.Response(
               '{"cars": []}',
               200,
@@ -2240,6 +2333,18 @@ void main() {
                 headers: {'content-type': 'application/json'},
               );
             }
+            if (method == 'GET' &&
+                RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
+              return http.Response(
+                json.encode({
+                  'media_status': 'ready',
+                  'items': <dynamic>[],
+                  'phase_a_complete': true,
+                }),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
             return http.Response(
               '{"cars": []}',
               200,
@@ -2452,10 +2557,18 @@ void main() {
           'videos': <dynamic>[],
         };
 
-        // Stall the video upload indefinitely so the run cannot reach
-        // completion (and therefore cannot remove the record from disk)
-        // before this test inspects the persisted baseline.
-        final videoGate = Completer<void>();
+        // Media-readiness contract fix: Phase A now runs (and must fully
+        // complete, for every media kind) BEFORE Phase B's own poll/attach
+        // work starts -- so stalling the video's atomic upload call (which
+        // is itself Phase A for a normal video) would block Phase A
+        // globally, and this test's photo-processing Phase B work (whose
+        // progress it wants to observe WHILE something is still stalled)
+        // would never even start. Stall the image PROCESSING JOB POLL
+        // (`GET /api/jobs/<id>`, a Phase-B-only step) instead -- the video
+        // upload now succeeds normally/fast, so Phase A finishes quickly
+        // for every item, and the run reaches Phase B (where img3's poll
+        // hangs) exactly as before.
+        final jobPollGate = Completer<void>();
         ApiService.testHttpClient = MockClient((request) async {
           final method = request.method.toUpperCase();
           final path = request.url.path;
@@ -2463,10 +2576,37 @@ void main() {
             r'^/api/cars/([^/]+)/videos$',
           ).firstMatch(path);
           if (method == 'POST' && videoMatch != null) {
-            await videoGate.future;
+            // Real backend contract: a genuinely-confirmed video upload
+            // returns a `videos` array with one entry per successfully
+            // attached file (see `kk/routes/media.py::upload_car_videos`).
+            // The Flutter media-confirmation crediting logic now credits
+            // strictly off THIS array's length -- never the blindly-
+            // assumed request count -- so this mock must actually report
+            // the video it just "received" as confirmed, or the test's
+            // own claim that "the video is credited immediately" (its
+            // Phase A IS its full atomic attach) can never hold.
+            final vid = videoMatch.group(1)!;
+            final vcar = carsById.putIfAbsent(
+              vid,
+              () => {'id': vid, 'images': <dynamic>[], 'videos': <dynamic>[]},
+            );
+            final vrow = {'id': 901, 'kind': 'listing'};
+            (vcar['videos'] as List).add(vrow);
             return http.Response(
-              json.encode({'videos': []}),
+              json.encode({'videos': [vrow]}),
               201,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (method == 'GET' &&
+              RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
+            return http.Response(
+              json.encode({
+                'media_status': 'processing',
+                'items': <dynamic>[],
+                'phase_a_complete': true,
+              }),
+              200,
               headers: {'content-type': 'application/json'},
             );
           }
@@ -2528,6 +2668,7 @@ void main() {
             );
           }
           if (method == 'GET' && path.startsWith('/api/jobs/')) {
+            await jobPollGate.future;
             final jobId = path.substring('/api/jobs/'.length);
             return http.Response(
               json.encode({
@@ -2575,8 +2716,9 @@ void main() {
         // Poll the ON-DISK record (not just statusNotifier) until it
         // reflects at least the server-confirmed baseline of 2 -- proving
         // this was durably persisted, not just held in memory -- and then
-        // until it reaches 3 once the new 3rd photo also gets confirmed,
-        // all while the video step is still stalled and the run has not
+        // until it reaches 3 once the video's Phase-A atomic upload+attach
+        // also gets confirmed/credited, all while the new photo's own
+        // processing-job poll is still stalled and the run has not
         // finished.
         await _waitUntil(() async {
           final r = await SellSubmissionStatePrefs.load(draftId);
@@ -2587,8 +2729,8 @@ void main() {
         expect(
           duringBaseline!.status,
           SellSubmissionStatus.inProgress,
-          reason: 'the run has not finished yet -- the video step is still '
-              'stalled',
+          reason: 'the run has not finished yet -- the new photo\'s '
+              'processing-job poll is still stalled',
         );
 
         await _waitUntil(() async {
@@ -2599,14 +2741,17 @@ void main() {
         expect(
           afterNewPhoto!.completedMediaCount,
           3,
-          reason: '2 pre-existing + 1 newly confirmed photo = 3, durably '
-              'persisted to disk before the video step (still stalled) '
-              'has any chance to finish',
+          reason: '2 pre-existing photos + 1 confirmed video (its Phase A '
+              'IS its full atomic attach, so it is credited immediately, '
+              'before Phase B even starts) = 3, durably persisted to disk '
+              'while the new (3rd) photo\'s own processing job is still '
+              'stalled and has not yet had any chance to finish/credit '
+              'its own count',
         );
 
-        // Let the video step finish so the test can clean up without a
+        // Let the stalled poll finish so the test can clean up without a
         // dangling stalled future.
-        videoGate.complete();
+        jobPollGate.complete();
         await resumeFuture;
       },
     );
