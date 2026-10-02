@@ -262,9 +262,37 @@ void main() {
     );
     final dynamic state = tester.state(find.byType(SellCarPage));
     state.invalidatePlateBlurJob(clearBlurred: true);
+    // Wait for the OBSERVABLE state, not a fixed wall-clock guess: the real
+    // `startBackgroundPlateBlur()` reads every local file off disk
+    // (`http.MultipartFile.fromPath`), POSTs, and only THEN publishes the
+    // `blur_pending` skeleton. A fixed 100ms sleep here was only ~2.5x the
+    // time that takes on a fast dev machine (~40ms) and failed on a slower /
+    // loaded CI runner (cold first test in the file) with
+    // `enqueuedJobIds` still empty. Poll (bounded) until every job is
+    // enqueued AND every expected tile carries its `blur_pending` skeleton.
+    final expectedJobs =
+        (extraCarData['original_images'] as List?)?.length ?? 0;
     await tester.runAsync(() async {
       unawaited(state.startBackgroundPlateBlur() as Future<void>);
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      bool skeletonPublished() {
+        if (controlled.enqueuedJobIds.length != expectedJobs) return false;
+        final blurred = (state.carData as Map)['blurred_images'];
+        return blurred is List &&
+            blurred.length == expectedJobs &&
+            blurred.every((e) => e is Map && e['blur_pending'] == true);
+      }
+
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (!skeletonPublished()) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw TestFailure(
+            'plate-blur pending skeleton never published: '
+            'enqueued=${controlled.enqueuedJobIds.length}/$expectedJobs, '
+            'blurred_images=${(state.carData as Map)['blurred_images']}',
+          );
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
     });
     await tester.pump();
     return controlled;
@@ -275,8 +303,35 @@ void main() {
   /// just one `pump()`: each resolved job's continuation chain (including
   /// the progressive `onProgress` `setState` this file is specifically
   /// testing) is pinned to the real zone it was issued from.
-  Future<void> settle(WidgetTester tester) async {
-    for (var round = 0; round < 12; round++) {
+  ///
+  /// [until], when supplied, makes the wait state-driven instead of a fixed
+  /// number of rounds: keeps running rounds (bounded by a generous real-time
+  /// deadline, never a short guess) until the expected observable state is
+  /// reached, then runs a few extra rounds to flush trailing timers.
+  Future<void> settle(
+    WidgetTester tester, {
+    bool Function()? until,
+  }) async {
+    var extraRounds = 12;
+    if (until != null) {
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      var guard = 0;
+      while (!until()) {
+        if (DateTime.now().isAfter(deadline) || ++guard > 2000) {
+          throw TestFailure('settle(): expected state not reached in time');
+        }
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 15));
+      }
+      // Keep the full trailing flush (`extraRounds` stays 12): the
+      // cache-manager cleanup `Timer` described below is not observable
+      // from the widget tree, so it can only be flushed by the same
+      // real-async rounds as before.
+    }
+    for (var round = 0; round < extraRounds; round++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
@@ -346,7 +401,11 @@ void main() {
           controlled.enqueuedJobIds[0],
           'uploads/blurred_a_progressive.jpg',
         );
-        await settle(tester);
+        await settle(
+          tester,
+          until: () => _renderedNetworkImageUrls(tester)
+              .any((u) => u.contains('blurred_a_progressive.jpg')),
+        );
 
         var rendered = _renderedNetworkImageUrls(tester);
         expect(
@@ -367,7 +426,11 @@ void main() {
           controlled.enqueuedJobIds[1],
           'uploads/blurred_b_progressive.jpg',
         );
-        await settle(tester);
+        await settle(
+          tester,
+          until: () => _renderedNetworkImageUrls(tester)
+              .any((u) => u.contains('blurred_b_progressive.jpg')),
+        );
 
         rendered = _renderedNetworkImageUrls(tester);
         expect(
