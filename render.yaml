@@ -10,8 +10,14 @@
 # Universal / App Links (listing shares → open app):
 #   APPLE_TEAM_ID=<10-char Team ID>
 #   ANDROID_SHA256_CERT_FINGERPRINTS=<sha256>[,<sha256>...]
-#     Local upload keystore example (add Play App Signing SHA after first Play upload):
-#     9E:7A:AC:CF:0B:CE:7E:A3:0E:B9:9D:AF:DF:37:8E:1D:3E:6C:F6:C5:E8:C8:22:41:1E:53:F5:A5:72:40:97:E8
+#     Dashboard-managed (sync:false below) -- the live value is NOT stored in this
+#     file, so a Blueprint sync can never overwrite it. Production value for
+#     package com.carnetiq.app (comma-separated, no spaces):
+#       Google Play App Signing certificate (required for Play-installed builds):
+#         3A:5B:6A:0A:66:8E:EE:68:14:4B:BB:B3:E8:29:49:1F:3F:55:2B:0A:7A:AF:E0:75:C4:CC:3E:8C:E3:60:36:82
+#       Local/upload release keystore (directly installed locally-signed builds):
+#         CD:C1:2F:74:DD:C0:E3:53:F1:61:14:D2:E3:66:CA:5A:71:34:E2:1F:49:23:89:95:4F:B1:39:45:8E:DB:52:9A
+#     See docs/ANDROID_APP_LINKS_SETUP.md.
 #
 # Listing moderation (default: pending in production when unset):
 #   LISTING_REQUIRE_APPROVAL=1
@@ -59,9 +65,13 @@ services:
     startCommand: bash start_render.sh
     healthCheckPath: /health
     envVars:
-      # Non-secret; sync:false so dashboard can append Play App Signing SHA later.
+      # Non-secret, but dashboard-managed (sync:false): the value is set in the
+      # Render dashboard and a Blueprint sync must never overwrite it. Do not
+      # put a literal value back here (a literal previously reverted the live
+      # App Links fingerprints on sync). Required fingerprints are listed in
+      # the header comment above and docs/ANDROID_APP_LINKS_SETUP.md.
       - key: ANDROID_SHA256_CERT_FINGERPRINTS
-        value: "9E:7A:AC:CF:0B:CE:7E:A3:0E:B9:9D:AF:DF:37:8E:1D:3E:6C:F6:C5:E8:C8:22:41:1E:53:F5:A5:72:40:97:E8"
+        sync: false
 
   # Browser admin dashboard (Next.js). Proxies API calls to the carr service.
   - type: web

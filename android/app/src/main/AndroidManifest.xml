@@ -136,6 +136,13 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${GOOGLE_MAPS_API_KEY}" />
+        <!-- FCM notification messages received while the app is backgrounded/killed
+             are posted by the system, not by Dart. Without this they land in FCM's
+             fallback channel. Points at the high-importance channel created in
+             lib/services/push_notification_service.dart. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="carzo_chat" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
