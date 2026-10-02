@@ -2,8 +2,10 @@ part of 'home_flow.dart';
 
 mixin _HomePageFilterCatalog on _HomePageFetch {
   void _invalidateHomeCatalogFilterCaches() {
-    _homeMotorOptsCacheKey = null;
-    _homeMotorOptsCache = null;
+    _homeCatalogOptsCacheKey = null;
+    _homeCatalogOptsCache = null;
+    _homeEngineCatalogOptsCacheKey = null;
+    _homeEngineCatalogOptsCache = null;
     _homeFilterSpecVariantsCacheKey = null;
     _homeFilterSpecVariantsCache = null;
   }
@@ -22,7 +24,7 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
 
   void _afterHomeYearBoundsChanged() {
     _invalidateHomeCatalogFilterCaches();
-    _pruneHomeMotorFilterSelectionsIfInvalid();
+    syncDependentFiltersToVehicle();
   }
 
   /// Spec rows for correlating engine ↔ cylinders in More Filters (cached per scope).
@@ -175,101 +177,128 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     _moreFiltersDialogFieldGeneration++;
   }
 
-  /// Catalog-backed engine/cylinder unions for the current brand + model (+ trim), or null.
-  ({List<String> engines, List<String> cylinders})?
-  _catalogMotorFilterOptions() {
-    final b = homeFilterDecodeSingle(selectedBrand)?.trim() ?? '';
-    final m = selectedModel?.trim();
-    if (b.isEmpty || m == null || m.isEmpty) return null;
+  /// The current Search vehicle selection (make / model / trim / year window).
+  HomeVehicleContext _homeVehicleContext() {
+    final yb = _homeFilterYearBounds();
+    return HomeVehicleContext(
+      brand: homeFilterDecodeSingle(selectedBrand),
+      model: selectedModel,
+      trim: selectedTrim,
+      minYear: yb.minY,
+      maxYear: yb.maxY,
+    );
+  }
+
+  /// Model-level catalog values (make + model + year window; trim ignored) from
+  /// the same resolver and dependency depth Sell step 2 uses
+  /// ([CarSpecIndex.sellFieldOptionsUnion] with `catalogAutofillModelOnly`).
+  /// Drives cylinders, body, transmission, fuel, drive and seating. Null when the
+  /// catalog cannot answer (no model / unknown model / no index).
+  CatalogSellFieldOptions? _homeCatalogFieldOptions() {
     final idx = _homeCarSpecIdx;
     if (idx == null) return null;
-    final trimKey = selectedTrim?.trim() ?? '';
-    final yb = _homeFilterYearBounds();
-    final key =
-        '$b|\x1e|$m|\x1e|$trimKey|\x1e|${yb.minY ?? ''}|\x1e|${yb.maxY ?? ''}';
-    if (_homeMotorOptsCacheKey == key && _homeMotorOptsCache != null) {
-      return _homeMotorOptsCache;
-    }
-    final appTrim = trimKey.isEmpty
-        ? CarSpecIndex.catalogAutofillModelOnly
-        : trimKey;
-    final raw = idx.homeFilterEngineCylinderOptions(
-      b,
-      m,
-      appTrim,
-      rangeMinYear: yb.minY,
-      rangeMaxYear: yb.maxY,
-    );
-    if (raw == null) {
-      return null;
-    }
-    if (raw.engineSizes.isEmpty &&
-        raw.cylinderCounts.isEmpty &&
-        yb.minY == null &&
-        yb.maxY == null) {
-      return null;
-    }
-    _homeMotorOptsCacheKey = key;
-    _homeMotorOptsCache = (
-      engines: raw.engineSizes,
-      cylinders: raw.cylinderCounts,
-    );
-    return _homeMotorOptsCache;
+    final ctx = _homeVehicleContext();
+    final key = ctx.modelCacheKey;
+    if (_homeCatalogOptsCacheKey == key) return _homeCatalogOptsCache;
+    final resolved = resolveHomeVehicleCatalogOptions(idx, ctx);
+    _homeCatalogOptsCacheKey = key;
+    _homeCatalogOptsCache = resolved;
+    return resolved;
   }
 
-  void _pruneHomeMotorFilterSelectionsIfInvalid() {
-    final eng = selectedEngineSize;
-    if (eng != null &&
-        eng.isNotEmpty &&
-        eng.toLowerCase() != 'any' &&
-        !getAvailableEngineSizes().contains(eng)) {
-      selectedEngineSize = null;
-      _engineSizeController.clear();
+  /// Trim-aware catalog values (make + model + trim + year window). Engine size
+  /// only: Search's pre-existing trim narrowing for engines, which Sell lacks.
+  CatalogSellFieldOptions? _homeEngineCatalogFieldOptions() {
+    final idx = _homeCarSpecIdx;
+    if (idx == null) return null;
+    final ctx = _homeVehicleContext();
+    final key = ctx.engineCacheKey;
+    if (_homeEngineCatalogOptsCacheKey == key) {
+      return _homeEngineCatalogOptsCache;
     }
-    final cyl = selectedCylinderCount;
-    if (cyl != null &&
-        cyl.isNotEmpty &&
-        cyl.toLowerCase() != 'any' &&
-        !getAvailableCylinderCounts().contains(cyl)) {
-      selectedCylinderCount = null;
-    }
+    final resolved = resolveHomeVehicleEngineCatalogOptions(idx, ctx);
+    _homeEngineCatalogOptsCacheKey = key;
+    _homeEngineCatalogOptsCache = resolved;
+    return resolved;
   }
 
-  void clearFiltersOnVehicleChange() {
-    // Clear filters that are specific to vehicle specifications
-    selectedBodyType = null;
-    selectedTransmission = null;
-    selectedFuelType = null;
-    selectedDriveType = null;
-    selectedCylinderCount = null;
-    selectedSeating = null;
-    selectedEngineSize = null;
-    selectedColor = null;
+  HomeVehicleFieldDefaults _homeVehicleFieldDefaults() =>
+      HomeVehicleFieldDefaults(
+        bodyTypes: bodyTypes,
+        transmissions: transmissions
+            .where((t) => t == 'Any' || !_isExcludedTransmissionFilter(t))
+            .toList(growable: false),
+        fuelTypes: fuelTypes,
+        driveTypes: driveTypes,
+        cylinderCounts: cylinderCounts
+            .where((c) => !_isExcludedCylinderFilter(c))
+            .toList(growable: false),
+        seatings: seatings,
+        engineSizes: engineSizeFilterOptionsFromCatalog(_homeCarSpecIdx),
+      );
+
+  /// Per-field allowed values for the current vehicle (catalog-narrowed where the
+  /// catalog has data for that field, defaults otherwise).
+  HomeVehicleFieldOptions _homeVehicleFieldOptions() =>
+      HomeVehicleFieldOptions.resolve(
+        catalog: _homeCatalogFieldOptions(),
+        engineCatalog: _homeEngineCatalogFieldOptions(),
+        defaults: _homeVehicleFieldDefaults(),
+      );
+
+  /// Re-validates every catalog-dependent filter against the current vehicle.
+  ///
+  /// Called whenever make / model / trim / year window change, after the catalog
+  /// finishes loading, and after filters are restored (saved search, session,
+  /// dialog revert). Only selections the catalog has ruled out are cleared;
+  /// valid selections (and fields without catalog data) are kept untouched.
+  /// Returns true if anything was cleared.
+  bool syncDependentFiltersToVehicle() {
+    final before = HomeVehicleDependentSelections(
+      bodyType: selectedBodyType,
+      transmission: selectedTransmission,
+      fuelType: selectedFuelType,
+      driveType: selectedDriveType,
+      cylinderCount: selectedCylinderCount,
+      seating: selectedSeating,
+      engineSize: selectedEngineSize,
+    );
+    final after = sanitizeHomeVehicleDependentSelections(
+      before,
+      _homeVehicleFieldOptions(),
+      pruneEngineSize: isEngineSizeDropdown,
+    );
+    if (after == before) return false;
+    selectedBodyType = after.bodyType;
+    selectedTransmission = after.transmission;
+    selectedFuelType = after.fuelType;
+    selectedDriveType = after.driveType;
+    selectedCylinderCount = after.cylinderCount;
+    selectedSeating = after.seating;
+    if (after.engineSize != before.engineSize) {
+      selectedEngineSize = after.engineSize;
+      _engineSizeController.text = after.engineSize ?? '';
+    }
+    // Remount dropdowns so they drop stale internal state.
+    _moreFiltersDialogFieldGeneration++;
+    return true;
   }
 
   // Helper methods to get available options based on selected vehicle
-  List<String> getAvailableEngineSizes() {
-    final mot = _catalogMotorFilterOptions();
-    if (mot != null) {
-      if (mot.engines.isNotEmpty) {
-        return ['Any', ...mot.engines];
-      }
-      return const ['Any'];
-    }
-    return engineSizeFilterOptionsFromCatalog(_homeCarSpecIdx);
-  }
+  List<String> getAvailableEngineSizes() =>
+      _homeVehicleFieldOptions().engineSizes;
 
   List<String> getAvailableConditions() => conditions;
 
-  List<String> getAvailableBodyTypes() => bodyTypes;
+  List<String> getAvailableBodyTypes() => _homeVehicleFieldOptions().bodyTypes;
 
-  List<String> getAvailableTransmissions() => transmissions
-      .where((t) => t == 'Any' || !_isExcludedTransmissionFilter(t))
-      .toList();
+  List<String> getAvailableTransmissions() =>
+      _homeVehicleFieldOptions().transmissions;
 
-  List<String> getAvailableFuelTypes() => fuelTypes;
+  List<String> getAvailableFuelTypes() => _homeVehicleFieldOptions().fuelTypes;
 
-  List<String> getAvailableDriveTypes() => driveTypes;
+  List<String> getAvailableDriveTypes() =>
+      _homeVehicleFieldOptions().driveTypes;
 
   static const Set<String> _excludedCylinderFilterValues = {
     '7',
@@ -287,17 +316,21 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     return _excludedCylinderFilterValues.contains(v);
   }
 
-  List<String> getAvailableCylinderCounts() {
-    // Always use the full static ladder (incl. 12 / 16). Catalog unions often
-    // stop at 10 and would hide valid search options when a make/model is set.
-    return cylinderCounts
-        .where((c) => !_isExcludedCylinderFilter(c))
-        .toList(growable: false);
-  }
+  /// Model-aware like Sell: the catalog's known cylinder counts for the selected
+  /// vehicle, or the full static ladder when the catalog has none for it.
+  List<String> getAvailableCylinderCounts() =>
+      _homeVehicleFieldOptions().cylinderCounts;
 
-  List<String> getAvailableSeatings() => seatings;
+  List<String> getAvailableSeatings() => _homeVehicleFieldOptions().seatings;
 
   List<String> getAvailableColors() => colors;
+
+  String _getValidSeatingValue() {
+    return homeValidDropdownSelection(
+      selected: selectedSeating,
+      available: getAvailableSeatings(),
+    );
+  }
 
   String _getValidCylinderCountValue() {
     return homeValidDropdownSelection(

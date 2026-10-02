@@ -167,10 +167,13 @@ abstract class _HomePageFields extends State<HomePage> {
   /// (`initialValue` is otherwise ignored after the first build).
   int _moreFiltersDialogFieldGeneration = 0;
 
-  /// Bundled spec DB for model-aware engine / cylinder pick lists in More Filters.
+  /// Bundled spec DB for model-aware pick lists (engine, cylinders, body,
+  /// transmission, fuel, drive, seating) — same resolver Sell step 2 uses.
   CarSpecIndex? _homeCarSpecIdx;
-  String? _homeMotorOptsCacheKey;
-  ({List<String> engines, List<String> cylinders})? _homeMotorOptsCache;
+  String? _homeCatalogOptsCacheKey;
+  CatalogSellFieldOptions? _homeCatalogOptsCache;
+  String? _homeEngineCatalogOptsCacheKey;
+  CatalogSellFieldOptions? _homeEngineCatalogOptsCache;
   String? _homeFilterSpecVariantsCacheKey;
   List<OnlineSpecVariant>? _homeFilterSpecVariantsCache;
 
@@ -442,7 +445,7 @@ class _HomePageState extends _HomePageFields
         setState(() {
           _homeCarSpecIdx = r.index;
           _invalidateHomeCatalogFilterCaches();
-          _pruneHomeMotorFilterSelectionsIfInvalid();
+          syncDependentFiltersToVehicle();
         });
       });
       return;
@@ -475,7 +478,7 @@ class _HomePageState extends _HomePageFields
       setState(() {
         _homeCarSpecIdx = r.index;
         _invalidateHomeCatalogFilterCaches();
-        _pruneHomeMotorFilterSelectionsIfInvalid();
+        syncDependentFiltersToVehicle();
       });
     });
     if (!_HomePageFields._homeDeleteHandlerRegistered) {

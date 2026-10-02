@@ -59,7 +59,7 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersColor {
           context: context,
           style: style,
           label: loc.seating,
-          value: selectedSeating ?? '',
+          value: _getValidSeatingValue(),
           narrowMenu: narrowMenu,
           items: [
             ...anyItem(),

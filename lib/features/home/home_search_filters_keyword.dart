@@ -88,7 +88,7 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
               onTap: () {
                 setState(() {
                   _homeSetSelectedBrand(brand);
-                  clearFiltersOnVehicleChange();
+                  syncDependentFiltersToVehicle();
                   _searchFiltersKeywordController.clear();
                   _searchFiltersKeywordFocusNode.unfocus();
                 });
@@ -123,7 +123,7 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
                   _homeSetSelectedBrand(item['brand']);
                   selectedModel = item['model'];
                   selectedTrim = null;
-                  clearFiltersOnVehicleChange();
+                  syncDependentFiltersToVehicle();
                   _searchFiltersKeywordController.clear();
                   _searchFiltersKeywordFocusNode.unfocus();
                 });

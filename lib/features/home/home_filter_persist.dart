@@ -59,6 +59,10 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedTitleStatus = parsed.titleStatus;
     selectedDamagedParts = parsed.damagedParts;
     selectedSortBy = _localizedSortSelection(parsed.sortBy);
+    // Restored dependent values must agree with the restored vehicle: keep valid
+    // ones, drop only those the catalog rules out (no-op until the catalog loads;
+    // the catalog-load hook re-runs it).
+    syncDependentFiltersToVehicle();
   }
 
   void _applyHomeFiltersSnapshot(HomeFiltersSnapshot snap) {
@@ -88,6 +92,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     selectedTitleStatus = snap.titleStatus;
     selectedDamagedParts = snap.damagedParts;
     selectedSortBy = _localizedSortSelection(snap.sortByUi);
+    syncDependentFiltersToVehicle();
   }
 
   /// Re-localizes a persisted sort label so chips/menus match the active language.
@@ -201,6 +206,7 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
       isYearDropdown = snap['isYearDropdown'] == true;
       isMileageDropdown = snap['isMileageDropdown'] == true;
       isEngineSizeDropdown = snap['isEngineSizeDropdown'] == true;
+      syncDependentFiltersToVehicle();
       _syncHomeFilterTextControllersFromSelection();
     });
   }

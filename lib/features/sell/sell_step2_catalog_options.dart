@@ -14,10 +14,7 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
   List<String> getAvailableBodyTypes() {
     final online = _onlineMultiFromCarData('_online_opts_body');
     if (online != null) return online;
-    final o = _catalogSellOpts;
-    if (o == null || o.bodyTypes.isEmpty) return bodyTypes;
-    final f = bodyTypes.where((e) => o.bodyTypes.contains(e)).toList();
-    return f.isEmpty ? bodyTypes : f;
+    return narrowOptionsToCatalog(bodyTypes, _catalogSellOpts?.bodyTypes);
   }
 
   List<String> getAvailableColors() {
@@ -32,37 +29,28 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
   List<String> getAvailableTransmissions() {
     final online = _onlineMultiFromCarData('_online_opts_transmission');
     if (online != null) return online;
-    final o = _catalogSellOpts;
-    if (o == null || o.transmissions.isEmpty) return transmissions;
-    final f = transmissions.where((e) => o.transmissions.contains(e)).toList();
-    return f.isEmpty ? transmissions : f;
+    return narrowOptionsToCatalog(
+      transmissions,
+      _catalogSellOpts?.transmissions,
+    );
   }
 
   List<String> getAvailableFuelTypes() {
     final online = _onlineMultiFromCarData('_online_opts_fuel');
     if (online != null) return online;
-    final o = _catalogSellOpts;
-    if (o == null || o.fuelTypes.isEmpty) return fuelTypes;
-    final f = fuelTypes.where((e) => o.fuelTypes.contains(e)).toList();
-    return f.isEmpty ? fuelTypes : f;
+    return narrowOptionsToCatalog(fuelTypes, _catalogSellOpts?.fuelTypes);
   }
 
   List<String> getAvailableDriveTypes() {
     final online = _onlineMultiFromCarData('_online_opts_drive');
     if (online != null) return online;
-    final o = _catalogSellOpts;
-    if (o == null || o.driveTypes.isEmpty) return driveTypes;
-    final f = driveTypes.where((e) => o.driveTypes.contains(e)).toList();
-    return f.isEmpty ? driveTypes : f;
+    return narrowOptionsToCatalog(driveTypes, _catalogSellOpts?.driveTypes);
   }
 
   List<String> getAvailableSeatings() {
     final online = _onlineMultiFromCarData('_online_opts_seating');
     if (online != null) return online;
-    final o = _catalogSellOpts;
-    if (o == null || o.seatings.isEmpty) return seatings;
-    final f = seatings.where((e) => o.seatings.contains(e)).toList();
-    return f.isEmpty ? seatings : f;
+    return narrowOptionsToCatalog(seatings, _catalogSellOpts?.seatings);
   }
 
   List<String> getAvailableEngineSizes() {
@@ -82,14 +70,7 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
     }
     final o = _catalogSellOpts;
     if (o != null && o.engineSizes.isNotEmpty) {
-      final catalog = o.engineSizes.toList()
-        ..sort((a, b) {
-          final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
-          final be = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
-          final c = ae.compareTo(be);
-          if (c != 0) return c;
-          return a.toLowerCase().compareTo(b.toLowerCase());
-        });
+      final catalog = sortCatalogEngineSizeLabels(o.engineSizes);
       if (catalog.length == 1) return catalog;
       return <String>['Any', ...catalog];
     }
@@ -99,12 +80,10 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
   List<String> getAvailableCylinderCounts() {
     final online = _onlineMultiFromCarData('_online_opts_cylinder');
     if (online != null) return online;
-    final o = _catalogSellOpts;
-    if (o == null || o.cylinderCounts.isEmpty) return cylinderCounts;
-    final f = cylinderCounts
-        .where((e) => o.cylinderCounts.contains(e))
-        .toList();
-    return f.isEmpty ? cylinderCounts : f;
+    return narrowOptionsToCatalog(
+      cylinderCounts,
+      _catalogSellOpts?.cylinderCounts,
+    );
   }
 
   List<OnlineSpecVariant>? _onlineSpecVariantsFromParent() {

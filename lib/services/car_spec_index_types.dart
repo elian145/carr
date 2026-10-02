@@ -65,4 +65,40 @@ class CatalogSellFieldOptions {
   final Set<String> seatings;
 }
 
+/// Shared "catalog narrows, defaults fall back" contract used by **both** Sell
+/// step 2 and Search/Filters for every catalog-dependent field.
+///
+/// * [known] has values  -> only the entries of [defaults] that the catalog knows
+///   (default list order/labels are preserved). [passthrough] (the filter-only
+///   `Any` entry) is always kept in place.
+/// * [known] is null/empty (catalog has no data for this field), or none of the
+///   known values exist in [defaults] -> the full [defaults] list. A missing field
+///   must never produce an empty picker, and values are never inferred.
+List<String> narrowOptionsToCatalog(
+  List<String> defaults,
+  Set<String>? known, {
+  String passthrough = 'Any',
+}) {
+  if (known == null || known.isEmpty) return defaults;
+  final narrowed = defaults
+      .where((e) => e == passthrough || known.contains(e))
+      .toList(growable: false);
+  final hasRealOption = narrowed.any((e) => e != passthrough);
+  return hasRealOption ? narrowed : defaults;
+}
+
+/// Engine-size labels (`2.0`, `3.5 T`, ...) ordered by litres, then label.
+/// Shared by Sell step 2 and Search so both list catalog engines identically.
+List<String> sortCatalogEngineSizeLabels(Iterable<String> labels) {
+  final sorted = labels.toList()
+    ..sort((a, b) {
+      final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
+      final be = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
+      final c = ae.compareTo(be);
+      if (c != 0) return c;
+      return a.toLowerCase().compareTo(b.toLowerCase());
+    });
+  return sorted;
+}
+
 /// Sell step 2 picker label for transmission (internal API value from [CatalogSpecFields]).

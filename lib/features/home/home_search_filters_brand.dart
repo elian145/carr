@@ -186,7 +186,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
               onSummaryTap: () {
                   setState(() {
                     _homeSetSelectedBrand(null);
-                    clearFiltersOnVehicleChange();
+                    syncDependentFiltersToVehicle();
                   });
                   setStateDialog(() {});
                 },
@@ -233,7 +233,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                           onTap: () {
                             setState(() {
                               _homeToggleBrand(brand);
-                              clearFiltersOnVehicleChange();
+                              syncDependentFiltersToVehicle();
                             });
                             setStateDialog(() {});
                           },
@@ -272,7 +272,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                       onTap: () {
                         setState(() {
                           _homeToggleBrand(brand);
-                          clearFiltersOnVehicleChange();
+                          syncDependentFiltersToVehicle();
                         });
                         setStateDialog(() {});
                       },
@@ -292,7 +292,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                   setState(() {
                     selectedModel = null;
                     selectedTrim = null;
-                    clearFiltersOnVehicleChange();
+                    syncDependentFiltersToVehicle();
                   });
                   setStateDialog(() {});
                 },
@@ -309,7 +309,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                 onSummaryTap: () {
                   setState(() {
                     selectedTrim = null;
-                    clearFiltersOnVehicleChange();
+                    syncDependentFiltersToVehicle();
                   });
                   setStateDialog(() {});
                 },
@@ -461,7 +461,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
         setState(() {
           selectedModel = value;
           selectedTrim = null;
-          clearFiltersOnVehicleChange();
+          syncDependentFiltersToVehicle();
         });
         setStateDialog(() {});
       },
@@ -499,7 +499,7 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
       onChanged: (value) {
         setState(() {
           selectedTrim = value;
-          clearFiltersOnVehicleChange();
+          syncDependentFiltersToVehicle();
         });
         setStateDialog(() {});
       },

@@ -1,8 +1,18 @@
 part of 'car_spec_index.dart';
 
 mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
-  ({List<String> engineSizes, List<String> cylinderCounts})?
-      homeFilterEngineCylinderOptions(
+  /// Union of **every** catalog-derived Sell field ([sellFieldOptionsUnion] — the
+  /// exact resolver Sell step 2 uses) across the catalog years in scope for the
+  /// home/search filters.
+  ///
+  /// With no year bounds all catalog years for the make/model(/trim) are unioned;
+  /// with [rangeMinYear]/[rangeMaxYear] only the years inside that window are.
+  /// Each field set is independent: an empty set means "the catalog has no data
+  /// for this field" (callers fall back to defaults for that field only).
+  ///
+  /// Returns null when the catalog cannot answer at all (unknown brand/model, no
+  /// spec rows, or the year window excludes every catalog year).
+  CatalogSellFieldOptions? homeFilterFieldOptions(
     String appBrand,
     String appModel,
     String appTrim, {
@@ -22,39 +32,41 @@ mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
           )
           .toList();
     }
-    if (yearList.isEmpty) {
-      return (engineSizes: <String>[], cylinderCounts: <String>[]);
-    }
-    final engines = <String>{};
-    final cylinders = <String>{};
+    if (yearList.isEmpty) return null;
+    final transmissions = <String>{};
+    final fuelTypes = <String>{};
+    final bodyTypes = <String>{};
+    final driveTypes = <String>{};
+    final cylinderCounts = <String>{};
+    final engineSizes = <String>{};
+    final seatings = <String>{};
     var anyRow = false;
     for (final y in yearList) {
       final o = sellFieldOptionsUnion(appBrand, appModel, appTrim, y);
       if (o == null) continue;
       anyRow = true;
-      engines.addAll(o.engineSizes);
-      cylinders.addAll(o.cylinderCounts);
+      transmissions.addAll(o.transmissions);
+      fuelTypes.addAll(o.fuelTypes);
+      bodyTypes.addAll(o.bodyTypes);
+      driveTypes.addAll(o.driveTypes);
+      cylinderCounts.addAll(o.cylinderCounts);
+      engineSizes.addAll(o.engineSizes);
+      seatings.addAll(o.seatings);
     }
     if (!anyRow) return null;
-    final engList = engines.toList()
-      ..sort((a, b) {
-        final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
-        final be = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
-        final c = ae.compareTo(be);
-        if (c != 0) return c;
-        return a.toLowerCase().compareTo(b.toLowerCase());
-      });
-    final cylList = cylinders.toList()
-      ..sort((a, b) {
-        final ia = int.tryParse(a) ?? 0;
-        final ib = int.tryParse(b) ?? 0;
-        return ia.compareTo(ib);
-      });
-    return (engineSizes: engList, cylinderCounts: cylList);
+    return CatalogSellFieldOptions(
+      transmissions: transmissions,
+      fuelTypes: fuelTypes,
+      bodyTypes: bodyTypes,
+      driveTypes: driveTypes,
+      cylinderCounts: cylinderCounts,
+      engineSizes: engineSizes,
+      seatings: seatings,
+    );
   }
 
   /// Deduped [OnlineSpecVariant] rows across all catalog years in scope for home filters
-  /// (same year window as [homeFilterEngineCylinderOptions]).
+  /// (same year window as [homeFilterFieldOptions]).
   List<OnlineSpecVariant> homeFilterSpecVariantsUnion(
     String appBrand,
     String appModel,
