@@ -30,6 +30,8 @@ abstract class CarSpecIndexBase {
   /// Parsing runs in a background isolate ([compute]) so large datasets do not
   /// freeze the UI isolate. Asset IO still happens on the caller isolate.
   static Future<CarSpecIndexLoadResult> loadWithResult() async {
+    final override = debugLoadWithResultOverride;
+    if (override != null) return override();
     try {
       final sw = Stopwatch()..start();
       final raw = await rootBundle.loadString(assetPath);
@@ -49,6 +51,12 @@ abstract class CarSpecIndexBase {
       );
     }
   }
+
+  /// Test seam: replaces [loadWithResult] so widget tests can hold the spec
+  /// catalog load open (or complete it on demand) to prove UI work never waits
+  /// on it. Always null in production.
+  @visibleForTesting
+  static Future<CarSpecIndexLoadResult> Function()? debugLoadWithResultOverride;
 
   /// Backward-compatible loader (null if anything goes wrong).
   static Future<CarSpecIndex?> load() async {

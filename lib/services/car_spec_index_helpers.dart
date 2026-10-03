@@ -37,10 +37,7 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
       if (spec == null) continue;
       final CatalogSpecFields f;
       try {
-        f = _mapSpecToFormFields(
-          spec,
-          catalogLabelHint: '${m.name} ${trim.name}',
-        );
+        f = _formFieldsForTrim(m, trim, spec);
       } catch (e, st) { logNonFatal(e, st); 
         continue;
       }
@@ -90,15 +87,46 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     });
   }
 
+  /// The index is immutable once built, so family lookups are memoized: the
+  /// year-window resolvers ask for the same family once per model year.
+  final Map<String, List<_Model>> _familyModelsCache = <String, List<_Model>>{};
+
   List<_Model> _familyModels(int brandId, String appModel) {
     final fam = appModel.trim();
-    if (fam.isEmpty) return [];
+    if (fam.isEmpty) return const [];
     final famLower = fam.toLowerCase();
-    final list = _modelsByBrandId[brandId] ?? [];
-    return list
-        .where((m) => _datasetNameMatchesAppFamily(m.name, famLower))
-        .toList()
-      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return _familyModelsCache.putIfAbsent(
+      '$brandId\x1e$famLower',
+      () {
+        final list = _modelsByBrandId[brandId] ?? const <_Model>[];
+        return List<_Model>.unmodifiable(
+          list
+              .where((m) => _datasetNameMatchesAppFamily(m.name, famLower))
+              .toList()
+            ..sort(
+              (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+            ),
+        );
+      },
+    );
+  }
+
+  /// Memoized [_mapSpecToFormFields] for a dataset trim. The mapping depends
+  /// only on the trim's spec and its `"<model> <trim>"` label, never on the
+  /// model year, so a trim that spans many model years is mapped once instead
+  /// of once per year. Throws are not cached (callers keep their own handling).
+  final Map<int, CatalogSpecFields> _formFieldsByTrimIdCache =
+      <int, CatalogSpecFields>{};
+
+  CatalogSpecFields _formFieldsForTrim(_Model m, _Trim trim, _Spec spec) {
+    final cached = _formFieldsByTrimIdCache[trim.id];
+    if (cached != null) return cached;
+    final f = _mapSpecToFormFields(
+      spec,
+      catalogLabelHint: '${m.name} ${trim.name}',
+    );
+    _formFieldsByTrimIdCache[trim.id] = f;
+    return f;
   }
 
   /// True when [datasetVariantName] belongs to the app catalog model line [familyLower].

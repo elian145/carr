@@ -318,10 +318,7 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
       final spec = _specForTrim(trim.id);
       if (spec == null) continue;
       anySpec = true;
-      final f = _mapSpecToFormFields(
-        spec,
-        catalogLabelHint: '${m.name} ${trim.name}',
-      );
+      final f = _formFieldsForTrim(m, trim, spec);
       transmissions.add(sellFlowTransmissionLabel(f.transmission));
       fuelTypes.add(sellFlowFuelLabel(f.fuelType));
       bodyTypes.add(sellFlowBodyLabel(f.bodyType));
@@ -352,12 +349,12 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
 
   List<String>? _allCatalogEngineSizeLabelsCache;
 
-  /// Every distinct engine-size label in the bundled catalog (e.g. `2.0`, `2.0 T`,
-  /// `3.0 D`), sorted by liters then label. Cached after first call.
-  List<String> allCatalogEngineSizeLabels() {
-    final cached = _allCatalogEngineSizeLabelsCache;
-    if (cached != null) return cached;
+  /// The cached [allCatalogEngineSizeLabels] if it has been built, else null.
+  /// Never scans the catalog.
+  List<String>? peekAllCatalogEngineSizeLabels() =>
+      _allCatalogEngineSizeLabelsCache;
 
+  Map<int, String> _trimHintsById() {
     final trimHintById = <int, String>{};
     for (final entry in _trimsByModelId.entries) {
       final model = _modelsById[entry.key];
@@ -366,9 +363,15 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
             model != null ? '${model.name} ${trim.name}' : trim.name;
       }
     }
+    return trimHintById;
+  }
 
-    final engines = <String>{};
-    for (final entry in _specByTrimId.entries) {
+  void _collectEngineLabels(
+    Iterable<MapEntry<int, _Spec>> specs,
+    Map<int, String> trimHintById,
+    Set<String> out,
+  ) {
+    for (final entry in specs) {
       try {
         final fields = _mapSpecToFormFields(
           entry.value,
@@ -376,15 +379,15 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
         );
         final liters = fields.engineSizeLiters;
         if (liters == null || liters <= 0.001) continue;
-        engines.add(
-          '${liters.toStringAsFixed(1)}${fields.displacementSuffix}',
-        );
+        out.add('${liters.toStringAsFixed(1)}${fields.displacementSuffix}');
       } catch (_) {
         // Skip malformed rows; still return the rest of the catalog.
       }
     }
+  }
 
-    final list = engines.toList()
+  List<String> _sortedEngineLabels(Set<String> engines) {
+    return engines.toList()
       ..sort((a, b) {
         final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
         final be = OnlineSpecVariant.parseLeadingEngineLiters(b) ?? 0;
@@ -392,7 +395,54 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
         if (c != 0) return c;
         return a.toLowerCase().compareTo(b.toLowerCase());
       });
-    _allCatalogEngineSizeLabelsCache = list;
-    return list;
+  }
+
+  /// Every distinct engine-size label in the bundled catalog (e.g. `2.0`, `2.0 T`,
+  /// `3.0 D`), sorted by liters then label. Cached after first call.
+  ///
+  /// This maps every spec row, so a cold call is expensive; UI paths that must
+  /// stay responsive should use [peekAllCatalogEngineSizeLabels] and let
+  /// [prewarmAllCatalogEngineSizeLabels] fill the cache in the background.
+  List<String> allCatalogEngineSizeLabels() {
+    final cached = _allCatalogEngineSizeLabelsCache;
+    if (cached != null) return cached;
+    final engines = <String>{};
+    _collectEngineLabels(_specByTrimId.entries, _trimHintsById(), engines);
+    return _allCatalogEngineSizeLabelsCache = _sortedEngineLabels(engines);
+  }
+
+  /// Builds the same cache as [allCatalogEngineSizeLabels] in short time slices
+  /// (about [sliceBudget] each), waiting for the next frame between slices so
+  /// the scan never holds the UI isolate for a whole frame. Safe to call
+  /// repeatedly / alongside the sync getter (both yield the identical list).
+  Future<void> prewarmAllCatalogEngineSizeLabels({
+    Duration sliceBudget = const Duration(milliseconds: 3),
+  }) async {
+    if (_allCatalogEngineSizeLabelsCache != null) return;
+    final hints = _trimHintsById();
+    final engines = <String>{};
+    final entries = _specByTrimId.entries.toList(growable: false);
+    const batch = 16;
+    var i = 0;
+    while (i < entries.length) {
+      if (_allCatalogEngineSizeLabelsCache != null) return;
+      final slice = Stopwatch()..start();
+      do {
+        final end = i + batch < entries.length ? i + batch : entries.length;
+        _collectEngineLabels(entries.getRange(i, end), hints, engines);
+        i = end;
+      } while (i < entries.length && slice.elapsed < sliceBudget);
+      if (i < entries.length) await _yieldToNextFrame();
+    }
+    _allCatalogEngineSizeLabelsCache ??= _sortedEngineLabels(engines);
+  }
+
+  static Future<void> _yieldToNextFrame() {
+    try {
+      return SchedulerBinding.instance.endOfFrame;
+    } catch (_) {
+      // No Flutter binding (plain Dart test): fall back to the event loop.
+      return Future<void>.delayed(Duration.zero);
+    }
   }
 }

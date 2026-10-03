@@ -92,7 +92,8 @@ class HomeVehicleFieldDefaults {
     required this.driveTypes,
     required this.cylinderCounts,
     required this.seatings,
-    required this.engineSizes,
+    this.engineSizes = const <String>[],
+    this.engineSizesProvider,
   });
 
   final List<String> bodyTypes;
@@ -101,7 +102,17 @@ class HomeVehicleFieldDefaults {
   final List<String> driveTypes;
   final List<String> cylinderCounts;
   final List<String> seatings;
+
+  /// Eager default engine sizes. Ignored when [engineSizesProvider] is set.
   final List<String> engineSizes;
+
+  /// Lazy default engine sizes. Building the full-catalog engine list scans
+  /// every spec row, so callers pass a provider and only pay for it when the
+  /// catalog has nothing to say about the selected vehicle's engines.
+  final List<String> Function()? engineSizesProvider;
+
+  List<String> get resolvedEngineSizes =>
+      engineSizesProvider?.call() ?? engineSizes;
 }
 
 /// Allowed values per dependent field after applying the shared fallback
@@ -146,7 +157,7 @@ class HomeVehicleFieldOptions {
 
     List<String> engines() {
       final known = engineSource?.engineSizes;
-      if (known == null || known.isEmpty) return defaults.engineSizes;
+      if (known == null || known.isEmpty) return defaults.resolvedEngineSizes;
       narrowed.add(HomeVehicleField.engineSize);
       return <String>['Any', ...sortCatalogEngineSizeLabels(known)];
     }

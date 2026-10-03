@@ -8,6 +8,10 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     _homeEngineCatalogOptsCache = null;
     _homeFilterSpecVariantsCacheKey = null;
     _homeFilterSpecVariantsCache = null;
+    _homeVehicleFieldOptionsCacheKey = null;
+    _homeVehicleFieldOptionsCacheIdx = null;
+    _homeVehicleFieldOptionsCache = null;
+    _homeVehicleFieldOptionsCacheProvisional = false;
   }
 
   /// Parsed min/max year from the home filter (empty string = unbounded). Swaps if inverted.
@@ -200,6 +204,9 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     final ctx = _homeVehicleContext();
     final key = ctx.modelCacheKey;
     if (_homeCatalogOptsCacheKey == key) return _homeCatalogOptsCache;
+    // A Search result tap is still being acknowledged: answer from defaults now
+    // and let the post-frame resolution run the catalog scan.
+    if (_homeVehicleResolutionDeferred) return null;
     final resolved = resolveHomeVehicleCatalogOptions(idx, ctx);
     _homeCatalogOptsCacheKey = key;
     _homeCatalogOptsCache = resolved;
@@ -212,10 +219,15 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     final idx = _homeCarSpecIdx;
     if (idx == null) return null;
     final ctx = _homeVehicleContext();
+    // Without a trim the trim-aware resolution is identical to the model-level
+    // one (see [resolveHomeVehicleEngineCatalogOptions]): reuse it instead of
+    // scanning the catalog a second time.
+    if ((ctx.trim?.trim() ?? '').isEmpty) return _homeCatalogFieldOptions();
     final key = ctx.engineCacheKey;
     if (_homeEngineCatalogOptsCacheKey == key) {
       return _homeEngineCatalogOptsCache;
     }
+    if (_homeVehicleResolutionDeferred) return null;
     final resolved = resolveHomeVehicleEngineCatalogOptions(idx, ctx);
     _homeEngineCatalogOptsCacheKey = key;
     _homeEngineCatalogOptsCache = resolved;
@@ -234,17 +246,81 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
             .where((c) => !_isExcludedCylinderFilter(c))
             .toList(growable: false),
         seatings: seatings,
-        engineSizes: engineSizeFilterOptionsFromCatalog(_homeCarSpecIdx),
+        // Lazy: listing every catalog engine size scans all spec rows, and is
+        // only needed when the catalog has no engines for the selected vehicle.
+        // While a result tap is being acknowledged never start that scan: use
+        // the cached list (warmed in the background) or the static ladder.
+        engineSizesProvider: () => _homeVehicleResolutionDeferred
+            ? engineSizeFilterOptionsFromCatalogIfCached(_homeCarSpecIdx)
+            : engineSizeFilterOptionsFromCatalog(_homeCarSpecIdx),
       );
 
   /// Per-field allowed values for the current vehicle (catalog-narrowed where the
   /// catalog has data for that field, defaults otherwise).
-  HomeVehicleFieldOptions _homeVehicleFieldOptions() =>
-      HomeVehicleFieldOptions.resolve(
-        catalog: _homeCatalogFieldOptions(),
-        engineCatalog: _homeEngineCatalogFieldOptions(),
-        defaults: _homeVehicleFieldDefaults(),
-      );
+  ///
+  /// Memoized per vehicle context + catalog instance: a single Search build
+  /// asks for these from many sections and must not re-resolve each time.
+  /// Answers given while a result tap is deferred are provisional and are
+  /// replaced as soon as the deferred resolution has run.
+  HomeVehicleFieldOptions _homeVehicleFieldOptions() {
+    final idx = _homeCarSpecIdx;
+    final key = _homeVehicleContext().engineCacheKey;
+    final cached = _homeVehicleFieldOptionsCache;
+    if (cached != null &&
+        _homeVehicleFieldOptionsCacheKey == key &&
+        identical(_homeVehicleFieldOptionsCacheIdx, idx) &&
+        // A provisional (defaults-only) answer is only reusable while the
+        // deferral that produced it is still pending.
+        (!_homeVehicleFieldOptionsCacheProvisional ||
+            _homeVehicleResolutionDeferred)) {
+      return cached;
+    }
+    final resolved = HomeVehicleFieldOptions.resolve(
+      catalog: _homeCatalogFieldOptions(),
+      engineCatalog: _homeEngineCatalogFieldOptions(),
+      defaults: _homeVehicleFieldDefaults(),
+    );
+    _homeVehicleFieldOptionsCacheKey = key;
+    _homeVehicleFieldOptionsCacheIdx = idx;
+    _homeVehicleFieldOptionsCache = resolved;
+    _homeVehicleFieldOptionsCacheProvisional = _homeVehicleResolutionDeferred;
+    return resolved;
+  }
+
+  /// Fills the full-catalog engine-size list in frame-sized slices so the first
+  /// Search build / result tap never pays for the cold scan.
+  void _prewarmHomeCatalogEngineSizes(CarSpecIndex? idx) {
+    if (idx == null) return;
+    unawaited(idx.prewarmAllCatalogEngineSizeLabels());
+  }
+
+  /// Applies a Search make/model/trim pick: [mutate] runs and the page repaints
+  /// at once, so the selection is visible on the tap frame. The catalog work
+  /// (model-aware option lists, cleanup of now-invalid dependent filters) runs
+  /// right after that frame via [syncDependentFiltersToVehicle], then the page
+  /// refreshes once more with the resolved lists.
+  void _homeApplyVehicleSelection(
+    BuildContext context,
+    StateSetter setStateDialog,
+    VoidCallback mutate,
+  ) {
+    _homeVehicleResolutionDeferred = true;
+    setState(mutate);
+    setStateDialog(() {});
+    if (_homeVehicleResolutionScheduled) return;
+    _homeVehicleResolutionScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _homeVehicleResolutionScheduled = false;
+      if (!mounted) {
+        _homeVehicleResolutionDeferred = false;
+        return;
+      }
+      setState(() {
+        syncDependentFiltersToVehicle();
+      });
+      if (context.mounted) setStateDialog(() {});
+    });
+  }
 
   /// Re-validates every catalog-dependent filter against the current vehicle.
   ///
@@ -254,6 +330,7 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
   /// valid selections (and fields without catalog data) are kept untouched.
   /// Returns true if anything was cleared.
   bool syncDependentFiltersToVehicle() {
+    _homeVehicleResolutionDeferred = false;
     final before = HomeVehicleDependentSelections(
       bodyType: selectedBodyType,
       transmission: selectedTransmission,

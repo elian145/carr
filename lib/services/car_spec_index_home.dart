@@ -19,6 +19,34 @@ mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
     int? rangeMinYear,
     int? rangeMaxYear,
   }) {
+    // The index is immutable, so the answer for one (vehicle, year window) never
+    // changes: re-selecting a model (or flipping between two) is then free.
+    final cacheKey =
+        '$appBrand\x1e$appModel\x1e$appTrim\x1e${rangeMinYear ?? ''}\x1e${rangeMaxYear ?? ''}';
+    if (_homeFilterFieldOptionsCache.containsKey(cacheKey)) {
+      return _homeFilterFieldOptionsCache[cacheKey];
+    }
+    final resolved = _resolveHomeFilterFieldOptions(
+      appBrand,
+      appModel,
+      appTrim,
+      rangeMinYear: rangeMinYear,
+      rangeMaxYear: rangeMaxYear,
+    );
+    _homeFilterFieldOptionsCache[cacheKey] = resolved;
+    return resolved;
+  }
+
+  final Map<String, CatalogSellFieldOptions?> _homeFilterFieldOptionsCache =
+      <String, CatalogSellFieldOptions?>{};
+
+  CatalogSellFieldOptions? _resolveHomeFilterFieldOptions(
+    String appBrand,
+    String appModel,
+    String appTrim, {
+    int? rangeMinYear,
+    int? rangeMaxYear,
+  }) {
     if (!hasCoverage(appBrand, appModel)) return null;
     final years = yearsForCatalogStep(appBrand, appModel, appTrim);
     if (years.isEmpty) return null;

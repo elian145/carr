@@ -458,12 +458,10 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
         style: filterDropdownHintStyle(_searchMoreFiltersStyle(context)),
       ),
       onChanged: (value) {
-        setState(() {
+        _homeApplyVehicleSelection(context, setStateDialog, () {
           selectedModel = value;
           selectedTrim = null;
-          syncDependentFiltersToVehicle();
         });
-        setStateDialog(() {});
       },
     );
   }
@@ -497,11 +495,9 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
         style: filterDropdownHintStyle(_searchMoreFiltersStyle(context)),
       ),
       onChanged: (value) {
-        setState(() {
+        _homeApplyVehicleSelection(context, setStateDialog, () {
           selectedTrim = value;
-          syncDependentFiltersToVehicle();
         });
-        setStateDialog(() {});
       },
     );
   }

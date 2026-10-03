@@ -169,3 +169,12 @@ List<String> engineSizeFilterOptionsFromCatalog(CarSpecIndex? index) {
   if (fromCatalog.isEmpty) return kEngineSizeFilterOptions;
   return <String>['Any', ...fromCatalog];
 }
+
+/// Like [engineSizeFilterOptionsFromCatalog] but never scans the catalog: uses the
+/// catalog sizes only if they are already cached, else [kEngineSizeFilterOptions].
+/// For frames that must stay responsive while the cache is still being warmed.
+List<String> engineSizeFilterOptionsFromCatalogIfCached(CarSpecIndex? index) {
+  final fromCatalog = index?.peekAllCatalogEngineSizeLabels();
+  if (fromCatalog == null || fromCatalog.isEmpty) return kEngineSizeFilterOptions;
+  return <String>['Any', ...fromCatalog];
+}

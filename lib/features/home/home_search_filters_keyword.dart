@@ -86,13 +86,11 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
                 style: TextStyle(color: mutedColor, fontSize: 12),
               ),
               onTap: () {
-                setState(() {
+                _homeApplyVehicleSelection(context, setStateDialog, () {
                   _homeSetSelectedBrand(brand);
-                  syncDependentFiltersToVehicle();
                   _searchFiltersKeywordController.clear();
                   _searchFiltersKeywordFocusNode.unfocus();
                 });
-                setStateDialog(() {});
               },
             ),
           for (final item in modelSlots)
@@ -119,15 +117,13 @@ mixin _HomePageSearchFiltersKeyword on _HomePageSearchFiltersFields {
                 style: TextStyle(color: mutedColor, fontSize: 12),
               ),
               onTap: () {
-                setState(() {
+                _homeApplyVehicleSelection(context, setStateDialog, () {
                   _homeSetSelectedBrand(item['brand']);
                   selectedModel = item['model'];
                   selectedTrim = null;
-                  syncDependentFiltersToVehicle();
                   _searchFiltersKeywordController.clear();
                   _searchFiltersKeywordFocusNode.unfocus();
                 });
-                setStateDialog(() {});
               },
             ),
         ],

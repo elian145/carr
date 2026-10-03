@@ -177,6 +177,22 @@ abstract class _HomePageFields extends State<HomePage> {
   String? _homeFilterSpecVariantsCacheKey;
   List<OnlineSpecVariant>? _homeFilterSpecVariantsCache;
 
+  /// Memoized [HomeVehicleFieldOptions] for the current vehicle. One Search
+  /// build asks for these once per section (fuel, body, transmission, drive,
+  /// engine, cylinders, seating ...); they are resolved once per vehicle
+  /// context / catalog instead of once per call.
+  String? _homeVehicleFieldOptionsCacheKey;
+  CarSpecIndex? _homeVehicleFieldOptionsCacheIdx;
+  HomeVehicleFieldOptions? _homeVehicleFieldOptionsCache;
+  bool _homeVehicleFieldOptionsCacheProvisional = false;
+
+  /// True between a Search result tap (new make/model/trim) and the
+  /// post-frame catalog resolution. While true, option getters answer from
+  /// already-resolved data or the plain defaults and never run the catalog
+  /// scan, so the tap frame is not blocked by it.
+  bool _homeVehicleResolutionDeferred = false;
+  bool _homeVehicleResolutionScheduled = false;
+
   Timer? _sortDebounceTimer;
   int _fetchRetryCount = 0;
   static const int _maxRetries = 3;
@@ -447,6 +463,7 @@ class _HomePageState extends _HomePageFields
           _invalidateHomeCatalogFilterCaches();
           syncDependentFiltersToVehicle();
         });
+        _prewarmHomeCatalogEngineSizes(r.index);
       });
       return;
     }
@@ -480,6 +497,7 @@ class _HomePageState extends _HomePageFields
         _invalidateHomeCatalogFilterCaches();
         syncDependentFiltersToVehicle();
       });
+      _prewarmHomeCatalogEngineSizes(r.index);
     });
     if (!_HomePageFields._homeDeleteHandlerRegistered) {
       _HomePageFields._homeDeleteHandlerRegistered = true;
