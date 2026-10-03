@@ -1,0 +1,1484 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Land Cruiser",
+  "generated_from": {
+    "evidence_file": "evidence/toyota_land_cruiser.json",
+    "researched_at": "2026-10-03",
+    "record_count": 40,
+    "source_count": 12,
+    "records_by_source_tier": {
+      "1": 26,
+      "2": 3,
+      "3": 8,
+      "5": 3
+    }
+  },
+  "research_coverage": [
+    "300 Series (2021-): Japan launch + global premiere (3.5 V6 TT petrol, 3.3 V6 TT diesel), UAE 2026 pages (3.5L, 4.0L), US 2027 (2.4L hybrid)",
+    "250 Series (2023-): global premiere table and Japan launch/spec PDF (2.8 diesel, 2.7 petrol, 2.4 turbo petrol/hybrid)",
+    "200 Series (2007-2021): US 2021 pressroom/brochure (5.7 V8), 2007 Toyota global lineage page (4.7 V8)",
+    "NOT researched: 70 Series, 100 Series and earlier, 4.5L V8 diesel and 4.0L V6 petrol 200 Series markets (NZ/ZA/GCC distributors), Land Cruiser Prado / Land Cruiser FJ (separate models), Libya/KSA distributor catalogues"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "union",
+    "includes_provisional": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "unresolved_conflicts": 0,
+    "conflicts_block_promotion_until_reviewed": false,
+    "review_status": "UNREVIEWED"
+  },
+  "union": {
+    "trims": [
+      "1958",
+      "AX",
+      "EXR",
+      "GR Sport",
+      "GX",
+      "GXR",
+      "Land Cruiser",
+      "VX",
+      "VXR",
+      "ZX"
+    ],
+    "engine_sizes": [
+      "2.4L",
+      "2.7L",
+      "2.8L",
+      "3.3L",
+      "3.5L",
+      "4.0L",
+      "4.7L",
+      "5.7L"
+    ],
+    "cylinders": [
+      4,
+      6,
+      8
+    ],
+    "fuel_types": [
+      "Diesel",
+      "Hybrid",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "Direct Shift",
+      "ECT-i",
+      "Super ECT"
+    ],
+    "transmission_gears": [
+      6,
+      8,
+      10
+    ],
+    "drivetrains": [
+      "4WD"
+    ],
+    "body_types": [
+      "SUV"
+    ],
+    "seats": [
+      5,
+      7,
+      8
+    ],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [
+      "AWD"
+    ],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "doors"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "2.4L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Hybrid",
+        "Petrol"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 277.2,
+          "record_id": "LC-023",
+          "trim": null
+        },
+        {
+          "value": 325.5,
+          "record_id": "LC-022",
+          "trim": null
+        },
+        {
+          "value": 326.0,
+          "record_id": "LC-001",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 430.0,
+          "record_id": "LC-023",
+          "trim": null
+        },
+        {
+          "value": 630.0,
+          "record_id": "LC-001",
+          "trim": null
+        },
+        {
+          "value": 630.0,
+          "record_id": "LC-022",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-001",
+        "LC-022",
+        "LC-023"
+      ]
+    },
+    {
+      "engine_size_label": "2.7L",
+      "displacement_cc": [
+        2693
+      ],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 160.8,
+          "record_id": "LC-021",
+          "trim": null
+        },
+        {
+          "value": 160.8,
+          "record_id": "LC-026",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 246.0,
+          "record_id": "LC-021",
+          "trim": null
+        },
+        {
+          "value": 246.0,
+          "record_id": "LC-026",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-019",
+        "LC-021",
+        "LC-026"
+      ]
+    },
+    {
+      "engine_size_label": "2.8L",
+      "displacement_cc": [
+        2754
+      ],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 201.2,
+          "record_id": "LC-020",
+          "trim": null
+        },
+        {
+          "value": 201.2,
+          "record_id": "LC-024",
+          "trim": null
+        },
+        {
+          "value": 201.2,
+          "record_id": "LC-025",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 500.0,
+          "record_id": "LC-020",
+          "trim": null
+        },
+        {
+          "value": 500.0,
+          "record_id": "LC-024",
+          "trim": null
+        },
+        {
+          "value": 500.0,
+          "record_id": "LC-025",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-016",
+        "LC-017",
+        "LC-018",
+        "LC-020",
+        "LC-024",
+        "LC-025"
+      ]
+    },
+    {
+      "engine_size_label": "3.3L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [
+        "Twin-turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 304.8,
+          "record_id": "LC-005",
+          "trim": null
+        },
+        {
+          "value": 304.8,
+          "record_id": "LC-014",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 700.0,
+          "record_id": "LC-005",
+          "trim": null
+        },
+        {
+          "value": 700.0,
+          "record_id": "LC-014",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-005",
+        "LC-011",
+        "LC-012",
+        "LC-014"
+      ]
+    },
+    {
+      "engine_size_label": "3.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [
+        "Twin-turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 409.0,
+          "record_id": "LC-030",
+          "trim": null
+        },
+        {
+          "value": 409.0,
+          "record_id": "LC-039",
+          "trim": null
+        },
+        {
+          "value": 409.3,
+          "record_id": "LC-004",
+          "trim": null
+        },
+        {
+          "value": 409.3,
+          "record_id": "LC-013",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 650.0,
+          "record_id": "LC-004",
+          "trim": null
+        },
+        {
+          "value": 650.0,
+          "record_id": "LC-013",
+          "trim": null
+        },
+        {
+          "value": 650.0,
+          "record_id": "LC-030",
+          "trim": null
+        },
+        {
+          "value": 650.0,
+          "record_id": "LC-039",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-004",
+        "LC-006",
+        "LC-007",
+        "LC-008",
+        "LC-009",
+        "LC-010",
+        "LC-013",
+        "LC-030",
+        "LC-031",
+        "LC-032",
+        "LC-033",
+        "LC-039"
+      ]
+    },
+    {
+      "engine_size_label": "4.0L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 271.0,
+          "record_id": "LC-034",
+          "trim": null
+        },
+        {
+          "value": 271.0,
+          "record_id": "LC-038",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 385.0,
+          "record_id": "LC-038",
+          "trim": null
+        }
+      ],
+      "best_tier": 3,
+      "record_ids": [
+        "LC-034",
+        "LC-035",
+        "LC-036",
+        "LC-037",
+        "LC-038"
+      ]
+    },
+    {
+      "engine_size_label": "4.7L",
+      "displacement_cc": [
+        4663
+      ],
+      "cylinders": [
+        8
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 284.1,
+          "record_id": "LC-029",
+          "trim": null
+        }
+      ],
+      "torque_nm": [],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-029"
+      ]
+    },
+    {
+      "engine_size_label": "5.7L",
+      "displacement_cc": [],
+      "cylinders": [
+        8
+      ],
+      "fuel_types": [],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 381.0,
+          "record_id": "LC-027",
+          "trim": null
+        },
+        {
+          "value": 381.0,
+          "record_id": "LC-028",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 544.0,
+          "record_id": "LC-027",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "LC-027",
+        "LC-028"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "1958",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "LC-002"
+        ],
+        "source_ids": [
+          "LC-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2027,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "AX",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 1,
+        "record_ids": [
+          "LC-007"
+        ],
+        "source_ids": [
+          "LC-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "EXR",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "LC-035"
+        ],
+        "source_ids": [
+          "LC-S11"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "GR Sport",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 3,
+        "record_ids": [
+          "LC-009",
+          "LC-011",
+          "LC-033"
+        ],
+        "source_ids": [
+          "LC-S10",
+          "LC-S2"
+        ],
+        "markets": [
+          "gcc",
+          "other:jp"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "GX",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "LC-006",
+          "LC-018"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S4"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "GXR",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 2,
+        "record_ids": [
+          "LC-031",
+          "LC-036"
+        ],
+        "source_ids": [
+          "LC-S10",
+          "LC-S11"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Land Cruiser",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "LC-003"
+        ],
+        "source_ids": [
+          "LC-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2027,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "VX",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-008",
+          "LC-017",
+          "LC-019"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S4"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "VXR",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 2,
+        "record_ids": [
+          "LC-032",
+          "LC-037"
+        ],
+        "source_ids": [
+          "LC-S10",
+          "LC-S11"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "ZX",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-010",
+          "LC-012",
+          "LC-016"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S4"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "2.4L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-001",
+          "LC-022",
+          "LC-023"
+        ],
+        "source_ids": [
+          "LC-S1",
+          "LC-S6"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2027,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "2.7L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-019",
+          "LC-021",
+          "LC-026"
+        ],
+        "source_ids": [
+          "LC-S4",
+          "LC-S5",
+          "LC-S6"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "2.8L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 6,
+        "record_ids": [
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-020",
+          "LC-024",
+          "LC-025"
+        ],
+        "source_ids": [
+          "LC-S4",
+          "LC-S5",
+          "LC-S6"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "3.3L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 4,
+        "record_ids": [
+          "LC-005",
+          "LC-011",
+          "LC-012",
+          "LC-014"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S3"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "3.5L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 12,
+        "record_ids": [
+          "LC-004",
+          "LC-006",
+          "LC-007",
+          "LC-008",
+          "LC-009",
+          "LC-010",
+          "LC-013",
+          "LC-030",
+          "LC-031",
+          "LC-032",
+          "LC-033",
+          "LC-039"
+        ],
+        "source_ids": [
+          "LC-S10",
+          "LC-S12",
+          "LC-S2",
+          "LC-S3"
+        ],
+        "markets": [
+          "gcc",
+          "other:jp"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "4.0L",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 5,
+        "record_ids": [
+          "LC-034",
+          "LC-035",
+          "LC-036",
+          "LC-037",
+          "LC-038"
+        ],
+        "source_ids": [
+          "LC-S11",
+          "LC-S12"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "4.7L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "LC-029"
+        ],
+        "source_ids": [
+          "LC-S9"
+        ],
+        "markets": [],
+        "years": [
+          2007,
+          2007
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "5.7L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "LC-027",
+          "LC-028"
+        ],
+        "source_ids": [
+          "LC-S7",
+          "LC-S8"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2021,
+          2021
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 7,
+        "record_ids": [
+          "LC-001",
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-019",
+          "LC-020",
+          "LC-021"
+        ],
+        "source_ids": [
+          "LC-S1",
+          "LC-S4",
+          "LC-S5"
+        ],
+        "markets": [
+          "other:jp",
+          "us"
+        ],
+        "years": [
+          2024,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 10,
+        "record_ids": [
+          "LC-004",
+          "LC-005",
+          "LC-013",
+          "LC-014",
+          "LC-015",
+          "LC-030",
+          "LC-034",
+          "LC-038",
+          "LC-039",
+          "LC-040"
+        ],
+        "source_ids": [
+          "LC-S10",
+          "LC-S11",
+          "LC-S12",
+          "LC-S2",
+          "LC-S3"
+        ],
+        "markets": [
+          "gcc",
+          "other:jp"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-027",
+          "LC-028",
+          "LC-029"
+        ],
+        "source_ids": [
+          "LC-S7",
+          "LC-S8",
+          "LC-S9"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2007,
+          2021
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Diesel",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "LC-005",
+          "LC-011",
+          "LC-012",
+          "LC-014",
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-020",
+          "LC-024",
+          "LC-025"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S3",
+          "LC-S4",
+          "LC-S5",
+          "LC-S6"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Hybrid",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-001",
+          "LC-022",
+          "LC-040"
+        ],
+        "source_ids": [
+          "LC-S1",
+          "LC-S12",
+          "LC-S6"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Petrol",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 13,
+        "record_ids": [
+          "LC-004",
+          "LC-006",
+          "LC-007",
+          "LC-008",
+          "LC-009",
+          "LC-010",
+          "LC-013",
+          "LC-015",
+          "LC-019",
+          "LC-021",
+          "LC-023",
+          "LC-026",
+          "LC-029"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S3",
+          "LC-S4",
+          "LC-S5",
+          "LC-S6",
+          "LC-S9"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2007,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 25,
+        "record_ids": [
+          "LC-004",
+          "LC-005",
+          "LC-006",
+          "LC-007",
+          "LC-008",
+          "LC-009",
+          "LC-010",
+          "LC-011",
+          "LC-012",
+          "LC-013",
+          "LC-014",
+          "LC-015",
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-019",
+          "LC-020",
+          "LC-022",
+          "LC-023",
+          "LC-024",
+          "LC-025",
+          "LC-026",
+          "LC-027",
+          "LC-038",
+          "LC-039"
+        ],
+        "source_ids": [
+          "LC-S12",
+          "LC-S2",
+          "LC-S3",
+          "LC-S4",
+          "LC-S5",
+          "LC-S6",
+          "LC-S7"
+        ],
+        "markets": [
+          "gcc",
+          "other:jp",
+          "us"
+        ],
+        "years": [
+          2021,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [
+      {
+        "value": "Direct Shift",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 17,
+        "record_ids": [
+          "LC-004",
+          "LC-005",
+          "LC-006",
+          "LC-007",
+          "LC-008",
+          "LC-009",
+          "LC-010",
+          "LC-011",
+          "LC-012",
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-020",
+          "LC-022",
+          "LC-023",
+          "LC-024",
+          "LC-025"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S4",
+          "LC-S5",
+          "LC-S6"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "ECT-i",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "LC-027"
+        ],
+        "source_ids": [
+          "LC-S7"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2021,
+          2021
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Super ECT",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "LC-019",
+          "LC-026"
+        ],
+        "source_ids": [
+          "LC-S4",
+          "LC-S6"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_gears": [
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-015",
+          "LC-019",
+          "LC-026"
+        ],
+        "source_ids": [
+          "LC-S3",
+          "LC-S4",
+          "LC-S6"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 9,
+        "record_ids": [
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-020",
+          "LC-022",
+          "LC-023",
+          "LC-024",
+          "LC-025",
+          "LC-027"
+        ],
+        "source_ids": [
+          "LC-S4",
+          "LC-S5",
+          "LC-S6",
+          "LC-S7"
+        ],
+        "markets": [
+          "other:jp",
+          "us"
+        ],
+        "years": [
+          2021,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 10,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 11,
+        "record_ids": [
+          "LC-004",
+          "LC-005",
+          "LC-006",
+          "LC-007",
+          "LC-008",
+          "LC-009",
+          "LC-010",
+          "LC-011",
+          "LC-012",
+          "LC-013",
+          "LC-014"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S3"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": null,
+        "in_conflict": false
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "4WD",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 8,
+        "record_ids": [
+          "LC-001",
+          "LC-016",
+          "LC-017",
+          "LC-018",
+          "LC-019",
+          "LC-020",
+          "LC-021",
+          "LC-027"
+        ],
+        "source_ids": [
+          "LC-S1",
+          "LC-S4",
+          "LC-S5",
+          "LC-S7"
+        ],
+        "markets": [
+          "other:jp",
+          "us"
+        ],
+        "years": [
+          2021,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "AWD",
+        "status": "PROVISIONAL",
+        "best_tier": 5,
+        "max_confidence": 0.35,
+        "support_count": 2,
+        "record_ids": [
+          "LC-038",
+          "LC-039"
+        ],
+        "source_ids": [
+          "LC-S12"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "SUV",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "LC-029"
+        ],
+        "source_ids": [
+          "LC-S9"
+        ],
+        "markets": [],
+        "years": [
+          2007,
+          2007
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "LC-006",
+          "LC-011",
+          "LC-018"
+        ],
+        "source_ids": [
+          "LC-S2",
+          "LC-S4"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 7,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "LC-007",
+          "LC-016",
+          "LC-019",
+          "LC-038",
+          "LC-039"
+        ],
+        "source_ids": [
+          "LC-S12",
+          "LC-S2",
+          "LC-S4"
+        ],
+        "markets": [
+          "gcc",
+          "other:jp"
+        ],
+        "years": [
+          2024,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "best_tier": 2,
+        "max_confidence": 0.9,
+        "support_count": 1,
+        "record_ids": [
+          "LC-028"
+        ],
+        "source_ids": [
+          "LC-S8"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2021,
+          2021
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": []
+  },
+  "conflicts": []
+}

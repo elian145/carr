@@ -1,0 +1,54 @@
+{
+  "schema_version": "carnet.source_rules/1",
+  "description": "Evidence tiers, deterministic confidence scoring and the verification policy that decides what may enter a model union.",
+
+  "tiers": {
+    "1": { "source_type": "official_manufacturer_website", "label": "Official manufacturer website (global, or a manufacturer-owned national site such as toyota.com, ford.com.au, global.toyota, pressroom.toyota.com, me.ford.com)", "base_confidence": 0.95 },
+    "2": { "source_type": "official_manufacturer_brochure", "label": "Official manufacturer brochure / technical specification PDF (manufacturer-hosted, or a PDF that is parsed and byte-identical to the manufacturer's sheet)", "base_confidence": 0.90 },
+    "3": { "source_type": "official_regional_distributor", "label": "Official regional distributor/importer site or a distributor/dealer-hosted copy of a manufacturer document (e.g. toyota.ae, toyota.com.sa, toyota.com.kw, en.aljazirahford.com)", "base_confidence": 0.80 },
+    "4": { "source_type": "reputable_spec_database", "label": "Reputable automotive specification database", "base_confidence": 0.60 },
+    "5": { "source_type": "secondary_automotive_website", "label": "Secondary automotive website, news or listing site", "base_confidence": 0.35 }
+  },
+
+  "confidence_adjustments": {
+    "retrieval": {
+      "fetched_full_text": 0.0,
+      "pdf_downloaded_and_parsed": 0.0,
+      "search_tool_full_text": -0.02,
+      "search_snippet_only": -0.15
+    },
+    "host_type": {
+      "manufacturer_domain": 0.0,
+      "official_distributor_domain": 0.0,
+      "dealer_hosted_copy": -0.05,
+      "third_party_mirror": -0.10,
+      "independent": 0.0
+    },
+    "no_model_year_stated": -0.05,
+    "floor": 0.05,
+    "ceiling": 0.99,
+    "note": "Confidence is a heuristic rubric score for ranking evidence, not a probability. It is recomputed by the tool; hand-entered values are ignored."
+  },
+
+  "verification_policy": {
+    "verified": "A value is VERIFIED when at least one evidence record of tier 1-3 supports it AND that record is not involved in an unresolved conflict on the same field.",
+    "provisional": "A value is PROVISIONAL when it is supported only by tier 4-5 records, or only by tier 1-3 records that are in unresolved conflict on that field. Provisional values are listed separately and are NOT part of the verified union.",
+    "conflict_lower_tier_rule": "A conflict never removes a tier 1-3 value merely because a tier 4-5 record disagrees: the tier 1-3 value stays VERIFIED (flagged in_conflict=true, conflict listed) and the tier 4-5 value stays PROVISIONAL. A tier 1-3 value is demoted to PROVISIONAL only when another tier 1-3 record asserts a different value for the same configuration and field. Nothing is ever resolved automatically: all records and the conflict are preserved.",
+    "conflict": "Two records describing the same configuration (same engine-size label, compatible market, compatible trim, overlapping or unspecified model years) with different non-null values on the same field are a CONFLICT. Both records are preserved, the conflict is listed, nothing is chosen. Conflicts where either side has no stated model year are marked severity 'possible_year_unspecified'.",
+    "same_configuration": [
+      "engine-specific records are only compared with other engine-specific records with the same engine_size_label",
+      "engine-less (model-level) records are only compared with other engine-less records, on seats/doors/body/drivetrain/transmission",
+      "a hybrid / plug-in hybrid record and a non-hybrid record of the same engine size are different configurations (never a conflict); Hybrid vs Plug-in Hybrid is still compared",
+      "records may carry an optional free-text 'variant' discriminator; two records whose variants are both set and different are different configurations",
+      "markets are compatible when equal or either is null; the 'other:<country>' markets only match the same country",
+      "trims are compatible when equal (trim_key) or either is null",
+      "years are compatible when ranges overlap or either side has no year"
+    ],
+    "production_default": "Production-bound unions use VERIFIED values only (the 'union' section of generated/*.union.json). PROVISIONAL values are never promoted automatically; they stay in 'provisional_only' for later review. Conflicts stay UNRESOLVED until a reviewer decides, and an unreviewed model union is not promotable (production_policy.review_status).",
+    "detailed_records_retained": "The model-level union is a projection. The per-record evidence (brand, model, generation, year range, market, trim, variant, engine, transmission, drivetrain, source, quote) stays in evidence/*.json and every union value lists its supporting record_ids in 'details', so the union can always be audited back to its sources.",
+    "no_ai_memory": "Every value in an evidence record must be supported by the supporting_text of its own source. Values that a source does not state stay null. Do not copy a value from a different market, year or trim into a record."
+  },
+
+  "host_types": ["manufacturer_domain", "official_distributor_domain", "dealer_hosted_copy", "third_party_mirror", "independent"],
+  "retrieval_methods": ["fetched_full_text", "pdf_downloaded_and_parsed", "search_tool_full_text", "search_snippet_only"]
+}

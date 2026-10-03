@@ -1,0 +1,471 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.catalog_patch/1",
+  "title": "CarNet catalog enrichment patch set (DRY-RUN ONLY, never applied by this schema)",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "applied",
+    "sources",
+    "patches"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "carnet.catalog_patch/1"
+    },
+    "applied": {
+      "const": false,
+      "description": "Must be false in any file under proposals/. A future apply step flips it only in its own output, never in the proposal file."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "sources": {
+      "type": "object",
+      "description": "Evidence registry. Patch fields cite entries by key.",
+      "additionalProperties": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "patches": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/patch"
+      }
+    },
+    "rejected_evidence": {
+      "type": "array",
+      "description": "Sources looked at and deliberately NOT used (wrong market, secondary only, ...). Kept so reviewers do not redo the work.",
+      "items": {
+        "type": "object",
+        "required": [
+          "url",
+          "reason"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "enum": [
+        "AUTO_APPROVABLE",
+        "NEEDS_REVIEW",
+        "CONFLICT",
+        "UNKNOWN"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "url",
+        "name",
+        "publisher",
+        "tier",
+        "document_type",
+        "origin_family",
+        "retrieved_at",
+        "market_scope"
+      ],
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "publisher": {
+          "type": "string"
+        },
+        "tier": {
+          "enum": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "description": "1 official manufacturer/regional site or press release; 2 official brochure/spec PDF; 3 reputable spec database; 4 secondary (supporting only, never sufficient alone)"
+        },
+        "document_type": {
+          "enum": [
+            "web_page",
+            "pdf_spec_sheet",
+            "press_release",
+            "database",
+            "blog_or_news"
+          ]
+        },
+        "origin_family": {
+          "type": "string",
+          "description": "Sources sharing a family are NOT independent (same CMS template / same text republished). The auditor counts families, not URLs."
+        },
+        "retrieved_at": {
+          "type": "string",
+          "format": "date"
+        },
+        "retrieval": {
+          "enum": [
+            "fetched_full_text",
+            "pdf_downloaded_and_parsed",
+            "search_snippet_only"
+          ]
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "model_year_label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Model-year label exactly as the source states it, or null."
+        },
+        "market_scope": {
+          "type": "string",
+          "description": "Market the source speaks for, as the source states it."
+        }
+      }
+    },
+    "fieldValue": {
+      "type": "object",
+      "required": [
+        "status",
+        "evidence"
+      ],
+      "properties": {
+        "value": {},
+        "raw_source_phrase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "normalization_note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/status"
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "key into top-level sources"
+          },
+          "description": "Sources whose stated model year, market and trim scope match patch.identity exactly. Only these count toward status."
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "value",
+              "evidence"
+            ],
+            "properties": {
+              "value": {},
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "corroboration": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Sources that agree with the value but do not state the patch's exact year/market/trim. They are shown to reviewers and never count toward AUTO_APPROVABLE."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "const": null
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "CONFLICT"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "const": null
+              }
+            },
+            "required": [
+              "conflicts"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "AUTO_APPROVABLE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "NEEDS_REVIEW"
+              }
+            }
+          },
+          "then": {
+            "anyOf": [
+              {
+                "properties": {
+                  "evidence": {
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "corroboration"
+                ],
+                "properties": {
+                  "corroboration": {
+                    "minItems": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "patch": {
+      "type": "object",
+      "required": [
+        "patch_id",
+        "operation",
+        "identity",
+        "overall_status",
+        "confidence",
+        "existing_rows_touched",
+        "review"
+      ],
+      "properties": {
+        "patch_id": {
+          "type": "string"
+        },
+        "operation": {
+          "enum": [
+            "add_variant_row",
+            "add_trim_label"
+          ],
+          "description": "v1 is additive only. There is deliberately no update/delete operation."
+        },
+        "identity": {
+          "type": "object",
+          "required": [
+            "make",
+            "model",
+            "year_from",
+            "year_to",
+            "market"
+          ],
+          "properties": {
+            "make": {
+              "type": "string",
+              "description": "Exact string from assets/car_catalog.json brands[]"
+            },
+            "model": {
+              "type": "string",
+              "description": "Exact string from assets/car_catalog.json models[make][]"
+            },
+            "year_from": {
+              "type": "integer"
+            },
+            "year_to": {
+              "type": "integer"
+            },
+            "year_basis": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "How the year range was established. Required when it is not a model-year label stated by a source."
+            },
+            "market": {
+              "enum": [
+                "us",
+                "gcc",
+                "iraq",
+                "canada",
+                "eu",
+                "cn",
+                "korea",
+                "ru",
+                "iran",
+                null
+              ],
+              "description": "Same codes as kCarRegionSpecCodes / Car.region_specs. null = market-agnostic (legacy dataset behaviour). Never guess."
+            },
+            "market_countries_verified": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "trims": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "App catalog trim labels, or null when the sources only speak at model level."
+            }
+          }
+        },
+        "proposed": {
+          "type": "object",
+          "description": "operation=add_variant_row: one new row shaped like a car_spec_dataset.json model+trim+spec triple. Every spec field carries its own status + evidence. Absent / UNKNOWN fields are left out of the eventual row, never defaulted.",
+          "properties": {
+            "variant_name": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "object",
+              "properties": {
+                "displacement_l_nominal": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "displacement_cc": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "cylinders": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "fuel_type": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "aspiration": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "transmission": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "drivetrain": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "body_type": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "seats": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "power_hp": {
+                  "$ref": "#/$defs/fieldValue"
+                },
+                "torque_nm": {
+                  "$ref": "#/$defs/fieldValue"
+                }
+              }
+            }
+          }
+        },
+        "proposed_trim_labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "existing_rows_touched": {
+          "type": "array",
+          "maxItems": 0,
+          "description": "Must be empty in v1 (additive only)."
+        },
+        "overall_status": {
+          "$ref": "#/$defs/status"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Heuristic score from the rubric in the design doc, NOT a probability."
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "review": {
+          "type": "object",
+          "required": [
+            "reviewer",
+            "decision",
+            "decided_at"
+          ],
+          "properties": {
+            "reviewer": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "decision": {
+              "enum": [
+                "approved",
+                "rejected",
+                "deferred",
+                null
+              ]
+            },
+            "decided_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1662 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Camry",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "8th generation (XV70, 2018-): US 2018 launch release and US 2026 hybrid page; Saudi Arabia 2026 grade table (gas + hybrid); UAE 2026 page",
+    "NOT researched (no usable fetch this run): 2.5L 6AT (2012-2017 XV50), 3.5L V6 2GR-FE 6AT, 2.0L/2.4L earlier generations, Camry Hybrid 1st/2nd gen, Thailand/Japan/China variants, Kuwait distributor spec table (page is JS-rendered, no spec text), US 2025 e-brochure",
+    "Seats and doors: no fetched source states them for Camry, so both stay null (no tier-5 value was fabricated or imported)"
+  ],
+  "not_used_sources": [
+    {
+      "url": "https://www.toyota.com.kw/en/vehicles/camry",
+      "reason": "Fetched but contains no specification text (JS-rendered)"
+    }
+  ],
+  "sources": {
+    "CM-S1": {
+      "url": "https://www.toyota.com/camry/",
+      "name": "2026 Toyota Camry | Toyota.com",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "United States"
+    },
+    "CM-S2": {
+      "url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+      "name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2018 (June 21, 2017)",
+      "market_scope": "United States"
+    },
+    "CM-S3": {
+      "url": "https://www.toyota.com.sa/en/vehicles/camry",
+      "name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+      "publisher": "Abdul Latif Jameel Motors (Toyota Saudi Arabia)",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "Saudi Arabia"
+    },
+    "CM-S4": {
+      "url": "https://www.toyota.ae/en/new-cars/camry/",
+      "name": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE",
+      "publisher": "Al-Futtaim Toyota (UAE)",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "UAE"
+    }
+  },
+  "records": [
+    {
+      "record_id": "CM-001",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": "FWD",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L 4-Cyl. Gas/Electric Hybrid (HEV)",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4-Cyl.",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 225,
+          "unit": "hp",
+          "basis": "net combined"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": "Electronically controlled Continuously Variable Transmission (ECVT)",
+        "gears": null
+      },
+      "drivetrain": "Front-Wheel Drive (FWD)",
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Performance 2.5L 4-Cyl. Gas/Electric Hybrid (HEV) 225 net combined hp Drivetrain Electronically controlled Continuously Variable Transmission (ECVT) Front-Wheel Drive (FWD) Available Electronic On-Demand All-Wheel Drive (AWD) Up to 232 Net Combined Horsepower"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 225.0,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "e-CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "FWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-002",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": "AWD",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L 4-Cyl. Gas/Electric Hybrid (HEV)",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4-Cyl.",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 232,
+          "unit": "hp",
+          "basis": "net combined, 'up to'"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": "Electronically controlled Continuously Variable Transmission (ECVT)",
+        "gears": null
+      },
+      "drivetrain": "Electronic On-Demand All-Wheel Drive (AWD)",
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Performance 2.5L 4-Cyl. Gas/Electric Hybrid (HEV) 225 net combined hp Drivetrain Electronically controlled Continuously Variable Transmission (ECVT) Front-Wheel Drive (FWD) Available Electronic On-Demand All-Wheel Drive (AWD) Up to 232 Net Combined Horsepower"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 232.0,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "e-CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-003",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": "LE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "LE SE Nightshade XLE XSE Camry's all-hybrid powertrain"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "LE",
+        "trim_key": "le",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-004",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": "SE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "LE SE Nightshade XLE XSE Camry's all-hybrid powertrain"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "SE",
+        "trim_key": "se",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-005",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": "Nightshade",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "LE SE Nightshade XLE XSE Camry's all-hybrid powertrain"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "Nightshade",
+        "trim_key": "nightshade",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-006",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": "XLE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "LE SE Nightshade XLE XSE Camry's all-hybrid powertrain"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "XLE",
+        "trim_key": "xle",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-007",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "US",
+      "trim": "XSE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S1",
+        "source_url": "https://www.toyota.com/camry/",
+        "source_name": "2026 Toyota Camry | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "LE SE Nightshade XLE XSE Camry's all-hybrid powertrain"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "XSE",
+        "trim_key": "xse",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-008",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": "gas",
+      "body_type": "sedan",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5-liter inline-four-cylinder D-4S gasoline",
+        "displacement_raw": "2.5-liter",
+        "displacement_cc": null,
+        "cylinders": "four-cylinder",
+        "fuel_type": "gasoline",
+        "aspiration": null,
+        "horsepower": {
+          "value": 206,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 186,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": "8AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE. The excitement over the eighth-generation sedan Three new powertrains will be available on the new 2018 Camry: They include an all-new 2.5-liter inline-four-cylinder D-4S gasoline engine and a new 3.5-liter V6 with D-4S Fuel Injection, both of which are paired to a new eight-speed Direct-Shift automatic transmission (8AT); and a next-generation Toyota Hybrid System (THS II). Peak horsepower is estimated at 206 at 6,600 rpm (176 horsepower at 5,700 rpm in the hybrid configuration) with torque estimated at 186 lb.-ft. at 5,000 rpm (163 lb.-ft. at 3,600-5,200 rpm for the hybrid)."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "Sedan",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 206.0,
+        "torque_nm": 252.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-009",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": "3.5 V6",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.5-liter V6 with D-4S",
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "8AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE. The excitement over the eighth-generation sedan Three new powertrains will be available on the new 2018 Camry: They include an all-new 2.5-liter inline-four-cylinder D-4S gasoline engine and a new 3.5-liter V6 with D-4S Fuel Injection, both of which are paired to a new eight-speed Direct-Shift automatic transmission (8AT); and a next-generation Toyota Hybrid System (THS II). Peak horsepower is estimated at 206 at 6,600 rpm (176 horsepower at 5,700 rpm in the hybrid configuration) with torque estimated at 186 lb.-ft. at 5,000 rpm (163 lb.-ft. at 3,600-5,200 rpm for the hybrid)."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-010",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "Toyota Hybrid System (THS II)",
+        "displacement_raw": "2.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 176,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 163,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE. The excitement over the eighth-generation sedan Three new powertrains will be available on the new 2018 Camry: They include an all-new 2.5-liter inline-four-cylinder D-4S gasoline engine and a new 3.5-liter V6 with D-4S Fuel Injection, both of which are paired to a new eight-speed Direct-Shift automatic transmission (8AT); and a next-generation Toyota Hybrid System (THS II). Peak horsepower is estimated at 206 at 6,600 rpm (176 horsepower at 5,700 rpm in the hybrid configuration) with torque estimated at 186 lb.-ft. at 5,000 rpm (163 lb.-ft. at 3,600-5,200 rpm for the hybrid)."
+      },
+      "notes": "Engine output of the hybrid configuration (not system output).",
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 176.0,
+        "torque_nm": 221.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-011",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": "L",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "L",
+        "trim_key": "l",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-012",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": "LE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "LE",
+        "trim_key": "le",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-013",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": "XLE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "XLE",
+        "trim_key": "xle",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-014",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": "SE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "SE",
+        "trim_key": "se",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-015",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2018,
+      "year_to": null,
+      "market": "US",
+      "trim": "XSE",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S2",
+        "source_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "XSE",
+        "trim_key": "xse",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-016",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "E",
+      "variant": "gas",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L Engine, 4 Cylinder",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Gas",
+        "aspiration": null,
+        "horsepower": {
+          "value": 201,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 240,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "8-Speed Automatic Transmission",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Grades Gas (3) Hybrid (4) Gas E Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "E",
+        "trim_key": "e",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 201.0,
+        "torque_nm": 240.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-017",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "LE",
+      "variant": "gas",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L Engine, 4 Cylinder",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Gas",
+        "aspiration": null,
+        "horsepower": {
+          "value": 201,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 240,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "8-Speed Automatic Transmission",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Grades Gas (3) Hybrid (4) Gas LE Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "LE",
+        "trim_key": "le",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 201.0,
+        "torque_nm": 240.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-018",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "Grande",
+      "variant": "gas",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L Engine, 4 Cylinder",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Gas",
+        "aspiration": null,
+        "horsepower": {
+          "value": 201,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 240,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "8-Speed Automatic Transmission",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Grades Gas (3) Hybrid (4) Gas Grande Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Grande",
+        "trim_key": "grande",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 201.0,
+        "torque_nm": 240.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-019",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "E HEV",
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L Engine, 4 Cylinder",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 226,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 221,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Electronic Continuous Variable Transmission (E-CVT)",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Hybrid E HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "E HEV",
+        "trim_key": "e hev",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 226.0,
+        "torque_nm": 221.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "e-CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-020",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "E Plus HEV",
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L Engine, 4 Cylinder",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 226,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 221,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Electronic Continuous Variable Transmission (E-CVT)",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Hybrid E Plus HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "E Plus HEV",
+        "trim_key": "e plus hev",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 226.0,
+        "torque_nm": 221.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "e-CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-021",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "LE HEV",
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L Engine, 4 Cylinder",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 226,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 221,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Electronic Continuous Variable Transmission (E-CVT)",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Hybrid LE HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "LE HEV",
+        "trim_key": "le hev",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 226.0,
+        "torque_nm": 221.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "e-CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-022",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Saudi Arabia",
+      "trim": "Lumiere HEV",
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S3",
+        "source_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "Lumiere HEV Hybrid (1)"
+      },
+      "notes": "Grade-presence record; its specification block was not read.",
+      "normalized": {
+        "market": "gcc",
+        "trim": "Lumiere HEV",
+        "trim_key": "lumiere hev",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "CM-023",
+      "brand": "Toyota",
+      "model": "Camry",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": "Sedan",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L 4-Cylinder, 16V DOHC",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "4-Cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "CM-S4",
+        "source_url": "https://www.toyota.ae/en/new-cars/camry/",
+        "source_name": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE 2.5L CAMRY 2026 2.5L 4-Cylinder, 16V DOHC"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "Sedan",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

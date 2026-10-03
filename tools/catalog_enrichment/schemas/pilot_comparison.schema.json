@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.pilot_comparison/2",
+  "title": "Pilot comparison: current CarNet data vs generated model unions (read-only)",
+  "type": "object",
+  "required": ["schema_version", "read_only", "models"],
+  "properties": {
+    "schema_version": { "const": "carnet.pilot_comparison/2" },
+    "read_only": { "const": true },
+    "note": { "type": "string" },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["brand", "model", "dimensions"],
+        "properties": {
+          "brand": { "type": "string" },
+          "model": { "type": "string" },
+          "current_carnet_meta": {
+            "type": "object",
+            "required": ["boundary"],
+            "properties": {
+              "boundary": {
+                "type": "object",
+                "description": "How many dataset rows the OLD prefix heuristic gave this model vs how many the deterministic resolver accepted, and why the rest were excluded.",
+                "required": ["legacy_family_rows", "strict_rows", "excluded_rows", "excluded_by_reason"],
+                "properties": {
+                  "legacy_family_rows": { "type": "integer" },
+                  "strict_rows": { "type": "integer" },
+                  "excluded_rows": { "type": "integer" },
+                  "excluded_by_reason": { "type": "object", "additionalProperties": { "type": "integer" } }
+                }
+              }
+            }
+          },
+          "conflict_count": { "type": "integer" },
+          "dimensions": {
+            "type": "object",
+            "description": "keys: trims, engine_sizes, cylinders, fuel_types, transmissions, transmission_gears, drivetrains, body_types, seats, doors",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["CURRENT_CARNET", "NEW_VERIFIED", "MISSING_FROM_CARNET", "ONLY_IN_CARNET", "CONFLICTS"],
+              "properties": {
+                "carnet_stores_field": { "type": "boolean" },
+                "CURRENT_CARNET": { "type": "array", "description": "values CarNet offers today (normalized with the same rules)" },
+                "NEW_VERIFIED": { "type": "array" },
+                "NEW_PROVISIONAL_ONLY": { "type": "array" },
+                "MATCHED": { "type": "array" },
+                "MISSING_FROM_CARNET": { "type": "array", "description": "verified by the pilot, absent from CarNet" },
+                "PROVISIONAL_NOT_IN_CARNET": { "type": "array" },
+                "CARNET_VALUE_ONLY_PROVISIONAL": { "type": "array" },
+                "ONLY_IN_CARNET": { "type": "array", "description": "in CarNet but not found in the evidence collected (NOT 'wrong')" },
+                "CONFLICTS": { "type": "array" },
+                "legacy_view": { "type": "object", "description": "INFORMATIONAL ONLY, not canonical: the MISSING comparison after folding labels the legacy dataset cannot express (4WD->AWD, Hybrid->Petrol). Evidence and unions never use this mapping." }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

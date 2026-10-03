@@ -1,0 +1,200 @@
+{
+  "schema_version": "carnet.normalization_rules/1",
+  "description": "Deterministic normalization tables for the enrichment pilot. Rules are applied top to bottom, first match wins. A raw value that matches nothing normalizes to null and gets a flag; nothing is ever guessed. Patterns are case-insensitive Python regexes.",
+
+  "locked_vocabulary": {
+    "version": "carnet.vocabulary/1",
+    "locked_on": "2026-10-03",
+    "locked_by": "product decision (pilot acceptance)",
+    "fuel_type": ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"],
+    "drivetrain": ["FWD", "RWD", "AWD", "4WD"],
+    "transmission_family": ["Automatic", "Manual"],
+    "transmission_variant_canonical": ["Conventional automatic", "CVT", "e-CVT", "DCT", "AMT"],
+    "transmission_variant_other": "any other explicit source wording that appears in transmission_named_systems.labels (e.g. 'SelectShift', 'Direct Shift', 'Super ECT', 'ECT-i', 'Tiptronic', 'Steptronic'); never invented",
+    "rules": [
+      "Petrol is canonical. Gasoline / Unleaded / Petrol (Gasoline) normalize to Petrol.",
+      "Hybrid and Plug-in Hybrid are separate from Petrol. Hybrid is never silently treated as Petrol.",
+      "AWD and 4WD stay distinct. 4x4 / Four-wheel drive / full-time 4WD / part-time 4WD -> 4WD. 4WD is never mapped to AWD.",
+      "4x2 / 2WD with no axle stated -> drivetrain null.",
+      "Transmission has two levels: family (Automatic|Manual) and variant. A CVT/DCT/AMT belongs to the Automatic family but its variant is never discarded.",
+      "Gear counts are kept wherever a source states them."
+    ]
+  },
+
+  "fuel_type": {
+    "canonical": ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"],
+    "decision_note": "LOCKED: canonical id is 'Petrol'. The app today shows 'Gasoline' in the Sell/Search pickers and the legacy dataset stores 'Petrol (Gasoline)'; both are only label projections of Petrol and are listed below so the comparison is label-independent. Hybrid is NOT Petrol.",
+    "carnet_ui_label": {
+      "Petrol": "Gasoline",
+      "Diesel": "Diesel",
+      "Electric": "Electric",
+      "Hybrid": "Hybrid",
+      "Plug-in Hybrid": "Plug-in Hybrid"
+    },
+    "legacy_dataset_label": {
+      "Petrol": "Petrol (Gasoline)",
+      "Diesel": "Diesel",
+      "Electric": "Electric"
+    },
+    "legacy_dataset_caveat": "The legacy dataset has no Hybrid/Plug-in value: every hybrid is stored as 'Petrol (Gasoline)'. So 'Hybrid' can never appear in CURRENT_CARNET and will always show as MISSING until the product decides how hybrids are represented.",
+    "rules": [
+      { "pattern": "plug[- ]?in|\\bphev\\b", "value": "Plug-in Hybrid" },
+      { "pattern": "hybrid|\\bhev\\b|i-?force\\s*max|\\bths\\b", "value": "Hybrid" },
+      { "pattern": "\\belectric\\b|\\bbev\\b", "value": "Electric" },
+      { "pattern": "diesel|\\bderv\\b|\\bd-?4d\\b|\\btdci\\b|軽油|ディーゼル|ดีเซล", "value": "Diesel" },
+      { "pattern": "petrol|gasoline|unleaded|\\bgas\\b|ガソリン|benzin", "value": "Petrol" }
+    ],
+    "explicitly_not_inferred": [
+      "'EcoBoost' alone does NOT imply petrol: a source must state petrol/gasoline.",
+      "'Turbo' alone does NOT imply a fuel type."
+    ]
+  },
+
+  "transmission": {
+    "canonical_family": ["Automatic", "Manual"],
+    "canonical_variant": ["Conventional automatic", "CVT", "e-CVT", "DCT", "AMT"],
+    "decision_note": "LOCKED two-level representation. transmission_family is Automatic|Manual (what CarNet's pickers offer). transmission_variant keeps the detail: a canonical variant when the source says so (CVT, e-CVT, DCT, AMT, Conventional automatic) otherwise the source's own named system (SelectShift, Direct Shift, Super ECT, ECT-i, ...) otherwise null. 'Conventional automatic' is set ONLY when the source explicitly says torque converter / conventional automatic; a plain 'automatic' or '8AT' keeps variant null (the source did not say). All named systems found are kept in transmission_named_systems. Gear counts are kept wherever stated, including for CVTs (a flag marks them).",
+    "automatic_patterns": [
+      "automatic", "\\d+\\s*-?\\s*a/?t\\b", "\\ba/?t\\b", "e-?cvt", "\\bcvt\\b", "\\bdct\\b", "\\bdsg\\b",
+      "\\bamt\\b", "automated manual", "dual[- ]clutch", "continuously variable", "continuous variable", "torque[- ]converter",
+      "\\becti?\\b", "ect-i", "super[- ]?ect", "direct\\s*shift", "select\\s*shift", "tiptronic", "steptronic"
+    ],
+    "manual_patterns": ["\\bmanual\\b", "\\d+\\s*-?\\s*m/?t\\b", "\\bm/?t\\b", "stick"],
+    "variant_rules": [
+      { "pattern": "\\be-?cvt\\b", "value": "e-CVT" },
+      { "pattern": "\\bcvt\\b|continuously variable|continuous variable|variable transmission", "value": "CVT" },
+      { "pattern": "\\bdct\\b|\\bdsg\\b|dual[- ]clutch", "value": "DCT" },
+      { "pattern": "\\bamt\\b|automated manual", "value": "AMT" },
+      { "pattern": "torque[- ]converter|conventional automatic|hydraulic automatic", "value": "Conventional automatic" }
+    ],
+    "named_systems": [
+      { "pattern": "select\\s*shift", "label": "SelectShift" },
+      { "pattern": "direct\\s*shift", "label": "Direct Shift" },
+      { "pattern": "super[- ]?ect", "label": "Super ECT" },
+      { "pattern": "\\bect-?i\\b", "label": "ECT-i" },
+      { "pattern": "tiptronic", "label": "Tiptronic" },
+      { "pattern": "steptronic", "label": "Steptronic" }
+    ],
+    "gear_count_patterns": [
+      "(\\d{1,2})\\s*-?\\s*(?:speed|spd)\\b",
+      "(\\d{1,2})\\s*-?\\s*(?:a/t|at|m/t|mt)\\b",
+      "(\\d{1,2})\\s*super[- ]?ect"
+    ],
+    "gears_flag_when_variant": ["CVT", "e-CVT"],
+    "note": "An 'automatic' that is also described with 'manual shift mode' / 'sequential shift' is still Automatic (automatic patterns are tested first)."
+  },
+
+  "drivetrain": {
+    "canonical": ["FWD", "RWD", "AWD", "4WD"],
+    "decision_note": "LOCKED: AWD and 4WD are DISTINCT canonical values everywhere (evidence, unions, comparison). 4WD is never mapped to AWD. Background: the legacy dataset stores every 4x4 as 'AWD' and the Sell/Search pickers list only FWD/RWD/AWD, so the strict comparison reports 4WD as MISSING_FROM_CARNET. 'legacy_collapse' is used ONLY by the informational legacy_view in the comparison report to show how many MISSING items are pure vocabulary differences; it never touches evidence or unions.",
+    "rules": [
+      { "pattern": "\\bawd\\b|all[- ]?wheel[- ]?drive|e-?four|on-?demand awd|dynamic torque control", "value": "AWD" },
+      { "pattern": "\\b4\\s?wd\\b|4\\s?[x×]\\s?4\\b|four[- ]?wheel[- ]?drive|\\b4[- ]?wheel[- ]?drive|\\b4-wd\\b", "value": "4WD" },
+      { "pattern": "\\brwd\\b|rear[- ]?wheel[- ]?drive", "value": "RWD" },
+      { "pattern": "\\bfwd\\b|front[- ]?wheel[- ]?drive", "value": "FWD" }
+    ],
+    "unresolved_rules": [
+      { "pattern": "\\b4\\s?[x×]\\s?2\\b|\\b2\\s?wd\\b|two[- ]wheel|\\b2[- ]wheel", "flag": "two_wheel_drive_axle_unspecified", "note": "4x2 / 2WD does not say whether the driven axle is front or rear. Left null; never assumed RWD." }
+    ],
+    "legacy_collapse": { "4WD": "AWD" }
+  },
+
+  "body_type": {
+    "canonical": ["Sedan", "SUV", "Hatchback", "Coupe", "Convertible", "Wagon", "Pickup", "Van", "Minivan"],
+    "basis": "sell_step2_fields.dart bodyTypes list. The legacy dataset's 'Off-road vehicle' is already mapped to SUV and 'Pick-up' to Pickup by _mapSpecToFormFields.",
+    "rules": [
+      { "pattern": "\\bsuv\\b|sport[- ]utility|off[- ]?road vehicle|crossover", "value": "SUV" },
+      { "pattern": "pick[- ]?up|\\btruck\\b|\\bute\\b", "value": "Pickup" },
+      { "pattern": "minivan|\\bmpv\\b", "value": "Minivan" },
+      { "pattern": "\\bvan\\b", "value": "Van" },
+      { "pattern": "hatch", "value": "Hatchback" },
+      { "pattern": "coupe|coupé", "value": "Coupe" },
+      { "pattern": "convertible|cabriolet|roadster", "value": "Convertible" },
+      { "pattern": "station wagon|estate|wagon", "value": "Wagon" },
+      { "pattern": "sedan|saloon", "value": "Sedan" }
+    ],
+    "authoring_caution": "Toyota calls the 300 Series a 'station wagon (SW)'; that is a Toyota range designation, not a body style claim, so evidence records must leave body_type null for it instead of letting the Wagon rule fire."
+  },
+
+  "seats": {
+    "valid_range": [1, 12],
+    "number_words": { "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10 },
+    "note": "Accepts an int, a digit string, '7-seater', '7 seats', or a number word. 'up to N' keeps N and sets flag seats_is_maximum. CarNet's Sell picker offers 2,4,5,6,7,8 (sellFlowNearestSeatingLabel rounds others); the union keeps the exact verified count."
+  },
+
+  "doors": { "valid_range": [2, 5] },
+
+  "cylinders": {
+    "valid_range": [1, 16],
+    "number_words": { "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "eight": 8, "ten": 10, "twelve": 12 },
+    "word_patterns": ["\\b(two|three|four|five|six|eight|ten|twelve)[- ]cylinders?\\b"],
+    "patterns": [
+      "\\b(?:v|w|i|h|l|inline|in-line|straight|flat|boxer)[- ]?(\\d{1,2})\\b",
+      "(\\d{1,2})[- ]?cyl(?:inder)?s?\\b",
+      "(\\d{1,2})\\s*สูบ",
+      "直列\\s*(\\d{1,2})\\s*気筒",
+      "\\bv[- ]?type[- ]?(\\d{1,2})\\b"
+    ]
+  },
+
+  "displacement": {
+    "rules": [
+      "1. Unit cc / cm3 / cm³ / cu cm  -> displacement_cc = value (exact); nominal litres = cc/1000.",
+      "2. Unit L / litre / liter with >=3 decimals (e.g. '2.754 L') -> treated as exact: displacement_cc = round(L*1000).",
+      "3. Unit L with <=2 decimals (e.g. '2.3L', '3.5-liter') -> nominal only; displacement_cc stays null (never invented).",
+      "4. engine_size_label = '<x.x>L' where x = round(cc/1000, 1) when cc is known, else round(nominal L, 1). Half-up on the decimal string."
+    ]
+  },
+
+  "aspiration": {
+    "rules": [
+      { "pattern": "twin[- ]?turbo|bi[- ]?turbo", "value": "Twin-turbo" },
+      { "pattern": "turbo", "value": "Turbo" },
+      { "pattern": "supercharg", "value": "Supercharged" }
+    ],
+    "note": "Only taken from text the source states. 'EcoBoost' alone is not turned into Turbo."
+  },
+
+  "power": {
+    "to_hp_mechanical": { "hp": 1.0, "bhp": 1.0, "ps": 0.98632, "cv": 0.98632, "kw": 1.34102 },
+    "decimals": 1,
+    "conflict_tolerance_hp": 1.0
+  },
+
+  "torque": {
+    "to_nm": { "nm": 1.0, "n-m": 1.0, "n.m": 1.0, "n·m": 1.0, "lb-ft": 1.35582, "lbft": 1.35582, "lb.-ft.": 1.35582, "kgm": 9.80665, "kgf-m": 9.80665, "kg-m": 9.80665 },
+    "decimals": 0,
+    "conflict_tolerance_nm": 2.0
+  },
+
+  "trim": {
+    "rules": [
+      "1. Strip, collapse internal whitespace to single spaces.",
+      "2. trim_key (used for de-duplication and comparison) = casefold, with '-' '_' '/' replaced by a space and whitespace collapsed. So 'GR-Sport', 'GR SPORT' and 'Gr Sport' share one key; 'GXR' and 'GX-R' do NOT (different spelling = different key until a reviewer merges them explicitly).",
+      "3. Display value: if the raw string is all upper-case or all lower-case, each space/hyphen/slash-separated part of <=3 letters is upper-cased and longer parts are Title-cased ('PLATINUM' -> 'Platinum', 'xle' -> 'XLE', 'GR SPORT' -> 'GR Sport', 'VX-R' -> 'VX-R'); mixed-case strings are kept as written.",
+      "4. The first spelling seen (evidence order) is the display spelling of a key."
+    ],
+    "placeholders_ignored": ["other", "base model", "n/a", "unknown"]
+  },
+
+  "market": {
+    "carnet_region_codes": ["us", "gcc", "iraq", "canada", "eu", "cn", "korea", "ru", "iran"],
+    "note": "Markets are normalized to CarNet's region_specs codes where one exists, otherwise 'other' + a country slug. A generic 'Middle East' maps to 'gcc' with flag market_approximate. Markets are kept on evidence records for traceability; the model union does not filter by market.",
+    "aliases": {
+      "us": ["us", "usa", "united states", "north america"],
+      "gcc": ["gcc", "uae", "united arab emirates", "saudi arabia", "ksa", "kuwait", "qatar", "bahrain", "oman", "gcc (ford middle east)", "gcc (uae)"],
+      "gcc_approximate": ["middle east", "mena"],
+      "eu": ["eu", "europe", "western europe", "eastern europe"],
+      "iraq": ["iraq"],
+      "canada": ["canada"],
+      "other:au": ["australia"],
+      "other:nz": ["new zealand"],
+      "other:th": ["thailand"],
+      "other:jp": ["japan"],
+      "other:za": ["south africa"],
+      "other:ly": ["libya"],
+      "other:global": ["global", "overseas"]
+    },
+    "global_means_unspecified": true
+  }
+}

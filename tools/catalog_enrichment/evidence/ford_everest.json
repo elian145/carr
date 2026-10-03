@@ -1,0 +1,3474 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Ford",
+  "model": "Everest",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "Current generation (P703, 2022-): Middle East XLS/XLT/Limited (2025 sheet), 2026 Middle East Active/Sport/Tremor/Platinum with 2.7L V6, Australia MY26.5/MY27, Thailand 2019-era Titanium+ and Platinum",
+    "Previous generation (2015-2022): Australia May 2017 brochure only (3.2L 5-cyl diesel)",
+    "NOT researched: Ford Everest Thailand 2.0L single-turbo 2022+ site pages (403 to automated fetch), Latin American / Indian / Chinese variants, pre-2015 generations, Ford Philippines/Vietnam"
+  ],
+  "not_used_sources": [
+    {
+      "url": "https://www.ford.co.th/showroom/ppvs/ford-everest/platinum/",
+      "reason": "403 to automated fetch in this run (a copy of the page text was reviewed earlier in the session but its URL/accessed state is not reproducible, so it is not used)"
+    },
+    {
+      "url": "https://media.ford.com/content/dam/fordmedia/img/Everest-e-Brochure-Ford%20Australia-2020-25MY.pdf",
+      "reason": "503 on re-fetch; content not re-verified"
+    }
+  ],
+  "sources": {
+    "FE-S1": {
+      "url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+      "name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
+      "publisher": "Ford Middle East",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2025",
+      "market_scope": "Middle East",
+      "notes": "Ford Middle East document hosted on the Bahrain distributor site. Columns are positional: header '2025 XLS XLS XLT LIMITED' (first XLS = 2.0L diesel 6AT, then 2.3L 10AT for XLS, XLT, Limited). A separately downloaded PDF (origin URL not recorded) with the same figures agreed."
+    },
+    "FE-S2": {
+      "url": "https://www.me.ford.com/en/are/suvs/everest/",
+      "name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+      "publisher": "Ford Middle East",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "UAE (Ford Middle East)"
+    },
+    "FE-S3": {
+      "url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+      "name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+      "publisher": "Al Jazirah Vehicles (Ford distributor, Kuwait)",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "market_scope": "Middle East",
+      "notes": "Release text carries no model-year label; date of original release not stated on the page."
+    },
+    "FE-S4": {
+      "url": "https://en.aljazirahford.com/news/ford-debuts-middle-east-exclusive-everest-v6-engine-lineup/",
+      "name": "Ford Debuts Middle East-Exclusive Everest V6 Engine Lineup and Unveils Everest Tremor | Al Jazirah Vehicles",
+      "publisher": "Al Jazirah Vehicles (Ford distributor, Kuwait)",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "26MY",
+      "market_scope": "Middle East"
+    },
+    "FE-S5": {
+      "url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+      "name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+      "publisher": "Ford Australia",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "search_tool_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "MY2026.50",
+      "market_scope": "Australia",
+      "notes": "Ford Australia document on a dealer-platform CDN (identical text also found on tddashboard.s3.ap-southeast-2.amazonaws.com). Six columns in header order: Active 4x4 (2.0L), Active 4WD (3.0L V6), Sport 4x4 (2.0L), Sport 4WD (3.0L V6), Tremor 4WD (3.0L V6), Platinum 4WD (3.0L V6)."
+    },
+    "FE-S6": {
+      "url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+      "name": "Ford Everest Sport SUV | Ford Australia",
+      "publisher": "Ford Australia",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "MY27",
+      "market_scope": "Australia"
+    },
+    "FE-S7": {
+      "url": "https://www.ford.com.au/showroom/suv/everest/specs/",
+      "name": "Explore Ford Everest Specs & Features | Ford Australia",
+      "publisher": "Ford Australia",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "MY26.5",
+      "market_scope": "Australia"
+    },
+    "FE-S8": {
+      "url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+      "name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+      "publisher": "Ford Australia",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "pdf_downloaded_and_parsed",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "May 2017 brochure",
+      "market_scope": "Australia",
+      "notes": "Previous-generation (pre-2022) Everest. 18-page PDF parsed with pypdf."
+    },
+    "FE-S9": {
+      "url": "https://ford.autonation.co.th/wp-content/uploads/2019/05/everest-2019-brochure.pdf",
+      "name": "Ford Everest 2019 specification brochure (Thailand)",
+      "publisher": "Ford Thailand (dealer-hosted copy)",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "pdf_downloaded_and_parsed",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2019",
+      "market_scope": "Thailand",
+      "notes": "Thai/English bilingual brochure; only the English labels and numbers are quoted."
+    },
+    "FE-S10": {
+      "url": "https://www.fordnakhornpathom.com/images/front/brochure/Ecg2Q.pdf",
+      "name": "Ford Everest Platinum brochure (Ford Nakhon Pathom dealer, Thailand)",
+      "publisher": "Ford dealer, Thailand",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "pdf_downloaded_and_parsed",
+      "accessed_at": "2026-10-03",
+      "market_scope": "Thailand",
+      "notes": "No model year stated in the extracted text. Thai glyphs were extracted as codes, so only English labels/numbers are quoted."
+    }
+  },
+  "records": [
+    {
+      "record_id": "FE-001",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "XLS",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L Turbo Diesel",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 170,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 405,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "6-Speed SelectShift AT",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S1",
+        "source_url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+        "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest 2025 Technical Specifications 2025 XLS XLS XLT LIMITED Mechanical Transmission 6-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT Engine 2.0L Turbo Diesel 170 Hp 405 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m Drive Train 4x4 4x4 4x4 4x4"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "XLS",
+        "trim_key": "xls",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 170.0,
+        "torque_nm": 405.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 6,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-002",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "XLS",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.3L I-4 EcoBoost",
+        "displacement_raw": "2.3L",
+        "displacement_cc": null,
+        "cylinders": "I-4",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 296,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed SelectShift AT",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S1",
+        "source_url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+        "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest 2025 Technical Specifications 2025 XLS XLS XLT LIMITED Mechanical Transmission 6-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT Engine 2.0L Turbo Diesel 170 Hp 405 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m Drive Train 4x4 4x4 4x4 4x4"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "XLS",
+        "trim_key": "xls",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.3L",
+        "engine_size_label": "2.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.3,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 296.0,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-003",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "XLT",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.3L I-4 EcoBoost",
+        "displacement_raw": "2.3L",
+        "displacement_cc": null,
+        "cylinders": "I-4",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 296,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed SelectShift AT",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S1",
+        "source_url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+        "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest 2025 Technical Specifications 2025 XLS XLS XLT LIMITED Mechanical Transmission 6-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT Engine 2.0L Turbo Diesel 170 Hp 405 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m Drive Train 4x4 4x4 4x4 4x4"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "XLT",
+        "trim_key": "xlt",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.3L",
+        "engine_size_label": "2.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.3,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 296.0,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-004",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "Limited",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.3L I-4 EcoBoost",
+        "displacement_raw": "2.3L",
+        "displacement_cc": null,
+        "cylinders": "I-4",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 296,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed SelectShift AT",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S1",
+        "source_url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+        "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest 2025 Technical Specifications 2025 XLS XLS XLT LIMITED Mechanical Transmission 6-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT 10-Speed SelectShift AT Engine 2.0L Turbo Diesel 170 Hp 405 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m 2.3L I-4 EcoBoost® 296 Hp 420 N.m Drive Train 4x4 4x4 4x4 4x4"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Limited",
+        "trim_key": "limited",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.3L",
+        "engine_size_label": "2.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.3,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 296.0,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-005",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": "SUV",
+      "doors": null,
+      "seats": "7-seater",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "10-speed SelectShift automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest is a 7-seater SUV, offering spacious seating for families and group travel. The Ford Everest offers 4x4 with 10-speed SelectShift automatic transmission designed for smooth and responsive driving."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-006",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "Active",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 comes in Active, Sport, Tremor and Platinum trims."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Active",
+        "trim_key": "active",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-007",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "Sport",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 comes in Active, Sport, Tremor and Platinum trims."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Sport",
+        "trim_key": "sport",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-008",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "Tremor",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 comes in Active, Sport, Tremor and Platinum trims."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Tremor",
+        "trim_key": "tremor",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-009",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "Platinum",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 comes in Active, Sport, Tremor and Platinum trims."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-010",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L Turbo Diesel",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 170,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 405,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 offers multiple engine options, including a 2.0L Turbo Diesel producing 170 hp and 405 Nm of torque, a 2.3L I-4 EcoBoost ® delivering 296 hp and 420 Nm, and a 2.7L V6 EcoBoost ® generating 310 hp and 542 Nm, providing a strong balance of performance and efficiency."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 170.0,
+        "torque_nm": 405.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-011",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.3L I-4 EcoBoost",
+        "displacement_raw": "2.3L",
+        "displacement_cc": null,
+        "cylinders": "I-4",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 296,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 offers multiple engine options, including a 2.0L Turbo Diesel producing 170 hp and 405 Nm of torque, a 2.3L I-4 EcoBoost ® delivering 296 hp and 420 Nm, and a 2.7L V6 EcoBoost ® generating 310 hp and 542 Nm, providing a strong balance of performance and efficiency."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.3L",
+        "engine_size_label": "2.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.3,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 296.0,
+        "torque_nm": 420.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-012",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.7L V6 EcoBoost",
+        "displacement_raw": "2.7L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 310,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 542,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S2",
+        "source_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "The Ford Everest 2026 offers multiple engine options, including a 2.0L Turbo Diesel producing 170 hp and 405 Nm of torque, a 2.3L I-4 EcoBoost ® delivering 296 hp and 420 Nm, and a 2.7L V6 EcoBoost ® generating 310 hp and 542 Nm, providing a strong balance of performance and efficiency."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.7L",
+        "engine_size_label": "2.7L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.7,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 310.0,
+        "torque_nm": 542.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-013",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.3L EcoBoost Turbo petrol",
+        "displacement_raw": "2.3L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "petrol",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 296,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed SelectShift automatic",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S3",
+        "source_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Starting with Ford’s proven, 2.3L EcoBoost® Turbo petrol engine, mated to an efficient 10-speed SelectShift automatic which delivers Best-in-Class 296HP power and 420Nm of torque (more than any competitor V6)."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.3L",
+        "engine_size_label": "2.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.3,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": "Turbo",
+        "horsepower_hp": 296.0,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-014",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L Single-Turbo diesel",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 168,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 405,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "6-speed automatic",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S3",
+        "source_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Additionally, a 2.0L Single-Turbo diesel comes standard with a 6-speed automatic, supplying 168HP and 405Nm of torque providing strong low speed torque, great low speed throttle response and optimum fuel economy."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 168.0,
+        "torque_nm": 405.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 6,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-015",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": null,
+      "variant": null,
+      "body_type": "SUV",
+      "doors": null,
+      "seats": "up to seven",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S3",
+        "source_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Inside, premium levels of craftsmanship have created a quiet and refined sanctuary for up to seven. Next-Gen Ford Everest is ready to go, with a 4x4 system utilizing a 2-speed Electronic Shift On the Fly (ESOF) transfer case. a rugged, refined, and fun-to-drive SUV"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": true,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": [
+        "seats_is_maximum",
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-016",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "XLS",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S3",
+        "source_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "three trims of the Next-Gen Ford Everest were presented at the reveal; XLS, XLT and Limited."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "XLS",
+        "trim_key": "xls",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-017",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "XLT",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S3",
+        "source_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "three trims of the Next-Gen Ford Everest were presented at the reveal; XLS, XLT and Limited."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "XLT",
+        "trim_key": "xlt",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-018",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": "Limited",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S3",
+        "source_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "three trims of the Next-Gen Ford Everest were presented at the reveal; XLS, XLT and Limited."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "Limited",
+        "trim_key": "limited",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-019",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Middle East",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.7L V6 EcoBoost",
+        "displacement_raw": "2.7L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 355,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 500,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S4",
+        "source_url": "https://en.aljazirahford.com/news/ford-debuts-middle-east-exclusive-everest-v6-engine-lineup/",
+        "source_name": "Ford Debuts Middle East-Exclusive Everest V6 Engine Lineup and Unveils Everest Tremor | Al Jazirah Vehicles",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.75,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "The 26MY Ford Everest introduces a new 2.7L V6 EcoBoost engine, developed for the region's driving conditions, delivering 355 horsepower and 500 Nm of torque. the 2.7L V6 EcoBoost engine delivers an impressive 355 horsepower and 500 Nm of torque, paired with a 10-speed automatic transmission"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.7L",
+        "engine_size_label": "2.7L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.7,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 355.0,
+        "torque_nm": 500.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "market_approximate"
+      ]
+    },
+    {
+      "record_id": "FE-020",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Active",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L Turbo Diesel",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 125,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 405,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S5",
+        "source_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.73,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_tool_full_text:-0.02",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications Active Active Sport Sport Tremor Platinum 4x4 4WD 4x4 4WD 4WD 4WD Engine 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 Number of cylinders 4 6 4 6 6 6 Maximum Power 125kW @ 3,500rpm 184kW @ 3,250rpm 125kW @ 3,500rpm 184kW @ 3,250rpm 184kW @ 3,250rpm 184kW @ 3,250rpm Maximum Torque 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm Transmissions 10-speed automatic transmission S S S S S S Driveline Part-time 4x4 S — S — — — Full-time 4WD — S — S S S Fuel Type Diesel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": "Column assignment is positional (see source notes).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Active",
+        "trim_key": "active",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 167.6,
+        "torque_nm": 405.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-021",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Active",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.0L V6 Turbo Diesel",
+        "displacement_raw": "3.0L",
+        "displacement_cc": null,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 184,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 600,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "FE-S5",
+        "source_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.73,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_tool_full_text:-0.02",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications Active Active Sport Sport Tremor Platinum 4x4 4WD 4x4 4WD 4WD 4WD Engine 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 Number of cylinders 4 6 4 6 6 6 Maximum Power 125kW @ 3,500rpm 184kW @ 3,250rpm 125kW @ 3,500rpm 184kW @ 3,250rpm 184kW @ 3,250rpm 184kW @ 3,250rpm Maximum Torque 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm Transmissions 10-speed automatic transmission S S S S S S Driveline Part-time 4x4 S — S — — — Full-time 4WD — S — S S S Fuel Type Diesel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": "Column assignment is positional (see source notes).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Active",
+        "trim_key": "active",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 246.7,
+        "torque_nm": 600.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-022",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Sport",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L Turbo Diesel",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 125,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 405,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4x4",
+      "evidence": {
+        "source_id": "FE-S5",
+        "source_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.73,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_tool_full_text:-0.02",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications Active Active Sport Sport Tremor Platinum 4x4 4WD 4x4 4WD 4WD 4WD Engine 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 Number of cylinders 4 6 4 6 6 6 Maximum Power 125kW @ 3,500rpm 184kW @ 3,250rpm 125kW @ 3,500rpm 184kW @ 3,250rpm 184kW @ 3,250rpm 184kW @ 3,250rpm Maximum Torque 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm Transmissions 10-speed automatic transmission S S S S S S Driveline Part-time 4x4 S — S — — — Full-time 4WD — S — S S S Fuel Type Diesel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": "Column assignment is positional (see source notes).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Sport",
+        "trim_key": "sport",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 167.6,
+        "torque_nm": 405.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-023",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Sport",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.0L V6 Turbo Diesel",
+        "displacement_raw": "3.0L",
+        "displacement_cc": null,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 184,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 600,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "FE-S5",
+        "source_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.73,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_tool_full_text:-0.02",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications Active Active Sport Sport Tremor Platinum 4x4 4WD 4x4 4WD 4WD 4WD Engine 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 Number of cylinders 4 6 4 6 6 6 Maximum Power 125kW @ 3,500rpm 184kW @ 3,250rpm 125kW @ 3,500rpm 184kW @ 3,250rpm 184kW @ 3,250rpm 184kW @ 3,250rpm Maximum Torque 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm Transmissions 10-speed automatic transmission S S S S S S Driveline Part-time 4x4 S — S — — — Full-time 4WD — S — S S S Fuel Type Diesel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": "Column assignment is positional (see source notes).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Sport",
+        "trim_key": "sport",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 246.7,
+        "torque_nm": 600.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-024",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Tremor",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.0L V6 Turbo Diesel",
+        "displacement_raw": "3.0L",
+        "displacement_cc": null,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 184,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 600,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "FE-S5",
+        "source_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.73,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_tool_full_text:-0.02",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications Active Active Sport Sport Tremor Platinum 4x4 4WD 4x4 4WD 4WD 4WD Engine 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 Number of cylinders 4 6 4 6 6 6 Maximum Power 125kW @ 3,500rpm 184kW @ 3,250rpm 125kW @ 3,500rpm 184kW @ 3,250rpm 184kW @ 3,250rpm 184kW @ 3,250rpm Maximum Torque 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm Transmissions 10-speed automatic transmission S S S S S S Driveline Part-time 4x4 S — S — — — Full-time 4WD — S — S S S Fuel Type Diesel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": "Column assignment is positional (see source notes).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Tremor",
+        "trim_key": "tremor",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 246.7,
+        "torque_nm": 600.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-025",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Platinum",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.0L V6 Turbo Diesel",
+        "displacement_raw": "3.0L",
+        "displacement_cc": null,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 184,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 600,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-speed automatic transmission",
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "FE-S5",
+        "source_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.73,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_tool_full_text:-0.02",
+          "host_type:dealer_hosted_copy:-0.05"
+        ],
+        "supporting_text": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications Active Active Sport Sport Tremor Platinum 4x4 4WD 4x4 4WD 4WD 4WD Engine 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 2.0L Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 3.0L V6 Turbo Diesel 1 Number of cylinders 4 6 4 6 6 6 Maximum Power 125kW @ 3,500rpm 184kW @ 3,250rpm 125kW @ 3,500rpm 184kW @ 3,250rpm 184kW @ 3,250rpm 184kW @ 3,250rpm Maximum Torque 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 405Nm @ 1,750 - 2,500rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm 600Nm @ 1,750 - 2,250rpm Transmissions 10-speed automatic transmission S S S S S S Driveline Part-time 4x4 S — S — — — Full-time 4WD — S — S S S Fuel Type Diesel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": "Column assignment is positional (see source notes).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 246.7,
+        "torque_nm": 600.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-026",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Sport",
+      "variant": null,
+      "body_type": "SUV",
+      "doors": null,
+      "seats": "7 Seats Standard",
+      "engine": {
+        "display_name": "2.0L Turbo Diesel",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "10-Speed Automatic Transmission",
+        "gears": null
+      },
+      "drivetrain": "Part-Time 4x4",
+      "evidence": {
+        "source_id": "FE-S6",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "source_name": "Ford Everest Sport SUV | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Ford Everest Sport SUV | Ford Australia Choose the 2.0L turbo diesel 82 for everyday efficiency or step up to the 3.0L V6 82 when you want more on tap. Powertrain 2.0L Turbo Diesel 82 or 3.0L V6 Turbo Diesel 82 10-Speed Automatic Transmission Part-Time 4x4 or Full-Time 4WD Available Bodystyles SUV Seats Synthetic Leather Seats 7 Seats Standard"
+      },
+      "notes": "Page lists both drivetrains for the Sport grade; the 4x4/4WD pairing with each engine is shown in the MY2026.50 spec sheet (FE-S5), not on this page.",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Sport",
+        "trim_key": "sport",
+        "body_type": "SUV",
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-027",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Sport",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "7 Seats Standard",
+      "engine": {
+        "display_name": "3.0L V6 Turbo Diesel",
+        "displacement_raw": "3.0L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "10-Speed Automatic Transmission",
+        "gears": null
+      },
+      "drivetrain": "Full-Time 4WD",
+      "evidence": {
+        "source_id": "FE-S6",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "source_name": "Ford Everest Sport SUV | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Ford Everest Sport SUV | Ford Australia Choose the 2.0L turbo diesel 82 for everyday efficiency or step up to the 3.0L V6 82 when you want more on tap. Powertrain 2.0L Turbo Diesel 82 or 3.0L V6 Turbo Diesel 82 10-Speed Automatic Transmission Part-Time 4x4 or Full-Time 4WD Available Bodystyles SUV Seats Synthetic Leather Seats 7 Seats Standard"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Sport",
+        "trim_key": "sport",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-028",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Active",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S6",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "source_name": "Ford Everest Sport SUV | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "MY27 Everest Active"
+      },
+      "notes": "Trim-presence record only (grade shown in the range comparison on the Sport page).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Active",
+        "trim_key": "active",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-029",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Wolftrak",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S6",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "source_name": "Ford Everest Sport SUV | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "MY27 Everest Wolftrak"
+      },
+      "notes": "Trim-presence record only (grade shown in the range comparison on the Sport page).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Wolftrak",
+        "trim_key": "wolftrak",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-030",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Tremor",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S6",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "source_name": "Ford Everest Sport SUV | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "MY27 Everest Tremor"
+      },
+      "notes": "Trim-presence record only (grade shown in the range comparison on the Sport page).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Tremor",
+        "trim_key": "tremor",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-031",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Platinum",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S6",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "source_name": "Ford Everest Sport SUV | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "MY27 Everest Platinum"
+      },
+      "notes": "Trim-presence record only (grade shown in the range comparison on the Sport page).",
+      "normalized": {
+        "market": "other:au",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-032",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Active",
+      "variant": "5 seats standard",
+      "body_type": "SUV",
+      "doors": null,
+      "seats": "5 seats standard",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S7",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/specs/",
+        "source_name": "Explore Ford Everest Specs & Features | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_snippet_only:-0.15"
+        ],
+        "supporting_text": "Active (MY26.5) - 2.0L Turbo Diesel1 Part-time 4x4 or 3.0L V6 Turbo Diesel1 Full-time 4WD - 10-speed automatic, e-shifter (4WD only) and Electronic Park Brake - SUV - Seat Material - Leather Accented - 5 seats standard, 7 seats optional at additional cost"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Active",
+        "trim_key": "active",
+        "body_type": "SUV",
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-033",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Active",
+      "variant": "7 seats optional",
+      "body_type": null,
+      "doors": null,
+      "seats": "7 seats optional",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S7",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/specs/",
+        "source_name": "Explore Ford Everest Specs & Features | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_snippet_only:-0.15"
+        ],
+        "supporting_text": "Active (MY26.5) - 5 seats standard, 7 seats optional at additional cost"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Active",
+        "trim_key": "active",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-034",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Platinum",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "7 seats standard",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S7",
+        "source_url": "https://www.ford.com.au/showroom/suv/everest/specs/",
+        "source_name": "Explore Ford Everest Specs & Features | Ford Australia",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_snippet_only:-0.15"
+        ],
+        "supporting_text": "Platinum (MY26.5) - Leather seats with unique ‘Platinum’ badging (excluding 2nd row middle seat)5 - 7 seats standard"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-035",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.2L Duratorq TDCi Diesel",
+        "displacement_raw": {
+          "value": 3198,
+          "unit": "cm3"
+        },
+        "displacement_cc": 3198,
+        "cylinders": "5 Cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower": {
+          "value": 143,
+          "unit": "kW"
+        },
+        "torque": {
+          "value": 470,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "6-Speed Automatic Transmission",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Everest Engine 3.2L Duratorq TDCi Diesel Engine Type 5 Cylinder Engine Size 3198cm3 Maximum Power 143kW @ 3000rpm Maximum Torque 470Nm @ 1750-2500rpm Transmission 6-Speed Automatic Transmission S Fuel Diesel Diesel Diesel Diesel Diesel"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.2L",
+        "engine_size_label": "3.2L",
+        "displacement_cc": 3198,
+        "displacement_nominal_l": 3.198,
+        "cylinders": 5,
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower_hp": 191.8,
+        "torque_nm": 470.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 6,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-036",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Ambiente",
+      "variant": "5 seats standard",
+      "body_type": null,
+      "doors": null,
+      "seats": "5 seats",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1. 5 seats standard in Ambiente models produced from April 2017. 7 seats optional in Ambiente models produced from April 2017 and standard in Trend and Titanium."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Ambiente",
+        "trim_key": "ambiente",
+        "body_type": null,
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-037",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Ambiente",
+      "variant": "7 seats optional",
+      "body_type": null,
+      "doors": null,
+      "seats": "7 seats",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1. 5 seats standard in Ambiente models produced from April 2017. 7 seats optional in Ambiente models produced from April 2017 and standard in Trend and Titanium."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Ambiente",
+        "trim_key": "ambiente",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-038",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Trend",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "7 seats",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1. 5 seats standard in Ambiente models produced from April 2017. 7 seats optional in Ambiente models produced from April 2017 and standard in Trend and Titanium."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Trend",
+        "trim_key": "trend",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-039",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": "Titanium",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "7 seats",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1. 5 seats standard in Ambiente models produced from April 2017. 7 seats optional in Ambiente models produced from April 2017 and standard in Trend and Titanium."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": "Titanium",
+        "trim_key": "titanium",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-040",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": null,
+      "variant": "4WD",
+      "body_type": "SUV",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "It’s time to elevate your expectations of what an SUV is capable of and choose either 4WD or RWD 1. to suit your driving"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-041",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Australia",
+      "trim": null,
+      "variant": "RWD",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "RWD",
+      "evidence": {
+        "source_id": "FE-S8",
+        "source_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "It’s time to elevate your expectations of what an SUV is capable of and choose either 4WD or RWD 1. to suit your driving"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:au",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "RWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-042",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Thailand",
+      "trim": "Trend",
+      "variant": "2.0L Turbo 4x2",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo",
+        "displacement_raw": {
+          "value": 1996,
+          "unit": "cc"
+        },
+        "displacement_cc": 1996,
+        "cylinders": "In-line 4 Cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 180,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed Automatic Transmission with SelectShift",
+        "gears": null
+      },
+      "drivetrain": "4x2",
+      "evidence": {
+        "source_id": "FE-S9",
+        "source_url": "https://ford.autonation.co.th/wp-content/uploads/2019/05/everest-2019-brochure.pdf",
+        "source_name": "Ford Everest 2019 specification brochure (Thailand)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "FORD EVEREST SPECIFICATIONS Model 2.0L Turbo Trend 4x2 10AT 2.0L Turbo Titanium 4x2 10AT 2.0L Turbo Titanium+ 4x2 10AT 2.0L Bi-Turbo Titanium+ 4x4 10AT Engine Type (2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo with Intercooler) (2.0 Litre Diesel In-line 4 Cylinder 16V Bi-Turbo with Intercooler) Displacement c.c. 1,996 Maximum Power PS (KW) / rpm 180 (132) / 3,500 213 (156.7) / 3,750 Maximum Torque (N.m. / rpm) 420 / 1,750 - 2,500 500 / 1,750 - 2,000 Transmission (10-Speed Automatic Transmission with SelectShift) Drivetrain (4x2) (Full Time 4x4 with Terrain Management System)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:th",
+        "trim": "Trend",
+        "trim_key": "trend",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": 1996,
+        "displacement_nominal_l": 1.996,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 177.5,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "two_wheel_drive_axle_unspecified"
+      ]
+    },
+    {
+      "record_id": "FE-043",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Thailand",
+      "trim": "Titanium",
+      "variant": "2.0L Turbo 4x2",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo",
+        "displacement_raw": {
+          "value": 1996,
+          "unit": "cc"
+        },
+        "displacement_cc": 1996,
+        "cylinders": "In-line 4 Cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 180,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed Automatic Transmission with SelectShift",
+        "gears": null
+      },
+      "drivetrain": "4x2",
+      "evidence": {
+        "source_id": "FE-S9",
+        "source_url": "https://ford.autonation.co.th/wp-content/uploads/2019/05/everest-2019-brochure.pdf",
+        "source_name": "Ford Everest 2019 specification brochure (Thailand)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "FORD EVEREST SPECIFICATIONS Model 2.0L Turbo Trend 4x2 10AT 2.0L Turbo Titanium 4x2 10AT 2.0L Turbo Titanium+ 4x2 10AT 2.0L Bi-Turbo Titanium+ 4x4 10AT Engine Type (2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo with Intercooler) (2.0 Litre Diesel In-line 4 Cylinder 16V Bi-Turbo with Intercooler) Displacement c.c. 1,996 Maximum Power PS (KW) / rpm 180 (132) / 3,500 213 (156.7) / 3,750 Maximum Torque (N.m. / rpm) 420 / 1,750 - 2,500 500 / 1,750 - 2,000 Transmission (10-Speed Automatic Transmission with SelectShift) Drivetrain (4x2) (Full Time 4x4 with Terrain Management System)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:th",
+        "trim": "Titanium",
+        "trim_key": "titanium",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": 1996,
+        "displacement_nominal_l": 1.996,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 177.5,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "two_wheel_drive_axle_unspecified"
+      ]
+    },
+    {
+      "record_id": "FE-044",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Thailand",
+      "trim": "Titanium+",
+      "variant": "2.0L Turbo 4x2",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo",
+        "displacement_raw": {
+          "value": 1996,
+          "unit": "cc"
+        },
+        "displacement_cc": 1996,
+        "cylinders": "In-line 4 Cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 180,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 420,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed Automatic Transmission with SelectShift",
+        "gears": null
+      },
+      "drivetrain": "4x2",
+      "evidence": {
+        "source_id": "FE-S9",
+        "source_url": "https://ford.autonation.co.th/wp-content/uploads/2019/05/everest-2019-brochure.pdf",
+        "source_name": "Ford Everest 2019 specification brochure (Thailand)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "FORD EVEREST SPECIFICATIONS Model 2.0L Turbo Trend 4x2 10AT 2.0L Turbo Titanium 4x2 10AT 2.0L Turbo Titanium+ 4x2 10AT 2.0L Bi-Turbo Titanium+ 4x4 10AT Engine Type (2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo with Intercooler) (2.0 Litre Diesel In-line 4 Cylinder 16V Bi-Turbo with Intercooler) Displacement c.c. 1,996 Maximum Power PS (KW) / rpm 180 (132) / 3,500 213 (156.7) / 3,750 Maximum Torque (N.m. / rpm) 420 / 1,750 - 2,500 500 / 1,750 - 2,000 Transmission (10-Speed Automatic Transmission with SelectShift) Drivetrain (4x2) (Full Time 4x4 with Terrain Management System)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:th",
+        "trim": "Titanium+",
+        "trim_key": "titanium+",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": 1996,
+        "displacement_nominal_l": 1.996,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 177.5,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "two_wheel_drive_axle_unspecified"
+      ]
+    },
+    {
+      "record_id": "FE-045",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Thailand",
+      "trim": "Titanium+",
+      "variant": "2.0L Bi-Turbo 4x4",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0 Litre Diesel In-line 4 Cylinder 16V Bi-Turbo",
+        "displacement_raw": {
+          "value": 1996,
+          "unit": "cc"
+        },
+        "displacement_cc": 1996,
+        "cylinders": "In-line 4 Cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "Bi-Turbo",
+        "horsepower": {
+          "value": 213,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 500,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10-Speed Automatic Transmission with SelectShift",
+        "gears": null
+      },
+      "drivetrain": "Full Time 4x4",
+      "evidence": {
+        "source_id": "FE-S9",
+        "source_url": "https://ford.autonation.co.th/wp-content/uploads/2019/05/everest-2019-brochure.pdf",
+        "source_name": "Ford Everest 2019 specification brochure (Thailand)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "FORD EVEREST SPECIFICATIONS Model 2.0L Turbo Trend 4x2 10AT 2.0L Turbo Titanium 4x2 10AT 2.0L Turbo Titanium+ 4x2 10AT 2.0L Bi-Turbo Titanium+ 4x4 10AT Engine Type (2.0 Litre Diesel In-line 4 Cylinder 16V VG Turbo with Intercooler) (2.0 Litre Diesel In-line 4 Cylinder 16V Bi-Turbo with Intercooler) Displacement c.c. 1,996 Maximum Power PS (KW) / rpm 180 (132) / 3,500 213 (156.7) / 3,750 Maximum Torque (N.m. / rpm) 420 / 1,750 - 2,500 500 / 1,750 - 2,000 Transmission (10-Speed Automatic Transmission with SelectShift) Drivetrain (4x2) (Full Time 4x4 with Terrain Management System)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:th",
+        "trim": "Titanium+",
+        "trim_key": "titanium+",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": 1996,
+        "displacement_nominal_l": 1.996,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 210.1,
+        "torque_nm": 500.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "SelectShift",
+        "transmission_named_systems": [
+          "SelectShift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FE-046",
+      "brand": "Ford",
+      "model": "Everest",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Thailand",
+      "trim": "Platinum",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.0L V6 Turbo",
+        "displacement_raw": {
+          "value": 2993,
+          "unit": "cc"
+        },
+        "displacement_cc": 2993,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": "Turbo",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "10AT",
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "FE-S10",
+        "source_url": "https://www.fordnakhornpathom.com/images/front/brochure/Ecg2Q.pdf",
+        "source_name": "Ford Everest Platinum brochure (Ford Nakhon Pathom dealer, Thailand)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.7,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Everest Platinum Model 3.0L V6 Turbo Platinum 4WD 10AT Displacement cc 2993 (4WD Terrain Management System with 6 Selectable Drive Modes : Normal, Eco, Tow/Haul, Slippery, Mud/Ruts, Sand)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:th",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": 2993,
+        "displacement_nominal_l": 2.993,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    }
+  ]
+}

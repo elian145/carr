@@ -1,0 +1,835 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Camry",
+  "generated_from": {
+    "evidence_file": "evidence/toyota_camry.json",
+    "researched_at": "2026-10-03",
+    "record_count": 23,
+    "source_count": 4,
+    "records_by_source_tier": {
+      "1": 15,
+      "3": 8
+    }
+  },
+  "research_coverage": [
+    "8th generation (XV70, 2018-): US 2018 launch release and US 2026 hybrid page; Saudi Arabia 2026 grade table (gas + hybrid); UAE 2026 page",
+    "NOT researched (no usable fetch this run): 2.5L 6AT (2012-2017 XV50), 3.5L V6 2GR-FE 6AT, 2.0L/2.4L earlier generations, Camry Hybrid 1st/2nd gen, Thailand/Japan/China variants, Kuwait distributor spec table (page is JS-rendered, no spec text), US 2025 e-brochure",
+    "Seats and doors: no fetched source states them for Camry, so both stay null (no tier-5 value was fabricated or imported)"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "union",
+    "includes_provisional": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "unresolved_conflicts": 0,
+    "conflicts_block_promotion_until_reviewed": false,
+    "review_status": "UNREVIEWED"
+  },
+  "union": {
+    "trims": [
+      "E",
+      "E HEV",
+      "E Plus HEV",
+      "Grande",
+      "L",
+      "LE",
+      "LE HEV",
+      "Lumiere HEV",
+      "Nightshade",
+      "SE",
+      "XLE",
+      "XSE"
+    ],
+    "engine_sizes": [
+      "2.5L",
+      "3.5L"
+    ],
+    "cylinders": [
+      4,
+      6
+    ],
+    "fuel_types": [
+      "Hybrid",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "e-CVT"
+    ],
+    "transmission_gears": [
+      8
+    ],
+    "drivetrains": [
+      "AWD",
+      "FWD"
+    ],
+    "body_types": [
+      "Sedan"
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "seats",
+    "doors"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "2.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Hybrid",
+        "Petrol"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 176.0,
+          "record_id": "CM-010",
+          "trim": null
+        },
+        {
+          "value": 201.0,
+          "record_id": "CM-016",
+          "trim": "E"
+        },
+        {
+          "value": 201.0,
+          "record_id": "CM-017",
+          "trim": "LE"
+        },
+        {
+          "value": 201.0,
+          "record_id": "CM-018",
+          "trim": "Grande"
+        },
+        {
+          "value": 206.0,
+          "record_id": "CM-008",
+          "trim": null
+        },
+        {
+          "value": 225.0,
+          "record_id": "CM-001",
+          "trim": null
+        },
+        {
+          "value": 226.0,
+          "record_id": "CM-019",
+          "trim": "E HEV"
+        },
+        {
+          "value": 226.0,
+          "record_id": "CM-020",
+          "trim": "E Plus HEV"
+        },
+        {
+          "value": 226.0,
+          "record_id": "CM-021",
+          "trim": "LE HEV"
+        },
+        {
+          "value": 232.0,
+          "record_id": "CM-002",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 221.0,
+          "record_id": "CM-010",
+          "trim": null
+        },
+        {
+          "value": 221.0,
+          "record_id": "CM-019",
+          "trim": "E HEV"
+        },
+        {
+          "value": 221.0,
+          "record_id": "CM-020",
+          "trim": "E Plus HEV"
+        },
+        {
+          "value": 221.0,
+          "record_id": "CM-021",
+          "trim": "LE HEV"
+        },
+        {
+          "value": 240.0,
+          "record_id": "CM-016",
+          "trim": "E"
+        },
+        {
+          "value": 240.0,
+          "record_id": "CM-017",
+          "trim": "LE"
+        },
+        {
+          "value": 240.0,
+          "record_id": "CM-018",
+          "trim": "Grande"
+        },
+        {
+          "value": 252.0,
+          "record_id": "CM-008",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "CM-001",
+        "CM-002",
+        "CM-008",
+        "CM-010",
+        "CM-016",
+        "CM-017",
+        "CM-018",
+        "CM-019",
+        "CM-020",
+        "CM-021",
+        "CM-023"
+      ]
+    },
+    {
+      "engine_size_label": "3.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [],
+      "aspirations": [],
+      "power_hp": [],
+      "torque_nm": [],
+      "best_tier": 1,
+      "record_ids": [
+        "CM-009"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "E",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "CM-016"
+        ],
+        "source_ids": [
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "E HEV",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "CM-019"
+        ],
+        "source_ids": [
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "E Plus HEV",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "CM-020"
+        ],
+        "source_ids": [
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Grande",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "CM-018"
+        ],
+        "source_ids": [
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "CM-011"
+        ],
+        "source_ids": [
+          "CM-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2018
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "LE",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "CM-003",
+          "CM-012",
+          "CM-017"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2",
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "LE HEV",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "CM-021"
+        ],
+        "source_ids": [
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Lumiere HEV",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "CM-022"
+        ],
+        "source_ids": [
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Nightshade",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "CM-005"
+        ],
+        "source_ids": [
+          "CM-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "SE",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "CM-004",
+          "CM-014"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "XLE",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "CM-006",
+          "CM-013"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "XSE",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "CM-007",
+          "CM-015"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "2.5L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 11,
+        "record_ids": [
+          "CM-001",
+          "CM-002",
+          "CM-008",
+          "CM-010",
+          "CM-016",
+          "CM-017",
+          "CM-018",
+          "CM-019",
+          "CM-020",
+          "CM-021",
+          "CM-023"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2",
+          "CM-S3",
+          "CM-S4"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "3.5L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "CM-009"
+        ],
+        "source_ids": [
+          "CM-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "CM-001",
+          "CM-002",
+          "CM-008",
+          "CM-016",
+          "CM-017",
+          "CM-018",
+          "CM-019",
+          "CM-020",
+          "CM-021",
+          "CM-023"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2",
+          "CM-S3",
+          "CM-S4"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "CM-009"
+        ],
+        "source_ids": [
+          "CM-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Hybrid",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 7,
+        "record_ids": [
+          "CM-001",
+          "CM-002",
+          "CM-010",
+          "CM-019",
+          "CM-020",
+          "CM-021",
+          "CM-022"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2",
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Petrol",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 4,
+        "record_ids": [
+          "CM-008",
+          "CM-016",
+          "CM-017",
+          "CM-018"
+        ],
+        "source_ids": [
+          "CM-S2",
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "CM-001",
+          "CM-002",
+          "CM-008",
+          "CM-009",
+          "CM-016",
+          "CM-017",
+          "CM-018",
+          "CM-019",
+          "CM-020",
+          "CM-021"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S2",
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [
+      {
+        "value": "e-CVT",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "CM-001",
+          "CM-002",
+          "CM-019",
+          "CM-020",
+          "CM-021"
+        ],
+        "source_ids": [
+          "CM-S1",
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_gears": [
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "CM-008",
+          "CM-009",
+          "CM-016",
+          "CM-017",
+          "CM-018"
+        ],
+        "source_ids": [
+          "CM-S2",
+          "CM-S3"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "AWD",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "CM-002"
+        ],
+        "source_ids": [
+          "CM-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "FWD",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "CM-001"
+        ],
+        "source_ids": [
+          "CM-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "Sedan",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "CM-008",
+          "CM-023"
+        ],
+        "source_ids": [
+          "CM-S2",
+          "CM-S4"
+        ],
+        "markets": [
+          "gcc",
+          "us"
+        ],
+        "years": [
+          2018,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "conflicts": []
+}

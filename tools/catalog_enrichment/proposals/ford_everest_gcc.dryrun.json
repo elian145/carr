@@ -1,0 +1,703 @@
+{
+  "schema_version": "carnet.catalog_patch/1",
+  "applied": false,
+  "generated_at": "2026-10-03",
+  "sources": {
+    "S1_me_my25_spec_sheet": {
+      "url": "https://live.dealer-asset.co/me23/product/file/MY25-Everest-Spec-Sheet-EN.pdf",
+      "name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, EN)",
+      "publisher": "Ford Middle East (dealer-asset CDN)",
+      "tier": 2,
+      "document_type": "pdf_spec_sheet",
+      "origin_family": "ford-me-spec-sheet-my25",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "pdf_downloaded_and_parsed",
+      "sha256": "0F5EAA3A78B6CEFF4B1263A32C7E97F6ABE46BE08F99989A1D395E55B5470345",
+      "model_year_label": "2025",
+      "market_scope": "Middle East (Ford ME dealer platform; the same sheet is also published on fordbahrain.com)",
+      "table_as_parsed": "Columns: XLS | XLS | XLT | LIMITED. Transmission: 6-Speed Selectshift AT | 10-Speed Selectshift AT | 10-Speed Selectshift AT | 10-Speed Selectshift AT. Engine: 2.0L Turbo Diesel 170 Hp 405 Nm | 2.3L I-4 EcoBoost 296 Hp 420 Nm | 2.3L I-4 EcoBoost 296 Hp 420 Nm | 2.3L I-4 EcoBoost 296 Hp 420 Nm. Drive Train: 4x4 | 4x4 | 4x4 | 4x4. Seating rows list '3rd Row Folding Seats' but give NO seat count."
+    },
+    "S2_ford_uae_everest_page": {
+      "url": "https://www.me.ford.com/en/are/suvs/everest/",
+      "name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
+      "publisher": "Ford Middle East",
+      "tier": 1,
+      "document_type": "web_page",
+      "origin_family": "ford-me-site-everest",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "fetched_full_text",
+      "model_year_label": "2026",
+      "market_scope": "UAE"
+    },
+    "S3_ford_ksa_everest_page": {
+      "url": "https://www.me.ford.com/en/sau/suvs/everest/",
+      "name": "Ford Everest 2026 - 7 Seater Family SUV | Ford KSA",
+      "publisher": "Ford Middle East",
+      "tier": 1,
+      "document_type": "web_page",
+      "origin_family": "ford-me-site-everest",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "fetched_full_text",
+      "model_year_label": "2026",
+      "market_scope": "Saudi Arabia (identical text to S2: same CMS template, so NOT an independent source)"
+    },
+    "S4_ford_me_press_release_2023_via_aljazirah": {
+      "url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+      "name": "Next-Gen Ford Everest debuts in the Middle East (Ford Middle East press release, 11 Oct 2023; verbatim copy on authorized distributor site)",
+      "publisher": "Ford Middle East via Al Jazirah Vehicles (authorized Ford distributor, KSA)",
+      "tier": 1,
+      "document_type": "press_release",
+      "origin_family": "ford-me-press-release-2023-10-11",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "fetched_full_text",
+      "model_year_label": null,
+      "market_scope": "Middle East; text says engines vary 'depending on the market'",
+      "note": "Original on Ford Media Center ME (media.lincoln.com mirror) returned no readable text to the fetcher; content confirmed via this copy and via search-result excerpts of the original."
+    },
+    "S5_aljazirah_v6_debut_2025": {
+      "url": "https://en.aljazirahford.com/news/ford-debuts-middle-east-exclusive-everest-v6-engine-lineup/",
+      "name": "Ford Debuts Middle East-Exclusive Everest V6 Engine Lineup and Unveils Everest Tremor (18 Dec 2025)",
+      "publisher": "Ford MENA via Al Jazirah Vehicles",
+      "tier": 1,
+      "document_type": "press_release",
+      "origin_family": "ford-mena-press-release-2025-12-18",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "search_snippet_only",
+      "model_year_label": "26MY",
+      "market_scope": "Middle East"
+    },
+    "S6_aljazirah_v6_testing_2026": {
+      "url": "https://en.aljazirahford.com/news/ford-everest-v6-testing-middle-east/",
+      "name": "Ford Everest V6 Testing in the Middle East (3 Sep 2026)",
+      "publisher": "Ford MENA via Al Jazirah Vehicles",
+      "tier": 1,
+      "document_type": "press_release",
+      "origin_family": "ford-mena-press-release-2026-09-03",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "search_snippet_only",
+      "model_year_label": "2026",
+      "market_scope": "Middle East"
+    },
+    "S7_fordalghanim_active_page": {
+      "url": "https://www.fordalghanim.com/en/vehicles/suvs/everest/active",
+      "name": "Ford Everest Active 2026 - Model Specifications | Ford UAE",
+      "publisher": "Al Ghanim (authorized Ford distributor)",
+      "tier": 1,
+      "document_type": "web_page",
+      "origin_family": "fordalghanim-site",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "search_snippet_only",
+      "model_year_label": "2026",
+      "market_scope": "UAE"
+    },
+    "S8_carblogindia_2023_uae": {
+      "url": "https://www.carblogindia.com/2023-ford-everest-launched-dubai-cost/",
+      "name": "2023 Ford Everest Launched in Dubai",
+      "publisher": "Car Blog India",
+      "tier": 4,
+      "document_type": "blog_or_news",
+      "origin_family": "carblogindia",
+      "retrieved_at": "2026-10-03",
+      "retrieval": "search_snippet_only",
+      "model_year_label": "2023 (blog's label)",
+      "market_scope": "UAE"
+    }
+  },
+  "rejected_evidence": [
+    {
+      "url": "https://www.ford.com.au/showroom/suv/everest/active/",
+      "reason": "Australia market: diesel-only (2.0L 4-cyl 125 kW / 3.0L V6). Different market, must not be merged into gcc."
+    },
+    {
+      "url": "https://live.dealer-asset.co/nz1/product/file/260527-ford-everest-brochure-639155615518576008.pdf",
+      "reason": "New Zealand market brochure (MY2026.50). Different market."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Ford_Everest",
+      "reason": "Secondary; mentions a 2.3L EcoBoost for an Australian 2026 update. Not usable for gcc and not primary."
+    },
+    {
+      "url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+      "reason": "Direct download blocked by a Cloudflare challenge in this environment; only seen as a search excerpt. Same sheet as S1, so would not add independence."
+    }
+  ],
+  "patches": [
+    {
+      "patch_id": "ford-everest-gcc-my2025-2.3-ecoboost-petrol-10at",
+      "operation": "add_variant_row",
+      "identity": {
+        "make": "Ford",
+        "model": "Everest",
+        "year_from": 2025,
+        "year_to": 2025,
+        "year_basis": "S1 is titled 'Ford Everest 2025'",
+        "market": "gcc",
+        "market_countries_verified": [
+          "AE"
+        ],
+        "trims": [
+          "XLS",
+          "XLT",
+          "Limited"
+        ]
+      },
+      "proposed": {
+        "variant_name": "Everest 2 3 EcoBoost (296 Hp) 4x4 Automatic",
+        "fields": {
+          "displacement_l_nominal": {
+            "value": 2.3,
+            "raw_source_phrase": "2.3L I-4 EcoBoost",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S2_ford_uae_everest_page",
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "displacement_cc": {
+            "value": null,
+            "status": "UNKNOWN",
+            "normalization_note": "No source states cc. Leave null; the app already falls back to the 2.3 nominal litres in the variant name (_resolveEngineLitersForForm). Do NOT fill 2261/2264 from memory.",
+            "evidence": []
+          },
+          "cylinders": {
+            "value": 4,
+            "raw_source_phrase": "I-4",
+            "normalization_note": "Dataset stores this as raw_spec_pairs['Cylinders alignment:'] = 'inline 4'",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S2_ford_uae_everest_page"
+            ]
+          },
+          "fuel_type": {
+            "value": "Petrol (Gasoline)",
+            "raw_source_phrase": "2.3L EcoBoost Turbo petrol engine (S4)",
+            "normalization_note": "Dataset vocabulary is exactly: Petrol (Gasoline) | Diesel | Electric. Only S4 states the word 'petrol'. S1 and the currently fetched S2 body say just 'EcoBoost'; an older cached copy of the S2 URL (seen in search results) also said 'EcoBoost petrol engine' but that is not the current page. One current official statement => NEEDS_REVIEW.",
+            "status": "NEEDS_REVIEW",
+            "evidence": [],
+            "corroboration": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "aspiration": {
+            "value": "turbo",
+            "raw_source_phrase": "EcoBoost Turbo petrol (S4)",
+            "normalization_note": "Not a stored dataset field; the app derives the ' T' suffix from the 'ecoboost' keyword in the name. Listed so reviewers see why the engine label becomes '2.3 T'.",
+            "status": "NEEDS_REVIEW",
+            "evidence": [],
+            "corroboration": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "transmission": {
+            "value": "Automatic",
+            "raw_source_phrase": "10-Speed Selectshift AT",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S4_ford_me_press_release_2023_via_aljazirah",
+              "S2_ford_uae_everest_page"
+            ]
+          },
+          "drivetrain": {
+            "value": "AWD",
+            "raw_source_phrase": "4x4",
+            "normalization_note": "Dataset drivetrain vocabulary is FWD | RWD | AWD ('' for unknown) and existing Everest 4x4 rows use 'AWD' with Traction 'All wheel drive (4x4)'. S1 says only '4x4'; S2/Active page says 'full-time 4WD system' for 2026. Reviewer must confirm AWD vs 4WD mapping before import.",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ]
+          },
+          "body_type": {
+            "value": "SUV",
+            "raw_source_phrase": "7 Seater Family SUV (S2 title, 2026)",
+            "status": "NEEDS_REVIEW",
+            "evidence": [],
+            "corroboration": [
+              "S2_ford_uae_everest_page"
+            ]
+          },
+          "seats": {
+            "value": null,
+            "status": "UNKNOWN",
+            "normalization_note": "S1 lists '3rd Row Folding Seats' but no seat count. The '7-seater' statement (S2) is for model year 2026, not 2025, so it is not transplanted.",
+            "evidence": []
+          },
+          "power_hp": {
+            "value": 296,
+            "raw_source_phrase": "296 Hp / 296HP",
+            "status": "NEEDS_REVIEW",
+            "normalization_note": "Not a structured dataset field; only used inside the variant_name label.",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S2_ford_uae_everest_page",
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "torque_nm": {
+            "value": 420,
+            "raw_source_phrase": "420 Nm / 420Nm",
+            "status": "NEEDS_REVIEW",
+            "normalization_note": "Not stored by CarNet. Recorded for future use only.",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S2_ford_uae_everest_page",
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          }
+        }
+      },
+      "existing_rows_touched": [],
+      "overall_status": "NEEDS_REVIEW",
+      "confidence": 0.7,
+      "notes": [
+        "Year-scoped evidence rule: only sources that state model year 2025 (S1) set field status. S2 (MY2026 page) and S4 (Oct-2023 launch release, no model-year label) agree with every engine value but are recorded under 'corroboration' and cannot raise status. Result: every field is single-source => NEEDS_REVIEW.",
+        "overall_status is also bounded by: drivetrain vocabulary mapping (4x4 -> AWD?), seats and displacement_cc unknown, and CarNet having no market-aware resolution yet (a market='gcc' row would otherwise surface for every market).",
+        "S1 gives trim granularity: XLS offers BOTH the 2.0L diesel (6AT) and the 2.3L petrol (10AT); XLT and Limited are 2.3L petrol only."
+      ],
+      "review": {
+        "reviewer": null,
+        "decision": null,
+        "decided_at": null
+      }
+    },
+    {
+      "patch_id": "ford-everest-gcc-my2026-2.3-ecoboost-petrol-10at",
+      "operation": "add_variant_row",
+      "identity": {
+        "make": "Ford",
+        "model": "Everest",
+        "year_from": 2026,
+        "year_to": 2026,
+        "year_basis": "S2/S3 pages are titled 'Ford Everest 2026'",
+        "market": "gcc",
+        "market_countries_verified": [
+          "AE",
+          "SA"
+        ],
+        "trims": null
+      },
+      "proposed": {
+        "variant_name": "Everest 2 3 EcoBoost (296 Hp) 4x4 Automatic",
+        "fields": {
+          "displacement_l_nominal": {
+            "value": 2.3,
+            "raw_source_phrase": "2.3L I-4 EcoBoost",
+            "status": "AUTO_APPROVABLE",
+            "evidence": [
+              "S2_ford_uae_everest_page",
+              "S7_fordalghanim_active_page"
+            ]
+          },
+          "cylinders": {
+            "value": 4,
+            "raw_source_phrase": "I-4",
+            "status": "AUTO_APPROVABLE",
+            "evidence": [
+              "S2_ford_uae_everest_page",
+              "S7_fordalghanim_active_page"
+            ]
+          },
+          "fuel_type": {
+            "value": "Petrol (Gasoline)",
+            "raw_source_phrase": "2.3L EcoBoost petrol engine",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S2_ford_uae_everest_page"
+            ],
+            "normalization_note": "'petrol' appears in S2's FAQ text as returned by search; the fetched page body says only 'EcoBoost'."
+          },
+          "transmission": {
+            "value": "Automatic",
+            "raw_source_phrase": "4x4 with 10-speed SelectShift automatic transmission",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S2_ford_uae_everest_page"
+            ],
+            "normalization_note": "Page states the 10AT at model level, not per engine."
+          },
+          "drivetrain": {
+            "value": "AWD",
+            "raw_source_phrase": "4x4 / full-time 4WD system",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S2_ford_uae_everest_page",
+              "S7_fordalghanim_active_page"
+            ]
+          },
+          "seats": {
+            "value": 7,
+            "raw_source_phrase": "7-seater SUV / Available seating for 7",
+            "status": "AUTO_APPROVABLE",
+            "evidence": [
+              "S2_ford_uae_everest_page",
+              "S3_ford_ksa_everest_page",
+              "S7_fordalghanim_active_page"
+            ],
+            "normalization_note": "S2 and S3 share a CMS template; S7 is a distinct distributor site. Counted as 2 origin families."
+          },
+          "power_hp": {
+            "value": 296,
+            "raw_source_phrase": "296 hp",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S2_ford_uae_everest_page"
+            ]
+          },
+          "displacement_cc": {
+            "value": null,
+            "status": "UNKNOWN",
+            "evidence": []
+          }
+        }
+      },
+      "existing_rows_touched": [],
+      "overall_status": "NEEDS_REVIEW",
+      "confidence": 0.75,
+      "notes": [
+        "Model-level only: the 2026 pages list the engine range but do not map engines to the Active/Sport/Tremor/Platinum trims, so trims stays null. Do not assume which 2026 trims get the 2.3L."
+      ],
+      "review": {
+        "reviewer": null,
+        "decision": null,
+        "decided_at": null
+      }
+    },
+    {
+      "patch_id": "ford-everest-gcc-my2023-2024-2.3-ecoboost-petrol-10at",
+      "operation": "add_variant_row",
+      "identity": {
+        "make": "Ford",
+        "model": "Everest",
+        "year_from": 2024,
+        "year_to": 2024,
+        "year_basis": "UNVERIFIED. S4 (11 Oct 2023) announces the Middle East debut but states no model-year label; S8 calls it '2023' and the blog price-list article '2024'. A MY2023/MY2024 spec sheet is required before any year range can be set.",
+        "market": "gcc",
+        "market_countries_verified": [
+          "AE"
+        ],
+        "trims": [
+          "XLS",
+          "XLT",
+          "Limited"
+        ]
+      },
+      "proposed": {
+        "variant_name": "Everest 2 3 EcoBoost (296 Hp) 4x4 Automatic",
+        "fields": {
+          "displacement_l_nominal": {
+            "value": 2.3,
+            "raw_source_phrase": "2.3L EcoBoost Turbo petrol engine",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "fuel_type": {
+            "value": "Petrol (Gasoline)",
+            "raw_source_phrase": "Turbo petrol",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S4_ford_me_press_release_2023_via_aljazirah",
+              "S8_carblogindia_2023_uae"
+            ]
+          },
+          "transmission": {
+            "value": "Automatic",
+            "raw_source_phrase": "10-speed SelectShift automatic",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "cylinders": {
+            "value": null,
+            "status": "UNKNOWN",
+            "normalization_note": "S4 does not state cylinder count; S8 (tier 4) says '4-cylinder' but secondary evidence alone is not enough.",
+            "evidence": []
+          }
+        }
+      },
+      "existing_rows_touched": [],
+      "overall_status": "NEEDS_REVIEW",
+      "confidence": 0.5,
+      "notes": [
+        "One official document (a launch press release), no model-year label. Do not import until a model-year-specific official source exists."
+      ],
+      "review": {
+        "reviewer": null,
+        "decision": null,
+        "decided_at": null
+      }
+    },
+    {
+      "patch_id": "ford-everest-gcc-my2025-2.0-turbo-diesel-6at",
+      "operation": "add_variant_row",
+      "identity": {
+        "make": "Ford",
+        "model": "Everest",
+        "year_from": 2025,
+        "year_to": 2025,
+        "year_basis": "S1 is titled 'Ford Everest 2025'",
+        "market": "gcc",
+        "market_countries_verified": [
+          "AE"
+        ],
+        "trims": [
+          "XLS"
+        ]
+      },
+      "proposed": {
+        "variant_name": "Everest 2 0 Turbo Diesel 4x4 Automatic",
+        "fields": {
+          "displacement_l_nominal": {
+            "value": 2.0,
+            "raw_source_phrase": "2.0L Turbo Diesel",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "fuel_type": {
+            "value": "Diesel",
+            "raw_source_phrase": "Turbo Diesel",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "transmission": {
+            "value": "Automatic",
+            "raw_source_phrase": "6-Speed Selectshift AT",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "corroboration": [
+              "S4_ford_me_press_release_2023_via_aljazirah"
+            ]
+          },
+          "drivetrain": {
+            "value": "AWD",
+            "raw_source_phrase": "4x4",
+            "status": "NEEDS_REVIEW",
+            "evidence": [
+              "S1_me_my25_spec_sheet"
+            ],
+            "normalization_note": "Same AWD-vs-4WD vocabulary question as the petrol patch."
+          },
+          "cylinders": {
+            "value": null,
+            "status": "UNKNOWN",
+            "evidence": [],
+            "normalization_note": "No Middle East source states the diesel's cylinder count. Australian Ford pages say 4 but that is a different market and is not transplanted."
+          },
+          "power_hp": {
+            "value": null,
+            "status": "CONFLICT",
+            "evidence": [],
+            "conflicts": [
+              {
+                "value": 170,
+                "evidence": [
+                  "S1_me_my25_spec_sheet",
+                  "S2_ford_uae_everest_page"
+                ]
+              },
+              {
+                "value": 168,
+                "evidence": [
+                  "S4_ford_me_press_release_2023_via_aljazirah"
+                ]
+              }
+            ],
+            "normalization_note": "Do not import hp; leave it out of the variant label until resolved."
+          },
+          "seats": {
+            "value": null,
+            "status": "UNKNOWN",
+            "evidence": []
+          }
+        }
+      },
+      "existing_rows_touched": [],
+      "overall_status": "CONFLICT",
+      "confidence": 0.6,
+      "notes": [
+        "Same year-scoped evidence rule as the petrol MY2025 patch: S4 is demoted to corroboration for the fields it supports. The hp conflict (S1 170 vs S4 168) is still recorded because S4 describes the same Middle East 2.0L diesel; a human must decide whether they are the same tune.",
+        "Shown to demonstrate field-level conflict handling: displacement/fuel/transmission agree, horsepower disagrees (170 vs 168), so the row cannot be AUTO_APPROVABLE as a whole.",
+        "CarNet already has 'Everest 2 0d Turbo (170 Hp) Automatic' (2022, RWD, 7 seats, market unknown). This GCC row is a distinct identity (4x4, 6AT, gcc) and must not be merged with it."
+      ],
+      "review": {
+        "reviewer": null,
+        "decision": null,
+        "decided_at": null
+      }
+    },
+    {
+      "patch_id": "ford-everest-gcc-my2026-2.7-v6-ecoboost",
+      "operation": "add_variant_row",
+      "identity": {
+        "make": "Ford",
+        "model": "Everest",
+        "year_from": 2026,
+        "year_to": 2026,
+        "year_basis": "S5 '26MY'; S2/S3 pages titled 2026",
+        "market": "gcc",
+        "market_countries_verified": [
+          "AE",
+          "SA"
+        ],
+        "trims": null
+      },
+      "proposed": {
+        "variant_name": "Everest 2 7 V6 EcoBoost 4x4 Automatic",
+        "fields": {
+          "displacement_l_nominal": {
+            "value": 2.7,
+            "raw_source_phrase": "2.7L V6 EcoBoost",
+            "status": "AUTO_APPROVABLE",
+            "evidence": [
+              "S2_ford_uae_everest_page",
+              "S5_aljazirah_v6_debut_2025",
+              "S6_aljazirah_v6_testing_2026"
+            ]
+          },
+          "cylinders": {
+            "value": 6,
+            "raw_source_phrase": "V6",
+            "status": "AUTO_APPROVABLE",
+            "evidence": [
+              "S2_ford_uae_everest_page",
+              "S5_aljazirah_v6_debut_2025",
+              "S6_aljazirah_v6_testing_2026"
+            ]
+          },
+          "fuel_type": {
+            "value": null,
+            "raw_source_phrase": "V6 EcoBoost",
+            "status": "UNKNOWN",
+            "evidence": [],
+            "normalization_note": "No Ford source retrieved states 'petrol' for the 2.7L; only a tier-4 trade article (zigwheels.ae) does. Left unknown per the 'source must state it' rule."
+          },
+          "transmission": {
+            "value": "Automatic",
+            "raw_source_phrase": "10-speed automatic transmission",
+            "status": "AUTO_APPROVABLE",
+            "evidence": [
+              "S5_aljazirah_v6_debut_2025",
+              "S6_aljazirah_v6_testing_2026"
+            ]
+          },
+          "power_hp": {
+            "value": null,
+            "status": "CONFLICT",
+            "evidence": [],
+            "conflicts": [
+              {
+                "value": 310,
+                "evidence": [
+                  "S2_ford_uae_everest_page",
+                  "S7_fordalghanim_active_page",
+                  "S6_aljazirah_v6_testing_2026"
+                ]
+              },
+              {
+                "value": 355,
+                "evidence": [
+                  "S5_aljazirah_v6_debut_2025"
+                ]
+              }
+            ]
+          },
+          "torque_nm": {
+            "value": null,
+            "status": "CONFLICT",
+            "evidence": [],
+            "conflicts": [
+              {
+                "value": 542,
+                "evidence": [
+                  "S2_ford_uae_everest_page",
+                  "S7_fordalghanim_active_page"
+                ]
+              },
+              {
+                "value": 500,
+                "evidence": [
+                  "S5_aljazirah_v6_debut_2025",
+                  "S6_aljazirah_v6_testing_2026"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "existing_rows_touched": [],
+      "overall_status": "NEEDS_REVIEW",
+      "confidence": 0.55,
+      "notes": [
+        "HOLD: S6 says the V6 'is scheduled to join the Middle East line-up in November 2026'. As of 2026-10-03 no used or even new unit should exist, so importing it now only adds a picker entry nobody can legitimately select. Re-check after launch.",
+        "Engine identity (2.7L, V6, 10AT) is consistent across all sources; only the power/torque figures conflict, and CarNet does not store them."
+      ],
+      "review": {
+        "reviewer": null,
+        "decision": null,
+        "decided_at": null
+      }
+    },
+    {
+      "patch_id": "ford-everest-gcc-my2026-trim-labels",
+      "operation": "add_trim_label",
+      "identity": {
+        "make": "Ford",
+        "model": "Everest",
+        "year_from": 2026,
+        "year_to": 2026,
+        "year_basis": "S2/S3 'The Ford Everest 2026 comes in Active, Sport, Tremor and Platinum trims'",
+        "market": "gcc",
+        "market_countries_verified": [
+          "AE",
+          "SA"
+        ],
+        "trims": null
+      },
+      "proposed_trim_labels": [
+        "Active",
+        "Sport",
+        "Tremor",
+        "Platinum"
+      ],
+      "existing_rows_touched": [],
+      "overall_status": "NEEDS_REVIEW",
+      "confidence": 0.8,
+      "notes": [
+        "Today car_catalog.json lists Everest trims ['Limited','XLT','Mid Range','XLS','Other']; XLS/XLT/Limited are confirmed for the Middle East by S1 and S4, but the 2026 Active/Sport/Tremor/Platinum labels are absent.",
+        "car_catalog.json trims are NOT market- or year-scoped, so adding them makes them visible for every market/year. A market/year scoping layer is needed first or reviewers must accept that limitation.",
+        "S2 and S3 are the same CMS (one origin family), S7 is a distinct distributor site listing the same four trims."
+      ],
+      "review": {
+        "reviewer": null,
+        "decision": null,
+        "decided_at": null
+      }
+    }
+  ]
+}

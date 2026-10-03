@@ -1,0 +1,44 @@
+{
+  "schema_version": "carnet.model_boundaries/1",
+  "decided_on": "2026-10-03",
+  "purpose": "Deterministic Brand+Model identity. Two models are the SAME only when their normalized names are equal or an explicit alias says so. A longer name is never folded into a shorter one by prefix.",
+
+  "algorithm": [
+    "1. Model key = NFKC, casefold, '-', '_' and '/' become spaces, whitespace collapsed. Nothing else is stripped.",
+    "2. The canonical models of a brand are exactly assets/car_catalog.json models[brand] (read-only) plus aliases below. No other model name exists for matching.",
+    "3. A free-text name (a dataset model name, or a record's model) is matched against ALL canonical models of the brand: candidates are those whose key equals the name key or is a whole-word prefix of it. The LONGEST candidate wins (so 'Land Cruiser Prado 2 7' -> 'Land Cruiser Prado', never 'Land Cruiser').",
+    "4. The remainder after the winning model key decides acceptance: empty -> exact; starts with an engine descriptor ('2 5', '1 33', '2 7l', '1100', '77 kwh', '(') -> engine_descriptor; otherwise it is a QUALIFIER (the words before the first engine descriptor).",
+    "5. A qualifier is accepted only as a trim_qualifier when its key equals a trim of that exact model in car_catalog.json trimsByBrandModel (or an explicit qualifier_trims entry). It is rejected as distinct_vehicle_qualifier if listed in qualifier_distinct. Every other qualifier is rejected as ambiguous_qualifier and quarantined for review. Nothing is guessed.",
+    "6. A name that has no canonical model prefix is unresolved and never joins any model.",
+    "7. Evidence records are bound to a model by exact key equality (or alias) between record.model and the evidence file model. Prefix relationships never bind."
+  ],
+
+  "aliases": {},
+  "qualifier_trims": {},
+  "qualifier_distinct": {},
+
+  "must_remain_distinct": [
+    { "brand": "Toyota", "models": ["Land Cruiser", "Land Cruiser Prado", "Land Cruiser 70", "Land Cruiser 70 Pickup", "Land Cruiser 76"], "note": "Prado is a separate catalog model; the pilot showed Prado rows contaminating Land Cruiser." },
+    { "brand": "Toyota", "models": ["Corolla", "Corolla Cross", "Corolla Hatchback", "Corolla Fielder", "Corolla iM", "GR Corolla"] },
+    { "brand": "Toyota", "models": ["Highlander", "Grand Highlander"] },
+    { "brand": "Toyota", "models": ["Camry", "Camry Solara"] },
+    { "brand": "Ford", "models": ["Bronco", "Bronco Sport"] },
+    { "brand": "Ford", "models": ["Explorer", "Explorer Sport Trac"] },
+    { "brand": "Ford", "models": ["Mustang", "Mustang Mach-E"] },
+    { "brand": "Land Rover", "models": ["Discovery", "Discovery Sport"] },
+    { "brand": "Land Rover", "models": ["Range Rover Evoque", "Range Rover Sport", "Range Rover Velar", "Range Rover Vogue"] },
+    { "brand": "Mitsubishi", "models": ["Pajero", "Pajero Sport"] },
+    { "brand": "Mitsubishi", "models": ["Outlander", "Outlander Sport"] },
+    { "brand": "Honda", "models": ["Civic", "Civic Hatchback", "Civic Type R"] },
+    { "brand": "Nissan", "models": ["Patrol", "Patrol Pickup", "Patrol Safari"] },
+    { "brand": "Jeep", "models": ["Grand Cherokee", "Grand Cherokee L"] },
+    { "brand": "Hyundai", "models": ["Kona", "Kona Electric"] },
+    { "brand": "Volkswagen", "models": ["Golf", "Golf Plus", "Golf R"] }
+  ],
+
+  "watchlist_not_in_catalog": [
+    { "brand": "Land Rover", "name": "Range Rover", "note": "The catalog has NO plain 'Range Rover' model, only Evoque/Sport/Velar/Vogue. Dataset rows named 'Range Rover <engine>' resolve to no canonical model and are excluded everywhere until the product adds that model." },
+    { "brand": "Volkswagen", "name": "Tiguan Allspace", "note": "Not a catalog model and no dataset row carries that name. If it is ever added it must be a separate model, never merged into Tiguan." },
+    { "brand": "Toyota", "name": "Corolla Verso / Spacio / Rumion / SL", "note": "Dataset rows 'Corolla Verso ...' etc. have a qualifier that is not a Corolla catalog trim: quarantined as ambiguous_qualifier, not counted as Corolla." }
+  ]
+}

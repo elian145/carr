@@ -1,0 +1,5632 @@
+{
+  "schema_version": "carnet.model_collisions/1",
+  "catalog_prefix_pair_count": 177,
+  "pairs_where_old_rule_contaminates": 39,
+  "dataset_rows_contaminating_shorter_models_under_old_rule": 495,
+  "pairs": [
+    {
+      "brand": "Alfa Romeo",
+      "shorter_model": "Giulia",
+      "longer_model": "Giulia Quadrifoglio",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 4,
+      "examples": [
+        "Giulia Quadrifoglio 2 9 V6 (510 Hp)",
+        "Giulia Quadrifoglio 2 9 V6 (510 Hp) Automatic",
+        "Giulia Quadrifoglio 2 9 V6 BiTurbo (510 Hp) Automatic"
+      ]
+    },
+    {
+      "brand": "Alfa Romeo",
+      "shorter_model": "Giulietta",
+      "longer_model": "Giulietta QV",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Alfa Romeo",
+      "shorter_model": "Stelvio",
+      "longer_model": "Stelvio Quadrifoglio",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Aston Martin",
+      "shorter_model": "DB11",
+      "longer_model": "DB11 Volante",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Aston Martin",
+      "shorter_model": "DB9",
+      "longer_model": "DB9 Volante",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Aston Martin",
+      "shorter_model": "V12 Vantage",
+      "longer_model": "V12 Vantage Roadster",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Aston Martin",
+      "shorter_model": "V8 Vantage",
+      "longer_model": "V8 Vantage Roadster",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Aston Martin",
+      "shorter_model": "V8 Vantage",
+      "longer_model": "V8 Vantage S",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 5,
+      "examples": [
+        "V8 Vantage S 4 7 V8 (436 Hp)",
+        "V8 Vantage S 4 7 V8 (436 Hp)",
+        "V8 Vantage S 4 7 V8 (436 Hp) Sportshift"
+      ]
+    },
+    {
+      "brand": "Aston Martin",
+      "shorter_model": "Vanquish",
+      "longer_model": "Vanquish Volante",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Audi",
+      "shorter_model": "SQ5",
+      "longer_model": "SQ5 Sportback",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "BYD",
+      "shorter_model": "Tang",
+      "longer_model": "Tang L",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Bentley",
+      "shorter_model": "Continental",
+      "longer_model": "Continental GT",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Bentley",
+      "shorter_model": "Continental",
+      "longer_model": "Continental GTC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Brilliance",
+      "shorter_model": "FRV",
+      "longer_model": "FRV Cross",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Buick",
+      "shorter_model": "Encore",
+      "longer_model": "Encore GX",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "ATS",
+      "longer_model": "ATS Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "ATS",
+      "longer_model": "ATS-V",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 6,
+      "examples": [
+        "ATS V 3 6 V6 (461 Hp) Automatic",
+        "ATS V 3 6 V6 (461 Hp) Automatic",
+        "ATS V 3 6 V6 (471 Hp) Automatic"
+      ]
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "ATS",
+      "longer_model": "ATS-V Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "ATS-V",
+      "longer_model": "ATS-V Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "CTS",
+      "longer_model": "CTS Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "CTS",
+      "longer_model": "CTS-V",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 9,
+      "examples": [
+        "CTS V 5 7 i V8 (405 Hp)",
+        "CTS V 6 0 i V8 (405 Hp)",
+        "CTS V 6 2 V8 (649 Hp) Automatic"
+      ]
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "CTS",
+      "longer_model": "CTS-V Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Cadillac",
+      "shorter_model": "CTS-V",
+      "longer_model": "CTS-V Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Changan",
+      "shorter_model": "CS35",
+      "longer_model": "CS35 Plus",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Changan",
+      "shorter_model": "CS75",
+      "longer_model": "CS75 Plus",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Changan",
+      "shorter_model": "Eado",
+      "longer_model": "Eado Plus",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Cowin",
+      "longer_model": "Cowin 1",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 2",
+      "longer_model": "Tiggo 2 Pro",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 7",
+      "longer_model": "Tiggo 7 Pro",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 1,
+      "examples": [
+        "Tiggo 7 Pro 1 5 TCI (145 Hp) CVT"
+      ]
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 7",
+      "longer_model": "Tiggo 7 Pro Hybrid",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 7",
+      "longer_model": "Tiggo 7 Pro Max",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 7 Pro",
+      "longer_model": "Tiggo 7 Pro Hybrid",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 7 Pro",
+      "longer_model": "Tiggo 7 Pro Max",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 8",
+      "longer_model": "Tiggo 8 Pro",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 2,
+      "examples": [
+        "Tiggo 8 Pro 1 5T (326 Hp) Plug-in Hybrid DHT",
+        "Tiggo 8 Pro 1 5T (326 Hp) Plug-in Hybrid DHT 7 Seat"
+      ]
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 8",
+      "longer_model": "Tiggo 8 Pro Max",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chery",
+      "shorter_model": "Tiggo 8 Pro",
+      "longer_model": "Tiggo 8 Pro Max",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Chevrolet",
+      "shorter_model": "Silverado",
+      "longer_model": "Silverado EV",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Citroen",
+      "shorter_model": "C4",
+      "longer_model": "C4 Picasso",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Daewoo",
+      "shorter_model": "Gentra",
+      "longer_model": "Gentra X",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Dongfeng",
+      "shorter_model": "Aeolus A60",
+      "longer_model": "Aeolus A60 MAX",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ferrari",
+      "shorter_model": "458",
+      "longer_model": "458 Spider",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ferrari",
+      "shorter_model": "California",
+      "longer_model": "California T",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ferrari",
+      "shorter_model": "F430",
+      "longer_model": "F430 Spider",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ferrari",
+      "shorter_model": "GTC4Lusso",
+      "longer_model": "GTC4Lusso T",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ford",
+      "shorter_model": "Bronco",
+      "longer_model": "Bronco Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 2,
+      "examples": [
+        "Bronco Sport 1 5 EcoBoost (181 Hp) 4x4 Automatic",
+        "Bronco Sport 2 0 EcoBoost (245 Hp) 4x4 Automatic"
+      ]
+    },
+    {
+      "brand": "Ford",
+      "shorter_model": "Explorer",
+      "longer_model": "Explorer Sport Trac",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ford",
+      "shorter_model": "F-150",
+      "longer_model": "F-150 Lightning",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ford",
+      "shorter_model": "F-150",
+      "longer_model": "F-150 Raptor",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ford",
+      "shorter_model": "Mustang",
+      "longer_model": "Mustang Mach-E",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ford",
+      "shorter_model": "Taurus",
+      "longer_model": "Taurus X",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 2,
+      "examples": [
+        "Taurus X 3 5i V6 (260 Hp)",
+        "Taurus X 3 5i V6 (260 Hp) AWD"
+      ]
+    },
+    {
+      "brand": "Foton",
+      "shorter_model": "Tunland",
+      "longer_model": "Tunland G7",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 6,
+      "examples": [
+        "Tunland G7 2 0 TD (163 Hp)",
+        "Tunland G7 2 0 TD (163 Hp) 4x4",
+        "Tunland G7 2 0 TD (163 Hp) 4x4 Automatic"
+      ]
+    },
+    {
+      "brand": "GAC",
+      "shorter_model": "Empow",
+      "longer_model": "Empow R",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GAC",
+      "shorter_model": "GS3",
+      "longer_model": "GS3 EMZOOM",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GAC",
+      "shorter_model": "GS4",
+      "longer_model": "GS4 Max",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GAC",
+      "shorter_model": "GS8",
+      "longer_model": "GS8 TRAVELLER",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GMC",
+      "shorter_model": "Hummer EV",
+      "longer_model": "Hummer EV Pickup",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GMC",
+      "shorter_model": "Yukon",
+      "longer_model": "Yukon XL",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GWM",
+      "shorter_model": "Wingle",
+      "longer_model": "Wingle 5",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "GWM",
+      "shorter_model": "Wingle",
+      "longer_model": "Wingle 7",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand",
+      "longer_model": "Emgrand EC7",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand",
+      "longer_model": "Emgrand EC8",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand",
+      "longer_model": "Emgrand GS",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 1,
+      "examples": [
+        "Emgrand GS 1 8 (133 Hp) DCT"
+      ]
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand",
+      "longer_model": "Emgrand GT",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 4,
+      "examples": [
+        "Emgrand GT 2 4 (162 Hp) Automatic",
+        "Emgrand GT 3 5 V6 (275 Hp) Automatic",
+        "Emgrand GT 2 4 (148 Hp) Automatic"
+      ]
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand",
+      "longer_model": "Emgrand X7",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 7,
+      "examples": [
+        "Emgrand X7 2 0 (139 Hp)",
+        "Emgrand X7 2 4 (149 Hp) Automatic",
+        "Emgrand X7 2 4 (149 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand",
+      "longer_model": "Emgrand X7 Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "Emgrand X7",
+      "longer_model": "Emgrand X7 Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "GX3",
+      "longer_model": "GX3 Pro",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Geely",
+      "shorter_model": "MK",
+      "longer_model": "MK Cross",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "HAVAL",
+      "shorter_model": "H6",
+      "longer_model": "H6 GT",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "HAVAL",
+      "shorter_model": "JOLION",
+      "longer_model": "JOLION Pro",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Honda",
+      "shorter_model": "Accord",
+      "longer_model": "Accord Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Honda",
+      "shorter_model": "Accord",
+      "longer_model": "Accord Crosstour",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Honda",
+      "shorter_model": "Civic",
+      "longer_model": "Civic Hatchback",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Honda",
+      "shorter_model": "Civic",
+      "longer_model": "Civic Type R",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 13,
+      "examples": [
+        "Civic Type R 2 0 (201 Hp)",
+        "Civic Type R 2 0 (200 Hp)",
+        "Civic Type R 1 6 (185 Hp)"
+      ]
+    },
+    {
+      "brand": "Honda",
+      "shorter_model": "Odyssey",
+      "longer_model": "Odyssey J",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Hyundai",
+      "shorter_model": "Accent",
+      "longer_model": "Accent Hatchback",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Hyundai",
+      "shorter_model": "Elantra",
+      "longer_model": "Elantra Touring",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Hyundai",
+      "shorter_model": "Genesis",
+      "longer_model": "Genesis Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Hyundai",
+      "shorter_model": "Ioniq",
+      "longer_model": "Ioniq 5",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 2,
+      "examples": [
+        "IONIQ 5 77 4 kWh (228 Hp) Electric",
+        "IONIQ 5 77 4 kWh (325 Hp) Electric AWD"
+      ]
+    },
+    {
+      "brand": "Hyundai",
+      "shorter_model": "Ioniq",
+      "longer_model": "Ioniq 6",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 3,
+      "examples": [
+        "IONIQ 6 63 kWh (170 Hp)",
+        "IONIQ 6 84 kWh (229 Hp)",
+        "IONIQ 6 84 kWh (325 Hp) AWD"
+      ]
+    },
+    {
+      "brand": "Hyundai",
+      "shorter_model": "Kona",
+      "longer_model": "Kona Electric",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Infiniti",
+      "shorter_model": "G35",
+      "longer_model": "G35 Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Infiniti",
+      "shorter_model": "G37",
+      "longer_model": "G37 Convertible",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Infiniti",
+      "shorter_model": "G37",
+      "longer_model": "G37 Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Jeep",
+      "shorter_model": "Grand Cherokee",
+      "longer_model": "Grand Cherokee L",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Jetour",
+      "shorter_model": "X70",
+      "longer_model": "X70 Plus",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "KAIYI",
+      "shorter_model": "X3",
+      "longer_model": "X3 PRO",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Kia",
+      "shorter_model": "Forte",
+      "longer_model": "Forte 5",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Kia",
+      "shorter_model": "Forte",
+      "longer_model": "Forte Koup",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Kia",
+      "shorter_model": "Rio",
+      "longer_model": "Rio 5",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Lamborghini",
+      "shorter_model": "Aventador",
+      "longer_model": "Aventador Roadster",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Lamborghini",
+      "shorter_model": "Huracan",
+      "longer_model": "Huracan EVO Spyder",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Lamborghini",
+      "shorter_model": "Huracan",
+      "longer_model": "Huracan STO",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Lamborghini",
+      "shorter_model": "Huracan",
+      "longer_model": "Huracan Spyder",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Land Rover",
+      "shorter_model": "Defender",
+      "longer_model": "Defender  Pickup",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Land Rover",
+      "shorter_model": "Discovery",
+      "longer_model": "Discovery Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 51,
+      "examples": [
+        "Discovery Sport 2 2 SD4 (190 Hp) AWD Automatic",
+        "Discovery Sport 2 0 (150 Hp) AWD Automatic Ingenium engine",
+        "Discovery Sport 2 2 TD4 (150 Hp) AWD"
+      ]
+    },
+    {
+      "brand": "Lexus",
+      "shorter_model": "IS",
+      "longer_model": "IS C",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Lexus",
+      "shorter_model": "IS",
+      "longer_model": "IS F",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Lexus",
+      "shorter_model": "RC",
+      "longer_model": "RC F",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 3,
+      "examples": [
+        "RC F 5 0 (477 Hp) Automatic",
+        "RC F 5 0 (467 Hp) Automatic",
+        "RC F Track Edition 5 0 V8 (472 Hp) Automatic"
+      ]
+    },
+    {
+      "brand": "Lincoln",
+      "shorter_model": "Navigator",
+      "longer_model": "Navigator L",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "MG",
+      "shorter_model": "5",
+      "longer_model": "5 Plus",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mazda",
+      "shorter_model": "2",
+      "longer_model": "2 Sedan",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mazda",
+      "shorter_model": "6",
+      "longer_model": "6 Ultra",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mazda",
+      "shorter_model": "6",
+      "longer_model": "6 Wagon",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mazda",
+      "shorter_model": "MX-5",
+      "longer_model": "MX-5 RF",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "shorter_model": "AMG GT",
+      "longer_model": "AMG GT 4-door Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "shorter_model": "GLC",
+      "longer_model": "GLC-Class Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "shorter_model": "GLE",
+      "longer_model": "GLE Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "shorter_model": "S-Class",
+      "longer_model": "S-Class Maybach",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "shorter_model": "V-Class",
+      "longer_model": "V-Class Maybach",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Eclipse",
+      "longer_model": "Eclipse Cross",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 10,
+      "examples": [
+        "Eclipse Cross 1 5 T-MIVEC (163 Hp)",
+        "Eclipse Cross 1 5 T-MIVEC (163 Hp) 4WD CVT",
+        "Eclipse Cross 2 2 DiD (150 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Lancer",
+      "longer_model": "Lancer EX",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Lancer",
+      "longer_model": "Lancer Evolution",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 17,
+      "examples": [
+        "Lancer Evolution 2 0 MIVEC (295 Hp) S-AWC",
+        "Lancer Evolution 2 0 MIVEC (295 Hp) S-AWC TC-SST",
+        "Lancer Evolution 2 0 MIVEC (280 Hp) 4WD"
+      ]
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Lancer",
+      "longer_model": "Lancer Fortis",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Mirage",
+      "longer_model": "Mirage G4",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Montero",
+      "longer_model": "Montero Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 21,
+      "examples": [
+        "Montero Sport 2 5 TD (115 Hp)",
+        "Montero Sport 2 5 TD (133 Hp)",
+        "Montero Sport 2 5 TD (99 Hp)"
+      ]
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Outlander",
+      "longer_model": "Outlander Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Pajero",
+      "longer_model": "Pajero Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 22,
+      "examples": [
+        "Pajero Sport 3 0 V6 (220 Hp)",
+        "Pajero Sport 3 2 TD (160 Hp)",
+        "Pajero Sport 2 5 TD (133 Hp)"
+      ]
+    },
+    {
+      "brand": "Mitsubishi",
+      "shorter_model": "Xpander",
+      "longer_model": "Xpander Cross",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Nissan",
+      "shorter_model": "Altima",
+      "longer_model": "Altima Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Nissan",
+      "shorter_model": "Patrol",
+      "longer_model": "Patrol Pickup",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Nissan",
+      "shorter_model": "Patrol",
+      "longer_model": "Patrol Safari",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Nissan",
+      "shorter_model": "Rogue",
+      "longer_model": "Rogue Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 4,
+      "examples": [
+        "Rogue Sport 2 0 (141 Hp) CVT",
+        "Rogue Sport 2 0 (141 Hp) AWD CVT",
+        "Rogue Sport 2 0 (141 Hp) Xtronic"
+      ]
+    },
+    {
+      "brand": "Nissan",
+      "shorter_model": "Versa",
+      "longer_model": "Versa Note",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Opel",
+      "shorter_model": "Astra",
+      "longer_model": "Astra GTC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Opel",
+      "shorter_model": "Astra",
+      "longer_model": "Astra OPC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Opel",
+      "shorter_model": "Corsa",
+      "longer_model": "Corsa OPC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Peugeot",
+      "shorter_model": "308",
+      "longer_model": "308 CC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Peugeot",
+      "shorter_model": "407",
+      "longer_model": "407 Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Polaris",
+      "shorter_model": "RZR",
+      "longer_model": "RZR PRO R",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Polaris",
+      "shorter_model": "RZR",
+      "longer_model": "RZR PRO XP 4 Turbo",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "911",
+      "longer_model": "911 Cabriolet",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "911",
+      "longer_model": "911 GT2",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 3,
+      "examples": [
+        "911 GT2 3 6 (530 Hp)",
+        "911 GT2 3 6 (483 Hp)",
+        "911 GT2 3 6 (430 Hp)"
+      ]
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "911",
+      "longer_model": "911 GT3",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 11,
+      "examples": [
+        "911 GT3 3 6 (415 Hp)",
+        "911 GT3 3 8 (435 Hp)",
+        "911 GT3 3 6 (360 Hp)"
+      ]
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "911",
+      "longer_model": "911 Turbo",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 22,
+      "examples": [
+        "911 Turbo 3 6 (480 Hp)",
+        "911 Turbo 3 6 (480 Hp)",
+        "911 Turbo 3 6 (420 Hp)"
+      ]
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "911",
+      "longer_model": "911 Turbo Cabriolet",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "911 Turbo",
+      "longer_model": "911 Turbo Cabriolet",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "Cayenne",
+      "longer_model": "Cayenne Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Porsche",
+      "shorter_model": "Taycan",
+      "longer_model": "Taycan Sport Turismo",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Ram",
+      "shorter_model": "ProMaster",
+      "longer_model": "Promaster City",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Renault",
+      "shorter_model": "Clio",
+      "longer_model": "Clio RS",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 4,
+      "examples": [
+        "Clio RS 2 0 16V (200 Hp)",
+        "Clio RS 2 0 16V (197 Hp)",
+        "Clio RS 1 6 (200 Hp) EDC S&S"
+      ]
+    },
+    {
+      "brand": "Renault",
+      "shorter_model": "Laguna",
+      "longer_model": "Laguna Coupe",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Renault",
+      "shorter_model": "Logan",
+      "longer_model": "Logan Van",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Renault",
+      "shorter_model": "Megane",
+      "longer_model": "Megane CC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Renault",
+      "shorter_model": "Megane",
+      "longer_model": "Megane GT",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 40,
+      "examples": [
+        "Megane GT 2 0 TCe (180 Hp)",
+        "Megane GT 2 0 TCe (220 Hp) Start&Stop",
+        "Megane GT 2 0 dCi (165 Hp)"
+      ]
+    },
+    {
+      "brand": "Renault",
+      "shorter_model": "Megane",
+      "longer_model": "Megane RS",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 13,
+      "examples": [
+        "Megane RS 2 0 dCi (173 Hp) FAP",
+        "Megane RS 2 0 dCi (173 Hp) FAP",
+        "Megane RS 2 0 16V (224 Hp)"
+      ]
+    },
+    {
+      "brand": "Ssangyong",
+      "shorter_model": "Musso",
+      "longer_model": "Musso Grand",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Subaru",
+      "shorter_model": "Impreza",
+      "longer_model": "Impreza WRX",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 13,
+      "examples": [
+        "Impreza WRX 2 5 (224 Hp) AWD",
+        "Impreza WRX 2 5 (265 Hp) AWD",
+        "Impreza WRX 2 5 (224 Hp) AWD"
+      ]
+    },
+    {
+      "brand": "Subaru",
+      "shorter_model": "Impreza",
+      "longer_model": "Impreza WRX STI",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 6,
+      "examples": [
+        "Impreza WRX STI 2 5 (293 Hp) AWD",
+        "Impreza WRX STI 2 5 (300 Hp) AWD",
+        "Impreza WRX STI 2 5 (305 Hp) AWD"
+      ]
+    },
+    {
+      "brand": "Subaru",
+      "shorter_model": "Impreza WRX",
+      "longer_model": "Impreza WRX STI",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 6,
+      "examples": [
+        "Impreza WRX STI 2 5 (293 Hp) AWD",
+        "Impreza WRX STI 2 5 (300 Hp) AWD",
+        "Impreza WRX STI 2 5 (305 Hp) AWD"
+      ]
+    },
+    {
+      "brand": "Suzuki",
+      "shorter_model": "Ignis",
+      "longer_model": "Ignis Crossover",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Camry",
+      "longer_model": "Camry Solara",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Corolla",
+      "longer_model": "Corolla Cross",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 15,
+      "examples": [
+        "Corolla Cross 1 8 (122 Hp) Hybrid e-CVT",
+        "Corolla Cross 1 8 Sport (140 Hp) CVT-i",
+        "Corolla Cross 2 0 (197 Hp) Hybrid e-CVT"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Corolla",
+      "longer_model": "Corolla Fielder",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Corolla",
+      "longer_model": "Corolla Hatchback",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Corolla",
+      "longer_model": "Corolla iM",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Crown",
+      "longer_model": "Crown Comfort",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Crown",
+      "longer_model": "Crown Kluger",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Crown",
+      "longer_model": "Crown Signia",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Land Cruiser",
+      "longer_model": "Land Cruiser 70",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Land Cruiser",
+      "longer_model": "Land Cruiser 70 Pickup",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Land Cruiser",
+      "longer_model": "Land Cruiser 76",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Land Cruiser",
+      "longer_model": "Land Cruiser Prado",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 76,
+      "examples": [
+        "Land Cruiser Prado 2 7 i (163 Hp) 4WD ECT-E",
+        "Land Cruiser Prado 3 0 D-4D (173 Hp) 4WD Automatic",
+        "Land Cruiser Prado 4 0 i (282 Hp) 4WD ECT"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Land Cruiser 70",
+      "longer_model": "Land Cruiser 70 Pickup",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Prius",
+      "longer_model": "Prius C",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Prius",
+      "longer_model": "Prius Prime",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 1,
+      "examples": [
+        "Prius Prime 1 8 (122 Hp) Plug-in Hybrid e-CVT"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Yaris",
+      "longer_model": "Yaris Cross",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 9,
+      "examples": [
+        "Yaris Cross 1 5 (116 Hp) Hybrid ECVT",
+        "Yaris Cross 1 5 (116 Hp) Hybrid E-Four ECVT",
+        "Yaris Cross 1 5 (120 Hp) CVT"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "shorter_model": "Yaris",
+      "longer_model": "Yaris iA",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Volkswagen",
+      "shorter_model": "Atlas",
+      "longer_model": "Atlas Cross Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Volkswagen",
+      "shorter_model": "Golf",
+      "longer_model": "Golf Plus",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Volkswagen",
+      "shorter_model": "Golf",
+      "longer_model": "Golf R",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 28,
+      "examples": [
+        "Golf R 2 0 TSI (270 Hp) 4MOTION",
+        "Golf R 2 0 TSI (270 Hp) 4MOTION DSG",
+        "Golf R 2 0 TSI (310 Hp) 4MOTION DSG"
+      ]
+    },
+    {
+      "brand": "Volkswagen",
+      "shorter_model": "Jetta",
+      "longer_model": "Jetta VS7",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Volkswagen",
+      "shorter_model": "Multivan",
+      "longer_model": "Multivan Alltrack",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    },
+    {
+      "brand": "Volkswagen",
+      "shorter_model": "Passat",
+      "longer_model": "Passat CC",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 47,
+      "examples": [
+        "Passat CC 1 8 TSI (152 Hp)",
+        "Passat CC 1 8 TSI (160 Hp)",
+        "Passat CC 1 8 TSI (160 Hp) DSG"
+      ]
+    },
+    {
+      "brand": "Volvo",
+      "shorter_model": "S60",
+      "longer_model": "S60 Polestar",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 3,
+      "examples": [
+        "S60 Polestar 3 0 T6 (350 Hp) AWD Geartronic",
+        "S60 Polestar 2 0 T6 (367 Hp) AWD Geartronic",
+        "S60 Polestar 2 0 T8 Twin Engine (318 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "brand": "Volvo",
+      "shorter_model": "V60",
+      "longer_model": "V60 Polestar",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 3,
+      "examples": [
+        "V60 Polestar 3 0 T6 (350 Hp) AWD Geartronic",
+        "V60 Polestar 2 0 T6 (367 Hp) AWD Geartronic",
+        "V60 Polestar 2 0 T8 TwEn (318 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "brand": "Zotye",
+      "shorter_model": "T600",
+      "longer_model": "T600 Sport",
+      "dataset_rows_old_rule_gives_to_shorter_but_belong_to_longer": 0,
+      "examples": []
+    }
+  ],
+  "quarantined_qualifiers": [
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "qualifiers": {
+        "320d": 89,
+        "320i": 82,
+        "330i": 59,
+        "330d": 58,
+        "325i": 56,
+        "318i": 48,
+        "335i": 41,
+        "316i": 39,
+        "318d": 38,
+        "328i": 35,
+        "325d": 33,
+        "323i": 19,
+        "335d": 16,
+        "316d": 16,
+        "330xd": 13,
+        "330ci": 13,
+        "330e": 13,
+        "330xi": 11,
+        "325xi": 10,
+        "325ci": 10,
+        "m340i": 10,
+        "320ci": 9,
+        "325ix": 8,
+        "340i": 8,
+        "318ci": 7,
+        "318is": 7,
+        "325e": 6,
+        "320e": 6,
+        "328xi": 6,
+        "328d": 6,
+        "323ci": 4,
+        "318ti": 4,
+        "325tds": 4,
+        "324td": 4,
+        "316": 4,
+        "325li": 4,
+        "m340d": 4,
+        "335is": 4,
+        "320cd": 3,
+        "318tds": 3,
+        "320": 3,
+        "320td": 2,
+        "325ti": 2,
+        "328ci": 2,
+        "330cd": 2,
+        "323ti": 2,
+        "325td": 2,
+        "315": 2,
+        "324d": 2,
+        "335xi": 1,
+        "318td": 1,
+        "318": 1,
+        "activehybrid": 1,
+        "320si": 1,
+        "330li": 1,
+        "320li": 1
+      },
+      "rows": 836
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifiers": {
+        "e 200": 52,
+        "e 220d": 32,
+        "e 500 v8": 25,
+        "e 220 cdi": 24,
+        "e 400 v6": 22,
+        "e 250 cdi blueefficiency": 20,
+        "e 200 kompressor": 20,
+        "e 350 v6": 19,
+        "e 220 cdi blueefficiency": 16,
+        "e 300": 15,
+        "e 350 bluetec v6": 15,
+        "e 200 cdi": 14,
+        "e 320": 13,
+        "e 350 cdi blueefficiency v6": 12,
+        "e 280 cdi v6": 12,
+        "amg e 53": 12,
+        "e 240": 11,
+        "e 350": 11,
+        "e 280": 11,
+        "e 300de": 11,
+        "e 250 cdi": 10,
+        "e 220 bluetec": 10,
+        "e 400d": 10,
+        "e 450": 10,
+        "e 250 bluetec": 10,
+        "amg e 63 v8": 9,
+        "e 280 v6": 9,
+        "e 200 cdi blueefficiency": 8,
+        "e 350 blueefficiency v6": 8,
+        "e 270 cdi": 8,
+        "e 320 v6": 8,
+        "e 320 cdi v6": 8,
+        "e 200 cgi blueefficiency": 8,
+        "e 300 v6": 8,
+        "e 200d": 8,
+        "e 300d": 8,
+        "e 450 v6": 8,
+        "e 240 v6": 7,
+        "amg e 55 v8": 7,
+        "e 350d": 7,
+        "e 300e": 7,
+        "e 500 blueefficiency v8": 6,
+        "e 250 d": 6,
+        "e 430 v8": 6,
+        "e 220": 6,
+        "e 250": 6,
+        "e 300 blueefficiency v6": 6,
+        "e 550 v8": 6,
+        "e 300 bluetec v6": 5,
+        "e 350d v6": 5,
+        "e 300 cdi blueefficiency v6": 5,
+        "e 200 blueefficiency": 4,
+        "e 250 blueefficiency": 4,
+        "e 230 v6": 4,
+        "e 320 cdi": 4,
+        "e 200 d": 4,
+        "e 290 turbodiesel": 4,
+        "e 230": 4,
+        "e 300 d": 4,
+        "e 250 turbodiesel": 4,
+        "e 300 turbodiesel": 4,
+        "e 420 v8": 4,
+        "e 250 cgi blueefficiency": 4,
+        "amg e 63 s v8": 4,
+        "e 250d": 4,
+        "e 200 bluetec": 4,
+        "e 260": 4,
+        "amg e 36": 3,
+        "e 450d": 3,
+        "e 300 bluetec hybrid": 2,
+        "e 200 ngt": 2,
+        "e 420 cdi v8": 2,
+        "e 350 cgi": 2,
+        "e 500": 2,
+        "e 220 d": 2,
+        "e 200 t": 2,
+        "e 220 t": 2,
+        "e 250 t d": 2,
+        "e 280 t": 2,
+        "e 300 t d": 2,
+        "e 300 t turbodiesel": 2,
+        "e 320 t": 2,
+        "e 350 cgi blueefficiency v6": 2,
+        "e 300 bluetec": 2,
+        "amg e 43": 2,
+        "e 350e": 2,
+        "e 280 cdi": 2,
+        "amg e 63 s": 2,
+        "amg e 63 v8 biturbo": 2,
+        "e 180": 2,
+        "e 200 ngt blueefficiency": 1,
+        "e 220 cdi blueefficiency edition": 1,
+        "e 400 cdi v8": 1,
+        "amg e 55": 1,
+        "amg e 50 v8": 1,
+        "e 250 d lang": 1,
+        "e 280 long": 1,
+        "amg e 60 v8": 1,
+        "e 300 t": 1,
+        "amg e 36 t": 1,
+        "e 200 natural gas drive": 1,
+        "e 320 bluetec": 1,
+        "e 400e": 1
+      },
+      "rows": 725
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifiers": {
+        "c 180": 61,
+        "c 200": 38,
+        "c 200 kompressor": 31,
+        "c 220 cdi": 30,
+        "c 220d": 30,
+        "c 200 cdi": 28,
+        "c 300": 23,
+        "c 230 kompressor": 20,
+        "c 320 v6": 16,
+        "c 200d": 16,
+        "c 350 v6": 15,
+        "c 240 v6": 14,
+        "c 250 cdi blueefficiency": 14,
+        "c 280 v6": 13,
+        "amg c 63 v8": 13,
+        "c 220 cdi blueefficiency": 12,
+        "c 180 kompressor": 12,
+        "c 160": 12,
+        "c 250d": 11,
+        "c 230 v6": 10,
+        "c 320 cdi v6": 10,
+        "c 200 d": 10,
+        "c 300d": 10,
+        "c 270 cdi": 8,
+        "c 220 d": 8,
+        "c 230": 8,
+        "c 250 turbodiesel": 8,
+        "amg c 63 s v8": 8,
+        "c 400 v6": 8,
+        "amg c 43 v6": 8,
+        "c 250": 7,
+        "c 300 v6": 7,
+        "amg c 30 cdi": 6,
+        "c 180 cdi blueefficiency": 6,
+        "c 200 cdi blueefficiency": 6,
+        "c 200 blueefficiency": 6,
+        "c 350 cdi blueefficiency v6": 6,
+        "c 180d": 6,
+        "c 300de": 6,
+        "c 200 cgi": 5,
+        "c 300e": 5,
+        "amg c 55 v8": 4,
+        "c 240": 4,
+        "c 280": 4,
+        "c 350 blueefficiency v6": 4,
+        "c 180 cgi blueefficiency": 4,
+        "c 200 cgi blueefficiency": 4,
+        "amg c 43": 4,
+        "amg c 32 v6": 3,
+        "c 250 blueefficiency": 3,
+        "amg c 63 performance package v8": 3,
+        "amg c 63 amg edition 507 v8": 3,
+        "c 250 v6": 3,
+        "amg c 43 v8": 2,
+        "c 220": 2,
+        "c 250 d": 2,
+        "c 220 cdi blueefficiency edition": 2,
+        "c 180 cdi": 2,
+        "c 300 cdi blueefficiency v6": 2,
+        "c 300h": 2,
+        "c 400": 2,
+        "c 350e": 2,
+        "amg c 450 v6": 2,
+        "c 250 cgi blueefficiency": 2,
+        "amg c 63 s e performance": 2,
+        "amg c 36": 1,
+        "c 250 cdi sport": 1,
+        "c 250 sport": 1,
+        "amg c 63 black series v8": 1,
+        "c 350 cgi blueefficiency v6": 1,
+        "c 400e": 1
+      },
+      "rows": 644
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "qualifiers": {
+        "530d": 52,
+        "520d": 48,
+        "520i": 36,
+        "525d": 34,
+        "535i": 32,
+        "530i": 31,
+        "528i": 28,
+        "525i": 22,
+        "535d": 20,
+        "523i": 16,
+        "550i": 14,
+        "540i": 11,
+        "540i v8": 11,
+        "530e": 10,
+        "518d": 8,
+        "550i v8": 7,
+        "525tds": 6,
+        "535i v8": 6,
+        "540d": 6,
+        "525i 24v": 5,
+        "518i": 5,
+        "m550d": 5,
+        "525xi": 4,
+        "530xd": 4,
+        "530xi": 4,
+        "545i": 4,
+        "530i 24v": 4,
+        "524td": 4,
+        "525e": 4,
+        "m535i": 4,
+        "520d special edition": 4,
+        "520i 24v": 3,
+        "m550i": 3,
+        "530d 24v": 2,
+        "525td": 2,
+        "530i v8": 2,
+        "518": 2,
+        "520": 2,
+        "525": 2,
+        "528": 2,
+        "activehybrid": 2,
+        "520e": 2,
+        "550e": 2,
+        "525ix": 1,
+        "525i 24v x": 1,
+        "524d": 1,
+        "530e iperformance": 1,
+        "545e": 1
+      },
+      "rows": 480
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifiers": {
+        "s 500 v8": 30,
+        "s 600 v12": 16,
+        "s 350d": 16,
+        "s 450": 15,
+        "s 500": 15,
+        "amg s 63 v8": 10,
+        "s 350": 8,
+        "s 430 v8": 8,
+        "300 se": 8,
+        "s 320": 8,
+        "s 420 v8": 8,
+        "s 320 cdi": 7,
+        "amg s 65 v12": 7,
+        "s 580e": 7,
+        "280 s": 6,
+        "350 se v8": 6,
+        "s 560 v8": 6,
+        "s 400d": 6,
+        "350 sel v8": 6,
+        "280 sel": 6,
+        "s 580 v8": 6,
+        "s 280": 5,
+        "280 se": 5,
+        "amg s 63": 4,
+        "s 350 v6": 4,
+        "s 400 cdi v8": 4,
+        "500 sec v8": 4,
+        "500 se v8": 4,
+        "s 350 blueefficiency": 4,
+        "s 350 cdi bluetec": 4,
+        "s 450 v8": 4,
+        "s 350 cdi blueefficiency": 4,
+        "500 sel v8": 4,
+        "s 450e": 4,
+        "s 450d": 4,
+        "s 400 v6": 3,
+        "amg s 65": 3,
+        "s 320 v6": 3,
+        "amg s 55 v8": 3,
+        "s 400": 3,
+        "s 560": 3,
+        "s 500 blueefficiency": 3,
+        "450 sel v8": 3,
+        "s 420 cdi v8": 2,
+        "s 550": 2,
+        "300 se cat": 2,
+        "380 se v8": 2,
+        "420 se v8 cat": 2,
+        "420 se v8": 2,
+        "500 se v8 cat": 2,
+        "420 sec v8 cat": 2,
+        "420 sec v8": 2,
+        "500 sec v8 cat": 2,
+        "560 sec v8 cat": 2,
+        "560 sec v8": 2,
+        "450 se v8": 2,
+        "s 300 bluetec": 2,
+        "s 350 bluetec": 2,
+        "s 350 bluetec v6": 2,
+        "s 650 v12": 2,
+        "s 250 cdi blueefficiency": 2,
+        "s 450 cdi v8": 2,
+        "400 se": 2,
+        "500 se": 2,
+        "600 se": 2,
+        "260 se cat": 2,
+        "260 se": 2,
+        "380 sel v8": 2,
+        "300 sd turbodiesel": 2,
+        "300 sel": 2,
+        "300 sel cat": 2,
+        "420 sel v8": 2,
+        "420 sel v8 cat": 2,
+        "500 sel v8 cat": 2,
+        "560 sel v8": 2,
+        "560 sel v8 cat": 2,
+        "s 680 v12": 2,
+        "s 350d v6": 2,
+        "s 280 v6": 1,
+        "amg s 55": 1,
+        "s 300 turbodiesel": 1,
+        "s 350 turbo d": 1,
+        "600 sec v12": 1,
+        "560 se v8 cat": 1,
+        "560 se v8": 1,
+        "380 sec v8": 1,
+        "450 sel": 1,
+        "s 560e v6": 1,
+        "s 500 blueefficiency v8": 1,
+        "350 sd turbodiesel": 1,
+        "300 sdl": 1,
+        "350 sdl cat": 1,
+        "s 500e v6": 1,
+        "s 350 turbodiesel": 1,
+        "amg s 63 e performance v8": 1,
+        "s 680 v8": 1,
+        "s 580 e": 1
+      },
+      "rows": 376
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "qualifiers": {
+        "120d": 35,
+        "118d": 34,
+        "120i": 29,
+        "118i": 26,
+        "125i": 22,
+        "116d": 22,
+        "116i": 19,
+        "m135i": 14,
+        "135i": 12,
+        "123d": 11,
+        "m140i": 10,
+        "125d": 8,
+        "128i": 8,
+        "130i": 6,
+        "114d": 6,
+        "135is": 4,
+        "114i": 2,
+        "120": 2,
+        "m135": 2,
+        "128ti": 1,
+        "116": 1,
+        "123": 1,
+        "118": 1
+      },
+      "rows": 276
+    },
+    {
+      "brand": "GMC",
+      "model": "Sierra",
+      "qualifiers": {
+        "3500hd": 149,
+        "2500hd": 125
+      },
+      "rows": 274
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "qualifiers": {
+        "420i": 38,
+        "420d": 38,
+        "430i": 31,
+        "m440i": 19,
+        "430d": 16,
+        "440i": 16,
+        "435i": 12,
+        "428i": 11,
+        "425d": 10,
+        "418d": 8,
+        "435d": 6,
+        "m440d": 4,
+        "418i": 4
+      },
+      "rows": 213
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "qualifiers": {
+        "735i": 15,
+        "730d": 13,
+        "740i": 12,
+        "750i": 12,
+        "730i": 12,
+        "740d": 10,
+        "730ld": 9,
+        "740li": 8,
+        "750li": 8,
+        "728i": 8,
+        "760i": 5,
+        "760li": 4,
+        "725tds": 4,
+        "732i": 4,
+        "activehybrid": 4,
+        "730li": 3,
+        "745i": 3,
+        "740il": 3,
+        "750d": 3,
+        "750ld": 3,
+        "740ld": 3,
+        "745d": 2,
+        "728il": 2,
+        "730il": 2,
+        "750il": 2,
+        "730i v8": 2,
+        "728": 2,
+        "730": 2,
+        "m760li": 2,
+        "740le iperformance": 2,
+        "733i": 2,
+        "725i": 2,
+        "735il": 2,
+        "m760li v12": 2,
+        "745le": 2,
+        "735li": 1,
+        "745li": 1,
+        "740e iperformance": 1,
+        "745e": 1,
+        "740le": 1,
+        "750e": 1,
+        "m760e": 1
+      },
+      "rows": 181
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "A-Class",
+      "qualifiers": {
+        "a 200": 20,
+        "a 250": 16,
+        "a 180": 15,
+        "a 160 cdi": 14,
+        "a 180 cdi": 10,
+        "a 200 cdi": 10,
+        "a 200d": 9,
+        "a 200 turbo": 8,
+        "a 160": 8,
+        "a 220d": 8,
+        "a 180d": 8,
+        "a 150": 7,
+        "a 220": 7,
+        "a 170": 6,
+        "a 170 cdi": 5,
+        "amg a 35": 4,
+        "a 250e": 4,
+        "a 140": 3,
+        "a 190": 3,
+        "a 210 evolution": 3,
+        "amg a 45": 3,
+        "a 160d": 2,
+        "amg a 45 s": 2,
+        "a 220 cdi": 1,
+        "a 160 blueefficiency": 1,
+        "a 180 blueefficiency": 1
+      },
+      "rows": 178
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "qualifiers": {
+        "218d": 26,
+        "218i": 26,
+        "220d": 25,
+        "220i": 22,
+        "m240i": 17,
+        "230i": 9,
+        "216d": 8,
+        "m235i": 7,
+        "228i": 5,
+        "225d": 4,
+        "216i": 4,
+        "225i": 3,
+        "225xe": 3,
+        "214d": 2,
+        "223i": 2,
+        "m235": 2,
+        "220": 2,
+        "225xe iperformance": 1,
+        "223d": 1,
+        "225e": 1,
+        "230e": 1,
+        "228": 1,
+        "218": 1,
+        "223": 1,
+        "216": 1,
+        "225l": 1
+      },
+      "rows": 176
+    },
+    {
+      "brand": "Ford",
+      "model": "F-350",
+      "qualifiers": {
+        "super duty": 175
+      },
+      "rows": 175
+    },
+    {
+      "brand": "Ford",
+      "model": "Transit",
+      "qualifiers": {
+        "connect": 151
+      },
+      "rows": 151
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLA",
+      "qualifiers": {
+        "cla 250": 25,
+        "cla 200": 17,
+        "cla 180": 16,
+        "cla 200d": 14,
+        "cla 220d": 13,
+        "cla 180d": 12,
+        "cla 200 cdi": 8,
+        "amg cla 45": 8,
+        "cla 220": 8,
+        "cla 220 cdi": 5,
+        "amg cla 45 s": 4,
+        "cla 250e": 4,
+        "cla": 3,
+        "cla 180 cdi": 2,
+        "cla 250+": 2
+      },
+      "rows": 141
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifiers": {
+        "g 500 v8": 20,
+        "amg g 63 v8": 8,
+        "g 320 cdi v6": 6,
+        "300 gd": 6,
+        "g 320 v6": 5,
+        "amg g 55 v8 kompressor": 4,
+        "g 350 bluetec v6": 4,
+        "g 300 d": 4,
+        "g 350 turbo": 4,
+        "200 ge": 4,
+        "amg g 55 v8": 4,
+        "230 ge": 4,
+        "g 230": 4,
+        "300 ge": 4,
+        "amg g 65 v12": 3,
+        "g 400 cdi v8": 3,
+        "g 350 cdi v6": 3,
+        "g 550 v8": 2,
+        "g 350d": 2,
+        "g 400d": 2,
+        "250 gd": 2,
+        "g 300 td": 2,
+        "350 gd turbo": 2,
+        "g 270 cdi": 2,
+        "g 200": 2,
+        "240 gd": 2,
+        "230 g": 2,
+        "g 500 v8 final edition 200": 1,
+        "g 350d v6": 1,
+        "g 650 landaulet v12": 1,
+        "g 300 cdi professional v6": 1,
+        "g 280 cdi edition.pur v6": 1,
+        "500 ge v8": 1,
+        "g 350 bluetec v6 ba3 final edition": 1,
+        "g 500 v8 ba3 final edition": 1,
+        "g 450d": 1,
+        "g 580 eq": 1
+      },
+      "rows": 120
+    },
+    {
+      "brand": "Ford",
+      "model": "F-250",
+      "qualifiers": {
+        "super duty": 109
+      },
+      "rows": 109
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "qualifiers": {
+        "18d": 21,
+        "20d": 17,
+        "20i": 15,
+        "18i": 11,
+        "28i": 6,
+        "16d": 5,
+        "25i": 4,
+        "25d": 4,
+        "23d": 3,
+        "20li": 3,
+        "25e": 2,
+        "25li": 2,
+        "m35i": 2,
+        "18li": 1,
+        "25le": 1,
+        "30le": 1,
+        "23i": 1,
+        "30e": 1
+      },
+      "rows": 100
+    },
+    {
+      "brand": "BMW",
+      "model": "6-Series",
+      "qualifiers": {
+        "650i": 24,
+        "640i": 16,
+        "640d": 14,
+        "630i": 11,
+        "635csi": 7,
+        "645ci": 4,
+        "628csi": 4,
+        "633csi": 4,
+        "630d": 4,
+        "630cs": 2,
+        "m 635csi": 2,
+        "635d": 2,
+        "620d": 2,
+        "650i v8": 2
+      },
+      "rows": 98
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "qualifiers": {
+        "114 cdi": 25,
+        "116 cdi": 22,
+        "119 cdi": 16,
+        "110 cdi": 10,
+        "evito": 5,
+        "v 230": 3,
+        "124 cdi": 2,
+        "v 200 cdi": 1,
+        "v 220 cdi": 1,
+        "v 230 td": 1,
+        "v 280": 1,
+        "evito 119": 1,
+        "evito 129": 1,
+        "124": 1,
+        "119 cdi blueefficiency": 1,
+        "114 cdi blueefficiency": 1,
+        "116 cdi blueefficiency": 1,
+        "109 cdi": 1,
+        "111 cdi": 1
+      },
+      "rows": 95
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "qualifiers": {
+        "cls 500 v8": 14,
+        "amg cls 63 v8": 12,
+        "cls 350 bluetec v6": 6,
+        "cls 400 v6": 6,
+        "cls 550 v8": 6,
+        "cls 350 cdi v6": 5,
+        "cls 250 bluetec": 4,
+        "cls 350 v6": 3,
+        "amg cls 63 s v8": 3,
+        "cls 320 cdi v6": 3,
+        "cls 350d v6": 3,
+        "cls 400d": 3,
+        "cls 250 cdi": 2,
+        "cls 220 bluetec": 2,
+        "cls 350 cgi v6": 2,
+        "cls 450": 2,
+        "amg cls 53": 2,
+        "cls 300d": 2,
+        "cls 220d": 2,
+        "amg cls 55 v8": 1,
+        "cls 350d": 1,
+        "cls 350": 1,
+        "amg cls 63 performance package v8": 1,
+        "cls 280 v6": 1,
+        "cls 300 v6": 1,
+        "cls 350 cdi grand edition v6": 1
+      },
+      "rows": 89
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "B-Class",
+      "qualifiers": {
+        "b 200": 12,
+        "b 180 cdi": 10,
+        "b 180": 10,
+        "b 200 cdi": 9,
+        "b 250": 6,
+        "b 220": 5,
+        "b 170": 4,
+        "b 200 turbo": 4,
+        "b 160 cdi": 4,
+        "b 200d": 4,
+        "b 180d": 4,
+        "b 150": 3,
+        "b 220 cdi": 3,
+        "b 160": 3,
+        "b 220d": 3,
+        "b 250e": 2,
+        "b 250 e": 1,
+        "b 160d": 1
+      },
+      "rows": 88
+    },
+    {
+      "brand": "BMW",
+      "model": "X3",
+      "qualifiers": {
+        "20i": 11,
+        "20d": 8,
+        "30d": 8,
+        "18d": 7,
+        "30i": 6,
+        "28i": 3,
+        "35d": 3,
+        "m40d": 3,
+        "30e": 3,
+        "3 0si": 2,
+        "35i": 2,
+        "2 5si": 2,
+        "25i": 2,
+        "m competition": 2,
+        "20": 2,
+        "3 0sd": 1,
+        "25d": 1,
+        "m": 1,
+        "m50": 1,
+        "30": 1,
+        "40d": 1,
+        "25l": 1,
+        "30l": 1,
+        "28d": 1
+      },
+      "rows": 73
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLC",
+      "qualifiers": {
+        "glc 300": 8,
+        "glc 220d": 6,
+        "amg glc 43": 4,
+        "glc 350e": 4,
+        "glc 200d": 4,
+        "glc 300d": 4,
+        "glc 200": 4,
+        "glc 300de": 4,
+        "glc 250d": 2,
+        "glc 250": 2,
+        "glc 350d": 2,
+        "amg glc 63": 2,
+        "amg glc 63 s": 2,
+        "amg glc 63 v8": 2,
+        "amg glc 63 s v8": 2,
+        "amg glc 43 v6": 2,
+        "glc 400d": 2,
+        "glc 400e": 2,
+        "amg glc 63 s e performance": 2,
+        "glc 450d": 2,
+        "amg glc 53": 2,
+        "glc 180": 2,
+        "f cell": 1,
+        "glc": 1
+      },
+      "rows": 68
+    },
+    {
+      "brand": "Porsche",
+      "model": "911",
+      "qualifiers": {
+        "carrera gts": 18,
+        "carrera 4 gts": 18,
+        "4s": 7,
+        "4 gts": 7,
+        "carrera t": 6,
+        "targa": 4,
+        "carrera rs": 3,
+        "r": 1,
+        "sport classic": 1,
+        "s t": 1
+      },
+      "rows": 66
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLE",
+      "qualifiers": {
+        "gle 300d": 6,
+        "amg gle 53": 6,
+        "amg gle 63 s v8": 5,
+        "gle 450": 5,
+        "gle 350de": 4,
+        "gle 350d": 3,
+        "amg gle 63 v8": 3,
+        "gle 350": 3,
+        "amg gle 450": 2,
+        "gle 250d": 2,
+        "gle 400 v6": 2,
+        "gle 500 v8": 2,
+        "amg gle 43 v6": 2,
+        "gle 400d": 2,
+        "gle 580 v8": 2,
+        "gle 350e": 2,
+        "gle 400e": 2,
+        "gle 450d": 2,
+        "gle 350 v6": 2,
+        "gle 320 v6": 2,
+        "gle 400": 1,
+        "amg gle 63": 1,
+        "amg gle 63 s": 1,
+        "gle 500e v6": 1,
+        "gle 350d v6": 1,
+        "gle 500": 1
+      },
+      "rows": 65
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLA",
+      "qualifiers": {
+        "gla 250": 10,
+        "gla 200": 8,
+        "gla 220d": 8,
+        "gla 200d": 7,
+        "gla 180": 6,
+        "amg gla 45": 4,
+        "gla 180d": 4,
+        "gla 200 cdi": 3,
+        "gla 220 cdi": 2,
+        "gla 180 cdi": 2,
+        "gla 220": 2,
+        "amg gla 35": 2,
+        "amg gla 45 s": 2,
+        "gla 250e": 2
+      },
+      "rows": 62
+    },
+    {
+      "brand": "Skoda",
+      "model": "Octavia",
+      "qualifiers": {
+        "rs": 48,
+        "vrs": 2,
+        "iv": 2,
+        "rs iv": 2
+      },
+      "rows": 54
+    },
+    {
+      "brand": "Lexus",
+      "model": "IS",
+      "qualifiers": {
+        "350 v6": 14,
+        "250 v6": 9,
+        "300h": 8,
+        "300 v6": 7,
+        "220d": 3,
+        "200": 3,
+        "200t": 2,
+        "250c awd": 1,
+        "200 kompressor": 1,
+        "250": 1,
+        "500 v8": 1,
+        "200d": 1
+      },
+      "rows": 51
+    },
+    {
+      "brand": "BMW",
+      "model": "X5",
+      "qualifiers": {
+        "30d": 7,
+        "40i": 7,
+        "25d": 5,
+        "40d": 4,
+        "m50d": 4,
+        "35d": 3,
+        "35i": 3,
+        "50i": 3,
+        "m competition": 2,
+        "3 0sd": 1,
+        "3 0si": 1,
+        "30i": 1,
+        "48i": 1,
+        "4 6is": 1,
+        "4 8is": 1,
+        "40e": 1,
+        "45e": 1,
+        "m50i v8": 1,
+        "50e": 1,
+        "m60i v8": 1
+      },
+      "rows": 49
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Grandeur",
+      "qualifiers": {
+        "azera": 49
+      },
+      "rows": 49
+    },
+    {
+      "brand": "Audi",
+      "model": "A6",
+      "qualifiers": {
+        "50 tdi v6": 8,
+        "45 tdi v6": 8,
+        "55 tfsi e": 6,
+        "50 tfsi e": 5,
+        "e tron": 5,
+        "competition": 4,
+        "55 tfsi v6": 4,
+        "35 tdi": 4,
+        "55 tdi v6": 2,
+        "e tron performance": 2
+      },
+      "rows": 48
+    },
+    {
+      "brand": "BMW",
+      "model": "8-Series",
+      "qualifiers": {
+        "840i": 19,
+        "840d": 9,
+        "m850i": 7,
+        "840ci": 2,
+        "850ci": 2,
+        "850i": 2,
+        "m850i v8": 2,
+        "850csi": 1
+      },
+      "rows": 44
+    },
+    {
+      "brand": "Suzuki",
+      "model": "SX4",
+      "qualifiers": {
+        "s cross": 42
+      },
+      "rows": 42
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifiers": {
+        "z28": 16,
+        "230 turbo thrift": 4,
+        "250 turbo thrift": 4,
+        "327 v8 turbo fire": 4,
+        "rs 327 v8 turbo fire": 4,
+        "ss 350 v8 turbo fire": 4,
+        "z28 ss": 4
+      },
+      "rows": 40
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "R-Class",
+      "qualifiers": {
+        "r 350 v6": 6,
+        "r 500 v8": 5,
+        "r 300 v6": 4,
+        "r 350 cdi v6": 4,
+        "r 300 cdi v6 blueefficiency": 3,
+        "r 280 cdi v6": 3,
+        "r 300 cdi v6": 3,
+        "r 280 v6": 2,
+        "r 320 cdi v6": 2,
+        "r 350 v6 blueefficiency": 2,
+        "amg r 63 v8": 2,
+        "r 320 bluetec": 1,
+        "r 350 v6 bluetec": 1
+      },
+      "rows": 38
+    },
+    {
+      "brand": "BMW",
+      "model": "X6",
+      "qualifiers": {
+        "30d": 7,
+        "m": 5,
+        "40d": 5,
+        "40i": 5,
+        "35i": 4,
+        "50i": 4,
+        "m50d": 3,
+        "35d": 1,
+        "m60i v8": 1,
+        "m competition": 1,
+        "activehybrid": 1
+      },
+      "rows": 37
+    },
+    {
+      "brand": "Lexus",
+      "model": "LS",
+      "qualifiers": {
+        "400 v8": 8,
+        "460 v8": 6,
+        "460 l v8": 6,
+        "430 v8": 4,
+        "500 v6": 4,
+        "600h v8": 3,
+        "600h l v8": 3,
+        "500h v6": 3
+      },
+      "rows": 37
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "V-Class",
+      "qualifiers": {
+        "v 300d": 14,
+        "v 220d": 8,
+        "v 250d": 8,
+        "v 200 cdi": 2,
+        "v 220 cdi": 2,
+        "v 300": 2,
+        "v 250 cdi bluetec": 1
+      },
+      "rows": 37
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Sprinter",
+      "qualifiers": {
+        "311 cdi": 4,
+        "411 cdi": 4,
+        "314 cdi": 4,
+        "414 cdi": 4,
+        "315 cdi": 4,
+        "415 cdi": 4,
+        "211 cdi": 2,
+        "214 cdi": 2,
+        "316 cdi": 2,
+        "416 cdi": 2,
+        "215 cdi": 2,
+        "417 cdi": 2
+      },
+      "rows": 36
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Ponton",
+      "qualifiers": {
+        "220 se": 10,
+        "220 s": 9,
+        "219": 3,
+        "180 d": 2,
+        "220 a": 1,
+        "180": 1,
+        "180 a": 1,
+        "190": 1,
+        "190 d": 1,
+        "180 db": 1,
+        "180 dc": 1,
+        "180 b": 1,
+        "180 c": 1,
+        "190 b": 1,
+        "190 db": 1
+      },
+      "rows": 35
+    },
+    {
+      "brand": "Jaguar",
+      "model": "F-Type",
+      "qualifiers": {
+        "r": 10,
+        "s": 6,
+        "svr": 6,
+        "p380 v6": 6,
+        "p340 v6": 4,
+        "p300": 2
+      },
+      "rows": 34
+    },
+    {
+      "brand": "Toyota",
+      "model": "Corolla",
+      "qualifiers": {
+        "verso": 20,
+        "sl": 7,
+        "spacio": 5,
+        "rumion": 2
+      },
+      "rows": 34
+    },
+    {
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifiers": {
+        "drw": 24,
+        "d250": 4,
+        "d150": 2,
+        "d150 s": 1,
+        "magnum": 1,
+        "srt10": 1
+      },
+      "rows": 33
+    },
+    {
+      "brand": "Lexus",
+      "model": "RX",
+      "qualifiers": {
+        "350 v6": 6,
+        "350l v6": 4,
+        "300 4wd": 3,
+        "350 f sport v6": 3,
+        "350 4wd": 2,
+        "300": 2,
+        "200t": 2,
+        "450h v6": 2,
+        "330": 1,
+        "330 4wd": 1,
+        "400h": 1,
+        "270": 1,
+        "450h f sport v6": 1,
+        "450hl v6": 1,
+        "350h": 1,
+        "500h": 1,
+        "450h+": 1
+      },
+      "rows": 33
+    },
+    {
+      "brand": "BMW",
+      "model": "Z4",
+      "qualifiers": {
+        "20i": 8,
+        "30i": 4,
+        "28i": 4,
+        "35i": 4,
+        "23i": 2,
+        "2 5si": 2,
+        "3 0si": 2,
+        "m": 2,
+        "35is": 2,
+        "18i": 2
+      },
+      "rows": 32
+    },
+    {
+      "brand": "Audi",
+      "model": "A4",
+      "qualifiers": {
+        "35 tfsi": 12,
+        "50 tdi": 5,
+        "45 tdi": 4,
+        "50 tdi v6": 3,
+        "g tron": 2,
+        "g tron 40 tfsi": 1,
+        "45 tdi v6": 1,
+        "45 tfs": 1,
+        "40 g tron": 1
+      },
+      "rows": 30
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "qualifiers": {
+        "vivo": 13,
+        "gti": 10,
+        "bluegt": 4,
+        "gti cup": 2,
+        "gti r5": 1
+      },
+      "rows": 30
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifiers": {
+        "gtd": 15,
+        "gti performance": 5,
+        "gti edition 35": 4,
+        "citystromer": 1,
+        "gls": 1,
+        "gli": 1,
+        "gti tcr": 1,
+        "gti edition 50": 1
+      },
+      "rows": 29
+    },
+    {
+      "brand": "Audi",
+      "model": "Q7",
+      "qualifiers": {
+        "45 tdi v6": 8,
+        "50 tdi v6": 8,
+        "55 tfsi v6": 4,
+        "60 tfsi e v6": 3,
+        "55 tfsi e v6": 3,
+        "e tron": 1
+      },
+      "rows": 27
+    },
+    {
+      "brand": "Lexus",
+      "model": "GS",
+      "qualifiers": {
+        "350 v6": 7,
+        "450h": 4,
+        "300 v6": 3,
+        "430 v8": 3,
+        "300h": 2,
+        "f": 2,
+        "460 v8": 1,
+        "300 t3": 1,
+        "400 v8": 1,
+        "250 v6": 1,
+        "450h v6": 1,
+        "200t": 1
+      },
+      "rows": 27
+    },
+    {
+      "brand": "Audi",
+      "model": "A8",
+      "qualifiers": {
+        "55 tfsi v6": 7,
+        "50 tdi v6": 6,
+        "60 tfsi v8": 5,
+        "60 tfsi e": 2,
+        "60 tdi v8": 2,
+        "60 tfsi e v6": 2
+      },
+      "rows": 24
+    },
+    {
+      "brand": "Audi",
+      "model": "Q3",
+      "qualifiers": {
+        "35 tdi": 10,
+        "40 tdi": 6,
+        "45 tfsi": 6,
+        "45 tfsi e": 2
+      },
+      "rows": 24
+    },
+    {
+      "brand": "Audi",
+      "model": "A3",
+      "qualifiers": {
+        "35 tdi": 8,
+        "g tron": 4,
+        "40 tfsi e": 3,
+        "45 tfsi e": 2,
+        "45 tfsi": 2,
+        "e tron": 1,
+        "40 e tron": 1,
+        "30 g tron": 1,
+        "40 tdi": 1
+      },
+      "rows": 23
+    },
+    {
+      "brand": "BMW",
+      "model": "X4",
+      "qualifiers": {
+        "20d": 5,
+        "30d": 4,
+        "20i": 3,
+        "30i": 3,
+        "m40d": 3,
+        "m competition": 2,
+        "35d": 1,
+        "25d": 1,
+        "m": 1
+      },
+      "rows": 23
+    },
+    {
+      "brand": "Genesis",
+      "model": "G90",
+      "qualifiers": {
+        "eq900": 23
+      },
+      "rows": 23
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLB",
+      "qualifiers": {
+        "glb 250": 4,
+        "glb 200d": 4,
+        "glb 220d": 3,
+        "glb 200": 2,
+        "amg glb 35": 2,
+        "glb 180d": 2,
+        "glb 250+": 2,
+        "glb 350": 2,
+        "glb 180": 1,
+        "glb 220": 1
+      },
+      "rows": 23
+    },
+    {
+      "brand": "Toyota",
+      "model": "Crown",
+      "qualifiers": {
+        "majesta": 23
+      },
+      "rows": 23
+    },
+    {
+      "brand": "BMW",
+      "model": "X2",
+      "qualifiers": {
+        "20i": 5,
+        "18d": 5,
+        "20d": 4,
+        "25d": 2,
+        "18i": 2,
+        "25e": 1,
+        "28i": 1
+      },
+      "rows": 20
+    },
+    {
+      "brand": "Bentley",
+      "model": "Continental",
+      "qualifiers": {
+        "speed": 8,
+        "v8": 4,
+        "v8 s": 4,
+        "gt3": 2,
+        "supersport": 2
+      },
+      "rows": 20
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifiers": {
+        "amg eqs 53": 4,
+        "suv eqs 450+": 2,
+        "suv eqs 450": 2,
+        "suv eqs 580": 2,
+        "suv eqs 500": 2,
+        "eqs 450": 2,
+        "eqs 500": 2,
+        "eqs 350": 1,
+        "suv eqs 680": 1,
+        "suv eqs 400": 1,
+        "suv eqs 550": 1
+      },
+      "rows": 20
+    },
+    {
+      "brand": "Ford",
+      "model": "Mustang Mach-E",
+      "qualifiers": {
+        "standard range": 8,
+        "extended range": 7,
+        "gt": 3,
+        "rally": 1
+      },
+      "rows": 19
+    },
+    {
+      "brand": "Renault",
+      "model": "Megane",
+      "qualifiers": {
+        "grandcoupe": 9,
+        "conquest": 6,
+        "ev60": 2,
+        "r.s.": 1,
+        "ev40": 1
+      },
+      "rows": 19
+    },
+    {
+      "brand": "Mazda",
+      "model": "BT-50",
+      "qualifiers": {
+        "xtr": 18
+      },
+      "rows": 18
+    },
+    {
+      "brand": "Jaguar",
+      "model": "XF",
+      "qualifiers": {
+        "20d": 5,
+        "e performance": 4,
+        "30t": 2,
+        "25t": 2,
+        "30d v6": 2,
+        "25d": 2
+      },
+      "rows": 17
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "qualifiers": {
+        "eqe 500": 3,
+        "eqe 350+": 3,
+        "eqe": 2,
+        "amg eqe 53": 2,
+        "eqe 300": 2,
+        "eqe 350": 2,
+        "amg eqe 43": 1,
+        "eqe 320": 1,
+        "eqe 320+": 1
+      },
+      "rows": 17
+    },
+    {
+      "brand": "Lexus",
+      "model": "LX",
+      "qualifiers": {
+        "570 v8": 6,
+        "470 v8": 3,
+        "600 v6": 2,
+        "700h v6": 2,
+        "450": 1,
+        "450d v8": 1,
+        "500d v6": 1
+      },
+      "rows": 16
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLS",
+      "qualifiers": {
+        "gls 350d": 3,
+        "gls 600 v8": 3,
+        "gls 580 v8": 3,
+        "amg gls 63 v8": 2,
+        "amg gls 63": 1,
+        "gls 400": 1,
+        "gls 500": 1,
+        "gls 400d": 1,
+        "gls 450d": 1
+      },
+      "rows": 16
+    },
+    {
+      "brand": "Audi",
+      "model": "Q5",
+      "qualifiers": {
+        "35 tdi": 3,
+        "55 tfsi e": 3,
+        "50 tfsi e": 3,
+        "50 tdi v6": 2,
+        "40 tfsi": 2,
+        "e tron 40": 1,
+        "e tron 50": 1
+      },
+      "rows": 15
+    },
+    {
+      "brand": "Audi",
+      "model": "Q8",
+      "qualifiers": {
+        "50 tdi v6": 2,
+        "45 tdi v6": 2,
+        "55 tfsi v6": 2,
+        "55 tfsi e v6": 2,
+        "60 tfsi e v6": 2,
+        "e tron 55": 2,
+        "45 tdi": 1,
+        "50 tdi": 1,
+        "e tron edition dakar 55": 1
+      },
+      "rows": 15
+    },
+    {
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifiers": {
+        "35 i v6 24v": 3,
+        "35 i v6 24v awd": 3,
+        "30": 2,
+        "m37 v6": 2,
+        "m56 v8": 2,
+        "45i v8 32v": 1,
+        "m35h v6": 1,
+        "m30d v6": 1
+      },
+      "rows": 15
+    },
+    {
+      "brand": "Porsche",
+      "model": "Boxster",
+      "qualifiers": {
+        "s": 12,
+        "gts": 2,
+        "spyder": 1
+      },
+      "rows": 15
+    },
+    {
+      "brand": "Audi",
+      "model": "A7",
+      "qualifiers": {
+        "45 tdi v6": 3,
+        "55 tfsi e": 3,
+        "competition": 2,
+        "50 tfsi e": 2,
+        "50 tdi v6": 2,
+        "55 tfsi v6": 2
+      },
+      "rows": 14
+    },
+    {
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifiers": {
+        "35 v6": 4,
+        "50 v8": 2,
+        "45 v8 32v": 2,
+        "35 v6 24v": 2,
+        "37 v6": 2,
+        "30d": 2
+      },
+      "rows": 14
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Viano",
+      "qualifiers": {
+        "cdi": 14
+      },
+      "rows": 14
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Transporter",
+      "qualifiers": {
+        "e transporter": 12,
+        "abt e transporter": 2
+      },
+      "rows": 14
+    },
+    {
+      "brand": "Audi",
+      "model": "A5",
+      "qualifiers": {
+        "50 tdi": 3,
+        "50 tdi v6": 3,
+        "g tron": 2,
+        "45 tdi": 2,
+        "45 tdi v6": 2,
+        "40 g tron": 1
+      },
+      "rows": 13
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifiers": {
+        "s": 3,
+        "c": 2,
+        "r": 1,
+        "black series": 1,
+        "63 v8": 1,
+        "55 v8": 1,
+        "43": 1,
+        "63 s e performance v8": 1,
+        "63 pro v8": 1,
+        "xx": 1
+      },
+      "rows": 13
+    },
+    {
+      "brand": "Porsche",
+      "model": "911 Turbo",
+      "qualifiers": {
+        "s": 12,
+        "s exclusive": 1
+      },
+      "rows": 13
+    },
+    {
+      "brand": "Volvo",
+      "model": "440",
+      "qualifiers": {
+        "k": 13
+      },
+      "rows": 13
+    },
+    {
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifiers": {
+        "4s performance": 2,
+        "4s performance plus": 2,
+        "gts performance plus": 2,
+        "performance": 2,
+        "performance plus": 2,
+        "turbo gt with weissach package": 1,
+        "turbo gt": 1
+      },
+      "rows": 12
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Santa Fe",
+      "qualifiers": {
+        "r": 10,
+        "g3 5 smartstream v6": 1
+      },
+      "rows": 11
+    },
+    {
+      "brand": "Lexus",
+      "model": "ES",
+      "qualifiers": {
+        "300": 3,
+        "350 v6": 3,
+        "200": 2,
+        "330": 1,
+        "350e": 1,
+        "500e": 1
+      },
+      "rows": 11
+    },
+    {
+      "brand": "Lexus",
+      "model": "GX",
+      "qualifiers": {
+        "460 v8": 5,
+        "470 v8": 4,
+        "550 v6": 1,
+        "overtrail 550 v6": 1
+      },
+      "rows": 11
+    },
+    {
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifiers": {
+        "gti": 4,
+        "e": 2,
+        "sport": 2,
+        "premium": 1,
+        "e 308": 1,
+        "e 308 58 3": 1
+      },
+      "rows": 11
+    },
+    {
+      "brand": "Toyota",
+      "model": "Yaris",
+      "qualifiers": {
+        "gr": 5,
+        "ts": 4,
+        "grmn": 2
+      },
+      "rows": 11
+    },
+    {
+      "brand": "Dodge",
+      "model": "Challenger",
+      "qualifiers": {
+        "srt hellcat": 5,
+        "srt hellcat redeye": 2,
+        "srt demon": 1,
+        "srt demon 170": 1,
+        "srt super stock": 1
+      },
+      "rows": 10
+    },
+    {
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifiers": {
+        "sport": 3,
+        "s": 2,
+        "mc stradale": 1,
+        "mc": 1,
+        "modena": 1,
+        "trofeo": 1,
+        "folgore": 1
+      },
+      "rows": 10
+    },
+    {
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifiers": {
+        "r110": 3,
+        "r90": 2,
+        "r240": 1,
+        "q210": 1,
+        "q90": 1,
+        "r75": 1,
+        "r135": 1
+      },
+      "rows": 10
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifiers": {
+        "pro s": 3,
+        "pro": 2,
+        "pro performance": 1,
+        "pure performance": 1,
+        "pure": 1,
+        "gtx": 1,
+        "gtx performance": 1
+      },
+      "rows": 10
+    },
+    {
+      "brand": "Audi",
+      "model": "Q2",
+      "qualifiers": {
+        "35 tdi": 5,
+        "30 tdi": 4
+      },
+      "rows": 9
+    },
+    {
+      "brand": "BMW",
+      "model": "X7",
+      "qualifiers": {
+        "40i": 3,
+        "40d": 2,
+        "50i": 1,
+        "30d": 1,
+        "m50d": 1,
+        "m50i v8": 1
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Ford",
+      "model": "Mustang",
+      "qualifiers": {
+        "gt cs": 4,
+        "mach": 2,
+        "shelby gt350 r": 1,
+        "bullitt": 1,
+        "shelby gt500 v8": 1
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Ioniq 5",
+      "qualifiers": {
+        "long range": 4,
+        "standard range": 3,
+        "n": 1,
+        "xrt": 1
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Hyundai",
+      "model": "i30",
+      "qualifiers": {
+        "n performance": 6,
+        "n": 3
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Kia",
+      "model": "Sonet",
+      "qualifiers": {
+        "d1 5 crdi vgt": 3,
+        "g1 2 smartstream": 2,
+        "g1 0 t gdi": 2,
+        "g1 0 t gdi smartstream": 2
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifiers": {
+        "d 300": 1,
+        "d 240": 1,
+        "d 180": 1,
+        "p 250": 1,
+        "p 380": 1,
+        "p 300": 1,
+        "d 275": 1,
+        "p 340": 1,
+        "svautobiography dynamic edition": 1
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Lexus",
+      "model": "SC",
+      "qualifiers": {
+        "430 v8": 4,
+        "300": 3,
+        "400": 2
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Maserati",
+      "model": "Quattroporte",
+      "qualifiers": {
+        "s": 3,
+        "s q4": 3,
+        "gts": 2,
+        "trofeo": 1
+      },
+      "rows": 9
+    },
+    {
+      "brand": "Aston Martin",
+      "model": "V8 Vantage",
+      "qualifiers": {
+        "n430": 4,
+        "f1 edition": 2,
+        "n24": 1,
+        "sp10": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "BYD",
+      "model": "HAN",
+      "qualifiers": {
+        "dm i 1 5ti": 4,
+        "dm p 1 5ti": 2,
+        "e9": 1,
+        "dm 2 0ti": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "BYD",
+      "model": "Tang",
+      "qualifiers": {
+        "dm 2 0ti": 3,
+        "dm i 1 5ti": 3,
+        "dm p 1 5ti": 2
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Cadillac",
+      "model": "CT5",
+      "qualifiers": {
+        "v blackwing": 4,
+        "v": 4
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Chery",
+      "model": "Tiggo 8",
+      "qualifiers": {
+        "plus 390tgdi": 4,
+        "plus 290tgdi": 2,
+        "tiger edition": 1,
+        "leopard edition": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Corvette",
+      "qualifiers": {
+        "zr": 3,
+        "e ray": 2,
+        "callaway": 2,
+        "zr1x": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifiers": {
+        "ss": 2,
+        "530t": 2,
+        "535": 1,
+        "530h": 1,
+        "535t": 1,
+        "redline 550t": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Dodge",
+      "model": "Charger",
+      "qualifiers": {
+        "srt hellcat": 2,
+        "daytona scat pack": 2,
+        "sixpack": 2,
+        "str8": 1,
+        "srt hellcat daytona": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Ford",
+      "model": "Fiesta",
+      "qualifiers": {
+        "st": 8
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Genesis",
+      "model": "GV60",
+      "qualifiers": {
+        "standard": 4,
+        "performance": 2,
+        "sport plus": 1,
+        "magma": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Kia",
+      "model": "EV6",
+      "qualifiers": {
+        "long range": 4,
+        "standard range": 2,
+        "gt line standard range": 1,
+        "gt long range": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Lamborghini",
+      "model": "Gallardo",
+      "qualifiers": {
+        "superleggera": 4,
+        "performante": 2,
+        "super trofeo stradale": 1,
+        "tricolore": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "T-Class",
+      "qualifiers": {
+        "t 180": 3,
+        "t 160d": 2,
+        "t 180d": 2,
+        "t 160": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Peugeot",
+      "model": "Traveller",
+      "qualifiers": {
+        "e traveller": 8
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Skoda",
+      "model": "Kodiaq",
+      "qualifiers": {
+        "rs": 5,
+        "gt tsi380": 1,
+        "gt tsi330": 1,
+        "iv": 1
+      },
+      "rows": 8
+    },
+    {
+      "brand": "Audi",
+      "model": "A1",
+      "qualifiers": {
+        "25 tfsi": 7
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Dodge",
+      "model": "Viper",
+      "qualifiers": {
+        "srt10": 3,
+        "gts": 2,
+        "srt": 1,
+        "srt10 acr": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Sonata",
+      "qualifiers": {
+        "g2 5 gdi": 2,
+        "g2 0": 1,
+        "g1 6 t gdi": 1,
+        "l2 0": 1,
+        "g2 0 gdi": 1,
+        "g2 5 t gdi": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Kia",
+      "model": "Carens",
+      "qualifiers": {
+        "g1 5 smartstream t gdi": 3,
+        "g1 4 smartstream t gdi": 2,
+        "g1 5 smartstream": 2
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Lexus",
+      "model": "NX",
+      "qualifiers": {
+        "300h": 3,
+        "200t": 2,
+        "300": 2
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Lexus",
+      "model": "RC",
+      "qualifiers": {
+        "350 v6": 4,
+        "300 v6": 2,
+        "200t vvt i": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Maserati",
+      "model": "GranCabrio",
+      "qualifiers": {
+        "sport": 3,
+        "mc": 2,
+        "trofeo": 1,
+        "folgore": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "X-Class",
+      "qualifiers": {
+        "x 250d": 4,
+        "x 220d": 2,
+        "x 350d v6": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Lancer",
+      "qualifiers": {
+        "sport": 3,
+        "ralliart": 2,
+        "gti": 2
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Peugeot",
+      "model": "508",
+      "qualifiers": {
+        "pse": 4,
+        "350 thp puretech": 1,
+        "400 thp puretech": 1,
+        "360 thp puretech": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Renault",
+      "model": "Kangoo",
+      "qualifiers": {
+        "z.e.": 7
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Renault",
+      "model": "Laguna",
+      "qualifiers": {
+        "gt": 6,
+        "2,0 16v": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Subaru",
+      "model": "Impreza",
+      "qualifiers": {
+        "gt": 4,
+        "rf": 2,
+        "2 0ie e boxer": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Suzuki",
+      "model": "Vitara",
+      "qualifiers": {
+        "brezza": 4,
+        "e vitara": 3
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifiers": {
+        "p90d": 2,
+        "p85": 1,
+        "p85d": 1,
+        "85d": 1,
+        "70d": 1,
+        "p90d ludicrous": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Volvo",
+      "model": "XC40",
+      "qualifiers": {
+        "recharge": 4,
+        "recharge pure electric": 2,
+        "recharge twin": 1
+      },
+      "rows": 7
+    },
+    {
+      "brand": "Audi",
+      "model": "R8",
+      "qualifiers": {
+        "performance": 4,
+        "gt4": 1,
+        "gt3": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Chery",
+      "model": "Tiggo 8 Pro",
+      "qualifiers": {
+        "390tgdi": 4,
+        "290tgdi": 2
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Blazer",
+      "qualifiers": {
+        "650t": 2,
+        "rs 650t": 2,
+        "ev": 2
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifiers": {
+        "rst": 1,
+        "3wt": 1,
+        "4wt": 1,
+        "rst max range": 1,
+        "rst extended range": 1,
+        "lt extended range": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Ford",
+      "model": "Escort",
+      "qualifiers": {
+        "rs": 3,
+        "gt": 2,
+        "rs cosworth 4x4": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Foton",
+      "model": "Tunland",
+      "qualifiers": {
+        "v": 6
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "EQV",
+      "qualifiers": {
+        "eqv 300": 4,
+        "eqv": 2
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "SLS AMG",
+      "qualifiers": {
+        "final edition gt": 2,
+        "gt": 2,
+        "black series": 1,
+        "electric drive": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Nissan",
+      "model": "Frontier",
+      "qualifiers": {
+        "desert runner": 6
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Renault",
+      "model": "Megane RS",
+      "qualifiers": {
+        "trophy": 5,
+        "trophy r": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Skoda",
+      "model": "Superb",
+      "qualifiers": {
+        "iv": 5,
+        "sleeper edition": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Toyota",
+      "model": "Avensis",
+      "qualifiers": {
+        "verso": 6
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Passat",
+      "qualifiers": {
+        "gte": 4,
+        "r36": 2
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Volvo",
+      "model": "XC60",
+      "qualifiers": {
+        "recharge": 3,
+        "polestar": 1,
+        "polestar recharge": 1,
+        "recharge t6": 1
+      },
+      "rows": 6
+    },
+    {
+      "brand": "Bentley",
+      "model": "Bentayga",
+      "qualifiers": {
+        "speed": 5
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Bolt",
+      "qualifiers": {
+        "ev": 4,
+        "euv": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "qualifiers": {
+        "280 tgdi": 2,
+        "g2 0 smartstream": 1,
+        "g1 6 smartstream": 1,
+        "d2 0 smartstream": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Jaguar",
+      "model": "F-Pace",
+      "qualifiers": {
+        "20d": 2,
+        "e performance": 1,
+        "25d": 1,
+        "30d v6": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Jaguar",
+      "model": "XE",
+      "qualifiers": {
+        "d180": 2,
+        "p300": 2,
+        "sv project": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Kia",
+      "model": "K3",
+      "qualifiers": {
+        "gt": 4,
+        "g1 6": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Lexus",
+      "model": "LC",
+      "qualifiers": {
+        "500 v8": 3,
+        "500h v6": 2
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT 4-door Coupe",
+      "qualifiers": {
+        "63 s v8": 1,
+        "63 v8": 1,
+        "43": 1,
+        "53": 1,
+        "63 s e performance v8": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Peugeot",
+      "model": "208",
+      "qualifiers": {
+        "gti": 2,
+        "e": 2,
+        "e 208": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Porsche",
+      "model": "911 GT3",
+      "qualifiers": {
+        "rs": 5
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Subaru",
+      "model": "Outback",
+      "qualifiers": {
+        "wilderness": 3,
+        "limited": 1,
+        "xt 2 4turbo": 1
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Tank",
+      "model": "500",
+      "qualifiers": {
+        "hi4 t": 3,
+        "hi4 z": 2
+      },
+      "rows": 5
+    },
+    {
+      "brand": "Alfa Romeo",
+      "model": "Giulia",
+      "qualifiers": {
+        "veloce": 2,
+        "gta": 1,
+        "gtam": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "BYD",
+      "model": "S6",
+      "qualifiers": {
+        "s7": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "BYD",
+      "model": "Seal 6",
+      "qualifiers": {
+        "dm i": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Cadillac",
+      "model": "CT6",
+      "qualifiers": {
+        "v blackwing": 2,
+        "blackwing": 1,
+        "28t": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Chery",
+      "model": "Tiggo 7",
+      "qualifiers": {
+        "plus": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Equinox",
+      "qualifiers": {
+        "ev": 2,
+        "535t": 1,
+        "550t": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Ford",
+      "model": "Explorer",
+      "qualifiers": {
+        "ev": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "GMC",
+      "model": "Envoy",
+      "qualifiers": {
+        "denali": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Geely",
+      "model": "Emgrand",
+      "qualifiers": {
+        "ev ev": 2,
+        "gl": 2
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Honda",
+      "model": "Element",
+      "qualifiers": {
+        "sc": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Elantra",
+      "qualifiers": {
+        "g1 6 smartstream": 2,
+        "g2 0 smartstream": 2
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Ioniq 6",
+      "qualifiers": {
+        "longrange": 2,
+        "standard": 1,
+        "n": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Hyundai",
+      "model": "i10",
+      "qualifiers": {
+        "blue": 2,
+        "n line": 2
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Infiniti",
+      "model": "Q50",
+      "qualifiers": {
+        "s": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Kia",
+      "model": "Cerato",
+      "qualifiers": {
+        "gt": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Kia",
+      "model": "Soul",
+      "qualifiers": {
+        "ev": 2,
+        "e soul": 2
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Land Rover",
+      "model": "Defender",
+      "qualifiers": {
+        "hard top": 3,
+        "octa": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Lexus",
+      "model": "TX",
+      "qualifiers": {
+        "350": 2,
+        "500h": 1,
+        "550h v6": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Lexus",
+      "model": "UX",
+      "qualifiers": {
+        "300e": 2,
+        "300h": 2
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Nissan",
+      "model": "Pathfinder",
+      "qualifiers": {
+        "380 vc turbo": 3,
+        "rock creek": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Skoda",
+      "model": "Fabia",
+      "qualifiers": {
+        "rs": 3,
+        "130": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Subaru",
+      "model": "Forester",
+      "qualifiers": {
+        "trend": 1,
+        "platinum": 1,
+        "wilderness": 1,
+        "2 0ie e boxer": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Tesla",
+      "model": "Model 3",
+      "qualifiers": {
+        "premium long range": 2,
+        "p50": 1,
+        "standard range": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Toyota",
+      "model": "Hilux",
+      "qualifiers": {
+        "hi rider": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Toyota",
+      "model": "Urban Cruiser",
+      "qualifiers": {
+        "hyryder": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Touran",
+      "qualifiers": {
+        "tgi": 4
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Volvo",
+      "model": "S60",
+      "qualifiers": {
+        "r": 2,
+        "recharge": 2
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Volvo",
+      "model": "V90",
+      "qualifiers": {
+        "recharge": 2,
+        "recharge t6": 1,
+        "recharge t8": 1
+      },
+      "rows": 4
+    },
+    {
+      "brand": "Audi",
+      "model": "RS e-tron",
+      "qualifiers": {
+        "gt": 2,
+        "gt performance": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Baic",
+      "model": "BJ30",
+      "qualifiers": {
+        "e": 2,
+        "1 5td": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Cadillac",
+      "model": "CT4",
+      "qualifiers": {
+        "v blackwing": 2,
+        "v": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Cadillac",
+      "model": "XT4",
+      "qualifiers": {
+        "350d": 2,
+        "350t": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Cruze",
+      "qualifiers": {
+        "premier": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Chrysler",
+      "model": "300",
+      "qualifiers": {
+        "srt": 1,
+        "lwb": 1,
+        "srt8": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Ferrari",
+      "model": "360",
+      "qualifiers": {
+        "360 challenge stradale": 1,
+        "360 f1": 1,
+        "360 spider": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Ford",
+      "model": "Taurus",
+      "qualifiers": {
+        "ecoboost 180": 1,
+        "ecoboost 245": 1,
+        "ecoboost 325 v6": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Ioniq",
+      "qualifiers": {
+        "9 long range": 2,
+        "9 performance": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Kona",
+      "qualifiers": {
+        "standard range": 1,
+        "long range": 1,
+        "n": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Palisade",
+      "qualifiers": {
+        "r": 2,
+        "xrt pro": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Stargazer",
+      "qualifiers": {
+        "g1 5 smartstream": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Staria",
+      "qualifiers": {
+        "van": 1,
+        "crew van": 1,
+        "wagon": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Tiburon",
+      "qualifiers": {
+        "gt": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Jaguar",
+      "model": "I-Pace",
+      "qualifiers": {
+        "ev400": 2,
+        "ev320": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Jaguar",
+      "model": "XJ",
+      "qualifiers": {
+        "sovereign v12": 2,
+        "12 h.e.": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Jetour",
+      "model": "T2",
+      "qualifiers": {
+        "2 0td": 1,
+        "1 5td": 1,
+        "i dm 1 5td": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Kia",
+      "model": "Niro",
+      "qualifiers": {
+        "e niro": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Kia",
+      "model": "Optima",
+      "qualifiers": {
+        "gt": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Kia",
+      "model": "Stinger",
+      "qualifiers": {
+        "gt": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Lincoln",
+      "model": "Corsair",
+      "qualifiers": {
+        "2 0turbo": 2,
+        "2 3turbo": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Mazda",
+      "model": "3",
+      "qualifiers": {
+        "mps": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Eclipse",
+      "qualifiers": {
+        "gsx": 2,
+        "gts": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Nissan",
+      "model": "Ariya",
+      "qualifiers": {
+        "nismo": 2,
+        "performance": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Nissan",
+      "model": "Titan",
+      "qualifiers": {
+        "p4x": 2,
+        "pro 4x": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Nissan",
+      "model": "Z",
+      "qualifiers": {
+        "nismo": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Peugeot",
+      "model": "2008",
+      "qualifiers": {
+        "e": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Peugeot",
+      "model": "3008",
+      "qualifiers": {
+        "e": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Peugeot",
+      "model": "408",
+      "qualifiers": {
+        "230thp puretech": 2,
+        "350thp puretech": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Renault",
+      "model": "Captur",
+      "qualifiers": {
+        "s": 2,
+        "e tech": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Soueast",
+      "model": "S07",
+      "qualifiers": {
+        "1 6td": 3
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Tesla",
+      "model": "Model Y",
+      "qualifiers": {
+        "standard range": 2,
+        "premium long range": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Toyota",
+      "model": "RAV4",
+      "qualifiers": {
+        "prime": 1,
+        "woodland": 1,
+        "gr sport": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Tiguan",
+      "qualifiers": {
+        "r": 1,
+        "330 tsi": 1,
+        "380 tsi": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Touareg",
+      "qualifiers": {
+        "r": 2,
+        "r50": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "XPENG",
+      "model": "P7",
+      "qualifiers": {
+        "550": 1,
+        "702": 1,
+        "610": 1
+      },
+      "rows": 3
+    },
+    {
+      "brand": "Acura",
+      "model": "MDX",
+      "qualifiers": {
+        "type s": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Alfa Romeo",
+      "model": "159",
+      "qualifiers": {
+        "1 750 tbi": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Alfa Romeo",
+      "model": "Giulietta",
+      "qualifiers": {
+        "1 750 tb": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Aston Martin",
+      "model": "DB9",
+      "qualifiers": {
+        "r": 1,
+        "rs": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Aston Martin",
+      "model": "DBS",
+      "qualifiers": {
+        "ultimate": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Aston Martin",
+      "model": "V12 Vantage",
+      "qualifiers": {
+        "s": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Audi",
+      "model": "RS6",
+      "qualifiers": {
+        "performance": 1,
+        "gt": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Audi",
+      "model": "S6",
+      "qualifiers": {
+        "e tron": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Audi",
+      "model": "SQ8",
+      "qualifiers": {
+        "e tron": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "BYD",
+      "model": "ATTO 3",
+      "qualifiers": {
+        "standard range": 1,
+        "extended range": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "BYD",
+      "model": "Destroyer 05",
+      "qualifiers": {
+        "dm i": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "BYD",
+      "model": "Sealion 5",
+      "qualifiers": {
+        "dm i": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Cadillac",
+      "model": "XTS",
+      "qualifiers": {
+        "28t": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Changan",
+      "model": "Eado",
+      "qualifiers": {
+        "ev460": 1,
+        "rs": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Changan",
+      "model": "UNI-V",
+      "qualifiers": {
+        "idd": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chery",
+      "model": "Tiggo 2",
+      "qualifiers": {
+        "0": 1,
+        "4": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Avalanche",
+      "qualifiers": {
+        "black diamond": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "HHR",
+      "qualifiers": {
+        "ss": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Orlando",
+      "qualifiers": {
+        "530t ecotec": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Sail",
+      "qualifiers": {
+        "s rv": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Tracker",
+      "qualifiers": {
+        "325t ecotec": 1,
+        "335t ecotec": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Trailblazer",
+      "qualifiers": {
+        "435t": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chrysler",
+      "model": "Crossfire",
+      "qualifiers": {
+        "srt": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Chrysler",
+      "model": "Sebring",
+      "qualifiers": {
+        "soft top": 1,
+        "hard top": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Dodge",
+      "model": "Caliber",
+      "qualifiers": {
+        "srt4": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Dodge",
+      "model": "Durango",
+      "qualifiers": {
+        "srt 392": 1,
+        "hellcat": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Dodge",
+      "model": "Hornet",
+      "qualifiers": {
+        "gt": 1,
+        "r t": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "GMC",
+      "model": "Jimmy",
+      "qualifiers": {
+        "diamond": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Geely",
+      "model": "Coolray",
+      "qualifiers": {
+        "200t": 1,
+        "260t": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Genesis",
+      "model": "GV70",
+      "qualifiers": {
+        "electrified": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Honda",
+      "model": "Jazz",
+      "qualifiers": {
+        "crosstar": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Infiniti",
+      "model": "G",
+      "qualifiers": {
+        "g25": 1,
+        "g25x": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Infiniti",
+      "model": "JX",
+      "qualifiers": {
+        "35 v6": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Jeep",
+      "model": "Cherokee",
+      "qualifiers": {
+        "chief": 1,
+        "chief 17": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Jeep",
+      "model": "Gladiator",
+      "qualifiers": {
+        "willys": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Jeep",
+      "model": "Wagoneer",
+      "qualifiers": {
+        "s": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Kia",
+      "model": "EV9",
+      "qualifiers": {
+        "gt": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Land Rover",
+      "model": "Discovery",
+      "qualifiers": {
+        "svx": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "MG",
+      "model": "ZS",
+      "qualifiers": {
+        "zst": 1,
+        "long range": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Maserati",
+      "model": "Ghibli",
+      "qualifiers": {
+        "ss": 1,
+        "trofeo": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Maybach",
+      "model": "57",
+      "qualifiers": {
+        "s": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Maybach",
+      "model": "62",
+      "qualifiers": {
+        "s": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Mazda",
+      "model": "323",
+      "qualifiers": {
+        "sport": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "EQA",
+      "qualifiers": {
+        "eqa 250+": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "EQB",
+      "qualifiers": {
+        "eqb 250": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "SLR McLaren",
+      "qualifiers": {
+        "722 edition": 1,
+        "722 s": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Montero Sport",
+      "qualifiers": {
+        "gt": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Nissan",
+      "model": "Armada",
+      "qualifiers": {
+        "pro 4x": 1,
+        "nismo": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Nissan",
+      "model": "Qashqai",
+      "qualifiers": {
+        "e power": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Nissan",
+      "model": "Sentra",
+      "qualifiers": {
+        "nismo": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Porsche",
+      "model": "911 GT2",
+      "qualifiers": {
+        "rs": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Porsche",
+      "model": "Cayenne",
+      "qualifiers": {
+        "diesel s": 1,
+        "gt paket turbo": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Porsche",
+      "model": "Panamera",
+      "qualifiers": {
+        "4s diesel": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "RAM",
+      "model": "1500",
+      "qualifiers": {
+        "ramcharger": 1,
+        "srt trx": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Renault",
+      "model": "Arkana",
+      "qualifiers": {
+        "edition one": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Renault",
+      "model": "Clio",
+      "qualifiers": {
+        "tce 100": 1,
+        "e tech": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Soueast",
+      "model": "S06",
+      "qualifiers": {
+        "1 6td": 1,
+        "dm 1 5td": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Subaru",
+      "model": "WRX",
+      "qualifiers": {
+        "ej20 final edition": 1,
+        "s209": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Subaru",
+      "model": "XV",
+      "qualifiers": {
+        "2 0dl": 1,
+        "2 0ie e boxer": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Suzuki",
+      "model": "Liana",
+      "qualifiers": {
+        "sport": 1,
+        "glx": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Toyota",
+      "model": "Matrix",
+      "qualifiers": {
+        "s": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Toyota",
+      "model": "Supra",
+      "qualifiers": {
+        "l type": 1,
+        "gr final edition": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Arteon",
+      "qualifiers": {
+        "r": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "ID.4",
+      "qualifiers": {
+        "gtx": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Scirocco",
+      "qualifiers": {
+        "gts": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "T-Roc",
+      "qualifiers": {
+        "r": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volvo",
+      "model": "S90",
+      "qualifiers": {
+        "recharge": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volvo",
+      "model": "V60",
+      "qualifiers": {
+        "recharge": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volvo",
+      "model": "V70",
+      "qualifiers": {
+        "r": 2
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Volvo",
+      "model": "XC70",
+      "qualifiers": {
+        "long range": 1,
+        "ultra long range": 1
+      },
+      "rows": 2
+    },
+    {
+      "brand": "Acura",
+      "model": "Integra",
+      "qualifiers": {
+        "type s": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Aston Martin",
+      "model": "DB7",
+      "qualifiers": {
+        "gta": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Aston Martin",
+      "model": "DBX",
+      "qualifiers": {
+        "s": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Audi",
+      "model": "RS5",
+      "qualifiers": {
+        "performance": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Audi",
+      "model": "RS7",
+      "qualifiers": {
+        "performance": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Audi",
+      "model": "RSQ8",
+      "qualifiers": {
+        "performance": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Audi",
+      "model": "SQ5",
+      "qualifiers": {
+        "competition": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Audi",
+      "model": "TT",
+      "qualifiers": {
+        "heritage edition": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "BMW",
+      "model": "XM",
+      "qualifiers": {
+        "50e": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "BMW",
+      "model": "i3",
+      "qualifiers": {
+        "50": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "BMW",
+      "model": "i4",
+      "qualifiers": {
+        "m60": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "BMW",
+      "model": "iX",
+      "qualifiers": {
+        "m70": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "BMW",
+      "model": "iX3",
+      "qualifiers": {
+        "50": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "BYD",
+      "model": "Shark 6",
+      "qualifiers": {
+        "dmo": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Cadillac",
+      "model": "Lyriq",
+      "qualifiers": {
+        "v": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Cadillac",
+      "model": "Optiq",
+      "qualifiers": {
+        "v": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Cadillac",
+      "model": "STS",
+      "qualifiers": {
+        "v": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Cadillac",
+      "model": "Seville",
+      "qualifiers": {
+        "v8": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Cadillac",
+      "model": "XLR",
+      "qualifiers": {
+        "v": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Changan",
+      "model": "CS15",
+      "qualifiers": {
+        "ev": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Changan",
+      "model": "CS55",
+      "qualifiers": {
+        "idd": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Changan",
+      "model": "UNI-K",
+      "qualifiers": {
+        "idd": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Changan",
+      "model": "UNI-Z",
+      "qualifiers": {
+        "idd": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Captiva",
+      "qualifiers": {
+        "sport": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Colorado",
+      "qualifiers": {
+        "trail boss": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Spark",
+      "qualifiers": {
+        "euv": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Traverse",
+      "qualifiers": {
+        "z71": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Ferrari",
+      "model": "California",
+      "qualifiers": {
+        "30": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Ford",
+      "model": "Escape",
+      "qualifiers": {
+        "st line": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Ford",
+      "model": "Maverick",
+      "qualifiers": {
+        "tremor": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Ford",
+      "model": "Territory",
+      "qualifiers": {
+        "ev": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Geely",
+      "model": "Azkarra",
+      "qualifiers": {
+        "1 5td": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Geely",
+      "model": "Monjaro",
+      "qualifiers": {
+        "2 0td": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Geely",
+      "model": "STARRAY",
+      "qualifiers": {
+        "em i": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Haval",
+      "model": "H6",
+      "qualifiers": {
+        "hi4": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Casper",
+      "qualifiers": {
+        "g1 0 smartstream": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Hyundai",
+      "model": "i20",
+      "qualifiers": {
+        "n": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Isuzu",
+      "model": "D-Max",
+      "qualifiers": {
+        "ev": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Jeep",
+      "model": "Compass",
+      "qualifiers": {
+        "e": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Jetour",
+      "model": "Dashing",
+      "qualifiers": {
+        "i dm": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Jetour",
+      "model": "T1",
+      "qualifiers": {
+        "1 5td": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Kia",
+      "model": "EV5",
+      "qualifiers": {
+        "gt": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Kia",
+      "model": "Picanto",
+      "qualifiers": {
+        "gt line": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Kia",
+      "model": "Tasman",
+      "qualifiers": {
+        "x pro": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Land Rover",
+      "model": "Range Rover Sport",
+      "qualifiers": {
+        "p400e": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Lincoln",
+      "model": "Continental",
+      "qualifiers": {
+        "mark": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "MG",
+      "model": "HS",
+      "qualifiers": {
+        "ehs": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Maserati",
+      "model": "Grecale",
+      "qualifiers": {
+        "folgore": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Mazda",
+      "model": "6",
+      "qualifiers": {
+        "mps": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Outlander",
+      "qualifiers": {
+        "gt": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Mitsubishi",
+      "model": "Pajero Sport",
+      "qualifiers": {
+        "gt": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Nissan",
+      "model": "GT-R",
+      "qualifiers": {
+        "track edition": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Nissan",
+      "model": "Kicks",
+      "qualifiers": {
+        "e power": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Nissan",
+      "model": "Leaf",
+      "qualifiers": {
+        "e+": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Nissan",
+      "model": "Micra",
+      "qualifiers": {
+        "160 sr": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Peugeot",
+      "model": "Partner",
+      "qualifiers": {
+        "dangel": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Peugeot",
+      "model": "RCZ",
+      "qualifiers": {
+        "r": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Porsche",
+      "model": "Macan",
+      "qualifiers": {
+        "4s": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Renault",
+      "model": "Clio RS",
+      "qualifiers": {
+        "trophy": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Renault",
+      "model": "Scenic",
+      "qualifiers": {
+        "tce": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Skoda",
+      "model": "Rapid",
+      "qualifiers": {
+        "tsi230": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Subaru",
+      "model": "Crosstrek",
+      "qualifiers": {
+        "2 0ie": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Tank",
+      "model": "300",
+      "qualifiers": {
+        "hi4 t": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Tank",
+      "model": "700",
+      "qualifiers": {
+        "hi4 t": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Tesla",
+      "model": "Model X",
+      "qualifiers": {
+        "p90d": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Toyota",
+      "model": "4Runner",
+      "qualifiers": {
+        "deluxe": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Toyota",
+      "model": "Fortuner",
+      "qualifiers": {
+        "gr s": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "qualifiers": {
+        "gxl": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Toyota",
+      "model": "Land Cruiser Prado",
+      "qualifiers": {
+        "first edition": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Beetle",
+      "qualifiers": {
+        "rsi": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Golf R",
+      "qualifiers": {
+        "20 years": 1
+      },
+      "rows": 1
+    },
+    {
+      "brand": "Volvo",
+      "model": "XC90",
+      "qualifiers": {
+        "recharge": 1
+      },
+      "rows": 1
+    }
+  ],
+  "qualifier_overlaps_other_model": [
+    {
+      "brand": "Toyota",
+      "dataset_name": "Corolla GR 1 6 (304 Hp) GR-FOUR iMT",
+      "resolved_model": "Corolla",
+      "flag": "qualifier_overlaps_other_model:GR Corolla"
+    },
+    {
+      "brand": "Toyota",
+      "dataset_name": "Corolla GR 1 6 (300 Hp) GR-FOUR DAT",
+      "resolved_model": "Corolla",
+      "flag": "qualifier_overlaps_other_model:GR Corolla"
+    },
+    {
+      "brand": "Toyota",
+      "dataset_name": "Corolla GR 1 6 (300 Hp) GR-FOUR iMT",
+      "resolved_model": "Corolla",
+      "flag": "qualifier_overlaps_other_model:GR Corolla"
+    }
+  ],
+  "qualifier_overlaps_other_model_count": 3
+}

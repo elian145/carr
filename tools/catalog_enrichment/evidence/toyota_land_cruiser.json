@@ -1,0 +1,3024 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Land Cruiser",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "300 Series (2021-): Japan launch + global premiere (3.5 V6 TT petrol, 3.3 V6 TT diesel), UAE 2026 pages (3.5L, 4.0L), US 2027 (2.4L hybrid)",
+    "250 Series (2023-): global premiere table and Japan launch/spec PDF (2.8 diesel, 2.7 petrol, 2.4 turbo petrol/hybrid)",
+    "200 Series (2007-2021): US 2021 pressroom/brochure (5.7 V8), 2007 Toyota global lineage page (4.7 V8)",
+    "NOT researched: 70 Series, 100 Series and earlier, 4.5L V8 diesel and 4.0L V6 petrol 200 Series markets (NZ/ZA/GCC distributors), Land Cruiser Prado / Land Cruiser FJ (separate models), Libya/KSA distributor catalogues"
+  ],
+  "not_used_sources": [
+    {
+      "url": "https://www.toyota.co.nz/globalassets/brochures/2020/landcruiser200-fullbrochure-correction-web.pdf",
+      "reason": "404 on re-fetch"
+    },
+    {
+      "url": "https://www.drivearabia.com/carprices/ksa/toyota/toyota-land-cruiser/2020/",
+      "reason": "403 to automated fetch"
+    },
+    {
+      "url": "https://site.toyota.ly/wp-content/uploads/2020/09/Toyota-LC200-catalogue.pdf",
+      "reason": "20 MB scanned catalogue with garbled text layer; engine-to-grade mapping not reliable"
+    }
+  ],
+  "sources": {
+    "LC-S1": {
+      "url": "https://www.toyota.com/landcruiser/",
+      "name": "2027 Toyota Land Cruiser | Toyota.com",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2027",
+      "market_scope": "United States"
+    },
+    "LC-S2": {
+      "url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+      "name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "300 Series launch",
+      "market_scope": "Japan",
+      "notes": "Merged table cells (blank Seating cells) are NOT interpreted: seats are recorded only where a number is printed on the row."
+    },
+    "LC-S3": {
+      "url": "https://global.toyota/en/newsroom/toyota/35323595.html",
+      "name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "300 Series premiere",
+      "market_scope": "Global / representative overseas grades"
+    },
+    "LC-S4": {
+      "url": "https://global.toyota/en/newsroom/toyota/40658942.html",
+      "name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2024",
+      "market_scope": "Japan"
+    },
+    "LC-S5": {
+      "url": "https://toyota.jp/pages/contents/landcruiser250/001_p_001/pdf/landcruiser250_spec_202507.pdf",
+      "name": "Land Cruiser 250 specifications (Toyota Japan, 202507)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 2,
+      "host_type": "manufacturer_domain",
+      "retrieval": "pdf_downloaded_and_parsed",
+      "accessed_at": "2026-10-03",
+      "market_scope": "Japan",
+      "notes": "PDF text extraction inserts spaces between Japanese glyphs; quotes are shown de-spaced. Columns (ZX/VX diesel, VX gasoline, GX diesel) are merged cells, so no trim is assigned to these engine records."
+    },
+    "LC-S6": {
+      "url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+      "name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2023 premiere",
+      "market_scope": "Global (markets listed per powertrain)",
+      "notes": "Each powertrain row lists several target markets; market is left null on these records and the listed markets are noted."
+    },
+    "LC-S7": {
+      "url": "https://pressroom.toyota.com/200-series-land-cruiser-heritage-edition-makes-second-climb-in-2021/",
+      "name": "200 Series Land Cruiser Heritage Edition Makes Second Climb in 2021 - Toyota USA Newsroom",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2021",
+      "market_scope": "United States"
+    },
+    "LC-S8": {
+      "url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2021/landcruiser_ebrochure.pdf",
+      "name": "2021 Toyota Land Cruiser e-brochure",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 2,
+      "host_type": "manufacturer_domain",
+      "retrieval": "pdf_downloaded_and_parsed",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2021",
+      "market_scope": "United States"
+    },
+    "LC-S9": {
+      "url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60013330/index.html",
+      "name": "75 Years of TOYOTA - Vehicle Lineage: Land Cruiser (200)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "200 Series, Sept 2007",
+      "market_scope": "Japan lineage page (representative grade)"
+    },
+    "LC-S10": {
+      "url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
+      "name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
+      "publisher": "Al-Futtaim Toyota (UAE)",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "UAE"
+    },
+    "LC-S11": {
+      "url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
+      "name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
+      "publisher": "Al-Futtaim Toyota (UAE)",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "UAE"
+    },
+    "LC-S12": {
+      "url": "https://carprices.ae/brands/toyota/2026/land-cruiser",
+      "name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
+      "publisher": "CarPrices.ae",
+      "tier": 5,
+      "host_type": "independent",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2026",
+      "market_scope": "UAE",
+      "notes": "Secondary price/spec site: provisional only. Uses 'All Wheel Drive' wording for the 4.0L/3.5L trims."
+    }
+  },
+  "records": [
+    {
+      "record_id": "LC-001",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.4L 4 Cylinder i-FORCE MAX Hybrid",
+        "displacement_raw": "2.4L",
+        "displacement_cc": null,
+        "cylinders": "4 Cylinder",
+        "fuel_type": "Hybrid",
+        "aspiration": "turbo",
+        "horsepower": {
+          "value": 326,
+          "unit": "hp",
+          "basis": "net combined"
+        },
+        "torque": {
+          "value": 465,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "Full-Time 4-Wheel Drive",
+      "evidence": {
+        "source_id": "LC-S1",
+        "source_url": "https://www.toyota.com/landcruiser/",
+        "source_name": "2027 Toyota Land Cruiser | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "2.4L 4 Cylinder i-FORCE MAX Hybrid 326 Net Combined Horsepower Land Cruiser's powertrain combines hybrid tech with an impressive turbo 4-cylinder hybrid engine to generate an electrifying 326 net combined horsepower with 465 lb.-ft. of torque. Standard Full-Time 4-Wheel Drive"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": "Turbo",
+        "horsepower_hp": 326.0,
+        "torque_nm": 630.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-002",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "US",
+      "trim": "1958",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S1",
+        "source_url": "https://www.toyota.com/landcruiser/",
+        "source_name": "2027 Toyota Land Cruiser | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Rugged elegance in two distinct trims. Land Cruiser 1958 is a back-to-basics homage to the original FJ25. Land Cruiser trim elevates the ride further"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "1958",
+        "trim_key": "1958",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-003",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2027,
+      "year_to": null,
+      "market": "US",
+      "trim": "Land Cruiser",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S1",
+        "source_url": "https://www.toyota.com/landcruiser/",
+        "source_name": "2027 Toyota Land Cruiser | Toyota.com",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Rugged elegance in two distinct trims. Land Cruiser 1958 is a back-to-basics homage to the original FJ25. Land Cruiser trim elevates the ride further"
+      },
+      "notes": "The trim is named identically to the model by Toyota.",
+      "normalized": {
+        "market": "us",
+        "trim": "Land Cruiser",
+        "trim_key": "land cruiser",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-004",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": null,
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.5-liter V6 twin-turbo gasoline",
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "gasoline",
+        "aspiration": "twin-turbo",
+        "horsepower": {
+          "value": 415,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 650,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "3.5-liter V6 twin-turbo gasoline engine The new Land Cruiser is available with a newly developed 3.5-liter V6 twin-turbo gasoline engine, with a maximum output of 305 kW (415 PS) and a maximum torque of 650 Nm. The Direct Shift-10AT also delivers drive torque characteristics and gear change timings optimized for gasoline and diesel engines respectively."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": 6,
+        "fuel_type": "Petrol",
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 409.3,
+        "torque_nm": 650.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-005",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": null,
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3.3-liter V6 twin-turbo diesel",
+        "displacement_raw": "3.3-liter",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "diesel",
+        "aspiration": "twin-turbo",
+        "horsepower": {
+          "value": 309,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 700,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "3.3-liter V6 twin-turbo diesel engine The 3.3-liter V6 twin-turbo diesel engine features various optimizations. It combines a maximum output of 227 kW (309 PS) and a maximum torque of 700 Nm with outstanding fuel efficiency. The Direct Shift-10AT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.3L",
+        "engine_size_label": "3.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.3,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 304.8,
+        "torque_nm": 700.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-006",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "GX",
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Manufacturer's Suggested Retail Prices Gasoline specifications Grade Seating Engine Transmission Price (yen) GX 5 V35A-FTS (3.5-liter) Direct Shift-10AT 5,100,000 AX 7 5,500.000 VX 6.300,000 GR SPORT ◎ 7,700,000 ZX ◎ 7,300,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "GX",
+        "trim_key": "gx",
+        "body_type": null,
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-007",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "AX",
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Manufacturer's Suggested Retail Prices Gasoline specifications Grade Seating Engine Transmission Price (yen) GX 5 V35A-FTS (3.5-liter) Direct Shift-10AT 5,100,000 AX 7 5,500.000 VX 6.300,000 GR SPORT ◎ 7,700,000 ZX ◎ 7,300,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "AX",
+        "trim_key": "ax",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-008",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "VX",
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Manufacturer's Suggested Retail Prices Gasoline specifications Grade Seating Engine Transmission Price (yen) GX 5 V35A-FTS (3.5-liter) Direct Shift-10AT 5,100,000 AX 7 5,500.000 VX 6.300,000 GR SPORT ◎ 7,700,000 ZX ◎ 7,300,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "VX",
+        "trim_key": "vx",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-009",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "GR SPORT",
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Manufacturer's Suggested Retail Prices Gasoline specifications Grade Seating Engine Transmission Price (yen) GX 5 V35A-FTS (3.5-liter) Direct Shift-10AT 5,100,000 AX 7 5,500.000 VX 6.300,000 GR SPORT ◎ 7,700,000 ZX ◎ 7,300,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "GR Sport",
+        "trim_key": "gr sport",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-010",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "ZX",
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Manufacturer's Suggested Retail Prices Gasoline specifications Grade Seating Engine Transmission Price (yen) GX 5 V35A-FTS (3.5-liter) Direct Shift-10AT 5,100,000 AX 7 5,500.000 VX 6.300,000 GR SPORT ◎ 7,700,000 ZX ◎ 7,300,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "ZX",
+        "trim_key": "zx",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-011",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "GR SPORT",
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.3-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Diesel specifications Grade Seating Engine Transmission Price (yen) GR SPORT 5 F33A-FTV (3.3-liter) Direct Shift-10AT 8,000,000 ZX 7,600,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "GR Sport",
+        "trim_key": "gr sport",
+        "body_type": null,
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "3.3L",
+        "engine_size_label": "3.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.3,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-012",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "ZX",
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.3-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S2",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Diesel specifications Grade Seating Engine Transmission Price (yen) GR SPORT 5 F33A-FTV (3.3-liter) Direct Shift-10AT 8,000,000 ZX 7,600,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "ZX",
+        "trim_key": "zx",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.3L",
+        "engine_size_label": "3.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.3,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-013",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "Gasoline vehicle 3.5 liters V6",
+        "displacement_raw": "3.5 liters",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "Gasoline",
+        "aspiration": "twin-turbo",
+        "horsepower": {
+          "value": 415,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 650,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S3",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35323595.html",
+        "source_name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Engine and transmission specifications of the new model (The specifications for representative grades for overseas markets) Displacement Layout Transmission Turbo-charger Maximum output Maximum torque Gasoline vehicle 3.5 liters V6 10AT Yes (twin-turbo) 305 kW (415 PS) 650 Nm"
+      },
+      "notes": null,
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": 6,
+        "fuel_type": "Petrol",
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 409.3,
+        "torque_nm": 650.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-014",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "Diesel vehicle 3.3 liters V6",
+        "displacement_raw": "3.3 liters",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "Diesel",
+        "aspiration": "twin-turbo",
+        "horsepower": {
+          "value": 309,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 700,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "10AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S3",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35323595.html",
+        "source_name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Displacement Layout Transmission Turbo-charger Maximum output Maximum torque Diesel vehicle 3.3 liters V6 10AT Yes (twin-turbo) 227 kW (309 PS) 700 Nm"
+      },
+      "notes": null,
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.3L",
+        "engine_size_label": "3.3L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.3,
+        "cylinders": 6,
+        "fuel_type": "Diesel",
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 304.8,
+        "torque_nm": 700.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 10,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-015",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "naturally aspirated V6",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "6AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S3",
+        "source_url": "https://global.toyota/en/newsroom/toyota/35323595.html",
+        "source_name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Naturally aspirated V6 gasoline engine and 6AT versions are available in some areas."
+      },
+      "notes": "Engine size not stated, so this record contributes cylinders, fuel and transmission only.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 6,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 6,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-016",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "ZX",
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "2.8-liter",
+        "displacement_cc": null,
+        "cylinders": "inline 4-cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "turbo",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": "Full-time four-wheel drive",
+      "evidence": {
+        "source_id": "LC-S4",
+        "source_url": "https://global.toyota/en/newsroom/toyota/40658942.html",
+        "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Diesel engine model Grade Seating capacity Driveline Engine Transmission Price ZX 7 Full-time four-wheel drive 1GD-FTV (2.8-liter inline 4-cylinder direct injection turbo) Direct Shift-8AT ◎ 7,350,000 VX 6,300,000 GX 5 5,200,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "ZX",
+        "trim_key": "zx",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "2.8L",
+        "engine_size_label": "2.8L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.8,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-017",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "VX",
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "2.8-liter",
+        "displacement_cc": null,
+        "cylinders": "inline 4-cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "turbo",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": "Full-time four-wheel drive",
+      "evidence": {
+        "source_id": "LC-S4",
+        "source_url": "https://global.toyota/en/newsroom/toyota/40658942.html",
+        "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Diesel engine model Grade Seating capacity Driveline Engine Transmission Price ZX 7 Full-time four-wheel drive 1GD-FTV (2.8-liter inline 4-cylinder direct injection turbo) Direct Shift-8AT ◎ 7,350,000 VX 6,300,000 GX 5 5,200,000"
+      },
+      "notes": "Seating cell is blank (merged) for VX; not interpreted.",
+      "normalized": {
+        "market": "other:jp",
+        "trim": "VX",
+        "trim_key": "vx",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.8L",
+        "engine_size_label": "2.8L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.8,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-018",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "GX",
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "2.8-liter",
+        "displacement_cc": null,
+        "cylinders": "inline 4-cylinder",
+        "fuel_type": "Diesel",
+        "aspiration": "turbo",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": "Full-time four-wheel drive",
+      "evidence": {
+        "source_id": "LC-S4",
+        "source_url": "https://global.toyota/en/newsroom/toyota/40658942.html",
+        "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Diesel engine model Grade Seating capacity Driveline Engine Transmission Price ZX 7 Full-time four-wheel drive 1GD-FTV (2.8-liter inline 4-cylinder direct injection turbo) Direct Shift-8AT ◎ 7,350,000 VX 6,300,000 GX 5 5,200,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "GX",
+        "trim_key": "gx",
+        "body_type": null,
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "2.8L",
+        "engine_size_label": "2.8L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.8,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-019",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": null,
+      "market": "Japan",
+      "trim": "VX",
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "2.7-liter",
+        "displacement_cc": null,
+        "cylinders": "inline 4-cylinder",
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "6 Super ECT",
+        "gears": null
+      },
+      "drivetrain": "Full-time four-wheel drive",
+      "evidence": {
+        "source_id": "LC-S4",
+        "source_url": "https://global.toyota/en/newsroom/toyota/40658942.html",
+        "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Gasoline engine model Grade Seating capacity Driveline Engine Transmission Price VX 7 Full-time four-wheel drive 2TR-FE (2.7-liter inline 4-cylinder) 6 Super ECT 5,450,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "VX",
+        "trim_key": "vx",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "2.7L",
+        "engine_size_label": "2.7L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.7,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Super ECT",
+        "transmission_named_systems": [
+          "Super ECT"
+        ],
+        "transmission_gears": 6,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-020",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": null,
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "1GD-FTV",
+        "displacement_raw": {
+          "value": 2.754,
+          "unit": "L"
+        },
+        "displacement_cc": 2754,
+        "cylinders": "直列4気筒",
+        "fuel_type": "軽油",
+        "aspiration": null,
+        "horsepower": {
+          "value": 204,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 500,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "LC-S5",
+        "source_url": "https://toyota.jp/pages/contents/landcruiser250/001_p_001/pdf/landcruiser250_spec_202507.pdf",
+        "source_name": "Land Cruiser 250 specifications (Toyota Japan, 202507)",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.85,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "型式 1GD-FTV 2TR-FE 1GD-FTV 総排気量 L 2.754 2.693 2.754 種類 直列4気筒 使用燃料 軽油 ガソリン（レギュラー） 軽油 最高出力〈ネット〉 kW（PS）/r.p.m. 150（204）/3,000～3,400 120（163）/5,200 150（204）/3,000～3,400 最大トルク〈ネット〉 N・m（kgf・m）/r.p.m. 500（51）/1,600～2,800 246（25.1）/3,900 500（51）/1,600～2,800 駆動方式 4輪駆動（フルタイム4WD） トランスミッション Direct Shift-8AT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.8L",
+        "engine_size_label": "2.8L",
+        "displacement_cc": 2754,
+        "displacement_nominal_l": 2.754,
+        "cylinders": 4,
+        "fuel_type": "Diesel",
+        "aspiration": null,
+        "horsepower_hp": 201.2,
+        "torque_nm": 500.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-021",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Japan",
+      "trim": null,
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2TR-FE",
+        "displacement_raw": {
+          "value": 2.693,
+          "unit": "L"
+        },
+        "displacement_cc": 2693,
+        "cylinders": "直列4気筒",
+        "fuel_type": "ガソリン",
+        "aspiration": null,
+        "horsepower": {
+          "value": 163,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 246,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "4WD",
+      "evidence": {
+        "source_id": "LC-S5",
+        "source_url": "https://toyota.jp/pages/contents/landcruiser250/001_p_001/pdf/landcruiser250_spec_202507.pdf",
+        "source_name": "Land Cruiser 250 specifications (Toyota Japan, 202507)",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.85,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "型式 1GD-FTV 2TR-FE 1GD-FTV 総排気量 L 2.754 2.693 2.754 種類 直列4気筒 使用燃料 軽油 ガソリン（レギュラー） 軽油 最高出力〈ネット〉 kW（PS）/r.p.m. 150（204）/3,000～3,400 120（163）/5,200 150（204）/3,000～3,400 最大トルク〈ネット〉 N・m（kgf・m）/r.p.m. 500（51）/1,600～2,800 246（25.1）/3,900 500（51）/1,600～2,800 駆動方式 4輪駆動（フルタイム4WD） トランスミッション Direct Shift-8AT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.7L",
+        "engine_size_label": "2.7L",
+        "displacement_cc": 2693,
+        "displacement_nominal_l": 2.693,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 160.8,
+        "torque_nm": 246.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-022",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "T24A-FTS Gasoline 2.4-liter turbo Hybrid",
+        "displacement_raw": "2.4-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": "turbo",
+        "horsepower": {
+          "value": 330,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 630,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S6",
+        "source_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+        "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "| T24A-FTS Gasoline 2.4-liter turbo Hybrid Direct Shift-8AT | 243 kW (330 PS) | 630 N･m | North America, China |"
+      },
+      "notes": "Listed markets: North America, China.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": "Turbo",
+        "horsepower_hp": 325.5,
+        "torque_nm": 630.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-023",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "T24A-FTS Gasoline 2.4-liter turbo",
+        "displacement_raw": "2.4-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Gasoline",
+        "aspiration": "turbo",
+        "horsepower": {
+          "value": 281,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 430,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S6",
+        "source_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+        "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "| T24A-FTS Gasoline 2.4-liter turbo Direct Shift-8AT | 207 kW (281 PS) | 430 N･m | Middle East, Eastern Europe, etc. |"
+      },
+      "notes": "Listed markets: Middle East, Eastern Europe, etc.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": "Turbo",
+        "horsepower_hp": 277.2,
+        "torque_nm": 430.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-024",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "diesel 48V",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "1GD-FTV Diesel 2.8-liter turbo (48V system)",
+        "displacement_raw": "2.8-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "turbo",
+        "horsepower": {
+          "value": 204,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 500,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S6",
+        "source_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+        "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "| 1GD-FTV Diesel 2.8-liter turbo (48V system) Direct Shift-8AT | 150 kW (204 PS) | 500 N･m | Australia, Western Europe |"
+      },
+      "notes": "Listed markets: Australia, Western Europe.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.8L",
+        "engine_size_label": "2.8L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.8,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 201.2,
+        "torque_nm": 500.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-025",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "diesel",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "1GD-FTV Diesel 2.8-liter turbo",
+        "displacement_raw": "2.8-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "turbo",
+        "horsepower": {
+          "value": 204,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 500,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S6",
+        "source_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+        "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "| 1GD-FTV Diesel 2.8-liter turbo Direct Shift-8AT | 150 kW (204 PS) | 500 N･m | Western Europe, Eastern Europe, Japan, Middle East, etc. |"
+      },
+      "notes": "Listed markets: Western Europe, Eastern Europe, Japan, Middle East, etc.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.8L",
+        "engine_size_label": "2.8L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.8,
+        "cylinders": null,
+        "fuel_type": "Diesel",
+        "aspiration": "Turbo",
+        "horsepower_hp": 201.2,
+        "torque_nm": 500.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-026",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": "gasoline",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2TR-FE gasoline 2.7-liter",
+        "displacement_raw": "2.7-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "gasoline",
+        "aspiration": null,
+        "horsepower": {
+          "value": 163,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 246,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "6 Super-ECT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S6",
+        "source_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+        "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "| 2TR-FE gasoline 2.7-liter 6 Super-ECT | 120 kW (163 PS) | 246 N･m | Eastern Europe, Japan, etc. |"
+      },
+      "notes": "Listed markets: Eastern Europe, Japan, etc.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.7L",
+        "engine_size_label": "2.7L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.7,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 160.8,
+        "torque_nm": 246.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Super ECT",
+        "transmission_named_systems": [
+          "Super ECT"
+        ],
+        "transmission_gears": 6,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-027",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2021,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "5.7-liter DOHC V8",
+        "displacement_raw": "5.7-liter",
+        "displacement_cc": null,
+        "cylinders": "V8",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 381,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 401,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": "8-speed Electronically Controlled Automatic Transmission with intelligence (ECT-i)",
+        "gears": null
+      },
+      "drivetrain": "full-time 4WD",
+      "evidence": {
+        "source_id": "LC-S7",
+        "source_url": "https://pressroom.toyota.com/200-series-land-cruiser-heritage-edition-makes-second-climb-in-2021/",
+        "source_name": "200 Series Land Cruiser Heritage Edition Makes Second Climb in 2021 - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Its sole available powertrain is a sturdy yet refined 381-horsepower 5.7-liter DOHC V8 engine, which produces 401 lb.-ft. of torque. The 8-speed Electronically Controlled Automatic Transmission with intelligence (ECT-i) teams with a versatile full-time 4WD system"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "5.7L",
+        "engine_size_label": "5.7L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 5.7,
+        "cylinders": 8,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 381.0,
+        "torque_nm": 544.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "ECT-i",
+        "transmission_named_systems": [
+          "ECT-i"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-028",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2021,
+      "year_to": null,
+      "market": "US",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "up to eight",
+      "engine": {
+        "display_name": "5.7L V8",
+        "displacement_raw": "5.7L",
+        "displacement_cc": null,
+        "cylinders": "V8",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 381,
+          "unit": "hp"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S8",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2021/landcruiser_ebrochure.pdf",
+        "source_name": "2021 Toyota Land Cruiser e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.9,
+        "confidence_basis": [
+          "tier2_base:0.9"
+        ],
+        "supporting_text": "impression wherever you go. A powerful 381-hp V8 5.7L V8 Overhead Cam (DOHC) 32-valve V8 develops 381 horse- Seating for up to eight"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": 8,
+        "seats_is_maximum": true,
+        "engine_group": "5.7L",
+        "engine_size_label": "5.7L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 5.7,
+        "cylinders": 8,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 381.0,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "seats_is_maximum"
+      ]
+    },
+    {
+      "record_id": "LC-029",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2007,
+      "year_to": null,
+      "market": null,
+      "trim": null,
+      "variant": null,
+      "body_type": "SUV",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2UZ-FE",
+        "displacement_raw": {
+          "value": 4663,
+          "unit": "cm3"
+        },
+        "displacement_cc": 4663,
+        "cylinders": "V8-cylinder",
+        "fuel_type": "gasoline",
+        "aspiration": null,
+        "horsepower": {
+          "value": 288,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S9",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60013330/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Land Cruiser (200)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "Land Cruiser (200) Released date : 2007/ 9/18 SUV 2UZ-FE Engine type V8-cylinder, DOHC Displacement(cm3) 4663 Max. output kW(PS)/r.p.m. 212/288/5400 The 4.7-liter 2UZ-FE V8 gasoline engine featured the intake VVT-i system"
+      },
+      "notes": "Representative-grade spec of the 200 Series launch (Sept 2007); market not stated beyond the Japan lineage page.",
+      "normalized": {
+        "market": null,
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "4.7L",
+        "engine_size_label": "4.7L",
+        "displacement_cc": 4663,
+        "displacement_nominal_l": 4.663,
+        "cylinders": 8,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 284.1,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-030",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "twin-turbocharged 3.5L V6",
+        "displacement_raw": "3.5L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": "twin-turbocharged",
+        "horsepower": {
+          "value": 409,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 650,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S10",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
+        "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "The Land Cruiser comes with a twin-turbocharged V6, delivering 409 hp and 650 Nm of torque. The Toyota LC features a twin-turbocharged 3.5L V6 engine, replacing the previous V8."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 409.0,
+        "torque_nm": 650.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-031",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "GXR",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S10",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
+        "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "3.5L LAND CRUISER 2026 GXR"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "GXR",
+        "trim_key": "gxr",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-032",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "VXR",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S10",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
+        "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "3.5L LAND CRUISER 2026 VXR"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "VXR",
+        "trim_key": "vxr",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-033",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "GR-SPORT",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S10",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
+        "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "3.5L LAND CRUISER 2026 GR-SPORT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "GR-Sport",
+        "trim_key": "gr sport",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-034",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "4.0L, V6",
+        "displacement_raw": "4.0L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 271,
+          "unit": "hp"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S11",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
+        "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "4.0L LAND CRUISER 2026 EXR 4.0L, V6 271 Hp"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "4.0L",
+        "engine_size_label": "4.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 4.0,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 271.0,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-035",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "EXR",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "4.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S11",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
+        "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "4.0L LAND CRUISER 2026 EXR"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "EXR",
+        "trim_key": "exr",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "4.0L",
+        "engine_size_label": "4.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 4.0,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-036",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "GXR",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "4.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S11",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
+        "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "4.0L LAND CRUISER 2026 GXR"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "GXR",
+        "trim_key": "gxr",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "4.0L",
+        "engine_size_label": "4.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 4.0,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-037",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": "VXR",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "4.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S11",
+        "source_url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
+        "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.8,
+        "confidence_basis": [
+          "tier3_base:0.8"
+        ],
+        "supporting_text": "4.0L LAND CRUISER 2026 VXR"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": "VXR",
+        "trim_key": "vxr",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "4.0L",
+        "engine_size_label": "4.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 4.0,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-038",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "7 Seater",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "4.0L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 271,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 385,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Automatic",
+        "gears": null
+      },
+      "drivetrain": "All Wheel Drive",
+      "evidence": {
+        "source_id": "LC-S12",
+        "source_url": "https://carprices.ae/brands/toyota/2026/land-cruiser",
+        "source_name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.35,
+        "confidence_basis": [
+          "tier5_base:0.35"
+        ],
+        "supporting_text": "Automatic, 7 Seater, 4.0L V6, All Wheel Drive, 385 Nm, 271 hp"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "4.0L",
+        "engine_size_label": "4.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 4.0,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 271.0,
+        "torque_nm": 385.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-039",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": "7 Seater",
+      "engine": {
+        "display_name": null,
+        "displacement_raw": "3.5L",
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 409,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 650,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "Automatic",
+        "gears": null
+      },
+      "drivetrain": "All Wheel Drive",
+      "evidence": {
+        "source_id": "LC-S12",
+        "source_url": "https://carprices.ae/brands/toyota/2026/land-cruiser",
+        "source_name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.35,
+        "confidence_basis": [
+          "tier5_base:0.35"
+        ],
+        "supporting_text": "Automatic, 7 Seater, 3.5L V6, All Wheel Drive, 650 Nm, 409 hp"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "3.5L",
+        "engine_size_label": "3.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.5,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 409.0,
+        "torque_nm": 650.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "LC-040",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "generation": null,
+      "year_from": 2026,
+      "year_to": null,
+      "market": "UAE",
+      "trim": null,
+      "variant": "hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "V6",
+        "fuel_type": "Hybrid",
+        "aspiration": "twin-turbo",
+        "horsepower": {
+          "value": 457,
+          "unit": "hp"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "LC-S12",
+        "source_url": "https://carprices.ae/brands/toyota/2026/land-cruiser",
+        "source_name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "accessed_at": "2026-10-03",
+        "confidence": 0.35,
+        "confidence_basis": [
+          "tier5_base:0.35"
+        ],
+        "supporting_text": "457 hp twin-turbo Hybrid V6. Official 10.9 km/L as a Hybrid."
+      },
+      "notes": "Engine size not stated.",
+      "normalized": {
+        "market": "gcc",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 6,
+        "fuel_type": "Hybrid",
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 457.0,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

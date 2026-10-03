@@ -1,0 +1,1527 @@
+{
+  "schema_version": "carnet.pilot_comparison/2",
+  "read_only": true,
+  "note": "CURRENT_CARNET is read from assets/ through catalog_audit_readonly.py; nothing under assets/ or lib/ was modified. ONLY_IN_CARNET means 'not found in the evidence collected by this pilot' (the pilot covered selected generations/markets), NOT 'wrong'. Dataset rows are assigned to a model by the deterministic resolver in model_boundaries.py (NOT the app's prefix heuristic): 'Land Cruiser Prado' rows never count as 'Land Cruiser'; rows with an ambiguous qualifier are quarantined (see current_carnet_meta.boundary). Vocabulary is LOCKED (rules/normalization_rules.json -> locked_vocabulary): Petrol canonical, Hybrid separate, AWD != 4WD, transmission family + variant. 'legacy_view' blocks are informational only.",
+  "models": [
+    {
+      "brand": "Ford",
+      "model": "Everest",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 11,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 11,
+          "strict_rows": 11,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 11
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "Everest 2 0 (214 Hp) 4WD Automatic",
+          "Everest 2 0 (214 Hp) Automatic",
+          "Everest 2 0d Bi-Turbo (209 Hp) 4x4 Automatic",
+          "Everest 2 0d Bi-Turbo (209 Hp) Automatic",
+          "Everest 2 0d Turbo (170 Hp) Automatic",
+          "Everest 3 0d V6 Turbo (250 Hp) 4x4 Automatic",
+          "Everest 3 2 Duratorq TDCi (195 Hp) 4WD Automatic",
+          "Everest 3 2 Duratorq TDCi (195 Hp) Automatic",
+          "Everest 3 2 DuratorqTDCi (194 Hp) 4WD Automatic",
+          "Everest 3 2 DuratorqTDCi (194 Hp) Automatic",
+          "Everest 3 2 DuratorqTDCi (194 Hp) Automatic 7 Seat"
+        ],
+        "dataset_year_span": [
+          2015,
+          2022
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Limited",
+            "Mid Range",
+            "XLS",
+            "XLT"
+          ],
+          "NEW_VERIFIED": [
+            "Active",
+            "Ambiente",
+            "Limited",
+            "Platinum",
+            "Sport",
+            "Titanium",
+            "Titanium+",
+            "Tremor",
+            "Trend",
+            "Wolftrak",
+            "XLS",
+            "XLT"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Limited",
+            "XLS",
+            "XLT"
+          ],
+          "MISSING_FROM_CARNET": [
+            "Active",
+            "Ambiente",
+            "Platinum",
+            "Sport",
+            "Titanium",
+            "Titanium+",
+            "Tremor",
+            "Trend",
+            "Wolftrak"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Mid Range",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "2.0L",
+            "3.0L",
+            "3.2L"
+          ],
+          "NEW_VERIFIED": [
+            "2.0L",
+            "2.3L",
+            "2.7L",
+            "3.0L",
+            "3.2L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "2.0L",
+            "3.0L",
+            "3.2L"
+          ],
+          "MISSING_FROM_CARNET": [
+            "2.3L",
+            "2.7L"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [
+            {
+              "conflict_id": "CF-ford-everest-001",
+              "field": "horsepower_hp",
+              "engine_group": "2.0L",
+              "severity": "possible_year_unspecified",
+              "values": [
+                [
+                  "FE-001",
+                  170.0
+                ],
+                [
+                  "FE-010",
+                  170.0
+                ],
+                [
+                  "FE-014",
+                  168.0
+                ]
+              ]
+            },
+            {
+              "conflict_id": "CF-ford-everest-002",
+              "field": "horsepower_hp",
+              "engine_group": "2.7L",
+              "severity": "definite",
+              "values": [
+                [
+                  "FE-012",
+                  310.0
+                ],
+                [
+                  "FE-019",
+                  355.0
+                ]
+              ]
+            },
+            {
+              "conflict_id": "CF-ford-everest-003",
+              "field": "torque_nm",
+              "engine_group": "2.7L",
+              "severity": "definite",
+              "values": [
+                [
+                  "FE-012",
+                  542.0
+                ],
+                [
+                  "FE-019",
+                  500.0
+                ]
+              ]
+            }
+          ]
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4,
+            5,
+            6
+          ],
+          "NEW_VERIFIED": [
+            4,
+            5,
+            6
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            4,
+            5,
+            6
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": []
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Diesel"
+          ],
+          "NEW_VERIFIED": [
+            "Diesel",
+            "Petrol"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Diesel"
+          ],
+          "MISSING_FROM_CARNET": [
+            "Petrol"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": [
+              "Petrol"
+            ]
+          }
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [
+            "Automatic"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Automatic"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": []
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "SelectShift"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "SelectShift"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            6,
+            10
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            6,
+            10
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD",
+            "RWD"
+          ],
+          "NEW_VERIFIED": [
+            "4WD",
+            "RWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "RWD"
+          ],
+          "MISSING_FROM_CARNET": [
+            "4WD"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "AWD",
+              "dataset_rows": 5
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          }
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "SUV"
+          ],
+          "NEW_VERIFIED": [
+            "SUV"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "SUV"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": []
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5,
+            7
+          ],
+          "NEW_VERIFIED": [
+            5,
+            7
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            5,
+            7
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": []
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 3,
+      "conflicts_not_attached_to_a_dimension": []
+    },
+    {
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 73,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 151,
+          "strict_rows": 73,
+          "excluded_rows": 78,
+          "excluded_by_reason": {
+            "ambiguous_qualifier:Land Cruiser": 1,
+            "ambiguous_qualifier:Land Cruiser Prado": 1,
+            "belongs_to:Land Cruiser Prado": 76
+          },
+          "excluded_examples": {
+            "ambiguous_qualifier:Land Cruiser": [
+              "Land Cruiser GXL 4 5d V8 (272 Hp) AWD Automatic"
+            ],
+            "ambiguous_qualifier:Land Cruiser Prado": [
+              "Land Cruiser Prado First Edition 2 8 D-4D (204 Hp) 4WD Automatic"
+            ],
+            "belongs_to:Land Cruiser Prado": [
+              "Land Cruiser Prado 2 4 DT (97 Hp) 4WD",
+              "Land Cruiser Prado 2 7 (163 Hp) 4WD",
+              "Land Cruiser Prado 2 7 (163 Hp) 4WD Automatic",
+              "Land Cruiser Prado 2 7 16V (150 Hp) 4WD ECT"
+            ]
+          },
+          "accepted_by_status": {
+            "engine_descriptor": 71,
+            "trim_qualifier": 2
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 2,
+        "dataset_model_names": [
+          "Land Cruiser 2 4 (RJ73) (110 Hp) 4WD",
+          "Land Cruiser 2 4 D (LJ70) (72 Hp) 4WD",
+          "Land Cruiser 2 4 TD (LJ70) (86 Hp) 4WD",
+          "Land Cruiser 2 4 TD (LJ73) (86 Hp) 4WD",
+          "Land Cruiser 2 4 TD (LJ73) (90 Hp) 4WD",
+          "Land Cruiser 2 4 TD (LJ77) (90 Hp) 4WD",
+          "Land Cruiser 2 4 i-FORCE MAX (326 Hp) Full Hybrid 4WD ECT-i",
+          "Land Cruiser 2 7L (163 Hp) 4WD ECT",
+          "Land Cruiser 2 8L (204 Hp) 4WD Direct Shift",
+          "Land Cruiser 2 8L (204 Hp) 4WD ECT",
+          "Land Cruiser 3 0 D (80 Hp) 4WD",
+          "Land Cruiser 3 0 TD (KZJ70) (125 Hp) 4WD",
+          "Land Cruiser 3 3d V6 (309 Hp) 4WD Direct Shift 5 Seat",
+          "Land Cruiser 3 4 D (BJ70) (98 Hp) 4WD",
+          "Land Cruiser 3 5 D (PZJ70) (115 Hp) 4WD",
+          "Land Cruiser 3 5 D (PZJ75) (115 Hp) 4WD",
+          "Land Cruiser 3 5 D (PZJ77HV) (115 Hp) 4WD",
+          "Land Cruiser 3 5L V6 (415 Hp) 4WD Direct Shift 5 Seat",
+          "Land Cruiser 3 5L V6 (415 Hp) 4WD Direct Shift 7 Seat",
+          "Land Cruiser 3 5L V6 Twin Turbo (409 Hp) 4x4 Automatic 7 Seat",
+          "Land Cruiser 3 5L V6 Twin Turbo (457 Hp) Hybrid 4x4 Automatic 7 Seat",
+          "Land Cruiser 4 0 (150 Hp) 4WD",
+          "Land Cruiser 4 0 (150 Hp) 4WD Automatic",
+          "Land Cruiser 4 0 (155 Hp) 4WD",
+          "Land Cruiser 4 0 (156 Hp) 4WD Automatic",
+          "Land Cruiser 4 0 D (HJ70) (115 Hp) 4WD",
+          "Land Cruiser 4 0 Diesel (101 Hp) 4WD",
+          "Land Cruiser 4 0 Diesel (103 Hp) 4WD",
+          "Land Cruiser 4 0 Turbo-D (136 Hp) 4WD",
+          "Land Cruiser 4 0 Turbo-D (136 Hp) 4WD Automatic",
+          "Land Cruiser 4 0 V6 (270 Hp) AWD",
+          "Land Cruiser 4 0 V6 (271 Hp) AWD Automatic",
+          "Land Cruiser 4 0 i V6 (231 Hp) 4WD",
+          "Land Cruiser 4 0L V6 (271 Hp) 4x4 Automatic 7 Seat",
+          "Land Cruiser 4 2 (125 Hp) 4WD",
+          "Land Cruiser 4 2 (135 Hp) 4WD",
+          "Land Cruiser 4 2 D (131 Hp)",
+          "Land Cruiser 4 2 D (131 Hp) 4WD",
+          "Land Cruiser 4 2 D (131 Hp) Automatic",
+          "Land Cruiser 4 2 D (135 Hp)",
+          "Land Cruiser 4 2 D (HZJ70) (135 Hp) 4WD",
+          "Land Cruiser 4 2 D (HZJ73HV) (135 Hp) 4WD",
+          "Land Cruiser 4 2 D (HZJ77HV) (135 Hp) 4WD",
+          "Land Cruiser 4 2 D 24V (128 Hp) 4WD",
+          "Land Cruiser 4 2 TD (131 Hp) 4WD",
+          "Land Cruiser 4 2 TD (167 Hp) 4WD",
+          "Land Cruiser 4 2 TD (167 Hp) 4WD Automatic",
+          "Land Cruiser 4 2 TD (170 Hp) 4WD",
+          "Land Cruiser 4 2 TD (204 Hp)",
+          "Land Cruiser 4 2 TD (204 Hp) 4WD",
+          "Land Cruiser 4 2 TD (204 Hp) 4WD Automatic",
+          "Land Cruiser 4 2 TD 24V (170 Hp) 4WD",
+          "Land Cruiser 4 5 24V (FZJ80) (190 Hp)",
+          "Land Cruiser 4 5 24V (FZJ80) (215 Hp) 4WD Automatic",
+          "Land Cruiser 4 5 D-4D V8 (205 Hp) 4WD",
+          "Land Cruiser 4 5 V8 TD (205 Hp) 4WD",
+          "Land Cruiser 4 5 i (224 Hp) 4WD",
+          "Land Cruiser 4 5D V8 (235 Hp) Automatic",
+          "Land Cruiser 4 5d V8 (272 Hp) Automatic",
+          "Land Cruiser 4 6 V8 (309 Hp) AWD Automatic",
+          "Land Cruiser 4 6 V8 (318 Hp) Automatic",
+          "Land Cruiser 4 7 V8 32V (235 Hp) 4WD Automatic (USA)",
+          "Land Cruiser 4 7 V8 32V (238 Hp) 4WD Automatic",
+          "Land Cruiser 4 7 i V8 (235 Hp) 4WD ECT-i",
+          "Land Cruiser 4 7i V8 (288 Hp)",
+          "Land Cruiser 5 7 V8 (381 Hp) 4x4 ECT-i",
+          "Land Cruiser 5 7 V8 (381 Hp) AWD Automatic",
+          "Land Cruiser GX 4 5d V8 (272 Hp) AWD Automatic",
+          "Land Cruiser VX 4 5d V8 (272 Hp) AWD Automatic"
+        ],
+        "dataset_year_span": [
+          1974,
+          2025
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "4.0L",
+            "4.6L",
+            "5.7L",
+            "Base",
+            "Black Edition",
+            "Executive Lounge Edition",
+            "EXR",
+            "EXR 4.0L",
+            "GR-Sport",
+            "GR-Sport 3.5L",
+            "GX",
+            "GXR",
+            "GXR 3.5L",
+            "GXR 4.0L",
+            "GXR 60th Anniversary",
+            "GXR Grand Touring",
+            "GXR MID",
+            "GXR Plus",
+            "GXR TOP",
+            "Heritage",
+            "LX",
+            "Special Edition",
+            "SWB",
+            "V8 Turbo",
+            "VX",
+            "VXR",
+            "VXR 3.5L",
+            "VXR 4.0L",
+            "VXR Base",
+            "VXR Grand Touring",
+            "VXR TOP",
+            "VXRi",
+            "VXS",
+            "ZX"
+          ],
+          "NEW_VERIFIED": [
+            "1958",
+            "AX",
+            "EXR",
+            "GR Sport",
+            "GX",
+            "GXR",
+            "Land Cruiser",
+            "VX",
+            "VXR",
+            "ZX"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "EXR",
+            "GR Sport",
+            "GX",
+            "GXR",
+            "VX",
+            "VXR",
+            "ZX"
+          ],
+          "MISSING_FROM_CARNET": [
+            "1958",
+            "AX",
+            "Land Cruiser"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "4.0L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "4.6L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "5.7L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Base",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Black Edition",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Executive Lounge Edition",
+              "dataset_rows": 1
+            },
+            {
+              "value": "EXR 4.0L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GR-Sport 3.5L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR 3.5L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR 4.0L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR 60th Anniversary",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR Grand Touring",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR MID",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR Plus",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GXR TOP",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Heritage",
+              "dataset_rows": 1
+            },
+            {
+              "value": "LX",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Special Edition",
+              "dataset_rows": 1
+            },
+            {
+              "value": "SWB",
+              "dataset_rows": 1
+            },
+            {
+              "value": "V8 Turbo",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXR 3.5L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXR 4.0L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXR Base",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXR Grand Touring",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXR TOP",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXRi",
+              "dataset_rows": 1
+            },
+            {
+              "value": "VXS",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "2.4L",
+            "2.7L",
+            "2.8L",
+            "3.0L",
+            "3.3L",
+            "3.4L",
+            "3.5L",
+            "4.0L",
+            "4.2L",
+            "4.5L",
+            "4.6L",
+            "4.7L",
+            "5.7L"
+          ],
+          "NEW_VERIFIED": [
+            "2.4L",
+            "2.7L",
+            "2.8L",
+            "3.3L",
+            "3.5L",
+            "4.0L",
+            "4.7L",
+            "5.7L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "2.4L",
+            "2.7L",
+            "2.8L",
+            "3.3L",
+            "3.5L",
+            "4.0L",
+            "4.7L",
+            "5.7L"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "3.0L",
+              "dataset_rows": 2
+            },
+            {
+              "value": "3.4L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "4.2L",
+              "dataset_rows": 20
+            },
+            {
+              "value": "4.5L",
+              "dataset_rows": 9
+            },
+            {
+              "value": "4.6L",
+              "dataset_rows": 2
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4,
+            5,
+            6,
+            8
+          ],
+          "NEW_VERIFIED": [
+            4,
+            6,
+            8
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            4,
+            6,
+            8
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": 5,
+              "dataset_rows": 3
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Diesel",
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [
+            "Diesel",
+            "Hybrid",
+            "Petrol"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Diesel",
+            "Petrol"
+          ],
+          "MISSING_FROM_CARNET": [
+            "Hybrid"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          }
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic",
+            "Manual"
+          ],
+          "NEW_VERIFIED": [
+            "Automatic"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Automatic"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Manual",
+              "dataset_rows": 39
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "Direct Shift",
+            "ECT-i",
+            "Super ECT"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "Direct Shift",
+            "ECT-i",
+            "Super ECT"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            6,
+            8,
+            10
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            6,
+            8,
+            10
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD"
+          ],
+          "NEW_VERIFIED": [
+            "4WD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [
+            "AWD"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "4WD"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "AWD"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          }
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Pickup",
+            "SUV"
+          ],
+          "NEW_VERIFIED": [
+            "SUV"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "SUV"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Pickup",
+              "dataset_rows": 3
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "NEW_VERIFIED": [
+            5,
+            7,
+            8
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            5,
+            7,
+            8
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": 4,
+              "dataset_rows": 3
+            },
+            {
+              "value": 6,
+              "dataset_rows": 7
+            },
+            {
+              "value": 9,
+              "dataset_rows": 2
+            },
+            {
+              "value": 10,
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": []
+    },
+    {
+      "brand": "Toyota",
+      "model": "Camry",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 114,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 114,
+          "strict_rows": 114,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 110,
+            "trim_qualifier": 4
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 11,
+        "dataset_model_names": [
+          "Camry 1 8 (90 Hp)",
+          "Camry 1 8 Turbo-D (73 Hp)",
+          "Camry 2 0 (107 Hp)",
+          "Camry 2 0 (148 Hp) Automatic",
+          "Camry 2 0 (150 Hp) Automatic",
+          "Camry 2 0 (173 Hp) Direct Shift CVT",
+          "Camry 2 0 (197 Hp) Hybrid e-CVT",
+          "Camry 2 0 GLi (107 Hp)",
+          "Camry 2 0 GLi (128 Hp)",
+          "Camry 2 0 GLi (128 Hp) 4x4",
+          "Camry 2 0 GLi 16V (121 Hp)",
+          "Camry 2 0 GLi 16V (121 Hp) CAT",
+          "Camry 2 0 LE (92 Hp) Automatic",
+          "Camry 2 0 Turbo-D (84 Hp)",
+          "Camry 2 0 Turbo-D (86 Hp)",
+          "Camry 2 2 (136 Hp)",
+          "Camry 2 2 (136 Hp) Automatic",
+          "Camry 2 2i 16V (135 Hp)",
+          "Camry 2 2i 16V (135 Hp) Automatic",
+          "Camry 2 4 (187 Hp) Hybrid e-CVT",
+          "Camry 2 4 16V (152 Hp)",
+          "Camry 2 4 16V (152 Hp) Automatic",
+          "Camry 2 4 16V (154 Hp)",
+          "Camry 2 4 16V (154 Hp) Automatic",
+          "Camry 2 4 16V (155 Hp)",
+          "Camry 2 4 16V (155 Hp) Automatic",
+          "Camry 2 4 16V (157 Hp)",
+          "Camry 2 4 16V (157 Hp) Automatic",
+          "Camry 2 4 16V (160 Hp)",
+          "Camry 2 4 16V (160 Hp) Automatic",
+          "Camry 2 4i 16V (158 Hp)",
+          "Camry 2 4i 16V (158 Hp) Automatic",
+          "Camry 2 4i 16V (167 Hp)",
+          "Camry 2 4i 16V (167 Hp) Automatic",
+          "Camry 2 5 (169 Hp)",
+          "Camry 2 5 (178 Hp) Automatic",
+          "Camry 2 5 (179 Hp) Automatic",
+          "Camry 2 5 (181 Hp) Automatic",
+          "Camry 2 5 (200 Hp) Hybrid e-CVT",
+          "Camry 2 5 (202 Hp) AWD ECT-i",
+          "Camry 2 5 (203 Hp) Automatic",
+          "Camry 2 5 (203 Hp) ECT-i",
+          "Camry 2 5 (208 Hp) Hybrid e-CVT",
+          "Camry 2 5 (218 Hp) Hybrid e-CVT",
+          "Camry 2 5 (225 Hp) Hybrid e-CVT",
+          "Camry 2 5 (230 Hp) Hybrid e-CVT",
+          "Camry 2 5 (232 Hp) Hybrid AWD e-CVT",
+          "Camry 2 5 V6 24V (160 Hp)",
+          "Camry 2 5 V6 GXi (160 Hp)",
+          "Camry 3 0 V6 (186 Hp) Automatic",
+          "Camry 3 0 V6 (190 Hp) Automatic",
+          "Camry 3 0 V6 (210 Hp) Automatic",
+          "Camry 3 0 V6 24V (188 Hp)",
+          "Camry 3 0 V6 24V (188 Hp) Automatic",
+          "Camry 3 0 V6 24V (190 Hp) Automatic",
+          "Camry 3 0 V6 24V (192 Hp) Automatic",
+          "Camry 3 0 V6 24V (194 Hp)",
+          "Camry 3 0 V6 24V (194 Hp) Automatic",
+          "Camry 3 0i V6 24V (198 Hp) Automatic",
+          "Camry 3 0i V6 24V (200 Hp)",
+          "Camry 3 0i V6 24V (200 Hp) Automatic",
+          "Camry 3 3 V6 (210 Hp) Automatic",
+          "Camry 3 3 V6 (225 Hp) Automatic",
+          "Camry 3 5 V6 (249 Hp) Automatic",
+          "Camry 3 5 V6 (250 Hp) Automatic",
+          "Camry 3 5 V6 (268 Hp) Automatic",
+          "Camry 3 5 V6 (275 Hp) Automatic",
+          "Camry 3 5 V6 (301 Hp) Automatic",
+          "Camry 3 5 V6 (301 Hp) ECT-i",
+          "Camry 3 5i V6 (268 Hp) Automatic",
+          "Camry 3 5i V6 (277 Hp) Automatic",
+          "Camry Sport 2 2 (128 Hp)",
+          "Camry Sport 2 2 (128 Hp) Automatic",
+          "Camry XSE 2 5 (205 Hp) AWD ECT-i",
+          "Camry XSE 2 5 (206 Hp) ECT-i"
+        ],
+        "dataset_year_span": [
+          1982,
+          2024
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "40th Anniversary",
+            "60 Years Edition",
+            "Base",
+            "E",
+            "G",
+            "GL",
+            "GLE",
+            "GLI",
+            "GLI Limited",
+            "GLX",
+            "Grande",
+            "Hybrid",
+            "Hybrid LE",
+            "Hybrid SE",
+            "Hybrid XLE",
+            "Hybrid XSE",
+            "L",
+            "LE",
+            "Limited",
+            "Nightshade",
+            "Platinum",
+            "Royal",
+            "RZ",
+            "S",
+            "S Plus",
+            "SE",
+            "SE Plus",
+            "Sport",
+            "Touring",
+            "TRD",
+            "XLE",
+            "XLI",
+            "XSE"
+          ],
+          "NEW_VERIFIED": [
+            "E",
+            "E HEV",
+            "E Plus HEV",
+            "Grande",
+            "L",
+            "LE",
+            "LE HEV",
+            "Lumiere HEV",
+            "Nightshade",
+            "SE",
+            "XLE",
+            "XSE"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "E",
+            "Grande",
+            "L",
+            "LE",
+            "Nightshade",
+            "SE",
+            "XLE",
+            "XSE"
+          ],
+          "MISSING_FROM_CARNET": [
+            "E HEV",
+            "E Plus HEV",
+            "LE HEV",
+            "Lumiere HEV"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "40th Anniversary",
+              "dataset_rows": 1
+            },
+            {
+              "value": "60 Years Edition",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Base",
+              "dataset_rows": 1
+            },
+            {
+              "value": "G",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GL",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GLE",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GLI",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GLI Limited",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GLX",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Hybrid",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Hybrid LE",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Hybrid SE",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Hybrid XLE",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Hybrid XSE",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Limited",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Platinum",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Royal",
+              "dataset_rows": 1
+            },
+            {
+              "value": "RZ",
+              "dataset_rows": 1
+            },
+            {
+              "value": "S",
+              "dataset_rows": 1
+            },
+            {
+              "value": "S Plus",
+              "dataset_rows": 1
+            },
+            {
+              "value": "SE Plus",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Sport",
+              "dataset_rows": 1
+            },
+            {
+              "value": "Touring",
+              "dataset_rows": 1
+            },
+            {
+              "value": "TRD",
+              "dataset_rows": 1
+            },
+            {
+              "value": "XLI",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "1.8L",
+            "2.0L",
+            "2.2L",
+            "2.4L",
+            "2.5L",
+            "3.0L",
+            "3.3L",
+            "3.5L"
+          ],
+          "NEW_VERIFIED": [
+            "2.5L",
+            "3.5L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "2.5L",
+            "3.5L"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "1.8L",
+              "dataset_rows": 5
+            },
+            {
+              "value": "2.0L",
+              "dataset_rows": 17
+            },
+            {
+              "value": "2.2L",
+              "dataset_rows": 11
+            },
+            {
+              "value": "2.4L",
+              "dataset_rows": 21
+            },
+            {
+              "value": "3.0L",
+              "dataset_rows": 20
+            },
+            {
+              "value": "3.3L",
+              "dataset_rows": 7
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4,
+            6
+          ],
+          "NEW_VERIFIED": [
+            4,
+            6
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            4,
+            6
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": []
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Diesel",
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [
+            "Hybrid",
+            "Petrol"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Petrol"
+          ],
+          "MISSING_FROM_CARNET": [
+            "Hybrid"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Diesel",
+              "dataset_rows": 6
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          }
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic",
+            "Manual"
+          ],
+          "NEW_VERIFIED": [
+            "Automatic"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Automatic"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Manual",
+              "dataset_rows": 39
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "e-CVT"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "e-CVT"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            8
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            8
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_VERIFIED": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "AWD",
+            "FWD"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          }
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Convertible",
+            "Coupe",
+            "Hatchback",
+            "Sedan",
+            "Wagon"
+          ],
+          "NEW_VERIFIED": [
+            "Sedan"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [
+            "Sedan"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Convertible",
+              "dataset_rows": 7
+            },
+            {
+              "value": "Coupe",
+              "dataset_rows": 15
+            },
+            {
+              "value": "Hatchback",
+              "dataset_rows": 3
+            },
+            {
+              "value": "Wagon",
+              "dataset_rows": 9
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4,
+            5
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": 4,
+              "dataset_rows": 7
+            },
+            {
+              "value": 5,
+              "dataset_rows": 107
+            }
+          ],
+          "CONFLICTS": []
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": []
+    }
+  ]
+}

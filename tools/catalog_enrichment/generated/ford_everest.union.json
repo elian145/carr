@@ -1,0 +1,1438 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Ford",
+  "model": "Everest",
+  "generated_from": {
+    "evidence_file": "evidence/ford_everest.json",
+    "researched_at": "2026-10-03",
+    "record_count": 46,
+    "source_count": 10,
+    "records_by_source_tier": {
+      "1": 17,
+      "3": 29
+    }
+  },
+  "research_coverage": [
+    "Current generation (P703, 2022-): Middle East XLS/XLT/Limited (2025 sheet), 2026 Middle East Active/Sport/Tremor/Platinum with 2.7L V6, Australia MY26.5/MY27, Thailand 2019-era Titanium+ and Platinum",
+    "Previous generation (2015-2022): Australia May 2017 brochure only (3.2L 5-cyl diesel)",
+    "NOT researched: Ford Everest Thailand 2.0L single-turbo 2022+ site pages (403 to automated fetch), Latin American / Indian / Chinese variants, pre-2015 generations, Ford Philippines/Vietnam"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "union",
+    "includes_provisional": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "unresolved_conflicts": 3,
+    "conflicts_block_promotion_until_reviewed": true,
+    "review_status": "UNREVIEWED"
+  },
+  "union": {
+    "trims": [
+      "Active",
+      "Ambiente",
+      "Limited",
+      "Platinum",
+      "Sport",
+      "Titanium",
+      "Titanium+",
+      "Tremor",
+      "Trend",
+      "Wolftrak",
+      "XLS",
+      "XLT"
+    ],
+    "engine_sizes": [
+      "2.0L",
+      "2.3L",
+      "2.7L",
+      "3.0L",
+      "3.2L"
+    ],
+    "cylinders": [
+      4,
+      5,
+      6
+    ],
+    "fuel_types": [
+      "Diesel",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "SelectShift"
+    ],
+    "transmission_gears": [
+      6,
+      10
+    ],
+    "drivetrains": [
+      "4WD",
+      "RWD"
+    ],
+    "body_types": [
+      "SUV"
+    ],
+    "seats": [
+      5,
+      7
+    ],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "doors"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "2.0L",
+      "displacement_cc": [
+        1996
+      ],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [
+        "Turbo",
+        "Twin-turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 167.6,
+          "record_id": "FE-020",
+          "trim": "Active"
+        },
+        {
+          "value": 167.6,
+          "record_id": "FE-022",
+          "trim": "Sport"
+        },
+        {
+          "value": 168.0,
+          "record_id": "FE-014",
+          "trim": null
+        },
+        {
+          "value": 170.0,
+          "record_id": "FE-001",
+          "trim": "XLS"
+        },
+        {
+          "value": 170.0,
+          "record_id": "FE-010",
+          "trim": null
+        },
+        {
+          "value": 177.5,
+          "record_id": "FE-042",
+          "trim": "Trend"
+        },
+        {
+          "value": 177.5,
+          "record_id": "FE-043",
+          "trim": "Titanium"
+        },
+        {
+          "value": 177.5,
+          "record_id": "FE-044",
+          "trim": "Titanium+"
+        },
+        {
+          "value": 210.1,
+          "record_id": "FE-045",
+          "trim": "Titanium+"
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 405.0,
+          "record_id": "FE-001",
+          "trim": "XLS"
+        },
+        {
+          "value": 405.0,
+          "record_id": "FE-010",
+          "trim": null
+        },
+        {
+          "value": 405.0,
+          "record_id": "FE-014",
+          "trim": null
+        },
+        {
+          "value": 405.0,
+          "record_id": "FE-020",
+          "trim": "Active"
+        },
+        {
+          "value": 405.0,
+          "record_id": "FE-022",
+          "trim": "Sport"
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-042",
+          "trim": "Trend"
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-043",
+          "trim": "Titanium"
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-044",
+          "trim": "Titanium+"
+        },
+        {
+          "value": 500.0,
+          "record_id": "FE-045",
+          "trim": "Titanium+"
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "FE-001",
+        "FE-010",
+        "FE-014",
+        "FE-020",
+        "FE-022",
+        "FE-026",
+        "FE-042",
+        "FE-043",
+        "FE-044",
+        "FE-045"
+      ]
+    },
+    {
+      "engine_size_label": "2.3L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 296.0,
+          "record_id": "FE-002",
+          "trim": "XLS"
+        },
+        {
+          "value": 296.0,
+          "record_id": "FE-003",
+          "trim": "XLT"
+        },
+        {
+          "value": 296.0,
+          "record_id": "FE-004",
+          "trim": "Limited"
+        },
+        {
+          "value": 296.0,
+          "record_id": "FE-011",
+          "trim": null
+        },
+        {
+          "value": 296.0,
+          "record_id": "FE-013",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 420.0,
+          "record_id": "FE-002",
+          "trim": "XLS"
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-003",
+          "trim": "XLT"
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-004",
+          "trim": "Limited"
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-011",
+          "trim": null
+        },
+        {
+          "value": 420.0,
+          "record_id": "FE-013",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "FE-002",
+        "FE-003",
+        "FE-004",
+        "FE-011",
+        "FE-013"
+      ]
+    },
+    {
+      "engine_size_label": "2.7L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 310.0,
+          "record_id": "FE-012",
+          "trim": null
+        },
+        {
+          "value": 355.0,
+          "record_id": "FE-019",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 500.0,
+          "record_id": "FE-019",
+          "trim": null
+        },
+        {
+          "value": 542.0,
+          "record_id": "FE-012",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "FE-012",
+        "FE-019"
+      ]
+    },
+    {
+      "engine_size_label": "3.0L",
+      "displacement_cc": [
+        2993
+      ],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 246.7,
+          "record_id": "FE-021",
+          "trim": "Active"
+        },
+        {
+          "value": 246.7,
+          "record_id": "FE-023",
+          "trim": "Sport"
+        },
+        {
+          "value": 246.7,
+          "record_id": "FE-024",
+          "trim": "Tremor"
+        },
+        {
+          "value": 246.7,
+          "record_id": "FE-025",
+          "trim": "Platinum"
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 600.0,
+          "record_id": "FE-021",
+          "trim": "Active"
+        },
+        {
+          "value": 600.0,
+          "record_id": "FE-023",
+          "trim": "Sport"
+        },
+        {
+          "value": 600.0,
+          "record_id": "FE-024",
+          "trim": "Tremor"
+        },
+        {
+          "value": 600.0,
+          "record_id": "FE-025",
+          "trim": "Platinum"
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "FE-021",
+        "FE-023",
+        "FE-024",
+        "FE-025",
+        "FE-027",
+        "FE-046"
+      ]
+    },
+    {
+      "engine_size_label": "3.2L",
+      "displacement_cc": [
+        3198
+      ],
+      "cylinders": [
+        5
+      ],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 191.8,
+          "record_id": "FE-035",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 470.0,
+          "record_id": "FE-035",
+          "trim": null
+        }
+      ],
+      "best_tier": 3,
+      "record_ids": [
+        "FE-035"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "Active",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 6,
+        "record_ids": [
+          "FE-006",
+          "FE-020",
+          "FE-021",
+          "FE-028",
+          "FE-032",
+          "FE-033"
+        ],
+        "source_ids": [
+          "FE-S2",
+          "FE-S5",
+          "FE-S6",
+          "FE-S7"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Ambiente",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 2,
+        "record_ids": [
+          "FE-036",
+          "FE-037"
+        ],
+        "source_ids": [
+          "FE-S8"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "Limited",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 2,
+        "record_ids": [
+          "FE-004",
+          "FE-018"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Platinum",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "FE-009",
+          "FE-025",
+          "FE-031",
+          "FE-034",
+          "FE-046"
+        ],
+        "source_ids": [
+          "FE-S10",
+          "FE-S2",
+          "FE-S5",
+          "FE-S6",
+          "FE-S7"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Sport",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "FE-007",
+          "FE-022",
+          "FE-023",
+          "FE-026",
+          "FE-027"
+        ],
+        "source_ids": [
+          "FE-S2",
+          "FE-S5",
+          "FE-S6"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Titanium",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 2,
+        "record_ids": [
+          "FE-039",
+          "FE-043"
+        ],
+        "source_ids": [
+          "FE-S8",
+          "FE-S9"
+        ],
+        "markets": [
+          "other:au",
+          "other:th"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "Titanium+",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 2,
+        "record_ids": [
+          "FE-044",
+          "FE-045"
+        ],
+        "source_ids": [
+          "FE-S9"
+        ],
+        "markets": [
+          "other:th"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "Tremor",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "FE-008",
+          "FE-024",
+          "FE-030"
+        ],
+        "source_ids": [
+          "FE-S2",
+          "FE-S5",
+          "FE-S6"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Trend",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 2,
+        "record_ids": [
+          "FE-038",
+          "FE-042"
+        ],
+        "source_ids": [
+          "FE-S8",
+          "FE-S9"
+        ],
+        "markets": [
+          "other:au",
+          "other:th"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "Wolftrak",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "FE-029"
+        ],
+        "source_ids": [
+          "FE-S6"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": [
+          2027,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "XLS",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 3,
+        "record_ids": [
+          "FE-001",
+          "FE-002",
+          "FE-016"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "XLT",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 2,
+        "record_ids": [
+          "FE-003",
+          "FE-017"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "2.0L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "FE-001",
+          "FE-010",
+          "FE-014",
+          "FE-020",
+          "FE-022",
+          "FE-026",
+          "FE-042",
+          "FE-043",
+          "FE-044",
+          "FE-045"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S2",
+          "FE-S3",
+          "FE-S5",
+          "FE-S6",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2027
+        ],
+        "in_conflict": true
+      },
+      {
+        "value": "2.3L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "FE-002",
+          "FE-003",
+          "FE-004",
+          "FE-011",
+          "FE-013"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S2",
+          "FE-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2025,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "2.7L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "FE-012",
+          "FE-019"
+        ],
+        "source_ids": [
+          "FE-S2",
+          "FE-S4"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": true
+      },
+      {
+        "value": "3.0L",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 6,
+        "record_ids": [
+          "FE-021",
+          "FE-023",
+          "FE-024",
+          "FE-025",
+          "FE-027",
+          "FE-046"
+        ],
+        "source_ids": [
+          "FE-S10",
+          "FE-S5",
+          "FE-S6"
+        ],
+        "markets": [
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "3.2L",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 1,
+        "record_ids": [
+          "FE-035"
+        ],
+        "source_ids": [
+          "FE-S8"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": null,
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "FE-002",
+          "FE-003",
+          "FE-004",
+          "FE-011",
+          "FE-020",
+          "FE-022",
+          "FE-042",
+          "FE-043",
+          "FE-044",
+          "FE-045"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S2",
+          "FE-S5",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 5,
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 1,
+        "record_ids": [
+          "FE-035"
+        ],
+        "source_ids": [
+          "FE-S8"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 8,
+        "record_ids": [
+          "FE-012",
+          "FE-019",
+          "FE-021",
+          "FE-023",
+          "FE-024",
+          "FE-025",
+          "FE-027",
+          "FE-046"
+        ],
+        "source_ids": [
+          "FE-S10",
+          "FE-S2",
+          "FE-S4",
+          "FE-S5",
+          "FE-S6"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Diesel",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 16,
+        "record_ids": [
+          "FE-001",
+          "FE-010",
+          "FE-014",
+          "FE-020",
+          "FE-021",
+          "FE-022",
+          "FE-023",
+          "FE-024",
+          "FE-025",
+          "FE-026",
+          "FE-027",
+          "FE-035",
+          "FE-042",
+          "FE-043",
+          "FE-044",
+          "FE-045"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S2",
+          "FE-S3",
+          "FE-S5",
+          "FE-S6",
+          "FE-S8",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Petrol",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 1,
+        "record_ids": [
+          "FE-013"
+        ],
+        "source_ids": [
+          "FE-S3"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": null,
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 22,
+        "record_ids": [
+          "FE-001",
+          "FE-002",
+          "FE-003",
+          "FE-004",
+          "FE-005",
+          "FE-013",
+          "FE-014",
+          "FE-019",
+          "FE-020",
+          "FE-021",
+          "FE-022",
+          "FE-023",
+          "FE-024",
+          "FE-025",
+          "FE-026",
+          "FE-027",
+          "FE-035",
+          "FE-042",
+          "FE-043",
+          "FE-044",
+          "FE-045",
+          "FE-046"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S10",
+          "FE-S2",
+          "FE-S3",
+          "FE-S4",
+          "FE-S5",
+          "FE-S6",
+          "FE-S8",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2027
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [
+      {
+        "value": "SelectShift",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "FE-001",
+          "FE-002",
+          "FE-003",
+          "FE-004",
+          "FE-005",
+          "FE-013",
+          "FE-042",
+          "FE-043",
+          "FE-044",
+          "FE-045"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S2",
+          "FE-S3",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_gears": [
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 3,
+        "record_ids": [
+          "FE-001",
+          "FE-014",
+          "FE-035"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S3",
+          "FE-S8"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 10,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 19,
+        "record_ids": [
+          "FE-002",
+          "FE-003",
+          "FE-004",
+          "FE-005",
+          "FE-013",
+          "FE-019",
+          "FE-020",
+          "FE-021",
+          "FE-022",
+          "FE-023",
+          "FE-024",
+          "FE-025",
+          "FE-026",
+          "FE-027",
+          "FE-042",
+          "FE-043",
+          "FE-044",
+          "FE-045",
+          "FE-046"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S10",
+          "FE-S2",
+          "FE-S3",
+          "FE-S4",
+          "FE-S5",
+          "FE-S6",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2027
+        ],
+        "in_conflict": false
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "4WD",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 17,
+        "record_ids": [
+          "FE-001",
+          "FE-002",
+          "FE-003",
+          "FE-004",
+          "FE-005",
+          "FE-015",
+          "FE-020",
+          "FE-021",
+          "FE-022",
+          "FE-023",
+          "FE-024",
+          "FE-025",
+          "FE-026",
+          "FE-027",
+          "FE-040",
+          "FE-045",
+          "FE-046"
+        ],
+        "source_ids": [
+          "FE-S1",
+          "FE-S10",
+          "FE-S2",
+          "FE-S3",
+          "FE-S5",
+          "FE-S6",
+          "FE-S8",
+          "FE-S9"
+        ],
+        "markets": [
+          "gcc",
+          "other:au",
+          "other:th"
+        ],
+        "years": [
+          2025,
+          2027
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "RWD",
+        "status": "VERIFIED",
+        "best_tier": 3,
+        "max_confidence": 0.7,
+        "support_count": 1,
+        "record_ids": [
+          "FE-041"
+        ],
+        "source_ids": [
+          "FE-S8"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": null,
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "SUV",
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "FE-005",
+          "FE-015",
+          "FE-026",
+          "FE-032",
+          "FE-040"
+        ],
+        "source_ids": [
+          "FE-S2",
+          "FE-S3",
+          "FE-S6",
+          "FE-S7",
+          "FE-S8"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.8,
+        "support_count": 2,
+        "record_ids": [
+          "FE-032",
+          "FE-036"
+        ],
+        "source_ids": [
+          "FE-S7",
+          "FE-S8"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 7,
+        "status": "VERIFIED",
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 9,
+        "record_ids": [
+          "FE-005",
+          "FE-015",
+          "FE-026",
+          "FE-027",
+          "FE-033",
+          "FE-034",
+          "FE-037",
+          "FE-038",
+          "FE-039"
+        ],
+        "source_ids": [
+          "FE-S2",
+          "FE-S3",
+          "FE-S6",
+          "FE-S7",
+          "FE-S8"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2027
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": []
+  },
+  "conflicts": [
+    {
+      "conflict_id": "CF-ford-everest-001",
+      "field": "horsepower_hp",
+      "engine_group": "2.0L",
+      "severity": "possible_year_unspecified",
+      "values": [
+        {
+          "record_id": "FE-001",
+          "value": 170.0,
+          "source_id": "FE-S1",
+          "source_tier": 3,
+          "market": "gcc",
+          "trim": "XLS",
+          "year_from": 2025,
+          "year_to": null
+        },
+        {
+          "record_id": "FE-010",
+          "value": 170.0,
+          "source_id": "FE-S2",
+          "source_tier": 1,
+          "market": "gcc",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "FE-014",
+          "value": 168.0,
+          "source_id": "FE-S3",
+          "source_tier": 3,
+          "market": "gcc",
+          "trim": null,
+          "year_from": null,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    },
+    {
+      "conflict_id": "CF-ford-everest-002",
+      "field": "horsepower_hp",
+      "engine_group": "2.7L",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "FE-012",
+          "value": 310.0,
+          "source_id": "FE-S2",
+          "source_tier": 1,
+          "market": "gcc",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "FE-019",
+          "value": 355.0,
+          "source_id": "FE-S4",
+          "source_tier": 3,
+          "market": "gcc",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    },
+    {
+      "conflict_id": "CF-ford-everest-003",
+      "field": "torque_nm",
+      "engine_group": "2.7L",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "FE-012",
+          "value": 542.0,
+          "source_id": "FE-S2",
+          "source_tier": 1,
+          "market": "gcc",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "FE-019",
+          "value": 500.0,
+          "source_id": "FE-S4",
+          "source_tier": 3,
+          "market": "gcc",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    }
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.enrichment_evidence/1",
+  "title": "CarNet enrichment evidence file (layer 1: source/evidence records)",
+  "description": "One file per Brand+Model in tools/catalog_enrichment/evidence/. Unknown = null. Nothing may be filled from AI memory: every non-null raw value must appear in the record's own evidence.supporting_text (enforced by run_pilot.py validate). 'normalized', 'normalization_flags' and the derived evidence fields are written by run_pilot.py prepare; authors only write the raw fields.",
+  "type": "object",
+  "required": ["schema_version", "brand", "model", "researched_at", "sources", "records"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": "carnet.enrichment_evidence/1" },
+    "brand": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "researched_at": { "type": "string", "format": "date" },
+    "coverage": { "type": "array", "items": { "type": "string" }, "description": "Human statement of what generations/markets were and were NOT researched." },
+    "not_used_sources": {
+      "type": "array",
+      "items": { "type": "object", "required": ["url", "reason"], "properties": { "url": { "type": "string" }, "reason": { "type": "string" } }, "additionalProperties": false }
+    },
+    "sources": { "type": "object", "additionalProperties": { "$ref": "#/$defs/source" } },
+    "records": { "type": "array", "items": { "$ref": "#/$defs/record" } }
+  },
+
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["url", "name", "tier", "host_type", "retrieval", "accessed_at"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "name": { "type": "string" },
+        "publisher": { "type": ["string", "null"] },
+        "tier": { "enum": [1, 2, 3, 4, 5], "description": "1 official manufacturer site, 2 official brochure/tech PDF, 3 official regional distributor/importer (or dealer-hosted copy of a manufacturer document), 4 reputable spec database, 5 secondary site" },
+        "host_type": { "enum": ["manufacturer_domain", "official_distributor_domain", "dealer_hosted_copy", "third_party_mirror", "independent"] },
+        "retrieval": { "enum": ["fetched_full_text", "pdf_downloaded_and_parsed", "search_tool_full_text", "search_snippet_only"] },
+        "accessed_at": { "type": "string", "format": "date" },
+        "model_year_label": { "type": ["string", "null"] },
+        "market_scope": { "type": ["string", "null"] },
+        "sha256": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+
+    "power": {
+      "type": ["object", "null"],
+      "required": ["value", "unit"],
+      "additionalProperties": false,
+      "properties": { "value": { "type": "number" }, "unit": { "type": "string", "description": "hp, bhp, PS, CV, kW (power) | Nm, lb-ft, kgm (torque)" }, "basis": { "type": "string", "description": "e.g. net, SAE net, net combined" } }
+    },
+
+    "record": {
+      "type": "object",
+      "required": ["record_id", "brand", "model", "engine", "transmission", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "record_id": { "type": "string", "pattern": "^[A-Z]{2}-\\d{3}$" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "generation": { "type": ["string", "null"] },
+        "year_from": { "type": ["integer", "null"], "minimum": 1900, "maximum": 2100 },
+        "year_to": { "type": ["integer", "null"], "minimum": 1900, "maximum": 2100 },
+        "market": { "type": ["string", "null"], "description": "Raw market wording from the source scope; normalized to CarNet region codes (gcc, us, eu, ...) or other:<country>." },
+        "trim": { "type": ["string", "null"] },
+        "variant": { "type": ["string", "null"], "description": "Optional free-text discriminator for distinct configurations of the same engine+trim+market+year (e.g. 'hybrid', 'FWD'). Two records with different non-null variants are never compared for conflicts." },
+        "body_type": { "type": ["string", "null"] },
+        "doors": { "type": ["integer", "string", "null"] },
+        "seats": { "type": ["integer", "string", "null"] },
+        "engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "display_name": { "type": ["string", "null"] },
+            "displacement_raw": {
+              "oneOf": [
+                { "type": ["string", "null"] },
+                { "type": "object", "required": ["value", "unit"], "properties": { "value": { "type": "number" }, "unit": { "enum": ["cc", "cm3", "L"] } }, "additionalProperties": false }
+              ]
+            },
+            "displacement_cc": { "type": ["integer", "null"], "description": "DERIVED. Only set when the source gives cc or litres with >=3 decimals." },
+            "cylinders": { "type": ["integer", "string", "null"] },
+            "fuel_type": { "type": ["string", "null"] },
+            "aspiration": { "type": ["string", "null"] },
+            "horsepower": { "$ref": "#/$defs/power" },
+            "torque": { "$ref": "#/$defs/power" }
+          }
+        },
+        "transmission": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "type": { "type": ["string", "null"] }, "gears": { "type": ["integer", "null"] } }
+        },
+        "drivetrain": { "type": ["string", "null"] },
+        "evidence": {
+          "type": "object",
+          "required": ["source_id", "supporting_text"],
+          "additionalProperties": false,
+          "properties": {
+            "source_id": { "type": "string" },
+            "source_url": { "type": "string", "description": "DERIVED from sources[source_id]" },
+            "source_name": { "type": "string", "description": "DERIVED" },
+            "source_type": { "enum": ["official_manufacturer_website", "official_manufacturer_brochure", "official_regional_distributor", "reputable_spec_database", "secondary_automotive_website"], "description": "DERIVED from tier" },
+            "source_tier": { "enum": [1, 2, 3, 4, 5], "description": "DERIVED" },
+            "accessed_at": { "type": "string", "description": "DERIVED" },
+            "confidence": { "type": "number", "minimum": 0.05, "maximum": 0.99, "description": "DERIVED heuristic rubric score (tier base + retrieval/host/no-year adjustments); not a probability" },
+            "confidence_basis": { "type": "array", "items": { "type": "string" } },
+            "supporting_text": { "type": "string", "minLength": 1, "description": "Verbatim (whitespace-collapsed) text from the source that contains every raw value of this record." }
+          }
+        },
+        "notes": { "type": ["string", "null"] },
+        "normalized": {
+          "type": "object",
+          "description": "DERIVED by deterministic rules (rules/normalization_rules.json). Raw values above are never overwritten.",
+          "properties": {
+            "market": { "type": ["string", "null"] },
+            "trim": { "type": ["string", "null"] },
+            "trim_key": { "type": ["string", "null"] },
+            "body_type": { "enum": ["Sedan", "SUV", "Hatchback", "Coupe", "Convertible", "Wagon", "Pickup", "Van", "Minivan", null] },
+            "doors": { "type": ["integer", "null"] },
+            "seats": { "type": ["integer", "null"] },
+            "seats_is_maximum": { "type": "boolean" },
+            "engine_group": { "type": "string", "description": "engine_size_label | 'model_level' | 'unlabeled_engine'" },
+            "engine_size_label": { "type": ["string", "null"], "pattern": "^\\d+\\.\\dL$" },
+            "displacement_cc": { "type": ["integer", "null"] },
+            "displacement_nominal_l": { "type": ["number", "null"] },
+            "cylinders": { "type": ["integer", "null"] },
+            "fuel_type": { "enum": ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid", null] },
+            "aspiration": { "enum": ["Twin-turbo", "Turbo", "Supercharged", null] },
+            "horsepower_hp": { "type": ["number", "null"] },
+            "torque_nm": { "type": ["number", "null"] },
+            "transmission_family": { "enum": ["Automatic", "Manual", null], "description": "LOCKED level 1" },
+            "transmission_variant": { "type": ["string", "null"], "description": "LOCKED level 2: canonical (Conventional automatic, CVT, e-CVT, DCT, AMT) when the source says so, else the source's own named system (SelectShift, Direct Shift, Super ECT, ECT-i, Tiptronic, Steptronic), else null. Never discarded." },
+            "transmission_named_systems": { "type": "array", "items": { "type": "string" }, "description": "every named system found in the raw wording" },
+            "transmission_gears": { "type": ["integer", "null"], "description": "kept wherever stated" },
+            "drivetrain": { "enum": ["FWD", "RWD", "AWD", "4WD", null] }
+          }
+        },
+        "normalization_flags": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
