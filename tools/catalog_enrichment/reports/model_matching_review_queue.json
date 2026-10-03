@@ -1,0 +1,7333 @@
+{
+  "schema_version": "carnet.model_matching_review_queue/1",
+  "note": "Rows still QUARANTINED after the brand suffix grammars. Each entry needs a human decision (add a rule/alias/trim, or leave quarantined). Categories are triage labels only.",
+  "total_rows": 2343,
+  "unique_entries": 684,
+  "rows_per_category": {
+    "possible_sibling_model": 944,
+    "unknown_engine_code": 655,
+    "unknown_trim": 540,
+    "mercedes_unknown_suffix": 94,
+    "audi_unknown_suffix": 35,
+    "jaguar_unknown_suffix": 31,
+    "bmw_unknown_suffix": 24,
+    "lexus_unknown_suffix": 20
+  },
+  "category_definitions": {
+    "<brand>_unknown_suffix": "the model HAS a grammar for this brand but the qualifier is outside it (new letter code, edition word, body variant...)",
+    "unknown_engine_code": "no grammar for the model; the qualifier has a digit-bearing token that looks like an engine/variant code",
+    "unknown_trim": "no grammar; 1-2 short alphabetic badge-like tokens (RS, GT, ST, N...)",
+    "possible_sibling_model": "no grammar; alphabetic word(s) that may be a different model/body/edition (Verso, Majesta, Super Duty, Connect...)"
+  },
+  "entries": [
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A6",
+      "qualifier": "e tron",
+      "rows": 5,
+      "examples": [
+        "A6 e-tron 100 kWh (476 Hp) quattro",
+        "A6 e-tron 83 kWh (326 Hp)",
+        "A6 e-tron 83 kWh (326 Hp)"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A3",
+      "qualifier": "g tron",
+      "rows": 4,
+      "examples": [
+        "A3 G-tron 1 4 TFSI CNG (110 Hp) S tronic",
+        "A3 G-tron 1 4 TFSI CNG (110 Hp)",
+        "A3 G-tron 1 4 TFSI (110 Hp)"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A6",
+      "qualifier": "competition",
+      "rows": 4,
+      "examples": [
+        "A6 Competition 3 0 TDI V6 (326 Hp) quattro Tiptronic",
+        "A6 Competition 3 0 BiTDI V6 (326 Hp) quattro Tiptronic",
+        "A6 Competition 3 0 TDI (326 Hp) quattro Tiptronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A4",
+      "qualifier": "g tron",
+      "rows": 2,
+      "examples": [
+        "A4 g-tron 2 0 TFSI (170 Hp)",
+        "A4 g-tron 2 0 TFSI (170 Hp) S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A5",
+      "qualifier": "g tron",
+      "rows": 2,
+      "examples": [
+        "A5 g-tron 2 0 TFSI (170 Hp) S tronic",
+        "A5 g-tron 2 0 TFSI (170 Hp)"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A6",
+      "qualifier": "e tron performance",
+      "rows": 2,
+      "examples": [
+        "A6 e-tron performance 100 kWh (381 Hp)",
+        "A6 e-tron performance 100 kWh (381 Hp)"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A7",
+      "qualifier": "competition",
+      "rows": 2,
+      "examples": [
+        "A7 Competition 3 0 BiTDI V6 (326 Hp) quattro Tiptronic",
+        "A7 Competition 3 0 BiTDI V6 (347 Hp) quattro Tiptronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "Q8",
+      "qualifier": "e tron 55",
+      "rows": 2,
+      "examples": [
+        "Q8 e-tron 55 114 kWh (408 Hp) quattro",
+        "Q8 e-tron 55 114 kWh (408 Hp) quattro"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A3",
+      "qualifier": "30 g tron",
+      "rows": 1,
+      "examples": [
+        "A3 30 g-tron (131 Hp) S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A3",
+      "qualifier": "40 e tron",
+      "rows": 1,
+      "examples": [
+        "A3 40 e-tron 1 4 TFSI (204 Hp) Plug-in Hybrid S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A3",
+      "qualifier": "e tron",
+      "rows": 1,
+      "examples": [
+        "A3 e-tron 1 4 TFSI (204 Hp) Plug-in Hybrid S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A4",
+      "qualifier": "40 g tron",
+      "rows": 1,
+      "examples": [
+        "A4 40 g-tron (170 Hp) S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A4",
+      "qualifier": "45 tfs",
+      "rows": 1,
+      "examples": [
+        "A4 45 TFS (265 Hp) quattro ultra Mild Hybrid S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A4",
+      "qualifier": "g tron 40 tfsi",
+      "rows": 1,
+      "examples": [
+        "A4 g-tron 40 TFSI (170 Hp) S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "A5",
+      "qualifier": "40 g tron",
+      "rows": 1,
+      "examples": [
+        "A5 40 g-tron (170 Hp) S tronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "Q5",
+      "qualifier": "e tron 40",
+      "rows": 1,
+      "examples": [
+        "Q5 e-tron 40 83 4 kWh (204 Hp)"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "Q5",
+      "qualifier": "e tron 50",
+      "rows": 1,
+      "examples": [
+        "Q5 e-tron 50 83 4 kWh (306 Hp) quattro"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "Q7",
+      "qualifier": "e tron",
+      "rows": 1,
+      "examples": [
+        "Q7 e-tron 3 0 TDI (374 Hp) Plug-in Hybrid quattro tiptronic"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "Q8",
+      "qualifier": "e tron edition dakar 55",
+      "rows": 1,
+      "examples": [
+        "Q8 e-tron edition Dakar 55 114 kWh (408 Hp) quattro"
+      ]
+    },
+    {
+      "category": "audi_unknown_suffix",
+      "brand": "Audi",
+      "model": "TT",
+      "qualifier": "heritage edition",
+      "rows": 1,
+      "examples": [
+        "TT Heritage Edition 2 5 TFSI (394 Hp) quattro S tronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X6",
+      "qualifier": "m",
+      "rows": 5,
+      "examples": [
+        "X6 M 4 4 V8 (555 Hp) Steptronic",
+        "X6 M 4 4 V8 (560 Hp) Steptronic",
+        "X6 M 4 4 V8 (575 Hp) xDrive Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "5-Series",
+      "qualifier": "520d special edition",
+      "rows": 4,
+      "examples": [
+        "5 Series 520d Special Edition (163 Hp)",
+        "5 Series 520d Special Edition (163 Hp) Steptronic",
+        "5 Series 520d Special Edition (163 Hp)"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "6-Series",
+      "qualifier": "630cs",
+      "rows": 2,
+      "examples": [
+        "6 Series 630CS (185 Hp)",
+        "6 Series 630CS (185 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X3",
+      "qualifier": "m competition",
+      "rows": 2,
+      "examples": [
+        "X3 M Competition 3 0 (510 Hp) xDrive Steptronic",
+        "X3 M Competition 3 0 (510 Hp) M xDrive M Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X4",
+      "qualifier": "m competition",
+      "rows": 2,
+      "examples": [
+        "X4 M Competition 3 0 (510 Hp) xDrive Steptronic",
+        "X4 M Competition 3 0 (510 Hp) M xDrive M Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X5",
+      "qualifier": "m competition",
+      "rows": 2,
+      "examples": [
+        "X5 M Competition 4 4 V8 (625 Hp) xDrive Steptronic",
+        "X5 M Competition 4 4 V8 (625 Hp) Mild Hybrid M xDrive M Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "Z4",
+      "qualifier": "m",
+      "rows": 2,
+      "examples": [
+        "Z4 M 3 2 (343 Hp)",
+        "Z4 M 3 2 (343 Hp)"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "5-Series",
+      "qualifier": "525i 24v x",
+      "rows": 1,
+      "examples": [
+        "5 Series 525i 24V X (192 Hp)"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X3",
+      "qualifier": "m",
+      "rows": 1,
+      "examples": [
+        "X3 M 3 0 (480 Hp) xDrive Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X4",
+      "qualifier": "m",
+      "rows": 1,
+      "examples": [
+        "X4 M 3 0 (480 Hp) xDrive Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X6",
+      "qualifier": "activehybrid",
+      "rows": 1,
+      "examples": [
+        "X6 ActiveHybrid 4 4 V8 (485 Hp) xDrive Steptronic"
+      ]
+    },
+    {
+      "category": "bmw_unknown_suffix",
+      "brand": "BMW",
+      "model": "X6",
+      "qualifier": "m competition",
+      "rows": 1,
+      "examples": [
+        "X6 M Competition 4 4 V8 (625 Hp) Mild Hybrid M xDrive M Steptronic"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "F-Type",
+      "qualifier": "r",
+      "rows": 10,
+      "examples": [
+        "F-type R 5 0 V8 (550 Hp) Automatic",
+        "F-type R 5 0 V8 (550 Hp) AWD Automatic",
+        "F-type R 5 0 V8 (550 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "F-Type",
+      "qualifier": "s",
+      "rows": 6,
+      "examples": [
+        "F-type S 3 0 V6 (380 Hp) Automatic",
+        "F-type S 3 0 V6 (380 Hp)",
+        "F-type S 3 0 V6 (380 Hp)"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "F-Type",
+      "qualifier": "svr",
+      "rows": 6,
+      "examples": [
+        "F-type SVR 5 0 V8 (575 Hp) AWD Automatic",
+        "F-type SVR 5 0 V8 (575 Hp) AWD Automatic",
+        "F-type SVR 5 0 V8 (575 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "XF",
+      "qualifier": "e performance",
+      "rows": 4,
+      "examples": [
+        "XF E-Performance 2 0d (163 Hp) Automatic",
+        "XF E-Performance 2 0d (163 Hp)",
+        "XF E-Performance 2 0d (163 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "XJ",
+      "qualifier": "sovereign v12",
+      "rows": 2,
+      "examples": [
+        "XJ Sovereign V12 (264 Hp)",
+        "XJ Sovereign V12 (268 Hp)"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "F-Pace",
+      "qualifier": "e performance",
+      "rows": 1,
+      "examples": [
+        "F-Pace E-Performance 2 0d (163 Hp)"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "XE",
+      "qualifier": "sv project",
+      "rows": 1,
+      "examples": [
+        "XE SV Project 8 5 0 V8 (600 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "jaguar_unknown_suffix",
+      "brand": "Jaguar",
+      "model": "XJ",
+      "qualifier": "12 h.e.",
+      "rows": 1,
+      "examples": [
+        "XJ 12 H.E. (295 Hp)"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "LS",
+      "qualifier": "460 l v8",
+      "rows": 6,
+      "examples": [
+        "LS 460 L V8 (380 Hp) Super ECT",
+        "LS 460 L V8 (370 Hp) AWD Super ECT",
+        "LS 460 L V8 (386 Hp) Super ECT"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "LS",
+      "qualifier": "600h l v8",
+      "rows": 3,
+      "examples": [
+        "LS 600h L V8 (445 Hp) Hybrid AWD e-CVT",
+        "LS 600h L V8 (445 Hp) Hybrid AWD e-CVT",
+        "LS 600h L V8 (445 Hp) Hybrid AWD e-CVT"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "RX",
+      "qualifier": "350 f sport v6",
+      "rows": 3,
+      "examples": [
+        "RX 350 F Sport V6 (295 Hp) Automatic",
+        "RX 350 F Sport V6 (295 Hp) AWD Automatic",
+        "RX 350 F Sport V6 (270 Hp) AWD ECT-i"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "GS",
+      "qualifier": "f",
+      "rows": 2,
+      "examples": [
+        "GS F 5 0 V8 (477 Hp) Automatic",
+        "GS F 5 0 V8 (467 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "GS",
+      "qualifier": "300 t3",
+      "rows": 1,
+      "examples": [
+        "GS 300 T3 (219 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "GX",
+      "qualifier": "overtrail 550 v6",
+      "rows": 1,
+      "examples": [
+        "GX Overtrail 550 V6 (349 Hp) 4WD Direct Shift"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "IS",
+      "qualifier": "200 kompressor",
+      "rows": 1,
+      "examples": [
+        "IS 200 Kompressor (186 Hp)"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "IS",
+      "qualifier": "250c awd",
+      "rows": 1,
+      "examples": [
+        "IS 250C AWD (208 Hp)"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "RC",
+      "qualifier": "200t vvt i",
+      "rows": 1,
+      "examples": [
+        "RC 200t VVT-i (245 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "lexus_unknown_suffix",
+      "brand": "Lexus",
+      "model": "RX",
+      "qualifier": "450h f sport v6",
+      "rows": 1,
+      "examples": [
+        "RX 450h F Sport V6 (313 Hp) Hybrid E-Four e-CVT"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "qualifier": "evito",
+      "rows": 5,
+      "examples": [
+        "Vito eVito 41 kWh (116 Hp)",
+        "Vito eVito 41 kWh (116 Hp)",
+        "Vito eVito 66 kWh (116 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "500 sec v8",
+      "rows": 4,
+      "examples": [
+        "S-class 500 SEC V8 (320 Hp) 4G-TRONIC",
+        "S-class 500 SEC V8 (231 Hp) Automatic",
+        "S-class 500 SEC V8 (245 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "A-Class",
+      "qualifier": "a 210 evolution",
+      "rows": 3,
+      "examples": [
+        "A-class A 210 Evolution (140 Hp)",
+        "A-class A 210 Evolution (140 Hp)",
+        "A-class A 210 Evolution (140 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifier": "amg c 63 amg edition 507 v8",
+      "rows": 3,
+      "examples": [
+        "C-class AMG C 63 AMG Edition 507 V8 (507 Hp) AMG SPEEDSHIFT MCT",
+        "C-class AMG C 63 AMG Edition 507 V8 (507 Hp) AMG SPEEDSHIFT MCT",
+        "C-class AMG C 63 AMG Edition 507 V8 (507 Hp) AMG SPEEDSHIFT MCT"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifier": "amg c 63 performance package v8",
+      "rows": 3,
+      "examples": [
+        "C-class AMG C 63 Performance Package V8 (487 Hp) AMG SPEEDSHIFT MCT",
+        "C-class AMG C 63 Performance Package V8 (487 Hp) AMG SPEEDSHIFT MCT",
+        "C-class AMG C 63 Performance Package V8 (487 Hp) AMG SPEEDSHIFT MCT"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "CLA",
+      "qualifier": "cla",
+      "rows": 3,
+      "examples": [
+        "CLA CLA 350 85 kWh (354 Hp) 4MATIC EQ Technology",
+        "CLA CLA 350 85 kWh (354 Hp) 4MATIC EQ Technology",
+        "CLA CLA 200 58 kWh (224 Hp) EQ Technology"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifier": "c 220 cdi blueefficiency edition",
+      "rows": 2,
+      "examples": [
+        "C-class C 220 CDI BlueEFFICIENCY Edition (170 Hp)",
+        "C-class C 220 CDI BlueEFFICIENCY Edition (170 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 200 t",
+      "rows": 2,
+      "examples": [
+        "E-class E 200 T (136 Hp)",
+        "E-class E 200 T (136 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 220 t",
+      "rows": 2,
+      "examples": [
+        "E-class E 220 T (150 Hp)",
+        "E-class E 220 T (150 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 250 t d",
+      "rows": 2,
+      "examples": [
+        "E-class E 250 T D (113 Hp)",
+        "E-class E 250 T D (113 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 280 t",
+      "rows": 2,
+      "examples": [
+        "E-class E 280 T (193 Hp)",
+        "E-class E 280 T (193 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 300 t d",
+      "rows": 2,
+      "examples": [
+        "E-class E 300 T D (136 Hp)",
+        "E-class E 300 T D (136 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 300 t turbodiesel",
+      "rows": 2,
+      "examples": [
+        "E-class E 300 T Turbodiesel (147 Hp) Automatic",
+        "E-class E 300 T Turbodiesel (147 Hp) 4MATIC Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 320 t",
+      "rows": 2,
+      "examples": [
+        "E-class E 320 T (220 Hp)",
+        "E-class E 320 T (220 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQE SUV",
+      "qualifier": "eqe",
+      "rows": 2,
+      "examples": [
+        "EQE SUV EQE 350 98 kWh (292 Hp) 4MATIC",
+        "EQE SUV EQE 300 98 kWh (245 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 450",
+      "rows": 2,
+      "examples": [
+        "EQS SUV EQS 450 120 kWh (360 Hp) 4MATIC",
+        "EQS SUV EQS 450 125 kWh (360 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 450+",
+      "rows": 2,
+      "examples": [
+        "EQS SUV EQS 450+ 120 kWh (360 Hp)",
+        "EQS SUV EQS 450+ 125 kWh (360 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 500",
+      "rows": 2,
+      "examples": [
+        "EQS SUV EQS 500 125 kWh (449 Hp) 4MATIC",
+        "EQS SUV EQS 500 120 kWh (449 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 580",
+      "rows": 2,
+      "examples": [
+        "EQS SUV EQS 580 120 kWh (544 Hp) 4MATIC",
+        "EQS SUV EQS 580 125 kWh (544 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQV",
+      "qualifier": "eqv",
+      "rows": 2,
+      "examples": [
+        "EQV EQV 250 66 kWh (204 Hp)",
+        "EQV EQV 250 66 kWh (204 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "R-Class",
+      "qualifier": "amg r 63 v8",
+      "rows": 2,
+      "examples": [
+        "R-class AMG R 63 V8 (510 Hp) 4MATIC 7G-TRONIC AMG SPEEDSHIFT",
+        "R-class AMG R 63 V8 (510 Hp) 4MATIC 7G-TRONIC AMG SPEEDSHIFT"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "300 sd turbodiesel",
+      "rows": 2,
+      "examples": [
+        "S-class 300 SD Turbodiesel (121 Hp) Automatic",
+        "S-class 300 SD Turbodiesel (125 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "420 sec v8",
+      "rows": 2,
+      "examples": [
+        "S-class 420 SEC V8 (218 Hp) Automatic",
+        "S-class 420 SEC V8 (231 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "420 sec v8 cat",
+      "rows": 2,
+      "examples": [
+        "S-class 420 SEC V8 CAT (224 Hp) Automatic",
+        "S-class 420 SEC V8 CAT (204 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "500 sec v8 cat",
+      "rows": 2,
+      "examples": [
+        "S-class 500 SEC V8 CAT (223 Hp) Automatic",
+        "S-class 500 SEC V8 CAT (252 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "560 sec v8",
+      "rows": 2,
+      "examples": [
+        "S-class 560 SEC V8 (272 Hp) Automatic",
+        "S-class 560 SEC V8 (300 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "560 sec v8 cat",
+      "rows": 2,
+      "examples": [
+        "S-class 560 SEC V8 CAT (279 Hp) Automatic",
+        "S-class 560 SEC V8 CAT (242 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifier": "amg c 63 black series v8",
+      "rows": 1,
+      "examples": [
+        "C-class AMG C 63 Black Series V8 (517 Hp) AMG SPEEDSHIFT MCT"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifier": "c 250 cdi sport",
+      "rows": 1,
+      "examples": [
+        "C-class C 250 CDI Sport (204 Hp) 7G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "qualifier": "c 250 sport",
+      "rows": 1,
+      "examples": [
+        "C-class C 250 Sport (204 Hp) 7G-TRONIC PLUS"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "qualifier": "amg cls 63 performance package v8",
+      "rows": 1,
+      "examples": [
+        "CLS AMG CLS 63 Performance Package V8 (557 Hp) AMG SPEEDSHIFT MCT"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "qualifier": "cls 350 cdi grand edition v6",
+      "rows": 1,
+      "examples": [
+        "CLS CLS 350 CDI Grand Edition V6 (272 Hp) 7G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "amg e 36 t",
+      "rows": 1,
+      "examples": [
+        "E-class AMG E 36 T (272 Hp) 4G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 200 natural gas drive",
+      "rows": 1,
+      "examples": [
+        "E-class E 200 Natural Gas Drive (156 Hp) 7G-TRONIC PLUS"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 220 cdi blueefficiency edition",
+      "rows": 1,
+      "examples": [
+        "E-class E 220 CDI BlueEFFICIENCY Edition (170 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 250 d lang",
+      "rows": 1,
+      "examples": [
+        "E-class E 250 D Lang (113 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 280 long",
+      "rows": 1,
+      "examples": [
+        "E-class E 280 long (193 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "qualifier": "e 300 t",
+      "rows": 1,
+      "examples": [
+        "E-class E 300 T (180 Hp) 4MATIC Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 400",
+      "rows": 1,
+      "examples": [
+        "EQS SUV EQS 400 125 kWh (355 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 550",
+      "rows": 1,
+      "examples": [
+        "EQS SUV EQS 550 125 kWh (536 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "qualifier": "suv eqs 680",
+      "rows": 1,
+      "examples": [
+        "EQS SUV EQS 680 (658 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 280 cdi edition.pur v6",
+      "rows": 1,
+      "examples": [
+        "G-class G 280 CDI Edition.PUR V6 (184 Hp) 4MATIC Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 300 cdi professional v6",
+      "rows": 1,
+      "examples": [
+        "G-class G 300 CDI Professional V6 (184 Hp) 4MATIC Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 350 bluetec v6 ba3 final edition",
+      "rows": 1,
+      "examples": [
+        "G-class G 350 BlueTEC V6 BA3 Final Edition (211 Hp) 4MATIC 7G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 500 v8 ba3 final edition",
+      "rows": 1,
+      "examples": [
+        "G-class G 500 V8 BA3 Final Edition (388 Hp) 4MATIC 7G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 500 v8 final edition 200",
+      "rows": 1,
+      "examples": [
+        "G-class G 500 V8 Final Edition 200 (388 Hp) 4MATIC 7G-TRONIC PLUS"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 580 eq",
+      "rows": 1,
+      "examples": [
+        "G-class G 580 EQ 116 kWh (587 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "qualifier": "g 650 landaulet v12",
+      "rows": 1,
+      "examples": [
+        "G-class G 650 Landaulet V12 (630 Hp) 4MATIC 7G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "GLC",
+      "qualifier": "f cell",
+      "rows": 1,
+      "examples": [
+        "GLC F-CELL 13 5 kWh (211 Hp) 4MATIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "GLC",
+      "qualifier": "glc",
+      "rows": 1,
+      "examples": [
+        "GLC GLC 400 94 kWh (489 Hp) 4MATIC EQ Technology"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "300 sdl",
+      "rows": 1,
+      "examples": [
+        "S-class 300 SDL (150 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "350 sd turbodiesel",
+      "rows": 1,
+      "examples": [
+        "S-class 350 SD Turbodiesel (136 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "350 sdl cat",
+      "rows": 1,
+      "examples": [
+        "S-class 350 SDL CAT (136 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "380 sec v8",
+      "rows": 1,
+      "examples": [
+        "S-class 380 SEC V8 (204 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "600 sec v12",
+      "rows": 1,
+      "examples": [
+        "S-class 600 SEC V12 (394 Hp) 4G-TRONIC"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "qualifier": "amg s 63 e performance v8",
+      "rows": 1,
+      "examples": [
+        "S-class AMG S 63 E PERFORMANCE V8 (802 Hp) Plug-in Hybrid 4MATIC+ AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "qualifier": "evito 119",
+      "rows": 1,
+      "examples": [
+        "Vito eVito 119 100 kWh (116 Hp)"
+      ]
+    },
+    {
+      "category": "mercedes_unknown_suffix",
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "qualifier": "evito 129",
+      "rows": 1,
+      "examples": [
+        "Vito eVito 129 100 kWh (204 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "F-350",
+      "qualifier": "super duty",
+      "rows": 175,
+      "examples": [
+        "F-350 Super Duty 6 2 V8 (385 Hp) 4x4 Automatic DRW",
+        "F-350 Super Duty 6 2 V8 (385 Hp) Automatic SRW",
+        "F-350 Super Duty 6 2 V8 (385 Hp) 4x4 Automatic SRW"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "Transit",
+      "qualifier": "connect",
+      "rows": 151,
+      "examples": [
+        "Transit Connect 2 0 EcoBlue (102 Hp)",
+        "Transit Connect 2 0 EcoBlue (122 Hp) DSG",
+        "Transit Connect 1 5 EcoBoost (150 Hp) Plug-in Hybrid DSG"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "F-250",
+      "qualifier": "super duty",
+      "rows": 109,
+      "examples": [
+        "F-250 Super Duty 6 2 V8 (385 Hp) Automatic",
+        "F-250 Super Duty 6 2 V8 (385 Hp) 4x4 Automatic",
+        "F-250 Super Duty 6 2 V8 (385 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Grandeur",
+      "qualifier": "azera",
+      "rows": 49,
+      "examples": [
+        "Grandeur/Azera 2 2 CRDi (155 Hp) Automatic",
+        "Grandeur/Azera 2 7 V6 (192 Hp) Automatic",
+        "Grandeur/Azera 3 3 V6 (235 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Suzuki",
+      "model": "SX4",
+      "qualifier": "s cross",
+      "rows": 42,
+      "examples": [
+        "SX4 S-Cross 1 6 i 16V VVT 2WD (107 Hp)",
+        "SX4 S-Cross 1 6 i 16V VVT 2WD (107 Hp) Automatic",
+        "SX4 S-Cross 2 0 L (143 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Crown",
+      "qualifier": "majesta",
+      "rows": 23,
+      "examples": [
+        "Crown Majesta 3 0i V6 24V (230 Hp) Automatic",
+        "Crown Majesta 4 0i V8 32V (260 Hp) 4x4 Automatic",
+        "Crown Majesta 4 3i V8 (280 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Corolla",
+      "qualifier": "verso",
+      "rows": 20,
+      "examples": [
+        "Corolla Verso 1 6 16V (110 Hp)",
+        "Corolla Verso 1 8 16V (129 Hp)",
+        "Corolla Verso 1 8 16V (129 Hp) MultiMode"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "carrera gts",
+      "rows": 18,
+      "examples": [
+        "911 Carrera GTS 3 8 (430 Hp)",
+        "911 Carrera GTS 3 8 (430 Hp) PDK",
+        "911 Carrera GTS 3 8 (430 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "Transporter",
+      "qualifier": "e transporter",
+      "rows": 12,
+      "examples": [
+        "Transporter e-Transporter 70 9 kWh (136 Hp) L1H1",
+        "Transporter e-Transporter 70 9 kWh (218 Hp) L1H1",
+        "Transporter e-Transporter 70 9 kWh (286 Hp) L1H1"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Renault",
+      "model": "Megane",
+      "qualifier": "grandcoupe",
+      "rows": 9,
+      "examples": [
+        "Megane GrandCoupe 1 6 SCe (114 Hp)",
+        "Megane GrandCoupe 1 2 Energy TCe (130 Hp) EDC",
+        "Megane GrandCoupe 1 5 dCi (90 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Bentley",
+      "model": "Continental",
+      "qualifier": "speed",
+      "rows": 8,
+      "examples": [
+        "Continental Speed 6 0i W12 (610 Hp)",
+        "Continental Speed 6 0i W12 48V Twin Turbo (610 Hp)",
+        "Continental Speed 6 0 W12 (626 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "Mustang Mach-E",
+      "qualifier": "standard range",
+      "rows": 8,
+      "examples": [
+        "Mustang Mach-E Standard Range 75 7 kWh (269 Hp)",
+        "Mustang Mach-E Standard Range 75 7 kWh (269 Hp) AWD",
+        "Mustang Mach-E Standard Range 75 7 kWh (269 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Peugeot",
+      "model": "Traveller",
+      "qualifier": "e traveller",
+      "rows": 8,
+      "examples": [
+        "Traveller e-Traveller 50 kWh (136 Hp)",
+        "Traveller e-Traveller 75 kWh (136 Hp)",
+        "Traveller e-Traveller 50 kWh (136 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "Mustang Mach-E",
+      "qualifier": "extended range",
+      "rows": 7,
+      "examples": [
+        "Mustang Mach-E Extended Range 98 7 kWh (294 Hp)",
+        "Mustang Mach-E Extended Range 98 7 kWh (351 Hp) AWD",
+        "Mustang Mach-E Extended Range 98 7 kWh (294 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "i30",
+      "qualifier": "n performance",
+      "rows": 6,
+      "examples": [
+        "i30 N Performance 2 0 T-GDI (275 Hp)",
+        "i30 N Performance 2 0 T-GDI (275 Hp)",
+        "i30 N Performance 2 0 T-GDI (275 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Frontier",
+      "qualifier": "desert runner",
+      "rows": 6,
+      "examples": [
+        "Frontier Desert Runner 3 3 V6 (210 Hp) 4x4",
+        "Frontier Desert Runner 3 3 V6 (210 Hp) 4x4",
+        "Frontier Desert Runner 3 3 V6 (210 Hp) 4x4 Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "carrera t",
+      "rows": 6,
+      "examples": [
+        "911 Carrera T 3 0 (370 Hp)",
+        "911 Carrera T 3 0 (370 Hp) PDK",
+        "911 Carrera T 3 0 (385 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Renault",
+      "model": "Megane",
+      "qualifier": "conquest",
+      "rows": 6,
+      "examples": [
+        "Megane Conquest 1 3 TCe (140 Hp) EDC",
+        "Megane Conquest 1 6 (143 Hp) E-TECH Hybrid Multimode",
+        "Megane Conquest 1 3 TCe (160 Hp) EDC"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Avensis",
+      "qualifier": "verso",
+      "rows": 6,
+      "examples": [
+        "Avensis Verso 2 0 (150 Hp)",
+        "Avensis Verso 2 0 D-4D (116 Hp)",
+        "Avensis Verso 2 0 (150 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Bentley",
+      "model": "Bentayga",
+      "qualifier": "speed",
+      "rows": 5,
+      "examples": [
+        "Bentayga SPEED 6 0 TSI W12 (635 Hp) AWD Automatic",
+        "Bentayga Speed 6 0 W12 TSI (635 Hp) AWD Automatic",
+        "Bentayga Speed 6 0 W12 TSI (635 Hp) AWD Automatic 7 Seat"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Challenger",
+      "qualifier": "srt hellcat",
+      "rows": 5,
+      "examples": [
+        "Challenger SRT Hellcat 6 2 HEMI V8 (707 Hp)",
+        "Challenger SRT Hellcat 6 2 HEMI V8 (707 Hp) Automatic",
+        "Challenger SRT Hellcat 6 2 HEMI V8 (717 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Renault",
+      "model": "Megane RS",
+      "qualifier": "trophy",
+      "rows": 5,
+      "examples": [
+        "Megane RS Trophy 2 0 (273 Hp)",
+        "Megane RS Trophy 2 0 16V (265 Hp)",
+        "Megane RS Trophy 1 8 (300 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Corolla",
+      "qualifier": "spacio",
+      "rows": 5,
+      "examples": [
+        "Corolla Spacio 1 4 (97 Hp)",
+        "Corolla Spacio 1 6i (110 Hp)",
+        "Corolla Spacio 1 8i (125 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gti performance",
+      "rows": 5,
+      "examples": [
+        "Golf GTI Performance 2 0 TSI (245 Hp) DSG OPF",
+        "Golf GTI Performance 2 0 TSI (245 Hp) DSG",
+        "Golf GTI Performance 2 0 TSI (245 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "R8",
+      "qualifier": "performance",
+      "rows": 4,
+      "examples": [
+        "R8 Performance 5 2 FSI V10 (620 Hp) quattro S tronic",
+        "R8 Performance 5 2 FSI V10 (620 Hp) quattro S tronic",
+        "R8 Performance 5 2 FSI V10 (570 Hp) RWD S tronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Cadillac",
+      "model": "CT5",
+      "qualifier": "v blackwing",
+      "rows": 4,
+      "examples": [
+        "CT5 V Blackwing 6 2 V8 (668 Hp) Automatic",
+        "CT5 V Blackwing 6 2 V8 (668 Hp)",
+        "CT5 V Blackwing 6 2 V8 (668 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "GMC",
+      "model": "Envoy",
+      "qualifier": "denali",
+      "rows": 4,
+      "examples": [
+        "Envoy Denali 5 3i V8 (300 Hp) Automatic",
+        "Envoy Denali 5 3i V8 (300 Hp) DoD Automatic",
+        "Envoy Denali 5 3i V8 (300 Hp) DoD 4x4 Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Genesis",
+      "model": "GV60",
+      "qualifier": "standard",
+      "rows": 4,
+      "examples": [
+        "GV60 Standard 77 4 kWh (228 Hp) BEV",
+        "GV60 Standard 77 4 kWh (318 Hp) BEV AWD",
+        "GV60 Standard 84 kWh (228 Hp) Electric"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Ioniq 5",
+      "qualifier": "long range",
+      "rows": 4,
+      "examples": [
+        "IONIQ 5 Long Range 72 6 kWh (218 Hp) Electric",
+        "IONIQ 5 Long Range 72 6 kWh (305 Hp) Electric AWD",
+        "IONIQ 5 Long Range 84 kWh (229 Hp) Electric"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Kia",
+      "model": "EV6",
+      "qualifier": "long range",
+      "rows": 4,
+      "examples": [
+        "EV6 Long Range 77 4 kWh (229 Hp)",
+        "EV6 Long Range 77 4 kWh (325 Hp) AWD",
+        "EV6 Long Range 84 kWh (229 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Lamborghini",
+      "model": "Gallardo",
+      "qualifier": "superleggera",
+      "rows": 4,
+      "examples": [
+        "Gallardo Superleggera 5 0 V10 (530 Hp) AWD",
+        "Gallardo Superleggera 5 2 (570 Hp) AWD",
+        "Gallardo Superleggera 5 2 (570 Hp) AWD E-Gear"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "targa",
+      "rows": 4,
+      "examples": [
+        "911 Targa 4 3 6 (325 Hp)",
+        "911 Targa 4 3 6 (325 Hp) Tiptronic S",
+        "911 Targa 4 3 6 (345 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Suzuki",
+      "model": "Vitara",
+      "qualifier": "brezza",
+      "rows": 4,
+      "examples": [
+        "Vitara Brezza 1 3 DDIS 200 (90 Hp)",
+        "Vitara Brezza 1 3 DDIS 200 (90 Hp) Automatic",
+        "Vitara Brezza 1 5i (105 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Hilux",
+      "qualifier": "hi rider",
+      "rows": 4,
+      "examples": [
+        "Hilux Hi-Rider 2 8d (177 Hp) Automatic",
+        "Hilux Hi-Rider 2 4d (150 Hp) Automatic",
+        "Hilux Hi-Rider 2 8d (177 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Urban Cruiser",
+      "qualifier": "hyryder",
+      "rows": 4,
+      "examples": [
+        "Urban Cruiser Hyryder 1 5 (102 Hp) Mild Hybrid",
+        "Urban Cruiser Hyryder 1 5 (102 Hp) Mild Hybrid Automatic",
+        "Urban Cruiser Hyryder 1 5 (102 Hp) Mild Hybrid AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "qualifier": "bluegt",
+      "rows": 4,
+      "examples": [
+        "Polo BlueGT 1 4 TSI ACT (140 Hp)",
+        "Polo BlueGT 1 4 TSI ACT (140 Hp) DSG",
+        "Polo BlueGT 1 4 TSI ACT (140 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC40",
+      "qualifier": "recharge",
+      "rows": 4,
+      "examples": [
+        "XC40 Recharge 69 kWh (231 Hp)",
+        "XC40 Recharge 69 kWh (238 Hp) Single Motor",
+        "XC40 Recharge 82 kWh (252 Hp) Single Motor Extended Range"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Cruze",
+      "qualifier": "premier",
+      "rows": 3,
+      "examples": [
+        "Cruze Premier 1 4 Turbo (153 Hp) Automatic",
+        "Cruze Premier 1 4 Turbo (153 Hp) Automatic",
+        "Cruze Premier 1 4 Turbo (153 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Ioniq 5",
+      "qualifier": "standard range",
+      "rows": 3,
+      "examples": [
+        "IONIQ 5 Standard Range 58 kWh (170 Hp) Electric",
+        "IONIQ 5 Standard Range 58 kWh (235 Hp) Electric AWD",
+        "IONIQ 5 Standard Range 63 kWh (170 Hp) Electric"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranCabrio",
+      "qualifier": "sport",
+      "rows": 3,
+      "examples": [
+        "GranCabrio Sport 4 7 V8 (450 Hp) Automatic",
+        "GranCabrio Sport 4 7 V8 (460 Hp) Automatic",
+        "GranCabrio Sport 4 7 V8 (460 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "sport",
+      "rows": 3,
+      "examples": [
+        "GranTurismo Sport 4 7 V8 (460 Hp)",
+        "GranTurismo Sport 4 7 V8 (460 Hp) Automatic",
+        "GranTurismo Sport 4 7 V8 (460 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mitsubishi",
+      "model": "Lancer",
+      "qualifier": "sport",
+      "rows": 3,
+      "examples": [
+        "Lancer Sport 2 0i 16V (135 Hp)",
+        "Lancer Sport 1 6i 16V (98 Hp)",
+        "Lancer Sport 2 0i 16V (135 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Z",
+      "qualifier": "nismo",
+      "rows": 3,
+      "examples": [
+        "Z NISMO 3 0 V6 (420 Hp) Automatic",
+        "Z NISMO 3 0 V6 (420 Hp)",
+        "Z NISMO 3 0 V6 (420 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "carrera rs",
+      "rows": 3,
+      "examples": [
+        "911 Carrera RS 3 8 (300 Hp)",
+        "911 Carrera RS 3 6 (260 Hp)",
+        "911 Carrera RS 2 7 (210 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Subaru",
+      "model": "Outback",
+      "qualifier": "wilderness",
+      "rows": 3,
+      "examples": [
+        "Outback Wilderness 2 4 (260 Hp) AWD Lineartronic",
+        "Outback Wilderness 2 4i (260 Hp) AWD Lineartronic CVT",
+        "Outback Wilderness 2 4 Turbo (260 Hp) AWD Lineartronic CVT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Suzuki",
+      "model": "Vitara",
+      "qualifier": "e vitara",
+      "rows": 3,
+      "examples": [
+        "Vitara e VITARA 49 kWh (144 Hp)",
+        "Vitara e VITARA 61 kWh (174 Hp)",
+        "Vitara e VITARA 61 kWh (184 Hp) ALLGRIP-e"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC60",
+      "qualifier": "recharge",
+      "rows": 3,
+      "examples": [
+        "XC60 Recharge 2 0 T6 (253 Hp) Plug-in Hybrid AWD Geartronic",
+        "XC60 Recharge 2 0 T8 (303 Hp) Plug-in Hybrid AWD Geartronic",
+        "XC60 Recharge 2 0 T8 (310 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Alfa Romeo",
+      "model": "Giulia",
+      "qualifier": "veloce",
+      "rows": 2,
+      "examples": [
+        "Giulia Veloce 2 0 (280 Hp) AWD Automatic",
+        "Giulia Veloce 2 2 JTD (210 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Aston Martin",
+      "model": "DBS",
+      "qualifier": "ultimate",
+      "rows": 2,
+      "examples": [
+        "DBS Ultimate 5 2 V12 (770 Hp) Automatic",
+        "DBS Ultimate 5 2 V12 (770 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Bentley",
+      "model": "Continental",
+      "qualifier": "supersport",
+      "rows": 2,
+      "examples": [
+        "Continental Supersport 6 0 W12 (710 Hp) AWD Automatic",
+        "Continental Supersport 6 0 W12 (710 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Cadillac",
+      "model": "CT4",
+      "qualifier": "v blackwing",
+      "rows": 2,
+      "examples": [
+        "CT4 V Blackwing 3 6 V6 (472 Hp) Automatic",
+        "CT4 V Blackwing 3 6 V6 (472 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Cadillac",
+      "model": "CT6",
+      "qualifier": "v blackwing",
+      "rows": 2,
+      "examples": [
+        "CT6 V Blackwing 4 2 V8 (550 Hp) AWD Hydra-Matic",
+        "CT6 V Blackwing 4 2 V8 (550 Hp) AWD Hydra-Matic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Avalanche",
+      "qualifier": "black diamond",
+      "rows": 2,
+      "examples": [
+        "Avalanche Black Diamond 5 3 V8 Vortec (310 Hp) FlexFuel Hydra-Matic",
+        "Avalanche Black Diamond 5 3 V8 Vortec (320/326 Hp) 4WD FlexFuel Hydra-Matic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Corvette",
+      "qualifier": "callaway",
+      "rows": 2,
+      "examples": [
+        "Corvette Callaway 5 7 V8 (382 Hp)",
+        "Corvette Callaway 5 7 V8 (382 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Challenger",
+      "qualifier": "srt hellcat redeye",
+      "rows": 2,
+      "examples": [
+        "Challenger SRT Hellcat Redeye 6 2 HEMI V8 (797 Hp) Automatic",
+        "Challenger SRT Hellcat Redeye 6 2 HEMI V8 (797 Hp) Widebody Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Charger",
+      "qualifier": "daytona scat pack",
+      "rows": 2,
+      "examples": [
+        "Charger Daytona Scat Pack 100 5 kWh (680 Hp) AWD Electric",
+        "Charger Daytona Scat Pack 100 5 kWh (680 Hp) AWD Electric"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Charger",
+      "qualifier": "sixpack",
+      "rows": 2,
+      "examples": [
+        "Charger SIXPACK 3 0L (550 Hp) AWD Automatic",
+        "Charger SIXPACK 3 0L (550 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Charger",
+      "qualifier": "srt hellcat",
+      "rows": 2,
+      "examples": [
+        "Charger SRT Hellcat 6 2 HEMI V8 (707 Hp) Automatic",
+        "Charger SRT Hellcat 6 2 HEMI V8 (707 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "GMC",
+      "model": "Jimmy",
+      "qualifier": "diamond",
+      "rows": 2,
+      "examples": [
+        "Jimmy Diamond 4 3i V6 (190 Hp) 4x4 Automatic",
+        "Jimmy Diamond 4 3i V6 (190 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Genesis",
+      "model": "GV60",
+      "qualifier": "performance",
+      "rows": 2,
+      "examples": [
+        "GV60 Performance 77 4 kWh (435 Hp) BEV AWD",
+        "GV60 Performance 84 kWh (490 Hp) Electric AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Genesis",
+      "model": "GV70",
+      "qualifier": "electrified",
+      "rows": 2,
+      "examples": [
+        "GV70 Electrified 77 4 kWh (490 Hp) AWD",
+        "GV70 Electrified 84 kWh (489 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Honda",
+      "model": "Jazz",
+      "qualifier": "crosstar",
+      "rows": 2,
+      "examples": [
+        "Jazz Crosstar 1 5 i-MMD (109 Hp) e:HEV e-CVT",
+        "Jazz Crosstar 1 5 i-MMD (122 Hp) e:HEV e-CVT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Ioniq 6",
+      "qualifier": "longrange",
+      "rows": 2,
+      "examples": [
+        "IONIQ 6 LongRange 77 4 kWh (229 Hp) BEV",
+        "IONIQ 6 LongRange 77 4 kWh (325 Hp) BEV AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Jeep",
+      "model": "Gladiator",
+      "qualifier": "willys",
+      "rows": 2,
+      "examples": [
+        "Gladiator Willys 3 6 Pentastar V6 (285 Hp) 4x4",
+        "Gladiator Willys 3 6 Pentastar V6 (285 Hp) 4x4 Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Kia",
+      "model": "EV6",
+      "qualifier": "standard range",
+      "rows": 2,
+      "examples": [
+        "EV6 Standard Range 58 kWh (170 Hp)",
+        "EV6 Standard Range 63 kWh (170 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Lamborghini",
+      "model": "Gallardo",
+      "qualifier": "performante",
+      "rows": 2,
+      "examples": [
+        "Gallardo Performante 5 2 (570 Hp) AWD",
+        "Gallardo Performante 5 2 (570 Hp) AWD E-Gear"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mazda",
+      "model": "323",
+      "qualifier": "sport",
+      "rows": 2,
+      "examples": [
+        "323 Sport 2 0i 16V (130 Hp)",
+        "323 Sport 2 0i 16V (130 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mercedes-Benz",
+      "model": "SLS AMG",
+      "qualifier": "final edition gt",
+      "rows": 2,
+      "examples": [
+        "SLS AMG FINAL EDITION GT 6 2 V8 (591 Hp) AMG SPEEDSHIFT DCT",
+        "SLS AMG FINAL EDITION GT 6 2 V8 (591 Hp) AMG SPEEDSHIFT DCT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mitsubishi",
+      "model": "Lancer",
+      "qualifier": "ralliart",
+      "rows": 2,
+      "examples": [
+        "Lancer Ralliart 2 0 (240 Hp)",
+        "Lancer Ralliart 2 0 (240 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Ariya",
+      "qualifier": "nismo",
+      "rows": 2,
+      "examples": [
+        "Ariya NISMO 91 kWh (435 Hp) B9 e-4ORCE",
+        "Ariya NISMO 66 kWh (367 Hp) B6 e-4ORCE"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Qashqai",
+      "qualifier": "e power",
+      "rows": 2,
+      "examples": [
+        "Qashqai e-POWER 1 5 VC-T (190 Hp) Full Hybrid Automatic",
+        "Qashqai e-POWER 1 5 VC-T (190 Hp) Full Hybrid Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Sentra",
+      "qualifier": "nismo",
+      "rows": 2,
+      "examples": [
+        "Sentra NISMO 1 6 (188 Hp)",
+        "Sentra NISMO 1 6 (188 Hp) Xtronic CVT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifier": "sport",
+      "rows": 2,
+      "examples": [
+        "308 Sport 1 6 HDi (109 Hp)",
+        "308 Sport 1 6 16V VTi (120 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "gts performance plus",
+      "rows": 2,
+      "examples": [
+        "Taycan GTS Performance Plus 93 4 kWh (598 Hp)",
+        "Taycan GTS Performance Plus 93 4 kWh (598 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "performance",
+      "rows": 2,
+      "examples": [
+        "Taycan Performance 79 2 kWh (408 Hp)",
+        "Taycan Performance 79 2 kWh (408 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "performance plus",
+      "rows": 2,
+      "examples": [
+        "Taycan Performance Plus 93 4 kWh (476 Hp)",
+        "Taycan Performance Plus 93 4 kWh (476 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Renault",
+      "model": "Arkana",
+      "qualifier": "edition one",
+      "rows": 2,
+      "examples": [
+        "Arkana Edition one 1 3 TCe (150 Hp) CVT X-Tronic",
+        "Arkana Edition one 1 3 TCe (150 Hp) AWD CVT X-Tronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Tesla",
+      "model": "Model 3",
+      "qualifier": "premium long range",
+      "rows": 2,
+      "examples": [
+        "Model 3 Premium Long Range 84 7 kWh (320 Hp)",
+        "Model 3 Premium Long Range 84 7 kWh (440 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Tesla",
+      "model": "Model Y",
+      "qualifier": "standard range",
+      "rows": 2,
+      "examples": [
+        "Model Y Standard Range 50 kWh (204 Hp)",
+        "Model Y Standard Range 60 kWh (299 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Corolla",
+      "qualifier": "rumion",
+      "rows": 2,
+      "examples": [
+        "Corolla Rumion 1 5i (110 Hp)",
+        "Corolla Rumion 1 8i (136 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "Transporter",
+      "qualifier": "abt e transporter",
+      "rows": 2,
+      "examples": [
+        "Transporter ABT e-Transporter 37 3 kWh (110 Hp) DSG L2H1",
+        "Transporter ABT e-Transporter 37 3 kWh (110 Hp) DSG L2H1"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "S60",
+      "qualifier": "recharge",
+      "rows": 2,
+      "examples": [
+        "S60 Recharge 2 0 T8 (455 Hp) Plug-in Hybrid AWD Geartronic",
+        "S60 Recharge 2 0 T6 (350 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "S90",
+      "qualifier": "recharge",
+      "rows": 2,
+      "examples": [
+        "S90 Recharge 2 0 T8 (303 Hp) Plug-in Hybrid AWD Geartronic",
+        "S90 Recharge 2 0 T8 (310 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "V60",
+      "qualifier": "recharge",
+      "rows": 2,
+      "examples": [
+        "V60 Recharge 2 0 T8 (455 Hp) Plug-in Hybrid AWD Geartronic",
+        "V60 Recharge 2 0 T6 (350 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "V90",
+      "qualifier": "recharge",
+      "rows": 2,
+      "examples": [
+        "V90 Recharge 2 0 T6 (253 Hp) Plug-in Hybrid AWD Geartronic",
+        "V90 Recharge 2 0 T8 (303 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC40",
+      "qualifier": "recharge pure electric",
+      "rows": 2,
+      "examples": [
+        "XC40 Recharge Pure Electric 78 kWh (408 Hp) AWD Twin Motor",
+        "XC40 Recharge Pure Electric 69 kWh (231 Hp) Single Motor"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "RS e-tron",
+      "qualifier": "gt performance",
+      "rows": 1,
+      "examples": [
+        "RS e-tron GT performance 105 kWh (925 Hp) quattro"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "RS5",
+      "qualifier": "performance",
+      "rows": 1,
+      "examples": [
+        "RS5 performance 2 9 TFSI V6 (470 Hp) quattro tiptronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "RS6",
+      "qualifier": "performance",
+      "rows": 1,
+      "examples": [
+        "RS6 performance 4 0 TFSI V8 (630 Hp) Mild Hybrid quattro tiptronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "RS7",
+      "qualifier": "performance",
+      "rows": 1,
+      "examples": [
+        "RS7 performance 4 0 TFSI V8 (630 Hp) Mild Hybrid quattro tiptronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "RSQ8",
+      "qualifier": "performance",
+      "rows": 1,
+      "examples": [
+        "RSQ8 performance 4 0 TFSI V8 (640 Hp) Mild Hybrid quattro tiptronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Audi",
+      "model": "SQ5",
+      "qualifier": "competition",
+      "rows": 1,
+      "examples": [
+        "SQ5 Competition 3 0 TDI V6 (326 Hp) quattro Tiptronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "BYD",
+      "model": "ATTO 3",
+      "qualifier": "extended range",
+      "rows": 1,
+      "examples": [
+        "Atto 3 Extended Range 60 48 kWh (204 Hp) BEV"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "BYD",
+      "model": "ATTO 3",
+      "qualifier": "standard range",
+      "rows": 1,
+      "examples": [
+        "Atto 3 Standard Range 49 92 kWh (204 Hp) BEV"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Cadillac",
+      "model": "CT6",
+      "qualifier": "blackwing",
+      "rows": 1,
+      "examples": [
+        "CT6 Blackwing 4 2 V8 (500 Hp) AWD Hydra-Matic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chery",
+      "model": "Tiggo 8",
+      "qualifier": "leopard edition",
+      "rows": 1,
+      "examples": [
+        "Tiggo 8 Leopard Edition 1 6 TGDI (200 Hp) DCT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chery",
+      "model": "Tiggo 8",
+      "qualifier": "tiger edition",
+      "rows": 1,
+      "examples": [
+        "Tiggo 8 Tiger Edition 1 6 TGDI (200 Hp) DCT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Captiva",
+      "qualifier": "sport",
+      "rows": 1,
+      "examples": [
+        "Captiva Sport 2 4 (182 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Colorado",
+      "qualifier": "trail boss",
+      "rows": 1,
+      "examples": [
+        "Colorado Trail Boss 2 7 Turbo (310 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifier": "lt extended range",
+      "rows": 1,
+      "examples": [
+        "Silverado EV LT Extended Range 167 kWh (645 Hp) Dual Motor e4WD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifier": "rst extended range",
+      "rows": 1,
+      "examples": [
+        "Silverado EV RST Extended Range 167 kWh (645 Hp) Dual Motor e4WD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifier": "rst max range",
+      "rows": 1,
+      "examples": [
+        "Silverado EV RST Max Range 200 kWh (760 Hp) Dual Motor e4WD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Challenger",
+      "qualifier": "srt demon",
+      "rows": 1,
+      "examples": [
+        "Challenger SRT Demon 6 2 HEMI V8 (808 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Challenger",
+      "qualifier": "srt super stock",
+      "rows": 1,
+      "examples": [
+        "Challenger SRT Super Stock 6 2 HEMI V8 (807 Hp) TorqueFlite"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Charger",
+      "qualifier": "srt hellcat daytona",
+      "rows": 1,
+      "examples": [
+        "Charger SRT Hellcat Daytona 6 2 HEMI V8 (717 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Durango",
+      "qualifier": "hellcat",
+      "rows": 1,
+      "examples": [
+        "Durango HELLCAT 6 2 HEMI V8 (710 Hp) AWD TORQUEFLITE"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifier": "magnum",
+      "rows": 1,
+      "examples": [
+        "RAM Magnum 5 2L V8 (235 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "Maverick",
+      "qualifier": "tremor",
+      "rows": 1,
+      "examples": [
+        "Maverick Tremor 2 0 EcoBoost (238 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "Mustang",
+      "qualifier": "bullitt",
+      "rows": 1,
+      "examples": [
+        "Mustang BULLITT 5 0 Ti-VCT V8 (480 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Ford",
+      "model": "Mustang Mach-E",
+      "qualifier": "rally",
+      "rows": 1,
+      "examples": [
+        "Mustang Mach-E Rally 98 7 kWh (487 Hp) AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Genesis",
+      "model": "GV60",
+      "qualifier": "magma",
+      "rows": 1,
+      "examples": [
+        "GV60 Magma 84 kWh (650 Hp) Electric AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Genesis",
+      "model": "GV60",
+      "qualifier": "sport plus",
+      "rows": 1,
+      "examples": [
+        "GV60 Sport Plus 77 4 kWh (490 Hp) BEV AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Ioniq 6",
+      "qualifier": "standard",
+      "rows": 1,
+      "examples": [
+        "IONIQ 6 Standard 53 kWh (151 Hp) BEV"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Kona",
+      "qualifier": "long range",
+      "rows": 1,
+      "examples": [
+        "Kona Long range 67 kWh (204 Hp) Electric"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Kona",
+      "qualifier": "standard range",
+      "rows": 1,
+      "examples": [
+        "Kona Standard range 42 kWh (136 Hp) Electric"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Hyundai",
+      "model": "Staria",
+      "qualifier": "wagon",
+      "rows": 1,
+      "examples": [
+        "Staria Wagon 84 kWh (218 Hp) Electric 9 Seat"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Jeep",
+      "model": "Cherokee",
+      "qualifier": "chief",
+      "rows": 1,
+      "examples": [
+        "Cherokee Chief 5 9 V8 (182 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Kia",
+      "model": "EV6",
+      "qualifier": "gt line standard range",
+      "rows": 1,
+      "examples": [
+        "EV6 GT-line Standard Range 58 kWh (235 Hp) AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Kia",
+      "model": "EV6",
+      "qualifier": "gt long range",
+      "rows": 1,
+      "examples": [
+        "EV6 GT Long Range 77 4 kWh (585 Hp) AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Lamborghini",
+      "model": "Gallardo",
+      "qualifier": "super trofeo stradale",
+      "rows": 1,
+      "examples": [
+        "Gallardo Super Trofeo Stradale 5 2 (570 Hp) AWD E-Gear"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Lamborghini",
+      "model": "Gallardo",
+      "qualifier": "tricolore",
+      "rows": 1,
+      "examples": [
+        "Gallardo Tricolore 5 2 (551 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "svautobiography dynamic edition",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar SVAutobiography Dynamic Edition 5 0 V8 (550 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "MG",
+      "model": "ZS",
+      "qualifier": "long range",
+      "rows": 1,
+      "examples": [
+        "ZS Long Range 72 6 kWh (156 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "Ghibli",
+      "qualifier": "trofeo",
+      "rows": 1,
+      "examples": [
+        "Ghibli Trofeo 3 8 V8 GDI (580 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranCabrio",
+      "qualifier": "folgore",
+      "rows": 1,
+      "examples": [
+        "GranCabrio Folgore 92 5 kWh (762 Hp) Electric AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranCabrio",
+      "qualifier": "trofeo",
+      "rows": 1,
+      "examples": [
+        "GranCabrio Trofeo 3 0 V6 (542 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "folgore",
+      "rows": 1,
+      "examples": [
+        "GranTurismo Folgore 92 5 kWh (762 Hp) BEV AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "mc stradale",
+      "rows": 1,
+      "examples": [
+        "GranTurismo MC Stradale 4 7 V8 (460 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "modena",
+      "rows": 1,
+      "examples": [
+        "GranTurismo Modena 3 0 V6 (496 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "trofeo",
+      "rows": 1,
+      "examples": [
+        "GranTurismo Trofeo 3 0 V6 (558 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "Grecale",
+      "qualifier": "folgore",
+      "rows": 1,
+      "examples": [
+        "Grecale Folgore 105 kWh (558 Hp) BEV AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Maserati",
+      "model": "Quattroporte",
+      "qualifier": "trofeo",
+      "rows": 1,
+      "examples": [
+        "Quattroporte Trofeo 3 8 V8 GDI (580 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "black series",
+      "rows": 1,
+      "examples": [
+        "AMG GT Black Series 4 0 V8 (730 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mercedes-Benz",
+      "model": "SLS AMG",
+      "qualifier": "black series",
+      "rows": 1,
+      "examples": [
+        "SLS AMG Black Series 6 2 V8 (631 Hp) AMG SPEEDSHIFT DCT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Mercedes-Benz",
+      "model": "SLS AMG",
+      "qualifier": "electric drive",
+      "rows": 1,
+      "examples": [
+        "SLS AMG Electric Drive 60 kWh (751 Hp) AMG Torque Dynamics"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Ariya",
+      "qualifier": "performance",
+      "rows": 1,
+      "examples": [
+        "Ariya Performance 90 kWh (394 Hp) e-4ORCE"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Armada",
+      "qualifier": "nismo",
+      "rows": 1,
+      "examples": [
+        "Armada NISMO 3 5 V6 (460 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "GT-R",
+      "qualifier": "track edition",
+      "rows": 1,
+      "examples": [
+        "GT-R Track Edition 3 8 V6 (570 Hp) AWD DCT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Kicks",
+      "qualifier": "e power",
+      "rows": 1,
+      "examples": [
+        "Kicks e-Power 1 2 (129 Hp) Hybrid"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Nissan",
+      "model": "Pathfinder",
+      "qualifier": "rock creek",
+      "rows": 1,
+      "examples": [
+        "Pathfinder Rock Creek 3 5 V6 (295 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifier": "premium",
+      "rows": 1,
+      "examples": [
+        "308 Premium 1 6 16V VTi (120 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Peugeot",
+      "model": "Partner",
+      "qualifier": "dangel",
+      "rows": 1,
+      "examples": [
+        "Partner Dangel 1 8 (90 Hp) 4x4"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "sport classic",
+      "rows": 1,
+      "examples": [
+        "911 Sport Classic 3 7 (550 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "911 Turbo",
+      "qualifier": "s exclusive",
+      "rows": 1,
+      "examples": [
+        "911 Turbo S Exclusive 3 8 (607 Hp) PDK"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Boxster",
+      "qualifier": "spyder",
+      "rows": 1,
+      "examples": [
+        "Boxster Spyder 3 8 (375 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Cayenne",
+      "qualifier": "diesel s",
+      "rows": 1,
+      "examples": [
+        "Cayenne Diesel S 4 2 V8 (382 Hp) Tiptronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Cayenne",
+      "qualifier": "gt paket turbo",
+      "rows": 1,
+      "examples": [
+        "Cayenne GT-Paket Turbo 4 0 V8 (739 Hp) E-Hybrid Tiptronic S"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "turbo gt",
+      "rows": 1,
+      "examples": [
+        "Taycan Turbo GT 105 kWh (1034 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "turbo gt with weissach package",
+      "rows": 1,
+      "examples": [
+        "Taycan Turbo GT with Weissach Package 105 kWh (1034 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "RAM",
+      "model": "1500",
+      "qualifier": "ramcharger",
+      "rows": 1,
+      "examples": [
+        "1500 Ramcharger 3 6 V6 91 8 kWh (647 Hp) Range Extender 4x4"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Renault",
+      "model": "Clio RS",
+      "qualifier": "trophy",
+      "rows": 1,
+      "examples": [
+        "Clio RS Trophy 1 6 (220 Hp) EDC S&S"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Renault",
+      "model": "Megane RS",
+      "qualifier": "trophy r",
+      "rows": 1,
+      "examples": [
+        "Megane RS Trophy-R 2 0 (273 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Skoda",
+      "model": "Superb",
+      "qualifier": "sleeper edition",
+      "rows": 1,
+      "examples": [
+        "Superb Sleeper Edition 2 0 TSI (477 Hp) 4x4 DSG"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Subaru",
+      "model": "Forester",
+      "qualifier": "platinum",
+      "rows": 1,
+      "examples": [
+        "Forester Platinum 2 0i (150 Hp) AWD Lineartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Subaru",
+      "model": "Forester",
+      "qualifier": "trend",
+      "rows": 1,
+      "examples": [
+        "Forester Trend 2 0i (150 Hp) AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Subaru",
+      "model": "Forester",
+      "qualifier": "wilderness",
+      "rows": 1,
+      "examples": [
+        "Forester Wilderness 2 5 (182 Hp) AWD Lineartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Subaru",
+      "model": "Outback",
+      "qualifier": "limited",
+      "rows": 1,
+      "examples": [
+        "Outback Limited 2 5i (170 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Suzuki",
+      "model": "Liana",
+      "qualifier": "sport",
+      "rows": 1,
+      "examples": [
+        "Liana Sport 1 6 i 16V (106 Hp) 4WD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Tesla",
+      "model": "Model 3",
+      "qualifier": "standard range",
+      "rows": 1,
+      "examples": [
+        "Model 3 Standard Range 68 3 kWh (325 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Tesla",
+      "model": "Model Y",
+      "qualifier": "premium long range",
+      "rows": 1,
+      "examples": [
+        "Model Y Premium Long Range 84 7 kWh (440 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "4Runner",
+      "qualifier": "deluxe",
+      "rows": 1,
+      "examples": [
+        "4Runner Deluxe 2 4i (116 Hp) 4x4 Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Land Cruiser Prado",
+      "qualifier": "first edition",
+      "rows": 1,
+      "examples": [
+        "Land Cruiser Prado First Edition 2 8 D-4D (204 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "RAV4",
+      "qualifier": "gr sport",
+      "rows": 1,
+      "examples": [
+        "RAV4 GR Sport 2 5 (324 Hp) Plug-in Hybrid AWD ECVT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "RAV4",
+      "qualifier": "prime",
+      "rows": 1,
+      "examples": [
+        "RAV4 Prime 2 5 D-4S (302 Hp) Plug-in Hybrid E-Four e-CVT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "RAV4",
+      "qualifier": "woodland",
+      "rows": 1,
+      "examples": [
+        "RAV4 Woodland 2 5 (236 Hp) Hybrid AWD ECVT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Toyota",
+      "model": "Supra",
+      "qualifier": "gr final edition",
+      "rows": 1,
+      "examples": [
+        "Supra GR Final Edition 3 0 (435 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "citystromer",
+      "rows": 1,
+      "examples": [
+        "Golf Citystromer 17 3 kWh (27 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "gtx performance",
+      "rows": 1,
+      "examples": [
+        "ID.3 GTX Performance 84 kWh (326 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "pro performance",
+      "rows": 1,
+      "examples": [
+        "ID.3 Pro Performance 62 kWh (204 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "pure performance",
+      "rows": 1,
+      "examples": [
+        "ID.3 Pure Performance 48 kWh (150 Hp)"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC40",
+      "qualifier": "recharge twin",
+      "rows": 1,
+      "examples": [
+        "XC40 Recharge Twin 78 kWh (408 Hp) AWD"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC60",
+      "qualifier": "polestar",
+      "rows": 1,
+      "examples": [
+        "XC60 Polestar 2 0 T8 TwEn (318 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC60",
+      "qualifier": "polestar recharge",
+      "rows": 1,
+      "examples": [
+        "XC60 Polestar Recharge 2 0 T8 (318 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC70",
+      "qualifier": "long range",
+      "rows": 1,
+      "examples": [
+        "XC70 Long Range 1 5T (318 Hp) Plug-in Hybrid DHT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC70",
+      "qualifier": "ultra long range",
+      "rows": 1,
+      "examples": [
+        "XC70 Ultra Long Range 1 5T (462 Hp) Plug-in Hybrid 4WD DHT"
+      ]
+    },
+    {
+      "category": "possible_sibling_model",
+      "brand": "Volvo",
+      "model": "XC90",
+      "qualifier": "recharge",
+      "rows": 1,
+      "examples": [
+        "XC90 Recharge 2 0 T8 (455 Hp) Plug-in Hybrid AWD Geartronic 6-7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "GMC",
+      "model": "Sierra",
+      "qualifier": "3500hd",
+      "rows": 149,
+      "examples": [
+        "Sierra 3500HD 6 0 V8 (360 Hp) DRW Automatic",
+        "Sierra 3500HD 6 0 V8 (360 Hp) SRW Automatic",
+        "Sierra 3500HD 6 0 V8 (360 Hp) 4WD SRW Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "GMC",
+      "model": "Sierra",
+      "qualifier": "2500hd",
+      "rows": 125,
+      "examples": [
+        "Sierra 2500HD 6 0 V8 (360 Hp) Automatic",
+        "Sierra 2500HD 6 6 Duramax TD V8 (445 Hp) Automatic",
+        "Sierra 2500HD 6 0 V8 (360 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Genesis",
+      "model": "G90",
+      "qualifier": "eq900",
+      "rows": 23,
+      "examples": [
+        "G90/EQ900 5 0 GDi V8 (425 Hp) AWD Automatic",
+        "G90/EQ900 3 3T GDi V6 (370 Hp) AWD Automatic",
+        "G90/EQ900 3 8 GDi V6 (315 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "carrera 4 gts",
+      "rows": 18,
+      "examples": [
+        "911 Carrera 4 GTS 3 8 (430 Hp)",
+        "911 Carrera 4 GTS 3 8 (430 Hp) PDK",
+        "911 Carrera 4 GTS 3 8 (430 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "z28",
+      "rows": 16,
+      "examples": [
+        "Camaro Z28 5 7 i V8 (275 Hp)",
+        "Camaro Z28 5 7 i V8 (285 Hp)",
+        "Camaro Z28 5 7 i V8 (310 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "4 gts",
+      "rows": 7,
+      "examples": [
+        "911 4 GTS 3 8 (430 Hp)",
+        "911 4 GTS 3 8 (430 Hp) PDK",
+        "911 4 GTS 3 0 (450 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "4s",
+      "rows": 7,
+      "examples": [
+        "911 4S 3 8 (400 Hp)",
+        "911 4S 3 8 (400 Hp) PDK",
+        "911 4S 3 0 (420 Hp) PDK"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Aston Martin",
+      "model": "V8 Vantage",
+      "qualifier": "n430",
+      "rows": 4,
+      "examples": [
+        "V8 Vantage N430 4 7 V8 (436 Hp)",
+        "V8 Vantage N430 4 7 V8 (436 Hp) Sportshift",
+        "V8 Vantage N430 4 7 V8 (436 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "HAN",
+      "qualifier": "dm i 1 5ti",
+      "rows": 4,
+      "examples": [
+        "Han DM-i 1 5Ti (197 Hp) Plug-in Hybrid CVT",
+        "Han DM-i 1 5Ti (218 Hp) Plug-in Hybrid CVT",
+        "Han DM-i 1 5Ti (272 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "S6",
+      "qualifier": "s7",
+      "rows": 4,
+      "examples": [
+        "S6/S7 2 0L (140 Hp)",
+        "S6/S7 1 5T (154 Hp)",
+        "S6/S7 2 4L (167 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Bentley",
+      "model": "Continental",
+      "qualifier": "v8",
+      "rows": 4,
+      "examples": [
+        "Continental V8 4 0 (500 Hp)",
+        "Continental V8 4 0 (500 Hp)",
+        "Continental V8 4 0 (507 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Bentley",
+      "model": "Continental",
+      "qualifier": "v8 s",
+      "rows": 4,
+      "examples": [
+        "Continental V8 S 4 0 (521 Hp)",
+        "Continental V8 S 4 0 (521 Hp)",
+        "Continental V8 S 4 0 (528 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chery",
+      "model": "Tiggo 8",
+      "qualifier": "plus 390tgdi",
+      "rows": 4,
+      "examples": [
+        "Tiggo 8 Plus 390TGDI (254 Hp) DCT",
+        "Tiggo 8 Plus 390TGDI (254 Hp) DCT 7 Seat",
+        "Tiggo 8 Plus 390TGDI (254 Hp) 4WD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chery",
+      "model": "Tiggo 8 Pro",
+      "qualifier": "390tgdi",
+      "rows": 4,
+      "examples": [
+        "Tiggo 8 Pro 390TGDI (254 Hp) DCT",
+        "Tiggo 8 Pro 390TGDI (254 Hp) DCT 7 Seat",
+        "Tiggo 8 Pro 390TGDI (254 Hp) 4WD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "230 turbo thrift",
+      "rows": 4,
+      "examples": [
+        "Camaro 230 Turbo-Thrift (140 Hp)",
+        "Camaro 230 Turbo-Thrift (140 Hp) Powerglide",
+        "Camaro 230 Turbo-Thrift (140 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "250 turbo thrift",
+      "rows": 4,
+      "examples": [
+        "Camaro 250 Turbo-Thrift (155 Hp)",
+        "Camaro 250 Turbo-Thrift (155 Hp) Powerglide",
+        "Camaro 250 Turbo-Thrift (155 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "327 v8 turbo fire",
+      "rows": 4,
+      "examples": [
+        "Camaro 327 V8 Turbo-Fire (210 Hp)",
+        "Camaro 327 V8 Turbo-Fire (210 Hp) Powerglide",
+        "Camaro 327 V8 Turbo-Fire (210 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "rs 327 v8 turbo fire",
+      "rows": 4,
+      "examples": [
+        "Camaro RS 327 V8 Turbo-Fire (275 Hp)",
+        "Camaro RS 327 V8 Turbo-Fire (275 Hp) Powerglide",
+        "Camaro RS 327 V8 Turbo-Fire (275 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "ss 350 v8 turbo fire",
+      "rows": 4,
+      "examples": [
+        "Camaro SS 350 V8 Turbo-Fire (295 Hp)",
+        "Camaro SS 350 V8 Turbo-Fire (295 Hp) Powerglide",
+        "Camaro SS 350 V8 Turbo-Fire (295 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "qualifier": "z28 ss",
+      "rows": 4,
+      "examples": [
+        "Camaro Z28 SS 5 7 i V8 (305 Hp)",
+        "Camaro Z28 SS 5 7 i V8 (305 Hp) Automatic",
+        "Camaro Z28 SS 5 7 i V8 (305 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifier": "d250",
+      "rows": 4,
+      "examples": [
+        "RAM D250 5 2 V8 (170 Hp)",
+        "RAM D250 5 9 V8 (175 Hp)",
+        "RAM D250 5 9 V8 (175 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifier": "35 v6",
+      "rows": 4,
+      "examples": [
+        "FX 35 V6 (303 Hp) ATTESA E-TS AWD Automatic",
+        "FX 35 V6 (303 Hp) Automatic",
+        "FX 35 V6 (303 Hp) ATTESA E-TS AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gti edition 35",
+      "rows": 4,
+      "examples": [
+        "Golf GTI Edition 35 2 0 TSI (235 Hp)",
+        "Golf GTI Edition 35 2 0 TSI (235 Hp) DSG",
+        "Golf GTI Edition 35 2 0 TSI (235 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "Tang",
+      "qualifier": "dm 2 0ti",
+      "rows": 3,
+      "examples": [
+        "Tang DM 2 0TI (437 Hp) Plug-in Hybrid AWD Automatic",
+        "Tang DM 2 0TI (586 Hp) Plug-in Hybrid AWD Genesis Automatic",
+        "Tang DM 2 0TI (586 Hp) Plug-in Hybrid AWD Honor Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "Tang",
+      "qualifier": "dm i 1 5ti",
+      "rows": 3,
+      "examples": [
+        "Tang DM-i 1 5Ti (197 Hp) Plug-in Hybrid E-CVT",
+        "Tang DM-i 1 5Ti (218 Hp) Plug-in Hybrid E-CVT",
+        "Tang DM-i 1 5Ti (272 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Viper",
+      "qualifier": "srt10",
+      "rows": 3,
+      "examples": [
+        "Viper SRT10 8 4 V10 (600 Hp)",
+        "Viper SRT10 8 3 V10 (510 Hp)",
+        "Viper SRT10 8 4 V10 (600 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "35 i v6 24v",
+      "rows": 3,
+      "examples": [
+        "M 35 i V6 24V (280 Hp)",
+        "M 35 i V6 24V (303 Hp)",
+        "M 35 i V6 24V (307 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "35 i v6 24v awd",
+      "rows": 3,
+      "examples": [
+        "M 35 i V6 24V AWD (280 Hp)",
+        "M 35 i V6 24V AWD (303 Hp)",
+        "M 35 i V6 24V AWD (307 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Maserati",
+      "model": "Quattroporte",
+      "qualifier": "s q4",
+      "rows": 3,
+      "examples": [
+        "Quattroporte S Q4 3 0 V6 (410 Hp) AWD Automatic",
+        "Quattroporte S Q4 3 0 GDI V6 (410 Hp) AWD Automatic",
+        "Quattroporte S Q4 3 0 GDI (430 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Nissan",
+      "model": "Pathfinder",
+      "qualifier": "380 vc turbo",
+      "rows": 3,
+      "examples": [
+        "Pathfinder 380 VC-TURBO (252 Hp) Automatic 7 Seat",
+        "Pathfinder 380 VC-TURBO (252 Hp) 4WD Automatic 7 Seat",
+        "Pathfinder 380 VC-TURBO (252 Hp) 4WD Automatic 6 Seat"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "r110",
+      "rows": 3,
+      "examples": [
+        "Zoe R110 44 1 kWh (108 Hp)",
+        "Zoe R110 52 kWh (108 Hp) Electric",
+        "Zoe R110 41 kWh (108 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Soueast",
+      "model": "S07",
+      "qualifier": "1 6td",
+      "rows": 3,
+      "examples": [
+        "S07 1 6TD (190 Hp) DCT",
+        "S07 1 6TD (186 Hp) 4WD Automatic",
+        "S07 1 6TD (197 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tank",
+      "model": "500",
+      "qualifier": "hi4 t",
+      "rows": 3,
+      "examples": [
+        "500 Hi4-T 2 0T 37 1 kWh (408 Hp) Plug-in Hybrid 4WD Automatic",
+        "500 Hi4-T 2 0T 37 1 kWh (408 Hp) Plug-in Hybrid 4WD Automatic",
+        "500 Hi4-T 2 0T 37 1 kWh (422 Hp) Plug-in Hybrid 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Alfa Romeo",
+      "model": "159",
+      "qualifier": "1 750 tbi",
+      "rows": 2,
+      "examples": [
+        "159 1 750 TBi (200 Hp)",
+        "159 1 750 TBi (200 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Alfa Romeo",
+      "model": "Giulietta",
+      "qualifier": "1 750 tb",
+      "rows": 2,
+      "examples": [
+        "Giulietta 1 750 TB (235 Hp)",
+        "Giulietta 1 750 TB (240 Hp) TCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Aston Martin",
+      "model": "V8 Vantage",
+      "qualifier": "f1 edition",
+      "rows": 2,
+      "examples": [
+        "V8 Vantage F1 Edition 4 0 V8 (535 Hp) Automatic",
+        "V8 Vantage F1 Edition 4 0 V8 (535 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "HAN",
+      "qualifier": "dm p 1 5ti",
+      "rows": 2,
+      "examples": [
+        "Han DM-p 1 5Ti (579 Hp) Plug-in Hybrid AWD CVT",
+        "Han DM-p 1 5Ti (544 Hp) Plug-in Hybrid 4WD E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "Tang",
+      "qualifier": "dm p 1 5ti",
+      "rows": 2,
+      "examples": [
+        "Tang DM-p 1 5Ti (615 Hp) Plug-in Hybrid AWD E-CVT",
+        "Tang DM-p 1 5Ti (544 Hp) Plug-in Hybrid 4WD E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Bentley",
+      "model": "Continental",
+      "qualifier": "gt3",
+      "rows": 2,
+      "examples": [
+        "Continental GT3 4 0 V8 (600 Hp)",
+        "Continental GT3 4 0 V8 (600 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Cadillac",
+      "model": "XT4",
+      "qualifier": "350d",
+      "rows": 2,
+      "examples": [
+        "XT4 350D (174 Hp) Automatic",
+        "XT4 350D (174 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Cadillac",
+      "model": "XTS",
+      "qualifier": "28t",
+      "rows": 2,
+      "examples": [
+        "XTS 28T (269 Hp) Automatic",
+        "XTS 28T (269 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chery",
+      "model": "Tiggo 8",
+      "qualifier": "plus 290tgdi",
+      "rows": 2,
+      "examples": [
+        "Tiggo 8 Plus 290TGDI (197 Hp) DCT",
+        "Tiggo 8 Plus 290TGDI (197 Hp) DCT 7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chery",
+      "model": "Tiggo 8 Pro",
+      "qualifier": "290tgdi",
+      "rows": 2,
+      "examples": [
+        "Tiggo 8 Pro 290TGDI (197 Hp) DCT",
+        "Tiggo 8 Pro 290TGDI (197 Hp) DCT 7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Blazer",
+      "qualifier": "650t",
+      "rows": 2,
+      "examples": [
+        "Blazer 650T (237 Hp) HYDRAMATIC",
+        "Blazer 650T (237 Hp) HYDRAMATIC 7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Blazer",
+      "qualifier": "rs 650t",
+      "rows": 2,
+      "examples": [
+        "Blazer RS 650T (237 Hp) 4WD HYDRAMATIC",
+        "Blazer RS 650T (237 Hp) 4WD HYDRAMATIC 7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifier": "530t",
+      "rows": 2,
+      "examples": [
+        "Malibu 530T (170 Hp) DSS",
+        "Malibu 530T (170 Hp) DCG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Orlando",
+      "qualifier": "530t ecotec",
+      "rows": 2,
+      "examples": [
+        "Orlando 530T Ecotec (163 Hp)",
+        "Orlando 530T Ecotec (163 Hp) DSS"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Trailblazer",
+      "qualifier": "435t",
+      "rows": 2,
+      "examples": [
+        "Trailblazer 435T (165 Hp) CVT",
+        "Trailblazer 435T (165 Hp) iAWD Hydra-Matic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Caliber",
+      "qualifier": "srt4",
+      "rows": 2,
+      "examples": [
+        "Caliber SRT4 2 4 16V (295 Hp)",
+        "Caliber SRT4 2 4 16V (303 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifier": "d150",
+      "rows": 2,
+      "examples": [
+        "RAM D150 3 7 (95 Hp)",
+        "RAM D150 5 2 V8 (135 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Hyundai",
+      "model": "Ioniq",
+      "qualifier": "9 long range",
+      "rows": 2,
+      "examples": [
+        "IONIQ 9 Long Range 110 3 kWh (218 Hp)",
+        "IONIQ 9 Long Range 110 3 kWh (313 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Hyundai",
+      "model": "Tucson",
+      "qualifier": "280 tgdi",
+      "rows": 2,
+      "examples": [
+        "Tucson 280 TGDi (130 Hp) DCT",
+        "Tucson 280 TGDi (130 Hp) AWD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifier": "30d",
+      "rows": 2,
+      "examples": [
+        "FX 30d (238 Hp) ATTESA E-TS AWD Automatic",
+        "FX 30d (238 Hp) ATTESA E-TS AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifier": "35 v6 24v",
+      "rows": 2,
+      "examples": [
+        "FX 35 V6 24V (283 Hp)",
+        "FX 35 V6 24V (283 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifier": "37 v6",
+      "rows": 2,
+      "examples": [
+        "FX 37 V6 (325 Hp) Automatic",
+        "FX 37 V6 (325 Hp) ATTESA E-TS AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifier": "45 v8 32v",
+      "rows": 2,
+      "examples": [
+        "FX 45 V8 32V (319 Hp) AWD",
+        "FX 45 V8 32V (328 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "FX",
+      "qualifier": "50 v8",
+      "rows": 2,
+      "examples": [
+        "FX 50 V8 (390 Hp) ATTESA E-TS AWD Automatic",
+        "FX 50 V8 (390 Hp) ATTESA E-TS AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "JX",
+      "qualifier": "35 v6",
+      "rows": 2,
+      "examples": [
+        "JX 35 V6 (265 Hp) CVT",
+        "JX 35 V6 (265 Hp) AWD CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "30",
+      "rows": 2,
+      "examples": [
+        "M 30 (164 Hp)",
+        "M 30 (164 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "m37 v6",
+      "rows": 2,
+      "examples": [
+        "M M37 V6 (330 Hp) Automatic",
+        "M M37 V6 (330 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "m56 v8",
+      "rows": 2,
+      "examples": [
+        "M M56 V8 (420 Hp) Automatic",
+        "M M56 V8 (420 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Lincoln",
+      "model": "Corsair",
+      "qualifier": "2 0turbo",
+      "rows": 2,
+      "examples": [
+        "Corsair 2 0Turbo (250 Hp) Automatic",
+        "Corsair 2 0Turbo (250 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Nissan",
+      "model": "Titan",
+      "qualifier": "p4x",
+      "rows": 2,
+      "examples": [
+        "Titan P4X 5 6 V8 (400 Hp) 4WD Automatic",
+        "Titan P4X 5 6 V8 (400 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "408",
+      "qualifier": "230thp puretech",
+      "rows": 2,
+      "examples": [
+        "408 230THP PureTech (136 Hp)",
+        "408 230THP PureTech (136 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "Panamera",
+      "qualifier": "4s diesel",
+      "rows": 2,
+      "examples": [
+        "Panamera 4S Diesel 4 0 V8 (422 Hp) PDK",
+        "Panamera 4S Diesel 4 0 V8 (422 Hp) PDK"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "4s performance",
+      "rows": 2,
+      "examples": [
+        "Taycan 4S Performance 79 2 kWh (530 Hp)",
+        "Taycan 4S Performance 79 2 kWh (530 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "Taycan",
+      "qualifier": "4s performance plus",
+      "rows": 2,
+      "examples": [
+        "Taycan 4S Performance Plus 93 4 kWh (571 Hp)",
+        "Taycan 4S Performance Plus 93 4 kWh (571 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Megane",
+      "qualifier": "ev60",
+      "rows": 2,
+      "examples": [
+        "Megane EV60 (220 Hp)",
+        "Megane EV60 (130 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "r90",
+      "rows": 2,
+      "examples": [
+        "Zoe R90 44 1 kWh (92 Hp)",
+        "Zoe R90 25 9 kWh (92 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tank",
+      "model": "500",
+      "qualifier": "hi4 z",
+      "rows": 2,
+      "examples": [
+        "500 Hi4-Z 2 0T 59 05 kWh (863 Hp) Plug-in Hybrid 4WD DHT",
+        "500 Hi4-Z 2 0T 59 05 kWh (863 Hp) Plug-in Hybrid 4WD DHT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifier": "p90d",
+      "rows": 2,
+      "examples": [
+        "Model S P90D 90 kWh (463 Hp) Dual Motor AWD",
+        "Model S P90D 90 kWh (463 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Passat",
+      "qualifier": "r36",
+      "rows": 2,
+      "examples": [
+        "Passat R36 3 6 V6 FSI (300 Hp) 4MOTION",
+        "Passat R36 3 6 V6 FSI (300 Hp) 4MOTION"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Aston Martin",
+      "model": "V8 Vantage",
+      "qualifier": "n24",
+      "rows": 1,
+      "examples": [
+        "V8 Vantage N24 4 3 V8 (416 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Aston Martin",
+      "model": "V8 Vantage",
+      "qualifier": "sp10",
+      "rows": 1,
+      "examples": [
+        "V8 Vantage SP10 4 7 V8 (442 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Audi",
+      "model": "R8",
+      "qualifier": "gt3",
+      "rows": 1,
+      "examples": [
+        "R8 GT3 5 2 V10 (585 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Audi",
+      "model": "R8",
+      "qualifier": "gt4",
+      "rows": 1,
+      "examples": [
+        "R8 GT4 5 2 FSI V10 (495 Hp) S tronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BMW",
+      "model": "i3",
+      "qualifier": "50",
+      "rows": 1,
+      "examples": [
+        "i3 50 108 7 kWh (469 Hp) xDrive"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BMW",
+      "model": "i4",
+      "qualifier": "m60",
+      "rows": 1,
+      "examples": [
+        "i4 M60 83 9 kWh (601 Hp) xDrive"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BMW",
+      "model": "iX",
+      "qualifier": "m70",
+      "rows": 1,
+      "examples": [
+        "iX M70 108 9 kWh (659 Hp) xDrive"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BMW",
+      "model": "iX3",
+      "qualifier": "50",
+      "rows": 1,
+      "examples": [
+        "iX3 50 108 7 kWh (469 Hp) xDrive"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "HAN",
+      "qualifier": "dm 2 0ti",
+      "rows": 1,
+      "examples": [
+        "Han DM 2 0TI (437 Hp) Plug-in Hybrid AWD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "BYD",
+      "model": "HAN",
+      "qualifier": "e9",
+      "rows": 1,
+      "examples": [
+        "Han e9 76 9 kWh (222 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Baic",
+      "model": "BJ30",
+      "qualifier": "1 5td",
+      "rows": 1,
+      "examples": [
+        "BJ30 1 5TD (185 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Cadillac",
+      "model": "CT6",
+      "qualifier": "28t",
+      "rows": 1,
+      "examples": [
+        "CT6 28T (237 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Cadillac",
+      "model": "Seville",
+      "qualifier": "v8",
+      "rows": 1,
+      "examples": [
+        "Seville V8 4 6 Northstar (299 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Cadillac",
+      "model": "XT4",
+      "qualifier": "350t",
+      "rows": 1,
+      "examples": [
+        "XT4 350T (230 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Changan",
+      "model": "Eado",
+      "qualifier": "ev460",
+      "rows": 1,
+      "examples": [
+        "Eado EV460 52 56 kWh (136 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chery",
+      "model": "Tiggo 2",
+      "qualifier": "0",
+      "rows": 1,
+      "examples": [
+        "Tiggo 2 0 (125 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chery",
+      "model": "Tiggo 2",
+      "qualifier": "4",
+      "rows": 1,
+      "examples": [
+        "Tiggo 2 4 (129 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Corvette",
+      "qualifier": "zr1x",
+      "rows": 1,
+      "examples": [
+        "Corvette ZR1X 5 5 V8 (1250 Hp) Hybrid eAWD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Equinox",
+      "qualifier": "535t",
+      "rows": 1,
+      "examples": [
+        "Equinox 535T (180 Hp) DSS"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Equinox",
+      "qualifier": "550t",
+      "rows": 1,
+      "examples": [
+        "Equinox 550T (260 Hp) AWD HYDRAMATIC"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifier": "530h",
+      "rows": 1,
+      "examples": [
+        "Malibu 530H (182 Hp) Hybrid EVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifier": "535",
+      "rows": 1,
+      "examples": [
+        "Malibu 535 (200 Hp) DSS"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifier": "535t",
+      "rows": 1,
+      "examples": [
+        "Malibu 535T (165 Hp) CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifier": "redline 550t",
+      "rows": 1,
+      "examples": [
+        "Malibu Redline 550T (241 Hp) HYDRAMATIC"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifier": "3wt",
+      "rows": 1,
+      "examples": [
+        "Silverado EV 3WT 167 kWh (510 Hp) Dual Motor e4WD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifier": "4wt",
+      "rows": 1,
+      "examples": [
+        "Silverado EV 4WT 200 kWh (515 Hp) Dual Motor e4WD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Tracker",
+      "qualifier": "325t ecotec",
+      "rows": 1,
+      "examples": [
+        "Tracker 325T Ecotec (125 Hp) DSS"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Tracker",
+      "qualifier": "335t ecotec",
+      "rows": 1,
+      "examples": [
+        "Tracker 335T Ecotec (165 Hp) CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chevrolet",
+      "model": "Traverse",
+      "qualifier": "z71",
+      "rows": 1,
+      "examples": [
+        "Traverse Z71 2 5 Turbo (328 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Chrysler",
+      "model": "300",
+      "qualifier": "srt8",
+      "rows": 1,
+      "examples": [
+        "300 SRT8 6 4 HEMI V8 (470 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Challenger",
+      "qualifier": "srt demon 170",
+      "rows": 1,
+      "examples": [
+        "Challenger SRT Demon 170 6 2 HEMI V8 (900/1025 Hp) Ethanol TorqueFlite"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Charger",
+      "qualifier": "str8",
+      "rows": 1,
+      "examples": [
+        "Charger STR8 6 1 (432 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Durango",
+      "qualifier": "srt 392",
+      "rows": 1,
+      "examples": [
+        "Durango SRT 392 6 4 HEMI V8 (475 Hp) AWD TORQUEFLITE"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifier": "d150 s",
+      "rows": 1,
+      "examples": [
+        "RAM D150 S 3 9 V6 (125 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifier": "srt10",
+      "rows": 1,
+      "examples": [
+        "RAM SRT10 8 3 V10 (500 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Dodge",
+      "model": "Viper",
+      "qualifier": "srt10 acr",
+      "rows": 1,
+      "examples": [
+        "Viper SRT10 ACR 8 4 V10 (600 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ferrari",
+      "model": "360",
+      "qualifier": "360 challenge stradale",
+      "rows": 1,
+      "examples": [
+        "360 360 Challenge Stradale (425 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ferrari",
+      "model": "360",
+      "qualifier": "360 f1",
+      "rows": 1,
+      "examples": [
+        "360 360 F1 (400 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ferrari",
+      "model": "360",
+      "qualifier": "360 spider",
+      "rows": 1,
+      "examples": [
+        "360 360 Spider (400 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ferrari",
+      "model": "California",
+      "qualifier": "30",
+      "rows": 1,
+      "examples": [
+        "California 30 4 3 V8 (490 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ford",
+      "model": "Escort",
+      "qualifier": "rs cosworth 4x4",
+      "rows": 1,
+      "examples": [
+        "Escort RS Cosworth 4x4 (220 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ford",
+      "model": "Mustang",
+      "qualifier": "shelby gt350 r",
+      "rows": 1,
+      "examples": [
+        "Mustang Shelby GT350 R 5 2 V8 (526 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ford",
+      "model": "Mustang",
+      "qualifier": "shelby gt500 v8",
+      "rows": 1,
+      "examples": [
+        "Mustang Shelby GT500 V8 (760 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ford",
+      "model": "Taurus",
+      "qualifier": "ecoboost 180",
+      "rows": 1,
+      "examples": [
+        "Taurus EcoBoost 180 (181 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ford",
+      "model": "Taurus",
+      "qualifier": "ecoboost 245",
+      "rows": 1,
+      "examples": [
+        "Taurus EcoBoost 245 (245 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Ford",
+      "model": "Taurus",
+      "qualifier": "ecoboost 325 v6",
+      "rows": 1,
+      "examples": [
+        "Taurus EcoBoost 325 V6 (329 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Geely",
+      "model": "Azkarra",
+      "qualifier": "1 5td",
+      "rows": 1,
+      "examples": [
+        "Azkarra 1 5TD (190 Hp) EMS 4WD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Geely",
+      "model": "Coolray",
+      "qualifier": "200t",
+      "rows": 1,
+      "examples": [
+        "Coolray 200T (136 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Geely",
+      "model": "Coolray",
+      "qualifier": "260t",
+      "rows": 1,
+      "examples": [
+        "Coolray 260T (177 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Geely",
+      "model": "Monjaro",
+      "qualifier": "2 0td",
+      "rows": 1,
+      "examples": [
+        "Monjaro 2 0TD (235 Hp) 4WD Aisin"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Haval",
+      "model": "H6",
+      "qualifier": "hi4",
+      "rows": 1,
+      "examples": [
+        "H6 Hi4 1 5T (364 Hp) Plug-in Hybrid AWD DHT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Hyundai",
+      "model": "Ioniq",
+      "qualifier": "9 performance",
+      "rows": 1,
+      "examples": [
+        "IONIQ 9 Performance 110 3 kWh (435 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "G",
+      "qualifier": "g25",
+      "rows": 1,
+      "examples": [
+        "G G25 2 5 V6 (218 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "G",
+      "qualifier": "g25x",
+      "rows": 1,
+      "examples": [
+        "G G25x 2 5 V6 (218 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "45i v8 32v",
+      "rows": 1,
+      "examples": [
+        "M 45i V8 32V (344 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "m30d v6",
+      "rows": 1,
+      "examples": [
+        "M M30d V6 (238 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Infiniti",
+      "model": "M",
+      "qualifier": "m35h v6",
+      "rows": 1,
+      "examples": [
+        "M M35h V6 (360 Hp) Hybrid Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Jeep",
+      "model": "Cherokee",
+      "qualifier": "chief 17",
+      "rows": 1,
+      "examples": [
+        "Cherokee Chief-17 5 9 V8 (153 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Jetour",
+      "model": "T1",
+      "qualifier": "1 5td",
+      "rows": 1,
+      "examples": [
+        "T1 1 5TD (184 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Jetour",
+      "model": "T2",
+      "qualifier": "1 5td",
+      "rows": 1,
+      "examples": [
+        "T2 1 5TD (184 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Jetour",
+      "model": "T2",
+      "qualifier": "2 0td",
+      "rows": 1,
+      "examples": [
+        "T2 2 0TD (254 Hp) 4WD DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Jetour",
+      "model": "T2",
+      "qualifier": "i dm 1 5td",
+      "rows": 1,
+      "examples": [
+        "T2 i-DM 1 5TD (380 Hp) Plug-in Hybrid DHT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Sport",
+      "qualifier": "p400e",
+      "rows": 1,
+      "examples": [
+        "Range Rover Sport P400e (404 Hp) Plug-in Hybrid AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "d 180",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar D 180 2 0 (180 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "d 240",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar D 240 2 0 (240 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "d 275",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar D 275 3 0 V6 (275 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "d 300",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar D 300 3 0 V6 (300 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "p 250",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar P 250 2 0 (250 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "p 300",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar P 300 2 0 (300 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "p 340",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar P 340 3 0 V6 (340 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Land Rover",
+      "model": "Range Rover Velar",
+      "qualifier": "p 380",
+      "rows": 1,
+      "examples": [
+        "Range Rover Velar P 380 3 0 V6 (380 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Lincoln",
+      "model": "Corsair",
+      "qualifier": "2 3turbo",
+      "rows": 1,
+      "examples": [
+        "Corsair 2 3Turbo (295 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "43",
+      "rows": 1,
+      "examples": [
+        "AMG GT 43 (421 Hp) Mild Hybrid AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "55 v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 55 V8 (476 Hp) 4MATIC+ AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "63 pro v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 63 PRO V8 (612 Hp) 4MATIC+ AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "63 s e performance v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 63 S E PERFORMANCE V8 (816 Hp) Plug-in Hybrid 4MATIC+ AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "63 v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 63 V8 (585 Hp) 4MATIC+ AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT 4-door Coupe",
+      "qualifier": "43",
+      "rows": 1,
+      "examples": [
+        "AMG GT 4-Door Coupe 43 (367 Hp) EQ Boost 4MATIC+ AMG SPEEDSHIFT TCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT 4-door Coupe",
+      "qualifier": "53",
+      "rows": 1,
+      "examples": [
+        "AMG GT 4-Door Coupe 53 (435 Hp) EQ Boost 4MATIC+ AMG SPEEDSHIFT TCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT 4-door Coupe",
+      "qualifier": "63 s e performance v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 4-Door Coupe 63 S E PERFORMANCE V8 (843 Hp) Plug-in Hybrid 4MATIC+ AMG SPEEDSHIFT MCT 9G"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT 4-door Coupe",
+      "qualifier": "63 s v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 4-Door Coupe 63 S V8 (639 Hp) 4MATIC+ MCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT 4-door Coupe",
+      "qualifier": "63 v8",
+      "rows": 1,
+      "examples": [
+        "AMG GT 4-Door Coupe 63 V8 (585 Hp) 4MATIC+ MCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "SLR McLaren",
+      "qualifier": "722 edition",
+      "rows": 1,
+      "examples": [
+        "SLR McLaren 722 Edition 5 5 V8 Kompressor (650 Hp) AMG SPEEDSHIFT R"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Mercedes-Benz",
+      "model": "SLR McLaren",
+      "qualifier": "722 s",
+      "rows": 1,
+      "examples": [
+        "SLR McLaren 722 S 5 5 V8 Kompressor (650 Hp) AMG SPEEDSHIFT R"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Nissan",
+      "model": "Armada",
+      "qualifier": "pro 4x",
+      "rows": 1,
+      "examples": [
+        "Armada PRO-4X 3 5 V6 (425 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Nissan",
+      "model": "Micra",
+      "qualifier": "160 sr",
+      "rows": 1,
+      "examples": [
+        "Micra 160 SR (110 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Nissan",
+      "model": "Titan",
+      "qualifier": "pro 4x",
+      "rows": 1,
+      "examples": [
+        "Titan PRO-4X 5 6 V8 (400 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "208",
+      "qualifier": "e 208",
+      "rows": 1,
+      "examples": [
+        "208 e-208 46 3 kWh (136 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifier": "e 308",
+      "rows": 1,
+      "examples": [
+        "308 E-308 58 3 kWh (156 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifier": "e 308 58 3",
+      "rows": 1,
+      "examples": [
+        "308 E-308 58 3 (156 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "408",
+      "qualifier": "350thp puretech",
+      "rows": 1,
+      "examples": [
+        "408 350THP PureTech (167 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "508",
+      "qualifier": "350 thp puretech",
+      "rows": 1,
+      "examples": [
+        "508 350 THP PureTech (167 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "508",
+      "qualifier": "360 thp puretech",
+      "rows": 1,
+      "examples": [
+        "508 360 THP PureTech (170 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Peugeot",
+      "model": "508",
+      "qualifier": "400 thp puretech",
+      "rows": 1,
+      "examples": [
+        "508 400 THP PureTech (211 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Porsche",
+      "model": "Macan",
+      "qualifier": "4s",
+      "rows": 1,
+      "examples": [
+        "Macan 4S 100 kWh (516 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Clio",
+      "qualifier": "tce 100",
+      "rows": 1,
+      "examples": [
+        "Clio TCe 100 (100 Hp) GPL"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Laguna",
+      "qualifier": "2,0 16v",
+      "rows": 1,
+      "examples": [
+        "Laguna 2,0 16V (140 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Megane",
+      "qualifier": "ev40",
+      "rows": 1,
+      "examples": [
+        "Megane EV40 (130 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "q210",
+      "rows": 1,
+      "examples": [
+        "Zoe Q210 25 9 kWh (88 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "q90",
+      "rows": 1,
+      "examples": [
+        "Zoe Q90 44 1 kWh (88 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "r135",
+      "rows": 1,
+      "examples": [
+        "Zoe R135 52 kWh (135 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "r240",
+      "rows": 1,
+      "examples": [
+        "Zoe R240 25 9 kWh (88 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Renault",
+      "model": "Zoe",
+      "qualifier": "r75",
+      "rows": 1,
+      "examples": [
+        "Zoe R75 44 1 kWh (77 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Skoda",
+      "model": "Fabia",
+      "qualifier": "130",
+      "rows": 1,
+      "examples": [
+        "Fabia 130 1 5 TSI (177 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Skoda",
+      "model": "Kodiaq",
+      "qualifier": "gt tsi330",
+      "rows": 1,
+      "examples": [
+        "Kodiaq GT TSI330 (186 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Skoda",
+      "model": "Kodiaq",
+      "qualifier": "gt tsi380",
+      "rows": 1,
+      "examples": [
+        "Kodiaq GT TSI380 (220 Hp) 4x4 DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Skoda",
+      "model": "Rapid",
+      "qualifier": "tsi230",
+      "rows": 1,
+      "examples": [
+        "Rapid TSI230 (131 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Soueast",
+      "model": "S06",
+      "qualifier": "1 6td",
+      "rows": 1,
+      "examples": [
+        "S06 1 6TD (197 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Soueast",
+      "model": "S06",
+      "qualifier": "dm 1 5td",
+      "rows": 1,
+      "examples": [
+        "S06 DM 1 5TD (355 Hp) Plug-in Hybrid DHT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "Crosstrek",
+      "qualifier": "2 0ie",
+      "rows": 1,
+      "examples": [
+        "Crosstrek 2 0ie (136 Hp) Mild Hybrid AWD Lineartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "Forester",
+      "qualifier": "2 0ie e boxer",
+      "rows": 1,
+      "examples": [
+        "Forester 2 0ie e-BOXER (150 Hp) AWD Lineartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "Impreza",
+      "qualifier": "2 0ie e boxer",
+      "rows": 1,
+      "examples": [
+        "Impreza 2 0ie e-Boxer (150 Hp) AWD Lineartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "Outback",
+      "qualifier": "xt 2 4turbo",
+      "rows": 1,
+      "examples": [
+        "Outback XT 2 4Turbo (260 Hp) AWD CVT"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "WRX",
+      "qualifier": "ej20 final edition",
+      "rows": 1,
+      "examples": [
+        "WRX EJ20 Final Edition 2 0 (309 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "WRX",
+      "qualifier": "s209",
+      "rows": 1,
+      "examples": [
+        "WRX S209 2 5 (341 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "XV",
+      "qualifier": "2 0dl",
+      "rows": 1,
+      "examples": [
+        "XV 2 0DL (109 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Subaru",
+      "model": "XV",
+      "qualifier": "2 0ie e boxer",
+      "rows": 1,
+      "examples": [
+        "XV 2 0ie e-Boxer (150 Hp) AWD Lineartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tank",
+      "model": "300",
+      "qualifier": "hi4 t",
+      "rows": 1,
+      "examples": [
+        "300 Hi4-T 2 0T 37 1 kWh (408 Hp) Plug-in Hybrid 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tank",
+      "model": "700",
+      "qualifier": "hi4 t",
+      "rows": 1,
+      "examples": [
+        "700 Hi4-T 3 0T V6 (523 Hp) Plug-in Hybrid 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model 3",
+      "qualifier": "p50",
+      "rows": 1,
+      "examples": [
+        "Model 3 P50 50 kWh (261 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifier": "70d",
+      "rows": 1,
+      "examples": [
+        "Model S 70D 70 kWh (328 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifier": "85d",
+      "rows": 1,
+      "examples": [
+        "Model S 85D 85 kWh (417 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifier": "p85",
+      "rows": 1,
+      "examples": [
+        "Model S P85 85 kWh (416 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifier": "p85d",
+      "rows": 1,
+      "examples": [
+        "Model S P85D 85 kWh (463 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model S",
+      "qualifier": "p90d ludicrous",
+      "rows": 1,
+      "examples": [
+        "Model S P90D Ludicrous 90 kWh (532 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Tesla",
+      "model": "Model X",
+      "qualifier": "p90d",
+      "rows": 1,
+      "examples": [
+        "Model X P90D 90 kWh (772 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gti edition 50",
+      "rows": 1,
+      "examples": [
+        "Golf GTI Edition 50 2 0 TSI (325 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Golf R",
+      "qualifier": "20 years",
+      "rows": 1,
+      "examples": [
+        "Golf R 20 Years 2 0 TSI (333 Hp) 4MOTION DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "qualifier": "gti r5",
+      "rows": 1,
+      "examples": [
+        "Polo GTI R5 1 6 (272 Hp) 4WD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Tiguan",
+      "qualifier": "330 tsi",
+      "rows": 1,
+      "examples": [
+        "Tiguan 330 TSI (186 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Tiguan",
+      "qualifier": "380 tsi",
+      "rows": 1,
+      "examples": [
+        "Tiguan 380 TSI (220 Hp) 4MOTION DSG"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volkswagen",
+      "model": "Touareg",
+      "qualifier": "r50",
+      "rows": 1,
+      "examples": [
+        "Touareg R50 5 0 TDI V10 (350 Hp) 4XMOTION Tiptronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volvo",
+      "model": "V90",
+      "qualifier": "recharge t6",
+      "rows": 1,
+      "examples": [
+        "V90 Recharge T6 2 0 (253 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volvo",
+      "model": "V90",
+      "qualifier": "recharge t8",
+      "rows": 1,
+      "examples": [
+        "V90 Recharge T8 2 0 (310 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "Volvo",
+      "model": "XC60",
+      "qualifier": "recharge t6",
+      "rows": 1,
+      "examples": [
+        "XC60 Recharge T6 2 0 (253 Hp) Plug-in Hybrid AWD Geartronic"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "XPENG",
+      "model": "P7",
+      "qualifier": "550",
+      "rows": 1,
+      "examples": [
+        "P7 550 64 4 kWh (276 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "XPENG",
+      "model": "P7",
+      "qualifier": "610",
+      "rows": 1,
+      "examples": [
+        "P7 610 86 2 kWh (473 Hp) Electric 4WD"
+      ]
+    },
+    {
+      "category": "unknown_engine_code",
+      "brand": "XPENG",
+      "model": "P7",
+      "qualifier": "702",
+      "rows": 1,
+      "examples": [
+        "P7 702 86 2 kWh (276 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Octavia",
+      "qualifier": "rs",
+      "rows": 48,
+      "examples": [
+        "Octavia RS 2 0 TSI (245 Hp)",
+        "Octavia RS 2 0 TDI (170 Hp)",
+        "Octavia RS 2 0 TDI (170 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Dodge",
+      "model": "Ram",
+      "qualifier": "drw",
+      "rows": 24,
+      "examples": [
+        "RAM DRW 5 9 Cummins TD (160 Hp) 4x4 Automatic",
+        "RAM DRW 5 9 Cummins TD (160 Hp) Automatic",
+        "RAM DRW 5 9 Cummins TD (175 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mazda",
+      "model": "BT-50",
+      "qualifier": "xtr",
+      "rows": 18,
+      "examples": [
+        "BT-50 XTR 3 2 (200 Hp) 4x4",
+        "BT-50 XTR 3 2 (200 Hp) 4x4 Automatic",
+        "BT-50 XTR 3 2 (200 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gtd",
+      "rows": 15,
+      "examples": [
+        "Golf GTD 2 0 TDI (184 Hp)",
+        "Golf GTD 2 0 TDI (184 Hp) DSG",
+        "Golf GTD 2 0 TDI (184 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "qualifier": "vivo",
+      "rows": 13,
+      "examples": [
+        "Polo Vivo 1 4 (75 Hp)",
+        "Polo Vivo 1 4 (86 Hp)",
+        "Polo Vivo 1 4 (86 Hp) Tiptronic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volvo",
+      "model": "440",
+      "qualifier": "k",
+      "rows": 13,
+      "examples": [
+        "440 K 1 6 i (82 Hp)",
+        "440 K 1 7 (102 Hp)",
+        "440 K 1 7 (106 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "911 Turbo",
+      "qualifier": "s",
+      "rows": 12,
+      "examples": [
+        "911 Turbo S 3 3 (381 Hp)",
+        "911 Turbo S 3 8 (560 Hp) PDK",
+        "911 Turbo S 3 8 (580 Hp) PDK"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "Boxster",
+      "qualifier": "s",
+      "rows": 12,
+      "examples": [
+        "Boxster S 3 2 (280 Hp) Tiptronic",
+        "Boxster S 3 2 (280 Hp)",
+        "Boxster S 3 4 (295 Hp) Tiptronic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Santa Fe",
+      "qualifier": "r",
+      "rows": 10,
+      "examples": [
+        "Santa Fe R 2 2 CRDi (197 Hp)",
+        "Santa Fe R 2 2 CRDi (197 Hp) Automatic",
+        "Santa Fe R 2 2 CRDi (197 Hp) 4WD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "qualifier": "gti",
+      "rows": 10,
+      "examples": [
+        "Polo GTI 1 8 (150 Hp) 3-d",
+        "Polo GTI 1 8 (150 Hp) 5-d",
+        "Polo GTI 1 8 TSI (192 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Fiesta",
+      "qualifier": "st",
+      "rows": 8,
+      "examples": [
+        "Fiesta ST 2 0 Duratec HE (150 Hp)",
+        "Fiesta ST 1 6 EcoBoost (182 Hp)",
+        "Fiesta ST 1 6 EcoBoost (200 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Kangoo",
+      "qualifier": "z.e.",
+      "rows": 7,
+      "examples": [
+        "Kangoo Z.E. 22 kWh (60 Hp)",
+        "Kangoo Z.E. 33 kWh (60 Hp)",
+        "Kangoo Z.E. 22 kWh (60 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Corolla",
+      "qualifier": "sl",
+      "rows": 7,
+      "examples": [
+        "Corolla SL 1100 (73 Hp)",
+        "Corolla SL 1200 (77 Hp)",
+        "Corolla SL 1200 (77 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Foton",
+      "model": "Tunland",
+      "qualifier": "v",
+      "rows": 6,
+      "examples": [
+        "Tunland V 2 0 TD (175 Hp) Mild Hybrid Automatic",
+        "Tunland V 2 0 TD (175 Hp) Mild Hybrid 4x4 Automatic",
+        "Tunland V 2 0 TD (175 Hp) Mild Hybrid"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Laguna",
+      "qualifier": "gt",
+      "rows": 6,
+      "examples": [
+        "Laguna GT 2 0 dCi (150 Hp) start&stop",
+        "Laguna GT 2 0 dCi (150 Hp) start&stop",
+        "Laguna GT 2 0 dCi (173 Hp) start&stop"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "911 GT3",
+      "qualifier": "rs",
+      "rows": 5,
+      "examples": [
+        "911 GT3 RS 4 0 (500 Hp) PDK",
+        "911 GT3 RS 4 0 (520 Hp) PDK",
+        "911 GT3 RS 3 6 (415 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Kodiaq",
+      "qualifier": "rs",
+      "rows": 5,
+      "examples": [
+        "Kodiaq RS 2 0 BiTDI (240 Hp) 4x4 DSG",
+        "Kodiaq RS 2 0 BiTDI (240 Hp) 4x4 DSG 7 Seat",
+        "Kodiaq RS 2 0 TSI (245 Hp) 4x4 DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Superb",
+      "qualifier": "iv",
+      "rows": 5,
+      "examples": [
+        "Superb iV 1 4 TSi (218 Hp) Plug-in hybrid",
+        "Superb iV 1 4 TSi (218 Hp) Plug-in hybrid DSG",
+        "Superb iV 1 5 TSI (204 Hp) Plug-in Hybrid DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Yaris",
+      "qualifier": "gr",
+      "rows": 5,
+      "examples": [
+        "Yaris GR 1 6 (261 Hp) GR-FOUR",
+        "Yaris GR 1 6 Turbo (280 Hp) GR-FOUR AWD iMT",
+        "Yaris GR 1 6 Turbo (280 Hp) GR-FOUR AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "BYD",
+      "model": "Seal 6",
+      "qualifier": "dm i",
+      "rows": 4,
+      "examples": [
+        "Seal 6 DM-i 1 5L 10 08 kWh (184 Hp) Plug-in Hybrid E-CVT",
+        "Seal 6 DM-i 1 5L 19 kWh (212 Hp) Plug-in Hybrid E-CVT",
+        "Seal 6 DM-i 1 5L 10 08 kWh (184 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Cadillac",
+      "model": "CT5",
+      "qualifier": "v",
+      "rows": 4,
+      "examples": [
+        "CT5 V 3 0 V6 (360 Hp) Automatic",
+        "CT5 V 3 0 V6 (360 Hp) AWD Automatic",
+        "CT5 V 3 0 V6 (360 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chery",
+      "model": "Tiggo 7",
+      "qualifier": "plus",
+      "rows": 4,
+      "examples": [
+        "Tiggo 7 Plus 1 6 T-GDI (197 Hp) DCT",
+        "Tiggo 7 Plus 1 5T (326 Hp) Plug-in Hybrid DHT",
+        "Tiggo 7 Plus 1 6 TGDI (197 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Bolt",
+      "qualifier": "ev",
+      "rows": 4,
+      "examples": [
+        "Bolt EV 60 kWh (200 Hp)",
+        "Bolt EV 66 kWh (200 Hp)",
+        "Bolt EV 65 kWh (200 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Explorer",
+      "qualifier": "ev",
+      "rows": 4,
+      "examples": [
+        "Explorer EV 82 kWh (286 Hp) Extended Range RWD",
+        "Explorer EV 82 kWh (340 Hp) Extended Range AWD",
+        "Explorer EV 58 kWh (190 Hp) Standard Range RWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Mustang",
+      "qualifier": "gt cs",
+      "rows": 4,
+      "examples": [
+        "Mustang GT/CS 5 0 V8 (450 Hp)",
+        "Mustang GT/CS 5 0 V8 (450 Hp) SelectShift",
+        "Mustang GT/CS 5 0 V8 (450 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Honda",
+      "model": "Element",
+      "qualifier": "sc",
+      "rows": 4,
+      "examples": [
+        "Element SC 2 4 (166 Hp)",
+        "Element SC 2 4 (166 Hp)",
+        "Element SC 2 4 (166 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Infiniti",
+      "model": "Q50",
+      "qualifier": "s",
+      "rows": 4,
+      "examples": [
+        "Q50 S 3 5 V6 (364 Hp) Hybrid Automatic",
+        "Q50 S 3 5 V6 (364 Hp) Hybrid AWD Automatic",
+        "Q50 S 3 0 V6 (405 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Cerato",
+      "qualifier": "gt",
+      "rows": 4,
+      "examples": [
+        "Cerato GT 1 6 T-GDI (204 Hp) DCT",
+        "Cerato GT 1 6 T-GDI (204 Hp) DCT",
+        "Cerato GT 1 6 T-GDI (204 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "K3",
+      "qualifier": "gt",
+      "rows": 4,
+      "examples": [
+        "K3 GT 1 6 T-GDI (204 Hp) DCT",
+        "K3 GT 1 6 T-GDI (204 Hp)",
+        "K3 GT 1 6 T-GDI (204 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifier": "gti",
+      "rows": 4,
+      "examples": [
+        "308 GTi 1 6 THP (270 Hp)",
+        "308 GTi 1 6 THP (250 Hp)",
+        "308 GTi 1 6 THP (270 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "508",
+      "qualifier": "pse",
+      "rows": 4,
+      "examples": [
+        "508 PSE 1 6 PureTech (360 Hp) 4WD Plug-in Hybrid e-EAT8",
+        "508 PSE 1 6 PureTech (360 Hp) 4WD Plug-in Hybrid e-EAT8",
+        "508 PSE 1 6 PureTech (360 Hp) 4WD Plug-in Hybrid e-EAT8"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Subaru",
+      "model": "Impreza",
+      "qualifier": "gt",
+      "rows": 4,
+      "examples": [
+        "Impreza GT 2 0 Turbo (211 Hp) 4WD",
+        "Impreza GT 2 0 Turbo (218 Hp) 4WD",
+        "Impreza GT 2 0 Turbo (218 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Yaris",
+      "qualifier": "ts",
+      "rows": 4,
+      "examples": [
+        "Yaris TS 1 8 (133 Hp)",
+        "Yaris TS 1 5 VVT-i (105 Hp)",
+        "Yaris TS 1 5 Turbo (150 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Passat",
+      "qualifier": "gte",
+      "rows": 4,
+      "examples": [
+        "Passat GTE 1 4 TSI (218 Hp) DSG Plug-in Hybrid",
+        "Passat GTE 1 4 TSI (218 Hp) Plug-in Hybrid DSG",
+        "Passat GTE 1 4 TSI (218 Hp) Plug-in Hybrid DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Touran",
+      "qualifier": "tgi",
+      "rows": 4,
+      "examples": [
+        "Touran TGI 1 4 TSI (150 Hp) BlueMotion",
+        "Touran TGI 1 4 TSI (150 Hp) BlueMotion",
+        "Touran TGI 1 4 TSI (150 Hp) DSG BlueMotion"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Corvette",
+      "qualifier": "zr",
+      "rows": 3,
+      "examples": [
+        "Corvette ZR-1 5 7 V8 (375 Hp)",
+        "Corvette ZR-1 5 7 V8 (405 Hp)",
+        "Corvette ZR-1 5 7 V8 (375 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Escort",
+      "qualifier": "rs",
+      "rows": 3,
+      "examples": [
+        "Escort RS 2000 (150 Hp)",
+        "Escort RS 2000 4x4 (150 Hp)",
+        "Escort RS 2000 (150 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Mustang Mach-E",
+      "qualifier": "gt",
+      "rows": 3,
+      "examples": [
+        "Mustang Mach-E GT 98 7 kWh (487 Hp) AWD",
+        "Mustang Mach-E GT 98 7 kWh (487 Hp) AWD",
+        "Mustang Mach-E GT 98 7 kWh (487 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Tiburon",
+      "qualifier": "gt",
+      "rows": 3,
+      "examples": [
+        "Tiburon GT 2 7 V6 (172 Hp) Manual 6-speed",
+        "Tiburon GT 2 7 V6 (172 Hp) Manual 5-speed",
+        "Tiburon GT 2 7 V6 (172 Hp) Shiftronic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "i30",
+      "qualifier": "n",
+      "rows": 3,
+      "examples": [
+        "i30 N 2 0 T-GDI (250 Hp)",
+        "i30 N 2 0 T-GDI (250 Hp)",
+        "i30 N 2 0 T-GDI (250 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Niro",
+      "qualifier": "e niro",
+      "rows": 3,
+      "examples": [
+        "Niro e-Niro 67 kWh (204 Hp)",
+        "Niro e-Niro 42 kWh (136 Hp)",
+        "Niro e-Niro 64 8 kWh (204 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Optima",
+      "qualifier": "gt",
+      "rows": 3,
+      "examples": [
+        "Optima GT 2 0 T-GDI (245 Hp) Automatic",
+        "Optima GT 2 0 T-GDI (245 Hp) Automatic",
+        "Optima GT 2 0 T-GDI (238 Hp) GPF Sportmatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Stinger",
+      "qualifier": "gt",
+      "rows": 3,
+      "examples": [
+        "Stinger GT 3 3 GDI (370 Hp) AWD Automatic",
+        "Stinger GT 3 3 GDI (370 Hp) Automatic",
+        "Stinger GT 3 3 GDI (366 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Land Rover",
+      "model": "Defender",
+      "qualifier": "hard top",
+      "rows": 3,
+      "examples": [
+        "Defender Hard Top 3 0 D200 (200 Hp) Mild Hybrid AWD Automatic",
+        "Defender Hard Top 3 0 D250 (249 Hp) Mild Hybrid AWD Automatic",
+        "Defender Hard Top 3 0 D300 (299 Hp) Mild Hybrid AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maserati",
+      "model": "Quattroporte",
+      "qualifier": "s",
+      "rows": 3,
+      "examples": [
+        "Quattroporte S 3 0 V6 (410 Hp) Automatic",
+        "Quattroporte S 3 0 GDI V6 (410 Hp) Automatic",
+        "Quattroporte S 3 0 GDI (430 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mazda",
+      "model": "3",
+      "qualifier": "mps",
+      "rows": 3,
+      "examples": [
+        "3 MPS 2 3i (260 Hp)",
+        "3 MPS 2 3i (260 Hp)",
+        "3 MPS 2 3i (260 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "s",
+      "rows": 3,
+      "examples": [
+        "AMG GT S 4 0 V8 (510 Hp) DCT",
+        "AMG GT S 4 0 V8 (522 Hp) DCT",
+        "AMG GT S 4 0 V8 (522 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "2008",
+      "qualifier": "e",
+      "rows": 3,
+      "examples": [
+        "2008 e-2008 50 kWh (136 Hp)",
+        "2008 e-2008 50 kWh (136 Hp)",
+        "2008 e-2008 54 kWh (156 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "3008",
+      "qualifier": "e",
+      "rows": 3,
+      "examples": [
+        "3008 e-3008 73 kWh (213 Hp)",
+        "3008 e-3008 73 kWh (326 Hp) Dual Motor AWD",
+        "3008 e-3008 98 kWh (231 Hp) Long Range"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Fabia",
+      "qualifier": "rs",
+      "rows": 3,
+      "examples": [
+        "Fabia RS 1 9 TDI (130 Hp)",
+        "Fabia RS 1 4 TSI (180 Hp) DSG",
+        "Fabia RS 1 4 TSI (180 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "pro s",
+      "rows": 3,
+      "examples": [
+        "ID.3 Pro S 82 kWh (204 Hp)",
+        "ID.3 Pro S 82 kWh (204 Hp)",
+        "ID.3 Pro S 82 kWh (231 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Acura",
+      "model": "MDX",
+      "qualifier": "type s",
+      "rows": 2,
+      "examples": [
+        "MDX Type S 3 0 V6 (355 Hp) SH-AWD SportShift",
+        "MDX Type S 3 0 V6 (355 Hp) SH-AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Aston Martin",
+      "model": "V12 Vantage",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "V12 Vantage S 6 0 V12 (573 Hp) Sportshift",
+        "V12 Vantage S 6 0 V12 (573 Hp) Sportshift"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Audi",
+      "model": "RS e-tron",
+      "qualifier": "gt",
+      "rows": 2,
+      "examples": [
+        "RS e-tron GT 93 4 kWh (646 Hp) quattro",
+        "RS e-tron GT 105 kWh (856 Hp) quattro"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Audi",
+      "model": "S6",
+      "qualifier": "e tron",
+      "rows": 2,
+      "examples": [
+        "S6 e-tron 100 kWh (551 Hp) quattro",
+        "S6 e-tron 100 kWh (551 Hp) quattro"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Audi",
+      "model": "SQ8",
+      "qualifier": "e tron",
+      "rows": 2,
+      "examples": [
+        "SQ8 e-tron 114 kWh (503 Hp) quattro",
+        "SQ8 e-tron 114 kWh (503 Hp) quattro"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "BYD",
+      "model": "Destroyer 05",
+      "qualifier": "dm i",
+      "rows": 2,
+      "examples": [
+        "Destroyer 05 DM-i 1 5L 8 3 kWh (180 Hp) Plug-in Hybrid E-CVT",
+        "Destroyer 05 DM-i 1 5L 18 3 kWh (197 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "BYD",
+      "model": "Sealion 5",
+      "qualifier": "dm i",
+      "rows": 2,
+      "examples": [
+        "Sealion 5 DM-i 1 5L 12 96 kWh (212 Hp) Plug-in Hybrid E-CVT",
+        "Sealion 5 DM-i 1 5L 18 3 kWh (212 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Baic",
+      "model": "BJ30",
+      "qualifier": "e",
+      "rows": 2,
+      "examples": [
+        "BJ30 e 1 5T (409 Hp) Hybrid 4WD DHT",
+        "BJ30 e 1 5T (334 Hp) Hybrid DHT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Changan",
+      "model": "UNI-V",
+      "qualifier": "idd",
+      "rows": 2,
+      "examples": [
+        "UNI-V iDD 1 5T (170 Hp) Plug-in Hybrid DCT",
+        "UNI-V iDD 1 5L (215 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Blazer",
+      "qualifier": "ev",
+      "rows": 2,
+      "examples": [
+        "Blazer EV 89 kWh (288 Hp) Dual Motor eAWD",
+        "Blazer EV 102 kWh (340 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Corvette",
+      "qualifier": "e ray",
+      "rows": 2,
+      "examples": [
+        "Corvette E-Ray 6 2 V8 (655 Hp) e-AWD DCT (USA)",
+        "Corvette E-Ray 6 2 V8 (655 Hp) e-AWD DCT (USA)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Equinox",
+      "qualifier": "ev",
+      "rows": 2,
+      "examples": [
+        "Equinox EV 89 kWh (213 Hp)",
+        "Equinox EV 89 kWh (288 Hp) Dual Motor eAWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "HHR",
+      "qualifier": "ss",
+      "rows": 2,
+      "examples": [
+        "HHR SS 2 0 Turbo (260 Hp)",
+        "HHR SS 2 0 Turbo (260 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Malibu",
+      "qualifier": "ss",
+      "rows": 2,
+      "examples": [
+        "Malibu SS 3 9i V6 12V (240 Hp) Automatic",
+        "Malibu SS 3 9i V6 12V (240 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Sail",
+      "qualifier": "s rv",
+      "rows": 2,
+      "examples": [
+        "Sail/S-RV 1 3 (103 Hp)",
+        "Sail/S-RV 1 5 (113 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chrysler",
+      "model": "Crossfire",
+      "qualifier": "srt",
+      "rows": 2,
+      "examples": [
+        "Crossfire SRT-6 3 2i V6 (330 Hp) Automatic",
+        "Crossfire SRT-6 3 2i V6 (330 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Dodge",
+      "model": "Viper",
+      "qualifier": "gts",
+      "rows": 2,
+      "examples": [
+        "Viper GTS 8 4i V10 20V (649 Hp)",
+        "Viper GTS 8 0 V10 (450 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Escort",
+      "qualifier": "gt",
+      "rows": 2,
+      "examples": [
+        "Escort GT 1 8i (128 Hp)",
+        "Escort GT 1 8i (128 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Mustang",
+      "qualifier": "mach",
+      "rows": 2,
+      "examples": [
+        "Mustang Mach 1 5 0 Ti-VCT V8 (460 Hp)",
+        "Mustang Mach 1 5 0 Ti-VCT V8 (460 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Geely",
+      "model": "Emgrand",
+      "qualifier": "ev ev",
+      "rows": 2,
+      "examples": [
+        "Emgrand EV EV 450 52 kWh (163 Hp) Electric",
+        "Emgrand EV EV 300 41 kWh (129 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Geely",
+      "model": "Emgrand",
+      "qualifier": "gl",
+      "rows": 2,
+      "examples": [
+        "Emgrand GL 1 8 (133 Hp) DCT",
+        "Emgrand GL 1 8 (133 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Palisade",
+      "qualifier": "r",
+      "rows": 2,
+      "examples": [
+        "Palisade R 2 2 CRDi (200 Hp) Automatic",
+        "Palisade R 2 2 CRDi (200 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "i10",
+      "qualifier": "blue",
+      "rows": 2,
+      "examples": [
+        "i10 blue 1 0 (67 Hp)",
+        "i10 blue 1 0 (67 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "i10",
+      "qualifier": "n line",
+      "rows": 2,
+      "examples": [
+        "i10 N Line 1 0 T-GDi (100 Hp)",
+        "i10 N Line 1 0 T-GDi (100 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Jeep",
+      "model": "Wagoneer",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "Wagoneer S 100 5 kWh (608 Hp) 4WD Electric",
+        "Wagoneer S 100 5 kWh (500 Hp) 4WD Electric"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "EV9",
+      "qualifier": "gt",
+      "rows": 2,
+      "examples": [
+        "EV9 GT 99 8 kWh (508 Hp) AWD Electric 6 Seat",
+        "EV9 GT 99 8 kWh (508 Hp) AWD Electric 7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Soul",
+      "qualifier": "e soul",
+      "rows": 2,
+      "examples": [
+        "Soul e-Soul 67 kWh (204 Hp)",
+        "Soul e-Soul 42 kWh (136 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Soul",
+      "qualifier": "ev",
+      "rows": 2,
+      "examples": [
+        "Soul EV 31 kWh (110 Hp)",
+        "Soul EV 33 kWh (110 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Land Rover",
+      "model": "Discovery",
+      "qualifier": "svx",
+      "rows": 2,
+      "examples": [
+        "Discovery SVX 5 0 V8 (525 Hp) AWD Automatic",
+        "Discovery SVX 5 0 V8 (525 Hp) AWD Automatic 7 Seat"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maserati",
+      "model": "GranCabrio",
+      "qualifier": "mc",
+      "rows": 2,
+      "examples": [
+        "GranCabrio MC 4 7 V8 (460 Hp) Automatic",
+        "GranCabrio MC 4 7 V8 (460 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "GranTurismo S 4 7 i V8 32V (440 Hp)",
+        "GranTurismo S 4 7 (440 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maserati",
+      "model": "Quattroporte",
+      "qualifier": "gts",
+      "rows": 2,
+      "examples": [
+        "Quattroporte GTS 3 8 V8 (530 Hp) Automatic",
+        "Quattroporte GTS 3 8 GDI V8 (530 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maybach",
+      "model": "57",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "57 S 6 0 V12 (612 Hp) Automatic",
+        "57 S 6 0 V12 (630 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maybach",
+      "model": "62",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "62 S 6 0 V12 (612 Hp) Automatic",
+        "62 S 6 0 V12 (630 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "c",
+      "rows": 2,
+      "examples": [
+        "AMG GT C 4 0 V8 (558 Hp) DCT",
+        "AMG GT C 4 0 V8 (557 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mercedes-Benz",
+      "model": "SLS AMG",
+      "qualifier": "gt",
+      "rows": 2,
+      "examples": [
+        "SLS AMG GT 6 2 V8 (591 Hp) AMG SPEEDSHIFT DCT",
+        "SLS AMG GT 6 2 V8 (591 Hp) AMG SPEEDSHIFT DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mitsubishi",
+      "model": "Eclipse",
+      "qualifier": "gsx",
+      "rows": 2,
+      "examples": [
+        "Eclipse GSX 2 0 Turbo (195 Hp) AWD",
+        "Eclipse GSX 2 0 Turbo (180 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mitsubishi",
+      "model": "Lancer",
+      "qualifier": "gti",
+      "rows": 2,
+      "examples": [
+        "Lancer GTi 1 8 16V (136 Hp)",
+        "Lancer GTi 1 8 16V (140 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mitsubishi",
+      "model": "Montero Sport",
+      "qualifier": "gt",
+      "rows": 2,
+      "examples": [
+        "Montero Sport GT 2 4 Clean Diesel (181 Hp) AWD Automatic",
+        "Montero Sport GT 2 4 Clean Diesel (181 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "208",
+      "qualifier": "e",
+      "rows": 2,
+      "examples": [
+        "208 e-208 50 kWh (136 Hp)",
+        "208 e-208 51 kWh (156 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "208",
+      "qualifier": "gti",
+      "rows": 2,
+      "examples": [
+        "208 GTI 1 6 THP (200 Hp)",
+        "208 GTi 1 6 THP (208 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "308",
+      "qualifier": "e",
+      "rows": 2,
+      "examples": [
+        "308 e-308 54 kWh (156 Hp)",
+        "308 e-308 54 kWh (156 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "911 GT2",
+      "qualifier": "rs",
+      "rows": 2,
+      "examples": [
+        "911 GT2 RS 3 6 (620 Hp)",
+        "911 GT2 RS 3 8 (700 Hp) PDK"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "Boxster",
+      "qualifier": "gts",
+      "rows": 2,
+      "examples": [
+        "Boxster GTS 3 4 (330 Hp)",
+        "Boxster GTS 3 4 (330 Hp) PDK"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Captur",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "Captur S 1 3 TCe (150 Hp) Start & Stop",
+        "Captur S 1 3 TCe (150 Hp) Start & Stop EDC"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Octavia",
+      "qualifier": "iv",
+      "rows": 2,
+      "examples": [
+        "Octavia iV 1 4 TSI (204 Hp) Plug-in Hybrid DSG",
+        "Octavia iV 1 4 TSI (204 Hp) Plug-in Hybrid DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Octavia",
+      "qualifier": "rs iv",
+      "rows": 2,
+      "examples": [
+        "Octavia RS iV 1 4 TSI (245 Hp) Plug-in Hybrid DSG",
+        "Octavia RS iV 1 4 TSI (245 Hp) Plug-in Hybrid DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Octavia",
+      "qualifier": "vrs",
+      "rows": 2,
+      "examples": [
+        "Octavia vRS 2 0 TSI (245 Hp) DSG",
+        "Octavia vRS 2 0 TSI (245 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Subaru",
+      "model": "Impreza",
+      "qualifier": "rf",
+      "rows": 2,
+      "examples": [
+        "Impreza RF 1 5 (107 Hp) AWD Automatic",
+        "Impreza RF 1 5 (107 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Matrix",
+      "qualifier": "s",
+      "rows": 2,
+      "examples": [
+        "Matrix S 2 4 (160 Hp) Automatic",
+        "Matrix S 2 4 (160 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Yaris",
+      "qualifier": "grmn",
+      "rows": 2,
+      "examples": [
+        "Yaris GRMN 1 8 VVT-iE (212 Hp)",
+        "Yaris GRMN 1 6 (272 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Arteon",
+      "qualifier": "r",
+      "rows": 2,
+      "examples": [
+        "Arteon R 2 0 TSI (320 Hp) 4MOTION DSG",
+        "Arteon R 2 0 TSI (320 Hp) 4MOTION DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "pro",
+      "rows": 2,
+      "examples": [
+        "ID.3 Pro 62 kWh (145 Hp)",
+        "ID.3 Pro 62 kWh (204 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "ID.4",
+      "qualifier": "gtx",
+      "rows": 2,
+      "examples": [
+        "ID.4 GTX 82 kWh (299 Hp) 4MOTION",
+        "ID.4 GTX 82 kWh (340 Hp) 4MOTION"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "qualifier": "gti cup",
+      "rows": 2,
+      "examples": [
+        "Polo GTI Cup 1 8 (180 Hp) 3-d",
+        "Polo GTI Cup 1 8 (180 Hp) 5-d"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Scirocco",
+      "qualifier": "gts",
+      "rows": 2,
+      "examples": [
+        "Scirocco GTS 2 0 TSI (220 Hp)",
+        "Scirocco GTS 2 0 TSI (220 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "T-Roc",
+      "qualifier": "r",
+      "rows": 2,
+      "examples": [
+        "T-Roc R 2 0 TSI (300 Hp) 4MOTION DSG",
+        "T-Roc R 2 0 TSI (300 Hp) OPF 4MOTION DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Touareg",
+      "qualifier": "r",
+      "rows": 2,
+      "examples": [
+        "Touareg R 3 0 V6 TSI (462 Hp) eHybrid 4MOTION Tiptronic",
+        "Touareg R 3 0 V6 TFSI (462 Hp) eHybrid 4MOTION Tiptronic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volvo",
+      "model": "S60",
+      "qualifier": "r",
+      "rows": 2,
+      "examples": [
+        "S60 R 2 5i 20V (300 Hp) AWD",
+        "S60 R 2 5i 20V (300 Hp) AWD Geartronic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volvo",
+      "model": "V70",
+      "qualifier": "r",
+      "rows": 2,
+      "examples": [
+        "V70 R 2 5i V20 (300 Hp) AWD",
+        "V70 R 2 5i V20 (300 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Acura",
+      "model": "Integra",
+      "qualifier": "type s",
+      "rows": 1,
+      "examples": [
+        "Integra Type S 2 0 (320 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Alfa Romeo",
+      "model": "Giulia",
+      "qualifier": "gta",
+      "rows": 1,
+      "examples": [
+        "Giulia GTA 2 9 V6 (540 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Alfa Romeo",
+      "model": "Giulia",
+      "qualifier": "gtam",
+      "rows": 1,
+      "examples": [
+        "Giulia GTAm 2 9 V6 (540 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Aston Martin",
+      "model": "DB7",
+      "qualifier": "gta",
+      "rows": 1,
+      "examples": [
+        "DB7 GTA 5 9 V12 (426 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Aston Martin",
+      "model": "DB9",
+      "qualifier": "r",
+      "rows": 1,
+      "examples": [
+        "DB9 R 6 0 V12 (608 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Aston Martin",
+      "model": "DB9",
+      "qualifier": "rs",
+      "rows": 1,
+      "examples": [
+        "DB9 RS 6 0 V12 (558 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Aston Martin",
+      "model": "DBX",
+      "qualifier": "s",
+      "rows": 1,
+      "examples": [
+        "DBX S 4 0 V8 (727 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Audi",
+      "model": "RS6",
+      "qualifier": "gt",
+      "rows": 1,
+      "examples": [
+        "RS6 GT 4 0 TFSI V8 (630 Hp) Mild Hybrid quattro tiptronic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "BYD",
+      "model": "Shark 6",
+      "qualifier": "dmo",
+      "rows": 1,
+      "examples": [
+        "Shark 6 DMO 1 5T 29 6 kWh (435 Hp) Plug-in Hybrid AWD EHS"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Cadillac",
+      "model": "CT4",
+      "qualifier": "v",
+      "rows": 1,
+      "examples": [
+        "CT4 V 2 7 Turbo (329 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Cadillac",
+      "model": "Lyriq",
+      "qualifier": "v",
+      "rows": 1,
+      "examples": [
+        "LYRIQ V 102 kWh (615 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Cadillac",
+      "model": "Optiq",
+      "qualifier": "v",
+      "rows": 1,
+      "examples": [
+        "OPTIQ V 85 kWh (519 Hp) Dual Motor AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Cadillac",
+      "model": "STS",
+      "qualifier": "v",
+      "rows": 1,
+      "examples": [
+        "STS V 4 4 i V8 (476 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Cadillac",
+      "model": "XLR",
+      "qualifier": "v",
+      "rows": 1,
+      "examples": [
+        "XLR V 4 4 i V8 32V (449 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Changan",
+      "model": "CS15",
+      "qualifier": "ev",
+      "rows": 1,
+      "examples": [
+        "CS15 EV 42 9 kWh (75 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Changan",
+      "model": "CS55",
+      "qualifier": "idd",
+      "rows": 1,
+      "examples": [
+        "CS55 iDD 1 5L (215 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Changan",
+      "model": "Eado",
+      "qualifier": "rs",
+      "rows": 1,
+      "examples": [
+        "Eado RS 1 5 (170 Hp) Start/Stop DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Changan",
+      "model": "UNI-K",
+      "qualifier": "idd",
+      "rows": 1,
+      "examples": [
+        "UNI-K iDD 1 5T (282 Hp) Plug-in Hybrid Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Changan",
+      "model": "UNI-Z",
+      "qualifier": "idd",
+      "rows": 1,
+      "examples": [
+        "UNI-Z iDD 1 5L (215 Hp) Plug-in Hybrid E-CVT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Bolt",
+      "qualifier": "euv",
+      "rows": 1,
+      "examples": [
+        "Bolt EUV 65 kWh (200 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Silverado EV",
+      "qualifier": "rst",
+      "rows": 1,
+      "examples": [
+        "Silverado EV RST 200 kWh (754 Hp) Dual Motor e4WD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chevrolet",
+      "model": "Spark",
+      "qualifier": "euv",
+      "rows": 1,
+      "examples": [
+        "Spark EUV 42 kWh (102 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chrysler",
+      "model": "300",
+      "qualifier": "lwb",
+      "rows": 1,
+      "examples": [
+        "300 LWB 3 5 V6 (253 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chrysler",
+      "model": "300",
+      "qualifier": "srt",
+      "rows": 1,
+      "examples": [
+        "300 SRT 6 4 V8 (476 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chrysler",
+      "model": "Sebring",
+      "qualifier": "hard top",
+      "rows": 1,
+      "examples": [
+        "Sebring Hard Top 2 0 CRD (140 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Chrysler",
+      "model": "Sebring",
+      "qualifier": "soft top",
+      "rows": 1,
+      "examples": [
+        "Sebring Soft Top 2 0 CRD (140 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Dodge",
+      "model": "Hornet",
+      "qualifier": "gt",
+      "rows": 1,
+      "examples": [
+        "Hornet GT 2 0 Turbo (268 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Dodge",
+      "model": "Hornet",
+      "qualifier": "r t",
+      "rows": 1,
+      "examples": [
+        "Hornet R/T 1 3 Turbo (288 Hp) eAWD Plug-in Hybrid Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Dodge",
+      "model": "Viper",
+      "qualifier": "srt",
+      "rows": 1,
+      "examples": [
+        "Viper SRT 8 4i V10 20V (649 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Escape",
+      "qualifier": "st line",
+      "rows": 1,
+      "examples": [
+        "Escape ST-Line 2 0 EcoBoost (250 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Ford",
+      "model": "Territory",
+      "qualifier": "ev",
+      "rows": 1,
+      "examples": [
+        "Territory EV 60 4 kWh (163 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Geely",
+      "model": "STARRAY",
+      "qualifier": "em i",
+      "rows": 1,
+      "examples": [
+        "Starray EM-i 1 5L (262 Hp) Plug-in Hybrid E-DHT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Ioniq 5",
+      "qualifier": "n",
+      "rows": 1,
+      "examples": [
+        "IONIQ 5 N 84 kWh (650 Hp) Electric AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Ioniq 5",
+      "qualifier": "xrt",
+      "rows": 1,
+      "examples": [
+        "IONIQ 5 XRT 84 kWh (320 Hp) Electric AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Ioniq 6",
+      "qualifier": "n",
+      "rows": 1,
+      "examples": [
+        "IONIQ 6 N 84 kWh (650 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Kona",
+      "qualifier": "n",
+      "rows": 1,
+      "examples": [
+        "Kona N 2 0 T-GDi (280 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Palisade",
+      "qualifier": "xrt pro",
+      "rows": 1,
+      "examples": [
+        "Palisade XRT Pro 3 5 V6 (287 Hp) HTRAC AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Staria",
+      "qualifier": "crew van",
+      "rows": 1,
+      "examples": [
+        "Staria Crew Van 2 2 CRDi VGT (177 Hp) Automatic 5 Seat"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "Staria",
+      "qualifier": "van",
+      "rows": 1,
+      "examples": [
+        "Staria Van 2 2 CRDi VGT (177 Hp) Automatic 2 Seat"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Hyundai",
+      "model": "i20",
+      "qualifier": "n",
+      "rows": 1,
+      "examples": [
+        "i20 N 1 6 T-GDi (204 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Isuzu",
+      "model": "D-Max",
+      "qualifier": "ev",
+      "rows": 1,
+      "examples": [
+        "D-Max EV 66 9 kWh (190 Hp) 4WD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Jeep",
+      "model": "Compass",
+      "qualifier": "e",
+      "rows": 1,
+      "examples": [
+        "Compass e 74 kWh (213 Hp) Electric"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Jetour",
+      "model": "Dashing",
+      "qualifier": "i dm",
+      "rows": 1,
+      "examples": [
+        "Dashing i-DM 1 5 TCI (326 Hp) Plug-in Hybrid DHT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "EV5",
+      "qualifier": "gt",
+      "rows": 1,
+      "examples": [
+        "EV5 GT 81 4 kWh (306 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Picanto",
+      "qualifier": "gt line",
+      "rows": 1,
+      "examples": [
+        "Picanto GT-Line 1 2 (84 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Kia",
+      "model": "Tasman",
+      "qualifier": "x pro",
+      "rows": 1,
+      "examples": [
+        "Tasman X-Pro 2 5 T-GDI (281 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Land Rover",
+      "model": "Defender",
+      "qualifier": "octa",
+      "rows": 1,
+      "examples": [
+        "Defender Octa 4 4 V8 P635 (635 Hp) Mild Hybrid AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Lincoln",
+      "model": "Continental",
+      "qualifier": "mark",
+      "rows": 1,
+      "examples": [
+        "Continental Mark 7 5 V8 (215 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "MG",
+      "model": "HS",
+      "qualifier": "ehs",
+      "rows": 1,
+      "examples": [
+        "HS EHS 1 5 T-GDI (258 Hp) Plug-in Hybrid Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "MG",
+      "model": "ZS",
+      "qualifier": "zst",
+      "rows": 1,
+      "examples": [
+        "ZS ZST 1 3i (156 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maserati",
+      "model": "Ghibli",
+      "qualifier": "ss",
+      "rows": 1,
+      "examples": [
+        "Ghibli SS 5 0 V8 (335 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Maserati",
+      "model": "GranTurismo",
+      "qualifier": "mc",
+      "rows": 1,
+      "examples": [
+        "GranTurismo MC 4 7 V8 (460 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mazda",
+      "model": "6",
+      "qualifier": "mps",
+      "rows": 1,
+      "examples": [
+        "6 MPS 2 3 (260 Hp) AWD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "r",
+      "rows": 1,
+      "examples": [
+        "AMG GT R 4 0 V8 (585 Hp) DCT"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mercedes-Benz",
+      "model": "AMG GT",
+      "qualifier": "xx",
+      "rows": 1,
+      "examples": [
+        "AMG GT XX 114 kWh (1360 Hp) 4MATIC+"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mitsubishi",
+      "model": "Eclipse",
+      "qualifier": "gts",
+      "rows": 1,
+      "examples": [
+        "Eclipse GTS 3 0 i V6 24V (210 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mitsubishi",
+      "model": "Outlander",
+      "qualifier": "gt",
+      "rows": 1,
+      "examples": [
+        "Outlander GT 3 0 MIVEC V6 (224 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Mitsubishi",
+      "model": "Pajero Sport",
+      "qualifier": "gt",
+      "rows": 1,
+      "examples": [
+        "Pajero Sport GT 2 4 (184 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Nissan",
+      "model": "Leaf",
+      "qualifier": "e+",
+      "rows": 1,
+      "examples": [
+        "Leaf e+ 62 kWh (217 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Peugeot",
+      "model": "RCZ",
+      "qualifier": "r",
+      "rows": 1,
+      "examples": [
+        "RCZ R 1 6 THP (270 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "r",
+      "rows": 1,
+      "examples": [
+        "911 R 4 0 (500 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Porsche",
+      "model": "911",
+      "qualifier": "s t",
+      "rows": 1,
+      "examples": [
+        "911 S/T 4 0 (525 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "RAM",
+      "model": "1500",
+      "qualifier": "srt trx",
+      "rows": 1,
+      "examples": [
+        "1500 SRT TRX 6 2 HEMI V8 (777 Hp) 4x4 TorqueFlite"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Captur",
+      "qualifier": "e tech",
+      "rows": 1,
+      "examples": [
+        "Captur E-TECH 1 6 (158 Hp) Plug-in Hybrid Multimode"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Clio",
+      "qualifier": "e tech",
+      "rows": 1,
+      "examples": [
+        "Clio E-TECH 1 6 (140 Hp) Hybrid Multi-Mode"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Megane",
+      "qualifier": "r.s.",
+      "rows": 1,
+      "examples": [
+        "Megane R.S. 1 8 (300 Hp) FAP EDC"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Renault",
+      "model": "Scenic",
+      "qualifier": "tce",
+      "rows": 1,
+      "examples": [
+        "Scenic TCe (130 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Skoda",
+      "model": "Kodiaq",
+      "qualifier": "iv",
+      "rows": 1,
+      "examples": [
+        "Kodiaq iV 1 5 TSI (204 Hp) Plug-in Hybrid DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Suzuki",
+      "model": "Liana",
+      "qualifier": "glx",
+      "rows": 1,
+      "examples": [
+        "Liana GLX 1 6 i 16V (103 Hp) 4WD"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Fortuner",
+      "qualifier": "gr s",
+      "rows": 1,
+      "examples": [
+        "Fortuner GR-S 2 8d (224 Hp) 4WD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Land Cruiser",
+      "qualifier": "gxl",
+      "rows": 1,
+      "examples": [
+        "Land Cruiser GXL 4 5d V8 (272 Hp) AWD Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Toyota",
+      "model": "Supra",
+      "qualifier": "l type",
+      "rows": 1,
+      "examples": [
+        "Supra L-type 2 8 (145 Hp) Automatic"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Beetle",
+      "qualifier": "rsi",
+      "rows": 1,
+      "examples": [
+        "Beetle RSI 3 2 (224 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gli",
+      "rows": 1,
+      "examples": [
+        "Golf GLi 1 6 (110 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gls",
+      "rows": 1,
+      "examples": [
+        "Golf GLS 1 5 (70 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "qualifier": "gti tcr",
+      "rows": 1,
+      "examples": [
+        "Golf GTI TCR 2 0 TSI (290 Hp) DSG"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "gtx",
+      "rows": 1,
+      "examples": [
+        "ID.3 GTX 84 kWh (286 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "ID.3",
+      "qualifier": "pure",
+      "rows": 1,
+      "examples": [
+        "ID.3 Pure 55 kWh (170 Hp)"
+      ]
+    },
+    {
+      "category": "unknown_trim",
+      "brand": "Volkswagen",
+      "model": "Tiguan",
+      "qualifier": "r",
+      "rows": 1,
+      "examples": [
+        "Tiguan R 2 0 TSI (320 Hp) 4MOTION DSG"
+      ]
+    }
+  ]
+}

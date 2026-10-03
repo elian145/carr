@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CarNet model matching report (baseline or recovery)",
+  "type": "object",
+  "required": ["schema_version", "kind", "baseline_commit"],
+  "properties": {
+    "schema_version": {"const": "carnet.model_matching_report/1"},
+    "kind": {"enum": ["baseline", "recovery"]},
+    "baseline_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+  },
+  "$defs": {
+    "outcomes": {
+      "type": "object",
+      "required": ["MATCHED", "QUARANTINED", "UNRESOLVED", "total"],
+      "properties": {
+        "MATCHED": {"type": "integer", "minimum": 0},
+        "QUARANTINED": {"type": "integer", "minimum": 0},
+        "UNRESOLVED": {"type": "integer", "minimum": 0},
+        "total": {"type": "integer", "minimum": 0}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "baseline"}}},
+      "then": {
+        "required": ["suffix_rules_enabled", "outcomes", "quarantined_total", "top_20_quarantined_brands", "quarantined_rows_per_pattern", "triage_heuristic_classes"],
+        "properties": {
+          "suffix_rules_enabled": {"const": false},
+          "outcomes": {"$ref": "#/$defs/outcomes"},
+          "top_20_quarantined_brands": {"type": "array", "maxItems": 20, "items": {"type": "object", "required": ["brand", "rows"]}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"kind": {"const": "recovery"}}},
+      "then": {
+        "required": ["before", "after", "recovered_rows", "recovered_pct_of_baseline_quarantined", "rules", "brands_improved", "still_quarantined", "safety", "row_accounting"],
+        "properties": {
+          "before": {"$ref": "#/$defs/outcomes"},
+          "after": {"$ref": "#/$defs/outcomes"},
+          "recovered_rows": {"type": "integer", "minimum": 0},
+          "rules": {"type": "array", "items": {"type": "object", "required": ["rule", "rows_recovered", "examples"]}},
+          "safety": {
+            "type": "object",
+            "required": ["matched_rows_lost_or_reassigned_vs_baseline", "suspected_false_matches", "grammar_sibling_self_check_violations", "required_sibling_pairs"],
+            "properties": {
+              "matched_rows_lost_or_reassigned_vs_baseline": {"const": 0},
+              "suspected_false_matches": {"type": "array", "maxItems": 0},
+              "grammar_sibling_self_check_violations": {"type": "array", "maxItems": 0},
+              "rows_matched_to_shorter_model_whose_name_starts_with_longer_sibling": {"const": 0}
+            }
+          },
+          "row_accounting": {
+            "type": "object",
+            "required": ["dataset_rows", "outcome_sum_after", "outcome_sum_before", "ledger_sha256_before", "ledger_sha256_after"]
+          }
+        }
+      }
+    }
+  ]
+}

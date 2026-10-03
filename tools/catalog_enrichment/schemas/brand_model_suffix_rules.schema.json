@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CarNet brand model-suffix rules",
+  "type": "object",
+  "required": ["schema_version", "principle", "token_classes", "brands"],
+  "properties": {
+    "schema_version": {"const": "carnet.brand_model_suffix_rules/1"},
+    "principle": {"type": "string"},
+    "interpreter": {"type": "string"},
+    "sibling_self_check": {"type": "string"},
+    "token_classes": {"type": "object", "additionalProperties": {"type": "string"}},
+    "audit_heuristics": {
+      "type": "object",
+      "required": ["powertrain_words", "unknown_trim_max_tokens", "unknown_trim_max_token_len"],
+      "properties": {
+        "note": {"type": "string"},
+        "powertrain_words": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "unknown_trim_max_tokens": {"type": "integer", "minimum": 1},
+        "unknown_trim_max_token_len": {"type": "integer", "minimum": 1}
+      }
+    },
+    "brands": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["evidence", "grammars"],
+        "properties": {
+          "evidence": {"type": "string", "minLength": 20},
+          "token_classes": {"type": "object", "additionalProperties": {"type": "string"}},
+          "grammars": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "kind", "models", "qualifier_regex"],
+              "additionalProperties": false,
+              "properties": {
+                "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+                "kind": {"enum": ["engine_designation", "engine_descriptor", "powertrain_name"]},
+                "doc": {"type": "string"},
+                "flags": {"type": "array", "items": {"type": "string"}},
+                "models": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "additionalProperties": {"type": "object", "additionalProperties": {"type": "string"}}
+                },
+                "qualifier_regex": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

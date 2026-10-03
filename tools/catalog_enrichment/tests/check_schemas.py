@@ -10,6 +10,9 @@ pairs = [
     ("evidence_record.schema.json", sorted((H / "evidence").glob("*.json"))),
     ("model_union.schema.json", sorted((H / "generated").glob("*.union.json"))),
     ("pilot_comparison.schema.json", [H / "reports" / "pilot_comparison.json"]),
+    ("brand_model_suffix_rules.schema.json", [H / "rules" / "brand_model_suffix_rules.json"]),
+    ("model_matching_report.schema.json", [H / "reports" / "model_matching_baseline.json", H / "reports" / "model_matching_recovery.json"]),
+    ("model_matching_review_queue.schema.json", [H / "reports" / "model_matching_review_queue.json"]),
 ]
 bad = 0
 for sch, files in pairs:

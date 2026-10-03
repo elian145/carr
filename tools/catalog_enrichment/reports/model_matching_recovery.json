@@ -1,0 +1,1833 @@
+{
+  "schema_version": "carnet.model_matching_report/1",
+  "kind": "recovery",
+  "baseline_commit": "ac91f611525bdb49a755c66005ae2a3f8590886a",
+  "before": {
+    "MATCHED": 24910,
+    "QUARANTINED": 8274,
+    "UNRESOLVED": 8946,
+    "total": 42130
+  },
+  "after": {
+    "MATCHED": 30841,
+    "QUARANTINED": 2343,
+    "UNRESOLVED": 8946,
+    "total": 42130
+  },
+  "baseline_quarantined": 8274,
+  "recovered_rows": 5931,
+  "recovered_pct_of_baseline_quarantined": 71.68,
+  "recovered_by_status": {
+    "suffix_rule": 5931
+  },
+  "recovered_from_unresolved": 0,
+  "recovered_triage_classes": {
+    "likely_powertrain_suffix": 5156,
+    "unclear": 768,
+    "likely_sibling_or_trim_word": 7
+  },
+  "brands_improved": [
+    {
+      "brand": "Mercedes-Benz",
+      "recovered_rows": 2818,
+      "before": {
+        "MATCHED": 58,
+        "QUARANTINED": 2938,
+        "UNRESOLVED": 922
+      },
+      "after": {
+        "MATCHED": 2876,
+        "QUARANTINED": 120,
+        "UNRESOLVED": 922
+      },
+      "pct_of_brand_quarantine_recovered": 95.9
+    },
+    {
+      "brand": "BMW",
+      "recovered_rows": 2624,
+      "before": {
+        "MATCHED": 125,
+        "QUARANTINED": 2652,
+        "UNRESOLVED": 165
+      },
+      "after": {
+        "MATCHED": 2749,
+        "QUARANTINED": 28,
+        "UNRESOLVED": 165
+      },
+      "pct_of_brand_quarantine_recovered": 98.9
+    },
+    {
+      "brand": "Audi",
+      "recovered_rows": 215,
+      "before": {
+        "MATCHED": 2409,
+        "QUARANTINED": 269,
+        "UNRESOLVED": 397
+      },
+      "after": {
+        "MATCHED": 2624,
+        "QUARANTINED": 54,
+        "UNRESOLVED": 397
+      },
+      "pct_of_brand_quarantine_recovered": 79.9
+    },
+    {
+      "brand": "Lexus",
+      "recovered_rows": 202,
+      "before": {
+        "MATCHED": 52,
+        "QUARANTINED": 222,
+        "UNRESOLVED": 17
+      },
+      "after": {
+        "MATCHED": 254,
+        "QUARANTINED": 20,
+        "UNRESOLVED": 17
+      },
+      "pct_of_brand_quarantine_recovered": 91.0
+    },
+    {
+      "brand": "Jaguar",
+      "recovered_rows": 36,
+      "before": {
+        "MATCHED": 284,
+        "QUARANTINED": 67,
+        "UNRESOLVED": 47
+      },
+      "after": {
+        "MATCHED": 320,
+        "QUARANTINED": 31,
+        "UNRESOLVED": 47
+      },
+      "pct_of_brand_quarantine_recovered": 53.7
+    },
+    {
+      "brand": "Hyundai",
+      "recovered_rows": 19,
+      "before": {
+        "MATCHED": 1068,
+        "QUARANTINED": 122,
+        "UNRESOLVED": 171
+      },
+      "after": {
+        "MATCHED": 1087,
+        "QUARANTINED": 103,
+        "UNRESOLVED": 171
+      },
+      "pct_of_brand_quarantine_recovered": 15.6
+    },
+    {
+      "brand": "Kia",
+      "recovered_rows": 17,
+      "before": {
+        "MATCHED": 780,
+        "QUARANTINED": 51,
+        "UNRESOLVED": 280
+      },
+      "after": {
+        "MATCHED": 797,
+        "QUARANTINED": 34,
+        "UNRESOLVED": 280
+      },
+      "pct_of_brand_quarantine_recovered": 33.3
+    }
+  ],
+  "rules": [
+    {
+      "rule": "bmw_n_series_code",
+      "brand": "BMW",
+      "rows_recovered": 2290,
+      "models": {
+        "1-Series": 276,
+        "2-Series": 176,
+        "3-Series": 835,
+        "4-Series": 213,
+        "5-Series": 473,
+        "6-Series": 96,
+        "7-Series": 177,
+        "8-Series": 44
+      },
+      "top_qualifiers": [
+        [
+          "320d",
+          89
+        ],
+        [
+          "320i",
+          82
+        ],
+        [
+          "330i",
+          59
+        ],
+        [
+          "330d",
+          58
+        ],
+        [
+          "325i",
+          56
+        ],
+        [
+          "530d",
+          52
+        ],
+        [
+          "318i",
+          48
+        ],
+        [
+          "520d",
+          48
+        ],
+        [
+          "335i",
+          41
+        ],
+        [
+          "316i",
+          39
+        ],
+        [
+          "318d",
+          38
+        ],
+        [
+          "420d",
+          38
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "1 Series 114d (95 Hp)",
+          "resolved_model": "1-Series",
+          "accepted_qualifier": "114d",
+          "flags": []
+        },
+        {
+          "dataset_name": "2 Series 220i (184 Hp) Steptronic",
+          "resolved_model": "2-Series",
+          "accepted_qualifier": "220i",
+          "flags": []
+        },
+        {
+          "dataset_name": "3 Series 320i (150 Hp) Steptronic",
+          "resolved_model": "3-Series",
+          "accepted_qualifier": "320i",
+          "flags": []
+        },
+        {
+          "dataset_name": "3 Series 330i (255 Hp) xDrive Steptronic (US)",
+          "resolved_model": "3-Series",
+          "accepted_qualifier": "330i",
+          "flags": []
+        },
+        {
+          "dataset_name": "5 Series 520d (177 Hp) Steptronic",
+          "resolved_model": "5-Series",
+          "accepted_qualifier": "520d",
+          "flags": []
+        },
+        {
+          "dataset_name": "5 Series 540d (320 Hp) xDrive Steptronic",
+          "resolved_model": "5-Series",
+          "accepted_qualifier": "540d",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "bmw_n_series_activehybrid",
+      "brand": "BMW",
+      "rows_recovered": 7,
+      "models": {
+        "3-Series": 1,
+        "5-Series": 2,
+        "7-Series": 4
+      },
+      "top_qualifiers": [
+        [
+          "activehybrid",
+          7
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "3 Series ActiveHybrid 3 0 (340 Hp) Steptronic",
+          "resolved_model": "3-Series",
+          "accepted_qualifier": "activehybrid",
+          "flags": []
+        },
+        {
+          "dataset_name": "5 Series ActiveHybrid 3 0 (340 Hp)",
+          "resolved_model": "5-Series",
+          "accepted_qualifier": "activehybrid",
+          "flags": []
+        },
+        {
+          "dataset_name": "5 Series ActiveHybrid 3 0 (340 Hp)",
+          "resolved_model": "5-Series",
+          "accepted_qualifier": "activehybrid",
+          "flags": []
+        },
+        {
+          "dataset_name": "7 Series ActiveHybrid 3 0 (354 Hp) Steptronic",
+          "resolved_model": "7-Series",
+          "accepted_qualifier": "activehybrid",
+          "flags": []
+        },
+        {
+          "dataset_name": "7 Series ActiveHybrid 3 0 (354 Hp) Steptronic",
+          "resolved_model": "7-Series",
+          "accepted_qualifier": "activehybrid",
+          "flags": []
+        },
+        {
+          "dataset_name": "7 Series ActiveHybrid 4 4 V8 (465 Hp) Steptronic",
+          "resolved_model": "7-Series",
+          "accepted_qualifier": "activehybrid",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "bmw_x_z_code",
+      "brand": "BMW",
+      "rows_recovered": 327,
+      "models": {
+        "X1": 100,
+        "X2": 20,
+        "X3": 70,
+        "X4": 20,
+        "X5": 47,
+        "X6": 30,
+        "X7": 9,
+        "XM": 1,
+        "Z4": 30
+      },
+      "top_qualifiers": [
+        [
+          "20i",
+          42
+        ],
+        [
+          "20d",
+          34
+        ],
+        [
+          "18d",
+          33
+        ],
+        [
+          "30d",
+          27
+        ],
+        [
+          "18i",
+          15
+        ],
+        [
+          "40i",
+          15
+        ],
+        [
+          "28i",
+          14
+        ],
+        [
+          "30i",
+          14
+        ],
+        [
+          "25d",
+          13
+        ],
+        [
+          "35i",
+          13
+        ],
+        [
+          "40d",
+          12
+        ],
+        [
+          "35d",
+          8
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "X1 16d (116 Hp)",
+          "resolved_model": "X1",
+          "accepted_qualifier": "16d",
+          "flags": []
+        },
+        {
+          "dataset_name": "X1 20d (190 Hp) sDrive Steptronic",
+          "resolved_model": "X1",
+          "accepted_qualifier": "20d",
+          "flags": []
+        },
+        {
+          "dataset_name": "X2 20d (190 Hp) sDrive Steptronic",
+          "resolved_model": "X2",
+          "accepted_qualifier": "20d",
+          "flags": []
+        },
+        {
+          "dataset_name": "X3 30d (218 Hp) xDrive",
+          "resolved_model": "X3",
+          "accepted_qualifier": "30d",
+          "flags": []
+        },
+        {
+          "dataset_name": "X5 30d (245 Hp) xDrive Steptronic",
+          "resolved_model": "X5",
+          "accepted_qualifier": "30d",
+          "flags": []
+        },
+        {
+          "dataset_name": "X6 40d (340 Hp) Mild Hybrid xDrive Steptronic",
+          "resolved_model": "X6",
+          "accepted_qualifier": "40d",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "mb_class_designation",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 2288,
+      "models": {
+        "A-Class": 166,
+        "B-Class": 88,
+        "C-Class": 580,
+        "CLA": 126,
+        "CLS": 69,
+        "E-Class": 661,
+        "EQA": 2,
+        "EQB": 2,
+        "EQE SUV": 12,
+        "EQS": 5,
+        "EQV": 4,
+        "G-Class": 67,
+        "GLA": 54,
+        "GLB": 21,
+        "GLC": 48,
+        "GLE": 45,
+        "GLS": 13,
+        "R-Class": 36,
+        "S-Class": 237,
+        "T-Class": 8,
+        "V-Class": 37,
+        "X-Class": 7
+      },
+      "top_qualifiers": [
+        [
+          "c 180",
+          61
+        ],
+        [
+          "e 200",
+          52
+        ],
+        [
+          "c 200",
+          38
+        ],
+        [
+          "e 220d",
+          32
+        ],
+        [
+          "c 200 kompressor",
+          31
+        ],
+        [
+          "c 220 cdi",
+          30
+        ],
+        [
+          "c 220d",
+          30
+        ],
+        [
+          "s 500 v8",
+          30
+        ],
+        [
+          "c 200 cdi",
+          28
+        ],
+        [
+          "cla 250",
+          25
+        ],
+        [
+          "e 500 v8",
+          25
+        ],
+        [
+          "e 220 cdi",
+          24
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "A-class A 140 (82 Hp)",
+          "resolved_model": "A-Class",
+          "accepted_qualifier": "a 140",
+          "flags": []
+        },
+        {
+          "dataset_name": "C-class C 200 (184 Hp) 9G-TRONIC",
+          "resolved_model": "C-Class",
+          "accepted_qualifier": "c 200",
+          "flags": []
+        },
+        {
+          "dataset_name": "C-class C 300e (313 Hp) Plug-in Hybrid 4MATIC 9G-TRONIC",
+          "resolved_model": "C-Class",
+          "accepted_qualifier": "c 300e",
+          "flags": []
+        },
+        {
+          "dataset_name": "E-class E 200 Kompressor (192 Hp) Automatic",
+          "resolved_model": "E-Class",
+          "accepted_qualifier": "e 200 kompressor",
+          "flags": []
+        },
+        {
+          "dataset_name": "E-class E 350 BlueTEC V6 (252 Hp) 7G-TRONIC PLUS",
+          "resolved_model": "E-Class",
+          "accepted_qualifier": "e 350 bluetec v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "GLE GLE 250d (204 Hp) 9G-TRONIC",
+          "resolved_model": "GLE",
+          "accepted_qualifier": "gle 250d",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "mb_class_designation_amg",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 241,
+      "models": {
+        "A-Class": 9,
+        "C-Class": 53,
+        "CLA": 12,
+        "CLS": 18,
+        "E-Class": 44,
+        "EQE SUV": 3,
+        "EQS": 4,
+        "G-Class": 19,
+        "GLA": 8,
+        "GLB": 2,
+        "GLC": 18,
+        "GLE": 20,
+        "GLS": 3,
+        "S-Class": 28
+      },
+      "top_qualifiers": [
+        [
+          "amg c 63 v8",
+          13
+        ],
+        [
+          "amg cls 63 v8",
+          12
+        ],
+        [
+          "amg e 53",
+          12
+        ],
+        [
+          "amg s 63 v8",
+          10
+        ],
+        [
+          "amg e 63 v8",
+          9
+        ],
+        [
+          "amg c 43 v6",
+          8
+        ],
+        [
+          "amg c 63 s v8",
+          8
+        ],
+        [
+          "amg cla 45",
+          8
+        ],
+        [
+          "amg g 63 v8",
+          8
+        ],
+        [
+          "amg e 55 v8",
+          7
+        ],
+        [
+          "amg s 65 v12",
+          7
+        ],
+        [
+          "amg c 30 cdi",
+          6
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "A-class AMG A 35 (306 Hp) 4MATIC DCT",
+          "resolved_model": "A-Class",
+          "accepted_qualifier": "amg a 35",
+          "flags": [
+            "variant:amg_performance"
+          ]
+        },
+        {
+          "dataset_name": "C-class AMG C 63 S E PERFORMANCE (680 Hp) Plug-in Hybrid 4MATIC+ AMG SPEEDSHIFT MCT 9G",
+          "resolved_model": "C-Class",
+          "accepted_qualifier": "amg c 63 s e performance",
+          "flags": [
+            "variant:amg_performance"
+          ]
+        },
+        {
+          "dataset_name": "CLS AMG CLS 63 V8 (514 Hp) 7G-TRONIC AMG SPEEDSHIFT",
+          "resolved_model": "CLS",
+          "accepted_qualifier": "amg cls 63 v8",
+          "flags": [
+            "variant:amg_performance"
+          ]
+        },
+        {
+          "dataset_name": "E-class AMG E 63 S (612 Hp) 4MATIC+ MCT",
+          "resolved_model": "E-Class",
+          "accepted_qualifier": "amg e 63 s",
+          "flags": [
+            "variant:amg_performance"
+          ]
+        },
+        {
+          "dataset_name": "G-class AMG G 65 V12 (621 Hp) 4MATIC 7G-TRONIC AMG SPEEDSHIFT PLUS (USA)",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "amg g 65 v12",
+          "flags": [
+            "variant:amg_performance"
+          ]
+        },
+        {
+          "dataset_name": "GLE AMG GLE 63 (558 Hp) 4MATIC 7G-TRONIC",
+          "resolved_model": "GLE",
+          "accepted_qualifier": "amg gle 63",
+          "flags": [
+            "variant:amg_performance"
+          ]
+        }
+      ]
+    },
+    {
+      "rule": "mb_s_class_legacy_numeric",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 89,
+      "models": {
+        "S-Class": 89
+      },
+      "top_qualifiers": [
+        [
+          "300 se",
+          8
+        ],
+        [
+          "280 s",
+          6
+        ],
+        [
+          "280 sel",
+          6
+        ],
+        [
+          "350 se v8",
+          6
+        ],
+        [
+          "350 sel v8",
+          6
+        ],
+        [
+          "280 se",
+          5
+        ],
+        [
+          "500 se v8",
+          4
+        ],
+        [
+          "500 sel v8",
+          4
+        ],
+        [
+          "450 sel v8",
+          3
+        ],
+        [
+          "260 se",
+          2
+        ],
+        [
+          "260 se cat",
+          2
+        ],
+        [
+          "300 se cat",
+          2
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "S-class 260 SE (166 Hp)",
+          "resolved_model": "S-Class",
+          "accepted_qualifier": "260 se",
+          "flags": []
+        },
+        {
+          "dataset_name": "S-class 280 SE (185 Hp) Automatic",
+          "resolved_model": "S-Class",
+          "accepted_qualifier": "280 se",
+          "flags": []
+        },
+        {
+          "dataset_name": "S-class 300 SE CAT (179 Hp)",
+          "resolved_model": "S-Class",
+          "accepted_qualifier": "300 se cat",
+          "flags": []
+        },
+        {
+          "dataset_name": "S-class 350 SEL V8 (200 Hp) Automatic",
+          "resolved_model": "S-Class",
+          "accepted_qualifier": "350 sel v8",
+          "flags": []
+        },
+        {
+          "dataset_name": "S-class 420 SEL V8 CAT (204 Hp) Automatic",
+          "resolved_model": "S-Class",
+          "accepted_qualifier": "420 sel v8 cat",
+          "flags": []
+        },
+        {
+          "dataset_name": "S-class 500 SE V8 CAT (252 Hp) Automatic",
+          "resolved_model": "S-Class",
+          "accepted_qualifier": "500 se v8 cat",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "mb_ponton_legacy_numeric",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 35,
+      "models": {
+        "Ponton": 35
+      },
+      "top_qualifiers": [
+        [
+          "220 se",
+          10
+        ],
+        [
+          "220 s",
+          9
+        ],
+        [
+          "219",
+          3
+        ],
+        [
+          "180 d",
+          2
+        ],
+        [
+          "180",
+          1
+        ],
+        [
+          "180 a",
+          1
+        ],
+        [
+          "180 b",
+          1
+        ],
+        [
+          "180 c",
+          1
+        ],
+        [
+          "180 db",
+          1
+        ],
+        [
+          "180 dc",
+          1
+        ],
+        [
+          "190",
+          1
+        ],
+        [
+          "190 b",
+          1
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "Ponton 180 (52 Hp)",
+          "resolved_model": "Ponton",
+          "accepted_qualifier": "180",
+          "flags": []
+        },
+        {
+          "dataset_name": "Ponton 180 a (65 Hp)",
+          "resolved_model": "Ponton",
+          "accepted_qualifier": "180 a",
+          "flags": []
+        },
+        {
+          "dataset_name": "Ponton 190 b (80 Hp)",
+          "resolved_model": "Ponton",
+          "accepted_qualifier": "190 b",
+          "flags": []
+        },
+        {
+          "dataset_name": "Ponton 220 S (100 Hp)",
+          "resolved_model": "Ponton",
+          "accepted_qualifier": "220 s",
+          "flags": []
+        },
+        {
+          "dataset_name": "Ponton 220 S (106 Hp) Hydrak",
+          "resolved_model": "Ponton",
+          "accepted_qualifier": "220 s",
+          "flags": []
+        },
+        {
+          "dataset_name": "Ponton 220 SE (115 Hp) Hydrak",
+          "resolved_model": "Ponton",
+          "accepted_qualifier": "220 se",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "mb_g_class_legacy_numeric",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 27,
+      "models": {
+        "G-Class": 27
+      },
+      "top_qualifiers": [
+        [
+          "300 gd",
+          6
+        ],
+        [
+          "200 ge",
+          4
+        ],
+        [
+          "230 ge",
+          4
+        ],
+        [
+          "300 ge",
+          4
+        ],
+        [
+          "230 g",
+          2
+        ],
+        [
+          "240 gd",
+          2
+        ],
+        [
+          "250 gd",
+          2
+        ],
+        [
+          "350 gd turbo",
+          2
+        ],
+        [
+          "500 ge v8",
+          1
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "G-class 200 GE (118 Hp) 4MATIC",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "200 ge",
+          "flags": []
+        },
+        {
+          "dataset_name": "G-class 230 G (90 Hp) 4WD",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "230 g",
+          "flags": []
+        },
+        {
+          "dataset_name": "G-class 230 GE (126 Hp) 4MATIC Automatic",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "230 ge",
+          "flags": []
+        },
+        {
+          "dataset_name": "G-class 250 GD (94 Hp) 4MATIC",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "250 gd",
+          "flags": []
+        },
+        {
+          "dataset_name": "G-class 300 GD (88 Hp) 4WD",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "300 gd",
+          "flags": []
+        },
+        {
+          "dataset_name": "G-class 300 GE (170 Hp) 4MATIC Automatic",
+          "resolved_model": "G-Class",
+          "accepted_qualifier": "300 ge",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "mb_van_numeric_cdi",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 124,
+      "models": {
+        "Sprinter": 36,
+        "Vito": 88
+      },
+      "top_qualifiers": [
+        [
+          "114 cdi",
+          25
+        ],
+        [
+          "116 cdi",
+          22
+        ],
+        [
+          "119 cdi",
+          16
+        ],
+        [
+          "110 cdi",
+          10
+        ],
+        [
+          "311 cdi",
+          4
+        ],
+        [
+          "314 cdi",
+          4
+        ],
+        [
+          "315 cdi",
+          4
+        ],
+        [
+          "411 cdi",
+          4
+        ],
+        [
+          "414 cdi",
+          4
+        ],
+        [
+          "415 cdi",
+          4
+        ],
+        [
+          "v 230",
+          3
+        ],
+        [
+          "124 cdi",
+          2
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "Sprinter 211 CDI (114 Hp) W910",
+          "resolved_model": "Sprinter",
+          "accepted_qualifier": "211 cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sprinter 411 CDI (114 Hp) W907",
+          "resolved_model": "Sprinter",
+          "accepted_qualifier": "411 cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Vito 110 CDI 1 7 (102 Hp)",
+          "resolved_model": "Vito",
+          "accepted_qualifier": "110 cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Vito 114 CDI (136 Hp) Automatic",
+          "resolved_model": "Vito",
+          "accepted_qualifier": "114 cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Vito 116 CDI (163 Hp) 4MATIC 9G-TRONIC",
+          "resolved_model": "Vito",
+          "accepted_qualifier": "116 cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Vito 119 CDI (190 Hp) 9G-TRONIC",
+          "resolved_model": "Vito",
+          "accepted_qualifier": "119 cdi",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "mb_viano_powertrain_word",
+      "brand": "Mercedes-Benz",
+      "rows_recovered": 14,
+      "models": {
+        "Viano": 14
+      },
+      "top_qualifiers": [
+        [
+          "cdi",
+          14
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "Viano CDI 2 0 (136 Hp)",
+          "resolved_model": "Viano",
+          "accepted_qualifier": "cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Viano CDI 2 0 (136 Hp) Automatic",
+          "resolved_model": "Viano",
+          "accepted_qualifier": "cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Viano CDI 2 0 L (136 Hp) 4MATIC Automatic",
+          "resolved_model": "Viano",
+          "accepted_qualifier": "cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Viano CDI 2 2 (163 Hp) 4MATIC Automatic",
+          "resolved_model": "Viano",
+          "accepted_qualifier": "cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Viano CDI 2 2 L (163 Hp)",
+          "resolved_model": "Viano",
+          "accepted_qualifier": "cdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Viano CDI 2 2 L (163 Hp) Automatic",
+          "resolved_model": "Viano",
+          "accepted_qualifier": "cdi",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "audi_power_level_designation",
+      "brand": "Audi",
+      "rows_recovered": 215,
+      "models": {
+        "A1": 7,
+        "A3": 16,
+        "A4": 25,
+        "A5": 10,
+        "A6": 37,
+        "A7": 12,
+        "A8": 24,
+        "Q2": 9,
+        "Q3": 24,
+        "Q5": 13,
+        "Q7": 26,
+        "Q8": 12
+      },
+      "top_qualifiers": [
+        [
+          "50 tdi v6",
+          34
+        ],
+        [
+          "35 tdi",
+          30
+        ],
+        [
+          "45 tdi v6",
+          24
+        ],
+        [
+          "55 tfsi v6",
+          19
+        ],
+        [
+          "35 tfsi",
+          12
+        ],
+        [
+          "55 tfsi e",
+          12
+        ],
+        [
+          "50 tfsi e",
+          10
+        ],
+        [
+          "50 tdi",
+          9
+        ],
+        [
+          "45 tfsi",
+          8
+        ],
+        [
+          "25 tfsi",
+          7
+        ],
+        [
+          "40 tdi",
+          7
+        ],
+        [
+          "45 tdi",
+          7
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "A1 25 TFSI (95 Hp)",
+          "resolved_model": "A1",
+          "accepted_qualifier": "25 tfsi",
+          "flags": []
+        },
+        {
+          "dataset_name": "A4 45 TDI (231 Hp) quattro Tiptronic",
+          "resolved_model": "A4",
+          "accepted_qualifier": "45 tdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "A6 50 TDI V6 (286 Hp) Mild Hybrid quattro tiptronic",
+          "resolved_model": "A6",
+          "accepted_qualifier": "50 tdi v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "A8 50 TDI V6 (286 Hp) Mild Hybrid quattro tiptronic",
+          "resolved_model": "A8",
+          "accepted_qualifier": "50 tdi v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "Q3 35 TDI (150 Hp) S tronic",
+          "resolved_model": "Q3",
+          "accepted_qualifier": "35 tdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Q7 45 TDI V6 (231 Hp) Mild Hybrid quattro tiptronic",
+          "resolved_model": "Q7",
+          "accepted_qualifier": "45 tdi v6",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "jaguar_engine_label",
+      "brand": "Jaguar",
+      "rows_recovered": 33,
+      "models": {
+        "F-Pace": 4,
+        "F-Type": 12,
+        "XE": 4,
+        "XF": 13
+      },
+      "top_qualifiers": [
+        [
+          "20d",
+          7
+        ],
+        [
+          "p380 v6",
+          6
+        ],
+        [
+          "p300",
+          4
+        ],
+        [
+          "p340 v6",
+          4
+        ],
+        [
+          "25d",
+          3
+        ],
+        [
+          "30d v6",
+          3
+        ],
+        [
+          "25t",
+          2
+        ],
+        [
+          "30t",
+          2
+        ],
+        [
+          "d180",
+          2
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "F-Pace 20d (180 Hp) AWD Automatic",
+          "resolved_model": "F-Pace",
+          "accepted_qualifier": "20d",
+          "flags": []
+        },
+        {
+          "dataset_name": "F-type P300 (300 Hp) Automatic",
+          "resolved_model": "F-Type",
+          "accepted_qualifier": "p300",
+          "flags": []
+        },
+        {
+          "dataset_name": "F-type P380 V6 (380 Hp)",
+          "resolved_model": "F-Type",
+          "accepted_qualifier": "p380 v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "XE D180 (180 Hp) AWD Automatic",
+          "resolved_model": "XE",
+          "accepted_qualifier": "d180",
+          "flags": []
+        },
+        {
+          "dataset_name": "XF 20d (180 Hp) AWD Automatic",
+          "resolved_model": "XF",
+          "accepted_qualifier": "20d",
+          "flags": []
+        },
+        {
+          "dataset_name": "XF 25t (250 Hp) Automatic",
+          "resolved_model": "XF",
+          "accepted_qualifier": "25t",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "jaguar_ipace_ev_label",
+      "brand": "Jaguar",
+      "rows_recovered": 3,
+      "models": {
+        "I-Pace": 3
+      },
+      "top_qualifiers": [
+        [
+          "ev400",
+          2
+        ],
+        [
+          "ev320",
+          1
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "I-Pace EV320 90 kWh (320 Hp) AWD",
+          "resolved_model": "I-Pace",
+          "accepted_qualifier": "ev320",
+          "flags": []
+        },
+        {
+          "dataset_name": "I-Pace EV400 90 kWh (400 Hp) AWD",
+          "resolved_model": "I-Pace",
+          "accepted_qualifier": "ev400",
+          "flags": []
+        },
+        {
+          "dataset_name": "I-Pace EV400 90 kWh (400 Hp) AWD",
+          "resolved_model": "I-Pace",
+          "accepted_qualifier": "ev400",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "hyundai_kia_fuel_prefixed_engine_code",
+      "brand": "Hyundai",
+      "rows_recovered": 19,
+      "models": {
+        "Casper": 1,
+        "Elantra": 4,
+        "Santa Fe": 1,
+        "Sonata": 7,
+        "Stargazer": 3,
+        "Tucson": 3
+      },
+      "top_qualifiers": [
+        [
+          "g1 5 smartstream",
+          3
+        ],
+        [
+          "g1 6 smartstream",
+          3
+        ],
+        [
+          "g2 0 smartstream",
+          3
+        ],
+        [
+          "g2 5 gdi",
+          2
+        ],
+        [
+          "d2 0 smartstream",
+          1
+        ],
+        [
+          "g1 0 smartstream",
+          1
+        ],
+        [
+          "g1 6 t gdi",
+          1
+        ],
+        [
+          "g2 0",
+          1
+        ],
+        [
+          "g2 0 gdi",
+          1
+        ],
+        [
+          "g2 5 t gdi",
+          1
+        ],
+        [
+          "g3 5 smartstream v6",
+          1
+        ],
+        [
+          "l2 0",
+          1
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "Casper G1 0 Smartstream (76 Hp) Automatic",
+          "resolved_model": "Casper",
+          "accepted_qualifier": "g1 0 smartstream",
+          "flags": []
+        },
+        {
+          "dataset_name": "Elantra G2 0 Smartstream (159 Hp)",
+          "resolved_model": "Elantra",
+          "accepted_qualifier": "g2 0 smartstream",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sonata G1 6 T-GDi (180 Hp) Automatic",
+          "resolved_model": "Sonata",
+          "accepted_qualifier": "g1 6 t gdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sonata G2 5 GDi (191 Hp) Automatic",
+          "resolved_model": "Sonata",
+          "accepted_qualifier": "g2 5 gdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sonata L2 0 (146 Hp) LPG Automatic",
+          "resolved_model": "Sonata",
+          "accepted_qualifier": "l2 0",
+          "flags": []
+        },
+        {
+          "dataset_name": "Stargazer G1 5 Smartstream (115 Hp) IVT",
+          "resolved_model": "Stargazer",
+          "accepted_qualifier": "g1 5 smartstream",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "kia_fuel_prefixed_engine_code",
+      "brand": "Kia",
+      "rows_recovered": 17,
+      "models": {
+        "Carens": 7,
+        "K3": 1,
+        "Sonet": 9
+      },
+      "top_qualifiers": [
+        [
+          "d1 5 crdi vgt",
+          3
+        ],
+        [
+          "g1 5 smartstream t gdi",
+          3
+        ],
+        [
+          "g1 0 t gdi",
+          2
+        ],
+        [
+          "g1 0 t gdi smartstream",
+          2
+        ],
+        [
+          "g1 2 smartstream",
+          2
+        ],
+        [
+          "g1 4 smartstream t gdi",
+          2
+        ],
+        [
+          "g1 5 smartstream",
+          2
+        ],
+        [
+          "g1 6",
+          1
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "Carens G1 4 Smartstream T-GDi (140 Hp)",
+          "resolved_model": "Carens",
+          "accepted_qualifier": "g1 4 smartstream t gdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Carens G1 5 Smartstream (115 Hp)",
+          "resolved_model": "Carens",
+          "accepted_qualifier": "g1 5 smartstream",
+          "flags": []
+        },
+        {
+          "dataset_name": "Carens G1 5 Smartstream T-GDi (160 Hp) DCT",
+          "resolved_model": "Carens",
+          "accepted_qualifier": "g1 5 smartstream t gdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sonet D1 5 CRDi VGT (116 Hp)",
+          "resolved_model": "Sonet",
+          "accepted_qualifier": "d1 5 crdi vgt",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sonet G1 0 T-GDi (120 Hp)",
+          "resolved_model": "Sonet",
+          "accepted_qualifier": "g1 0 t gdi",
+          "flags": []
+        },
+        {
+          "dataset_name": "Sonet G1 0 T-GDi Smartstream (120 Hp) iMT",
+          "resolved_model": "Sonet",
+          "accepted_qualifier": "g1 0 t gdi smartstream",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "lexus_code_designation",
+      "brand": "Lexus",
+      "rows_recovered": 197,
+      "models": {
+        "ES": 11,
+        "GS": 24,
+        "GX": 10,
+        "IS": 49,
+        "LC": 5,
+        "LS": 28,
+        "LX": 16,
+        "NX": 7,
+        "RC": 6,
+        "RX": 24,
+        "SC": 9,
+        "TX": 4,
+        "UX": 4
+      },
+      "top_qualifiers": [
+        [
+          "350 v6",
+          34
+        ],
+        [
+          "300h",
+          15
+        ],
+        [
+          "300 v6",
+          12
+        ],
+        [
+          "460 v8",
+          12
+        ],
+        [
+          "430 v8",
+          11
+        ],
+        [
+          "250 v6",
+          10
+        ],
+        [
+          "300",
+          10
+        ],
+        [
+          "400 v8",
+          9
+        ],
+        [
+          "200t",
+          7
+        ],
+        [
+          "470 v8",
+          7
+        ],
+        [
+          "570 v8",
+          6
+        ],
+        [
+          "200",
+          5
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "ES 200 (150 Hp) Automatic",
+          "resolved_model": "ES",
+          "accepted_qualifier": "200",
+          "flags": []
+        },
+        {
+          "dataset_name": "GS 450h (345 Hp) Hybrid e-CVT",
+          "resolved_model": "GS",
+          "accepted_qualifier": "450h",
+          "flags": []
+        },
+        {
+          "dataset_name": "IS 300 V6 (228 Hp) ECT-i",
+          "resolved_model": "IS",
+          "accepted_qualifier": "300 v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "LC 500h V6 (359 Hp) Hybrid Multistage",
+          "resolved_model": "LC",
+          "accepted_qualifier": "500h v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "LX 470 V8 (275 Hp) AWD Automatic",
+          "resolved_model": "LX",
+          "accepted_qualifier": "470 v8",
+          "flags": []
+        },
+        {
+          "dataset_name": "RX 330 (230 Hp)",
+          "resolved_model": "RX",
+          "accepted_qualifier": "330",
+          "flags": []
+        }
+      ]
+    },
+    {
+      "rule": "lexus_rx_long_wheelbase_designation",
+      "brand": "Lexus",
+      "rows_recovered": 5,
+      "models": {
+        "RX": 5
+      },
+      "top_qualifiers": [
+        [
+          "350l v6",
+          4
+        ],
+        [
+          "450hl v6",
+          1
+        ]
+      ],
+      "examples": [
+        {
+          "dataset_name": "RX 350L V6 (290 Hp) AWD Automatic",
+          "resolved_model": "RX",
+          "accepted_qualifier": "350l v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "RX 350L V6 (290 Hp) AWD Automatic",
+          "resolved_model": "RX",
+          "accepted_qualifier": "350l v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "RX 350L V6 (290 Hp) Automatic",
+          "resolved_model": "RX",
+          "accepted_qualifier": "350l v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "RX 350L V6 (290 Hp) Automatic",
+          "resolved_model": "RX",
+          "accepted_qualifier": "350l v6",
+          "flags": []
+        },
+        {
+          "dataset_name": "RX 450hL V6 (313 Hp) Hybrid E-Four e-CVT",
+          "resolved_model": "RX",
+          "accepted_qualifier": "450hl v6",
+          "flags": []
+        }
+      ]
+    }
+  ],
+  "still_quarantined": 2343,
+  "still_quarantined_by_review_category": {
+    "possible_sibling_model": 944,
+    "unknown_engine_code": 655,
+    "unknown_trim": 540,
+    "mercedes_unknown_suffix": 94,
+    "audi_unknown_suffix": 35,
+    "jaguar_unknown_suffix": 31,
+    "bmw_unknown_suffix": 24,
+    "lexus_unknown_suffix": 20
+  },
+  "still_quarantined_top_brands": [
+    [
+      "Ford",
+      487
+    ],
+    [
+      "GMC",
+      280
+    ],
+    [
+      "Mercedes-Benz",
+      120
+    ],
+    [
+      "Porsche",
+      118
+    ],
+    [
+      "Volkswagen",
+      109
+    ],
+    [
+      "Hyundai",
+      103
+    ],
+    [
+      "Chevrolet",
+      96
+    ],
+    [
+      "Toyota",
+      93
+    ],
+    [
+      "Skoda",
+      73
+    ],
+    [
+      "Dodge",
+      64
+    ],
+    [
+      "Renault",
+      58
+    ],
+    [
+      "Audi",
+      54
+    ],
+    [
+      "Suzuki",
+      51
+    ],
+    [
+      "Volvo",
+      43
+    ],
+    [
+      "Peugeot",
+      42
+    ],
+    [
+      "Infiniti",
+      37
+    ],
+    [
+      "Kia",
+      34
+    ],
+    [
+      "Genesis",
+      33
+    ],
+    [
+      "BYD",
+      31
+    ],
+    [
+      "Jaguar",
+      31
+    ]
+  ],
+  "still_quarantined_triage_classes": {
+    "likely_powertrain_suffix": 578,
+    "unclear": 364,
+    "likely_sibling_or_trim_word": 1401
+  },
+  "safety": {
+    "matched_rows_lost_or_reassigned_vs_baseline": 0,
+    "matched_rows_lost_or_reassigned_examples": [],
+    "new_rows_accepted_by_more_than_one_grammar": 0,
+    "suspected_false_matches": [],
+    "catalog_prefix_pairs": 177,
+    "rows_matched_to_shorter_model_whose_name_starts_with_longer_sibling": 0,
+    "contaminated_pairs": [],
+    "required_sibling_pairs": [
+      {
+        "brand": "Toyota",
+        "shorter": "Land Cruiser",
+        "longer": "Land Cruiser Prado",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 73,
+        "rows_matched_to_longer": 76,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Volkswagen",
+        "shorter": "Golf",
+        "longer": "Golf R",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 628,
+        "rows_matched_to_longer": 28,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Land Rover",
+        "shorter": "Discovery",
+        "longer": "Discovery Sport",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 57,
+        "rows_matched_to_longer": 51,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Ford",
+        "shorter": "Bronco",
+        "longer": "Bronco Sport",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 40,
+        "rows_matched_to_longer": 2,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Toyota",
+        "shorter": "Corolla",
+        "longer": "Corolla Cross",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 224,
+        "rows_matched_to_longer": 15,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Toyota",
+        "shorter": "Corolla",
+        "longer": "GR Corolla",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 224,
+        "rows_matched_to_longer": 0,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Mitsubishi",
+        "shorter": "Pajero",
+        "longer": "Pajero Sport",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 78,
+        "rows_matched_to_longer": 22,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Volkswagen",
+        "shorter": "Passat",
+        "longer": "Passat CC",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 440,
+        "rows_matched_to_longer": 47,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      },
+      {
+        "brand": "Renault",
+        "shorter": "Megane",
+        "longer": "Megane GT",
+        "both_in_catalog": true,
+        "rows_matched_to_shorter": 357,
+        "rows_matched_to_longer": 40,
+        "rows_matched_to_shorter_whose_name_starts_with_longer": 0
+      }
+    ],
+    "grammar_sibling_self_check_violations": []
+  },
+  "row_accounting": {
+    "dataset_rows": 42130,
+    "outcome_sum_after": 42130,
+    "outcome_sum_before": 42130,
+    "ledger_sha256_before": "7f2ed0207489009ca1b8872442275471eb9868669c28eaf8cc3e71f544446500",
+    "ledger_sha256_after": "6a6e37e4e46e8858f0e743b6dd4ac12e10ebd091cce137cf3a6108c88cdd57d0"
+  }
+}

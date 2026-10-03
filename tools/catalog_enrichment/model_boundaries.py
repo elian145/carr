@@ -5,6 +5,12 @@ Replaces the app-mirroring `name_matches_family` heuristic, which treats
 'Land Cruiser Prado 2 7' as a 'Land Cruiser' row (first-word / prefix match).
 Rules: see rules/model_boundaries.json -> "algorithm". No fuzzy matching, no guessing.
 
+Brand suffix grammars (rules/brand_model_suffix_rules.json) add ONE more accepted status, `suffix_rule`: a
+qualifier after the longest canonical model is accepted only if the whole qualifier fullmatches a data-defined,
+brand+model-scoped powertrain/engine-code grammar (e.g. BMW '3 Series 320d', Mercedes 'E-Class E 220 d').
+Every row ends as MATCHED / QUARANTINED / UNRESOLVED (`Resolution.outcome`). `ModelIndex(..., use_suffix_rules=False)`
+reproduces the strict pre-grammar baseline. Audit/metrics: matching_audit.py.
+
 CLI (repo root):
   python tools/catalog_enrichment/model_boundaries.py report            # writes reports/model_collisions.json
   python tools/catalog_enrichment/model_boundaries.py resolve "Toyota" "Land Cruiser Prado 2 7 (163 Hp)"
@@ -16,15 +22,21 @@ import re
 import sys
 import unicodedata
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 RULES_PATH = HERE / "rules" / "model_boundaries.json"
 
-ACCEPTED = {"exact", "engine_descriptor", "trim_qualifier"}
+SUFFIX_RULES_PATH = HERE / "rules" / "brand_model_suffix_rules.json"
+
+ACCEPTED = {"exact", "engine_descriptor", "trim_qualifier", "suffix_rule"}
 REJECTED = {"distinct_vehicle_qualifier", "ambiguous_qualifier", "unresolved"}
+
+# Three-state outcome used by the matching audit. Every dataset row gets exactly one; nothing is dropped.
+MATCHED, QUARANTINED, UNRESOLVED = "MATCHED", "QUARANTINED", "UNRESOLVED"
+_PLACEHOLDER = re.compile(r"\{([a-z_][a-z0-9_]*)\}")  # '{2,3}' quantifiers do not match (must start with a letter)
 
 # What a dataset name looks like right after the model: the dataset writes displacement as '2 5', '1 33',
 # '2 7l', '2 4i', or cc ('1100'), or kWh for EVs, or a bracketed group.
@@ -49,15 +61,68 @@ class Resolution:
     remainder: str = ""
     qualifier: str = ""
     flags: list[str] = field(default_factory=list)
+    rule: str | None = None  # id of the brand suffix grammar that accepted the qualifier (status == suffix_rule)
 
     @property
     def accepted(self) -> bool:
         return self.status in ACCEPTED
 
+    @property
+    def outcome(self) -> str:
+        if self.status in ACCEPTED:
+            return MATCHED
+        if self.status == "unresolved":
+            return UNRESOLVED
+        return QUARANTINED  # a canonical model was found but the remainder is not provably a descriptor of it
+
+
+class _Grammar:
+    """One data-defined suffix grammar: which models it applies to, and the anchored qualifier regex."""
+
+    def __init__(self, brand: str, spec: dict, classes: dict[str, str]):
+        self.brand = brand
+        self.id: str = spec["id"]
+        self.kind: str = spec["kind"]
+        self.flags: list[str] = list(spec.get("flags", []))
+        self.template: str = spec["qualifier_regex"]
+        self.models: dict[str, dict[str, str]] = {m: dict(v) for m, v in spec["models"].items()}
+        self.classes = classes
+        self.wildcard = False  # True when the spec used models {"*": {}} (model-independent engine-code notation)
+        self._compiled: dict[str, re.Pattern] = {}
+
+    def _expand(self, template: str, mvars: dict[str, str], depth: int = 0) -> str:
+        if depth > 5:
+            raise ValueError(f"token class nesting too deep in grammar {self.id}")
+
+        def sub(m: re.Match) -> str:
+            name = m.group(1)
+            if name in mvars:
+                return re.escape(mvars[name])
+            if name in self.classes:
+                return "(?:" + self._expand(self.classes[name], mvars, depth + 1) + ")"
+            raise ValueError(f"grammar {self.id}: unknown placeholder {{{name}}}")
+
+        return _PLACEHOLDER.sub(sub, template)
+
+    def compile_for(self, model: str) -> re.Pattern:
+        if model not in self._compiled:
+            self._compiled[model] = re.compile(self._expand(self.template, self.models[model]))
+        return self._compiled[model]
+
+    def accepts(self, model: str, qualifier: str) -> bool:
+        return model in self.models and self.compile_for(model).fullmatch(qualifier) is not None
+
 
 class ModelIndex:
-    def __init__(self, catalog: dict, rules: dict | None = None):
+    def __init__(self, catalog: dict, rules: dict | None = None, suffix_rules: dict | None = None, use_suffix_rules: bool = True,
+                 strict_suffix_rules: bool | None = None):
+        """strict_suffix_rules: brands/models named in the suffix rules MUST exist in `catalog` (else ValueError).
+        Defaults to True when suffix_rules are passed explicitly, False for the shipped rule file (so small test
+        catalogs that lack e.g. BMW simply get no BMW grammar). load_index() and the tests on the real catalog are strict."""
         self.rules = rules if rules is not None else json.loads(RULES_PATH.read_text(encoding="utf-8"))
+        self.use_suffix_rules = use_suffix_rules
+        strict = (suffix_rules is not None) if strict_suffix_rules is None else strict_suffix_rules
+        self.suffix_rules = suffix_rules if suffix_rules is not None else json.loads(SUFFIX_RULES_PATH.read_text(encoding="utf-8"))
         self.models: dict[str, list[str]] = {b: list(ms) for b, ms in catalog["models"].items()}
         self.trims: dict[str, dict[str, list[str]]] = catalog.get("trimsByBrandModel", {})
         self._brand_by_key = {mkey(b): b for b in self.models}
@@ -78,6 +143,37 @@ class ModelIndex:
                     raise ValueError(f"alias {alias!r} of {b} collides with model {d[ka]!r}")
                 d[ka] = canon
             self._keys[b] = d
+        # compiled brand grammars (validated against the catalog; always built so a broken rule file fails loudly)
+        self._grammars: dict[str, list[_Grammar]] = {}
+        shared = dict(self.suffix_rules.get("token_classes", {}))
+        seen_ids: set[str] = set()
+        for brand, bspec in (self.suffix_rules.get("brands") or {}).items():
+            if brand not in self.models:
+                if strict:
+                    raise ValueError(f"suffix rules: brand {brand!r} not in catalog")
+                continue
+            classes = {**shared, **(bspec.get("token_classes") or {})}
+            gl = []
+            for spec in bspec.get("grammars", []):
+                g = _Grammar(brand, spec, classes)
+                if g.id in seen_ids:
+                    raise ValueError(f"duplicate suffix grammar id {g.id}")
+                seen_ids.add(g.id)
+                if "*" in g.models:  # model-independent engine-code notation: applies to every model of the brand (sibling self-check still enforced)
+                    if len(g.models) != 1 or g.models["*"]:
+                        raise ValueError(f"suffix grammar {g.id}: '*' must be the only model key and carry no variables")
+                    g.models = {m: {} for m in self.models[brand]}
+                    g.wildcard = True
+                for m in list(g.models):
+                    if m not in self.models[brand]:
+                        if strict:
+                            raise ValueError(f"suffix grammar {g.id}: {m!r} is not a canonical {brand} model")
+                        del g.models[m]
+                        continue
+                    g.compile_for(m)  # surfaces unknown placeholders / bad regex now
+                if g.models:
+                    gl.append(g)
+            self._grammars[brand] = gl
 
     # -- brand / model identity ----------------------------------------------------------
     def brand_name(self, brand: str) -> str | None:
@@ -139,14 +235,20 @@ class ModelIndex:
         if qual in {mkey(x) for x in dist}:
             return Resolution(b, name, "distinct_vehicle_qualifier", model, remainder=rem, qualifier=qual)
         if qual in self._trim_keys(b, model):
-            flags = []
-            # the 'trim' word(s) plus the model tokens spell another catalog model (e.g. 'Corolla' + 'GR' vs 'GR Corolla')
-            target = sorted(mkey(model).split() + qual.split())
-            for other in self.models[b]:
-                if other != model and sorted(mkey(other).split()) == target:
-                    flags.append(f"qualifier_overlaps_other_model:{other}")
-            return Resolution(b, name, "trim_qualifier", model, remainder=rem, qualifier=qual, flags=flags)
+            return Resolution(b, name, "trim_qualifier", model, remainder=rem, qualifier=qual, flags=self._overlap_flags(b, model, qual))
+        if self.use_suffix_rules:
+            for g in self._grammars.get(b, ()):
+                if g.accepts(model, qual):
+                    return Resolution(
+                        b, name, "suffix_rule", model, remainder=rem, qualifier=qual,
+                        flags=self._overlap_flags(b, model, qual) + [f"variant:{f}" for f in g.flags], rule=g.id,
+                    )
         return Resolution(b, name, "ambiguous_qualifier", model, remainder=rem, qualifier=qual)
+
+    def _overlap_flags(self, b: str, model: str, qual: str) -> list[str]:
+        """The qualifier word(s) plus the model tokens spell another catalog model (e.g. 'Corolla' + 'GR' vs 'GR Corolla')."""
+        target = sorted(mkey(model).split() + qual.split())
+        return [f"qualifier_overlaps_other_model:{o}" for o in self.models[b] if o != model and sorted(mkey(o).split()) == target]
 
     def accepts(self, brand: str, selected_model: str, name: str) -> Resolution:
         """Resolution of `name` plus whether it belongs to `selected_model` (canonical identity, exact)."""
@@ -154,8 +256,39 @@ class ModelIndex:
         sel = self.canonical_model(brand, selected_model)
         r_ok = r.accepted and sel is not None and r.model == sel
         if not r_ok and r.accepted:
-            r = Resolution(r.brand, r.name, r.status, r.model, r.remainder, r.qualifier, r.flags + ["belongs_to_other_model"])
+            r = replace(r, flags=r.flags + ["belongs_to_other_model"])
         return r
+
+    # -- suffix-rule safety --------------------------------------------------------------------
+    def sibling_safety_violations(self) -> list[dict]:
+        """A grammar for model M must never accept the tail of a longer sibling model L = 'M tail' (catalog or alias).
+        Returns every violation; the shipped rules must produce none."""
+        out = []
+        for b, grammars in self._grammars.items():
+            keys = self._keys[b]
+            for g in grammars:
+                for m in g.models:
+                    mk = mkey(m)
+                    for lk, lcanon in keys.items():
+                        if lcanon != m and lk.startswith(mk + " "):
+                            tail = lk[len(mk) + 1:]
+                            if g.accepts(m, tail):
+                                out.append({"brand": b, "grammar": g.id, "model": m, "sibling": lcanon, "tail": tail})
+        return out
+
+    def matching_grammars(self, brand: str, model: str, qualifier: str) -> list[str]:
+        """Ids of every grammar that accepts this qualifier for this model (more than one = overlapping rules)."""
+        return [g.id for g in self._grammars.get(brand, ()) if g.accepts(model, qualifier)]
+
+    def has_grammar(self, brand: str, model: str) -> bool:
+        """True if a model-specific (non-wildcard) grammar covers this model."""
+        return any(model in g.models for g in self._grammars.get(brand, ()) if not g.wildcard)
+
+    def model_keys(self, brand: str) -> dict[str, str]:
+        return dict(self._keys[brand])
+
+    def grammar_ids(self) -> list[str]:
+        return [g.id for gl in self._grammars.values() for g in gl]
 
     # -- dataset-level utilities -----------------------------------------------------------
     def split_dataset_rows(self, brand: str, selected_model: str, rows: list[dict], name_key: str = "name"):
@@ -235,10 +368,10 @@ def collision_report(idx: ModelIndex, ds: dict) -> dict:
     }
 
 
-def load_index() -> tuple[ModelIndex, dict, dict]:
+def load_index(use_suffix_rules: bool = True) -> tuple[ModelIndex, dict, dict]:
     cat = json.loads((REPO / "assets" / "car_catalog.json").read_text(encoding="utf-8"))
     ds = json.loads((REPO / "assets" / "car_spec_dataset.json").read_text(encoding="utf-8"))
-    return ModelIndex(cat), cat, ds
+    return ModelIndex(cat, use_suffix_rules=use_suffix_rules, strict_suffix_rules=True), cat, ds
 
 
 def main(argv=None):

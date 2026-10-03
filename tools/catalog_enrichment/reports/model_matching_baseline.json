@@ -1,0 +1,2434 @@
+{
+  "schema_version": "carnet.model_matching_report/1",
+  "kind": "baseline",
+  "baseline_commit": "ac91f611525bdb49a755c66005ae2a3f8590886a",
+  "suffix_rules_enabled": false,
+  "outcomes": {
+    "MATCHED": 24910,
+    "QUARANTINED": 8274,
+    "UNRESOLVED": 8946,
+    "total": 42130
+  },
+  "dataset_status_counts": {
+    "unresolved": 8946,
+    "engine_descriptor": 23647,
+    "trim_qualifier": 1263,
+    "ambiguous_qualifier": 8274
+  },
+  "quarantined_total": 8274,
+  "quarantined_by_reason": {
+    "ambiguous_qualifier": 8274
+  },
+  "quarantined_rows_per_brand": [
+    [
+      "Mercedes-Benz",
+      2938
+    ],
+    [
+      "BMW",
+      2652
+    ],
+    [
+      "Ford",
+      487
+    ],
+    [
+      "GMC",
+      280
+    ],
+    [
+      "Audi",
+      269
+    ],
+    [
+      "Lexus",
+      222
+    ],
+    [
+      "Hyundai",
+      122
+    ],
+    [
+      "Porsche",
+      118
+    ],
+    [
+      "Volkswagen",
+      109
+    ],
+    [
+      "Chevrolet",
+      96
+    ],
+    [
+      "Toyota",
+      93
+    ],
+    [
+      "Skoda",
+      73
+    ],
+    [
+      "Jaguar",
+      67
+    ],
+    [
+      "Dodge",
+      64
+    ],
+    [
+      "Renault",
+      58
+    ],
+    [
+      "Kia",
+      51
+    ],
+    [
+      "Suzuki",
+      51
+    ],
+    [
+      "Volvo",
+      43
+    ],
+    [
+      "Peugeot",
+      42
+    ],
+    [
+      "Infiniti",
+      37
+    ],
+    [
+      "Genesis",
+      33
+    ],
+    [
+      "BYD",
+      31
+    ],
+    [
+      "Maserati",
+      29
+    ],
+    [
+      "Nissan",
+      29
+    ],
+    [
+      "Bentley",
+      25
+    ],
+    [
+      "Cadillac",
+      25
+    ],
+    [
+      "Mazda",
+      24
+    ],
+    [
+      "Subaru",
+      21
+    ],
+    [
+      "Chery",
+      20
+    ],
+    [
+      "Aston Martin",
+      16
+    ],
+    [
+      "Land Rover",
+      16
+    ],
+    [
+      "Tesla",
+      15
+    ],
+    [
+      "Mitsubishi",
+      14
+    ],
+    [
+      "Geely",
+      9
+    ],
+    [
+      "Alfa Romeo",
+      8
+    ],
+    [
+      "Changan",
+      8
+    ],
+    [
+      "Lamborghini",
+      8
+    ],
+    [
+      "Chrysler",
+      7
+    ],
+    [
+      "Jeep",
+      7
+    ],
+    [
+      "Tank",
+      7
+    ],
+    [
+      "Foton",
+      6
+    ],
+    [
+      "Honda",
+      6
+    ],
+    [
+      "Jetour",
+      5
+    ],
+    [
+      "Soueast",
+      5
+    ],
+    [
+      "Ferrari",
+      4
+    ],
+    [
+      "Lincoln",
+      4
+    ],
+    [
+      "Maybach",
+      4
+    ],
+    [
+      "Acura",
+      3
+    ],
+    [
+      "Baic",
+      3
+    ],
+    [
+      "MG",
+      3
+    ],
+    [
+      "XPENG",
+      3
+    ],
+    [
+      "RAM",
+      2
+    ],
+    [
+      "Haval",
+      1
+    ],
+    [
+      "Isuzu",
+      1
+    ]
+  ],
+  "top_20_quarantined_brands": [
+    {
+      "brand": "Mercedes-Benz",
+      "rows": 2938,
+      "pct_of_quarantined": 35.51,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 2079,
+        "unclear": 837,
+        "likely_sibling_or_trim_word": 22
+      }
+    },
+    {
+      "brand": "BMW",
+      "rows": 2652,
+      "pct_of_quarantined": 32.05,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 2619,
+        "unclear": 18,
+        "likely_sibling_or_trim_word": 15
+      }
+    },
+    {
+      "brand": "Ford",
+      "rows": 487,
+      "pct_of_quarantined": 5.89,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 481,
+        "unclear": 3,
+        "likely_powertrain_suffix": 3
+      }
+    },
+    {
+      "brand": "GMC",
+      "rows": 280,
+      "pct_of_quarantined": 3.38,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 6,
+        "likely_powertrain_suffix": 274
+      }
+    },
+    {
+      "brand": "Audi",
+      "rows": 269,
+      "pct_of_quarantined": 3.25,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 41,
+        "likely_powertrain_suffix": 217,
+        "unclear": 11
+      }
+    },
+    {
+      "brand": "Lexus",
+      "rows": 222,
+      "pct_of_quarantined": 2.68,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 214,
+        "unclear": 8
+      }
+    },
+    {
+      "brand": "Hyundai",
+      "rows": 122,
+      "pct_of_quarantined": 1.47,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 79,
+        "unclear": 22,
+        "likely_powertrain_suffix": 21
+      }
+    },
+    {
+      "brand": "Porsche",
+      "rows": 118,
+      "pct_of_quarantined": 1.43,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 53,
+        "unclear": 56,
+        "likely_powertrain_suffix": 9
+      }
+    },
+    {
+      "brand": "Volkswagen",
+      "rows": 109,
+      "pct_of_quarantined": 1.32,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 86,
+        "likely_powertrain_suffix": 9,
+        "unclear": 14
+      }
+    },
+    {
+      "brand": "Chevrolet",
+      "rows": 96,
+      "pct_of_quarantined": 1.16,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 34,
+        "likely_powertrain_suffix": 35,
+        "unclear": 27
+      }
+    },
+    {
+      "brand": "Toyota",
+      "rows": 93,
+      "pct_of_quarantined": 1.12,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 91,
+        "unclear": 2
+      }
+    },
+    {
+      "brand": "Skoda",
+      "rows": 73,
+      "pct_of_quarantined": 0.88,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 69,
+        "likely_powertrain_suffix": 2,
+        "unclear": 2
+      }
+    },
+    {
+      "brand": "Jaguar",
+      "rows": 67,
+      "pct_of_quarantined": 0.81,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 37,
+        "unclear": 18,
+        "likely_sibling_or_trim_word": 12
+      }
+    },
+    {
+      "brand": "Dodge",
+      "rows": 64,
+      "pct_of_quarantined": 0.77,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 15,
+        "likely_sibling_or_trim_word": 46,
+        "unclear": 3
+      }
+    },
+    {
+      "brand": "Renault",
+      "rows": 58,
+      "pct_of_quarantined": 0.7,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 14,
+        "likely_sibling_or_trim_word": 33,
+        "unclear": 11
+      }
+    },
+    {
+      "brand": "Kia",
+      "rows": 51,
+      "pct_of_quarantined": 0.62,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 34,
+        "likely_powertrain_suffix": 17
+      }
+    },
+    {
+      "brand": "Suzuki",
+      "rows": 51,
+      "pct_of_quarantined": 0.62,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 51
+      }
+    },
+    {
+      "brand": "Volvo",
+      "rows": 43,
+      "pct_of_quarantined": 0.52,
+      "heuristic_classes": {
+        "unclear": 20,
+        "likely_sibling_or_trim_word": 23
+      }
+    },
+    {
+      "brand": "Peugeot",
+      "rows": 42,
+      "pct_of_quarantined": 0.51,
+      "heuristic_classes": {
+        "likely_sibling_or_trim_word": 22,
+        "unclear": 1,
+        "likely_powertrain_suffix": 19
+      }
+    },
+    {
+      "brand": "Infiniti",
+      "rows": 37,
+      "pct_of_quarantined": 0.45,
+      "heuristic_classes": {
+        "likely_powertrain_suffix": 33,
+        "unclear": 4
+      }
+    }
+  ],
+  "quarantined_rows_per_pattern": [
+    [
+      "A",
+      2993
+    ],
+    [
+      "w",
+      817
+    ],
+    [
+      "w w",
+      424
+    ],
+    [
+      "l N",
+      364
+    ],
+    [
+      "l N P",
+      295
+    ],
+    [
+      "l N A",
+      224
+    ],
+    [
+      "l A",
+      217
+    ],
+    [
+      "N P",
+      207
+    ],
+    [
+      "N A",
+      161
+    ],
+    [
+      "w A",
+      161
+    ],
+    [
+      "P N",
+      159
+    ],
+    [
+      "P N P",
+      158
+    ],
+    [
+      "w N",
+      157
+    ],
+    [
+      "l",
+      140
+    ],
+    [
+      "P N A",
+      127
+    ],
+    [
+      "P A",
+      97
+    ],
+    [
+      "A A",
+      92
+    ],
+    [
+      "N P A",
+      86
+    ],
+    [
+      "N",
+      81
+    ],
+    [
+      "N w",
+      80
+    ],
+    [
+      "l w",
+      79
+    ],
+    [
+      "w l N A",
+      73
+    ],
+    [
+      "P N P P",
+      65
+    ],
+    [
+      "P N P A",
+      63
+    ],
+    [
+      "l N P P",
+      60
+    ],
+    [
+      "w w N",
+      58
+    ],
+    [
+      "w N A",
+      54
+    ],
+    [
+      "P w",
+      53
+    ],
+    [
+      "l N P A",
+      53
+    ],
+    [
+      "N w A",
+      48
+    ],
+    [
+      "N P P",
+      37
+    ],
+    [
+      "P",
+      31
+    ],
+    [
+      "w N P",
+      30
+    ],
+    [
+      "w P N A",
+      25
+    ],
+    [
+      "w w w",
+      25
+    ],
+    [
+      "w w N A",
+      24
+    ],
+    [
+      "N l",
+      23
+    ],
+    [
+      "w l N",
+      20
+    ],
+    [
+      "P N P P A",
+      19
+    ],
+    [
+      "A N P",
+      18
+    ],
+    [
+      "w N w",
+      18
+    ],
+    [
+      "w P N",
+      18
+    ],
+    [
+      "A w",
+      17
+    ],
+    [
+      "N w A P",
+      17
+    ],
+    [
+      "w N P A",
+      16
+    ],
+    [
+      "N w P",
+      15
+    ],
+    [
+      "w P",
+      15
+    ],
+    [
+      "A P",
+      13
+    ],
+    [
+      "N P P A",
+      12
+    ],
+    [
+      "w w N l A",
+      10
+    ],
+    [
+      "N P w",
+      9
+    ],
+    [
+      "l N P P A",
+      9
+    ],
+    [
+      "w l",
+      9
+    ],
+    [
+      "w w N l",
+      9
+    ],
+    [
+      "w N A P w",
+      8
+    ],
+    [
+      "w l N l A",
+      8
+    ],
+    [
+      "A N P P",
+      7
+    ],
+    [
+      "A N P P P",
+      7
+    ],
+    [
+      "A l",
+      7
+    ],
+    [
+      "A w w",
+      7
+    ]
+  ],
+  "quarantined_rows_per_first_token_after_model": [
+    [
+      "e",
+      754
+    ],
+    [
+      "c",
+      586
+    ],
+    [
+      "s",
+      341
+    ],
+    [
+      "super",
+      285
+    ],
+    [
+      "amg",
+      253
+    ],
+    [
+      "a",
+      169
+    ],
+    [
+      "connect",
+      151
+    ],
+    [
+      "3500hd",
+      149
+    ],
+    [
+      "cla",
+      129
+    ],
+    [
+      "2500hd",
+      125
+    ],
+    [
+      "320d",
+      89
+    ],
+    [
+      "b",
+      88
+    ],
+    [
+      "g",
+      83
+    ],
+    [
+      "320i",
+      82
+    ],
+    [
+      "rs",
+      77
+    ],
+    [
+      "r",
+      74
+    ],
+    [
+      "cls",
+      70
+    ],
+    [
+      "v",
+      67
+    ],
+    [
+      "330i",
+      59
+    ],
+    [
+      "330d",
+      58
+    ],
+    [
+      "350",
+      58
+    ],
+    [
+      "50",
+      57
+    ],
+    [
+      "325i",
+      56
+    ],
+    [
+      "35",
+      56
+    ],
+    [
+      "gt",
+      56
+    ],
+    [
+      "530d",
+      54
+    ],
+    [
+      "gla",
+      54
+    ],
+    [
+      "300",
+      53
+    ],
+    [
+      "520d",
+      52
+    ],
+    [
+      "azera",
+      49
+    ],
+    [
+      "glc",
+      49
+    ],
+    [
+      "318i",
+      48
+    ],
+    [
+      "45",
+      46
+    ],
+    [
+      "carrera",
+      45
+    ],
+    [
+      "gle",
+      45
+    ],
+    [
+      "20i",
+      42
+    ],
+    [
+      "20d",
+      41
+    ],
+    [
+      "335i",
+      41
+    ],
+    [
+      "316i",
+      39
+    ],
+    [
+      "520i",
+      39
+    ],
+    [
+      "55",
+      39
+    ],
+    [
+      "318d",
+      38
+    ],
+    [
+      "420d",
+      38
+    ],
+    [
+      "420i",
+      38
+    ],
+    [
+      "535i",
+      38
+    ],
+    [
+      "530i",
+      37
+    ],
+    [
+      "120d",
+      35
+    ],
+    [
+      "328i",
+      35
+    ],
+    [
+      "118d",
+      34
+    ],
+    [
+      "525d",
+      34
+    ],
+    [
+      "18d",
+      33
+    ],
+    [
+      "325d",
+      33
+    ],
+    [
+      "30d",
+      32
+    ],
+    [
+      "gti",
+      32
+    ],
+    [
+      "430i",
+      31
+    ],
+    [
+      "120i",
+      29
+    ],
+    [
+      "500",
+      29
+    ],
+    [
+      "220d",
+      28
+    ],
+    [
+      "525i",
+      28
+    ],
+    [
+      "528i",
+      28
+    ]
+  ],
+  "quarantined_rows_per_model_top60": [
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "rows": 836
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "rows": 725
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "rows": 644
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "rows": 480
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "rows": 376
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "rows": 276
+    },
+    {
+      "brand": "GMC",
+      "model": "Sierra",
+      "rows": 274
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "rows": 213
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "rows": 181
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "A-Class",
+      "rows": 178
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "rows": 176
+    },
+    {
+      "brand": "Ford",
+      "model": "F-350",
+      "rows": 175
+    },
+    {
+      "brand": "Ford",
+      "model": "Transit",
+      "rows": 151
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLA",
+      "rows": 141
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "rows": 120
+    },
+    {
+      "brand": "Ford",
+      "model": "F-250",
+      "rows": 109
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "rows": 100
+    },
+    {
+      "brand": "BMW",
+      "model": "6-Series",
+      "rows": 98
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "rows": 95
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "rows": 89
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "B-Class",
+      "rows": 88
+    },
+    {
+      "brand": "BMW",
+      "model": "X3",
+      "rows": 73
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLC",
+      "rows": 68
+    },
+    {
+      "brand": "Porsche",
+      "model": "911",
+      "rows": 66
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLE",
+      "rows": 65
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLA",
+      "rows": 62
+    },
+    {
+      "brand": "Skoda",
+      "model": "Octavia",
+      "rows": 54
+    },
+    {
+      "brand": "Lexus",
+      "model": "IS",
+      "rows": 51
+    },
+    {
+      "brand": "BMW",
+      "model": "X5",
+      "rows": 49
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Grandeur",
+      "rows": 49
+    },
+    {
+      "brand": "Audi",
+      "model": "A6",
+      "rows": 48
+    },
+    {
+      "brand": "BMW",
+      "model": "8-Series",
+      "rows": 44
+    },
+    {
+      "brand": "Suzuki",
+      "model": "SX4",
+      "rows": 42
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "rows": 40
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "R-Class",
+      "rows": 38
+    },
+    {
+      "brand": "BMW",
+      "model": "X6",
+      "rows": 37
+    },
+    {
+      "brand": "Lexus",
+      "model": "LS",
+      "rows": 37
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "V-Class",
+      "rows": 37
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Sprinter",
+      "rows": 36
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Ponton",
+      "rows": 35
+    },
+    {
+      "brand": "Jaguar",
+      "model": "F-Type",
+      "rows": 34
+    },
+    {
+      "brand": "Toyota",
+      "model": "Corolla",
+      "rows": 34
+    },
+    {
+      "brand": "Dodge",
+      "model": "Ram",
+      "rows": 33
+    },
+    {
+      "brand": "Lexus",
+      "model": "RX",
+      "rows": 33
+    },
+    {
+      "brand": "BMW",
+      "model": "Z4",
+      "rows": 32
+    },
+    {
+      "brand": "Audi",
+      "model": "A4",
+      "rows": 30
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "rows": 30
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "rows": 29
+    },
+    {
+      "brand": "Audi",
+      "model": "Q7",
+      "rows": 27
+    },
+    {
+      "brand": "Lexus",
+      "model": "GS",
+      "rows": 27
+    },
+    {
+      "brand": "Audi",
+      "model": "A8",
+      "rows": 24
+    },
+    {
+      "brand": "Audi",
+      "model": "Q3",
+      "rows": 24
+    },
+    {
+      "brand": "Audi",
+      "model": "A3",
+      "rows": 23
+    },
+    {
+      "brand": "BMW",
+      "model": "X4",
+      "rows": 23
+    },
+    {
+      "brand": "Genesis",
+      "model": "G90",
+      "rows": 23
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLB",
+      "rows": 23
+    },
+    {
+      "brand": "Toyota",
+      "model": "Crown",
+      "rows": 23
+    },
+    {
+      "brand": "BMW",
+      "model": "X2",
+      "rows": 20
+    },
+    {
+      "brand": "Bentley",
+      "model": "Continental",
+      "rows": 20
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "EQS",
+      "rows": 20
+    }
+  ],
+  "triage_heuristic_classes": {
+    "note": "Descriptive triage of the baseline quarantine by qualifier shape (rules/brand_model_suffix_rules.json -> audit_heuristics). NOT used for matching.",
+    "likely_safe_engine_or_powertrain_suffix": 5734,
+    "likely_genuine_sibling_other_model_or_trim_word": 1408,
+    "unclear": 1132,
+    "unresolved_no_canonical_candidate": 8946,
+    "unresolved_breakdown": {
+      "brand_not_in_catalog": 368,
+      "no_canonical_model_prefix": 8578
+    }
+  },
+  "groups_brand_model_firsttoken_pattern_reason_top150": [
+    {
+      "brand": "Ford",
+      "model": "F-350",
+      "first_token": "super",
+      "pattern": "w w",
+      "reason": "ambiguous_qualifier",
+      "rows": 175
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "c",
+      "pattern": "l N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 173
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "c",
+      "pattern": "l N",
+      "reason": "ambiguous_qualifier",
+      "rows": 161
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 158
+    },
+    {
+      "brand": "Ford",
+      "model": "Transit",
+      "first_token": "connect",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 151
+    },
+    {
+      "brand": "GMC",
+      "model": "Sierra",
+      "first_token": "3500hd",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 149
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P N",
+      "reason": "ambiguous_qualifier",
+      "rows": 147
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 126
+    },
+    {
+      "brand": "GMC",
+      "model": "Sierra",
+      "first_token": "2500hd",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 125
+    },
+    {
+      "brand": "Ford",
+      "model": "F-250",
+      "first_token": "super",
+      "pattern": "w w",
+      "reason": "ambiguous_qualifier",
+      "rows": 109
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "s",
+      "pattern": "l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 94
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 93
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "320d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 89
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "c",
+      "pattern": "l A",
+      "reason": "ambiguous_qualifier",
+      "rows": 89
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "c",
+      "pattern": "l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 86
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "A-Class",
+      "first_token": "a",
+      "pattern": "l N",
+      "reason": "ambiguous_qualifier",
+      "rows": 85
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "320i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 82
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLA",
+      "first_token": "cla",
+      "pattern": "w N",
+      "reason": "ambiguous_qualifier",
+      "rows": 66
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P N P P",
+      "reason": "ambiguous_qualifier",
+      "rows": 65
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P N P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 63
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "330i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 59
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "s",
+      "pattern": "l N",
+      "reason": "ambiguous_qualifier",
+      "rows": 59
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "330d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 58
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "325i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 56
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "530d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 52
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "A-Class",
+      "first_token": "a",
+      "pattern": "l N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 50
+    },
+    {
+      "brand": "Hyundai",
+      "model": "Grandeur",
+      "first_token": "azera",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 49
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "318i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 48
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "520d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 48
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "c",
+      "pattern": "l N P P",
+      "reason": "ambiguous_qualifier",
+      "rows": 48
+    },
+    {
+      "brand": "Skoda",
+      "model": "Octavia",
+      "first_token": "rs",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 48
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "B-Class",
+      "first_token": "b",
+      "pattern": "l N",
+      "reason": "ambiguous_qualifier",
+      "rows": 43
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLA",
+      "first_token": "cla",
+      "pattern": "w A",
+      "reason": "ambiguous_qualifier",
+      "rows": 43
+    },
+    {
+      "brand": "Suzuki",
+      "model": "SX4",
+      "first_token": "s",
+      "pattern": "l w",
+      "reason": "ambiguous_qualifier",
+      "rows": 42
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "335i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 41
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "316i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 39
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "318d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 38
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "420d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 38
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "420i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 38
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "s",
+      "pattern": "l A",
+      "reason": "ambiguous_qualifier",
+      "rows": 37
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "520i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 36
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "120d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 35
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "328i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 35
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "118d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 34
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "525d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 34
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "325d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 33
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "535i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 32
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "amg",
+      "pattern": "w l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 32
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLC",
+      "first_token": "glc",
+      "pattern": "w A",
+      "reason": "ambiguous_qualifier",
+      "rows": 32
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "430i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 31
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "530i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 31
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "A-Class",
+      "first_token": "a",
+      "pattern": "l A",
+      "reason": "ambiguous_qualifier",
+      "rows": 31
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "B-Class",
+      "first_token": "b",
+      "pattern": "l N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 31
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "first_token": "cls",
+      "pattern": "w N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 31
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "V-Class",
+      "first_token": "v",
+      "pattern": "l A",
+      "reason": "ambiguous_qualifier",
+      "rows": 30
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "120i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 29
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "528i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 28
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "first_token": "g",
+      "pattern": "l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 27
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "118i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 26
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "first_token": "218d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 26
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "first_token": "218i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 26
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLA",
+      "first_token": "gla",
+      "pattern": "w N",
+      "reason": "ambiguous_qualifier",
+      "rows": 26
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "first_token": "220d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 25
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "first_token": "114",
+      "pattern": "N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 25
+    },
+    {
+      "brand": "BMW",
+      "model": "6-Series",
+      "first_token": "650i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 24
+    },
+    {
+      "brand": "Dodge",
+      "model": "Ram",
+      "first_token": "drw",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 24
+    },
+    {
+      "brand": "Genesis",
+      "model": "G90",
+      "first_token": "eq900",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 23
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLE",
+      "first_token": "gle",
+      "pattern": "w A",
+      "reason": "ambiguous_qualifier",
+      "rows": 23
+    },
+    {
+      "brand": "Toyota",
+      "model": "Crown",
+      "first_token": "majesta",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 23
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "116d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 22
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "125i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 22
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "first_token": "220i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 22
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "525i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 22
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "first_token": "116",
+      "pattern": "N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 22
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "first_token": "18d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 21
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLA",
+      "first_token": "gla",
+      "pattern": "w A",
+      "reason": "ambiguous_qualifier",
+      "rows": 21
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "s",
+      "pattern": "l N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 21
+    },
+    {
+      "brand": "Porsche",
+      "model": "911",
+      "first_token": "carrera",
+      "pattern": "w w",
+      "reason": "ambiguous_qualifier",
+      "rows": 21
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "535d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 20
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "amg",
+      "pattern": "w l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 20
+    },
+    {
+      "brand": "Toyota",
+      "model": "Corolla",
+      "first_token": "verso",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 20
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "116i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 19
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "323i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 19
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "m440i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 19
+    },
+    {
+      "brand": "BMW",
+      "model": "8-Series",
+      "first_token": "840i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 19
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "e",
+      "pattern": "P N P P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 19
+    },
+    {
+      "brand": "Mazda",
+      "model": "BT-50",
+      "first_token": "xtr",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 18
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "amg",
+      "pattern": "w P N",
+      "reason": "ambiguous_qualifier",
+      "rows": 18
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "E-Class",
+      "first_token": "amg",
+      "pattern": "w P N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 18
+    },
+    {
+      "brand": "Porsche",
+      "model": "911",
+      "first_token": "carrera",
+      "pattern": "w N w",
+      "reason": "ambiguous_qualifier",
+      "rows": 18
+    },
+    {
+      "brand": "BMW",
+      "model": "2-Series",
+      "first_token": "m240i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 17
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "first_token": "20d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 17
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "R-Class",
+      "first_token": "r",
+      "pattern": "l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 17
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "316d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "335d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "430d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "440i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "523i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "BMW",
+      "model": "6-Series",
+      "first_token": "640i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "Chevrolet",
+      "model": "Camaro",
+      "first_token": "z28",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "first_token": "cls",
+      "pattern": "w N P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "first_token": "g",
+      "pattern": "l N P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "GLC",
+      "first_token": "glc",
+      "pattern": "w N",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Vito",
+      "first_token": "119",
+      "pattern": "N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 16
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "first_token": "735i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 15
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "first_token": "20i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 15
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLA",
+      "first_token": "cla",
+      "pattern": "w N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 15
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "first_token": "amg",
+      "pattern": "w l N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 15
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Golf",
+      "first_token": "gtd",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 15
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "m135i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "550i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "BMW",
+      "model": "6-Series",
+      "first_token": "640d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "Lexus",
+      "model": "IS",
+      "first_token": "350",
+      "pattern": "N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "B-Class",
+      "first_token": "b",
+      "pattern": "l A",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "C-Class",
+      "first_token": "c",
+      "pattern": "l N P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "Viano",
+      "first_token": "cdi",
+      "pattern": "P",
+      "reason": "ambiguous_qualifier",
+      "rows": 14
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "330ci",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "330e",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "330xd",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "first_token": "730d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "CLS",
+      "first_token": "amg",
+      "pattern": "w w N A",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Polo",
+      "first_token": "vivo",
+      "pattern": "w",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "Volvo",
+      "model": "440",
+      "first_token": "k",
+      "pattern": "l",
+      "reason": "ambiguous_qualifier",
+      "rows": 13
+    },
+    {
+      "brand": "Audi",
+      "model": "A4",
+      "first_token": "35",
+      "pattern": "N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "135i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "435i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "first_token": "730i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "first_token": "740i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "BMW",
+      "model": "7-Series",
+      "first_token": "750i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "G-Class",
+      "first_token": "g",
+      "pattern": "l N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "R-Class",
+      "first_token": "r",
+      "pattern": "l N P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "350",
+      "pattern": "N w A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "500",
+      "pattern": "N w A",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Porsche",
+      "model": "911 Turbo",
+      "first_token": "s",
+      "pattern": "l",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Porsche",
+      "model": "Boxster",
+      "first_token": "s",
+      "pattern": "l",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "Volkswagen",
+      "model": "Transporter",
+      "first_token": "e",
+      "pattern": "P w",
+      "reason": "ambiguous_qualifier",
+      "rows": 12
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "123d",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "3-Series",
+      "first_token": "330xi",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "4-Series",
+      "first_token": "428i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "540i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "5-Series",
+      "first_token": "540i",
+      "pattern": "A A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "6-Series",
+      "first_token": "630i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "X1",
+      "first_token": "18i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "BMW",
+      "model": "X3",
+      "first_token": "20i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "280",
+      "pattern": "N w",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "300",
+      "pattern": "N w",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "s",
+      "pattern": "l N P A",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "model": "S-Class",
+      "first_token": "s",
+      "pattern": "l N P P",
+      "reason": "ambiguous_qualifier",
+      "rows": 11
+    },
+    {
+      "brand": "Audi",
+      "model": "Q3",
+      "first_token": "35",
+      "pattern": "N P",
+      "reason": "ambiguous_qualifier",
+      "rows": 10
+    },
+    {
+      "brand": "BMW",
+      "model": "1-Series",
+      "first_token": "m140i",
+      "pattern": "A",
+      "reason": "ambiguous_qualifier",
+      "rows": 10
+    }
+  ],
+  "group_count_total": 1298
+}

@@ -1,0 +1,195 @@
+{
+  "schema_version": "carnet.brand_model_suffix_rules/1",
+  "principle": "A grammar may accept a qualifier only if EVERY token of the (key-normalized) qualifier is a powertrain / drivetrain / engine-code token of that brand AND the model-identifying digit or class letter inside the qualifier equals the one derived from the canonical model. The whole qualifier must match (fullmatch). Anything else stays QUARANTINED. No similarity scoring, no web, no AI.",
+  "interpreter": "model_boundaries.ModelIndex.resolve -> _Grammar. Placeholders: {name} is replaced by (1) a per-model variable from 'models', else (2) a token class. Model variables are re.escape()d. Grammars apply ONLY to the canonical models listed in their 'models' object; names are validated against assets/car_catalog.json at load time.",
+  "sibling_self_check": "ModelIndex.sibling_safety_violations(): for every grammar and every model M it applies to, the tail of every longer catalog sibling 'M tail' must NOT be accepted by M's grammar. Enforced by tests.",
+  "token_classes": {},
+  "audit_heuristics": {
+    "note": "Used ONLY by matching_audit.py to describe/triage rows in reports. Never used to accept or reject a row.",
+    "powertrain_words": [
+      "cdi", "cgi", "tdi", "tfsi", "fsi", "tsi", "tgi", "kompressor", "bluetec", "blueefficiency", "turbodiesel", "biturbo", "turbo",
+      "ngt", "hybrid", "v6", "v8", "v10", "v12", "d", "td", "e", "h", "t", "i", "4matic", "awd", "4wd", "cat", "gdi", "tgdi", "crdi",
+      "vgt", "mpi", "lpi", "smartstream", "thp", "puretech", "ecoboost", "ecotec", "24v", "16v", "32v"
+    ],
+    "unknown_trim_max_tokens": 2,
+    "unknown_trim_max_token_len": 4
+  },
+  "brands": {
+    "BMW": {
+      "evidence": "Dataset names repeat the series digit inside the qualifier (3-Series '320d', '330i', 'M340i'; X5 'xDrive40i' forms are dataset '40i'). The app's own catalog lists the same designations as trims of the same model. Letter lexicon below = every suffix actually observed in the dataset for numeric designations, minus those whose meaning is not established.",
+      "token_classes": {
+        "bmw_code_letters": "i|d|e|xi|xd|xe|ix|li|ld|le|il|ci|csi|cd|is|si|ti|td|tds|l",
+        "bmw_x_code_letters": "i|d|e|is|si|sd|xi|l|li|le",
+        "bmw_extra": "v\\d{1,2}|\\d{2}v|iperformance"
+      },
+      "grammars": [
+        {
+          "id": "bmw_n_series_code",
+          "kind": "engine_designation",
+          "doc": "N-Series: '<optional M ><series digit><2 digits><optional engine letters>' + optional cylinder/valve/iPerformance tokens. The leading digit must equal the model's series number.",
+          "models": {
+            "1-Series": {"n": "1"}, "2-Series": {"n": "2"}, "3-Series": {"n": "3"}, "4-Series": {"n": "4"},
+            "5-Series": {"n": "5"}, "6-Series": {"n": "6"}, "7-Series": {"n": "7"}, "8-Series": {"n": "8"}
+          },
+          "qualifier_regex": "(?:m ?)?{n}\\d{2}(?:{bmw_code_letters})?(?: (?:{bmw_extra}))*"
+        },
+        {
+          "id": "bmw_n_series_activehybrid",
+          "kind": "powertrain_name",
+          "doc": "'ActiveHybrid' is BMW's hybrid powertrain name for the 3/5/7 series.",
+          "models": {"3-Series": {}, "5-Series": {}, "7-Series": {}},
+          "qualifier_regex": "activehybrid(?: \\d)?"
+        },
+        {
+          "id": "bmw_x_z_code",
+          "kind": "engine_designation",
+          "doc": "X1-X7 / Z3 / Z4 / XM: '<optional M ><2 digits><engine letters>' or the legacy displacement form '3 0si' / '4 6is'.",
+          "models": {"X1": {}, "X2": {}, "X3": {}, "X4": {}, "X5": {}, "X6": {}, "X7": {}, "XM": {}, "Z3": {}, "Z4": {}},
+          "qualifier_regex": "(?:(?:m ?)?\\d{2}(?:{bmw_x_code_letters})?|\\d \\d(?:{bmw_x_code_letters}))(?: (?:{bmw_extra}))*"
+        }
+      ]
+    },
+    "Mercedes-Benz": {
+      "evidence": "Dataset names repeat the class letter inside the qualifier ('E 220 d', 'GLC 300', 'C 63 AMG'). The app's catalog lists E220d / GLC300 / C63 AMG style designations as trims of the same class. Letter-class models are listed explicitly with their class letter.",
+      "token_classes": {
+        "mb_num": "\\d{2,3}(?:d|e|de|h)?\\+?",
+        "mb_pt": "cdi|cgi|kompressor|bluetec|blueefficiency|turbodiesel|biturbo|turbo|ngt|hybrid|v6|v8|v10|v12|d|td|e|4matic\\+?",
+        "mb_legacy_code": "se|sel|ge|gd|d|td"
+      },
+      "grammars": [
+        {
+          "id": "mb_class_designation",
+          "kind": "engine_designation",
+          "doc": "'<class letter(s)> <number>' + powertrain tokens. The class letters must equal the model's class.",
+          "models": {
+            "A-Class": {"cls": "a"}, "B-Class": {"cls": "b"}, "C-Class": {"cls": "c"}, "CL-Class": {"cls": "cl"},
+            "CLA": {"cls": "cla"}, "CLC-Class": {"cls": "clc"}, "CLE Coupe": {"cls": "cle"}, "CLK-Class": {"cls": "clk"},
+            "CLS": {"cls": "cls"}, "E-Class": {"cls": "e"}, "EQA": {"cls": "eqa"}, "EQB": {"cls": "eqb"},
+            "EQE Sedan": {"cls": "eqe"}, "EQE SUV": {"cls": "eqe"}, "EQS": {"cls": "eqs"}, "EQV": {"cls": "eqv"},
+            "G-Class": {"cls": "g"}, "GL-Class": {"cls": "gl"}, "GLA": {"cls": "gla"}, "GLB": {"cls": "glb"},
+            "GLC": {"cls": "glc"}, "GLC-Class Coupe": {"cls": "glc"}, "GLE": {"cls": "gle"}, "GLE Coupe": {"cls": "gle"},
+            "GLK-Class": {"cls": "glk"}, "GLS": {"cls": "gls"}, "ML-Class": {"cls": "ml"}, "R-Class": {"cls": "r"},
+            "S-Class": {"cls": "s"}, "SL-Class": {"cls": "sl"}, "SLC-Class": {"cls": "slc"}, "SLK-Class": {"cls": "slk"},
+            "T-Class": {"cls": "t"}, "V-Class": {"cls": "v"}, "X-Class": {"cls": "x"}
+          },
+          "qualifier_regex": "{cls} ?{mb_num}(?: (?:{mb_pt}))*"
+        },
+        {
+          "id": "mb_class_designation_amg",
+          "kind": "engine_designation",
+          "flags": ["amg_performance"],
+          "doc": "AMG-badged designation of the SAME class ('AMG C 63', 'C 63 AMG S'). The standalone model 'AMG GT' is a different catalog model and is never touched by this grammar.",
+          "models": {
+            "A-Class": {"cls": "a"}, "C-Class": {"cls": "c"}, "CLA": {"cls": "cla"}, "CLS": {"cls": "cls"},
+            "E-Class": {"cls": "e"}, "G-Class": {"cls": "g"}, "GLA": {"cls": "gla"}, "GLB": {"cls": "glb"},
+            "GLC": {"cls": "glc"}, "GLE": {"cls": "gle"}, "GLE Coupe": {"cls": "gle"}, "GLS": {"cls": "gls"},
+            "S-Class": {"cls": "s"}, "SL-Class": {"cls": "sl"}, "EQE Sedan": {"cls": "eqe"}, "EQE SUV": {"cls": "eqe"}, "EQS": {"cls": "eqs"}
+          },
+          "qualifier_regex": "(?:amg {cls} ?{mb_num}|{cls} ?{mb_num} amg)(?: (?:s|{mb_pt}))*(?: s e performance)?"
+        },
+        {
+          "id": "mb_s_class_legacy_numeric",
+          "kind": "engine_designation",
+          "doc": "Pre-1998 S-Class: '<3 digits>' + SE/SEL/S injection-body code + engine tokens ('300 se', '420 sel v8 cat'). 'sec' is excluded on purpose: SEC is its own catalog model (coupe).",
+          "models": {"S-Class": {}},
+          "qualifier_regex": "\\d{3}(?: (?:s|se|sel))?(?: (?:v6|v8|v12|cat|turbo|d|td))*"
+        },
+        {
+          "id": "mb_ponton_legacy_numeric",
+          "kind": "engine_designation",
+          "doc": "Ponton (W120/W121) generation designations: '180', '190 d', '220 s', '180 db'. Lexicon = suffix codes observed for this model.",
+          "models": {"Ponton": {}},
+          "qualifier_regex": "\\d{3}(?: (?:a|b|c|d|db|dc|s|se))?"
+        },
+        {
+          "id": "mb_g_class_legacy_numeric",
+          "kind": "engine_designation",
+          "doc": "Pre-2018 G-Class '<3 digits> <g|ge|gd>' ('300 gd', '230 ge', '350 gd turbo').",
+          "models": {"G-Class": {}},
+          "qualifier_regex": "\\d{3}(?: (?:g|ge|gd))?(?: (?:turbo|v8))*"
+        },
+        {
+          "id": "mb_van_numeric_cdi",
+          "kind": "engine_designation",
+          "doc": "Vito / Sprinter van designations: '114 cdi', 'v 230 td', '311 cdi blueefficiency'. The electric 'evito' is deliberately not accepted (separate vehicle name).",
+          "models": {"Vito": {}, "Sprinter": {}},
+          "qualifier_regex": "(?:v ?)?\\d{3}(?: (?:cdi|td|blueefficiency))*"
+        },
+        {
+          "id": "mb_viano_powertrain_word",
+          "kind": "powertrain_name",
+          "models": {"Viano": {}},
+          "qualifier_regex": "cdi"
+        }
+      ]
+    },
+    "Audi": {
+      "evidence": "Audi's numeric power-level designation ('45 TFSI', '50 TDI') is the factory powertrain label and is repeated as a trim of the same model in the app's catalog (A6 '45 TFSI', Q7 '55 TFSI'). e-tron / g-tron / performance / competition are deliberately NOT accepted (e-tron is its own model line in the catalog: 'Q4 e-tron', 'RS e-tron').",
+      "grammars": [
+        {
+          "id": "audi_power_level_designation",
+          "kind": "engine_designation",
+          "models": {"A1": {}, "A3": {}, "A4": {}, "A5": {}, "A6": {}, "A7": {}, "A8": {}, "Q2": {}, "Q3": {}, "Q5": {}, "Q7": {}, "Q8": {}, "TT": {}},
+          "qualifier_regex": "\\d{2} (?:tdi|tfsi|fsi)(?: e)?(?: v[68])?"
+        }
+      ]
+    },
+    "Jaguar": {
+      "evidence": "Jaguar's Ingenium engine labels: P<power PS> petrol, D<power PS> diesel, <2 digits>d / <2 digits>t (2.0/2.5/3.0 d|t), EV<power PS> for I-Pace. They are engine labels, not trims; trim words (R, S, SVR, R-Dynamic, E-Performance, Sovereign, Portfolio) are NOT accepted.",
+      "grammars": [
+        {
+          "id": "jaguar_engine_label",
+          "kind": "engine_designation",
+          "models": {"E-Pace": {}, "F-Pace": {}, "F-Type": {}, "XE": {}, "XF": {}, "XJ": {}, "XK": {}},
+          "qualifier_regex": "(?:p\\d{3}|d\\d{3}|\\d{2}[dt])(?: (?:v6|v8))*"
+        },
+        {
+          "id": "jaguar_ipace_ev_label",
+          "kind": "engine_designation",
+          "models": {"I-Pace": {}},
+          "qualifier_regex": "ev\\d{3}"
+        }
+      ]
+    },
+    "Hyundai": {
+      "evidence": "Hyundai/Kia dataset engine notation 'G1 6' = gasoline 1.6, 'D1 5' = diesel 1.5, 'L2 0' = LPG 2.0 (fuel letter + displacement digits), followed by engine-family tokens. This is the engine descriptor written with a fuel prefix (the shared _ENGINE_START pattern only recognizes the bare '1 6' form). Model-independent; the sibling self-check guards it.",
+      "grammars": [
+        {
+          "id": "hyundai_kia_fuel_prefixed_engine_code",
+          "kind": "engine_descriptor",
+          "models": {"*": {}},
+          "qualifier_regex": "[gdl]\\d(?: \\d{1,2})?(?: (?:smartstream|gdi|tgdi|t|crdi|vgt|mpi|lpi|v6))*"
+        }
+      ]
+    },
+    "Kia": {
+      "evidence": "Same Hyundai-Kia group engine notation as Hyundai (see there).",
+      "grammars": [
+        {
+          "id": "kia_fuel_prefixed_engine_code",
+          "kind": "engine_descriptor",
+          "models": {"*": {}},
+          "qualifier_regex": "[gdl]\\d(?: \\d{1,2})?(?: (?:smartstream|gdi|tgdi|t|crdi|vgt|mpi|lpi|v6))*"
+        }
+      ]
+    },
+    "Lexus": {
+      "evidence": "Lexus names the model letters and a 3-digit displacement-style code ('RX 350', 'NX 300h', 'GS 200t', 'UX 250h'); the app's catalog lists the same codes as trims. 'c' (IS 250C) and 'l' are excluded: IS C is its own catalog model, 'L' is a body/wheelbase variant.",
+      "grammars": [
+        {
+          "id": "lexus_code_designation",
+          "kind": "engine_designation",
+          "models": {"CT": {}, "ES": {}, "GS": {}, "GX": {}, "IS": {}, "LC": {}, "LS": {}, "LX": {}, "NX": {}, "RC": {}, "RX": {}, "SC": {}, "TX": {}, "UX": {}},
+          "qualifier_regex": "\\d{3}(?:h\\+?|t|d|e)?(?: (?:v6|v8|4wd|awd))*"
+        },
+        {
+          "id": "lexus_rx_long_wheelbase_designation",
+          "kind": "engine_designation",
+          "doc": "RX only: '350L' / '450hL' - the app's catalog lists both as RX trims.",
+          "models": {"RX": {}},
+          "qualifier_regex": "\\d{3}h?l(?: (?:v6|v8|4wd|awd))*"
+        }
+      ]
+    }
+  }
+}
