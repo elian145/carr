@@ -80,17 +80,10 @@
       "final_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
       "content_type": "text/html",
       "records_total": 8,
-      "records_confirmed": 5,
+      "records_confirmed": 6,
       "records_unconfirmed": [
         {
           "record_id": "CM-008",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Camry will be available in five grades: L, LE, XLE, SE and XSE. The excitement over the eighth-generation sedan Three new powertrains will b"
-          ]
-        },
-        {
-          "record_id": "CM-009",
           "diagnosis": "not_found_verbatim",
           "missing_segments": [
             "Camry will be available in five grades: L, LE, XLE, SE and XSE. The excitement over the eighth-generation sedan Three new powertrains will b"
@@ -111,7 +104,7 @@
       "outcome": "PARTIAL_CONFIRMED",
       "new_state": "FULL_TEXT_VERIFIED",
       "retrieved_at": "2026-10-03T16:53:46Z",
-      "note": "Re-fetched and preserved; 3 of 8 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified)."
+      "note": "Quote repair applied to CM-009 (reports/pilot_quote_repair_audit.json). Re-fetched and preserved; 3 of 8 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified)."
     },
     {
       "source_id": "CM-S3",
@@ -122,43 +115,8 @@
       "final_url": "https://www.toyota.com.sa/en/vehicles/camry",
       "content_type": "text/html",
       "records_total": 7,
-      "records_confirmed": 0,
+      "records_confirmed": 5,
       "records_unconfirmed": [
-        {
-          "record_id": "CM-016",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Grades Gas (3) Hybrid (4) Gas E Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Trans"
-          ]
-        },
-        {
-          "record_id": "CM-017",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Grades Gas (3) Hybrid (4) Gas LE Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Tran"
-          ]
-        },
-        {
-          "record_id": "CM-018",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Grades Gas (3) Hybrid (4) Gas Grande Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM "
-          ]
-        },
-        {
-          "record_id": "CM-019",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Hybrid E HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic "
-          ]
-        },
-        {
-          "record_id": "CM-020",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Hybrid E Plus HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electr"
-          ]
-        },
         {
           "record_id": "CM-021",
           "diagnosis": "not_found_verbatim",
@@ -178,9 +136,10 @@
       "extractor": "html-text/1",
       "raw_sha256": "b6dc2ca01e80162bfde5e5343af2267c38d064899c5ff65434fdc0c7dad3ec3d",
       "content_sha256": "87e7bdb8af015bd86f60c62aeeb2a34912fd4ed29bb987f686f6ec88c9814a31",
-      "outcome": "CONTENT_MISMATCH",
-      "new_state": "RETRIEVED_UNVERIFIABLE",
-      "retrieved_at": "2026-10-03T16:53:46Z"
+      "outcome": "PARTIAL_CONFIRMED",
+      "new_state": "FULL_TEXT_VERIFIED",
+      "retrieved_at": "2026-10-03T16:53:46Z",
+      "note": "Quote repair applied to CM-016, CM-017, CM-018, CM-019, CM-020 (reports/pilot_quote_repair_audit.json). Content retrieved at 2026-10-03T16:53:46Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). 2 of 7 records' quotes are NOT in the content (listed in unconfirmed_record_ids, never verified)."
     },
     {
       "source_id": "CM-S4",
@@ -191,23 +150,16 @@
       "final_url": "https://www.toyota.ae/en/new-cars/camry/",
       "content_type": "text/html",
       "records_total": 1,
-      "records_confirmed": 0,
-      "records_unconfirmed": [
-        {
-          "record_id": "CM-023",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE 2.5L CAMRY 2026 2.5L 4-Cylinder, 16V DOHC"
-          ]
-        }
-      ],
+      "records_confirmed": 1,
+      "records_unconfirmed": [],
       "error": null,
       "extractor": "html-text/1",
       "raw_sha256": "20eeb39e4df7e6639cdec187e6c15c946b16da365c84fdf8f598d5352ad06af3",
       "content_sha256": "394f2646bcf2f596ac5bce1c7bdfb2863bb9b1664b62b4afb81c246ca1c2f4dc",
-      "outcome": "CONTENT_MISMATCH",
-      "new_state": "RETRIEVED_UNVERIFIABLE",
-      "retrieved_at": "2026-10-03T16:53:46Z"
+      "outcome": "CONFIRMED",
+      "new_state": "FULL_TEXT_VERIFIED",
+      "retrieved_at": "2026-10-03T16:53:46Z",
+      "note": "Quote repair applied to CM-023 (reports/pilot_quote_repair_audit.json). Content retrieved at 2026-10-03T16:53:46Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). Every cited quote is in the preserved content."
     }
   ]
 }

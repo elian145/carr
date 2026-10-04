@@ -13,6 +13,8 @@ pairs = [
     ("brand_research_plan.schema.json", sorted((H / "reports").glob("*_research_plan.json"))),
     ("brand_batch_comparison.schema.json", sorted((H / "reports").glob("*_batch_*_comparison.json"))),
     ("source_revalidation.schema.json", sorted((H / "reports").glob("*_revalidation.json"))),
+    ("pilot_quote_repair_proposals.schema.json", [H / "reports" / "pilot_quote_repair_proposals.json"]),
+    ("pilot_quote_repair_audit.schema.json", [H / "reports" / "pilot_quote_repair_audit.json"]),
     ("../patch.schema.json", sorted((H / "proposals").glob("*.json"))),
     ("brand_enrichment_rules.schema.json", [H / "rules" / "brand_enrichment_rules.json"]),
     ("pilot_comparison.schema.json", [H / "reports" / "pilot_comparison.json"]),

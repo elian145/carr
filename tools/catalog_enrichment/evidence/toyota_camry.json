@@ -67,7 +67,6 @@
         "previous_state": "RETRIEVED_UNVERIFIABLE",
         "unconfirmed_record_ids": [
           "CM-008",
-          "CM-009",
           "CM-010"
         ]
       }
@@ -83,19 +82,23 @@
       "model_year_label": "2026",
       "market_scope": "Saudi Arabia",
       "integrity": {
-        "state": "RETRIEVED_UNVERIFIABLE",
+        "state": "FULL_TEXT_VERIFIED",
         "retrieved_at": "2026-10-03T16:53:46Z",
-        "content_sha256": null,
-        "snapshot_path": null,
-        "origin": "revalidation:refetch_content_mismatch",
-        "note": "Re-fetched (HTTP 200, extracted text sha256 87e7bdb8af015bd8...) but none of the 7 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "content_sha256": "87e7bdb8af015bd86f60c62aeeb2a34912fd4ed29bb987f686f6ec88c9814a31",
+        "snapshot_path": "evidence/_source_text/CM-S3.txt",
+        "origin": "quote_repair:promoted_candidate_snapshot",
+        "note": "Content retrieved at 2026-10-03T16:53:46Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). 2 of 7 records' quotes are NOT in the content (listed in unconfirmed_record_ids, never verified).",
         "retrieved_by": "fetch_snapshot.py/1",
         "final_url": "https://www.toyota.com.sa/en/vehicles/camry",
         "http_status": 200,
         "content_type": "text/html",
         "raw_sha256": "b6dc2ca01e80162bfde5e5343af2267c38d064899c5ff65434fdc0c7dad3ec3d",
         "extractor": "html-text/1",
-        "previous_state": "RETRIEVED_UNVERIFIABLE"
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "CM-021",
+          "CM-022"
+        ]
       }
     },
     "CM-S4": {
@@ -109,12 +112,12 @@
       "model_year_label": "2026",
       "market_scope": "UAE",
       "integrity": {
-        "state": "RETRIEVED_UNVERIFIABLE",
+        "state": "FULL_TEXT_VERIFIED",
         "retrieved_at": "2026-10-03T16:53:46Z",
-        "content_sha256": null,
-        "snapshot_path": null,
-        "origin": "revalidation:refetch_content_mismatch",
-        "note": "Re-fetched (HTTP 200, extracted text sha256 394f2646bcf2f596...) but none of the 1 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "content_sha256": "394f2646bcf2f596ac5bce1c7bdfb2863bb9b1664b62b4afb81c246ca1c2f4dc",
+        "snapshot_path": "evidence/_source_text/CM-S4.txt",
+        "origin": "quote_repair:promoted_candidate_snapshot",
+        "note": "Content retrieved at 2026-10-03T16:53:46Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). Every cited quote is in the preserved content.",
         "retrieved_by": "fetch_snapshot.py/1",
         "final_url": "https://www.toyota.ae/en/new-cars/camry/",
         "http_status": 200,
@@ -724,7 +727,7 @@
         "confidence_basis": [
           "tier1_base:0.95"
         ],
-        "supporting_text": "Camry will be available in five grades: L, LE, XLE, SE and XSE. The excitement over the eighth-generation sedan Three new powertrains will be available on the new 2018 Camry: They include an all-new 2.5-liter inline-four-cylinder D-4S gasoline engine and a new 3.5-liter V6 with D-4S Fuel Injection, both of which are paired to a new eight-speed Direct-Shift automatic transmission (8AT); and a next-generation Toyota Hybrid System (THS II). Peak horsepower is estimated at 206 at 6,600 rpm (176 horsepower at 5,700 rpm in the hybrid configuration) with torque estimated at 186 lb.-ft. at 5,000 rpm (163 lb.-ft. at 3,600-5,200 rpm for the hybrid)."
+        "supporting_text": "Three new powertrains will be available on the new 2018 Camry: They include an all-new 2.5-liter inline-four-cylinder D-4S gasoline engine and a new 3.5-liter V6 with D-4S Fuel Injection, both of which are paired to a new eight-speed Direct-Shift automatic transmission (8AT); and a next-generation Toyota Hybrid System (THS II)."
       },
       "notes": null,
       "normalized": {
@@ -1206,13 +1209,13 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "Grades Gas (3) Hybrid (4) Gas E Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
+        "supporting_text": "Gas E Price 109,825 Includes Shipping fee of 3,795 Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
       },
       "notes": null,
       "normalized": {
@@ -1280,13 +1283,13 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "Grades Gas (3) Hybrid (4) Gas LE Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
+        "supporting_text": "Gas LE Price 121,555 Includes Shipping fee of 3,795 Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
       },
       "notes": null,
       "normalized": {
@@ -1354,13 +1357,13 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "Grades Gas (3) Hybrid (4) Gas Grande Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
+        "supporting_text": "Gas Grande Price 145,475 Includes Shipping fee of 3,795 Engine 2.5L Engine, 4 Cylinder Max Output (hp) 201 HP/6,600 RPM Max Torque 240 Nm/4,000-5000 RPM Transmission 8-Speed Automatic Transmission"
       },
       "notes": null,
       "normalized": {
@@ -1428,13 +1431,13 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "Hybrid E HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
+        "supporting_text": "Hybrid E HEV Price 111,090 Includes Shipping fee of 3,795 Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
       },
       "notes": null,
       "normalized": {
@@ -1502,13 +1505,13 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "Hybrid E Plus HEV Price Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
+        "supporting_text": "Hybrid E Plus HEV Price 116,035 Includes Shipping fee of 3,795 Engine 2.5L Engine, 4 Cylinder Max Output (hp) 226 HP/6,000 RPM Max Torque 221 Nm/3,600-5200 RPM Transmission Electronic Continuous Variable Transmission (E-CVT)"
       },
       "notes": null,
       "normalized": {
@@ -1576,7 +1579,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1644,7 +1647,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1712,13 +1715,13 @@
         "source_name": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE 2.5L CAMRY 2026 2.5L 4-Cylinder, 16V DOHC"
+        "supporting_text": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE … 2.5L 4-Cylinder, 16V DOHC"
       },
       "notes": null,
       "normalized": {

@@ -35,19 +35,22 @@
       "model_year_label": "2027",
       "market_scope": "United States",
       "integrity": {
-        "state": "RETRIEVED_UNVERIFIABLE",
+        "state": "FULL_TEXT_VERIFIED",
         "retrieved_at": "2026-10-03T16:53:29Z",
-        "content_sha256": null,
-        "snapshot_path": null,
-        "origin": "revalidation:refetch_content_mismatch",
-        "note": "Re-fetched (HTTP 200, extracted text sha256 b45b26c4ac10be78...) but none of the 3 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "content_sha256": "b45b26c4ac10be783b8f40a1265d470cda30e075e63a8fb74c86a18114f7c96d",
+        "snapshot_path": "evidence/_source_text/LC-S1.txt",
+        "origin": "quote_repair:promoted_candidate_snapshot",
+        "note": "Content retrieved at 2026-10-03T16:53:29Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). 1 of 3 records' quotes are NOT in the content (listed in unconfirmed_record_ids, never verified).",
         "retrieved_by": "fetch_snapshot.py/1",
         "final_url": "https://www.toyota.com/vehicles/landcruiser/2027",
         "http_status": 200,
         "content_type": "text/html",
         "raw_sha256": "d44c4cca15c60907860fd095ce681f2cc0ec8feffb6f01409117a894188d50ea",
         "extractor": "html-text/1",
-        "previous_state": "RETRIEVED_UNVERIFIABLE"
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-003"
+        ]
       }
     },
     "LC-S2": {
@@ -61,19 +64,27 @@
       "model_year_label": "300 Series launch",
       "market_scope": "Japan",
       "integrity": {
-        "state": "RETRIEVED_UNVERIFIABLE",
+        "state": "FULL_TEXT_VERIFIED",
         "retrieved_at": "2026-10-03T16:53:29Z",
-        "content_sha256": null,
-        "snapshot_path": null,
-        "origin": "revalidation:refetch_content_mismatch",
-        "note": "Re-fetched (HTTP 200, extracted text sha256 ee51550de16bd294...) but none of the 9 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "content_sha256": "ee51550de16bd29434e958c08198c47d8ee0eb83c0729a19463e91c4b3723395",
+        "snapshot_path": "evidence/_source_text/LC-S2.txt",
+        "origin": "quote_repair:promoted_candidate_snapshot",
+        "note": "Content retrieved at 2026-10-03T16:53:29Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). 6 of 9 records' quotes are NOT in the content (listed in unconfirmed_record_ids, never verified).",
         "retrieved_by": "fetch_snapshot.py/1",
         "final_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
         "http_status": 200,
         "content_type": "text/html",
         "raw_sha256": "f3eb97350816fdc986eb1d97cc61fd04ea07d116ef9fc9c8822faa969b5868d6",
         "extractor": "html-text/1",
-        "previous_state": "RETRIEVED_UNVERIFIABLE"
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-005",
+          "LC-007",
+          "LC-008",
+          "LC-009",
+          "LC-010",
+          "LC-012"
+        ]
       },
       "notes": "Merged table cells (blank Seating cells) are NOT interpreted: seats are recorded only where a number is printed on the row."
     },
@@ -118,19 +129,23 @@
       "model_year_label": "2024",
       "market_scope": "Japan",
       "integrity": {
-        "state": "RETRIEVED_UNVERIFIABLE",
+        "state": "FULL_TEXT_VERIFIED",
         "retrieved_at": "2026-10-03T16:53:29Z",
-        "content_sha256": null,
-        "snapshot_path": null,
-        "origin": "revalidation:refetch_content_mismatch",
-        "note": "Re-fetched (HTTP 200, extracted text sha256 dcd0cd17ba57f960...) but none of the 4 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "content_sha256": "dcd0cd17ba57f960dd62187eb7090e2b012605a022d204ad38d9397bbe2882bc",
+        "snapshot_path": "evidence/_source_text/LC-S4.txt",
+        "origin": "quote_repair:promoted_candidate_snapshot",
+        "note": "Content retrieved at 2026-10-03T16:53:29Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). 2 of 4 records' quotes are NOT in the content (listed in unconfirmed_record_ids, never verified).",
         "retrieved_by": "fetch_snapshot.py/1",
         "final_url": "https://global.toyota/en/newsroom/toyota/40658942.html",
         "http_status": 200,
         "content_type": "text/html",
         "raw_sha256": "a128ff369197a4406d192413f6804088d9268c0be0957031befc47332f6352bf",
         "extractor": "html-text/1",
-        "previous_state": "RETRIEVED_UNVERIFIABLE"
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-017",
+          "LC-018"
+        ]
       }
     },
     "LC-S5": {
@@ -170,19 +185,22 @@
       "model_year_label": "2023 premiere",
       "market_scope": "Global (markets listed per powertrain)",
       "integrity": {
-        "state": "RETRIEVED_UNVERIFIABLE",
+        "state": "FULL_TEXT_VERIFIED",
         "retrieved_at": "2026-10-03T16:53:29Z",
-        "content_sha256": null,
-        "snapshot_path": null,
-        "origin": "revalidation:refetch_content_mismatch",
-        "note": "Re-fetched (HTTP 200, extracted text sha256 fa6f8fa1f4d96771...) but none of the 5 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "content_sha256": "fa6f8fa1f4d96771cffc0f8acd9c740580b32eafb4b2993c9cab0bee8a609ea0",
+        "snapshot_path": "evidence/_source_text/LC-S6.txt",
+        "origin": "quote_repair:promoted_candidate_snapshot",
+        "note": "Content retrieved at 2026-10-03T16:53:29Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). 1 of 5 records' quotes are NOT in the content (listed in unconfirmed_record_ids, never verified).",
         "retrieved_by": "fetch_snapshot.py/1",
         "final_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
         "http_status": 200,
         "content_type": "text/html",
         "raw_sha256": "1e0f076973f6fdda282c8e3345382ee25bbf6556bc4cc77358ae059140534514",
         "extractor": "html-text/1",
-        "previous_state": "RETRIEVED_UNVERIFIABLE"
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-026"
+        ]
       },
       "notes": "Each powertrain row lists several target markets; market is left null on these records and the listed markets are noted."
     },
@@ -287,10 +305,7 @@
         "content_type": "text/html",
         "raw_sha256": "220655b79361b0b140180b58b4e2ce1c3b2d9c5ed483d01eeef6338e354bb190",
         "extractor": "html-text/1",
-        "previous_state": "RETRIEVED_UNVERIFIABLE",
-        "unconfirmed_record_ids": [
-          "LC-030"
-        ]
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
       }
     },
     "LC-S11": {
@@ -390,13 +405,13 @@
         "source_name": "2027 Toyota Land Cruiser | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
           "tier1_base:0.95"
         ],
-        "supporting_text": "2.4L 4 Cylinder i-FORCE MAX Hybrid 326 Net Combined Horsepower Land Cruiser's powertrain combines hybrid tech with an impressive turbo 4-cylinder hybrid engine to generate an electrifying 326 net combined horsepower with 465 lb.-ft. of torque. Standard Full-Time 4-Wheel Drive"
+        "supporting_text": "Standard Full-Time 4-Wheel Drive POWERTRAIN 2.4L 4 Cylinder i-FORCE MAX Hybrid … Land Cruiser's powertrain combines hybrid tech with an impressive turbo 4-cylinder hybrid engine to generate an electrifying 326 net combined horsepower with 465 lb.-ft. of torque."
       },
       "notes": null,
       "normalized": {
@@ -458,13 +473,13 @@
         "source_name": "2027 Toyota Land Cruiser | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
           "tier1_base:0.95"
         ],
-        "supporting_text": "Rugged elegance in two distinct trims. Land Cruiser 1958 is a back-to-basics homage to the original FJ25. Land Cruiser trim elevates the ride further"
+        "supporting_text": "Rugged elegance in two distinct trims. Land Cruiser 1958 is a back-to-basics homage to the original FJ25, with iconic round headlights and fabric seats. Land Cruiser trim elevates the ride further"
       },
       "notes": null,
       "normalized": {
@@ -526,7 +541,7 @@
         "source_name": "2027 Toyota Land Cruiser | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -600,14 +615,14 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "3.5-liter V6 twin-turbo gasoline engine The new Land Cruiser is available with a newly developed 3.5-liter V6 twin-turbo gasoline engine, with a maximum output of 305 kW (415 PS) and a maximum torque of 650 Nm. The Direct Shift-10AT also delivers drive torque characteristics and gear change timings optimized for gasoline and diesel engines respectively."
+        "supporting_text": "The new Land Cruiser is available with a newly developed 3.5-liter V6 twin-turbo gasoline engine, with a maximum output of 305 kW (415 PS) and a maximum torque of 650 Nm. … The Direct Shift-10AT also delivers drive torque characteristics and gear change timings optimized for gasoline and diesel engines respectively."
       },
       "notes": null,
       "normalized": {
@@ -677,7 +692,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -748,14 +763,14 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "Manufacturer's Suggested Retail Prices Gasoline specifications Grade Seating Engine Transmission Price (yen) GX 5 V35A-FTS (3.5-liter) Direct Shift-10AT 5,100,000 AX 7 5,500.000 VX 6.300,000 GR SPORT ◎ 7,700,000 ZX ◎ 7,300,000"
+        "supporting_text": "Gasoline specifications | Grade | Seating | Engine | Transmission | Price (yen)* | | GX | 5 | V35A-FTS (3.5-liter) | Direct Shift-10AT | 5,100,000 |"
       },
       "notes": null,
       "normalized": {
@@ -819,7 +834,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -890,7 +905,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -961,7 +976,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1032,7 +1047,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1103,14 +1118,14 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "Diesel specifications Grade Seating Engine Transmission Price (yen) GR SPORT 5 F33A-FTV (3.3-liter) Direct Shift-10AT 8,000,000 ZX 7,600,000"
+        "supporting_text": "Diesel specifications | Grade | Seating | Engine | Transmission | Price (yen)* | | GR SPORT | 5 | F33A-FTV (3.3-liter) | Direct Shift-10AT | 8,000,000 |"
       },
       "notes": null,
       "normalized": {
@@ -1174,7 +1189,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1464,13 +1479,13 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
           "tier1_base:0.95"
         ],
-        "supporting_text": "Diesel engine model Grade Seating capacity Driveline Engine Transmission Price ZX 7 Full-time four-wheel drive 1GD-FTV (2.8-liter inline 4-cylinder direct injection turbo) Direct Shift-8AT ◎ 7,350,000 VX 6,300,000 GX 5 5,200,000"
+        "supporting_text": "Diesel engine model | Grade | Seating capacity | Driveline | Engine | Transmission | Price* (JPY) (including consumption tax) | | ZX | 7 | Full-time four-wheel drive | 1GD-FTV (2.8-liter inline 4-cylinder direct injection turbo) | Direct Shift-8AT | ◎7,350,000 |"
       },
       "notes": null,
       "normalized": {
@@ -1534,7 +1549,7 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1604,7 +1619,7 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1674,13 +1689,13 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
           "tier1_base:0.95"
         ],
-        "supporting_text": "Gasoline engine model Grade Seating capacity Driveline Engine Transmission Price VX 7 Full-time four-wheel drive 2TR-FE (2.7-liter inline 4-cylinder) 6 Super ECT 5,450,000"
+        "supporting_text": "Gasoline engine model | Grade | Seating capacity | Driveline | Engine | Transmission | Price* (JPY) (including consumption tax) | | VX | 7 | Full-time four-wheel drive | 2TR-FE (2.7-liter inline 4-cylinder) | 6 Super ECT | 5,450,000"
       },
       "notes": null,
       "normalized": {
@@ -1908,14 +1923,14 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "| T24A-FTS Gasoline 2.4-liter turbo Hybrid Direct Shift-8AT | 243 kW (330 PS) | 630 N･m | North America, China |"
+        "supporting_text": "T24A-FTS Gasoline 2.4-liter turbo Hybrid Direct Shift-8AT | 243 kW (330 PS) | 630 N･m … North America, China"
       },
       "notes": "Listed markets: North America, China.",
       "normalized": {
@@ -1985,14 +2000,14 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "| T24A-FTS Gasoline 2.4-liter turbo Direct Shift-8AT | 207 kW (281 PS) | 430 N･m | Middle East, Eastern Europe, etc. |"
+        "supporting_text": "T24A-FTS Gasoline 2.4-liter turbo Direct Shift-8AT | 207 kW (281 PS) | 430 N･m … Middle East, Eastern Europe, etc."
       },
       "notes": "Listed markets: Middle East, Eastern Europe, etc.",
       "normalized": {
@@ -2062,14 +2077,14 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "| 1GD-FTV Diesel 2.8-liter turbo (48V system) Direct Shift-8AT | 150 kW (204 PS) | 500 N･m | Australia, Western Europe |"
+        "supporting_text": "1GD-FTV Diesel 2.8-liter turbo (48V system) Direct Shift-8AT | 150 kW (204 PS) | 500 N･m … Australia, Western Europe"
       },
       "notes": "Listed markets: Australia, Western Europe.",
       "normalized": {
@@ -2139,14 +2154,14 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
           "tier1_base:0.95",
           "no_model_year_stated:-0.05"
         ],
-        "supporting_text": "| 1GD-FTV Diesel 2.8-liter turbo Direct Shift-8AT | 150 kW (204 PS) | 500 N･m | Western Europe, Eastern Europe, Japan, Middle East, etc. |"
+        "supporting_text": "1GD-FTV Diesel 2.8-liter turbo Direct Shift-8AT | 150 kW (204 PS) | 500 N･m … Western Europe, Eastern Europe, Japan, Middle East, etc."
       },
       "notes": "Listed markets: Western Europe, Eastern Europe, Japan, Middle East, etc.",
       "normalized": {
@@ -2216,7 +2231,7 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
-        "source_integrity": "RETRIEVED_UNVERIFIABLE",
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -2522,7 +2537,7 @@
         "confidence_basis": [
           "tier3_base:0.8"
         ],
-        "supporting_text": "The Land Cruiser comes with a twin-turbocharged V6, delivering 409 hp and 650 Nm of torque. The Toyota LC features a twin-turbocharged 3.5L V6 engine, replacing the previous V8."
+        "supporting_text": "The Land Cruiser comes with a twin-turbocharged V6, delivering 409 hp and 650 Nm of torque. … The Toyota LC features a twin-turbocharged 3.5L V6 engine, replacing the previous V8."
       },
       "notes": null,
       "normalized": {

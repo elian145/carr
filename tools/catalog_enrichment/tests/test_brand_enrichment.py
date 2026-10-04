@@ -197,9 +197,10 @@ class PilotReuse(Base):
         self.assertEqual(state["Camry"]["existing_evidence"], "evidence/toyota_camry.json")
         status = {k: v for b in self.plan["batches"] for k, v in b["model_status"].items()}
         # after the pilot sources were re-fetched, only the records whose quotes were found in a preserved snapshot are
-        # VERIFIED: Land Cruiser has enough of them to be PARTIAL, Camry has too few; neither is RESEARCHED.
-        self.assertEqual(status["Land Cruiser"], "PARTIALLY_RESEARCHED")
-        self.assertEqual(status["Camry"], "NEEDS_MORE_SOURCES")
+        # VERIFIED. After the approved HIGH-confidence quote repairs Land Cruiser has enough of them to be RESEARCHED and Camry is PARTIALLY_RESEARCHED
+        # (CM-S1, whose page now states a different horsepower, is still unresolved).
+        self.assertEqual(status["Land Cruiser"], "RESEARCHED")
+        self.assertEqual(status["Camry"], "PARTIALLY_RESEARCHED")
 
 
 class SiblingIsolation(Base):

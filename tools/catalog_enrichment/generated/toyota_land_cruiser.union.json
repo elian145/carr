@@ -14,20 +14,20 @@
       "5": 3
     },
     "records_by_integrity_state": {
-      "FULL_TEXT_VERIFIED": 12,
+      "FULL_TEXT_VERIFIED": 33,
       "PDF_VERIFIED": 0,
       "SNIPPET_ONLY": 0,
       "UNAVAILABLE": 3,
-      "RETRIEVED_UNVERIFIABLE": 25
+      "RETRIEVED_UNVERIFIABLE": 4
     },
     "sources_by_integrity_state": {
-      "FULL_TEXT_VERIFIED": 4,
+      "FULL_TEXT_VERIFIED": 8,
       "PDF_VERIFIED": 0,
       "SNIPPET_ONLY": 0,
       "UNAVAILABLE": 1,
-      "RETRIEVED_UNVERIFIABLE": 7
+      "RETRIEVED_UNVERIFIABLE": 3
     },
-    "records_passing_integrity_test": 8
+    "records_passing_integrity_test": 20
   },
   "research_coverage": [
     "300 Series (2021-): Japan launch + global premiere (3.5 V6 TT petrol, 3.3 V6 TT diesel), UAE 2026 pages (3.5L, 4.0L), US 2027 (2.4L hybrid)",
@@ -49,74 +49,108 @@
   },
   "verified": {
     "trims": [
+      "1958",
       "EXR",
       "GR Sport",
+      "GX",
       "GXR",
-      "VXR"
+      "VX",
+      "VXR",
+      "ZX"
     ],
     "engine_sizes": [
+      "2.4L",
+      "2.7L",
+      "2.8L",
+      "3.3L",
       "3.5L",
       "4.0L",
       "5.7L"
     ],
     "cylinders": [
+      4,
       6,
       8
     ],
     "fuel_types": [
+      "Diesel",
+      "Hybrid",
       "Petrol"
     ],
     "transmissions": [
       "Automatic"
     ],
     "transmission_variants": [
-      "ECT-i"
+      "Direct Shift",
+      "ECT-i",
+      "Super ECT"
     ],
     "transmission_gears": [
       6,
-      8
+      8,
+      10
     ],
     "drivetrains": [
       "4WD"
     ],
     "body_types": [],
-    "seats": [],
+    "seats": [
+      5,
+      7
+    ],
     "doors": []
   },
   "union": {
     "trims": [
+      "1958",
       "EXR",
       "GR Sport",
+      "GX",
       "GXR",
-      "VXR"
+      "VX",
+      "VXR",
+      "ZX"
     ],
     "engine_sizes": [
+      "2.4L",
+      "2.7L",
+      "2.8L",
+      "3.3L",
       "3.5L",
       "4.0L",
       "5.7L"
     ],
     "cylinders": [
+      4,
       6,
       8
     ],
     "fuel_types": [
+      "Diesel",
+      "Hybrid",
       "Petrol"
     ],
     "transmissions": [
       "Automatic"
     ],
     "transmission_variants": [
-      "ECT-i"
+      "Direct Shift",
+      "ECT-i",
+      "Super ECT"
     ],
     "transmission_gears": [
       6,
-      8
+      8,
+      10
     ],
     "drivetrains": [
       "4WD"
     ],
     "body_types": [],
-    "seats": [],
+    "seats": [
+      5,
+      7
+    ],
     "doors": []
   },
   "provisional_only": {
@@ -136,42 +170,22 @@
   },
   "needs_source_retrieval": {
     "trims": [
-      "1958",
       "AX",
-      "GX",
-      "Land Cruiser",
-      "VX",
-      "ZX"
+      "Land Cruiser"
     ],
     "engine_sizes": [
-      "2.4L",
-      "2.7L",
-      "2.8L",
-      "3.3L",
       "4.7L"
     ],
-    "cylinders": [
-      4
-    ],
-    "fuel_types": [
-      "Diesel",
-      "Hybrid"
-    ],
+    "cylinders": [],
+    "fuel_types": [],
     "transmissions": [],
-    "transmission_variants": [
-      "Direct Shift",
-      "Super ECT"
-    ],
-    "transmission_gears": [
-      10
-    ],
+    "transmission_variants": [],
+    "transmission_gears": [],
     "drivetrains": [],
     "body_types": [
       "SUV"
     ],
     "seats": [
-      5,
-      7,
       8
     ],
     "doors": []
@@ -550,11 +564,13 @@
     "trims": [
       {
         "value": "1958",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-002"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 1,
@@ -577,7 +593,7 @@
         "value": "AX",
         "status": "NEEDS_SOURCE_RETRIEVAL",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
         "validated_record_ids": [],
         "best_tier": 1,
@@ -626,10 +642,10 @@
         "value": "GR Sport",
         "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
         "validated_record_ids": [
+          "LC-011",
           "LC-033"
         ],
         "best_tier": 1,
@@ -656,11 +672,13 @@
       },
       {
         "value": "GX",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-006"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 2,
@@ -715,7 +733,7 @@
         "value": "Land Cruiser",
         "status": "NEEDS_SOURCE_RETRIEVAL",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
         "validated_record_ids": [],
         "best_tier": 1,
@@ -738,11 +756,13 @@
       },
       {
         "value": "VX",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 3,
@@ -796,11 +816,13 @@
       },
       {
         "value": "ZX",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-016"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 3,
@@ -826,11 +848,15 @@
     "engine_sizes": [
       {
         "value": "2.4L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-001",
+          "LC-022",
+          "LC-023"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 3,
@@ -854,11 +880,14 @@
       },
       {
         "value": "2.7L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
+          "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 3,
@@ -883,11 +912,16 @@
       },
       {
         "value": "2.8L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
+          "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-016",
+          "LC-024",
+          "LC-025"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 6,
@@ -915,12 +949,13 @@
       },
       {
         "value": "3.3L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-011"
+        ],
         "best_tier": 1,
         "max_confidence": 0.9,
         "support_count": 4,
@@ -945,10 +980,12 @@
         "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE",
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
+          "LC-004",
+          "LC-006",
+          "LC-030",
           "LC-031",
           "LC-032",
           "LC-033"
@@ -1078,11 +1115,16 @@
     "cylinders": [
       {
         "value": 4,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
+          "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-001",
+          "LC-016",
+          "LC-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 7,
@@ -1115,11 +1157,12 @@
         "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE",
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
-          "LC-015"
+          "LC-004",
+          "LC-015",
+          "LC-030"
         ],
         "best_tier": 1,
         "max_confidence": 0.9,
@@ -1189,12 +1232,17 @@
     "fuel_types": [
       {
         "value": "Diesel",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-011",
+          "LC-016",
+          "LC-024",
+          "LC-025"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 10,
@@ -1228,12 +1276,15 @@
       },
       {
         "value": "Hybrid",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE",
+          "FULL_TEXT_VERIFIED",
           "UNAVAILABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-001",
+          "LC-022"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 3,
@@ -1265,7 +1316,11 @@
           "RETRIEVED_UNVERIFIABLE"
         ],
         "validated_record_ids": [
-          "LC-015"
+          "LC-004",
+          "LC-006",
+          "LC-015",
+          "LC-019",
+          "LC-023"
         ],
         "best_tier": 1,
         "max_confidence": 0.95,
@@ -1313,7 +1368,16 @@
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
+          "LC-004",
+          "LC-006",
+          "LC-011",
           "LC-015",
+          "LC-016",
+          "LC-019",
+          "LC-022",
+          "LC-023",
+          "LC-024",
+          "LC-025",
           "LC-027"
         ],
         "best_tier": 1,
@@ -1370,11 +1434,21 @@
     "transmission_variants": [
       {
         "value": "Direct Shift",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
+          "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-004",
+          "LC-006",
+          "LC-011",
+          "LC-016",
+          "LC-022",
+          "LC-023",
+          "LC-024",
+          "LC-025"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 17,
@@ -1441,11 +1515,13 @@
       },
       {
         "value": "Super ECT",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 2,
@@ -1472,11 +1548,11 @@
         "value": 6,
         "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
         "validated_record_ids": [
-          "LC-015"
+          "LC-015",
+          "LC-019"
         ],
         "best_tier": 1,
         "max_confidence": 0.95,
@@ -1508,6 +1584,11 @@
           "RETRIEVED_UNVERIFIABLE"
         ],
         "validated_record_ids": [
+          "LC-016",
+          "LC-022",
+          "LC-023",
+          "LC-024",
+          "LC-025",
           "LC-027"
         ],
         "best_tier": 1,
@@ -1542,12 +1623,15 @@
       },
       {
         "value": 10,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-004",
+          "LC-006",
+          "LC-011"
+        ],
         "best_tier": 1,
         "max_confidence": 0.9,
         "support_count": 11,
@@ -1584,6 +1668,9 @@
           "RETRIEVED_UNVERIFIABLE"
         ],
         "validated_record_ids": [
+          "LC-001",
+          "LC-016",
+          "LC-019",
           "LC-027"
         ],
         "best_tier": 1,
@@ -1670,11 +1757,14 @@
     "seats": [
       {
         "value": 5,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-006",
+          "LC-011"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 3,
@@ -1698,12 +1788,15 @@
       },
       {
         "value": 7,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE",
+          "FULL_TEXT_VERIFIED",
           "UNAVAILABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "LC-016",
+          "LC-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 5,

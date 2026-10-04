@@ -443,13 +443,17 @@ class PilotRegression(unittest.TestCase):
         self.assertEqual(counts["ford_everest"]["SNIPPET_ONLY"], 7)
         self.assertEqual(counts["ford_everest"]["UNAVAILABLE"], 14)
         self.assertEqual(counts["toyota_land_cruiser"]["UNAVAILABLE"], 3)  # LC-S12 (tier 5) answered HTTP 429
-        self.assertEqual(counts["toyota_camry"]["FULL_TEXT_VERIFIED"], 8)
+        # CM-S2 (8 records) + CM-S3 (7) + CM-S4 (1): CM-S3 / CM-S4 were promoted after the HIGH-confidence quote repairs were approved
+        self.assertEqual(counts["toyota_camry"]["FULL_TEXT_VERIFIED"], 16)
+        self.assertEqual(counts["toyota_camry"]["RETRIEVED_UNVERIFIABLE"], 7)  # CM-S1 (the page now states 232 hp, not 225 hp) stays unresolved
 
     def test_pilot_values_survive_as_needs_source_retrieval_not_deleted(self):
         u = L.read_json(HERE / "generated" / "toyota_camry.union.json")
         self.assertIn("XLE", u["verified"]["trims"])  # CM-S2 records whose quote was found in the preserved snapshot
         self.assertIn("Nightshade", u["needs_source_retrieval"]["trims"])  # CM-S1 quote no longer in the page -> not verified, not deleted
-        self.assertEqual(u["needs_source_retrieval"]["fuel_types"], ["Hybrid", "Petrol"])
+        self.assertEqual(u["verified"]["fuel_types"], ["Hybrid", "Petrol"])  # now backed by the repaired CM-S3 / CM-S2 quotes
+        for lost in ("LE HEV", "Lumiere HEV"):  # trims whose only evidence is unconfirmed stay NEEDS_SOURCE_RETRIEVAL
+            self.assertIn(lost, u["needs_source_retrieval"]["trims"])
         self.assertEqual(u["generated_from"]["record_count"], 23)
 
 

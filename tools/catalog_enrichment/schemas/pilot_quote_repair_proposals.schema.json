@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.quote_repair_proposals/1",
+  "title": "Pilot quote-repair proposals (quote_repair.py). DRY RUN: a review artefact, never applied automatically.",
+  "type": "object",
+  "required": ["schema_version", "dry_run", "applied", "policy", "evidence_files_analyzed", "summary", "verified_values_if_all_safe_repairs_were_approved", "proposals"],
+  "properties": {
+    "schema_version": {"const": "carnet.quote_repair_proposals/1"},
+    "dry_run": {"const": true},
+    "applied": {"const": false},
+    "policy": {"type": "string"},
+    "evidence_files_analyzed": {
+      "type": "object",
+      "description": "evidence file -> sha256 of its bytes at analysis time (proves the report was computed from, and did not change, those files)",
+      "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    },
+    "summary": {
+      "type": "object",
+      "required": ["unresolved_records_analyzed", "by_classification", "by_model", "by_reason"],
+      "properties": {
+        "unresolved_records_analyzed": {"type": "integer", "minimum": 0},
+        "by_classification": {"$ref": "#/$defs/counts3"},
+        "by_model": {"type": "object", "additionalProperties": {"$ref": "#/$defs/counts4"}},
+        "by_reason": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 1}}
+      },
+      "additionalProperties": false
+    },
+    "verified_values_if_all_safe_repairs_were_approved": {
+      "type": "object",
+      "required": ["total", "by_model"],
+      "properties": {
+        "total": {
+          "type": "object",
+          "required": ["before", "after"],
+          "properties": {"before": {"type": "integer", "minimum": 0}, "after": {"type": "integer", "minimum": 0}},
+          "additionalProperties": false
+        },
+        "by_model": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["verified_values_before", "verified_values_after", "newly_verified", "no_longer_verified", "records_passing_before", "records_passing_after", "simulation_validation_errors"],
+            "properties": {
+              "verified_values_before": {"type": "integer", "minimum": 0},
+              "verified_values_after": {"type": "integer", "minimum": 0},
+              "newly_verified": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+              "no_longer_verified": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"}}},
+              "records_passing_before": {"type": "integer", "minimum": 0},
+              "records_passing_after": {"type": "integer", "minimum": 0},
+              "simulation_validation_errors": {"type": "array", "items": {"type": "string"}}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "proposals": {"type": "array", "items": {"$ref": "#/$defs/proposal"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "counts3": {
+      "type": "object",
+      "required": ["SAFE_QUOTE_REPAIR", "FACTUAL_CHANGE", "NEEDS_MANUAL_REVIEW"],
+      "properties": {
+        "SAFE_QUOTE_REPAIR": {"type": "integer", "minimum": 0},
+        "FACTUAL_CHANGE": {"type": "integer", "minimum": 0},
+        "NEEDS_MANUAL_REVIEW": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "counts4": {
+      "type": "object",
+      "required": ["SAFE_QUOTE_REPAIR", "FACTUAL_CHANGE", "NEEDS_MANUAL_REVIEW", "analyzed"],
+      "properties": {
+        "SAFE_QUOTE_REPAIR": {"type": "integer", "minimum": 0},
+        "FACTUAL_CHANGE": {"type": "integer", "minimum": 0},
+        "NEEDS_MANUAL_REVIEW": {"type": "integer", "minimum": 0},
+        "analyzed": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "proposal": {
+      "type": "object",
+      "required": ["evidence_id", "model", "evidence_file", "source_id", "source_url", "source_integrity_state", "classification", "reason_code", "reason",
+                   "old_quote", "proposed_exact_quote", "proposed_segments", "authored_values_supported", "authored_values_unsupported",
+                   "old_quote_token_coverage", "old_quote_tokens_not_located", "confidence", "factual_change",
+                   "snapshot_kind", "snapshot_path", "snapshot_sha256", "application_requires_snapshot_promotion"],
+      "properties": {
+        "evidence_id": {"type": "string"},
+        "model": {"type": "string"},
+        "evidence_file": {"type": "string"},
+        "source_id": {"type": "string"},
+        "source_url": {"type": "string"},
+        "source_integrity_state": {"enum": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED", "SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"], "description": "current integrity state of the source (the record is unresolved)"},
+        "classification": {"enum": ["SAFE_QUOTE_REPAIR", "FACTUAL_CHANGE", "NEEDS_MANUAL_REVIEW"]},
+        "reason_code": {"type": "string"},
+        "reason": {"type": "string"},
+        "old_quote": {"type": "string"},
+        "proposed_exact_quote": {"type": ["string", "null"], "description": "only for SAFE_QUOTE_REPAIR: text copied from the snapshot (segments joined by ' … ')"},
+        "proposed_segments": {"type": "array", "items": {"type": "string"}},
+        "authored_values_supported": {"type": "object", "additionalProperties": {"type": ["string", "number"]}},
+        "authored_values_unsupported": {"type": "array", "items": {"type": "string"}},
+        "old_quote_token_coverage": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "old_quote_tokens_not_located": {"type": "array", "items": {"type": "string"}, "description": "normalised tokens of the old quote that do not occur in the matching snapshot passage"},
+        "confidence": {"enum": ["HIGH", "MEDIUM", null], "description": "SAFE only. HIGH = every old-quote token located; MEDIUM = a few were not (reviewer should glance at them)"},
+        "factual_change": {"type": ["object", "null"]},
+        "snapshot_kind": {"enum": ["preserved_evidence", "candidate_not_yet_preserved", "none"]},
+        "snapshot_path": {"type": ["string", "null"]},
+        "snapshot_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "application_requires_snapshot_promotion": {"type": "boolean", "description": "true when the source has no preserved evidence snapshot yet, so approving the repair also means preserving the candidate snapshot (fetch_snapshot.py)"}
+      },
+      "allOf": [
+        {"if": {"properties": {"classification": {"const": "SAFE_QUOTE_REPAIR"}}},
+         "then": {"properties": {"proposed_exact_quote": {"type": "string", "minLength": 1}, "proposed_segments": {"minItems": 1}, "snapshot_sha256": {"type": "string"}, "confidence": {"enum": ["HIGH", "MEDIUM"]}}},
+         "else": {"properties": {"proposed_exact_quote": {"type": "null"}, "proposed_segments": {"maxItems": 0}, "confidence": {"type": "null"}}}},
+        {"if": {"properties": {"classification": {"const": "FACTUAL_CHANGE"}}},
+         "then": {"properties": {"factual_change": {"type": "object"}}}}
+      ],
+      "additionalProperties": false
+    }
+  }
+}

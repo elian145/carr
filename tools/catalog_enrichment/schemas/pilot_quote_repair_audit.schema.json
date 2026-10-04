@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.quote_repair_audit/1",
+  "title": "Applied pilot quote repairs (apply_quote_repair.py). Tooling-only audit history; never read by union generation.",
+  "type": "object",
+  "required": ["schema_version", "tooling_only", "note", "entries"],
+  "properties": {
+    "schema_version": {"const": "carnet.quote_repair_audit/1"},
+    "tooling_only": {"const": true},
+    "note": {"type": "string"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["evidence_id", "evidence_file", "source_id", "reason", "previous_quote", "replacement_quote", "proposal_classification", "proposal_confidence",
+                     "proposal_reason_code", "snapshot_path", "snapshot_sha256", "snapshot_promoted_from", "applied_at"],
+        "properties": {
+          "evidence_id": {"type": "string"},
+          "evidence_file": {"type": "string"},
+          "source_id": {"type": "string"},
+          "reason": {"const": "quote_repair"},
+          "previous_quote": {"type": "string", "minLength": 1},
+          "replacement_quote": {"type": "string", "minLength": 1},
+          "proposal_classification": {"const": "SAFE_QUOTE_REPAIR"},
+          "proposal_confidence": {"const": "HIGH"},
+          "proposal_reason_code": {"type": "string"},
+          "snapshot_path": {"type": "string", "pattern": "^evidence/"},
+          "snapshot_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "snapshot_promoted_from": {"type": ["string", "null"], "description": "candidate snapshot the canonical one was promoted from (null = the canonical snapshot already existed)"},
+          "applied_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

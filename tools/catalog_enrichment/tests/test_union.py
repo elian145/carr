@@ -262,7 +262,7 @@ class PilotUnions(unittest.TestCase):
                 st = L.source_integrity_state(s)
                 if st in L.VERIFIED_ELIGIBLE_STATES:
                     self.assertIn(sid, texts, (n, sid))
-                    self.assertTrue(s["integrity"]["origin"].startswith("revalidation:"), (n, sid))
+                    self.assertTrue(s["integrity"]["origin"].startswith(("revalidation:", "quote_repair:")), (n, sid))
                 else:
                     self.assertIsNone(s["integrity"]["content_sha256"], (n, sid))
                     self.assertIsNone(s["integrity"]["snapshot_path"], (n, sid))
@@ -274,7 +274,7 @@ class PilotUnions(unittest.TestCase):
         u = L.read_json(L.HERE / "generated" / "toyota_land_cruiser.union.json")
         self.assertEqual(u["verified"]["drivetrains"], ["4WD"])  # tier 1, quote found in a preserved snapshot
         self.assertEqual(u["provisional_only"]["drivetrains"], ["AWD"])  # tier 5
-        self.assertIn("Hybrid", u["needs_source_retrieval"]["fuel_types"])
+        self.assertIn("Hybrid", u["verified"]["fuel_types"])  # LC-001 / LC-022 quotes repaired against preserved snapshots
         self.assertNotIn("Hybrid", u["needs_source_retrieval"]["transmission_variants"])
 
     def test_record_ids_never_disappear(self):

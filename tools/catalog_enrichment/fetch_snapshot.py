@@ -244,7 +244,7 @@ def revalidate_doc(doc: dict, snapshot_dir: Path, now: str, only: list[str] | No
         if only and sid not in only:
             continue
         s = doc["sources"][sid]
-        if not force and L.source_integrity_state(s) in L.VERIFIED_ELIGIBLE_STATES and (s["integrity"].get("origin") or "").startswith(("revalidation:", "authored", "migration:cached")):
+        if not force and L.source_integrity_state(s) in L.VERIFIED_ELIGIBLE_STATES and (s["integrity"].get("origin") or "").startswith(("revalidation:", "quote_repair:", "authored", "migration:cached")):
             entries.append({"source_id": sid, "url": s["url"], "tier": s["tier"], "outcome": "SKIPPED_ALREADY_VERIFIED", "new_state": s["integrity"]["state"]})
             continue
         result = fetcher(s["url"])

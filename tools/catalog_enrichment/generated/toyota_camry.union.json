@@ -12,20 +12,20 @@
       "3": 8
     },
     "records_by_integrity_state": {
-      "FULL_TEXT_VERIFIED": 8,
+      "FULL_TEXT_VERIFIED": 16,
       "PDF_VERIFIED": 0,
       "SNIPPET_ONLY": 0,
       "UNAVAILABLE": 0,
-      "RETRIEVED_UNVERIFIABLE": 15
+      "RETRIEVED_UNVERIFIABLE": 7
     },
     "sources_by_integrity_state": {
-      "FULL_TEXT_VERIFIED": 1,
+      "FULL_TEXT_VERIFIED": 3,
       "PDF_VERIFIED": 0,
       "SNIPPET_ONLY": 0,
       "UNAVAILABLE": 0,
-      "RETRIEVED_UNVERIFIABLE": 3
+      "RETRIEVED_UNVERIFIABLE": 1
     },
-    "records_passing_integrity_test": 5
+    "records_passing_integrity_test": 12
   },
   "research_coverage": [
     "8th generation (XV70, 2018-): US 2018 launch release and US 2026 hybrid page; Saudi Arabia 2026 grade table (gas + hybrid); UAE 2026 page",
@@ -46,64 +46,15 @@
   },
   "verified": {
     "trims": [
-      "L",
-      "LE",
-      "SE",
-      "XLE",
-      "XSE"
-    ],
-    "engine_sizes": [],
-    "cylinders": [],
-    "fuel_types": [],
-    "transmissions": [],
-    "transmission_variants": [],
-    "transmission_gears": [],
-    "drivetrains": [],
-    "body_types": [],
-    "seats": [],
-    "doors": []
-  },
-  "union": {
-    "trims": [
-      "L",
-      "LE",
-      "SE",
-      "XLE",
-      "XSE"
-    ],
-    "engine_sizes": [],
-    "cylinders": [],
-    "fuel_types": [],
-    "transmissions": [],
-    "transmission_variants": [],
-    "transmission_gears": [],
-    "drivetrains": [],
-    "body_types": [],
-    "seats": [],
-    "doors": []
-  },
-  "provisional_only": {
-    "trims": [],
-    "engine_sizes": [],
-    "cylinders": [],
-    "fuel_types": [],
-    "transmissions": [],
-    "transmission_variants": [],
-    "transmission_gears": [],
-    "drivetrains": [],
-    "body_types": [],
-    "seats": [],
-    "doors": []
-  },
-  "needs_source_retrieval": {
-    "trims": [
       "E",
       "E HEV",
       "E Plus HEV",
       "Grande",
-      "LE HEV",
-      "Lumiere HEV",
-      "Nightshade"
+      "L",
+      "LE",
+      "SE",
+      "XLE",
+      "XSE"
     ],
     "engine_sizes": [
       "2.5L",
@@ -126,13 +77,83 @@
     "transmission_gears": [
       8
     ],
+    "drivetrains": [],
+    "body_types": [
+      "Sedan"
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "union": {
+    "trims": [
+      "E",
+      "E HEV",
+      "E Plus HEV",
+      "Grande",
+      "L",
+      "LE",
+      "SE",
+      "XLE",
+      "XSE"
+    ],
+    "engine_sizes": [
+      "2.5L",
+      "3.5L"
+    ],
+    "cylinders": [
+      4,
+      6
+    ],
+    "fuel_types": [
+      "Hybrid",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "e-CVT"
+    ],
+    "transmission_gears": [
+      8
+    ],
+    "drivetrains": [],
+    "body_types": [
+      "Sedan"
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "needs_source_retrieval": {
+    "trims": [
+      "LE HEV",
+      "Lumiere HEV",
+      "Nightshade"
+    ],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
     "drivetrains": [
       "AWD",
       "FWD"
     ],
-    "body_types": [
-      "Sedan"
-    ],
+    "body_types": [],
     "seats": [],
     "doors": []
   },
@@ -281,11 +302,13 @@
     "trims": [
       {
         "value": "E",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-016"
+        ],
         "best_tier": 3,
         "max_confidence": 0.8,
         "support_count": 1,
@@ -306,11 +329,13 @@
       },
       {
         "value": "E HEV",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-019"
+        ],
         "best_tier": 3,
         "max_confidence": 0.8,
         "support_count": 1,
@@ -331,11 +356,13 @@
       },
       {
         "value": "E Plus HEV",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-020"
+        ],
         "best_tier": 3,
         "max_confidence": 0.8,
         "support_count": 1,
@@ -356,11 +383,13 @@
       },
       {
         "value": "Grande",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-018"
+        ],
         "best_tier": 3,
         "max_confidence": 0.8,
         "support_count": 1,
@@ -414,7 +443,8 @@
           "RETRIEVED_UNVERIFIABLE"
         ],
         "validated_record_ids": [
-          "CM-012"
+          "CM-012",
+          "CM-017"
         ],
         "best_tier": 1,
         "max_confidence": 0.95,
@@ -443,7 +473,7 @@
         "value": "LE HEV",
         "status": "NEEDS_SOURCE_RETRIEVAL",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
         "validated_record_ids": [],
         "best_tier": 3,
@@ -468,7 +498,7 @@
         "value": "Lumiere HEV",
         "status": "NEEDS_SOURCE_RETRIEVAL",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
         "validated_record_ids": [],
         "best_tier": 3,
@@ -608,12 +638,19 @@
     "engine_sizes": [
       {
         "value": "2.5L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-016",
+          "CM-017",
+          "CM-018",
+          "CM-019",
+          "CM-020",
+          "CM-023"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 11,
@@ -648,11 +685,13 @@
       },
       {
         "value": "3.5L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-009"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 1,
@@ -675,12 +714,19 @@
     "cylinders": [
       {
         "value": 4,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-016",
+          "CM-017",
+          "CM-018",
+          "CM-019",
+          "CM-020",
+          "CM-023"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 10,
@@ -714,11 +760,13 @@
       },
       {
         "value": 6,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-009"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 1,
@@ -741,12 +789,15 @@
     "fuel_types": [
       {
         "value": "Hybrid",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-019",
+          "CM-020"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 7,
@@ -776,12 +827,15 @@
       },
       {
         "value": "Petrol",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-016",
+          "CM-017",
+          "CM-018"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 4,
@@ -809,12 +863,19 @@
     "transmissions": [
       {
         "value": "Automatic",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-009",
+          "CM-016",
+          "CM-017",
+          "CM-018",
+          "CM-019",
+          "CM-020"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 10,
@@ -849,11 +910,15 @@
     "transmission_variants": [
       {
         "value": "e-CVT",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
+          "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-019",
+          "CM-020"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 5,
@@ -882,12 +947,16 @@
     "transmission_gears": [
       {
         "value": 8,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-009",
+          "CM-016",
+          "CM-017",
+          "CM-018"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 5,
@@ -968,12 +1037,13 @@
     "body_types": [
       {
         "value": "Sedan",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "FULL_TEXT_VERIFIED",
-          "RETRIEVED_UNVERIFIABLE"
+          "FULL_TEXT_VERIFIED"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "CM-023"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 2,

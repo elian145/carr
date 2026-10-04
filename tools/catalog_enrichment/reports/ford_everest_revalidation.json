@@ -43,31 +43,16 @@
       "final_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
       "content_type": "text/html",
       "records_total": 6,
-      "records_confirmed": 4,
-      "records_unconfirmed": [
-        {
-          "record_id": "FE-014",
-          "diagnosis": "punctuation_or_layout_only",
-          "missing_segments": [
-            "Additionally, a 2.0L Single-Turbo diesel comes standard with a 6-speed automatic, supplying 168HP and 405Nm of torque providing strong low s"
-          ]
-        },
-        {
-          "record_id": "FE-015",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "Inside, premium levels of craftsmanship have created a quiet and refined sanctuary for up to seven. Next-Gen Ford Everest is ready to go, wi"
-          ]
-        }
-      ],
+      "records_confirmed": 6,
+      "records_unconfirmed": [],
       "error": null,
       "extractor": "html-text/1",
       "raw_sha256": "179ea479db3786aff148a1d40c6c344dc075a036cdbdc30c28c5dea61ffd2b71",
       "content_sha256": "5be7d726d182103c5444af16dee1c0fa479d2b2b91ee2e41477426aaaf65b759",
-      "outcome": "PARTIAL_CONFIRMED",
+      "outcome": "CONFIRMED",
       "new_state": "FULL_TEXT_VERIFIED",
       "retrieved_at": "2026-10-03T16:52:53Z",
-      "note": "Re-fetched and preserved; 2 of 6 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified)."
+      "note": "Quote repair applied to FE-014, FE-015 (reports/pilot_quote_repair_audit.json). Re-fetched and preserved; 2 of 6 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified)."
     },
     {
       "source_id": "FE-S4",
@@ -78,23 +63,16 @@
       "final_url": "https://en.aljazirahford.com/news/ford-debuts-middle-east-exclusive-everest-v6-engine-lineup/",
       "content_type": "text/html",
       "records_total": 1,
-      "records_confirmed": 0,
-      "records_unconfirmed": [
-        {
-          "record_id": "FE-019",
-          "diagnosis": "not_found_verbatim",
-          "missing_segments": [
-            "The 26MY Ford Everest introduces a new 2.7L V6 EcoBoost engine, developed for the region's driving conditions, delivering 355 horsepower and"
-          ]
-        }
-      ],
+      "records_confirmed": 1,
+      "records_unconfirmed": [],
       "error": null,
       "extractor": "html-text/1",
       "raw_sha256": "0be844596f6ae74b8f0daba97ca3cf0fd16530e1bfddb63d722ecc577a880d14",
       "content_sha256": "9fcc7659b389993377dc6551d749926213d841d4472d8fcfa7639092249eaa8d",
-      "outcome": "CONTENT_MISMATCH",
-      "new_state": "RETRIEVED_UNVERIFIABLE",
-      "retrieved_at": "2026-10-03T16:52:53Z"
+      "outcome": "CONFIRMED",
+      "new_state": "FULL_TEXT_VERIFIED",
+      "retrieved_at": "2026-10-03T16:52:53Z",
+      "note": "Quote repair applied to FE-019 (reports/pilot_quote_repair_audit.json). Content retrieved at 2026-10-03T16:52:53Z (hash recorded by the re-validation fetch). Re-validated from the stored candidate snapshot and promoted to canonical evidence after review of the quote repair (reports/pilot_quote_repair_audit.json). Every cited quote is in the preserved content."
     },
     {
       "source_id": "FE-S5",

@@ -12,20 +12,20 @@
       "3": 29
     },
     "records_by_integrity_state": {
-      "FULL_TEXT_VERIFIED": 6,
+      "FULL_TEXT_VERIFIED": 7,
       "PDF_VERIFIED": 7,
       "SNIPPET_ONLY": 7,
       "UNAVAILABLE": 14,
-      "RETRIEVED_UNVERIFIABLE": 12
+      "RETRIEVED_UNVERIFIABLE": 11
     },
     "sources_by_integrity_state": {
-      "FULL_TEXT_VERIFIED": 1,
+      "FULL_TEXT_VERIFIED": 2,
       "PDF_VERIFIED": 1,
       "SNIPPET_ONLY": 2,
       "UNAVAILABLE": 2,
-      "RETRIEVED_UNVERIFIABLE": 4
+      "RETRIEVED_UNVERIFIABLE": 3
     },
-    "records_passing_integrity_test": 10
+    "records_passing_integrity_test": 13
   },
   "research_coverage": [
     "Current generation (P703, 2022-): Middle East XLS/XLT/Limited (2025 sheet), 2026 Middle East Active/Sport/Tremor/Platinum with 2.7L V6, Australia MY26.5/MY27, Thailand 2019-era Titanium+ and Platinum",
@@ -54,10 +54,15 @@
       "XLT"
     ],
     "engine_sizes": [
-      "2.3L"
+      "2.0L",
+      "2.3L",
+      "2.7L"
     ],
-    "cylinders": [],
+    "cylinders": [
+      6
+    ],
     "fuel_types": [
+      "Diesel",
       "Petrol"
     ],
     "transmissions": [
@@ -67,6 +72,7 @@
       "SelectShift"
     ],
     "transmission_gears": [
+      6,
       10
     ],
     "drivetrains": [
@@ -92,10 +98,15 @@
       "XLT"
     ],
     "engine_sizes": [
-      "2.3L"
+      "2.0L",
+      "2.3L",
+      "2.7L"
     ],
-    "cylinders": [],
+    "cylinders": [
+      6
+    ],
     "fuel_types": [
+      "Diesel",
       "Petrol"
     ],
     "transmissions": [
@@ -105,6 +116,7 @@
       "SelectShift"
     ],
     "transmission_gears": [
+      6,
       10
     ],
     "drivetrains": [
@@ -143,24 +155,17 @@
       "Wolftrak"
     ],
     "engine_sizes": [
-      "2.0L",
-      "2.7L",
       "3.0L",
       "3.2L"
     ],
     "cylinders": [
       4,
-      5,
-      6
+      5
     ],
-    "fuel_types": [
-      "Diesel"
-    ],
+    "fuel_types": [],
     "transmissions": [],
     "transmission_variants": [],
-    "transmission_gears": [
-      6
-    ],
+    "transmission_gears": [],
     "drivetrains": [],
     "body_types": [],
     "seats": [],
@@ -870,14 +875,16 @@
     "engine_sizes": [
       {
         "value": "2.0L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE",
           "SNIPPET_ONLY",
           "UNAVAILABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "FE-014"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 10,
@@ -949,12 +956,14 @@
       },
       {
         "value": "2.7L",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
-          "RETRIEVED_UNVERIFIABLE",
+          "FULL_TEXT_VERIFIED",
           "UNAVAILABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "FE-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 2,
@@ -1098,12 +1107,15 @@
       },
       {
         "value": 6,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
+          "FULL_TEXT_VERIFIED",
           "RETRIEVED_UNVERIFIABLE",
           "UNAVAILABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "FE-019"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 8,
@@ -1139,7 +1151,7 @@
     "fuel_types": [
       {
         "value": "Diesel",
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "PDF_VERIFIED",
@@ -1147,7 +1159,9 @@
           "SNIPPET_ONLY",
           "UNAVAILABLE"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "FE-014"
+        ],
         "best_tier": 1,
         "max_confidence": 0.95,
         "support_count": 16,
@@ -1226,7 +1240,9 @@
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
-          "FE-013"
+          "FE-013",
+          "FE-014",
+          "FE-019"
         ],
         "best_tier": 1,
         "max_confidence": 0.95,
@@ -1326,13 +1342,15 @@
     "transmission_gears": [
       {
         "value": 6,
-        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "status": "VERIFIED",
         "integrity_states": [
           "FULL_TEXT_VERIFIED",
           "PDF_VERIFIED",
           "SNIPPET_ONLY"
         ],
-        "validated_record_ids": [],
+        "validated_record_ids": [
+          "FE-014"
+        ],
         "best_tier": 3,
         "max_confidence": 0.7,
         "support_count": 3,
@@ -1366,7 +1384,8 @@
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
-          "FE-013"
+          "FE-013",
+          "FE-019"
         ],
         "best_tier": 1,
         "max_confidence": 0.95,
@@ -1426,6 +1445,7 @@
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
+          "FE-015",
           "FE-040"
         ],
         "best_tier": 1,
@@ -1507,6 +1527,7 @@
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
+          "FE-015",
           "FE-040"
         ],
         "best_tier": 1,
@@ -1578,6 +1599,7 @@
           "UNAVAILABLE"
         ],
         "validated_record_ids": [
+          "FE-015",
           "FE-037",
           "FE-038",
           "FE-039"
