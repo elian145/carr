@@ -1,0 +1,436 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Wigo",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "Philippines current Wigo (1.0L 1KR-VE 3-cylinder; G CVT, E CVT, J M/T 5-speed): Toyota Motor Philippines site, its comparison page and a dealer-hosted copy of the Toyota Motor Philippines leaflet (Oct 2024)",
+    "All sources are search-result snippets (retrieval 'search_snippet_only'); full pages were not cached",
+    "NOT researched: Wigo drivetrain (the PH sheet labels 'Drivetrain' but the snippet drops the value), body type, doors, Indonesia/India/Japan markets, the 2014-2022 first generation the legacy dataset mostly lists, model years"
+  ],
+  "not_used_sources": [],
+  "sources": {
+    "WG-S1": {
+      "url": "https://toyota.com.ph/wigo",
+      "name": "Toyota Wigo | Toyota Philippines Official Website | Toyota Motor Philippines",
+      "publisher": "Toyota Motor Philippines Corporation",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "Philippines",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "WG-S2": {
+      "url": "https://toyota.com.ph/comparison/wigo/j-mt",
+      "name": "Comparison | Toyota Motor Philippines (Wigo J M/T)",
+      "publisher": "Toyota Motor Philippines Corporation",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "Philippines",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "WG-S3": {
+      "url": "https://toyotabalintawak.com/wp-content/uploads/2025/03/Wigo-Brochure-March-2025.pdf",
+      "name": "FA_TMW 0024 Toyota Wigo Updated Leaflet_Oct2024",
+      "publisher": "Toyota Motor Philippines Corporation (hosted by a Toyota dealer)",
+      "tier": 3,
+      "host_type": "dealer_hosted_copy",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "Oct 2024 leaflet",
+      "market_scope": "Philippines",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    }
+  },
+  "records": [
+    {
+      "record_id": "WG-001",
+      "brand": "Toyota",
+      "model": "Wigo",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "G",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "1KR-VE 3-cylinder, In-Line, 12-valve DOHC",
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "3-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "CVT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "WG-S1",
+        "source_url": "https://toyota.com.ph/wigo",
+        "source_name": "Toyota Wigo | Toyota Philippines Official Website | Toyota Motor Philippines",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "G CVT … Engine: 1KR-VE 3-cylinder, In-Line, 12-valve DOHC Functions: EPS Power Steering with Push Start Ignition Transmission: CVT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "G",
+        "trim_key": "g",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 3,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "WG-002",
+      "brand": "Toyota",
+      "model": "Wigo",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "E",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "1KR-VE 3-cylinder, In-Line, 12-valve DOHC",
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "3-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "CVT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "WG-S1",
+        "source_url": "https://toyota.com.ph/wigo",
+        "source_name": "Toyota Wigo | Toyota Philippines Official Website | Toyota Motor Philippines",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "E CVT … Engine: 1KR-VE 3-cylinder, In-Line, 12-valve DOHC Functions: EPS Power Steering with Rotary Ignition Transmission: CVT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "E",
+        "trim_key": "e",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 3,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "WG-003",
+      "brand": "Toyota",
+      "model": "Wigo",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "J",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "1KR-VE 3-cylinder, In-Line, 12-valve DOHC",
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "3-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "5-speed MT",
+        "gears": 5
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "WG-S1",
+        "source_url": "https://toyota.com.ph/wigo",
+        "source_name": "Toyota Wigo | Toyota Philippines Official Website | Toyota Motor Philippines",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "J M/T … Engine: 1KR-VE 3-cylinder, In-Line, 12-valve DOHC Functions: EPS Power Steering with Rotary Ignition Transmission: 5-speed MT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "J",
+        "trim_key": "j",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 3,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Manual",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": 5,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "WG-004",
+      "brand": "Toyota",
+      "model": "Wigo",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "3-cylinder, In-Line, 12-valve DOHC with VVT",
+        "displacement_raw": {
+          "value": 998,
+          "unit": "cc"
+        },
+        "displacement_cc": 998,
+        "cylinders": "3-cylinder",
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": {
+          "value": 67,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 89,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "WG-S3",
+        "source_url": "https://toyotabalintawak.com/wp-content/uploads/2025/03/Wigo-Brochure-March-2025.pdf",
+        "source_name": "FA_TMW 0024 Toyota Wigo Updated Leaflet_Oct2024",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.55,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "host_type:dealer_hosted_copy:-0.05",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1KR-VE 3-cylinder, In-Line, 12-valve DOHC with VVT 998 67 / 6000 89 / 4400 Gasoline 36"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "1.0L",
+        "engine_size_label": "1.0L",
+        "displacement_cc": 998,
+        "displacement_nominal_l": 0.998,
+        "cylinders": 3,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 66.1,
+        "torque_nm": 89.0,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "WG-005",
+      "brand": "Toyota",
+      "model": "Wigo",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "WG-S2",
+        "source_url": "https://toyota.com.ph/comparison/wigo/j-mt",
+        "source_name": "Comparison | Toyota Motor Philippines (Wigo J M/T)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "seating capacity 5"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

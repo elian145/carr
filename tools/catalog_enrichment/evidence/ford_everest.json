@@ -29,6 +29,19 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "2025",
       "market_scope": "Middle East",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_unavailable",
+        "note": "Re-fetch attempt failed: HTTP 403. The quotes could not be validated against retrieved content (the source remains a search-result snippet).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://fordbahrain.com/wp-content/uploads/2025/08/MY25-Everest-Spec-Sheet-EN.pdf",
+        "http_status": 403,
+        "content_type": "text/html",
+        "previous_state": "SNIPPET_ONLY"
+      },
       "notes": "Ford Middle East document hosted on the Bahrain distributor site. Columns are positional: header '2025 XLS XLS XLT LIMITED' (first XLS = 2.0L diesel 6AT, then 2.3L 10AT for XLS, XLT, Limited). A separately downloaded PDF (origin URL not recorded) with the same figures agreed."
     },
     "FE-S2": {
@@ -40,7 +53,20 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
-      "market_scope": "UAE (Ford Middle East)"
+      "market_scope": "UAE (Ford Middle East)",
+      "integrity": {
+        "state": "UNAVAILABLE",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_unavailable",
+        "note": "Re-fetch attempt failed: HTTP 403. The quotes could not be validated against retrieved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.me.ford.com/en/are/suvs/everest/",
+        "http_status": 403,
+        "content_type": "text/html",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "FE-S3": {
       "url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
@@ -51,6 +77,25 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "market_scope": "Middle East",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": "5be7d726d182103c5444af16dee1c0fa479d2b2b91ee2e41477426aaaf65b759",
+        "snapshot_path": "evidence/_source_text/FE-S3.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; 2 of 6 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://en.aljazirahford.com/news/next-gen-ford-everest/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "179ea479db3786aff148a1d40c6c344dc075a036cdbdc30c28c5dea61ffd2b71",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "FE-014",
+          "FE-015"
+        ]
+      },
       "notes": "Release text carries no model-year label; date of original release not stated on the page."
     },
     "FE-S4": {
@@ -62,7 +107,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "26MY",
-      "market_scope": "Middle East"
+      "market_scope": "Middle East",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 9fcc7659b3899933...) but none of the 1 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://en.aljazirahford.com/news/ford-debuts-middle-east-exclusive-everest-v6-engine-lineup/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "0be844596f6ae74b8f0daba97ca3cf0fd16530e1bfddb63d722ecc577a880d14",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "FE-S5": {
       "url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
@@ -74,6 +134,21 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "MY2026.50",
       "market_scope": "Australia",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 d851240abbc4f144...) but none of the 6 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://resource.digitaldealer.com.au/pdf/186153647669fd4e7ce3311781700624.pdf",
+        "http_status": 200,
+        "content_type": "application/pdf",
+        "raw_sha256": "25efb387187b1cd28ec506771f57a47b0ffeac8823551a9981af29d941881e79",
+        "extractor": "pypdf/6.7.1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "Ford Australia document on a dealer-platform CDN (identical text also found on tddashboard.s3.ap-southeast-2.amazonaws.com). Six columns in header order: Active 4x4 (2.0L), Active 4WD (3.0L V6), Sport 4x4 (2.0L), Sport 4WD (3.0L V6), Tremor 4WD (3.0L V6), Platinum 4WD (3.0L V6)."
     },
     "FE-S6": {
@@ -85,7 +160,20 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "MY27",
-      "market_scope": "Australia"
+      "market_scope": "Australia",
+      "integrity": {
+        "state": "UNAVAILABLE",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_unavailable",
+        "note": "Re-fetch attempt failed: HTTP 403. The quotes could not be validated against retrieved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.ford.com.au/showroom/suv/everest/sport/",
+        "http_status": 403,
+        "content_type": "text/html",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "FE-S7": {
       "url": "https://www.ford.com.au/showroom/suv/everest/specs/",
@@ -96,7 +184,20 @@
       "retrieval": "search_snippet_only",
       "accessed_at": "2026-10-03",
       "model_year_label": "MY26.5",
-      "market_scope": "Australia"
+      "market_scope": "Australia",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_unavailable",
+        "note": "Re-fetch attempt failed: HTTP 403. The quotes could not be validated against retrieved content (the source remains a search-result snippet).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.ford.com.au/showroom/suv/everest/specs/",
+        "http_status": 403,
+        "content_type": "text/html",
+        "previous_state": "SNIPPET_ONLY"
+      }
     },
     "FE-S8": {
       "url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
@@ -108,6 +209,24 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "May 2017 brochure",
       "market_scope": "Australia",
+      "integrity": {
+        "state": "PDF_VERIFIED",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": "9cc2515f3f42d79b8e5003f6a3cf6929bc347ff03fa7bca2ab292afa14674f28",
+        "snapshot_path": "evidence/_source_text/FE-S8.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; 1 of 7 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "http://admin.i-motor.com.au/ssl/CMS/files_cms/23272_bhfmc0885_everest_ebro_may2017-p-72.pdf",
+        "http_status": 200,
+        "content_type": "application/pdf",
+        "raw_sha256": "35fc4a73a71d5aa0e4a5bd84121938301745831844b6290fbafe68151ea624f2",
+        "extractor": "pypdf/6.7.1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "FE-035"
+        ]
+      },
       "notes": "Previous-generation (pre-2022) Everest. 18-page PDF parsed with pypdf."
     },
     "FE-S9": {
@@ -120,6 +239,21 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "2019",
       "market_scope": "Thailand",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 5ccf08de76233a08...) but none of the 4 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://ford.autonation.co.th/wp-content/uploads/2019/05/everest-2019-brochure.pdf",
+        "http_status": 200,
+        "content_type": "application/pdf",
+        "raw_sha256": "f87a2a3b2a3af0ff07e3370cba81a1a29bea6cb6bc8ecaa7dcf229ff4ac5dcc3",
+        "extractor": "pypdf/6.7.1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "Thai/English bilingual brochure; only the English labels and numbers are quoted."
     },
     "FE-S10": {
@@ -131,6 +265,21 @@
       "retrieval": "pdf_downloaded_and_parsed",
       "accessed_at": "2026-10-03",
       "market_scope": "Thailand",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:52:53Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 5611f8c93c93bdc6...) but none of the 1 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.fordnakhornpathom.com/images/front/brochure/Ecg2Q.pdf",
+        "http_status": 200,
+        "content_type": "application/pdf",
+        "raw_sha256": "52ae41f07d4cc52ee032a011a7183e8ccf4e40ba5cf78236f869efeff974662a",
+        "extractor": "pypdf/6.7.1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "No model year stated in the extracted text. Thai glyphs were extracted as codes, so only English labels/numbers are quoted."
     }
   },
@@ -175,6 +324,7 @@
         "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.6,
         "confidence_basis": [
@@ -254,6 +404,7 @@
         "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.6,
         "confidence_basis": [
@@ -333,6 +484,7 @@
         "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.6,
         "confidence_basis": [
@@ -412,6 +564,7 @@
         "source_name": "Ford Everest 2025 Technical Specifications (Ford Middle East spec sheet, Ford Bahrain copy)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.6,
         "confidence_basis": [
@@ -485,6 +638,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -554,6 +708,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -621,6 +776,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -688,6 +844,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -755,6 +912,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -828,6 +986,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -901,6 +1060,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -974,6 +1134,7 @@
         "source_name": "Ford Everest 2026 - 7 Seater Family SUV | Ford UAE",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1047,6 +1208,7 @@
         "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -1126,6 +1288,7 @@
         "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -1197,6 +1360,7 @@
         "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -1269,6 +1433,7 @@
         "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -1340,6 +1505,7 @@
         "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -1411,6 +1577,7 @@
         "source_name": "Next-Gen Ford Everest (reprint of Ford Middle East reveal release) | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -1488,6 +1655,7 @@
         "source_name": "Ford Debuts Middle East-Exclusive Everest V6 Engine Lineup and Unveils Everest Tremor | Al Jazirah Vehicles",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.75,
         "confidence_basis": [
@@ -1564,6 +1732,7 @@
         "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.73,
         "confidence_basis": [
@@ -1639,6 +1808,7 @@
         "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.73,
         "confidence_basis": [
@@ -1714,6 +1884,7 @@
         "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.73,
         "confidence_basis": [
@@ -1789,6 +1960,7 @@
         "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.73,
         "confidence_basis": [
@@ -1864,6 +2036,7 @@
         "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.73,
         "confidence_basis": [
@@ -1939,6 +2112,7 @@
         "source_name": "Ford Everest MY2026.50 Specifications | Active, Sport, Tremor and Platinum Specifications (Ford Australia spec sheet)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.73,
         "confidence_basis": [
@@ -2008,6 +2182,7 @@
         "source_name": "Ford Everest Sport SUV | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2075,6 +2250,7 @@
         "source_name": "Ford Everest Sport SUV | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2142,6 +2318,7 @@
         "source_name": "Ford Everest Sport SUV | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2209,6 +2386,7 @@
         "source_name": "Ford Everest Sport SUV | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2276,6 +2454,7 @@
         "source_name": "Ford Everest Sport SUV | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2343,6 +2522,7 @@
         "source_name": "Ford Everest Sport SUV | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2410,6 +2590,7 @@
         "source_name": "Explore Ford Everest Specs & Features | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2478,6 +2659,7 @@
         "source_name": "Explore Ford Everest Specs & Features | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2546,6 +2728,7 @@
         "source_name": "Explore Ford Everest Specs & Features | Ford Australia",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "SNIPPET_ONLY",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2623,6 +2806,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -2692,6 +2876,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -2761,6 +2946,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -2830,6 +3016,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -2899,6 +3086,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -2968,6 +3156,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -3037,6 +3226,7 @@
         "source_name": "Ford Everest e-brochure May 2017 (Ford Australia)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "PDF_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -3115,6 +3305,7 @@
         "source_name": "Ford Everest 2019 specification brochure (Thailand)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -3197,6 +3388,7 @@
         "source_name": "Ford Everest 2019 specification brochure (Thailand)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -3279,6 +3471,7 @@
         "source_name": "Ford Everest 2019 specification brochure (Thailand)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -3361,6 +3554,7 @@
         "source_name": "Ford Everest 2019 specification brochure (Thailand)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [
@@ -3435,6 +3629,7 @@
         "source_name": "Ford Everest Platinum brochure (Ford Nakhon Pathom dealer, Thailand)",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.7,
         "confidence_basis": [

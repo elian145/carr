@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.brand_enrichment_rules/1",
+  "title": "Data-only rules for brand inventory, deterministic batching, coverage classes and research statuses",
+  "type": "object",
+  "required": ["schema_version", "inventory", "batching", "coverage", "model_status", "batch_status"],
+  "properties": {
+    "schema_version": { "const": "carnet.brand_enrichment_rules/1" },
+    "inventory": { "type": "object" },
+    "batching": { "type": "object", "required": ["target_batch_size"], "properties": { "target_batch_size": { "type": "integer", "minimum": 2 } } },
+    "coverage": { "type": "object", "required": ["dimensions"], "properties": { "dimensions": { "type": "array", "items": { "type": "string" }, "minItems": 1 } } },
+    "model_status": {
+      "type": "object",
+      "required": ["values", "never_used", "researched_min_good", "researched_required_non_empty", "partial_min_dimensions_with_verified"],
+      "properties": {
+        "values": { "const": ["NOT_STARTED", "NEEDS_MORE_SOURCES", "PARTIALLY_RESEARCHED", "RESEARCHED", "CONFLICT"] },
+        "never_used": { "const": ["COMPLETE", "DONE", "FULL"] },
+        "researched_min_good": { "type": "integer", "minimum": 1 },
+        "researched_requires_integrity_verified_tier123_record": { "type": "boolean" },
+        "researched_required_non_empty": { "type": "array", "items": { "type": "string" } },
+        "partial_min_dimensions_with_verified": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "batch_status": { "type": "object" }
+  }
+}

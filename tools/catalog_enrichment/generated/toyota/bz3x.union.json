@@ -1,0 +1,467 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "bZ3X",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/bz3x.json",
+    "researched_at": "2026-10-03",
+    "record_count": 10,
+    "source_count": 3,
+    "records_by_source_tier": {
+      "1": 1,
+      "5": 9
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 0,
+      "PDF_VERIFIED": 1,
+      "SNIPPET_ONLY": 9,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 0,
+      "PDF_VERIFIED": 1,
+      "SNIPPET_ONLY": 2,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 0
+  },
+  "research_coverage": [
+    "China (GAC Toyota bZ3X, launched March 2025): Toyota Global newsroom (tier 1, snippet) for identity/body/fuel; tier-5 sources (CarNewsChina snippet, hiluckev.com sheet) for doors, seats, drivetrain and per-trim motor power",
+    "Only body type and electric fuel are tier-1 supported; everything else is PROVISIONAL (tier 5)",
+    "NOT researched: any official GAC Toyota page, torque, battery size as a field (not part of the schema), transmission, model years beyond 2025 launch"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 0,
+    "conflicts_block_promotion_until_reviewed": false,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "union": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [
+      "430 Air",
+      "430 Air+",
+      "520 Pro",
+      "520 Pro Smart",
+      "520 Pro+",
+      "520 Pro+ Smart",
+      "610 Max"
+    ],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [
+      "FWD"
+    ],
+    "body_types": [],
+    "seats": [
+      5
+    ],
+    "doors": [
+      5
+    ]
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [
+      "Electric"
+    ],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [
+      "SUV"
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "engine_sizes",
+    "cylinders",
+    "transmissions",
+    "transmission_variants",
+    "transmission_gears"
+  ],
+  "engines": [],
+  "details": {
+    "trims": [
+      {
+        "value": "430 Air",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-003"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "430 Air+",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-004"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "520 Pro",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-005"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "520 Pro Smart",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-008"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "520 Pro+",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-006"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "520 Pro+ Smart",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-009"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "610 Max",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-007"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [
+      {
+        "value": "Electric",
+        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "integrity_states": [
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "BU-010"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.75,
+        "support_count": 3,
+        "record_ids": [
+          "BU-001",
+          "BU-002",
+          "BU-010"
+        ],
+        "source_ids": [
+          "BU-S1",
+          "BU-S2",
+          "BU-S3"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [
+      {
+        "value": "FWD",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.2,
+        "support_count": 1,
+        "record_ids": [
+          "BU-002"
+        ],
+        "source_ids": [
+          "BU-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "SUV",
+        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "integrity_states": [
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "BU-010"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.75,
+        "support_count": 2,
+        "record_ids": [
+          "BU-001",
+          "BU-010"
+        ],
+        "source_ids": [
+          "BU-S1",
+          "BU-S3"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "BU-010"
+        ],
+        "best_tier": 5,
+        "max_confidence": 0.33,
+        "support_count": 2,
+        "record_ids": [
+          "BU-002",
+          "BU-010"
+        ],
+        "source_ids": [
+          "BU-S2",
+          "BU-S3"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": [
+      {
+        "value": 5,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "BU-010"
+        ],
+        "best_tier": 5,
+        "max_confidence": 0.33,
+        "support_count": 2,
+        "record_ids": [
+          "BU-002",
+          "BU-010"
+        ],
+        "source_ids": [
+          "BU-S2",
+          "BU-S3"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ]
+  },
+  "conflicts": []
+}

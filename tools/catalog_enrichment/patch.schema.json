@@ -6,6 +6,7 @@
   "required": [
     "schema_version",
     "applied",
+    "proposal_status",
     "sources",
     "patches"
   ],
@@ -16,6 +17,67 @@
     "applied": {
       "const": false,
       "description": "Must be false in any file under proposals/. A future apply step flips it only in its own output, never in the proposal file."
+    },
+    "proposal_status": {
+      "type": "object",
+      "description": "Machine-readable currency of the proposal. A proposal is actionable only when state=current, actionable=true and evidence_integrity_version equals the current rules version (rules/source_rules.json evidence_integrity.proposals). Stale proposals must have actionable=false. Nothing here ever applies a proposal to production.",
+      "required": [
+        "state",
+        "actionable",
+        "evidence_integrity_version"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "current",
+            "stale"
+          ]
+        },
+        "actionable": {
+          "type": "boolean"
+        },
+        "evidence_integrity_version": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "stale_since": {
+          "type": "string",
+          "format": "date"
+        },
+        "stale_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requires": {
+          "type": "string"
+        },
+        "never_apply_to_production": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "stale"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "actionable": {
+                "const": false
+              }
+            },
+            "required": [
+              "stale_reason"
+            ]
+          }
+        }
+      ]
     },
     "generated_at": {
       "type": "string",

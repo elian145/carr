@@ -1,0 +1,290 @@
+| | 3X 2025 Bozhi | 3X 2025 520 Bozhi Pro 430 3X 2025 430 3X 2025 520 Air Bozhi Air+ Bozhi Pro LiDAR Edition | 3X 2025 520 Bozhi Pro+ 3X 2025 520 3X 2025 610 Bozhi Pro+ Bozhi Max LiDAR Edition |
+| --- | --- | --- | --- |
+| | Basic parameters | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Manufacturer | GAC Toyota GAC Toyota GAC Toyota GAC Toyota | GAC Toyota GAC Toyota GAC Toyota |
+| | level | compact SUV compact SUV compact SUV compact | SUV compact SUV compact SUV compact SUV |
+| | Energy type | Pure electric Pure electric Pure electric Pure electric | Pure electric Pure electric Pure electric |
+| | Time to market | 2025.03 2025.03 2025.03 2025.03 | 2025.03 2025.03 2025.03 |
+| | CLTC pure electric | range (km) 430 430 520 520 | 520 520 610 |
+| | Battery fast charging (hours) | time 0.4 0.4 0.4 0.4 | 0.4 0.4 0.4 |
+| | Battery slow charging (hours) | time 10 10 10 10 | 10 10 12 |
+| | Battery fast charge range (%) | capacity 30-80 30-80 30-80 30-80 | 30-80 30-80 30-80 |
+| | Battery slow charging range (%) | capacity 0-100 0-100 0-100 0-100 | 0-100 0-100 0-100 |
+| | Maximum power | (kW) 150 150 150 150 | 150 150 165 |
+| | Maximum torque | (N·m) 200 200 200 200 | 200 200 210 |
+| | Body structure | 5-door, 5-seater SUV 5-door, 5-seater SUV 5-door, 5-seater SUV 5-door, 5-seater | SUV 5-door, 5-seater SUV 5-door, 5-seater SUV 5-door, 5-seater SUV |
+| | Motor (Ps) | 204 204 204 204 | 204 204 224 |
+| | Length*Width*Height(mm) | 4600*1850*1660 4600*1850*1660 4600*1850*1660 4600*1875*1645 | 4600*1850*1645 4600*1875*1645 4600*1850*1645 |
+| | Official 0-100km/h (s) | acceleration - - - - | - - - |
+| | Official 0-50km/h (s) | acceleration 3.7 4 4 4 | 4 4 4 |
+| | Maximum speed | (km/h) 160 160 160 160 | 160 160 160 |
+| | Electric energy equivalent consumption (L/100km) | fuel 1.46 1.46 1.45 1.45 | 1.45 1.45 1.49 |
+| | Curb mass (kg) | 1690 1690 1745 1745 | 1760 1760 1835 |
+| | Maximum full load | mass (kg) 2100 2100 2185 2185 | 2185 2185 2250 |
+| | | | |
+| | ● ( Standard body | ○ Optional - N/A ) | |
+| | | | |
+| | Length (mm) | 4600 4600 4600 4600 | 4600 4600 4600 |
+| | Width (mm) | 1850 1850 1850 1875 | 1850 1875 1850 |
+| | Height (mm) | 1660 1660 1660 1645 | 1645 1645 1645 |
+| | Wheelbase (mm) | 2765 2765 2765 2765 | 2765 2765 2765 |
+| | Front wheelbase | (mm) 1600 1600 1600 1600 | 1600 1600 1600 |
+| | Rear wheelbase (mm) | 1600 1600 1600 1600 | 1600 1600 1600 |
+| | Approach angle (°) | 18 18 18 18 | 18 18 18 |
+| | Departure angle (°) | 25 25 25 25 | 25 25 25 |
+| | Minimum turning | radius (m) 5.6 5.6 5.6 5.6 | 5.6 5.6 5.6 |
+| | Body structure | SUV SUV SUV SUV | SUV SUV SUV |
+| | Door opening method | swing door swing door swing door swing | door swing door swing door swing door |
+| | Number of doors | ● ● ● ● 5 5 5 | ● ● ● 5 5 5 5 |
+| | Number of seats | ● ● ● ● 5 5 5 | ● ● ● 5 5 5 5 |
+| | Trunk volume (L) | - - - - | - - - |
+| | Drag coefficient (Cd) | 0.27 0.27 0.27 0.27 | 0.27 0.27 0.27 |
+| | | | |
+| | electric motor | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | former motor brand | Nidec Nidec Nidec Nidec | Nidec Nidec Suzhou Huichuan |
+| | Front motor model | TZ175XSAY501 TZ175XSAY501 TZ175XSAY501 TZ175XSAY501 | TZ175XSAY501 TZ175XSAY501 TZ180XS135 |
+| | Motor type | Permanent Permanent Permanent Permanent magnet/synchronous magnet/synchronous magnet/synchronous magnet/synchronous | Permanent Permanent Permanent magnet/synchronous magnet/synchronous magnet/synchronous |
+| | Total motor power | (kW) 150 150 150 150 | 150 150 165 |
+| | Total motor horsepower | (Ps) 204 204 204 204 | 204 204 224 |
+| | Total torque of the (N·m) | motor 200 200 200 200 | 200 200 210 |
+| | | | |
+
+| | Maximum power motor (kW) | of front 150 150 150 150 | 150 150 165 |
+| --- | --- | --- | --- |
+| | Maximum torque motor (N·m) | of front 200 200 200 200 | 200 200 210 |
+| | Number of drive motors | Single motor Single motor Single motor Single | motor Single motor Single motor Single motor |
+| | Motor layout | Pre Pre Pre Pre | Pre Pre Pre |
+| | | | |
+| | Battery/Charging | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Battery Type | ● ● ● ● lithium iron lithium iron lithium iron lithium phosphate battery phosphate battery phosphate battery phosphate | ● ● ● iron lithium iron lithium iron lithium iron battery phosphate battery phosphate battery phosphate battery |
+| | Battery cell brand | China New Aviation China New ● ● ● ● Jiangsu Zhengli Jiangsu Zhengli ● ● Jiangsu Zhengli Jiangsu | Aviation China New Aviation China New Aviation ● ● ● China New Aviation ● ● Zhengli Jiangsu Zhengli Jiangsu Zhengli |
+| | Battery cooling method | Liquid Cooling Liquid Cooling Liquid Cooling Liquid Cooling | Liquid Cooling Liquid Cooling Liquid Cooling |
+| | CLTC pure electric | range (km) 430 430 520 520 | 520 520 610 |
+| | Battery energy (kWh) | 50.03 50.03 58.37 58.37 | 58.37 58.37 67.92 |
+| | Power consumption kilometers (kWh/100km) | 100 per 12.6 12.6 12.5 12.5 | 12.5 12.5 12.8 |
+| | Fast charging function | support support support support | support support support |
+| | Battery fast charging (hours) | time 0.4 0.4 0.4 0.4 | 0.4 0.4 0.4 |
+| | Battery slow charging (hours) | time 10 10 10 10 | 10 10 12 |
+| | Battery fast charge range (%) | capacity 30-80 30-80 30-80 30-80 | 30-80 30-80 30-80 |
+| | Battery slow charging range (%) | capacity 0-100 0-100 0-100 0-100 | 0-100 0-100 0-100 |
+| | Slow charging port | right front side of the right front side of the right front side of the right front location car car car car | side of the right front side of the right front side of the right front side of the car car car |
+| | Fast charging port | right front side of the right front side of the right front side of the right front location car car car car | side of the right front side of the right front side of the right front side of the car car car |
+| | External AC discharge (kW) | power 3.3 3.3 3.3 3.3 | 3.3 3.3 3.3 |
+| | | | |
+| | ● ( Standard gearbox | ○ Optional - N/A ) | |
+| | | | |
+| | Abbreviation | Electric vehicle single Electric vehicle single Electric vehicle single Electric vehicle speed transmission speed transmission speed transmission speed transmission | single Electric vehicle single Electric vehicle single Electric vehicle single speed transmission speed transmission speed transmission |
+| | Number of gears | 1 1 1 1 | 1 1 1 |
+| | Transmission type | Fixed gear ratio Fixed gear ratio Fixed gear ratio Fixed gear gearbox gearbox gearbox gearbox | ratio Fixed gear ratio Fixed gear ratio Fixed gear ratio gearbox gearbox gearbox |
+| | | | |
+| | Chassis steering | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Drive mode | ● ● ● ● Front-engine, front Front-engine, front Front-engine, front Front-engine, wheel drive wheel drive wheel drive wheel | ● ● ● front Front-engine, front Front-engine, front Front-engine, front drive wheel drive wheel drive wheel drive |
+| | Front suspension | ● ● ● ● McPherson McPherson McPherson McPherson type independent independent independent independent suspension suspension suspension suspension | ● ● ● McPherson McPherson McPherson independent independent independent suspension suspension suspension |
+| | Rear suspension | ● ● ● ● Torsion beam non Torsion beam non Torsion beam non Torsion type independent independent independent independent suspension suspension suspension suspension | ● ● ● beam non Torsion beam non Torsion beam non Torsion beam non independent independent independent suspension suspension suspension |
+| | Power type | ● ● ● ● Electric power Electric power Electric power Electric steering steering steering steering | ● ● ● power Electric power Electric power Electric power steering steering steering |
+| | Body structure | load-bearing load-bearing load-bearing load-bearing | load-bearing load-bearing load-bearing |
+| | | | |
+| | wheel brakes | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Front brake type | ● ● ● ● Ventilated disc Ventilated disc Ventilated disc Ventilated | ● ● ● disc Ventilated disc Ventilated disc Ventilated disc |
+| | Rear brake type | ● ● ● ● Disc Disc Disc Disc | ● ● ● Disc Disc Disc |
+| | Parking brake type | ● ● ● ● Electronic parking Electronic parking Electronic parking Electronic brake brake brake brake | ● ● ● parking Electronic parking Electronic parking Electronic parking brake brake brake |
+| | Front tire specifications | 215/55 R18 ● 215/55 R18 215/55 R18 225/45 R19 (3000 215/55 ● ● ○ ● yuan) | 215/55 R18 ● R18 225/45 R19 (3000 215/55 R18 225/45 R19 ○ ● ● yuan) |
+| | Rear tire specifications | 215/55 R18 ● 215/55 R18 215/55 R18 215/55 ● ● ● 225/45 R19 ○ | 215/55 R18 ● R18 215/55 R18 225/45 R19 ● ● 225/45 R19 ○ |
+| | Spare tire specifications | ● ● ● - Tire repair tools Tire repair tools Tire repair | ● ● ● tools Tire repair tools Tire repair tools Tire repair tools |
+| | | | |
+| | Passive safety | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+
+| | Driver/passenger | host● Vice● host● Vice● host● Vice● host● / / / / seat airbags | Vice● host● Vice● host● Vice● host● Vice● / / / |
+| --- | --- | --- | --- |
+| | Front/rear side airbags | forward● forward● forward● forward● / back- / back- / back- | forward● forward● forward● / back- / back- / back- / back |
+| | Front/rear head airbags curtain) | (air forward● back● forward● back● forward● back● forward● / / / | back● forward● back● forward● back● forward● back● / / / / |
+| | Front center airbag | ● ● ● - | ● ● ● |
+| | | | |
+| | Active safety | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | ABS anti-lock braking | ● ● ● ● system | ● ● ● |
+| | Braking force distribution (EBD/CBC, etc.) | ● ● ● ● | ● ● ● |
+| | Brake assist (EBA/BAS/BA, | ● ● ● ● etc.) | ● ● ● |
+| | Traction control (ASR/TCS/TRC, etc.) | ● ● ● ● | ● ● ● |
+| | Vehicle stability control (ESC/ESP/DSC, etc.) | ● ● ● ● | ● ● ● |
+| | Tire pressure monitoring function | ● ● ● ● Tire pressure Tire pressure Tire pressure Tire pressure display display display display | ● ● ● Tire pressure Tire pressure Tire pressure display display display |
+| | Seat belt unfastened | ● ● ● ● reminder | ● ● ● |
+| | ISOFIX child seat | ● ● ● ● interface | ● ● ● |
+| | Lane Departure Warning System | ● ● ● - | ● ● ● |
+| | Active braking/active systems | safety ● ● ● - | ● ● ● |
+| | Fatigue driving tips | - - - - | ● ● ● |
+| | DOW door opening | ● warning - - - | ● ● ● |
+| | Forward Collision | ● ● ● Warning - | ● ● ● |
+| | Rear Collision Warning | ● - - - | ● ● ● |
+| | Low speed warning | ● ● ● ● | ● ● ● |
+| | Anti-rollover system | ● ● ● ● | ● ● ● |
+| | | | |
+| | Driving control | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Driving mode switch | ● ● ● ● sports sports sports sports ● ● ● ● economy economy economy economy ● ● ● ● Standard/Comfort Standard/Comfort Standard/Comfort Standard/Comfort | ● ● ● sports sports sports ● ● ● economy economy economy ● ● ● Standard/Comfort Standard/Comfort Standard/Comfort |
+| | Energy recovery system | ● ● ● ● | ● ● ● |
+| | Automatic parking | ● ● ● ● | ● ● ● |
+| | Hill-start assist | ● ● ● ● | ● ● ● |
+| | Steep slope descent | ● ● ● ● | ● ● ● |
+| | | | |
+| | Driving hardware | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Front/rear parking | Back● Back● Back● forward● Front / Front / Front / radar | back● Back● forward● back● forward○ back● / Front / / / |
+| | Driving assistance | ● ● ● ● 360-degree 360-degree 360-degree 360-degree images panoramic images panoramic images panoramic images panoramic | ● ● ● 360-degree 360-degree 360-degree images panoramic images panoramic images panoramic images |
+| | Transparent chassis/540- degree imaging | ● ● ● ● | ● ● ● |
+| | Assisted driving chip | ● - - - Nvidia | ● ○ Orin-X - Nvidia Orin-X Nvidia Orin-X |
+| | Total chip computing | 254 ● power - - - | 254 254 ● ○ TOPS TOPS TOPS - |
+| | Forward perception | ● ● ● Monocular Monocular Binocular camera - | ● Monocular ● ● Monocular Binocular ○ Binocular |
+| | Number of cameras | ● ● ● ● 4 5 5 | ● 5 ● ● 11 5 11 ○ 11 |
+| | Number of cameras | in the car - - - - | ● ● ● 1 1 1 |
+| | Number of ultrasonic | 3 3 3 ● ● ● ● radars | ● 3 12 3 12 ● ● ○ 12 |
+| | Number of millimeter-wave radars | ● ● ● 1 1 - | ● ● ● 3 3 3 3 |
+| | Number of lidars | ● - - - | ● ○ 1 - 1 1 |
+| | | | |
+| | Driving functions | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Cruise control system | ● ● ● Full-speed adaptive Full-speed adaptive Full-speed - cruise control cruise control cruise control | ● ● ● adaptive Full-speed adaptive Full-speed adaptive Full-speed adaptive cruise control cruise control cruise control |
+| | | | |
+
+Assisted driving system - ● Toyota Pilot ● Toyota Pilot ● Momenta 5.0 ● Toyota Pilot ● Momenta 5.0
+
+● Toyota Pilot ○ Momenta 5.0
+
+| Driving assistance level Reversing side warning | - system - | L2 ● - | L2 ● - | L2 ● ● | | L2 ● ● | L2 ● ● | L2 ● ● |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Satellite navigation system Navigation traffic information display Map Brand | ● ● ● Gaode | ● ● ● Gaode | ● ● ● Gaode | ● ● ● Gaode | | ● ● ● Gaode | ● ● ● Gaode | ● ● ● Gaode |
+| Lane change assistance Lane Keeping Assist System Lane centering Road traffic sign recognition Assisted parking Remote control parking Memory Parking Assisted lane change | - - - - - - - - | - ● ● ● - - - - | - ● ● ● - - - - | ● ● ● ● ● ● ● ● | | ● ● ● ● - - - - | ● ● ● ● ● ● ● ● | ● ● ● ● ○ ○ ○ ○ |
+| Automatic exit (entry) of auxiliary ramp Hands-off steering wheel detection Assisted driving sections Appearance/anti-theft Rim material | - - - ● ○ ( Standard Optional - N/A ● aluminum alloy | - - - ) ● aluminum | - - - ● alloy aluminum | ● ● ● Urban roads ● Expressway ● alloy aluminum | section ● alloy aluminum | - - - alloy | ● ● ● Urban roads ● Expressway ● aluminum | ○ ○ ○ Urban roads ○ section Expressway section ● alloy aluminum alloy |
+| Electric trunk Sensor trunk Electric trunk position | - - memory - | - - - | - - - | - - - | | ● ● ● | ● ● ● | ● ● ● |
+| Central locking system car Key type Keyless start system Keyless entry function | in the ● remote control key ● ● ● front row | ● ● remote control ● Bluetooth ● ● front row | ● ● key remote control ● key Bluetooth ● ● front row | ● ● key remote control ● key Bluetooth ● ● front row | ● key remote ● key ● | ● control key Bluetooth key ● front row | ● ● remote control ● Bluetooth ● ● front row | ● ● key remote control key ● key Bluetooth key ● ● front row |
+| Hidden electric door handles Active closed grille | - - | ● - | ● ● | ● ● | | ● ● | ● ● | ● ● |
+| Remote start function Battery preheating Discharge to the outside ● ( Exterior lights Low beam light source High beam light source LED daytime running lights | ● ● ● ○ Standard Optional - N/A ) ● led ● led ● | ● ● ● ● led ● led ● | ● ● ● ● led ● led ● | ● ● ● ● led ● led ● | | ● ● ● ● led ● led ● | ● ● ● ● led ● led ● | ● ● ● ● led ● led ● |
+| Adaptive high and low | beam - | ● | ● | ● | | ● | ● | ● |
+| Automatic headlights Front fog lights Headlight height adjustable off Headlights delayed | ● - ● ● | ● - ● ● | ● - ● ● | ● - ● ● | | ● - ● ● | ● - ● ● | ● - ● ● |
+| Scene Lighting | - | - | - | - | | - | - | ● |
+
+Skylight/Glass ( ● Standard ○ Optional - N/A )
+
+Skylight Type - - -
+
+● The panoramic sunroof cannot be opened 
+● The panoramic sunroof cannot be opened 
+● The panoramic sunroof cannot be opened 
+● The panoramic sunroof cannot be opened 
+
+Front/rear electric windows forward● / back● forward● / back● forward● / back● forward● / back● forward● / back● forward● / back● forward● / back●
+
+One-touch window lift function ● whole vehicle ● whole vehicle ● whole vehicle ● whole vehicle ● whole vehicle ● whole vehicle ● whole vehicle
+
+| | Window anti-pinch | ● ● ● ● function | ● ● ● |
+| --- | --- | --- | --- |
+| | Side window multi-layer soundproof glass | - - - - | ● ● ● front row front row front row |
+| | Rear side privacy | ● ● ● glass - | ● ● ● |
+| | Car makeup mirror | ● ● ● ● Main driving light + Main driving light + Main driving light + Main driving lighting lighting lighting lighting ● ● ● ● Co-pilot + lighting Co-pilot + lighting Co-pilot + lighting Co-pilot | ● ● ● light + Main driving light + Main driving light + Main driving light + lighting lighting lighting ● ● ● + lighting Co-pilot + lighting Co-pilot + lighting Co-pilot + lighting |
+| | rear wiper | ● ● ● ● | ● ● ● |
+| | Rain sensor wiper | ● ● ● ● function Rain sensor Rain sensor Rain sensor Rain | ● ● ● sensor Rain sensor Rain sensor Rain sensor |
+| | | | |
+| | exterior rearview | ● ○ ( Standard Optional - N/A ) mirror | |
+| | | | |
+| | Exterior rearview function | ● ● Electric adjustment Electric adjustment ● ● Electric folding Electric ● ● Rearview mirror Rearview ● Electric adjustment memory memory ○ Rearview mirror ● ● mirror Heated rearview Heated ● Electric adjustment memory mirrors mirrors ○ Automatically tilt ● ● Automatically tilt Automatically down when reversing down when reversing down when ● ● Automatic folding Automatic when the car is locked when the car | ● ● ● Electric adjustment Electric adjustment Electric adjustment ● ● ● folding Electric folding Electric folding Electric folding ● ● ● mirror Rearview mirror Rearview mirror Rearview mirror memory memory memory ● ● ● rearview Heated rearview Heated rearview Heated rearview mirrors mirrors mirrors ● ● ● tilt Automatically tilt Automatically tilt Automatically tilt reversing down when reversing down when reversing down when reversing ● ● ● folding Automatic folding Automatic folding Automatic folding is locked when the car is locked when the car is locked when the car is locked |
+| | | | |
+| | Screen/System | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Central control color | ● ● ● ● screen Touch LCD screen Touch LCD screen Touch LCD screen Touch LCD screen | ● ● ● Touch LCD screen Touch LCD screen Touch LCD screen |
+| | Central control screen | 14.6 14.6 14.6 14.6 ● ● ● ● size inches inches inches | 14.6 14.6 14.6 ● ● ● inches inches inches inches |
+| | Bluetooth/car phone | ● ● ● ● | ● ● ● |
+| | Mobile phone interconnection/mapping | Support HUAWEI Support HUAWEI Support HUAWEI Support ● ● ● ● HiCar HiCar HiCar HiCar | HUAWEI Support HUAWEI Support HUAWEI Support HUAWEI ● ● ● HiCar HiCar HiCar |
+| | Voice recognition system | ● ● ● Multimedia system Multimedia system Multimedia ● ● ● ● Multimedia system navigation navigation navigation ● ● ● ● navigation Telephone Telephone Telephone control ● ● ● ● Telephone air conditioner air conditioner air conditioner ● ● ● ● air conditioner car windows car windows car windows ● ○ ○ ○ car windows Heated seats Heated seats Heated ○ ○ ○ Seat ventilation Seat ventilation Seat ventilation | ● ● ● system Multimedia system Multimedia system Multimedia system ● ● ● navigation navigation navigation ● ● ● Telephone Telephone Telephone ● ● ● air conditioner air conditioner air conditioner ● ● ● car windows car windows car windows ○ ○ ○ seats Heated seats Heated seats Heated seats ○ ○ ○ Seat ventilation Seat ventilation Seat ventilation |
+| | Voice assistant wake-up | ● ● ● ● Hello, Bear Hello, Bear Hello, Bear Hello, word | ● ● ● Bear Hello, Bear Hello, Bear Hello, Bear |
+| | Voice wake-up word-free | ● ● ● ● | ● ● ● |
+| | Voice wake-up recognition region | by ● ● ● ● Four regions Four regions Four regions Four | ● ● ● regions Four regions Four regions Four regions |
+| | Continuous speech | ● ● ● ● recognition | ● ● ● |
+| | Seeing is telling | ● ● ● ● | ● ● ● |
+| | App Store | ● ● ● ● | ● ● ● |
+| | Car computer smart | ● ● ● ● Qualcomm Qualcomm Qualcomm Qualcomm chip 8155 8155 8155 Snapdragon Snapdragon Snapdragon Snapdragon | ● ● ● Qualcomm Qualcomm Qualcomm 8155 8155 8155 8155 Snapdragon Snapdragon Snapdragon |
+| | | | |
+| | Intelligent configuration | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Internet of Vehicles | ● ● ● ● | ● ● ● |
+| | 4G/5G network | ● ● ● ● 4G 4G 4G | ● ● ● 4G 4G 4G 4G |
+| | OTA upgrade | ● ● ● ● | ● ● ● |
+| | Wi-Fi hotspots | ● ● ● ● | ● ● ● |
+| | In-vehicle biological monitoring system | - - - - | ● ● ● |
+| | Mobile APP remote | ● ● ● Door control Door control Door ● ● ● ● Door control Window controls Window controls Window Window controls Vehicle start Vehicle start Vehicle ● ● ● ● ● ● ● ● Vehicle start Charging Charging Charging ● Charging Management Management Management ● ● ● Air conditioning Air conditioning Air conditioning Management ● Air conditioning control control control ○ ○ ○ Heated seats Heated seats Heated control Vehicle condition Seat ventilation Seat ventilation Seat ventilation ● ○ ○ ○ function ● ● ● inquiry/diagnosis Vehicle condition Vehicle condition Vehicle ● Vehicle inquiry/diagnosis inquiry/diagnosis inquiry/diagnosis ● ● ● positioning/search Vehicle Vehicle Vehicle ● Car owner services positioning/search positioning/search positioning/search ● ● ● (find charging stations, Car owner services Car owner services Car owner gas stations, parking (find charging stations, (find charging stations, (find charging lots, etc.) gas stations, parking gas stations, parking gas stations, ● Schedule lots, etc.) lots, etc.) lots, ● ● ● maintenance/repair Schedule Schedule Schedule maintenance/repair maintenance/repair maintenance/repair | ● ● ● control Door control Door control Door control ● ● ● controls Window controls Window controls Window controls start Vehicle start Vehicle start Vehicle start ● ● ● ● ● ● Charging Charging Charging Management Management Management ● ● ● Air conditioning Air conditioning Air conditioning control control control ○ ○ ○ seats Heated seats Heated seats Heated seats Seat ventilation Seat ventilation Seat ventilation ○ ○ ○ ● ● ● condition Vehicle condition Vehicle condition Vehicle condition inquiry/diagnosis inquiry/diagnosis inquiry/diagnosis ● ● ● Vehicle Vehicle Vehicle positioning/search positioning/search positioning/search ● ● ● services Car owner services Car owner services Car owner services stations, (find charging stations, (find charging stations, (find charging stations, parking gas stations, parking gas stations, parking gas stations, parking etc.) lots, etc.) lots, etc.) lots, etc.) ● ● ● Schedule Schedule Schedule maintenance/repair maintenance/repair maintenance/repair |
+| | | | |
+| | Steering wheel/interior | ● ○ ( Standard Optional - N/A ) rearview mirror | |
+| | | | |
+
+| | Steering wheel material | ● ● ● ● plastic plastic cortex cortex | ● ● ● cortex cortex cortex |
+| --- | --- | --- | --- |
+| | Steering wheel position adjustment | ● ● ● ● Manual up and Manual up and Manual up and Manual down + front and back down + front and back down + front and back down + front adjustment adjustment adjustment adjustment | ● ● ● up and Manual up and Manual up and Manual up and and back down + front and back down + front and back down + front and back adjustment adjustment adjustment |
+| | Gear shifting | ● ● ● ● Electronic hand Electronic hand Electronic hand Electronic shift gear shift gear shift gear shift | ● ● ● hand Electronic hand Electronic hand Electronic hand gear shift gear shift gear shift gear |
+| | Multi-function steering | ● ● ● ● wheel | ● ● ● |
+| | Heated steering wheel | - - - - | - - - |
+| | Steering wheel memory | - - - - | - - - |
+| | Trip computer display | ● ● ● ● color color color color screen | ● ● ● color color color |
+| | Full LCD instrument | ● ● ● ● panel | ● ● ● |
+| | LCD instrument size | 8.8 8.8 8.8 8.8 ● ● ● ● inches inches inches | 8.8 8.8 8.8 ● ● ● inches inches inches inches |
+| | Interior rearview function | mirror ● ● ● ● Manual anti-glare Manual anti-glare Manual anti-glare Manual | ● Automatic anti ● ● anti-glare Manual anti-glare Manual anti-glare glare |
+| | ETC device | (200 (200 (200 (200 ○ ○ ○ ○ yuan) yuan) yuan) | (200 (200 ○ ○ ● yuan) yuan) yuan) |
+| | | | |
+| | In-car charging | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Multimedia/charging | USB USB USB USB ● ● ● ● port | ● ● ● USB USB USB ● ● ● Type-C Type-C Type-C |
+| | Number of USB/Type-C ports | 1 row/1 1 row/1 1 row/1 1 row/1 ● ● ● ● front back front back front back front row row row row | 2 seats/2 2 seats/2 2 seats/2 ● ● ● back front back front back front back seats seats seats |
+| | Mobile phone wireless charging function | ● ● - - front row front | ● ● ● row front row front row front row |
+| | Mobile phone wireless charging power | ● ● 50W 50W - - | ● ● ● 50W 50W 50W |
+| | | | |
+| | Seat configuration | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Seat material | ● ● ● ● fabric imitation leather imitation leather imitation | ● ● ● leather imitation leather imitation leather imitation leather |
+| | Main seat adjustment | ● ● ● ● Front and rear Front and rear Front and rear Front adjustment adjustment adjustment adjustment ● ● ● ● Backrest Backrest Backrest Backrest method adjustment adjustment adjustment adjustment ● ● ● ● Height adjustment Height adjustment Height adjustment Height adjustment (2-way) (2-way) (2-way) (2-way) | ● ● ● and rear Front and rear Front and rear Front and rear adjustment adjustment adjustment ● ● ● Backrest Backrest Backrest adjustment adjustment adjustment ● ● ● Height adjustment Height adjustment Height adjustment (2-way) (2-way) (2-way) |
+| | Passenger seat adjustment method | ● ● ● ● Front and rear Front and rear Front and rear Front adjustment adjustment adjustment adjustment ● ● ● ● Backrest Backrest Backrest Backrest adjustment adjustment adjustment adjustment | ● ● ● and rear Front and rear Front and rear Front and rear adjustment adjustment adjustment ● ● ● Backrest Backrest Backrest adjustment adjustment adjustment |
+| | Driver/passenger adjustment | seat electric host● host● Vice● host● Vice● host● / Vice- / / / | Vice● host● Vice● host● Vice● host● Vice● / / / |
+| | Front seat functions | ○ ○ ○ heating heating heating - ○ ○ ○ ventilation ventilation ventilation | ○ ○ ○ heating heating heating ○ ○ ○ ventilation ventilation ventilation |
+| | Electric seat memory | ○ ● ● Driver's seat Driver's seat Driver's function - ○ ○ ○ co-pilot seat co-pilot seat co-pilot | ● ● ● seat Driver's seat Driver's seat Driver's seat ○ ○ ○ seat co-pilot seat co-pilot seat co-pilot seat |
+| | Co-pilot rear seat buttons | adjustable - - - - | - - - |
+| | Second row seat | ● ● ● ● Backrest Backrest Backrest Backrest adjustment adjustment adjustment adjustment adjustment | ● ● ● Backrest Backrest Backrest adjustment adjustment adjustment |
+| | Rear small table | - - - - | ● - - |
+| | Rear seat folding | ● ● ● ● Proportional down Proportional down Proportional down Proportional | ● ● ● down Proportional down Proportional down Proportional down |
+| | Front/rear center | forward● forward● forward● forward● / back- / back- / back- armrest | forward● back● forward● back● forward● back● / back- / / / |
+| | Rear cup holder | - - - - | ● ● ● |
+| | | | |
+| | Audio/Interior | ● ○ ( Standard Optional - N/A ) Lighting | |
+| | | | |
+| | Speaker brand name | (3000 ○ YAMAHA ● YAMAHA - - yuan) | (3000 ○ YAMAHA ● ● YAMAHA YAMAHA yuan) |
+| | Number of speakers | 9 ● speakers 9 9 11 ● ● ● speakers speakers speakers 11 speakers ○ | 9 ● speakers 11 11 ● ● speakers speakers 11 speakers ○ |
+| | Touch-sensitive reading | ● ● ● ● light | ● ● ● |
+| | Interior ambient | lighting - - - - | 32 32 32 ● ● ● colors colors colors |
+| | | | |
+| | Air conditioning/refrigerator | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Air conditioning temperature control method | ● ● ● ● Automatic air Automatic air Automatic air Automatic conditioning conditioning conditioning conditioning | ● ● ● air Automatic air Automatic air Automatic air conditioning conditioning conditioning |
+| | heat pump air conditioner | ● ● ● ● | ● ● ● |
+| | | | |
+
+| | Rear independent conditioning | air - - - - | - - - |
+| --- | --- | --- | --- |
+| | Rear seat air vents | ● ● ● ● | ● ● ● |
+| | Temperature zone | ● ● ● ● control | ● ● ● |
+| | Car air purifier | - - - - | - - - |
+| | PM2.5 In-car filter | ● ● ● ● | ● ● ● |
+| | Air quality monitoring | - - - - | ● - - |
+| | | | |
+| | ● ( Standard color | ○ Optional - N/A ) | |
+| | | | |
+| | Appearance color | Sky White Sky White Sky White Sky White Pure snow white Pure snow white Pure snow white Pure snow Vast Black Vast Black Vast Black Vast Black Distant Mountain Ash Distant Mountain Ash Distant Mountain Ash Distant Mountain Bright Moon Silver Bright Moon Silver Bright Moon Silver Bright Moon Cyberkin Cyberkin Cyberkin Cyberkin Sky Pink Sky Pink Sky Pink Sky Pink | Sky White Sky White Sky White Pure snow white white Pure snow white Pure snow white Vast Black Vast Black Vast Black Distant Mountain Ash Ash Distant Mountain Ash Distant Mountain Ash Bright Moon Silver Silver Bright Moon Silver Bright Moon Silver Black/Pure White Cyberkin Cyberkin Cyberkin Sky Pink Sky Pink Black/Cyber Gold Sky Pink |
+| | Interior color | elegant rice elegant elegant rice Elegant Gray Elegant Black Elegant Elegant Black Vibrant Orange Vibrant | rice elegant rice elegant rice elegant rice Black Elegant Black Elegant Black Elegant Black Orange Vibrant Orange Vibrant Orange Vibrant Orange |
+| | | | |
+| | Optional Package | ● ○ ( Standard Optional - N/A ) | |
+| | | | |
+| | Comfort seat package | Includes: front seat ventilation/heating (remote control), front seat memory, exterior - - - mirror memory, reverse flip (3000 ○ Optional yuan) | - - - |
+| | Comfort seat package | Includes: Front seat Includes: Front ventilation/heating ventilation/heating (remote control), (remote passenger seat passenger - - memory memory (3000 ○ ○ Optional Optional yuan) yuan) | seat Includes: Front seat Includes: Front seat Includes: Front seat ventilation/heating ventilation/heating ventilation/heating control), (remote control), (remote control), (remote control), seat passenger seat passenger seat passenger seat memory memory memory (3000 (3000 (3000 (3000 ○ ○ ○ Optional Optional Optional yuan) yuan) yuan) |
+| | Intelligent Driving | Package - - - - | Includes: Highway Pilot, City Pilot and Automatic Parking - - (20,000 ○ Optional yuan) |
+

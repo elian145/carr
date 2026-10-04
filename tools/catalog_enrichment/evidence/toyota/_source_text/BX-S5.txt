@@ -1,0 +1,499 @@
+March 2026
+
+THE NEW TOYOTA bZ4X
+
+• A comprehensive programme of enhancements and new features for Toyota’s all electric SUV 
+• Full revision of the battery electric powertrain: new batteries and eAxles delivering more power – up to 338bhp (343 DIN hp) – and greater efficiency 
+• Increased customer choice with dual battery line-up (57.7 and 73.1kWh) 
+• Extended driving range – up to 352 miles (WLTP) – and faster charging 
+• Suspension tuning for enhanced ride comfort and dynamic performance 
+• New exterior details amplify the hammerhead frontal design and enhance aerodynamic performance 
+• New horizontal dashboard with 14-inch multimedia screen and “digital island” centre console 
+• Additional measures to further insulate cabin from noise and vibration 
+• On sale now; customer deliveries from January 2026 
+
+The bZ4X was Toyota’s first dedicated battery electric vehicle, introduced to the market in 2022, setting the template for the company’s approach to developing new, all-electric SUVs.
+
+This “BEV DNA” includes true SUV packaging, authentic all-wheel drive performance, powertrain efficiency and essential Toyota Quality, Durability and Reliability.
+
+The bZ4X has been a sales success, with more than 150,000 units sold since launch, making it the third most popular model in its segment in Europe. It has earned praise for its dynamic performance, particularly in wintry conditions, and for its genuine off-road capabilities.
+
+This was only the beginning. Toyota has worked on continuous improvement of all aspects of the bZ4X to raise the level of performance, efficiency, comfort and driver rewards.
+
+The new bZ4X is much more than a mid-life refresh. Its electric powertrain has been comprehensively upgraded with new batteries that deliver more power, faster charging and an extended driving range. With two battery capacities now available, there is more
+
+customer choice, with versions to suit different driving needs and budgets. Peace of mind is provided by Toyota’s Battery Care Programme which guarantees 70 per cent of original battery capacity still being retained for up to 650,000 miles or 10 years of vehicle use*.
+
+As well as more power, charging times are quicker and driving range is longer. A 22kW on board charger is featured on the new Excel grade model and there are updated eAxles, revised to reduce internal energy losses and raise performance efficiency.
+
+Handling, steering response and ride comfort were prioritised in detailed tuning of the suspension and steps to increase body rigidity.
+
+The distinctive hammerhead frontal design has more emphasis with new design tweaks while the open and spacious cabin has a new, horizontally aligned dashboard featuring an enlarged (14-inch) multimedia display and “digital island” centre console. A series of measures have been introduced to further reduce noise and vibration reaching the interior.
+
+NEW HIGH-CAPACITY BATTERIES WITH ENHANCED PERFORMANCE
+
+• Two new lithium-ion battery options with 57.7 or 73.1kWh 
+• Optimised design accommodates more cells, contributing to an extended driving range – up to 352 miles (WLTP cycle) 
+• AWD model gains 1,500kg towing capacity 
+• Performance enhanced with new battery cooling system 
+• Cold temperature charging times improved with battery heating and pre conditioning functions 
+
+Dual battery option
+
+The new bZ4X provides greater consumer choice and enhances its performance profile with the introduction of two new battery options. Customers have the choice of 57.7kWh or 73.1kWh units (gross capacity figures), to best meet their driving requirements and budget.
+
+The 57.7kWh battery is exclusive to the Icon grade front-wheel drive bZ4X. The higher capacity 73.1kWh unit is available in both front and all-wheel drive versions.
+
+Thus, there is a choice of three drivetrains:
+
+FWD AWD Battery 57.7kWh 73.1kWh 73.1kWh Max system output
+
+165bhp (167 DIN hp/123kW)
+
+221bhp (224 DIN hp/165kW)
+
+338bhp (343 DIN hp/252kW)
+
+Consumption (miles/kWh)
+
+4.47 4.47 3.9
+
+EV range WLTP (miles)
+
+274.6 352 291
+
+The maximum driving range is achieved by the front-wheel drive model with the 73.1kWh battery and 18-inch wheels; this version has a WLTP cycle distance of 352 miles on a full charge. Moreover, in AWD configuration, the bZ4X is now able to tow braked trailers up to 1,500kg, adding another dimension to its authentic SUV status. With front wheel-drive, towing capacity remains at 750kg.
+
+New battery structure
+
+The new batteries, supplied by Prime Planet Energy & Solutions (PPES), are configured so that more cells – 26 – can be contained in each module, without increasing the unit’s overall dimensions. The 57.7kWh battery has 78 cells and the new high-capacity unit 104 cells. This compares to the previous unit’s 96.
+
+PPES is a joint venture company owned by Toyota Motor Corporation (51 per cent) and Panasonic Corporation (49 per cent), established in 2019.
+
+Improvements in battery charging times
+
+Toyota’s aim was for the new bZ4X to offer improved DC-charging times and high performance consistency across a wide range of temperatures, in particular in cold conditions. This has been achieved through a series of measures, including enhancements to the battery and its control systems, software and hardware adjustments, a new pre conditioning system. For AC-charging, a new 22kW on-board charger is standard for Excel grade, (11kW OBC on other grades).
+
+Charging type Charging time 10-80% SoC AC 11kW 4.8hr AC 22kW 2.2hr DC 150kW 28min
+
+Battery pre-conditioning
+
+A new battery pre-conditioning function is key to reducing the charging times, particularly in cold climates. This ensures the battery is at its optimum temperature when charging begins. With the battery fully pre-heated, a DC fast charge from 10 to 80 per cent will take 28 minutes, performance that is consistent across an outdoor temperature range from -10 to +25°C.
+
+The driver can activate pre-conditioning manually via the car’s multimedia system, schedule it to start at a specific time, or it will engage automatically when a fast-charging point is programmed as a destination in the car’s navigation system.
+
+Consistent performance with battery cooling and heating
+
+The water-cooling arrangement uses refrigerant from the car’s air conditioning system when needed to reduce the coolant temperature. The cooler operates from the battery’s lower surface so that each cell is cooled evenly. The standard provision of a heat pump in the air conditioning system ensures energy-efficient performance.
+
+The battery heating function provides uniform heating of all the cells, with consistent operation even in very low temperatures, helping to reduce charging time. The system uses a water-to-water heat exchanger located between the high and low temperature coolant circuits.
+
+Driver information
+
+The driver is kept up-to-date on key battery performance data with new functions added to the seven-inch combimeter. These include current (real-time) charging power, the time remaining to reach 80 per cent SoC; and battery state-of-health, with remaining capacity.
+
+BEV navigation
+
+The bZ4X benefits from a BEV navigation function which automatically proposes a route with recommended convenient charging stations, based on the battery’s state of charge and remaining driving range. The function is dynamic, so recommendations will be updated in real time, based on the car’s actual energy consumption during the drive.
+
+POWERTRAIN WITH NEW eAXLES
+
+• New, compact and lightweight eAxles, integrating the electric transaxle, motor and inverter 
+• More efficient inverter performance with new silicon carbide (SiC) semiconductors 
+• Focused measures to reduce internal energy losses 
+• Enhanced AWD dynamic performance with new turning control system to control front and rear drive torque in cornering 
+
+The complete update of the bZ4X’s BEV platform includes the adoption of updated eAxles. These compact, lightweight units integrate the key electric drive components: transaxle, motor and inverter. The space-saving design contributes to giving the vehicle shorter overhangs, a lower centre of gravity and more cabin and load space.
+
+Their full-scale revision for the new model focused on both output and efficiency with the goal of delivering more power with lower energy consumption.
+
+As a result, maximum output from the front motor is up by more than 11 per cent, from 150 to 167kW, while maximum power from the rear unit has been increased from 80 to 87kW. In the all-wheel drive bZ4X, the combined output is 338bhp (343 DIN hp/252 kW), making this one of the most powerful Toyota models available in Europe, outside the GR performance range. This power is comfortably handled by the powertrain, which features a pre-load differential and equal-length left and right driveshafts to ensure straight-line driveability.
+
+New silicon carbide (SiC) semiconductors in the inverter are key to this achievement. These are more efficient than the previous silicon type in handling high voltages, operating at high temperatures and delivering higher outputs.
+
+Toyota also sought to reduce energy losses wherever possible. This included applying a super-polishing process to the surfaces of the gear teeth in the transaxle. Further gains were made by introducing an electric oil pump which uses less energy than the previous mechanical type.
+
+Improved power distribution
+
+The bZ4X AWD has a new turning control system that predicts the line a driver intends taking through a bend, based on factors such as vehicle speed and steering wheel angle. The level of front and rear drive torque is automatically controlled to secure stable and controllable performance appropriate for the driving conditions.
+
+• As the driver begins to turn the steering wheel, drive torque to the front wheels is increased for a quicker turn-in. 
+• Moving through the corner, rear wheel drive torque is increased for line-tracing faithful to the driver’s intention. 
+• On exiting the corner, rear drive torque is further increased to enhance traction and communicate a direct acceleration feel to the driver. 
+
+If the system detects any wheel-slip or senses snow on the road, it will prioritise stability, controlling the ratio of rear-wheel drive torque appropriately.
+
+ALL-WHEEL DRIVE AND OFF-ROAD PERFORMANCE
+
+• Authentic off-road driving capability using X-MODE and Grip Control 
+• Multi-Terrain Monitor with under-vehicle view 
+• 500mm wading depth 
+• Panoramic View Monitor available for precise manoeuvring and parking 
+
+The bZ4X’s all-wheel drive system was developed by Toyota with project partner Subaru. In 2022 it was introduced as an all-new package benefiting from both companies’ extensive technical know-how and experience. It produced an unprecedented new value for BEVs, giving the SUV genuine, class-leading off-road driving capability – a market first for an all electric SUV.
+
+The system gives the driver a range of selectable X-MODE settings which adjust vehicle performance when driving in mud or snow; deep mud and snow at speeds below 12.5mph; and in tougher off-road conditions using Grip Control, at less than 6mph.
+
+Using X-MODE with Grip Control allows the driver to concentrate on accurate steering while the system controls vehicle speed, whether travelling downhill, uphill or on level ground. On downhill slopes, the driver can also use the car’s Downhill Assist Control for a similar level of assistance.
+
+The new bZ4X’s off-road credentials also extend to a wading depth of 500mm.
+
+Multi-Terrain Monitor
+
+A Multi-Terrain Monitor (MTM) is available to help the drive judge the conditions when travelling off-road. The system uses four cameras that provide a real-time view of the area immediately around the car, eliminating blind spots. There is also an under-vehicle view to help the driver check the position of the rear wheels and the road surface.
+
+When using X-MODE, a seamless image is presented showing the under-floor view and dual side views; the information includes an inclinometer and the angle of vehicle pitch and roll.
+
+Panoramic View Monitor
+
+The Panoramic View Monitor helps with precise parking and manoeuvres and, like the MTM, provides an under-floor view option. The latest update reduces blind spots even further; it can also be operated using voice commands.
+
+NEW EXTERIOR AND INTERIOR DESIGN FEATURES
+
+• Signature hammerhead frontal design given emphasis with new central light bar 
+• Reprofiled front end projects a strong 3D look, expressing stability and power 
+• New, slim horizontal dashboard increases cabin sense of space and openness 
+• New 14-inch multimedia screen and “digital island” centre console 
+• Interior mood enhanced by 64-colour ambient lighting and optional panoramic roof 
+
+• New upholstery materials made from recycled PET
+
+New frontal treatment
+
+The overall design concept for the bZ4X is robust and sleek, combining urban refinement with toughness appropriate for exploring the great outdoors.
+
+The principal exterior design changes focus on developing the signature Toyota hammerhead frontal treatment to express a powerful, sporty feel. The slim headlight units are linked by a new central LED clearance light that traces the leading edge of the hammerhead shape, producing a strong illumination signature.
+
+The lower grille and bumper are revised, helping generate a stronger 3D impression and expressing a stable, planted stance. The sleek and elegant qualities of the design are reflected in a new piano black gloss finish for the wheel arch trims.
+
+The bZ4X’s sharp, contemporary styling is amplified by a wide choice of paint colours, in (according to model grade) monotone or contrast bi-tone finishes. New-design 18-inch alloy wheels feature aero-efficient full resin covers. The new 20-inch rims are all-alloy with a contrasting black and bright machined finish and resin ornamentation that helps manage airflow.
+
+Aerodynamic detailing
+
+Further styling details enhance the car’s aerodynamic performance. On versions without a high-mounted spoiler, the upper edge of the ducktail spoiler has been raised by 5 mm, and the rear garnish has been brought closer to the level of the rear window glass.
+
+Meanwhile, beneath the car, the underbody is smoother with an increase in the undercover’s surface area. In combination the changes improve the bZ4X’s drag coefficient (Cd) from 0.29 to 0.27, contributing to its performance efficiency and extended driving range.
+
+Interior with new instrument panel
+
+An all-new, ultra-slim instrument panel has a horizontal design that amplifies the sense of space and openness in the cabin. The elegant unit flows into the upper door trims and houses new, slimmer air vent registers between a lower pad and the upper surface.
+
+The driver’s instrument display is repositioned above the level of the steering wheel, so less eye movement is needed to take in data and information. The steering wheel itself now benefits from heating around its full circumference and new paddle controls can be used braking regeneration selection, with four levels available.
+
+The digital driver’s combimeter provides additional BEV-specific information, including details of charging performance and time remaining to achieve 80 per cent state of charge.
+
+An indicator showing the battery’s state of health is another new feature. This gives the driver full transparency of the battery condition and remaining capacity, in line with Toyota’s commitment to Quality, Durability and Reliability and the guarantee provided by its battery care package.
+
+The new 14-inch multimedia screen replaces the previous 12.3-inch display. It occupies a prominent central position while the centre console is set 10 cm lower to form an independent “digital island”, housing the dial-type shift selector and twin wireless device chargers for the driver and front passenger.
+
+The rear console has twin USB ports with power increased from 15 to 60W. They are now positioned on top of the unit for easier access, with a redesign also moving the rear air vents closer to the passengers. Storage points include a lower tray in the console, large enough to take a pair of shoes or tissue box. Convenience is designed into the console box which is hinged to open left or right and has space for a tablet, first aid kit and glasses. The cup holders and redesigned door pockets can accommodate both large and small water bottles.
+
+Climate control system
+
+The system provides two-layer operation: fresh air with low humidity is introduced into the upper cabin, which helps prevent fogging, while warm air is recirculated in the lower section around the occupants’ feet, improving heating performance while saving energy.
+
+The air conditioning ECO mode is enhanced so that heating can be focused on the driver when other seats are unoccupied, with air volume and temperature controlled and seat and steering wheel heaters engaged. This provides a warm space while conserving power.
+
+Panoramic roof
+
+The cabin is given a lighter and more open feel with the removal of the central reinforcement from the panoramic roof. This has been made possible by using ultra-high-strength steel and strengthening the roof connection points. As a result, the glass section has been increased by 20 per cent.
+
+Ambient lighting
+
+A new ambient lighting system is available, offering a choice of 64 colours to create the right mood for any journey, from cool and relaxing to sporty and invigorating. It also provides an additional warning linked to the car’s Safe Exit Assist, lighting the interior door handles red if there’s a risk of opening a door into the path of traffic approaching from the rear.
+
+New recycled upholstery materials
+
+According to model grade, different upholstery options have been introduced using recycled and non-animal products. These include a new fabric made from recycled PET yarn and a soft but durable synthetic leather with an attractive grained finish.
+
+THE eTNGA MODULAR ARCHITECTURE
+
+• Toyota’s eTNGA modular EV platform provides fundamental benefits of high body rigidity, low centre of gravity and responsive vehicle dynamics 
+• Aluminium reinforcements introduced to protect new, wider battery pack 
+• Long wheelbase helps secure spacious cabin and load compartment 
+
+The bZ4X’s eTNGA – the Toyota global architecture modular platform purpose-designed for battery electric vehicles – continues to provide the SUV with the essential benefits of a highly rigid body, a low centre of gravity and responsive, controllable vehicle dynamics.
+
+As the new vehicle batteries are 170mm wider than the previous unit, the platform has been updated with the addition of aluminium EA (extruded material) reinforcements to provide
+
+•• PROTECTED 関係者外秘 extra protection in the event of a side impact.
+
+The eTNGA’s modular platform design has allowed it to be developed for electric vehicles of different types and sizes, accommodating batteries with varying dimensions and outputs, and with front or all-wheel drivetrain. In addition to the bZ4X, it is also deployed in the all new Toyota C-HR+ that will be launched with announcement of prices and opening of order books before the end of 2025.
+
+In the bZ4X, the platform allows for a long, 2,850mm wheelbase – 160mm longer than the current Toyota RAV4. The result is excellent interior space, both in the cabin and the load compartment. Notably, rear seat passengers enjoy a one-metre couple distance and a flat floor, with leg room that rivals larger vehicles.
+
+The flexible load space has a two-level deck board and an underfloor space that can be used to increase load height by 7mm. With the rear seats in place and the deck board in its lower position, there is up to 452 litres (VDA) – room enough for three 82-litre suitcases or two mountain bikes. Beneath the deck board there is a tool kit and space for the car’s charging cable and a warning triangle; the folding tonneau cover can also be stowed.
+
+DRIVING DYNAMICS, RIDE QUALITY AND ON-BOARD COMFORT
+
+• Detailed suspension tuning to raise the levels of comfort and dynamic performance 
+• Optimised spring and damper rates, with focus on an improved ride for rear seat passengers 
+• Measures introduced for enhanced line tracing performance and predictable vehicle behaviour 
+
+The bZ4X’s handling is well-regarded by critics, particularly in driving off-road or on uneven surfaces. Nonetheless, Toyota has introduced a series of adjustments to the car’s suspension to improve comfort – particularly for rear seat passengers – dynamic behaviour and steering responsiveness.
+
+The coil spring and damper rates are tuned to raise the levels of comfort, stability and controllability and the level of shock feeling, particularly for rear passengers is reduced, making long journeys more comfortable.
+
+Adjustment of the front lower arm bushing helps secure better line tracing and predictable vehicle behaviour in wet and snowy conditions. Control and responsiveness are further enhanced by a rigid mount for the steering gear in place of the original bushing and the introduction of a thicker and stiffer radiator mount.
+
+Ride comfort benefits from the use of a high-damping body adhesive in the vehicle floor to increase vibration absorption.
+
+A quieter cabin
+
+With less noise generated by the powertrain, other external sounds become more noticeable. A series of new measures further reduce cabin noise levels in the new bZ4X.
+
+These include acoustic glass introduced in the front side windows and foam material added at key points in the inner body frame. The level of motor noise entering the cabin is reduced by a new silencer beneath the rear floor and new sound-absorbing materials in the rear wing liners. An increase in the damping performance of the rear motor mounts reduces vibration when driving over a rough surface.
+
+In addition, rear wheelhouse silencers are used, and the sealant performance of the rear quarter lights has been improved.
+
+TOYOTA SAFETY SENSE AND DRIVER ASSISTANCE
+
+• Comprehensive package of active safety and driver assistance systems 
+• Latest generation Toyota Safety Sense features 
+• Over-the-air software updates provide convenient, seamless delivery of the latest system developments 
+
+The new bZ4X carries forward the model’s comprehensive package of wide-ranging support and safety features, including the latest generation Toyota Safety Sense.
+
+The preventive safety systems can detect a wider range of accident risk scenarios in
+
+everyday driving, alert the driver and initiate drive force, steering and braking assistance if needed to help avoid a collision or mitigate the effects if an impact cannot be avoided.
+
+For example, making a left or right turn across the flow of traffic at a busy intersection presents hazards not just from oncoming and crossing traffic, but also from pedestrians or cyclists crossing the road you are turning into. The Pre-Collision System (PCS) monitors the road for these hazards, warning the driver or initiating emergency braking if there’s an imminent risk of an impact.
+
+A pedestrian stepping off the kerb, or a vehicle stranded on the roadside can prompt the driver to swerve. The PCS provides Emergency Steering Assist, helping steer around the hazard while keeping the car stable and within its traffic lane. The system also recognises when there’s a risk of a collision from sudden, sharp acceleration during low-speed driving, automatically regulating the driving force and providing braking control.
+
+Even a brief loss of concentration can cause a car to wander off-course; with Lane Trace Assist, the bZ4X will keep to its correct path, guided by the markings on the road, the road margin or the vehicle ahead. The system will co-operate with the Full-Range Adaptive Cruise Control, so the vehicle’s speed is safely adjusted when travelling through a highway bend. It also keeps an eye on the driver’s use of the steering wheel, brakes and accelerator pedal: if they are not used for a certain amount of time, it will initiate an Emergency Driving Stop System.
+
+Safe Exit Assist helps avoid the common risk of inadvertently opening a car door into the path of a vehicle, cyclist or pedestrian approaching from the rear. It uses the car’s Blind Spot Monitor to scan the road and flash a warning should driver or passenger be about to open the door and risk a collision.
+
+With Proactive Driving Assist, the bZ4X is able to scan the road ahead, calculate collision risks and operate the brakes and steering at an early stage to help prevent an accident. This can be, for example, a person or cyclist close to the edge of the road or about to cross, or a vehicle ahead.
+
+Over-the-air software updates for multimedia system and safety functions ensure the latest developments are delivered seamlessly, without the owner having to take their vehicle to a workshop.
+
+CONNECTED AND REMOTE SERVICES WITH MyToyota APP
+
+• MyToyota app provides access to BEV-specific functions and services 
+• Connection to Toyota HomeCharge wallbox for time and cost-efficient charging scheduling 
+• Access to the pan-European Toyota Charging Network for charging away from home 
+• Remote functions including pre-journey vehicle heating or cooling 
+
+The MyToyota app makes bZ4X ownership easy and convenient, providing a series of BEV specific functions and services.
+
+They include connection to the Toyota HomeCharge domestic wallbox, so that owners can easily monitor, manage and control their domestic charging schedule. This includes scheduling smart charging for times when electricity price tariffs are lower. Customers can also check their billing history at a glance.
+
+The MyToyota app links to the Toyota Charging Network, which provides seamless access to one of the largest pan-European EV charging networks. Again, budgeting is made simple with billing information displayed on the app.
+
+Owners can obtain an instant read-out of their vehicle’s state of charge on their smartphone. And for easy navigation to a charging point, a Send to Car function allows users to transmit a selected location from their phone directly to their car.
+
+The app further allows remote activation of the climate control, to heat or cool the cabin efficiently ahead of a journey, reducing the demand on air conditioning systems during the trip and thus potentially increasing the driving range.
+
+To further maximise range, a BEV coaching tool assesses previous journeys and offers advice on how to improve driving range and efficiency.
+
+UK MODEL RANGE AND PRICING
+
+• Three equipment grades – Icon, Design and Excel 
+• Standard features include new 14-inch multimedia screen, heated steering wheel and Blind Spot Monitor 
+• Available to order now, deliveries from January 2026 
+• On-the-road prices from £39,995 
+
+Entry point to the new bZ4X range is Icon grade. New equipment features include two wireless smartphone chargers in the centre console, 14-inch multimedia display, ambient cabin lighting and glossy piano black wheel arches. Other specification details include front wheel drive, heated front seats and steering wheel, a power back door and a Blind Spot Monitor.
+
+Design grade introduces the more powerful 73.1kWh battery. This is also a front-wheel drive model, building on the Icon specification with the addition of a Panoramic View Monitor, puddle lights and a windscreen de-icer.
+
+At the top of the range, Excel grade can be specified with front or all-wheel drive. Both versions are equipped with 20-inch alloy wheels, heated, ventilated and power adjustable front seats, heated rear seats, a digital rear-view mirror and full synthetic leather seat upholstery. A 22kW on-board charger enables faster AC charging.
+
+| DRIVETRAIN | | FWD | AWD |
+| --- | --- | --- | --- |
+| | 57.7kWh | | 73.1kWh |
+| Electric motors | | | |
+
+TOYOTA bZ4X TECHNICAL SPECIFICATIONS
+
+Electric motors 
+Type Permanent magnet, synchronous motor 
+Total power (bhp/DIN hp/kW) 166/167/123 221/224/165 338/343/252 
+Max. torque (Nm) 268.6 338.4 
+Battery 57.7kWh 73.1kWh 73.1kWh 
+Type Lithium-ion 
+Nominal voltage 288.6 384.8 
+Capacity (kWh) 57.7 73.1 
+Number of cells 78 104 
+PERFORMANCE FWD 
+57.7kWh 
+
+AWD 73.1kWh
+
+FWD 73.1kWh
+
+0-62mph (sec) 8.6 7.4 5.1 
+Max. speed (mph) 87 99 99 
+Driving range – 
+WLTP (miles) 
+
+Icon 274 - -Design - 352 -Excel - 319 292
+
+44.47 4.47 4.29
+
+18in wheels
+
+Electric energy consumption (combined, miles/kWh)
+
+- 4.03 3.9
+
+20in wheels
+
+DIMENSIONS 
+Overall length (mm) 4,690 
+Overall width – excluding 
+mirrors (mm) 
+
+1,860 
+Overall height (mm) 1,650 
+Wheelbase (mm) 2,850 
+Track front (mm) 1,600 
+Track rear (mm) 1,610 
+Front overhang (mm) 915 
+Rear overhang (mm) 925 
+INTERIOR DIMENSIONS 
+Interior length (mm) 1,918 
+
+Interior width (mm) 1,502 
+Interior height (mm) 1,149 (1,142 with Skyview roof) 
+Load capacity (inc. under 
+deckboard, VDA litres) 
+
+452
+
+AWD 73.1kWh
+
+WEIGHTS FWD 57.7kWh
+
+FWD 73.1kWh
+
+Kerb weight (kg) 1,850-1890 1,930-2,020 2,025-2,080 
+Gross vehicle weight (kg) 2,465 2,520 2,560 
+Towing capacity (kg) 750 
+INSURANCE, SERVICING & 
+WARRANTY 
+Insurance group TBC 
+Service intervals 10,000 miles/annually 
+
+Comprehensive new vehicle warranty
+
+3 years/60,000 miles
+
+Battery warranty 8 years/100,000 miles 10 years/650,000 miles with EV Care Battery Health Check
+
+SUSPENSION 
+Front MacPherson strut 
+Rear Trailing arms 
+BRAKES 
+Front Ventilated discs 
+Rear Ventilated discs 
+Parking brake Electronic 
+STEERING 
+Type Rack and pinion, electric power steering 
+Turns (lock to lock) 2.81 
+Min. turning 
+radius (m) 
+Tyre 5.6 
+Body 6.1 
+WHEELS & TYRES 
+Wheel and tyre size 18in, 235/60R18 
+20in, 235/50R20 
+OFF-ROAD PEFORMANCE 
+Angle of approach (deg) 17.4 
+Angle of departure (deg) 25.6 
+Min. running ground 
+clearance (mm) 
+
+177 (with one passenger)
+
+Wading depth (mm) 500
+
+TOYOTA bZ4X EQUIPMENT SPECIFICATIONS SAFETY & DRIVING ASSISTANCE ICON DESIGN EXCEL
+
+Toyota Safety Sense
+
+Pre-Collision System with Intersection Turn Assist, Emergency Steering Assist
+
+✓ ✓ ✓
+
+Intelligent Adaptive Cruise Control ✓ ✓ ✓
+
+Lane Trace Assist ✓ ✓ ✓
+
+Lane Departure Alert with steering control
+
+✓ ✓ ✓
+
+Lane Change Assist   ✓
+
+Road Sign Assist with speed limiter ✓ ✓ ✓
+
+Emergency Driving Stop System ✓ ✓ ✓
+
+Low-speed acceleration suppression ✓ ✓ ✓
+
+Automatic High Beam 
+(AHB)/Automatic High-beam System 
+(AHS) 
+
+✓
+
+(AHB)
+
+✓ (AHS)
+
+✓ (AHS)
+
+Emergency Steering Assist ✓ ✓ ✓
+
+Automatic flashing rear hazard lights ✓ ✓ ✓
+
+Driver monitor ✓ ✓ ✓ Driver’s airbag ✓ ✓ ✓ Front passenger airbag with cut-off switch ✓ ✓ ✓ Front centre airbag ✓ ✓ ✓ Front side airbags ✓ ✓ ✓ Rear side airbags ✓ ✓ ✓ Curtain shield airbags ✓ ✓ ✓ ISOFIX child seat fixings on outer rear seats ✓ ✓ ✓ Hill-start Assist Control (HAC) ✓ ✓ ✓ Downhill Assist Control (DAC) ✓ ✓ ✓ Automatic door locking ✓ ✓ ✓ Tyre pressure warning system ✓ ✓ ✓ Rear Cross Traffic Alert with auto braking ✓ ✓ ✓ Blind Spot Monitor (BSM) ✓ ✓ ✓
+
+Front Cross Traffic Alert   ✓ Safe Exit Assist ✓ ✓ ✓ Rear Seat Reminder System ✓ ✓ ✓ eCall ✓ ✓ ✓
+
+INSTRUMENTS & CONTROLS ICON DESIGN EXCEL 7in colour multi-information digital display ✓ ✓ ✓ Electronic parking brake ✓ ✓ ✓
+
+X-MODE all-wheel drive   Opt COMFORT & CONVENIENCE ICON DESIGN EXCEL Front and rear power windows with auto up/down ✓ ✓ ✓ Auto-dimming rear-view mirror ✓ ✓  Digital rear-view mirror   ✓ Reversing camera ✓ ✓ ✓
+
+Front parking sensors, with automatic braking (object hazards)
+
+ ✓ ✓
+
+Front and rear intelligent clearance sonar with automatic braking (objects, vehicles and pedestrians)
+
+✓ ✓ ✓
+
+Intelligent Parking Assist   ✓ Panoramic View Monitor  ✓ ✓ Tilt and telescopic steering wheel adjustment ✓ ✓ ✓ Heated steering wheel ✓ ✓ ✓ Auxiliary switches on steering wheel ✓ ✓ ✓ Automatic windscreen wipers ✓ ✓ ✓ Automatic headlights ✓ ✓ ✓ Automatic headlight levelling ✓ ✓ ✓ Smart entry and push-button start ✓ ✓ ✓ Illuminated entry system ✓ ✓ ✓ Power back door ✓ ✓ ✓ Front wiper de-icer  ✓ ✓ Push-button back door release ✓ ✓ ✓ Back door remote release on key fob ✓ ✓ ✓ 12V power outlet in front cabin ✓ ✓ ✓ Retractable tonneau cover ✓ ✓ ✓ Underfloor boot storage ✓ ✓ ✓ Dual-level deck board ✓ ✓ ✓
+
+Dual-zone automatic air conditioning ✓ ✓ ✓ Energy-saving heat pump ✓ ✓ ✓ Radiant foot heaters   ✓ Over-the-air safety and multimedia software updates ✓ ✓ ✓
+
+AUDIO, COMMUNICATION & INFORMATION ICON DESIGN EXCEL 6-speaker audio system ✓ ✓ ✓
+
+JBL 9-speaker premium audio   Opt 14in Toyota Smart Connect+ multimedia display ✓ ✓ ✓ Cloud-based navigation ✓ ✓ ✓ Embedded satellite navigation ✓ ✓ ✓ Voice assistant ✓ ✓ ✓ DAB radio ✓ ✓ ✓ Apple CarPlay & Android Auto smartphone connection ✓ ✓ ✓ Wireless smartphone charger x2 ✓ ✓ ✓ Bluetooth ✓ ✓ ✓ USB connection (x2 front, x2 rear) ✓ ✓ ✓ Data Communication Module (DCM) ✓ ✓ ✓
+
+Access to connected/remote services with MyToyota app
+
+✓ ✓ ✓
+
+SECURITY ICON DESIGN EXCEL Transponder engine immobiliser ✓ ✓ ✓ Remote control central double locking ✓ ✓ ✓
+
+Intrusion alarm with intrusion, tilt and breaking glass sensors
+
+✓ ✓ ✓
+
+SEATING, UPHOLSTERY & TRIM ICON DESIGN EXCEL 60:40 split-fold rear seats ✓ ✓ ✓ Power adjustable driver’s seat ✓ ✓ ✓ Driver’s seat memory function   ✓ Front passenger seat height adjustment (manual) ✓ ✓  Power adjustable front passenger seat   ✓ Heated front seats ✓ ✓ ✓ Ventilated front seats   ✓ Heated rear seats   ✓ Power lumbar adjustment on driver’s seat ✓ ✓ ✓ Black fabric upholstery ✓  
+
+Combination black fabric/synthetic leather upholstery  ✓  Black synthetic leather upholstery   ✓ Ambient cabin lighting ✓ ✓ ✓
+
+EXTERIOR & BODY ICON DESIGN EXCEL LED headlights ✓ ✓ ✓ Follow-me-home headlight function ✓ ✓ ✓ LED daytime running lights ✓ ✓ ✓ LED front fog lights ✓ ✓ ✓ LED rear lights ✓ ✓ ✓ LED turn indicators ✓ ✓ ✓
+
+Skyview one-piece fixed panoramic roof   Opt Rear privacy glass ✓ ✓ ✓ Rear spoiler ✓ ✓ ✓ Black roof rails ✓ ✓ ✓ Shark fin antenna ✓ ✓ ✓ Power-adjustable heated door mirrors ✓ ✓ ✓ Reverse tilting function for door mirrors   ✓ Memory function for door mirrors   ✓ Puddle lights  ✓ ✓
+
+Metallic/pearlescent paint Opt Opt Opt Bi-tone paint finish   Opt 18in alloy wheels with wheel caps ✓ ✓  20in alloy wheels   ✓ Tyre repair kit ✓ ✓ ✓
+
+ENDS
+

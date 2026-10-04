@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.brand_research_plan/1",
+  "title": "Brand research plan (deterministic batches of ~10 models + per-batch research status)",
+  "type": "object",
+  "required": ["schema_version", "brand", "model_count", "batch_count", "all_models_assigned_exactly_once", "model_status_counts", "batches"],
+  "properties": {
+    "schema_version": { "const": "carnet.brand_research_plan/1" },
+    "brand": { "type": "string" },
+    "model_count": { "type": "integer", "minimum": 1 },
+    "batch_count": { "type": "integer", "minimum": 1 },
+    "all_models_assigned_exactly_once": { "const": true },
+    "model_status_counts": { "type": "object", "propertyNames": { "$ref": "#/$defs/modelStatus" }, "additionalProperties": { "type": "integer" } },
+    "batches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["batch_id", "batch_number", "models", "status", "evidence_record_count", "conflicts", "provisional_values", "needs_source_retrieval_values", "unresearched_fields", "model_status", "model_plan"],
+        "properties": {
+          "batch_id": { "type": "string", "pattern": "^[a-z0-9_]+-batch-\\d{2}$" },
+          "batch_number": { "type": "integer", "minimum": 1 },
+          "models": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "status": { "enum": ["NOT_STARTED", "IN_PROGRESS", "RESEARCHED_PENDING_REVIEW"] },
+          "evidence_record_count": { "type": "integer", "minimum": 0 },
+          "conflicts": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
+          "provisional_values": { "type": "object" },
+          "unresearched_fields": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
+          "model_status": { "type": "object", "additionalProperties": { "$ref": "#/$defs/modelStatus" } },
+          "needs_source_retrieval_values": { "type": "object", "description": "tier 1-3 values whose source content was never validated (not verified)" },
+          "evidence_integrity": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["records_by_state", "sources_by_state", "records_passing_integrity_test"],
+              "properties": {
+                "records_by_state": { "type": "object", "required": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED", "SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"], "additionalProperties": { "type": "integer", "minimum": 0 } },
+                "sources_by_state": { "type": "object", "required": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED", "SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"], "additionalProperties": { "type": "integer", "minimum": 0 } },
+                "records_passing_integrity_test": { "type": "integer", "minimum": 0 }
+              }
+            }
+          },
+          "model_plan": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["model", "priority_score", "sparse_flags", "recent", "legacy_spec_rows", "collision_risk", "siblings_to_keep_separate"],
+              "properties": {
+                "model": { "type": "string" },
+                "priority_score": { "type": "number" },
+                "sparse_flags": { "type": "array", "items": { "type": "string" } },
+                "recent": { "type": "boolean" },
+                "legacy_spec_rows": { "type": "integer", "minimum": 0 },
+                "newest_legacy_model_year": { "type": ["integer", "null"] },
+                "collision_risk": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+                "siblings_to_keep_separate": { "type": "array", "items": { "type": "string" } },
+                "existing_evidence": { "type": ["string", "null"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "modelStatus": { "enum": ["NOT_STARTED", "NEEDS_MORE_SOURCES", "PARTIALLY_RESEARCHED", "RESEARCHED", "CONFLICT"] }
+  }
+}

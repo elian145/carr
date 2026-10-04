@@ -9,8 +9,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import enrichment_lib as L  # noqa: E402
 
 
-def src(tier, host="manufacturer_domain", retrieval="fetched_full_text"):
-    return {"url": f"https://example.test/t{tier}", "name": f"tier {tier} source", "tier": tier, "host_type": host, "retrieval": retrieval, "accessed_at": "2026-10-03"}
+def integrity(state="FULL_TEXT_VERIFIED", sid="T1"):
+    if state in L.VERIFIED_ELIGIBLE_STATES:
+        return {"state": state, "retrieved_at": "2026-10-03", "content_sha256": "a" * 64, "snapshot_path": f"evidence/test/_source_text/{sid}.txt", "origin": "authored", "note": None}
+    return {"state": state, "retrieved_at": "2026-10-03", "content_sha256": None, "snapshot_path": None, "origin": "authored", "note": None}
+
+
+def src(tier, host="manufacturer_domain", retrieval="fetched_full_text", state="FULL_TEXT_VERIFIED", sid=None):
+    """A source whose integrity block claims `state` (default: preserved full text). Fixture only: the in-memory
+    snapshot text is supplied by union_of(); validate_evidence does not read files."""
+    return {"url": f"https://example.test/t{tier}", "name": f"tier {tier} source", "tier": tier, "host_type": host, "retrieval": retrieval,
+            "accessed_at": "2026-10-03", "integrity": integrity(state, sid or f"T{tier}")}
 
 
 def rec(rid, sid, text, **kw):
@@ -36,11 +45,20 @@ def doc(records, sources=None):
     return L.prepare_evidence(d)
 
 
-def union_of(records, **kw):
+def snapshot_texts(d):
+    """In-memory 'preserved snapshot' per verifiable source = the concatenation of every quote that cites it."""
+    out = {}
+    for sid, s in d["sources"].items():
+        if L.source_integrity_state(s) in L.VERIFIED_ELIGIBLE_STATES:
+            out[sid] = L._ws(" ".join(r["evidence"]["supporting_text"] for r in d["records"] if r["evidence"]["source_id"] == sid) or "x")
+    return out
+
+
+def union_of(records, texts=None, **kw):
     d = doc(records, **kw)
     assert L.validate_evidence(d) == [], L.validate_evidence(d)
     conflicts = L.detect_conflicts(d["records"], "acme-roadster")
-    return d, L.build_union(d, conflicts), conflicts
+    return d, L.build_union(d, conflicts, texts=snapshot_texts(d) if texts is None else texts), conflicts
 
 
 class VerifiedVsProvisional(unittest.TestCase):
@@ -78,7 +96,8 @@ class VerifiedVsProvisional(unittest.TestCase):
     def test_production_policy_never_includes_provisional(self):
         _, u, _ = union_of([rec("AC-001", "T5", "Diesel", fuel="Diesel")])
         self.assertFalse(u["production_policy"]["includes_provisional"])
-        self.assertEqual(u["production_policy"]["production_bound_section"], "union")
+        self.assertEqual(u["production_policy"]["production_bound_section"], "verified")
+        self.assertFalse(u["production_policy"]["includes_needs_source_retrieval"])
         self.assertEqual(u["production_policy"]["review_status"], "UNREVIEWED")
         self.assertEqual(u["union"]["fuel_types"], [])
         self.assertEqual(u["provisional_only"]["fuel_types"], ["Diesel"])
@@ -222,19 +241,41 @@ class PilotUnions(unittest.TestCase):
     def test_no_provisional_value_leaks_into_the_union_section(self):
         for n in self.NAMES:
             u = L.read_json(L.HERE / "generated" / f"{n}.union.json")
-            for dim, vals in u["union"].items():
-                prov = set(map(str, u["provisional_only"][dim]))
-                self.assertFalse(prov & set(map(str, vals)), (n, dim))
+            self.assertEqual(u["verified"], u["union"])
+            for dim, vals in u["verified"].items():
+                for other in ("provisional_only", "needs_source_retrieval"):
+                    self.assertFalse(set(map(str, u[other][dim])) & set(map(str, vals)), (n, dim, other))
+                self.assertFalse(set(map(str, u["provisional_only"][dim])) & set(map(str, u["needs_source_retrieval"][dim])), (n, dim))
             for dim, det in u["details"].items():
-                verified = [x["value"] for x in det if x["status"] == "VERIFIED"]
-                self.assertEqual(sorted(map(str, verified)), sorted(map(str, u["union"][dim])), (n, dim))
+                for status, section in (("VERIFIED", "verified"), ("NEEDS_SOURCE_RETRIEVAL", "needs_source_retrieval"), ("PROVISIONAL", "provisional_only")):
+                    vals = [x["value"] for x in det if x["status"] == status]
+                    self.assertEqual(sorted(map(str, vals)), sorted(map(str, u[section][dim])), (n, dim, status))
 
-    def test_land_cruiser_pilot_keeps_awd_provisional_and_4wd_verified(self):
+    def test_pilot_integrity_is_backed_by_real_snapshots_or_stays_non_verified(self):
+        # After the re-fetch (fetch_snapshot.py): a source is *_VERIFIED only with a preserved snapshot + matching hash;
+        # every other source carries no hash and no snapshot claim. Verified values come only from records that pass.
+        for n in self.NAMES:
+            d = L.read_json(L.HERE / "evidence" / f"{n}.json")
+            errs, texts, assess = L.verify_snapshots(d, L.HERE)
+            self.assertEqual(errs, [], n)
+            for sid, s in d["sources"].items():
+                st = L.source_integrity_state(s)
+                if st in L.VERIFIED_ELIGIBLE_STATES:
+                    self.assertIn(sid, texts, (n, sid))
+                    self.assertTrue(s["integrity"]["origin"].startswith("revalidation:"), (n, sid))
+                else:
+                    self.assertIsNone(s["integrity"]["content_sha256"], (n, sid))
+                    self.assertIsNone(s["integrity"]["snapshot_path"], (n, sid))
+            u = L.read_json(L.HERE / "generated" / f"{n}.union.json")
+            self.assertEqual(u["generated_from"]["records_passing_integrity_test"], sum(1 for a in assess.values() if a["eligible"]), n)
+            self.assertGreater(u["generated_from"]["records_passing_integrity_test"], 0, n)
+
+    def test_land_cruiser_pilot_keeps_4wd_awd_split(self):
         u = L.read_json(L.HERE / "generated" / "toyota_land_cruiser.union.json")
-        self.assertEqual(u["union"]["drivetrains"], ["4WD"])
-        self.assertEqual(u["provisional_only"]["drivetrains"], ["AWD"])
-        self.assertIn("Hybrid", u["union"]["fuel_types"])
-        self.assertNotIn("Hybrid", u["union"]["transmission_variants"])
+        self.assertEqual(u["verified"]["drivetrains"], ["4WD"])  # tier 1, quote found in a preserved snapshot
+        self.assertEqual(u["provisional_only"]["drivetrains"], ["AWD"])  # tier 5
+        self.assertIn("Hybrid", u["needs_source_retrieval"]["fuel_types"])
+        self.assertNotIn("Hybrid", u["needs_source_retrieval"]["transmission_variants"])
 
     def test_record_ids_never_disappear(self):
         manifest = L.read_json(L.HERE / "reports" / "evidence_manifest.json")

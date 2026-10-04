@@ -1,0 +1,877 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Grand Highlander",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/grand_highlander.json",
+    "researched_at": "2026-10-03",
+    "record_count": 11,
+    "source_count": 2,
+    "records_by_source_tier": {
+      "1": 5,
+      "2": 6
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 5,
+      "PDF_VERIFIED": 6,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 1,
+      "PDF_VERIFIED": 1,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 11
+  },
+  "research_coverage": [
+    "US 2024 e-brochure (XLE/Limited/Platinum gas 2.4L turbo; Hybrid XLE/Limited 2.5L; Hybrid MAX Limited/Platinum 2.4L) and US 2025 newsroom release (adds LE grade and Hybrid Nightshade)",
+    "NOT researched: markets outside the US (Middle East, Canada), the Nightshade trim as its own record, engine torque per hybrid trim, doors",
+    "Hybrids are recorded with fuel_type 'Hybrid' (never Petrol); the legacy dataset stores every Grand Highlander hybrid as Petrol"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 0,
+    "conflicts_block_promotion_until_reviewed": false,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [
+      "LE",
+      "Limited",
+      "Platinum",
+      "XLE"
+    ],
+    "engine_sizes": [
+      "2.4L",
+      "2.5L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [
+      "Hybrid",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "Direct Shift",
+      "e-CVT"
+    ],
+    "transmission_gears": [
+      6,
+      8
+    ],
+    "drivetrains": [
+      "AWD",
+      "FWD"
+    ],
+    "body_types": [
+      "SUV"
+    ],
+    "seats": [
+      7,
+      8
+    ],
+    "doors": []
+  },
+  "union": {
+    "trims": [
+      "LE",
+      "Limited",
+      "Platinum",
+      "XLE"
+    ],
+    "engine_sizes": [
+      "2.4L",
+      "2.5L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [
+      "Hybrid",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "Direct Shift",
+      "e-CVT"
+    ],
+    "transmission_gears": [
+      6,
+      8
+    ],
+    "drivetrains": [
+      "AWD",
+      "FWD"
+    ],
+    "body_types": [
+      "SUV"
+    ],
+    "seats": [
+      7,
+      8
+    ],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "doors"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "2.4L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Hybrid",
+        "Petrol"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 265.0,
+          "record_id": "GH-001",
+          "trim": "XLE"
+        },
+        {
+          "value": 265.0,
+          "record_id": "GH-002",
+          "trim": "Platinum"
+        },
+        {
+          "value": 362.0,
+          "record_id": "GH-005",
+          "trim": "Limited"
+        },
+        {
+          "value": 362.0,
+          "record_id": "GH-006",
+          "trim": "Platinum"
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 420.0,
+          "record_id": "GH-001",
+          "trim": "XLE"
+        },
+        {
+          "value": 420.0,
+          "record_id": "GH-002",
+          "trim": "Platinum"
+        },
+        {
+          "value": 542.0,
+          "record_id": "GH-005",
+          "trim": "Limited"
+        },
+        {
+          "value": 542.0,
+          "record_id": "GH-006",
+          "trim": "Platinum"
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "GH-001",
+        "GH-002",
+        "GH-005",
+        "GH-006",
+        "GH-007"
+      ]
+    },
+    {
+      "engine_size_label": "2.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Hybrid"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 245.0,
+          "record_id": "GH-003",
+          "trim": "XLE"
+        },
+        {
+          "value": 245.0,
+          "record_id": "GH-004",
+          "trim": "Limited"
+        }
+      ],
+      "torque_nm": [],
+      "best_tier": 1,
+      "record_ids": [
+        "GH-003",
+        "GH-004",
+        "GH-008"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "LE",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-007",
+          "GH-008"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 2,
+        "record_ids": [
+          "GH-007",
+          "GH-008"
+        ],
+        "source_ids": [
+          "GH-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Limited",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-004",
+          "GH-005"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 2,
+        "record_ids": [
+          "GH-004",
+          "GH-005"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Platinum",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-002",
+          "GH-006"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 2,
+        "record_ids": [
+          "GH-002",
+          "GH-006"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "XLE",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-003"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 2,
+        "record_ids": [
+          "GH-001",
+          "GH-003"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "2.4L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-005",
+          "GH-006",
+          "GH-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 5,
+        "record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-005",
+          "GH-006",
+          "GH-007"
+        ],
+        "source_ids": [
+          "GH-S1",
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "2.5L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-003",
+          "GH-004",
+          "GH-008"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 3,
+        "record_ids": [
+          "GH-003",
+          "GH-004",
+          "GH-008"
+        ],
+        "source_ids": [
+          "GH-S1",
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-003",
+          "GH-004",
+          "GH-005",
+          "GH-006",
+          "GH-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 7,
+        "record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-003",
+          "GH-004",
+          "GH-005",
+          "GH-006",
+          "GH-007"
+        ],
+        "source_ids": [
+          "GH-S1",
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Hybrid",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-003",
+          "GH-004",
+          "GH-005",
+          "GH-006",
+          "GH-008"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 5,
+        "record_ids": [
+          "GH-003",
+          "GH-004",
+          "GH-005",
+          "GH-006",
+          "GH-008"
+        ],
+        "source_ids": [
+          "GH-S1",
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Petrol",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 1,
+        "record_ids": [
+          "GH-007"
+        ],
+        "source_ids": [
+          "GH-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-004",
+          "GH-005",
+          "GH-006"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 5,
+        "record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-004",
+          "GH-005",
+          "GH-006"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [
+      {
+        "value": "Direct Shift",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-005",
+          "GH-006"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 4,
+        "record_ids": [
+          "GH-001",
+          "GH-002",
+          "GH-005",
+          "GH-006"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "e-CVT",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-004"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 1,
+        "record_ids": [
+          "GH-004"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_gears": [
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-005",
+          "GH-006"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 2,
+        "record_ids": [
+          "GH-005",
+          "GH-006"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-002"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 2,
+        "record_ids": [
+          "GH-001",
+          "GH-002"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "AWD",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-002",
+          "GH-004",
+          "GH-005",
+          "GH-006",
+          "GH-008",
+          "GH-011"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 6,
+        "record_ids": [
+          "GH-002",
+          "GH-004",
+          "GH-005",
+          "GH-006",
+          "GH-008",
+          "GH-011"
+        ],
+        "source_ids": [
+          "GH-S1",
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2025
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "FWD",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-010"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 1,
+        "record_ids": [
+          "GH-010"
+        ],
+        "source_ids": [
+          "GH-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "SUV",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-009"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 1,
+        "record_ids": [
+          "GH-009"
+        ],
+        "source_ids": [
+          "GH-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 7,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-001",
+          "GH-003"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.88,
+        "support_count": 2,
+        "record_ids": [
+          "GH-001",
+          "GH-003"
+        ],
+        "source_ids": [
+          "GH-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GH-007",
+          "GH-008"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.93,
+        "support_count": 2,
+        "record_ids": [
+          "GH-007",
+          "GH-008"
+        ],
+        "source_ids": [
+          "GH-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2025,
+          2025
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": []
+  },
+  "conflicts": []
+}

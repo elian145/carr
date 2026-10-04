@@ -1,0 +1,677 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Veloz",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "Malaysia e-brochure (1.5L 2NR-VE, 7-speed CVT, 7-seater crossover), Philippines official site (1.5 V/G/E CVT, FWD) and Indonesia official site (1.5 M/T and 1.5 CVT, 106 PS)",
+    "All three sources are search-result snippets (retrieval 'search_snippet_only'): quotes are exact snippet text but the full pages were not cached",
+    "NOT researched: Veloz Hybrid (Indonesia/Malaysia), earlier Avanza Veloz generations, doors, Thailand/Vietnam, model years (none of the snippets state one)",
+    "Body type: Toyota Malaysia calls it a '7-seater premium crossover'; recorded as stated (crossover maps to SUV). The legacy dataset lists Minivan - not assumed wrong"
+  ],
+  "not_used_sources": [],
+  "sources": {
+    "VL-S1": {
+      "url": "https://www.toyota.com.my/content/dam/malaysia/model-brochures/brochures/veloz-e-brochure.pdf",
+      "name": "Veloz e-brochure",
+      "publisher": "UMW Toyota Motor (Malaysia)",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "Malaysia",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "VL-S2": {
+      "url": "https://toyota.com.ph/veloz",
+      "name": "Toyota Veloz | Toyota Motor Philippines",
+      "publisher": "Toyota Motor Philippines Corporation",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "Philippines",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "VL-S3": {
+      "url": "https://toyota.com.ph/comparison/veloz/1-5-v-cvt",
+      "name": "Comparison | Toyota Motor Philippines (Veloz 1.5 V CVT)",
+      "publisher": "Toyota Motor Philippines Corporation",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "Philippines",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "VL-S4": {
+      "url": "https://www.official-toyota.com/veloz/",
+      "name": "VELOZ | Toyota Jakarta",
+      "publisher": "PT Toyota-Astra Motor / Toyota Jakarta dealer network",
+      "tier": 3,
+      "host_type": "official_distributor_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "Indonesia",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    }
+  },
+  "records": [
+    {
+      "record_id": "VL-001",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Malaysia",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "4-cylinder, In-line, 16-valve DOHC with Dual-VVT-i",
+        "displacement_raw": {
+          "value": 1496,
+          "unit": "cc"
+        },
+        "displacement_cc": 1496,
+        "cylinders": "4-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 106,
+          "unit": "PS"
+        },
+        "torque": {
+          "value": 138,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "7-speed CVT",
+        "gears": 7
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S1",
+        "source_url": "https://www.toyota.com.my/content/dam/malaysia/model-brochures/brochures/veloz-e-brochure.pdf",
+        "source_name": "Veloz e-brochure",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "4-cylinder, In-line, 16-valve DOHC with Dual-VVT-i … cc 1,496 … 78 (106) / 6000 … 138 (14) / 4200 … 7-speed CVT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:my",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "1.5L",
+        "engine_size_label": "1.5L",
+        "displacement_cc": 1496,
+        "displacement_nominal_l": 1.496,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 104.5,
+        "torque_nm": 138.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": 7,
+        "drivetrain": null
+      },
+      "normalization_flags": [
+        "gears_stated_for_cvt"
+      ]
+    },
+    {
+      "record_id": "VL-002",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Malaysia",
+      "trim": null,
+      "variant": null,
+      "body_type": "crossover",
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S1",
+        "source_url": "https://www.toyota.com.my/content/dam/malaysia/model-brochures/brochures/veloz-e-brochure.pdf",
+        "source_name": "Veloz e-brochure",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Discover a new kind of happiness with the spacious 7-seater premium crossover"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:my",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "VL-003",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "V",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": "4-Cylinder, In-line, 16-Valve DOHC with Dual VVT-i",
+        "displacement_raw": {
+          "value": 1496,
+          "unit": "cc"
+        },
+        "displacement_cc": 1496,
+        "cylinders": "4-Cylinder",
+        "fuel_type": "Gasoline",
+        "aspiration": null,
+        "horsepower": {
+          "value": 106,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": "CVT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S3",
+        "source_url": "https://toyota.com.ph/comparison/veloz/1-5-v-cvt",
+        "source_name": "Comparison | Toyota Motor Philippines (Veloz 1.5 V CVT)",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Veloz 1.5 V CVT … seating capacity 7 … 4-Cylinder, In-line, 16-Valve DOHC with Dual VVT-i … Engine Displacement (cc) 1496 … 106/6000 … fuel type Gasoline"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "V",
+        "trim_key": "v",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "1.5L",
+        "engine_size_label": "1.5L",
+        "displacement_cc": 1496,
+        "displacement_nominal_l": 1.496,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 104.5,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "VL-004",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "V",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "Front Wheel Drive",
+      "evidence": {
+        "source_id": "VL-S2",
+        "source_url": "https://toyota.com.ph/veloz",
+        "source_name": "Toyota Veloz | Toyota Motor Philippines",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1.5 V CVT … Chassis: Front Wheel Drive with 17\" Alloy Tires"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "V",
+        "trim_key": "v",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "FWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "VL-005",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "G",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S2",
+        "source_url": "https://toyota.com.ph/veloz",
+        "source_name": "Toyota Veloz | Toyota Motor Philippines",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1.5 G CVT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "G",
+        "trim_key": "g",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "VL-006",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Philippines",
+      "trim": "E",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S2",
+        "source_url": "https://toyota.com.ph/veloz",
+        "source_name": "Toyota Veloz | Toyota Motor Philippines",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "1.5 E CVT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:ph",
+        "trim": "E",
+        "trim_key": "e",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "VL-007",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Indonesia",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": "M/T",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S4",
+        "source_url": "https://www.official-toyota.com/veloz/",
+        "source_name": "VELOZ | Toyota Jakarta",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "VELOZ 1.5 M/T"
+      },
+      "notes": "Indonesia lists a manual variant alongside the CVT",
+      "normalized": {
+        "market": "other:id",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": "Manual",
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "VL-008",
+      "brand": "Toyota",
+      "model": "Veloz",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "Indonesia",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "4 Cylinders In-line, 16 Valve DOHC with Dual VVT-i",
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "4 Cylinders",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 106,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "VL-S4",
+        "source_url": "https://www.official-toyota.com/veloz/",
+        "source_name": "VELOZ | Toyota Jakarta",
+        "source_type": "official_regional_distributor",
+        "source_tier": 3,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.6,
+        "confidence_basis": [
+          "tier3_base:0.8",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "4 Cylinders In-line, 16 Valve DOHC with Dual VVT-i … Maximum Output (ps/rpm) 106/6,000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:id",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 104.5,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

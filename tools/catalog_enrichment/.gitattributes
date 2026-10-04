@@ -1,0 +1,3 @@
+# Preserved source snapshots are hashed byte-for-byte (integrity.content_sha256) and hold the retrieved text verbatim,
+# including its trailing whitespace. Never convert line endings and never flag whitespace in them.
+evidence/**/_source_text/*.txt -text -whitespace

@@ -1,0 +1,137 @@
+{
+  "bz3": {
+    "record_count": 3,
+    "records": {
+      "BT-001": "acaf8cd13bf91f52",
+      "BT-002": "808b6cab1e9e2118",
+      "BT-003": "9a39b40c0b698bc3"
+    }
+  },
+  "bz3x": {
+    "record_count": 10,
+    "records": {
+      "BU-001": "9abbb652793d5276",
+      "BU-002": "1a3e03e166951697",
+      "BU-003": "825ac2146ed7e08b",
+      "BU-004": "dbd5c06e0bceffb8",
+      "BU-005": "9a525cccb4369ebe",
+      "BU-006": "a5564455a99c3e40",
+      "BU-007": "f166c9e817826773",
+      "BU-008": "abb14a00b354988d",
+      "BU-009": "283a56afa8df0bca",
+      "BU-010": "0b3e771dfb9bfd2b"
+    }
+  },
+  "bz4x": {
+    "record_count": 18,
+    "records": {
+      "BX-001": "0592184a0659080b",
+      "BX-002": "e1308512dc17542d",
+      "BX-003": "53e50723be8708b2",
+      "BX-004": "1b57fb5ba35ad21c",
+      "BX-005": "a93d6612e1819aa9",
+      "BX-006": "3edd7b8664c3c574",
+      "BX-007": "18eaf28f2b8e1f50",
+      "BX-008": "60ad4d00382b32e3",
+      "BX-009": "89ed9d19083ccceb",
+      "BX-010": "e787e7584d9f6aef",
+      "BX-011": "2d52d30d13350e9e",
+      "BX-012": "b71fd6d29c7c8f36",
+      "BX-013": "60cc4f8263c98520",
+      "BX-014": "3b5ae53c7ba3453c",
+      "BX-015": "d87b0dca0e24815a",
+      "BX-016": "ae16bac739957551",
+      "BX-017": "f9bc0bd9c96fc0e9",
+      "BX-018": "b4090af9e5cd9470"
+    }
+  },
+  "frontlander": {
+    "record_count": 4,
+    "records": {
+      "FL-001": "fe0cbbda81ed74b7",
+      "FL-002": "5215921cad0ed8d6",
+      "FL-003": "8d31729f06ebf35f",
+      "FL-004": "0e3471b25f128559"
+    }
+  },
+  "grand_highlander": {
+    "record_count": 11,
+    "records": {
+      "GH-001": "0841878774826502",
+      "GH-002": "718bcb6c0b119673",
+      "GH-003": "78d1b36e9a60e6b6",
+      "GH-004": "75f2abb24c4a173f",
+      "GH-005": "3d8aba68e94e8882",
+      "GH-006": "77ebed8352415af2",
+      "GH-007": "cdc670b2d2d34ec4",
+      "GH-008": "0165c1ce2a06e440",
+      "GH-009": "9d3b8843f43ac42b",
+      "GH-010": "03ea33814cc4ec5c",
+      "GH-011": "4abaac970cf1f111"
+    }
+  },
+  "prius_prime": {
+    "record_count": 6,
+    "records": {
+      "PP-001": "600cdefa88576093",
+      "PP-002": "8db2b9ae14f8b002",
+      "PP-003": "9f736ce0b7664052",
+      "PP-004": "15a4b2f4d7375295",
+      "PP-005": "1f379727cb55acc3",
+      "PP-006": "ca12f3af29f91e6c"
+    }
+  },
+  "urban_cruiser": {
+    "record_count": 9,
+    "records": {
+      "UC-001": "00e8fed8991c6ae3",
+      "UC-002": "773bbe96dccf1b8e",
+      "UC-003": "02e9801596411544",
+      "UC-004": "cf55ffd64ed93fba",
+      "UC-005": "a4cfd0ff5e7ae99f",
+      "UC-006": "8bdfbbed689f25e7",
+      "UC-007": "2950b67cc85088f2",
+      "UC-008": "961bf3e8de4cfb1f",
+      "UC-009": "3abf1b05cdb9fbdc"
+    }
+  },
+  "veloz": {
+    "record_count": 8,
+    "records": {
+      "VL-001": "55a7ca9127c66d26",
+      "VL-002": "953e26fa889487dc",
+      "VL-003": "5e8a94b505f3860e",
+      "VL-004": "fd2360af6a036d66",
+      "VL-005": "09a803b8d1b740ff",
+      "VL-006": "8486b454c134cea9",
+      "VL-007": "8702a5e6f79c54ce",
+      "VL-008": "b4cdcff97051f32e"
+    }
+  },
+  "wigo": {
+    "record_count": 5,
+    "records": {
+      "WG-001": "2a9b247c3733e64d",
+      "WG-002": "8f1ba9481b46fb97",
+      "WG-003": "4f33fef87352c387",
+      "WG-004": "3951168541c09d37",
+      "WG-005": "77decc225246fba3"
+    }
+  },
+  "yaris_cross": {
+    "record_count": 11,
+    "records": {
+      "YC-001": "82663972b1b91733",
+      "YC-002": "68efdfe40002ebf1",
+      "YC-003": "8a278f9b309ce972",
+      "YC-004": "4fb2e0f9524c4ed3",
+      "YC-005": "97ab4b5722513115",
+      "YC-006": "735720ab0b5f536e",
+      "YC-007": "ad0e89ded3527f30",
+      "YC-008": "660d803192a6060e",
+      "YC-009": "cce9cdf56fd8f5c3",
+      "YC-010": "cfcfe4dd735af29e",
+      "YC-011": "1b1a9319049eec31"
+    }
+  }
+}

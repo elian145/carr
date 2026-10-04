@@ -2,6 +2,7 @@
 """Run the CarNet enrichment pilot (tooling only; never writes under assets/ or lib/).
 
   python tools/catalog_enrichment/run_pilot.py prepare    # expand sources, score confidence, normalize (in place in evidence/)
+  python tools/catalog_enrichment/run_pilot.py integrity  # add the evidence-integrity block to sources that lack one (deterministic migration)
   python tools/catalog_enrichment/run_pilot.py validate   # structure + traceability + unmapped-value checks
   python tools/catalog_enrichment/run_pilot.py generate   # conflicts + model unions -> generated/*.union.json
   python tools/catalog_enrichment/run_pilot.py compare    # unions vs CURRENT CarNet (read-only) -> reports/pilot_comparison.json
@@ -45,6 +46,17 @@ def _models():
     return mb.load_index()[0]
 
 
+def cmd_integrity():
+    """Add the evidence-integrity block to pilot sources that lack one (deterministic, never upgrades to *_VERIFIED
+    without a preserved snapshot whose hash matches; pilot sources have none -> RETRIEVED_UNVERIFIABLE / SNIPPET_ONLY)."""
+    for b, m in PILOT:
+        p = evidence_path(b, m)
+        doc, log = L.migrate_integrity(L.read_json(p), p.parent / "_source_text")
+        if log:
+            L.write_json(p, doc)
+        print(f"{p.name}: integrity added to {len(log)} source(s)" + (": " + ", ".join(log) if log else " (already present)"))
+
+
 def cmd_validate() -> int:
     bad = 0
     mi = _models()
@@ -53,9 +65,11 @@ def cmd_validate() -> int:
         p = evidence_path(b, m)
         doc = L.read_json(p)
         errs = L.validate_evidence(doc, mi)
+        errs += L.verify_snapshots(doc)[0]
         merrs, mnotes = L.check_manifest(doc, manifest.get(p.stem))
         errs += merrs
-        print(f"{p.name}: {'OK' if not errs else str(len(errs)) + ' error(s)'}  records={len(doc['records'])}")
+        ic = L.integrity_counts(doc)["records"]
+        print(f"{p.name}: {'OK' if not errs else str(len(errs)) + ' error(s)'}  records={len(doc['records'])}  integrity={ {k: v for k, v in ic.items() if v} }")
         for e in errs:
             print("   -", e)
         for w in L.boundary_warnings(doc, mi):
@@ -63,6 +77,14 @@ def cmd_validate() -> int:
         for n in mnotes:
             print("   ~", n)
         bad += len(errs)
+    for pp in sorted(L.PROPOSALS.glob("*.json")):  # proposals must declare whether they are current; stale ones must be non-actionable
+        pdoc = L.read_json(pp)
+        perrs = L.validate_proposal(pdoc)
+        actionable = not L.proposal_problems(pdoc)
+        print(f"proposals/{pp.name}: {'OK' if not perrs else str(len(perrs)) + ' error(s)'}  state={(pdoc.get('proposal_status') or {}).get('state')}  actionable={actionable}")
+        for e in perrs:
+            print("   -", e)
+        bad += len(perrs)
     return 1 if bad else 0
 
 
@@ -119,7 +141,7 @@ def cmd_summary():
         u = L.read_json(GEN / f"{L.slug(b)}_{L.slug(m)}.union.json")
         print(f"\n=== {b} {m}: {u['generated_from']['record_count']} records, {u['generated_from']['source_count']} sources, tiers {u['generated_from']['records_by_source_tier']}")
         for d in L.DIMENSIONS:
-            print(f"  {d:19} VERIFIED {u['union'][d]}   PROVISIONAL-only {u['provisional_only'][d]}")
+            print(f"  {d:19} VERIFIED {u['verified'][d]}   NEEDS-SOURCE-RETRIEVAL {u['needs_source_retrieval'][d]}   PROVISIONAL-only {u['provisional_only'][d]}")
         print(f"  conflicts: {len(u['conflicts'])}")
         for c in u["conflicts"]:
             print(f"    {c['conflict_id']} {c['field']} [{c['engine_group']}] {c['severity']}: " + "; ".join(f"{v['record_id']}={v['value']}" for v in c["values"]))
@@ -137,9 +159,11 @@ def cmd_summary():
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("cmd", choices=["prepare", "validate", "generate", "compare", "all", "summary", "manifest", "boundaries"])
+    ap.add_argument("cmd", choices=["prepare", "integrity", "validate", "generate", "compare", "all", "summary", "manifest", "boundaries"])
     a = ap.parse_args(argv)
-    if a.cmd == "manifest":
+    if a.cmd == "integrity":
+        cmd_integrity()
+    elif a.cmd == "manifest":
         cmd_manifest()
     elif a.cmd == "boundaries":
         cmd_boundaries()

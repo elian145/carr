@@ -1,0 +1,5175 @@
+{
+  "schema_version": "carnet.brand_inventory/1",
+  "brand": "Toyota",
+  "read_only": true,
+  "source": "assets/car_catalog.json (canonical model list) + assets/car_spec_dataset.json (legacy rows resolved by model_boundaries.py). Nothing under assets/ or lib/ is written.",
+  "rules": "rules/brand_enrichment_rules.json -> inventory",
+  "totals": {
+    "models": 86,
+    "models_with_zero_legacy_rows": 26,
+    "models_sparse_or_incomplete": 65,
+    "models_with_enrichment_evidence": 12,
+    "legacy_spec_rows": 2000,
+    "collision_risk": {
+      "HIGH": 4,
+      "LOW": 61,
+      "MEDIUM": 21
+    }
+  },
+  "models": [
+    {
+      "model": "4Runner",
+      "legacy_spec_rows": 50,
+      "legacy_dataset_model_names": 39,
+      "catalog_trim_count": 9,
+      "catalog_trims": [
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "SR5",
+        "SR5 Premium",
+        "Trail Special Edition",
+        "TRD Off-Road",
+        "TRD Pro",
+        "TRD Sport"
+      ],
+      "newest_legacy_model_year": 2024,
+      "oldest_legacy_model_year": 1984,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 51,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 1
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "SR5",
+          "SR5 Premium",
+          "Trail Special Edition",
+          "TRD Off-Road",
+          "TRD Pro",
+          "TRD Sport"
+        ],
+        "engines": [
+          "2.4L",
+          "2.7L",
+          "3.0L",
+          "3.4L",
+          "4.0L",
+          "4.7L"
+        ],
+        "cylinders": [
+          4,
+          6,
+          8
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          5,
+          7
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Alphard",
+      "legacy_spec_rows": 19,
+      "legacy_dataset_model_names": 18,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2023,
+      "oldest_legacy_model_year": 2002,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 19,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.4L",
+          "2.5L",
+          "3.0L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Aristo",
+      "legacy_spec_rows": 3,
+      "legacy_dataset_model_names": 3,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2005,
+      "oldest_legacy_model_year": 1991,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 3,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "3.0L"
+        ],
+        "cylinders": [
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Aurion",
+      "legacy_spec_rows": 4,
+      "legacy_dataset_model_names": 2,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2017,
+      "oldest_legacy_model_year": 2006,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 4,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "3.5L"
+        ],
+        "cylinders": [
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Auris",
+      "legacy_spec_rows": 44,
+      "legacy_dataset_model_names": 25,
+      "catalog_trim_count": 4,
+      "catalog_trims": [
+        "Design",
+        "Excel",
+        "Icon",
+        "Special Edition"
+      ],
+      "newest_legacy_model_year": 2018,
+      "oldest_legacy_model_year": 2006,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 44,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Design",
+          "Excel",
+          "Icon",
+          "Special Edition"
+        ],
+        "engines": [
+          "1.2L",
+          "1.3L",
+          "1.4L",
+          "1.6L",
+          "1.8L",
+          "2.0L",
+          "2.2L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Avalon",
+      "legacy_spec_rows": 13,
+      "legacy_dataset_model_names": 8,
+      "catalog_trim_count": 7,
+      "catalog_trims": [
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "Touring",
+        "TRD",
+        "XLE",
+        "XSE"
+      ],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 1994,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 13,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "Touring",
+          "TRD",
+          "XLE",
+          "XSE"
+        ],
+        "engines": [
+          "2.5L",
+          "3.0L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Avanza",
+      "legacy_spec_rows": 10,
+      "legacy_dataset_model_names": 10,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2018,
+      "oldest_legacy_model_year": 2003,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 10,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.3L",
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "RWD"
+        ],
+        "seating": [
+          5,
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Avensis",
+      "legacy_spec_rows": 100,
+      "legacy_dataset_model_names": 42,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2018,
+      "oldest_legacy_model_year": 1997,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 106,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 6
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.6L",
+          "1.8L",
+          "2.0L",
+          "2.2L",
+          "2.4L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "bZ3",
+      "legacy_spec_rows": 2,
+      "legacy_dataset_model_names": 2,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2023,
+      "oldest_legacy_model_year": 2023,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 2,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/bz3.json",
+        "record_count": 3,
+        "source_count": 2,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [
+          "Electric"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "bZ3X",
+      "legacy_spec_rows": 3,
+      "legacy_dataset_model_names": 3,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2025,
+      "oldest_legacy_model_year": 2025,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 3,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/bz3x.json",
+        "record_count": 10,
+        "source_count": 3,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [
+          "Electric"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "bZ4X",
+      "legacy_spec_rows": 8,
+      "legacy_dataset_model_names": 8,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2026,
+      "oldest_legacy_model_year": 2022,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 8,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/bz4x.json",
+        "record_count": 18,
+        "source_count": 6,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [
+          "Electric"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "bZ5",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Caldina",
+      "legacy_spec_rows": 14,
+      "legacy_dataset_model_names": 14,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2007,
+      "oldest_legacy_model_year": 1992,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 14,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L",
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Camry",
+      "legacy_spec_rows": 114,
+      "legacy_dataset_model_names": 75,
+      "catalog_trim_count": 33,
+      "catalog_trims": [
+        "40th Anniversary",
+        "60 Years Edition",
+        "Base",
+        "E",
+        "G",
+        "GL",
+        "GLE",
+        "GLI",
+        "GLI Limited",
+        "GLX",
+        "Grande",
+        "Hybrid",
+        "Hybrid LE",
+        "Hybrid SE",
+        "Hybrid XLE",
+        "Hybrid XSE",
+        "L",
+        "LE",
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "Royal",
+        "RZ",
+        "S",
+        "S Plus",
+        "SE",
+        "SE Plus",
+        "Sport",
+        "Touring",
+        "TRD",
+        "XLE",
+        "XLI",
+        "XSE"
+      ],
+      "newest_legacy_model_year": 2024,
+      "oldest_legacy_model_year": 1982,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [
+          "Camry Solara"
+        ],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [
+          "Camry Solara"
+        ],
+        "legacy_loose_rule_rows": 114,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota_camry.json",
+        "record_count": 23,
+        "source_count": 4,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": true
+      },
+      "current_known_dimensions": {
+        "trims": [
+          "40th Anniversary",
+          "60 Years Edition",
+          "Base",
+          "E",
+          "G",
+          "GL",
+          "GLE",
+          "GLI",
+          "GLI Limited",
+          "GLX",
+          "Grande",
+          "Hybrid",
+          "Hybrid LE",
+          "Hybrid SE",
+          "Hybrid XLE",
+          "Hybrid XSE",
+          "L",
+          "LE",
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "Royal",
+          "RZ",
+          "S",
+          "S Plus",
+          "SE",
+          "SE Plus",
+          "Sport",
+          "Touring",
+          "TRD",
+          "XLE",
+          "XLI",
+          "XSE"
+        ],
+        "engines": [
+          "1.8L",
+          "2.0L",
+          "2.2L",
+          "2.4L",
+          "2.5L",
+          "3.0L",
+          "3.3L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          4,
+          5
+        ],
+        "body_type": [
+          "Convertible",
+          "Coupe",
+          "Hatchback",
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Camry Solara",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Camry"
+        ],
+        "must_remain_distinct_with": [
+          "Camry"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Carina",
+      "legacy_spec_rows": 74,
+      "legacy_dataset_model_names": 51,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2001,
+      "oldest_legacy_model_year": 1974,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 74,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.5L",
+          "1.6L",
+          "1.8L",
+          "2.0L",
+          "2.2L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Celica",
+      "legacy_spec_rows": 45,
+      "legacy_dataset_model_names": 45,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2006,
+      "oldest_legacy_model_year": 1973,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 45,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.6L",
+          "1.8L",
+          "1.9L",
+          "2.0L",
+          "2.2L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD",
+          "RWD"
+        ],
+        "seating": [
+          2,
+          4,
+          5
+        ],
+        "body_type": [
+          "?Liftback",
+          "Convertible",
+          "Coupe"
+        ]
+      }
+    },
+    {
+      "model": "Celsior",
+      "legacy_spec_rows": 4,
+      "legacy_dataset_model_names": 4,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2003,
+      "oldest_legacy_model_year": 1989,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 4,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "4.0L",
+          "4.3L"
+        ],
+        "cylinders": [
+          8
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "CH-R",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Chaser",
+      "legacy_spec_rows": 20,
+      "legacy_dataset_model_names": 19,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2001,
+      "oldest_legacy_model_year": 1984,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 20,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L",
+          "2.0L",
+          "2.4L",
+          "2.5L",
+          "3.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Coaster",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 1,
+      "catalog_trims": [
+        "Basic"
+      ],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Basic"
+        ],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Corolla",
+      "legacy_spec_rows": 224,
+      "legacy_dataset_model_names": 145,
+      "catalog_trim_count": 30,
+      "catalog_trims": [
+        "50th Anniversary Edition",
+        "60th Anniversary Edition",
+        "Altis",
+        "Apex",
+        "Base",
+        "CE",
+        "GLI",
+        "GLI Hybrid",
+        "GLI MID",
+        "GR",
+        "GR Corolla",
+        "Hybrid LE",
+        "Hybrid SE",
+        "Hybrid XLE",
+        "IM",
+        "L",
+        "LE",
+        "Limited Special Edition",
+        "Nightshade",
+        "S",
+        "SE",
+        "SE Plus",
+        "Sport",
+        "Sport Plus",
+        "X",
+        "XLE",
+        "XLI",
+        "XLI MID",
+        "XRS",
+        "XSE"
+      ],
+      "newest_legacy_model_year": 2024,
+      "oldest_legacy_model_year": 1966,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "HIGH",
+      "collision_detail": {
+        "longer_siblings": [
+          "Corolla Cross",
+          "Corolla Fielder",
+          "Corolla Hatchback",
+          "Corolla iM"
+        ],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [
+          "Corolla Cross",
+          "Corolla Fielder",
+          "Corolla Hatchback",
+          "Corolla iM",
+          "GR Corolla"
+        ],
+        "legacy_loose_rule_rows": 273,
+        "rows_borrowed_from_siblings_by_loose_rule": 15,
+        "rows_quarantined_ambiguous_qualifier": 34
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "50th Anniversary Edition",
+          "60th Anniversary Edition",
+          "Altis",
+          "Apex",
+          "Base",
+          "CE",
+          "GLI",
+          "GLI Hybrid",
+          "GLI MID",
+          "GR",
+          "GR Corolla",
+          "Hybrid LE",
+          "Hybrid SE",
+          "Hybrid XLE",
+          "IM",
+          "L",
+          "LE",
+          "Limited Special Edition",
+          "Nightshade",
+          "S",
+          "SE",
+          "SE Plus",
+          "Sport",
+          "Sport Plus",
+          "X",
+          "XLE",
+          "XLI",
+          "XLI MID",
+          "XRS",
+          "XSE"
+        ],
+        "engines": [
+          "1.1L",
+          "1.2L",
+          "1.3L",
+          "1.4L",
+          "1.5L",
+          "1.6L",
+          "1.8L",
+          "2.0L",
+          "2.2L"
+        ],
+        "cylinders": [
+          3,
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD",
+          "RWD"
+        ],
+        "seating": [
+          4,
+          5
+        ],
+        "body_type": [
+          "Coupe",
+          "Hatchback",
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Corolla Cross",
+      "legacy_spec_rows": 15,
+      "legacy_dataset_model_names": 12,
+      "catalog_trim_count": 8,
+      "catalog_trims": [
+        "Elite +",
+        "GLI",
+        "Hybrid",
+        "L",
+        "LE",
+        "Special Edition",
+        "XL",
+        "XLE"
+      ],
+      "newest_legacy_model_year": 2025,
+      "oldest_legacy_model_year": 2020,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Corolla"
+        ],
+        "must_remain_distinct_with": [
+          "Corolla",
+          "Corolla Fielder",
+          "Corolla Hatchback",
+          "Corolla iM",
+          "GR Corolla"
+        ],
+        "legacy_loose_rule_rows": 15,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Elite +",
+          "GLI",
+          "Hybrid",
+          "L",
+          "LE",
+          "Special Edition",
+          "XL",
+          "XLE"
+        ],
+        "engines": [
+          "1.8L",
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Corolla Fielder",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Corolla"
+        ],
+        "must_remain_distinct_with": [
+          "Corolla",
+          "Corolla Cross",
+          "Corolla Hatchback",
+          "Corolla iM",
+          "GR Corolla"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Corolla Hatchback",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Corolla"
+        ],
+        "must_remain_distinct_with": [
+          "Corolla",
+          "Corolla Cross",
+          "Corolla Fielder",
+          "Corolla iM",
+          "GR Corolla"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Corolla iM",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Corolla"
+        ],
+        "must_remain_distinct_with": [
+          "Corolla",
+          "Corolla Cross",
+          "Corolla Fielder",
+          "Corolla Hatchback",
+          "GR Corolla"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Corona",
+      "legacy_spec_rows": 34,
+      "legacy_dataset_model_names": 32,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2001,
+      "oldest_legacy_model_year": 1972,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 34,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.5L",
+          "1.6L",
+          "1.8L",
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Cresta",
+      "legacy_spec_rows": 11,
+      "legacy_dataset_model_names": 11,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2001,
+      "oldest_legacy_model_year": 1988,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 11,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L",
+          "2.0L",
+          "2.4L",
+          "2.5L",
+          "3.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Crown",
+      "legacy_spec_rows": 112,
+      "legacy_dataset_model_names": 60,
+      "catalog_trim_count": 5,
+      "catalog_trims": [
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "Special Edition",
+        "XLE"
+      ],
+      "newest_legacy_model_year": 2024,
+      "oldest_legacy_model_year": 1979,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [
+          "Crown Comfort",
+          "Crown Kluger",
+          "Crown Signia"
+        ],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 135,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 23
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "Special Edition",
+          "XLE"
+        ],
+        "engines": [
+          "2.0L",
+          "2.4L",
+          "2.5L",
+          "2.8L",
+          "3.0L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan",
+          "SUV",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Crown Comfort",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Crown"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Crown Kluger",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Crown"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Crown Signia",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Crown"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Dyna",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Echo",
+      "legacy_spec_rows": 4,
+      "legacy_dataset_model_names": 2,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2005,
+      "oldest_legacy_model_year": 1999,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 4,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Coupe",
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "FJ Cruiser",
+      "legacy_spec_rows": 6,
+      "legacy_dataset_model_names": 6,
+      "catalog_trim_count": 10,
+      "catalog_trims": [
+        "Adventure",
+        "Basic",
+        "Extreme",
+        "GXR",
+        "Standard",
+        "TOP",
+        "Trail Teams Edition",
+        "TRD",
+        "VXR",
+        "Xtreme"
+      ],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 2006,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 6,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Adventure",
+          "Basic",
+          "Extreme",
+          "GXR",
+          "Standard",
+          "TOP",
+          "Trail Teams Edition",
+          "TRD",
+          "VXR",
+          "Xtreme"
+        ],
+        "engines": [
+          "4.0L"
+        ],
+        "cylinders": [
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Fortuner",
+      "legacy_spec_rows": 25,
+      "legacy_dataset_model_names": 21,
+      "catalog_trim_count": 6,
+      "catalog_trims": [
+        "EXR",
+        "GXR",
+        "SR5",
+        "TRD Sportivo",
+        "V",
+        "VXR"
+      ],
+      "newest_legacy_model_year": 2020,
+      "oldest_legacy_model_year": 2004,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 26,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 1
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "EXR",
+          "GXR",
+          "SR5",
+          "TRD Sportivo",
+          "V",
+          "VXR"
+        ],
+        "engines": [
+          "2.4L",
+          "2.5L",
+          "2.7L",
+          "2.8L",
+          "3.0L",
+          "4.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          7
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Frontlander",
+      "legacy_spec_rows": 1,
+      "legacy_dataset_model_names": 1,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 2022,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 1,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/frontlander.json",
+        "record_count": 4,
+        "source_count": 2,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "GR Corolla",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 5,
+      "catalog_trims": [
+        "Circuit",
+        "Core",
+        "Morizo",
+        "Premium",
+        "Special Edition"
+      ],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [
+          "Corolla",
+          "Corolla Cross",
+          "Corolla Fielder",
+          "Corolla Hatchback",
+          "Corolla iM"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Circuit",
+          "Core",
+          "Morizo",
+          "Premium",
+          "Special Edition"
+        ],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "GR86",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 4,
+      "catalog_trims": [
+        "Base",
+        "Limited",
+        "Premium",
+        "Special Edition"
+      ],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Base",
+          "Limited",
+          "Premium",
+          "Special Edition"
+        ],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Grand Highlander",
+      "legacy_spec_rows": 5,
+      "legacy_dataset_model_names": 5,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2023,
+      "oldest_legacy_model_year": 2023,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [
+          "Highlander"
+        ],
+        "legacy_loose_rule_rows": 5,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/grand_highlander.json",
+        "record_count": 11,
+        "source_count": 2,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.4L",
+          "2.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          7
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Granvia",
+      "legacy_spec_rows": 1,
+      "legacy_dataset_model_names": 1,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2002,
+      "oldest_legacy_model_year": 1995,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:drivetrains"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 1,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.7L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [],
+        "seating": [
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "GT86",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Hiace",
+      "legacy_spec_rows": 110,
+      "legacy_dataset_model_names": 43,
+      "catalog_trim_count": 7,
+      "catalog_trims": [
+        "Commuter",
+        "DLX",
+        "GL",
+        "GLS",
+        "GLX",
+        "Panel",
+        "Standard"
+      ],
+      "newest_legacy_model_year": 2026,
+      "oldest_legacy_model_year": 1989,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 110,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Commuter",
+          "DLX",
+          "GL",
+          "GLS",
+          "GLX",
+          "Panel",
+          "Standard"
+        ],
+        "engines": [
+          "2.0L",
+          "2.4L",
+          "2.5L",
+          "2.7L",
+          "2.8L",
+          "3.0L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          2,
+          3,
+          5,
+          8,
+          10
+        ],
+        "body_type": [
+          "Minivan",
+          "Van"
+        ]
+      }
+    },
+    {
+      "model": "Highlander",
+      "legacy_spec_rows": 30,
+      "legacy_dataset_model_names": 28,
+      "catalog_trim_count": 15,
+      "catalog_trims": [
+        "Base",
+        "Hybrid GXR",
+        "Hybrid LE",
+        "Hybrid Limited",
+        "Hybrid Platinum",
+        "Hybrid VXR",
+        "Hybrid XLE",
+        "L",
+        "LE",
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "SE",
+        "XLE",
+        "XSE"
+      ],
+      "newest_legacy_model_year": 2026,
+      "oldest_legacy_model_year": 2000,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [
+          "Grand Highlander"
+        ],
+        "legacy_loose_rule_rows": 30,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Base",
+          "Hybrid GXR",
+          "Hybrid LE",
+          "Hybrid Limited",
+          "Hybrid Platinum",
+          "Hybrid VXR",
+          "Hybrid XLE",
+          "L",
+          "LE",
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "SE",
+          "XLE",
+          "XSE"
+        ],
+        "engines": [
+          "2.4L",
+          "2.5L",
+          "2.7L",
+          "3.0L",
+          "3.3L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5,
+          6,
+          7,
+          8
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Hilux",
+      "legacy_spec_rows": 80,
+      "legacy_dataset_model_names": 46,
+      "catalog_trim_count": 33,
+      "catalog_trims": [
+        "Adventure",
+        "Adventure X",
+        "DLX Basic",
+        "DLX MID",
+        "DLX TOP",
+        "Double Cab",
+        "Double Cab AWD",
+        "Double Cab Base",
+        "Double Cab DL",
+        "Double Cab DLS",
+        "Double Cab DLS D",
+        "Double Cab DLX D",
+        "Double Cab GL",
+        "Double Cab GL AWD P",
+        "Double Cab GlS Awd P",
+        "Double Cab GLX",
+        "Double Cab GLX AWD P",
+        "Double Cab Top",
+        "Double Cab TRD",
+        "GR-Sport",
+        "GX",
+        "Limited",
+        "Revo Edition",
+        "Rocco",
+        "Single Cab",
+        "Single Cab Base",
+        "Single Cabine GL",
+        "Single Cabine GLX",
+        "Single Cabine GLX AWD",
+        "SR",
+        "SR5",
+        "TRD",
+        "TRD SR5"
+      ],
+      "newest_legacy_model_year": 2026,
+      "oldest_legacy_model_year": 1983,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 84,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 4
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Adventure",
+          "Adventure X",
+          "DLX Basic",
+          "DLX MID",
+          "DLX TOP",
+          "Double Cab",
+          "Double Cab AWD",
+          "Double Cab Base",
+          "Double Cab DL",
+          "Double Cab DLS",
+          "Double Cab DLS D",
+          "Double Cab DLX D",
+          "Double Cab GL",
+          "Double Cab GL AWD P",
+          "Double Cab GlS Awd P",
+          "Double Cab GLX",
+          "Double Cab GLX AWD P",
+          "Double Cab Top",
+          "Double Cab TRD",
+          "GR-Sport",
+          "GX",
+          "Limited",
+          "Revo Edition",
+          "Rocco",
+          "Single Cab",
+          "Single Cab Base",
+          "Single Cabine GL",
+          "Single Cabine GLX",
+          "Single Cabine GLX AWD",
+          "SR",
+          "SR5",
+          "TRD",
+          "TRD SR5"
+        ],
+        "engines": [
+          "2.0L",
+          "2.4L",
+          "2.5L",
+          "2.7L",
+          "2.8L",
+          "3.0L",
+          "3.4L",
+          "4.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          2,
+          4,
+          5
+        ],
+        "body_type": [
+          "Pickup"
+        ]
+      }
+    },
+    {
+      "model": "Innova",
+      "legacy_spec_rows": 15,
+      "legacy_dataset_model_names": 15,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 2004,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 15,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.0L",
+          "2.4L",
+          "2.5L",
+          "2.7L",
+          "2.8L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "FWD",
+          "RWD"
+        ],
+        "seating": [
+          6,
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Ipsum",
+      "legacy_spec_rows": 4,
+      "legacy_dataset_model_names": 4,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2009,
+      "oldest_legacy_model_year": 1995,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 4,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.0L",
+          "2.4L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          6,
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Land Cruiser",
+      "legacy_spec_rows": 73,
+      "legacy_dataset_model_names": 69,
+      "catalog_trim_count": 34,
+      "catalog_trims": [
+        "4.0L",
+        "4.6L",
+        "5.7L",
+        "Base",
+        "Black Edition",
+        "Executive Lounge Edition",
+        "EXR",
+        "EXR 4.0L",
+        "GR-Sport",
+        "GR-Sport 3.5L",
+        "GX",
+        "GXR",
+        "GXR 3.5L",
+        "GXR 4.0L",
+        "GXR 60th Anniversary",
+        "GXR Grand Touring",
+        "GXR MID",
+        "GXR Plus",
+        "GXR TOP",
+        "Heritage",
+        "LX",
+        "Special Edition",
+        "SWB",
+        "V8 Turbo",
+        "VX",
+        "VXR",
+        "VXR 3.5L",
+        "VXR 4.0L",
+        "VXR Base",
+        "VXR Grand Touring",
+        "VXR TOP",
+        "VXRi",
+        "VXS",
+        "ZX"
+      ],
+      "newest_legacy_model_year": 2025,
+      "oldest_legacy_model_year": 1974,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "HIGH",
+      "collision_detail": {
+        "longer_siblings": [
+          "Land Cruiser 70",
+          "Land Cruiser 70 Pickup",
+          "Land Cruiser 76",
+          "Land Cruiser Prado"
+        ],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [
+          "Land Cruiser 70",
+          "Land Cruiser 70 Pickup",
+          "Land Cruiser 76",
+          "Land Cruiser Prado"
+        ],
+        "legacy_loose_rule_rows": 151,
+        "rows_borrowed_from_siblings_by_loose_rule": 76,
+        "rows_quarantined_ambiguous_qualifier": 2
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota_land_cruiser.json",
+        "record_count": 40,
+        "source_count": 12,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": true
+      },
+      "current_known_dimensions": {
+        "trims": [
+          "4.0L",
+          "4.6L",
+          "5.7L",
+          "Base",
+          "Black Edition",
+          "Executive Lounge Edition",
+          "EXR",
+          "EXR 4.0L",
+          "GR-Sport",
+          "GR-Sport 3.5L",
+          "GX",
+          "GXR",
+          "GXR 3.5L",
+          "GXR 4.0L",
+          "GXR 60th Anniversary",
+          "GXR Grand Touring",
+          "GXR MID",
+          "GXR Plus",
+          "GXR TOP",
+          "Heritage",
+          "LX",
+          "Special Edition",
+          "SWB",
+          "V8 Turbo",
+          "VX",
+          "VXR",
+          "VXR 3.5L",
+          "VXR 4.0L",
+          "VXR Base",
+          "VXR Grand Touring",
+          "VXR TOP",
+          "VXRi",
+          "VXS",
+          "ZX"
+        ],
+        "engines": [
+          "2.4L",
+          "2.7L",
+          "2.8L",
+          "3.0L",
+          "3.3L",
+          "3.4L",
+          "3.5L",
+          "4.0L",
+          "4.2L",
+          "4.5L",
+          "4.6L",
+          "4.7L",
+          "5.7L"
+        ],
+        "cylinders": [
+          4,
+          5,
+          6,
+          8
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD"
+        ],
+        "seating": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "body_type": [
+          "Pickup",
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Land Cruiser 70",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [
+          "Land Cruiser 70 Pickup"
+        ],
+        "shorter_parents": [
+          "Land Cruiser"
+        ],
+        "must_remain_distinct_with": [
+          "Land Cruiser",
+          "Land Cruiser 70 Pickup",
+          "Land Cruiser 76",
+          "Land Cruiser Prado"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Land Cruiser 70 Pickup",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Land Cruiser",
+          "Land Cruiser 70"
+        ],
+        "must_remain_distinct_with": [
+          "Land Cruiser",
+          "Land Cruiser 70",
+          "Land Cruiser 76",
+          "Land Cruiser Prado"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Land Cruiser 76",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Land Cruiser"
+        ],
+        "must_remain_distinct_with": [
+          "Land Cruiser",
+          "Land Cruiser 70",
+          "Land Cruiser 70 Pickup",
+          "Land Cruiser Prado"
+        ],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Land Cruiser Prado",
+      "legacy_spec_rows": 76,
+      "legacy_dataset_model_names": 49,
+      "catalog_trim_count": 24,
+      "catalog_trims": [
+        "60th Anniversary Edition",
+        "Adventure",
+        "Adventure First Edition",
+        "EXR",
+        "GX Basic",
+        "GX MID",
+        "GX TOP",
+        "GXL",
+        "GXR",
+        "Limited",
+        "TX",
+        "Tx-l MID",
+        "Tx-l MID TOP",
+        "Tx-l TOP",
+        "TXL",
+        "TXR",
+        "TZ-G",
+        "VX Basic",
+        "Vx-l MID",
+        "Vx-l TOP",
+        "VX MID",
+        "VX TOP",
+        "VXL",
+        "VXR"
+      ],
+      "newest_legacy_model_year": 2023,
+      "oldest_legacy_model_year": 1990,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Land Cruiser"
+        ],
+        "must_remain_distinct_with": [
+          "Land Cruiser",
+          "Land Cruiser 70",
+          "Land Cruiser 70 Pickup",
+          "Land Cruiser 76"
+        ],
+        "legacy_loose_rule_rows": 77,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 1
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "60th Anniversary Edition",
+          "Adventure",
+          "Adventure First Edition",
+          "EXR",
+          "GX Basic",
+          "GX MID",
+          "GX TOP",
+          "GXL",
+          "GXR",
+          "Limited",
+          "TX",
+          "Tx-l MID",
+          "Tx-l MID TOP",
+          "Tx-l TOP",
+          "TXL",
+          "TXR",
+          "TZ-G",
+          "VX Basic",
+          "VX MID",
+          "VX TOP",
+          "Vx-l MID",
+          "Vx-l TOP",
+          "VXL",
+          "VXR"
+        ],
+        "engines": [
+          "2.4L",
+          "2.7L",
+          "2.8L",
+          "3.0L",
+          "3.4L",
+          "4.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD"
+        ],
+        "seating": [
+          5,
+          7,
+          8
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Mark II",
+      "legacy_spec_rows": 34,
+      "legacy_dataset_model_names": 28,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2006,
+      "oldest_legacy_model_year": 1984,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 34,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L",
+          "2.0L",
+          "2.2L",
+          "2.4L",
+          "2.5L",
+          "3.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD",
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Matrix",
+      "legacy_spec_rows": 8,
+      "legacy_dataset_model_names": 8,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2014,
+      "oldest_legacy_model_year": 2002,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 10,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 2
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L",
+          "2.4L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback"
+        ]
+      }
+    },
+    {
+      "model": "Noah",
+      "legacy_spec_rows": 2,
+      "legacy_dataset_model_names": 2,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2004,
+      "oldest_legacy_model_year": 1996,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 2,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          8
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Paseo",
+      "legacy_spec_rows": 4,
+      "legacy_dataset_model_names": 3,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2000,
+      "oldest_legacy_model_year": 1991,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 4,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          4
+        ],
+        "body_type": [
+          "Convertible",
+          "Coupe"
+        ]
+      }
+    },
+    {
+      "model": "Previa",
+      "legacy_spec_rows": 9,
+      "legacy_dataset_model_names": 8,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2005,
+      "oldest_legacy_model_year": 1990,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 9,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.0L",
+          "2.2L",
+          "2.4L",
+          "3.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD",
+          "RWD"
+        ],
+        "seating": [
+          8
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Prius",
+      "legacy_spec_rows": 17,
+      "legacy_dataset_model_names": 16,
+      "catalog_trim_count": 6,
+      "catalog_trims": [
+        "L",
+        "LE",
+        "Limited",
+        "Nightshade",
+        "Special Edition",
+        "XLE"
+      ],
+      "newest_legacy_model_year": 2023,
+      "oldest_legacy_model_year": 1997,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "HIGH",
+      "collision_detail": {
+        "longer_siblings": [
+          "Prius C",
+          "Prius Prime"
+        ],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 18,
+        "rows_borrowed_from_siblings_by_loose_rule": 1,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "L",
+          "LE",
+          "Limited",
+          "Nightshade",
+          "Special Edition",
+          "XLE"
+        ],
+        "engines": [
+          "1.5L",
+          "1.8L",
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5,
+          7
+        ],
+        "body_type": [
+          "?Liftback",
+          "Hatchback",
+          "Minivan",
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Prius C",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 5,
+      "catalog_trims": [
+        "Four",
+        "One",
+        "Special Edition",
+        "Three",
+        "Two"
+      ],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Prius"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Four",
+          "One",
+          "Special Edition",
+          "Three",
+          "Two"
+        ],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Prius Prime",
+      "legacy_spec_rows": 1,
+      "legacy_dataset_model_names": 1,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 2017,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Prius"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 1,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/prius_prime.json",
+        "record_count": 6,
+        "source_count": 2,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Electric"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          4
+        ],
+        "body_type": [
+          "?Liftback"
+        ]
+      }
+    },
+    {
+      "model": "Proace City",
+      "legacy_spec_rows": 46,
+      "legacy_dataset_model_names": 6,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2025,
+      "oldest_legacy_model_year": 2020,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 46,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.2L",
+          "1.5L"
+        ],
+        "cylinders": [
+          3,
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          2,
+          3,
+          5
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Raize",
+      "legacy_spec_rows": 2,
+      "legacy_dataset_model_names": 2,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2019,
+      "oldest_legacy_model_year": 2019,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 2,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.0L"
+        ],
+        "cylinders": [
+          3
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "RAV4",
+      "legacy_spec_rows": 98,
+      "legacy_dataset_model_names": 74,
+      "catalog_trim_count": 10,
+      "catalog_trims": [
+        "Adventure",
+        "LE",
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "Prime SE",
+        "Prime XSE",
+        "TRD Off-Road",
+        "XLE",
+        "XLE Premium"
+      ],
+      "newest_legacy_model_year": 2025,
+      "oldest_legacy_model_year": 1994,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 101,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 3
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Adventure",
+          "LE",
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "Prime SE",
+          "Prime XSE",
+          "TRD Off-Road",
+          "XLE",
+          "XLE Premium"
+        ],
+        "engines": [
+          "1.8L",
+          "2.0L",
+          "2.2L",
+          "2.4L",
+          "2.5L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Diesel",
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          4,
+          5,
+          7
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Rush",
+      "legacy_spec_rows": 3,
+      "legacy_dataset_model_names": 3,
+      "catalog_trim_count": 5,
+      "catalog_trims": [
+        "EX",
+        "G",
+        "GX",
+        "S",
+        "Standard"
+      ],
+      "newest_legacy_model_year": 2008,
+      "oldest_legacy_model_year": 2006,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 3,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "EX",
+          "G",
+          "GX",
+          "S",
+          "Standard"
+        ],
+        "engines": [
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Scion tC",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Scion xB",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Sequoia",
+      "legacy_spec_rows": 12,
+      "legacy_dataset_model_names": 12,
+      "catalog_trim_count": 5,
+      "catalog_trims": [
+        "Limited",
+        "Platinum",
+        "Special Edition",
+        "SR5",
+        "TRD Pro"
+      ],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 2000,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 12,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Limited",
+          "Platinum",
+          "Special Edition",
+          "SR5",
+          "TRD Pro"
+        ],
+        "engines": [
+          "3.5L",
+          "4.6L",
+          "4.7L",
+          "5.7L"
+        ],
+        "cylinders": [
+          6,
+          8
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          5,
+          7
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Sienna",
+      "legacy_spec_rows": 11,
+      "legacy_dataset_model_names": 11,
+      "catalog_trim_count": 5,
+      "catalog_trims": [
+        "LE",
+        "Limited",
+        "Platinum",
+        "Special Edition",
+        "XLE"
+      ],
+      "newest_legacy_model_year": 2020,
+      "oldest_legacy_model_year": 1997,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 11,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "LE",
+          "Limited",
+          "Platinum",
+          "Special Edition",
+          "XLE"
+        ],
+        "engines": [
+          "2.5L",
+          "2.7L",
+          "3.0L",
+          "3.3L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5,
+          7,
+          8
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Supra",
+      "legacy_spec_rows": 19,
+      "legacy_dataset_model_names": 19,
+      "catalog_trim_count": 11,
+      "catalog_trims": [
+        "2.0",
+        "3.0",
+        "3.0 Premium",
+        "A91-CF",
+        "A91-MT",
+        "GR",
+        "GR Premium",
+        "GR RB",
+        "Premium",
+        "Special Edition",
+        "SZ"
+      ],
+      "newest_legacy_model_year": 2022,
+      "oldest_legacy_model_year": 1979,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 21,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 2
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "2.0",
+          "3.0",
+          "3.0 Premium",
+          "A91-CF",
+          "A91-MT",
+          "GR",
+          "GR Premium",
+          "GR RB",
+          "Premium",
+          "Special Edition",
+          "SZ"
+        ],
+        "engines": [
+          "2.0L",
+          "2.8L",
+          "3.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "RWD"
+        ],
+        "seating": [
+          2,
+          4
+        ],
+        "body_type": [
+          "Coupe"
+        ]
+      }
+    },
+    {
+      "model": "T100",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Tacoma",
+      "legacy_spec_rows": 137,
+      "legacy_dataset_model_names": 39,
+      "catalog_trim_count": 7,
+      "catalog_trims": [
+        "Limited",
+        "Special Edition",
+        "SR",
+        "SR5",
+        "TRD Off-Road",
+        "TRD Pro",
+        "TRD Sport"
+      ],
+      "newest_legacy_model_year": 2024,
+      "oldest_legacy_model_year": 1995,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 137,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Limited",
+          "Special Edition",
+          "SR",
+          "SR5",
+          "TRD Off-Road",
+          "TRD Pro",
+          "TRD Sport"
+        ],
+        "engines": [
+          "2.4L",
+          "2.7L",
+          "3.4L",
+          "3.5L",
+          "4.0L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "body_type": [
+          "Pickup"
+        ]
+      }
+    },
+    {
+      "model": "Tercel",
+      "legacy_spec_rows": 13,
+      "legacy_dataset_model_names": 13,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 1999,
+      "oldest_legacy_model_year": 1978,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 13,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.3L",
+          "1.4L",
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "Sedan",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "TownAce",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "ToyoAce",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Tundra",
+      "legacy_spec_rows": 118,
+      "legacy_dataset_model_names": 39,
+      "catalog_trim_count": 31,
+      "catalog_trims": [
+        "1794 Platinum",
+        "1794 TRD Off-Road",
+        "Base",
+        "Capstone",
+        "Crewmax 1794 Edition",
+        "Crewmax 1794 Edition FFV",
+        "Crewmax Limited",
+        "Crewmax Limited FFV",
+        "Crewmax Platinum",
+        "Crewmax Platinum FFV",
+        "Crewmax SR5",
+        "Crewmax SR5 FFV",
+        "Crewmax TRD Pro",
+        "Crewmax TRD Pro FFV",
+        "Double Cab Limited",
+        "Double Cab Limited FFV",
+        "Double Cab SR",
+        "Double Cab SR FFV",
+        "Double Cab SR5",
+        "Double Cab SR5 FFV",
+        "Double Cab TRD Pro",
+        "Double Cab TRD Pro FFV",
+        "Limited",
+        "Nightshade",
+        "Platinum",
+        "Regular Cab SR FFV",
+        "SR",
+        "SR FFV",
+        "SR5",
+        "TRD",
+        "TRD Pro"
+      ],
+      "newest_legacy_model_year": 2021,
+      "oldest_legacy_model_year": 1999,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 118,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "1794 Platinum",
+          "1794 TRD Off-Road",
+          "Base",
+          "Capstone",
+          "Crewmax 1794 Edition",
+          "Crewmax 1794 Edition FFV",
+          "Crewmax Limited",
+          "Crewmax Limited FFV",
+          "Crewmax Platinum",
+          "Crewmax Platinum FFV",
+          "Crewmax SR5",
+          "Crewmax SR5 FFV",
+          "Crewmax TRD Pro",
+          "Crewmax TRD Pro FFV",
+          "Double Cab Limited",
+          "Double Cab Limited FFV",
+          "Double Cab SR",
+          "Double Cab SR FFV",
+          "Double Cab SR5",
+          "Double Cab SR5 FFV",
+          "Double Cab TRD Pro",
+          "Double Cab TRD Pro FFV",
+          "Limited",
+          "Nightshade",
+          "Platinum",
+          "Regular Cab SR FFV",
+          "SR",
+          "SR FFV",
+          "SR5",
+          "TRD",
+          "TRD Pro"
+        ],
+        "engines": [
+          "3.4L",
+          "3.5L",
+          "4.0L",
+          "4.6L",
+          "4.7L",
+          "5.7L"
+        ],
+        "cylinders": [
+          6,
+          8
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "RWD"
+        ],
+        "seating": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "body_type": [
+          "Pickup"
+        ]
+      }
+    },
+    {
+      "model": "Urban Cruiser",
+      "legacy_spec_rows": 8,
+      "legacy_dataset_model_names": 8,
+      "catalog_trim_count": 2,
+      "catalog_trims": [
+        "GL",
+        "GLX"
+      ],
+      "newest_legacy_model_year": 2025,
+      "oldest_legacy_model_year": 2008,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 12,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 4
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/urban_cruiser.json",
+        "record_count": 9,
+        "source_count": 3,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [
+          "GL",
+          "GLX"
+        ],
+        "engines": [
+          "1.3L",
+          "1.4L",
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Electric",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Veloz",
+      "legacy_spec_rows": 1,
+      "legacy_dataset_model_names": 1,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2021,
+      "oldest_legacy_model_year": 2021,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 1,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/veloz.json",
+        "record_count": 8,
+        "source_count": 4,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.5L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Venza",
+      "legacy_spec_rows": 13,
+      "legacy_dataset_model_names": 13,
+      "catalog_trim_count": 4,
+      "catalog_trims": [
+        "LE",
+        "Limited",
+        "Special Edition",
+        "XLE"
+      ],
+      "newest_legacy_model_year": 2020,
+      "oldest_legacy_model_year": 2008,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 13,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "LE",
+          "Limited",
+          "Special Edition",
+          "XLE"
+        ],
+        "engines": [
+          "2.5L",
+          "2.7L",
+          "3.5L"
+        ],
+        "cylinders": [
+          4,
+          6
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV",
+          "Wagon"
+        ]
+      }
+    },
+    {
+      "model": "Voxy",
+      "legacy_spec_rows": 1,
+      "legacy_dataset_model_names": 1,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2004,
+      "oldest_legacy_model_year": 2001,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 1,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          8
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "Wigo",
+      "legacy_spec_rows": 5,
+      "legacy_dataset_model_names": 5,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2020,
+      "oldest_legacy_model_year": 2014,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 5,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/wigo.json",
+        "record_count": 5,
+        "source_count": 3,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.0L"
+        ],
+        "cylinders": [
+          3
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback"
+        ]
+      }
+    },
+    {
+      "model": "Wish",
+      "legacy_spec_rows": 12,
+      "legacy_dataset_model_names": 10,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2017,
+      "oldest_legacy_model_year": 2003,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "no_recent_years",
+        "few_trims"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 12,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.8L",
+          "2.0L"
+        ],
+        "cylinders": [
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          6,
+          7
+        ],
+        "body_type": [
+          "Minivan"
+        ]
+      }
+    },
+    {
+      "model": "xA",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Yaris",
+      "legacy_spec_rows": 64,
+      "legacy_dataset_model_names": 47,
+      "catalog_trim_count": 19,
+      "catalog_trims": [
+        "Basic",
+        "Basic Plus",
+        "E",
+        "E CVT",
+        "G",
+        "IA",
+        "L",
+        "LE",
+        "MID",
+        "Nightshade",
+        "S",
+        "SE",
+        "SE Plus",
+        "Special Edition",
+        "Sport",
+        "TOP",
+        "TOP Plus",
+        "XLE",
+        "Yaris GR"
+      ],
+      "newest_legacy_model_year": 2024,
+      "oldest_legacy_model_year": 1999,
+      "sparse_or_incomplete": false,
+      "sparse_flags": [],
+      "collision_risk": "HIGH",
+      "collision_detail": {
+        "longer_siblings": [
+          "Yaris Cross",
+          "Yaris iA"
+        ],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 84,
+        "rows_borrowed_from_siblings_by_loose_rule": 9,
+        "rows_quarantined_ambiguous_qualifier": 11
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "Basic",
+          "Basic Plus",
+          "E",
+          "E CVT",
+          "G",
+          "IA",
+          "L",
+          "LE",
+          "MID",
+          "Nightshade",
+          "S",
+          "SE",
+          "SE Plus",
+          "Special Edition",
+          "Sport",
+          "TOP",
+          "TOP Plus",
+          "XLE",
+          "Yaris GR"
+        ],
+        "engines": [
+          "1.0L",
+          "1.2L",
+          "1.3L",
+          "1.4L",
+          "1.5L"
+        ],
+        "cylinders": [
+          3,
+          4
+        ],
+        "fuel": [
+          "Diesel",
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "Hatchback",
+          "Minivan",
+          "Sedan"
+        ]
+      }
+    },
+    {
+      "model": "Yaris Cross",
+      "legacy_spec_rows": 9,
+      "legacy_dataset_model_names": 9,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": 2023,
+      "oldest_legacy_model_year": 2020,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "few_trims"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Yaris"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 9,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/yaris_cross.json",
+        "record_count": 11,
+        "source_count": 2,
+        "researched_at": "2026-10-03",
+        "pilot_evidence": false
+      },
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [
+          "1.5L"
+        ],
+        "cylinders": [
+          3,
+          4
+        ],
+        "fuel": [
+          "Petrol"
+        ],
+        "transmission": [
+          "Automatic",
+          "Manual"
+        ],
+        "drivetrain": [
+          "AWD",
+          "FWD"
+        ],
+        "seating": [
+          5
+        ],
+        "body_type": [
+          "SUV"
+        ]
+      }
+    },
+    {
+      "model": "Yaris iA",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 4,
+      "catalog_trims": [
+        "L",
+        "LE",
+        "Special Edition",
+        "XLE"
+      ],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "MEDIUM",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [
+          "Yaris"
+        ],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [
+          "L",
+          "LE",
+          "Special Edition",
+          "XLE"
+        ],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    },
+    {
+      "model": "Zelas",
+      "legacy_spec_rows": 0,
+      "legacy_dataset_model_names": 0,
+      "catalog_trim_count": 0,
+      "catalog_trims": [],
+      "newest_legacy_model_year": null,
+      "oldest_legacy_model_year": null,
+      "sparse_or_incomplete": true,
+      "sparse_flags": [
+        "few_rows",
+        "no_recent_years",
+        "few_trims",
+        "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+      ],
+      "collision_risk": "LOW",
+      "collision_detail": {
+        "longer_siblings": [],
+        "shorter_parents": [],
+        "must_remain_distinct_with": [],
+        "legacy_loose_rule_rows": 0,
+        "rows_borrowed_from_siblings_by_loose_rule": 0,
+        "rows_quarantined_ambiguous_qualifier": 0
+      },
+      "has_enrichment_evidence": false,
+      "enrichment_evidence": null,
+      "current_known_dimensions": {
+        "trims": [],
+        "engines": [],
+        "cylinders": [],
+        "fuel": [],
+        "transmission": [],
+        "drivetrain": [],
+        "seating": [],
+        "body_type": []
+      }
+    }
+  ]
+}

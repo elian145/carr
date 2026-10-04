@@ -24,7 +24,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
-      "market_scope": "United States"
+      "market_scope": "United States",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:46Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 ad62c42e64b056a2...) but none of the 7 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.com/camry/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "9261c3d1a065502d1a8e982e60308a0fb9114067c8772a773870aea825c7dd04",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "CM-S2": {
       "url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
@@ -35,7 +50,27 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2018 (June 21, 2017)",
-      "market_scope": "United States"
+      "market_scope": "United States",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03T16:53:46Z",
+        "content_sha256": "09b52d5a9cb8cd60ed40057f8a5ff58cd0072d3e2f85e99be1fd6ec4a30d5a6c",
+        "snapshot_path": "evidence/_source_text/CM-S2.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; 3 of 8 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://pressroom.toyota.com/all-new-2018-toyota-camry-launch/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "1e43f82b0ffd78deb6f5cbcc018819f111f5d242496ac7b3a578ebb45bf9f29a",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "CM-008",
+          "CM-009",
+          "CM-010"
+        ]
+      }
     },
     "CM-S3": {
       "url": "https://www.toyota.com.sa/en/vehicles/camry",
@@ -46,7 +81,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
-      "market_scope": "Saudi Arabia"
+      "market_scope": "Saudi Arabia",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:46Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 87e7bdb8af015bd8...) but none of the 7 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.com.sa/en/vehicles/camry",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "b6dc2ca01e80162bfde5e5343af2267c38d064899c5ff65434fdc0c7dad3ec3d",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "CM-S4": {
       "url": "https://www.toyota.ae/en/new-cars/camry/",
@@ -57,7 +107,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
-      "market_scope": "UAE"
+      "market_scope": "UAE",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:46Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 394f2646bcf2f596...) but none of the 1 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.ae/en/new-cars/camry/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "20eeb39e4df7e6639cdec187e6c15c946b16da365c84fdf8f598d5352ad06af3",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     }
   },
   "records": [
@@ -99,6 +164,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -170,6 +236,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -237,6 +304,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -304,6 +372,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -371,6 +440,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -438,6 +508,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -505,6 +576,7 @@
         "source_name": "2026 Toyota Camry | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -578,6 +650,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -645,6 +718,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -718,6 +792,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -785,6 +860,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -852,6 +928,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -919,6 +996,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -986,6 +1064,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1053,6 +1132,7 @@
         "source_name": "Ready for Launch: The Countdown Begins for the Highly Anticipated All-New 2018 Toyota Camry - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1126,6 +1206,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1199,6 +1280,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1272,6 +1354,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1345,6 +1428,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1418,6 +1502,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1491,6 +1576,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1558,6 +1644,7 @@
         "source_name": "New 2026 Toyota Camry Hybrid Car | Toyota KSA - ALJ",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -1625,6 +1712,7 @@
         "source_name": "The New Toyota Camry 2026 Sedan - Price & Specs | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [

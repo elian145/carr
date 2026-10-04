@@ -193,6 +193,11 @@
       "other:jp": ["japan"],
       "other:za": ["south africa"],
       "other:ly": ["libya"],
+      "cn": ["cn", "china", "prc", "mainland china"],
+      "other:uk": ["uk", "united kingdom", "great britain", "britain"],
+      "other:my": ["malaysia"],
+      "other:ph": ["philippines"],
+      "other:id": ["indonesia"],
       "other:global": ["global", "overseas"]
     },
     "global_means_unspecified": true

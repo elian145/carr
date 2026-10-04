@@ -1,0 +1,61 @@
+{
+  "schema_version": "carnet.brand_enrichment_rules/1",
+  "description": "Deterministic, data-only rules for brand-scale enrichment: inventory flags, research batching, coverage classification and model research status. Nothing here is a vehicle fact; it only decides ordering and labels. No clocks, no randomness.",
+
+  "inventory": {
+    "sparse_flags": {
+      "few_rows": {"max_spec_rows_exclusive": 10, "doc": "fewer than this many strict spec rows resolve to the model"},
+      "no_recent_years": {"newest_year_below": 2020, "doc": "newest legacy model year (year_from or stated year_end) is below this, or the model has no rows"},
+      "few_trims": {"max_catalog_trims_exclusive": 3, "doc": "fewer than this many trims in car_catalog.json trimsByBrandModel"},
+      "missing_dimensions": {"dimensions": ["engine_sizes", "cylinders", "fuel_types", "transmissions", "drivetrains", "body_types", "seats"], "doc": "a core dimension with zero values in the strict legacy rows"}
+    },
+    "recent_year_at_least": 2020,
+    "sparse_if": "any of the sparse flags is raised"
+  },
+
+  "batching": {
+    "target_batch_size": 10,
+    "balanced": "n_batches = ceil(n_models / target); the first (n_models % n_batches) batches get one extra model so sizes differ by at most one. No model is ever dropped.",
+    "priority": {
+      "doc": "score = w_sparse*sparse_flag_count_capped + w_recent*is_recent + w_presence*has_presence. Higher score first; ties: more catalog trims first, then canonical name (casefold). Every model gets a batch; older models are scheduled last, never deleted.",
+      "w_sparse": 2,
+      "sparse_flag_count_cap": 3,
+      "w_recent": 3,
+      "w_presence": 1,
+      "presence": "model has >=1 strict spec row OR >=1 catalog trim"
+    }
+  },
+
+  "coverage": {
+    "dimensions": ["trims", "engine_sizes", "cylinders", "fuel_types", "transmissions", "drivetrains", "body_types", "seats"],
+    "classes": {
+      "CONFLICT": "an unresolved conflict touches this dimension (fields in enrichment_lib.DIM_CONFLICT_FIELDS)",
+      "NO_EVIDENCE": "no VERIFIED, no NEEDS_SOURCE_RETRIEVAL and no PROVISIONAL value",
+      "PARTIAL": "values exist but none (or too little) is integrity-verified: NEEDS_SOURCE_RETRIEVAL / PROVISIONAL only, OR VERIFIED by a single source in a single market/generation scope",
+      "GOOD": "at least one VERIFIED value AND the integrity-verified records (tier 1-3, preserved snapshot, quote found) span >=2 distinct sources OR >=2 distinct market/generation scopes"
+    },
+    "note": "Research coverage describes the EVIDENCE COLLECTED, not whether the model is complete. It is never a numeric confidence score. Snippet-only (or otherwise unvalidated) evidence never makes a dimension GOOD."
+  },
+
+  "model_status": {
+    "values": ["NOT_STARTED", "NEEDS_MORE_SOURCES", "PARTIALLY_RESEARCHED", "RESEARCHED", "CONFLICT"],
+    "never_used": ["COMPLETE", "DONE", "FULL"],
+    "rules": [
+      "no evidence file or zero records -> NOT_STARTED",
+      "any unresolved conflict -> CONFLICT",
+      "RESEARCHED: >= 5 of 8 coverage dimensions GOOD (GOOD itself needs integrity-verified evidence), NO coverage dimension is NO_EVIDENCE (all 8 have at least some evidence, validated or not), and at least one tier 1-3 record passes the integrity test (FULL_TEXT_VERIFIED / PDF_VERIFIED, quote found in the preserved snapshot)",
+      "PARTIALLY_RESEARCHED: at least 3 dimensions have VERIFIED (integrity-verified) values",
+      "otherwise -> NEEDS_MORE_SOURCES (including models whose tier 1-3 evidence is snippet-only or unpreserved)"
+    ],
+    "researched_min_good": 5,
+    "researched_requires_integrity_verified_tier123_record": true,
+    "researched_required_non_empty": ["trims", "engine_sizes", "cylinders", "fuel_types", "transmissions", "drivetrains", "body_types", "seats"],
+    "partial_min_dimensions_with_verified": 3,
+    "disclaimer": "RESEARCHED means the minimum evidence thresholds were met for the markets/generations listed in the evidence file 'coverage' statement. It does not claim every historical global configuration was found."
+  },
+
+  "batch_status": {
+    "values": ["NOT_STARTED", "IN_PROGRESS", "RESEARCHED_PENDING_REVIEW"],
+    "rules": ["no model started -> NOT_STARTED", "some but not all models started -> IN_PROGRESS", "every model started -> RESEARCHED_PENDING_REVIEW (still UNREVIEWED; never 'complete')"]
+  }
+}

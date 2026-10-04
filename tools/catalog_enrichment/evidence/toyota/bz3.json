@@ -1,0 +1,266 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "bZ3",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "China (FAW Toyota bZ3 sedan, announced Oct 2022): Toyota Global newsroom (tier 1, snippet) for body/seats/identity; hiluckev.com parameter sheet (tier 5, snippet) for doors",
+    "NOT researched: motor power/torque and battery per version (a tier-5 sheet lists 135/180 kW and 49.92/65.28 kWh but its column mapping is ambiguous in the snippet, so it was NOT turned into records), trims, drivetrain wording, transmission, model years",
+    "Identity: bZ3 (sedan) is kept separate from bZ3X, bZ3C, bZ4X and bZ5"
+  ],
+  "not_used_sources": [],
+  "sources": {
+    "BT-S1": {
+      "url": "https://global.toyota/en/newsroom/toyota/38131700.html",
+      "name": "Toyota Announces bZ3, Second Model in bZ Series | Toyota Global Newsroom",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2022 announcement",
+      "market_scope": "China",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "BT-S2": {
+      "url": "https://hiluckev.com/wp-content/uploads/2025/10/TOYOTA-bZ3.pdf",
+      "name": "Vehicle Parameter Report - Preview Tool (TOYOTA bZ3)",
+      "publisher": "hiluckev.com",
+      "tier": 5,
+      "host_type": "independent",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2024.01 listing",
+      "market_scope": "China",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    }
+  },
+  "records": [
+    {
+      "record_id": "BT-001",
+      "brand": "Toyota",
+      "model": "bZ3",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": "sedan",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "battery electric",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "BT-S1",
+        "source_url": "https://global.toyota/en/newsroom/toyota/38131700.html",
+        "source_name": "Toyota Announces bZ3, Second Model in bZ Series | Toyota Global Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.75,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "The bZ3 is a battery electric sedan jointly developed for the Chinese market"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "Sedan",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": "Electric",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "BT-002",
+      "brand": "Toyota",
+      "model": "bZ3",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "BT-S1",
+        "source_url": "https://global.toyota/en/newsroom/toyota/38131700.html",
+        "source_name": "Toyota Announces bZ3, Second Model in bZ Series | Toyota Global Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.75,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Toyota bZ3 Main Specifications … Seating capacity | 5"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "BT-003",
+      "brand": "Toyota",
+      "model": "bZ3",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": "sedan",
+      "doors": 4,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "BT-S2",
+        "source_url": "https://hiluckev.com/wp-content/uploads/2025/10/TOYOTA-bZ3.pdf",
+        "source_name": "Vehicle Parameter Report - Preview Tool (TOYOTA bZ3)",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.15,
+        "confidence_basis": [
+          "tier5_base:0.35",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "Manufacturer | FAW Toyota … Body structure | 4-door, 5-seater sedan"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "Sedan",
+        "doors": 4,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

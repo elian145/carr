@@ -33,7 +33,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2027",
-      "market_scope": "United States"
+      "market_scope": "United States",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 b45b26c4ac10be78...) but none of the 3 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.com/vehicles/landcruiser/2027",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "d44c4cca15c60907860fd095ce681f2cc0ec8feffb6f01409117a894188d50ea",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "LC-S2": {
       "url": "https://global.toyota/en/newsroom/toyota/35758437.html",
@@ -45,6 +60,21 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "300 Series launch",
       "market_scope": "Japan",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 ee51550de16bd294...) but none of the 9 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://global.toyota/en/newsroom/toyota/35758437.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "f3eb97350816fdc986eb1d97cc61fd04ea07d116ef9fc9c8822faa969b5868d6",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "Merged table cells (blank Seating cells) are NOT interpreted: seats are recorded only where a number is printed on the row."
     },
     "LC-S3": {
@@ -56,7 +86,26 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "300 Series premiere",
-      "market_scope": "Global / representative overseas grades"
+      "market_scope": "Global / representative overseas grades",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": "6f4d90770ee2863a2d5bd928c17c88d4e3e5f177daa5d5c98993e7290e4f9f54",
+        "snapshot_path": "evidence/_source_text/LC-S3.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; 2 of 3 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://global.toyota/en/newsroom/toyota/35323595.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "b43641a89e54c8476834e6457929d5bee6a0102dc542e080b0a60a811d47dbdd",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-013",
+          "LC-014"
+        ]
+      }
     },
     "LC-S4": {
       "url": "https://global.toyota/en/newsroom/toyota/40658942.html",
@@ -67,7 +116,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2024",
-      "market_scope": "Japan"
+      "market_scope": "Japan",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 dcd0cd17ba57f960...) but none of the 4 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://global.toyota/en/newsroom/toyota/40658942.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "a128ff369197a4406d192413f6804088d9268c0be0957031befc47332f6352bf",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "LC-S5": {
       "url": "https://toyota.jp/pages/contents/landcruiser250/001_p_001/pdf/landcruiser250_spec_202507.pdf",
@@ -78,6 +142,21 @@
       "retrieval": "pdf_downloaded_and_parsed",
       "accessed_at": "2026-10-03",
       "market_scope": "Japan",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 28c27cda1e39827f...) but none of the 2 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://toyota.jp/pages/contents/landcruiser250/001_p_001/pdf/landcruiser250_spec_202507.pdf",
+        "http_status": 200,
+        "content_type": "application/pdf",
+        "raw_sha256": "f87e507fca13f4c52b904f4a7e964785bd26e15271e7f33d586fcaee155b828e",
+        "extractor": "pypdf/6.7.1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "PDF text extraction inserts spaces between Japanese glyphs; quotes are shown de-spaced. Columns (ZX/VX diesel, VX gasoline, GX diesel) are merged cells, so no trim is assigned to these engine records."
     },
     "LC-S6": {
@@ -90,6 +169,21 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "2023 premiere",
       "market_scope": "Global (markets listed per powertrain)",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 fa6f8fa1f4d96771...) but none of the 5 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://global.toyota/en/newsroom/toyota/39526684.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "1e0f076973f6fdda282c8e3345382ee25bbf6556bc4cc77358ae059140534514",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "Each powertrain row lists several target markets; market is left null on these records and the listed markets are noted."
     },
     "LC-S7": {
@@ -101,7 +195,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2021",
-      "market_scope": "United States"
+      "market_scope": "United States",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": "b921fcd0ae333b4b7917edfbdf78d7ebf4bf8886db7505781540df9576f31842",
+        "snapshot_path": "evidence/_source_text/LC-S7.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; every cited quote was found in the preserved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://pressroom.toyota.com/200-series-land-cruiser-heritage-edition-makes-second-climb-in-2021/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "2d66ad774476333c252793ec96bb9ac19b23969f59215dfa65321464cc6ade93",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "LC-S8": {
       "url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2021/landcruiser_ebrochure.pdf",
@@ -112,7 +221,22 @@
       "retrieval": "pdf_downloaded_and_parsed",
       "accessed_at": "2026-10-03",
       "model_year_label": "2021",
-      "market_scope": "United States"
+      "market_scope": "United States",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 48c8fd1e098bc3a9...) but none of the 1 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2021/landcruiser_ebrochure.pdf",
+        "http_status": 200,
+        "content_type": "application/pdf",
+        "raw_sha256": "c45a57c20df9a793e8c909253a3b1c83748eaf1c838663b35c37055b09b367f7",
+        "extractor": "pypdf/6.7.1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "LC-S9": {
       "url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60013330/index.html",
@@ -123,7 +247,22 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "200 Series, Sept 2007",
-      "market_scope": "Japan lineage page (representative grade)"
+      "market_scope": "Japan lineage page (representative grade)",
+      "integrity": {
+        "state": "RETRIEVED_UNVERIFIABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_content_mismatch",
+        "note": "Re-fetched (HTTP 200, extracted text sha256 77ab2d519b120402...) but none of the 1 cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60013330/index.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "3a8afb52f49928e2ad250c5f0ac255f1624258a038cfefd662fb4cb10e81765b",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      }
     },
     "LC-S10": {
       "url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
@@ -134,7 +273,25 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
-      "market_scope": "UAE"
+      "market_scope": "UAE",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": "c236b66668981c2a599862859e7c2445b4484fdd13d84e057d726d5b0a7517bc",
+        "snapshot_path": "evidence/_source_text/LC-S10.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; 1 of 4 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.ae/en/new-cars/land-cruiser/3.5-l/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "220655b79361b0b140180b58b4e2ce1c3b2d9c5ed483d01eeef6338e354bb190",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-030"
+        ]
+      }
     },
     "LC-S11": {
       "url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
@@ -145,7 +302,25 @@
       "retrieval": "fetched_full_text",
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
-      "market_scope": "UAE"
+      "market_scope": "UAE",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": "559e57290807527e862bffaa4c20bef78ee0ae398d361ff222c930c3dd2e5cbd",
+        "snapshot_path": "evidence/_source_text/LC-S11.txt",
+        "origin": "revalidation:refetch",
+        "note": "Re-fetched and preserved; 1 of 4 records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified).",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota.ae/en/new-cars/land-cruiser/4.0-l/",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "1f1abb07d2652d5ee8069b55bbdf8d7cdb712abe86086795a2e74e2e3ead397e",
+        "extractor": "html-text/1",
+        "previous_state": "RETRIEVED_UNVERIFIABLE",
+        "unconfirmed_record_ids": [
+          "LC-034"
+        ]
+      }
     },
     "LC-S12": {
       "url": "https://carprices.ae/brands/toyota/2026/land-cruiser",
@@ -157,6 +332,19 @@
       "accessed_at": "2026-10-03",
       "model_year_label": "2026",
       "market_scope": "UAE",
+      "integrity": {
+        "state": "UNAVAILABLE",
+        "retrieved_at": "2026-10-03T16:53:29Z",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "revalidation:refetch_unavailable",
+        "note": "Re-fetch attempt failed: HTTP 429. The quotes could not be validated against retrieved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://carprices.ae/brands/toyota/2026/land-cruiser",
+        "http_status": 429,
+        "content_type": "text/html",
+        "previous_state": "RETRIEVED_UNVERIFIABLE"
+      },
       "notes": "Secondary price/spec site: provisional only. Uses 'All Wheel Drive' wording for the 4.0L/3.5L trims."
     }
   },
@@ -202,6 +390,7 @@
         "source_name": "2027 Toyota Land Cruiser | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -269,6 +458,7 @@
         "source_name": "2027 Toyota Land Cruiser | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -336,6 +526,7 @@
         "source_name": "2027 Toyota Land Cruiser | Toyota.com",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -409,6 +600,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -485,6 +677,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -555,6 +748,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -625,6 +819,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -695,6 +890,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -765,6 +961,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -835,6 +1032,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -905,6 +1103,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -975,6 +1174,7 @@
         "source_name": "Toyota Launches New Land Cruiser (Japan launch, Aug 2, 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1051,6 +1251,7 @@
         "source_name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1125,6 +1326,7 @@
         "source_name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1193,6 +1395,7 @@
         "source_name": "Toyota's New Land Cruiser Makes World Premiere (June 2021)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1261,6 +1464,7 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1330,6 +1534,7 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1399,6 +1604,7 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1468,6 +1674,7 @@
         "source_name": "Toyota Launches All-New Land Cruiser \"250\" Series in Japan (Apr 18, 2024)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -1546,6 +1753,7 @@
         "source_name": "Land Cruiser 250 specifications (Toyota Japan, 202507)",
         "source_type": "official_manufacturer_brochure",
         "source_tier": 2,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.85,
         "confidence_basis": [
@@ -1625,6 +1833,7 @@
         "source_name": "Land Cruiser 250 specifications (Toyota Japan, 202507)",
         "source_type": "official_manufacturer_brochure",
         "source_tier": 2,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.85,
         "confidence_basis": [
@@ -1699,6 +1908,7 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1775,6 +1985,7 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1851,6 +2062,7 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -1927,6 +2139,7 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -2003,6 +2216,7 @@
         "source_name": "Toyota's New Land Cruiser \"250\" Makes World Premiere (Aug 2, 2023)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -2079,6 +2293,7 @@
         "source_name": "200 Series Land Cruiser Heritage Edition Makes Second Climb in 2021 - Toyota USA Newsroom",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2151,6 +2366,7 @@
         "source_name": "2021 Toyota Land Cruiser e-brochure",
         "source_type": "official_manufacturer_brochure",
         "source_tier": 2,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.9,
         "confidence_basis": [
@@ -2226,6 +2442,7 @@
         "source_name": "75 Years of TOYOTA - Vehicle Lineage: Land Cruiser (200)",
         "source_type": "official_manufacturer_website",
         "source_tier": 1,
+        "source_integrity": "RETRIEVED_UNVERIFIABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.95,
         "confidence_basis": [
@@ -2299,6 +2516,7 @@
         "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2366,6 +2584,7 @@
         "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2433,6 +2652,7 @@
         "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2500,6 +2720,7 @@
         "source_name": "New Toyota Land Cruiser 3.5L Twin Turbo 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2570,6 +2791,7 @@
         "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2637,6 +2859,7 @@
         "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2704,6 +2927,7 @@
         "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2771,6 +2995,7 @@
         "source_name": "New Toyota Land Cruiser 4.0L 2026 - EXR, GXR & VXR | Toyota UAE",
         "source_type": "official_regional_distributor",
         "source_tier": 3,
+        "source_integrity": "FULL_TEXT_VERIFIED",
         "accessed_at": "2026-10-03",
         "confidence": 0.8,
         "confidence_basis": [
@@ -2844,6 +3069,7 @@
         "source_name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
         "source_type": "secondary_automotive_website",
         "source_tier": 5,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.35,
         "confidence_basis": [
@@ -2917,6 +3143,7 @@
         "source_name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
         "source_type": "secondary_automotive_website",
         "source_tier": 5,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.35,
         "confidence_basis": [
@@ -2987,6 +3214,7 @@
         "source_name": "2026 Toyota Land Cruiser Price & Specs in UAE | CarPrices.ae",
         "source_type": "secondary_automotive_website",
         "source_tier": 5,
+        "source_integrity": "UNAVAILABLE",
         "accessed_at": "2026-10-03",
         "confidence": 0.35,
         "confidence_basis": [

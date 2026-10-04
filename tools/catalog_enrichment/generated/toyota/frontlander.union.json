@@ -1,0 +1,449 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Frontlander",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/frontlander.json",
+    "researched_at": "2026-10-03",
+    "record_count": 4,
+    "source_count": 2,
+    "records_by_source_tier": {
+      "4": 1,
+      "5": 3
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 0,
+      "PDF_VERIFIED": 0,
+      "SNIPPET_ONLY": 4,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 0,
+      "PDF_VERIFIED": 0,
+      "SNIPPET_ONLY": 2,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 0
+  },
+  "research_coverage": [
+    "China (GAC Toyota Frontlander, 2022-): ONLY tier 4/5 sources were found in this run (auto-data.net database, Baidu Baike). No Toyota or GAC Toyota page was retrieved, so every value here is PROVISIONAL by policy",
+    "NOT researched: any official GAC Toyota / Toyota China page, Frontlander Hybrid official specs, trims, model years beyond production start, other markets (e.g. exported as a Corolla Cross sibling)",
+    "Identity: Frontlander is GAC Toyota's sister of FAW Toyota's Corolla Cross; Corolla Cross evidence was not mixed in"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 0,
+    "conflicts_block_promotion_until_reviewed": false,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "union": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [
+      "2.0L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [
+      "Hybrid",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "CVT"
+    ],
+    "transmission_gears": [],
+    "drivetrains": [
+      "FWD"
+    ],
+    "body_types": [
+      "SUV"
+    ],
+    "seats": [
+      5
+    ],
+    "doors": [
+      5
+    ]
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "trims",
+    "transmission_gears"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "2.0L",
+      "displacement_cc": [
+        1987
+      ],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Hybrid",
+        "Petrol"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 171.0,
+          "record_id": "FL-001",
+          "trim": null
+        },
+        {
+          "value": 171.0,
+          "record_id": "FL-003",
+          "trim": null
+        },
+        {
+          "value": 193.3,
+          "record_id": "FL-004",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 205.0,
+          "record_id": "FL-001",
+          "trim": null
+        }
+      ],
+      "best_tier": 4,
+      "record_ids": [
+        "FL-001",
+        "FL-003",
+        "FL-004"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [],
+    "engine_sizes": [
+      {
+        "value": "2.0L",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 3,
+        "record_ids": [
+          "FL-001",
+          "FL-003",
+          "FL-004"
+        ],
+        "source_ids": [
+          "FL-S1",
+          "FL-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 1,
+        "record_ids": [
+          "FL-001"
+        ],
+        "source_ids": [
+          "FL-S1"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Hybrid",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 5,
+        "max_confidence": 0.15,
+        "support_count": 1,
+        "record_ids": [
+          "FL-004"
+        ],
+        "source_ids": [
+          "FL-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": null,
+        "in_conflict": false
+      },
+      {
+        "value": "Petrol",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 2,
+        "record_ids": [
+          "FL-001",
+          "FL-003"
+        ],
+        "source_ids": [
+          "FL-S1",
+          "FL-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 2,
+        "record_ids": [
+          "FL-001",
+          "FL-003"
+        ],
+        "source_ids": [
+          "FL-S1",
+          "FL-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [
+      {
+        "value": "CVT",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 2,
+        "record_ids": [
+          "FL-001",
+          "FL-003"
+        ],
+        "source_ids": [
+          "FL-S1",
+          "FL-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_gears": [],
+    "drivetrains": [
+      {
+        "value": "FWD",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 1,
+        "record_ids": [
+          "FL-001"
+        ],
+        "source_ids": [
+          "FL-S1"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "SUV",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 2,
+        "record_ids": [
+          "FL-001",
+          "FL-002"
+        ],
+        "source_ids": [
+          "FL-S1",
+          "FL-S2"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 1,
+        "record_ids": [
+          "FL-001"
+        ],
+        "source_ids": [
+          "FL-S1"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": [
+      {
+        "value": 5,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 4,
+        "max_confidence": 0.45,
+        "support_count": 1,
+        "record_ids": [
+          "FL-001"
+        ],
+        "source_ids": [
+          "FL-S1"
+        ],
+        "markets": [
+          "cn"
+        ],
+        "years": [
+          2022,
+          2022
+        ],
+        "in_conflict": false
+      }
+    ]
+  },
+  "conflicts": []
+}

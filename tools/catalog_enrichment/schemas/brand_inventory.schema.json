@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.brand_inventory/1",
+  "title": "Brand model inventory (read-only snapshot of the legacy catalog/spec dataset)",
+  "type": "object",
+  "required": ["schema_version", "brand", "read_only", "totals", "models"],
+  "properties": {
+    "schema_version": { "const": "carnet.brand_inventory/1" },
+    "brand": { "type": "string" },
+    "read_only": { "const": true },
+    "source": {},
+    "rules": {},
+    "totals": {
+      "type": "object",
+      "required": ["models", "models_with_zero_legacy_rows", "models_sparse_or_incomplete", "models_with_enrichment_evidence", "legacy_spec_rows", "collision_risk"],
+      "properties": {
+        "models": { "type": "integer", "minimum": 0 },
+        "models_with_zero_legacy_rows": { "type": "integer", "minimum": 0 },
+        "models_sparse_or_incomplete": { "type": "integer", "minimum": 0 },
+        "models_with_enrichment_evidence": { "type": "integer", "minimum": 0 },
+        "legacy_spec_rows": { "type": "integer", "minimum": 0 },
+        "collision_risk": { "type": "object", "propertyNames": { "enum": ["HIGH", "MEDIUM", "LOW"] }, "additionalProperties": { "type": "integer" } }
+      }
+    },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["model", "legacy_spec_rows", "catalog_trim_count", "catalog_trims", "newest_legacy_model_year", "sparse_or_incomplete", "sparse_flags", "collision_risk", "collision_detail", "has_enrichment_evidence", "current_known_dimensions"],
+        "properties": {
+          "model": { "type": "string" },
+          "legacy_spec_rows": { "type": "integer", "minimum": 0 },
+          "catalog_trim_count": { "type": "integer", "minimum": 0 },
+          "catalog_trims": { "type": "array", "items": { "type": "string" } },
+          "newest_legacy_model_year": { "type": ["integer", "null"] },
+          "oldest_legacy_model_year": { "type": ["integer", "null"] },
+          "sparse_or_incomplete": { "type": "boolean" },
+          "sparse_flags": { "type": "array", "items": { "type": "string" } },
+          "collision_risk": { "enum": ["HIGH", "MEDIUM", "LOW"] },
+          "collision_detail": {
+            "type": "object",
+            "required": ["longer_siblings", "shorter_parents", "must_remain_distinct_with"],
+            "properties": {
+              "longer_siblings": { "type": "array", "items": { "type": "string" } },
+              "shorter_parents": { "type": "array", "items": { "type": "string" } },
+              "must_remain_distinct_with": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "has_enrichment_evidence": { "type": "boolean" },
+          "enrichment_evidence": {},
+          "current_known_dimensions": {
+            "type": "object",
+            "required": ["trims", "engines", "cylinders", "fuel", "transmission", "drivetrain", "seating", "body_type"],
+            "additionalProperties": { "type": "array" }
+          }
+        }
+      }
+    }
+  }
+}

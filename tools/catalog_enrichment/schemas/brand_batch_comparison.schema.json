@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.brand_batch_comparison/1",
+  "title": "Per-batch CURRENT_CARNET vs NEW_VERIFIED comparison with research coverage",
+  "type": "object",
+  "required": ["schema_version", "brand", "batch_id", "read_only", "models"],
+  "properties": {
+    "schema_version": { "const": "carnet.brand_batch_comparison/1" },
+    "brand": { "type": "string" },
+    "batch_id": { "type": "string" },
+    "read_only": { "const": true },
+    "note": { "type": "string" },
+    "models": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["model", "status"],
+        "properties": {
+          "model": { "type": "string" },
+          "status": { "enum": ["NOT_STARTED", "NEEDS_MORE_SOURCES", "PARTIALLY_RESEARCHED", "RESEARCHED", "CONFLICT"] },
+          "dimensions": {
+            "type": "object",
+            "description": "11 comparison dimensions; the 8 coverage dimensions additionally carry research_coverage + UNKNOWN_NOT_YET_RESEARCHED",
+            "additionalProperties": { "$ref": "#/$defs/dimension" },
+            "properties": {
+              "trims": { "$ref": "#/$defs/coverageDimension" },
+              "engine_sizes": { "$ref": "#/$defs/coverageDimension" },
+              "cylinders": { "$ref": "#/$defs/coverageDimension" },
+              "fuel_types": { "$ref": "#/$defs/coverageDimension" },
+              "transmissions": { "$ref": "#/$defs/coverageDimension" },
+              "drivetrains": { "$ref": "#/$defs/coverageDimension" },
+              "body_types": { "$ref": "#/$defs/coverageDimension" },
+              "seats": { "$ref": "#/$defs/coverageDimension" }
+            }
+          },
+          "research_coverage": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "required": ["class", "verified_values", "needs_source_retrieval_values", "provisional_only_values", "verified_source_count", "verified_scope_count", "conflicts"],
+              "properties": { "class": { "enum": ["GOOD", "PARTIAL", "NO_EVIDENCE", "CONFLICT"] } }
+            }
+          },
+          "unresearched_fields": { "type": "array", "items": { "type": "string" } },
+          "evidence_integrity": { "$ref": "#/$defs/evidenceIntegrity" },
+          "evidence_file": { "type": "string" },
+          "union_file": { "type": "string" },
+          "evidence_record_count": { "type": "integer", "minimum": 0 },
+          "evidence_coverage_statement": { "type": "array", "items": { "type": "string" } }
+        },
+        "if": { "properties": { "status": { "const": "NOT_STARTED" } } },
+        "else": { "required": ["dimensions", "research_coverage", "unresearched_fields", "evidence_integrity", "evidence_file", "union_file", "evidence_coverage_statement"] }
+      }
+    }
+  },
+  "$defs": {
+    "evidenceIntegrity": {
+      "type": "object",
+      "required": ["records_by_state", "sources_by_state", "records_passing_integrity_test"],
+      "properties": {
+        "records_by_state": { "type": "object", "required": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED", "SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"], "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "sources_by_state": { "type": "object", "required": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED", "SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"], "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "records_passing_integrity_test": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "required": ["CURRENT_CARNET", "NEW_VERIFIED", "MISSING_FROM_CARNET", "ONLY_IN_CARNET", "CONFLICTS"],
+      "properties": {
+        "CURRENT_CARNET": { "type": "array" },
+        "NEW_VERIFIED": { "type": "array" },
+        "NEW_PROVISIONAL_ONLY": { "type": "array" },
+        "NEW_NEEDS_SOURCE_RETRIEVAL": { "type": "array" },
+        "MATCHED": { "type": "array" },
+        "MISSING_FROM_CARNET": { "type": "array" },
+        "PROVISIONAL_NOT_IN_CARNET": { "type": "array" },
+        "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": { "type": "array" },
+        "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": { "type": "array" },
+        "ONLY_IN_CARNET": { "type": "array" },
+        "CONFLICTS": { "type": "array" }
+      }
+    },
+    "coverageDimension": {
+      "allOf": [
+        { "$ref": "#/$defs/dimension" },
+        {
+          "type": "object",
+          "required": ["research_coverage", "UNKNOWN_NOT_YET_RESEARCHED"],
+          "properties": {
+            "research_coverage": { "enum": ["GOOD", "PARTIAL", "NO_EVIDENCE", "CONFLICT"] },
+            "UNKNOWN_NOT_YET_RESEARCHED": { "oneOf": [{ "const": false }, { "type": "object", "required": ["all_current_values_unverified", "reason"] }] }
+          }
+        }
+      ]
+    }
+  }
+}

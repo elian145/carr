@@ -7,8 +7,14 @@ import jsonschema
 
 H = Path(__file__).resolve().parents[1]
 pairs = [
-    ("evidence_record.schema.json", sorted((H / "evidence").glob("*.json"))),
-    ("model_union.schema.json", sorted((H / "generated").glob("*.union.json"))),
+    ("evidence_record.schema.json", sorted((H / "evidence").glob("*.json")) + sorted((H / "evidence").glob("*/*.json"))),
+    ("model_union.schema.json", sorted((H / "generated").glob("*.union.json")) + sorted((H / "generated").glob("*/*.union.json"))),
+    ("brand_inventory.schema.json", sorted((H / "reports").glob("*_inventory.json"))),
+    ("brand_research_plan.schema.json", sorted((H / "reports").glob("*_research_plan.json"))),
+    ("brand_batch_comparison.schema.json", sorted((H / "reports").glob("*_batch_*_comparison.json"))),
+    ("source_revalidation.schema.json", sorted((H / "reports").glob("*_revalidation.json"))),
+    ("../patch.schema.json", sorted((H / "proposals").glob("*.json"))),
+    ("brand_enrichment_rules.schema.json", [H / "rules" / "brand_enrichment_rules.json"]),
     ("pilot_comparison.schema.json", [H / "reports" / "pilot_comparison.json"]),
     ("brand_model_suffix_rules.schema.json", [H / "rules" / "brand_model_suffix_rules.json"]),
     ("model_matching_report.schema.json", [H / "reports" / "model_matching_baseline.json", H / "reports" / "model_matching_recovery.json"]),

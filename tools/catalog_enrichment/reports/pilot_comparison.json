@@ -50,38 +50,43 @@
             "XLT"
           ],
           "NEW_VERIFIED": [
-            "Active",
             "Ambiente",
             "Limited",
-            "Platinum",
-            "Sport",
             "Titanium",
-            "Titanium+",
-            "Tremor",
             "Trend",
-            "Wolftrak",
             "XLS",
             "XLT"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Active",
+            "Platinum",
+            "Sport",
+            "Titanium+",
+            "Tremor",
+            "Wolftrak"
+          ],
           "MATCHED": [
             "Limited",
             "XLS",
             "XLT"
           ],
           "MISSING_FROM_CARNET": [
-            "Active",
             "Ambiente",
-            "Platinum",
-            "Sport",
             "Titanium",
-            "Titanium+",
-            "Tremor",
-            "Trend",
-            "Wolftrak"
+            "Trend"
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "Active",
+            "Platinum",
+            "Sport",
+            "Titanium+",
+            "Tremor",
+            "Wolftrak"
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [
             {
               "value": "Mid Range",
@@ -98,24 +103,29 @@
             "3.2L"
           ],
           "NEW_VERIFIED": [
+            "2.3L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "2.0L",
-            "2.3L",
             "2.7L",
             "3.0L",
             "3.2L"
           ],
-          "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "2.3L"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "2.7L"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
             "2.0L",
             "3.0L",
             "3.2L"
           ],
-          "MISSING_FROM_CARNET": [
-            "2.3L",
-            "2.7L"
-          ],
-          "PROVISIONAL_NOT_IN_CARNET": [],
-          "CARNET_VALUE_ONLY_PROVISIONAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [
             {
@@ -179,20 +189,23 @@
             5,
             6
           ],
-          "NEW_VERIFIED": [
-            4,
-            5,
-            6
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             4,
             5,
             6
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            4,
+            5,
+            6
+          ],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": []
         },
@@ -202,18 +215,22 @@
             "Diesel"
           ],
           "NEW_VERIFIED": [
-            "Diesel",
             "Petrol"
           ],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "Diesel"
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [
             "Petrol"
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Diesel"
+          ],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "legacy_view": {
@@ -236,12 +253,15 @@
             "Automatic"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [
             "Automatic"
           ],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": []
         },
@@ -252,12 +272,15 @@
             "SelectShift"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [
             "SelectShift"
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -266,17 +289,22 @@
           "carnet_stores_field": false,
           "CURRENT_CARNET": [],
           "NEW_VERIFIED": [
-            6,
             10
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            6
+          ],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [
-            6,
             10
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            6
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -292,6 +320,7 @@
             "RWD"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [
             "RWD"
           ],
@@ -299,7 +328,9 @@
             "4WD"
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [
             {
               "value": "AWD",
@@ -324,12 +355,15 @@
             "SUV"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [
             "SUV"
           ],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": []
         },
@@ -344,13 +378,16 @@
             7
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [
             5,
             7
           ],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": []
         },
@@ -359,10 +396,13 @@
           "CURRENT_CARNET": [],
           "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -524,34 +564,39 @@
             "ZX"
           ],
           "NEW_VERIFIED": [
-            "1958",
-            "AX",
             "EXR",
             "GR Sport",
-            "GX",
             "GXR",
-            "Land Cruiser",
-            "VX",
-            "VXR",
-            "ZX"
+            "VXR"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "1958",
+            "AX",
+            "GX",
+            "Land Cruiser",
+            "VX",
+            "ZX"
+          ],
           "MATCHED": [
             "EXR",
             "GR Sport",
-            "GX",
             "GXR",
-            "VX",
-            "VXR",
-            "ZX"
+            "VXR"
           ],
-          "MISSING_FROM_CARNET": [
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
             "1958",
             "AX",
             "Land Cruiser"
           ],
-          "PROVISIONAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "GX",
+            "VX",
+            "ZX"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "4.0L",
@@ -682,29 +727,34 @@
             "5.7L"
           ],
           "NEW_VERIFIED": [
-            "2.4L",
-            "2.7L",
-            "2.8L",
-            "3.3L",
             "3.5L",
             "4.0L",
-            "4.7L",
             "5.7L"
           ],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "2.4L",
             "2.7L",
             "2.8L",
             "3.3L",
+            "4.7L"
+          ],
+          "MATCHED": [
             "3.5L",
             "4.0L",
-            "4.7L",
             "5.7L"
           ],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "2.4L",
+            "2.7L",
+            "2.8L",
+            "3.3L",
+            "4.7L"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "3.0L",
@@ -738,19 +788,24 @@
             8
           ],
           "NEW_VERIFIED": [
-            4,
             6,
             8
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            4
+          ],
           "MATCHED": [
-            4,
             6,
             8
           ],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            4
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": 5,
@@ -766,20 +821,25 @@
             "Petrol"
           ],
           "NEW_VERIFIED": [
-            "Diesel",
-            "Hybrid",
             "Petrol"
           ],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "Diesel",
-            "Petrol"
-          ],
-          "MISSING_FROM_CARNET": [
             "Hybrid"
           ],
+          "MATCHED": [
+            "Petrol"
+          ],
+          "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "Hybrid"
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Diesel"
+          ],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "legacy_view": {
@@ -801,12 +861,15 @@
             "Automatic"
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [
             "Automatic"
           ],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [
             {
               "value": "Manual",
@@ -819,19 +882,24 @@
           "carnet_stores_field": false,
           "CURRENT_CARNET": [],
           "NEW_VERIFIED": [
-            "Direct Shift",
-            "ECT-i",
-            "Super ECT"
+            "ECT-i"
           ],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [],
-          "MISSING_FROM_CARNET": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "Direct Shift",
-            "ECT-i",
             "Super ECT"
           ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "ECT-i"
+          ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "Direct Shift",
+            "Super ECT"
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -841,18 +909,23 @@
           "CURRENT_CARNET": [],
           "NEW_VERIFIED": [
             6,
-            8,
-            10
+            8
           ],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            10
+          ],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [
             6,
-            8,
-            10
+            8
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            10
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -868,14 +941,17 @@
           "NEW_PROVISIONAL_ONLY": [
             "AWD"
           ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [
             "4WD"
           ],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [
             "AWD"
           ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "legacy_view": {
@@ -892,16 +968,19 @@
             "Pickup",
             "SUV"
           ],
-          "NEW_VERIFIED": [
-            "SUV"
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "SUV"
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "SUV"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "Pickup",
@@ -921,20 +1000,23 @@
             9,
             10
           ],
-          "NEW_VERIFIED": [
-            5,
-            7,
-            8
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             5,
             7,
             8
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            5,
+            7,
+            8
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": 4,
@@ -960,10 +1042,13 @@
           "CURRENT_CARNET": [],
           "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -1113,38 +1198,43 @@
             "XSE"
           ],
           "NEW_VERIFIED": [
-            "E",
-            "E HEV",
-            "E Plus HEV",
-            "Grande",
             "L",
             "LE",
-            "LE HEV",
-            "Lumiere HEV",
-            "Nightshade",
             "SE",
             "XLE",
             "XSE"
           ],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "E",
+            "E HEV",
+            "E Plus HEV",
             "Grande",
+            "LE HEV",
+            "Lumiere HEV",
+            "Nightshade"
+          ],
+          "MATCHED": [
             "L",
             "LE",
-            "Nightshade",
             "SE",
             "XLE",
             "XSE"
           ],
-          "MISSING_FROM_CARNET": [
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
             "E HEV",
             "E Plus HEV",
             "LE HEV",
             "Lumiere HEV"
           ],
-          "PROVISIONAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "E",
+            "Grande",
+            "Nightshade"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "40th Anniversary",
@@ -1261,18 +1351,21 @@
             "3.3L",
             "3.5L"
           ],
-          "NEW_VERIFIED": [
-            "2.5L",
-            "3.5L"
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "2.5L",
             "3.5L"
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "2.5L",
+            "3.5L"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "1.8L",
@@ -1307,18 +1400,21 @@
             4,
             6
           ],
-          "NEW_VERIFIED": [
-            4,
-            6
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             4,
             6
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            4,
+            6
+          ],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": []
         },
@@ -1328,19 +1424,22 @@
             "Diesel",
             "Petrol"
           ],
-          "NEW_VERIFIED": [
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "Hybrid",
             "Petrol"
           ],
-          "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
-            "Petrol"
-          ],
-          "MISSING_FROM_CARNET": [
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
             "Hybrid"
           ],
-          "PROVISIONAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Petrol"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "Diesel",
@@ -1363,16 +1462,19 @@
             "Automatic",
             "Manual"
           ],
-          "NEW_VERIFIED": [
-            "Automatic"
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "Automatic"
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "Manual",
@@ -1384,16 +1486,19 @@
         "transmission_variants": {
           "carnet_stores_field": false,
           "CURRENT_CARNET": [],
-          "NEW_VERIFIED": [
-            "e-CVT"
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [],
-          "MISSING_FROM_CARNET": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "e-CVT"
           ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "e-CVT"
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -1401,16 +1506,19 @@
         "transmission_gears": {
           "carnet_stores_field": false,
           "CURRENT_CARNET": [],
-          "NEW_VERIFIED": [
-            8
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [],
-          "MISSING_FROM_CARNET": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             8
           ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            8
+          ],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."
@@ -1421,18 +1529,21 @@
             "AWD",
             "FWD"
           ],
-          "NEW_VERIFIED": [
-            "AWD",
-            "FWD"
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "AWD",
             "FWD"
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "AWD",
+            "FWD"
+          ],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "legacy_view": {
@@ -1452,16 +1563,19 @@
             "Sedan",
             "Wagon"
           ],
-          "NEW_VERIFIED": [
-            "Sedan"
-          ],
+          "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
-          "MATCHED": [
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
             "Sedan"
           ],
+          "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Sedan"
+          ],
           "ONLY_IN_CARNET": [
             {
               "value": "Convertible",
@@ -1490,10 +1604,13 @@
           ],
           "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [
             {
               "value": 4,
@@ -1511,10 +1628,13 @@
           "CURRENT_CARNET": [],
           "NEW_VERIFIED": [],
           "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
           "MATCHED": [],
           "MISSING_FROM_CARNET": [],
           "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
           "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
           "ONLY_IN_CARNET": [],
           "CONFLICTS": [],
           "note": "CarNet's dataset does not store this attribute; every verified value is new information."

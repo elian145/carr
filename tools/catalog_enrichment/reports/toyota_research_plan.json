@@ -1,0 +1,2869 @@
+{
+  "schema_version": "carnet.brand_research_plan/1",
+  "brand": "Toyota",
+  "rules": "rules/brand_enrichment_rules.json -> batching",
+  "note": "Deterministic: batch membership depends only on the inventory (never on research results), so it never reshuffles between runs. Status words are RESEARCHED / PARTIALLY_RESEARCHED / NEEDS_MORE_SOURCES / CONFLICT / NOT_STARTED - never 'complete'. RESEARCHED means the evidence thresholds in the rules were met for the markets/generations listed in each evidence file's coverage statement.",
+  "model_count": 86,
+  "batch_count": 9,
+  "all_models_assigned_exactly_once": true,
+  "model_status_counts": {
+    "NEEDS_MORE_SOURCES": 6,
+    "NOT_STARTED": 74,
+    "PARTIALLY_RESEARCHED": 5,
+    "RESEARCHED": 1
+  },
+  "batches": [
+    {
+      "batch_id": "toyota-batch-01",
+      "batch_number": 1,
+      "models": [
+        "bZ3",
+        "bZ3X",
+        "bZ4X",
+        "Urban Cruiser",
+        "Frontlander",
+        "Grand Highlander",
+        "Prius Prime",
+        "Veloz",
+        "Wigo",
+        "Yaris Cross"
+      ],
+      "status": "RESEARCHED_PENDING_REVIEW",
+      "evidence_record_count": 85,
+      "conflicts": {},
+      "provisional_values": {
+        "bZ3": {
+          "doors": [
+            4
+          ]
+        },
+        "bZ3X": {
+          "trims": [
+            "430 Air",
+            "430 Air+",
+            "520 Pro",
+            "520 Pro Smart",
+            "520 Pro+",
+            "520 Pro+ Smart",
+            "610 Max"
+          ],
+          "drivetrains": [
+            "FWD"
+          ],
+          "seats": [
+            5
+          ],
+          "doors": [
+            5
+          ]
+        },
+        "Frontlander": {
+          "engine_sizes": [
+            "2.0L"
+          ],
+          "cylinders": [
+            4
+          ],
+          "fuel_types": [
+            "Hybrid",
+            "Petrol"
+          ],
+          "transmissions": [
+            "Automatic"
+          ],
+          "transmission_variants": [
+            "CVT"
+          ],
+          "drivetrains": [
+            "FWD"
+          ],
+          "body_types": [
+            "SUV"
+          ],
+          "seats": [
+            5
+          ],
+          "doors": [
+            5
+          ]
+        }
+      },
+      "needs_source_retrieval_values": {
+        "bZ3": {
+          "fuel_types": [
+            "Electric"
+          ],
+          "body_types": [
+            "Sedan"
+          ],
+          "seats": [
+            5
+          ]
+        },
+        "bZ3X": {
+          "fuel_types": [
+            "Electric"
+          ],
+          "body_types": [
+            "SUV"
+          ]
+        },
+        "Urban Cruiser": {
+          "trims": [
+            "Design",
+            "Excel",
+            "Icon"
+          ],
+          "transmissions": [
+            "Automatic"
+          ],
+          "transmission_gears": [
+            1
+          ],
+          "seats": [
+            5
+          ],
+          "doors": [
+            5
+          ]
+        },
+        "Veloz": {
+          "trims": [
+            "E",
+            "G",
+            "V"
+          ],
+          "engine_sizes": [
+            "1.5L"
+          ],
+          "cylinders": [
+            4
+          ],
+          "fuel_types": [
+            "Petrol"
+          ],
+          "transmissions": [
+            "Automatic",
+            "Manual"
+          ],
+          "transmission_variants": [
+            "CVT"
+          ],
+          "transmission_gears": [
+            7
+          ],
+          "drivetrains": [
+            "FWD"
+          ],
+          "body_types": [
+            "SUV"
+          ],
+          "seats": [
+            7
+          ]
+        },
+        "Wigo": {
+          "trims": [
+            "E",
+            "G",
+            "J"
+          ],
+          "engine_sizes": [
+            "1.0L"
+          ],
+          "cylinders": [
+            3
+          ],
+          "fuel_types": [
+            "Petrol"
+          ],
+          "transmissions": [
+            "Automatic",
+            "Manual"
+          ],
+          "transmission_variants": [
+            "CVT"
+          ],
+          "transmission_gears": [
+            5
+          ],
+          "seats": [
+            5
+          ]
+        }
+      },
+      "unresearched_fields": {
+        "bZ3": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "transmissions",
+          "drivetrains"
+        ],
+        "bZ3X": [
+          "engine_sizes",
+          "cylinders",
+          "transmissions"
+        ],
+        "bZ4X": [
+          "engine_sizes",
+          "cylinders",
+          "transmissions"
+        ],
+        "Urban Cruiser": [
+          "engine_sizes",
+          "cylinders"
+        ],
+        "Frontlander": [
+          "trims"
+        ],
+        "Prius Prime": [
+          "body_types",
+          "seats"
+        ],
+        "Wigo": [
+          "drivetrains",
+          "body_types"
+        ]
+      },
+      "model_status": {
+        "bZ3": "NEEDS_MORE_SOURCES",
+        "bZ3X": "NEEDS_MORE_SOURCES",
+        "bZ4X": "PARTIALLY_RESEARCHED",
+        "Urban Cruiser": "PARTIALLY_RESEARCHED",
+        "Frontlander": "NEEDS_MORE_SOURCES",
+        "Grand Highlander": "RESEARCHED",
+        "Prius Prime": "PARTIALLY_RESEARCHED",
+        "Veloz": "NEEDS_MORE_SOURCES",
+        "Wigo": "NEEDS_MORE_SOURCES",
+        "Yaris Cross": "PARTIALLY_RESEARCHED"
+      },
+      "evidence_integrity": {
+        "bZ3": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 3,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 2,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "bZ3X": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 9,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 2,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "bZ4X": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 10,
+            "PDF_VERIFIED": 7,
+            "SNIPPET_ONLY": 1,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 2,
+            "PDF_VERIFIED": 3,
+            "SNIPPET_ONLY": 1,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 17
+        },
+        "Urban Cruiser": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 4,
+            "SNIPPET_ONLY": 5,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 2,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 4
+        },
+        "Frontlander": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 4,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 2,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "Grand Highlander": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 5,
+            "PDF_VERIFIED": 6,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 1,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 11
+        },
+        "Prius Prime": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 5,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 1,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 6
+        },
+        "Veloz": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 8,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 4,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "Wigo": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 5,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 3,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "Yaris Cross": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 11,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 2,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 11
+        }
+      },
+      "model_plan": [
+        {
+          "model": "bZ3",
+          "priority_score": 10,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 2,
+          "newest_legacy_model_year": 2023,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/bz3.json"
+        },
+        {
+          "model": "bZ3X",
+          "priority_score": 10,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 3,
+          "newest_legacy_model_year": 2025,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/bz3x.json"
+        },
+        {
+          "model": "bZ4X",
+          "priority_score": 10,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 8,
+          "newest_legacy_model_year": 2026,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/bz4x.json"
+        },
+        {
+          "model": "Urban Cruiser",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 8,
+          "newest_legacy_model_year": 2025,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/urban_cruiser.json"
+        },
+        {
+          "model": "Frontlander",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 1,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/frontlander.json"
+        },
+        {
+          "model": "Grand Highlander",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 5,
+          "newest_legacy_model_year": 2023,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Highlander"
+          ],
+          "existing_evidence": "evidence/toyota/grand_highlander.json"
+        },
+        {
+          "model": "Prius Prime",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 1,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Prius"
+          ],
+          "existing_evidence": "evidence/toyota/prius_prime.json"
+        },
+        {
+          "model": "Veloz",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 1,
+          "newest_legacy_model_year": 2021,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/veloz.json"
+        },
+        {
+          "model": "Wigo",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 5,
+          "newest_legacy_model_year": 2020,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": "evidence/toyota/wigo.json"
+        },
+        {
+          "model": "Yaris Cross",
+          "priority_score": 8,
+          "sparse_flags": [
+            "few_rows",
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 9,
+          "newest_legacy_model_year": 2023,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Yaris"
+          ],
+          "existing_evidence": "evidence/toyota/yaris_cross.json"
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-02",
+      "batch_number": 2,
+      "models": [
+        "GR Corolla",
+        "Prius C",
+        "GR86",
+        "Yaris iA",
+        "Coaster",
+        "Aristo",
+        "Aurion",
+        "Celsior",
+        "Echo",
+        "Granvia"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "GR Corolla": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Prius C": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "GR86": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Yaris iA": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Coaster": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Aristo": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Aurion": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Celsior": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Echo": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Granvia": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "GR Corolla": "NOT_STARTED",
+        "Prius C": "NOT_STARTED",
+        "GR86": "NOT_STARTED",
+        "Yaris iA": "NOT_STARTED",
+        "Coaster": "NOT_STARTED",
+        "Aristo": "NOT_STARTED",
+        "Aurion": "NOT_STARTED",
+        "Celsior": "NOT_STARTED",
+        "Echo": "NOT_STARTED",
+        "Granvia": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "GR Corolla",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Corolla",
+            "Corolla Cross",
+            "Corolla Fielder",
+            "Corolla Hatchback",
+            "Corolla iM"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Prius C",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Prius"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "GR86",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Yaris iA",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Yaris"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Coaster",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Aristo",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 3,
+          "newest_legacy_model_year": 2005,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Aurion",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 4,
+          "newest_legacy_model_year": 2017,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Celsior",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 4,
+          "newest_legacy_model_year": 2003,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Echo",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 4,
+          "newest_legacy_model_year": 2005,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Granvia",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:drivetrains"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 1,
+          "newest_legacy_model_year": 2002,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-03",
+      "batch_number": 3,
+      "models": [
+        "Ipsum",
+        "Matrix",
+        "Noah",
+        "Paseo",
+        "Previa",
+        "Raize",
+        "Voxy",
+        "FJ Cruiser",
+        "Alphard",
+        "bZ5"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "Ipsum": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Matrix": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Noah": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Paseo": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Previa": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Raize": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Voxy": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "FJ Cruiser": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Alphard": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "bZ5": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "Ipsum": "NOT_STARTED",
+        "Matrix": "NOT_STARTED",
+        "Noah": "NOT_STARTED",
+        "Paseo": "NOT_STARTED",
+        "Previa": "NOT_STARTED",
+        "Raize": "NOT_STARTED",
+        "Voxy": "NOT_STARTED",
+        "FJ Cruiser": "NOT_STARTED",
+        "Alphard": "NOT_STARTED",
+        "bZ5": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "Ipsum",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 4,
+          "newest_legacy_model_year": 2009,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Matrix",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 8,
+          "newest_legacy_model_year": 2014,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Noah",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 2,
+          "newest_legacy_model_year": 2004,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Paseo",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 4,
+          "newest_legacy_model_year": 2000,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Previa",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 9,
+          "newest_legacy_model_year": 2005,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Raize",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 2,
+          "newest_legacy_model_year": 2019,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Voxy",
+          "priority_score": 7,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 1,
+          "newest_legacy_model_year": 2004,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "FJ Cruiser",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 6,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Alphard",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 19,
+          "newest_legacy_model_year": 2023,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "bZ5",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-04",
+      "batch_number": 4,
+      "models": [
+        "Camry Solara",
+        "CH-R",
+        "Corolla Fielder",
+        "Corolla Hatchback",
+        "Corolla iM",
+        "Crown Comfort",
+        "Crown Kluger",
+        "Crown Signia",
+        "Dyna",
+        "GT86"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "Camry Solara": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "CH-R": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Corolla Fielder": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Corolla Hatchback": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Corolla iM": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Crown Comfort": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Crown Kluger": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Crown Signia": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Dyna": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "GT86": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "Camry Solara": "NOT_STARTED",
+        "CH-R": "NOT_STARTED",
+        "Corolla Fielder": "NOT_STARTED",
+        "Corolla Hatchback": "NOT_STARTED",
+        "Corolla iM": "NOT_STARTED",
+        "Crown Comfort": "NOT_STARTED",
+        "Crown Kluger": "NOT_STARTED",
+        "Crown Signia": "NOT_STARTED",
+        "Dyna": "NOT_STARTED",
+        "GT86": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "Camry Solara",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Camry"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "CH-R",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Corolla Fielder",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Corolla",
+            "Corolla Cross",
+            "Corolla Hatchback",
+            "Corolla iM",
+            "GR Corolla"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Corolla Hatchback",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Corolla",
+            "Corolla Cross",
+            "Corolla Fielder",
+            "Corolla iM",
+            "GR Corolla"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Corolla iM",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Corolla",
+            "Corolla Cross",
+            "Corolla Fielder",
+            "Corolla Hatchback",
+            "GR Corolla"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Crown Comfort",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Crown"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Crown Kluger",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Crown"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Crown Signia",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Crown"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Dyna",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "GT86",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-05",
+      "batch_number": 5,
+      "models": [
+        "Innova",
+        "Land Cruiser 70",
+        "Land Cruiser 70 Pickup",
+        "Land Cruiser 76",
+        "Proace City",
+        "Scion tC",
+        "Scion xB",
+        "T100",
+        "TownAce",
+        "ToyoAce"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "Innova": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Land Cruiser 70": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Land Cruiser 70 Pickup": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Land Cruiser 76": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Proace City": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Scion tC": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Scion xB": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "T100": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "TownAce": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "ToyoAce": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "Innova": "NOT_STARTED",
+        "Land Cruiser 70": "NOT_STARTED",
+        "Land Cruiser 70 Pickup": "NOT_STARTED",
+        "Land Cruiser 76": "NOT_STARTED",
+        "Proace City": "NOT_STARTED",
+        "Scion tC": "NOT_STARTED",
+        "Scion xB": "NOT_STARTED",
+        "T100": "NOT_STARTED",
+        "TownAce": "NOT_STARTED",
+        "ToyoAce": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "Innova",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 15,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Land Cruiser 70",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Land Cruiser",
+            "Land Cruiser 70 Pickup",
+            "Land Cruiser 76",
+            "Land Cruiser Prado"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Land Cruiser 70 Pickup",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Land Cruiser",
+            "Land Cruiser 70",
+            "Land Cruiser 76",
+            "Land Cruiser Prado"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Land Cruiser 76",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Land Cruiser",
+            "Land Cruiser 70",
+            "Land Cruiser 70 Pickup",
+            "Land Cruiser Prado"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Proace City",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_trims"
+          ],
+          "recent": true,
+          "legacy_spec_rows": 46,
+          "newest_legacy_model_year": 2025,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Scion tC",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Scion xB",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "T100",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "TownAce",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "ToyoAce",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-06",
+      "batch_number": 6,
+      "models": [
+        "xA",
+        "Zelas",
+        "Rush",
+        "Avanza",
+        "Avensis",
+        "Caldina",
+        "Carina",
+        "Celica",
+        "Chaser"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "xA": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Zelas": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Rush": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Avanza": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Avensis": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Caldina": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Carina": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Celica": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Chaser": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "xA": "NOT_STARTED",
+        "Zelas": "NOT_STARTED",
+        "Rush": "NOT_STARTED",
+        "Avanza": "NOT_STARTED",
+        "Avensis": "NOT_STARTED",
+        "Caldina": "NOT_STARTED",
+        "Carina": "NOT_STARTED",
+        "Celica": "NOT_STARTED",
+        "Chaser": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "xA",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Zelas",
+          "priority_score": 6,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years",
+            "few_trims",
+            "missing_dimensions:engine_sizes,cylinders,fuel_types,transmissions,drivetrains,body_types,seats"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 0,
+          "newest_legacy_model_year": null,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Rush",
+          "priority_score": 5,
+          "sparse_flags": [
+            "few_rows",
+            "no_recent_years"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 3,
+          "newest_legacy_model_year": 2008,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Avanza",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 10,
+          "newest_legacy_model_year": 2018,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Avensis",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 100,
+          "newest_legacy_model_year": 2018,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Caldina",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 14,
+          "newest_legacy_model_year": 2007,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Carina",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 74,
+          "newest_legacy_model_year": 2001,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Celica",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 45,
+          "newest_legacy_model_year": 2006,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Chaser",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 20,
+          "newest_legacy_model_year": 2001,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-07",
+      "batch_number": 7,
+      "models": [
+        "Corona",
+        "Cresta",
+        "Mark II",
+        "Tercel",
+        "Wish",
+        "Land Cruiser",
+        "Camry",
+        "Hilux",
+        "Tundra"
+      ],
+      "status": "IN_PROGRESS",
+      "evidence_record_count": 63,
+      "conflicts": {},
+      "provisional_values": {
+        "Land Cruiser": {
+          "drivetrains": [
+            "AWD"
+          ]
+        }
+      },
+      "needs_source_retrieval_values": {
+        "Land Cruiser": {
+          "trims": [
+            "1958",
+            "AX",
+            "GX",
+            "Land Cruiser",
+            "VX",
+            "ZX"
+          ],
+          "engine_sizes": [
+            "2.4L",
+            "2.7L",
+            "2.8L",
+            "3.3L",
+            "4.7L"
+          ],
+          "cylinders": [
+            4
+          ],
+          "fuel_types": [
+            "Diesel",
+            "Hybrid"
+          ],
+          "transmission_variants": [
+            "Direct Shift",
+            "Super ECT"
+          ],
+          "transmission_gears": [
+            10
+          ],
+          "body_types": [
+            "SUV"
+          ],
+          "seats": [
+            5,
+            7,
+            8
+          ]
+        },
+        "Camry": {
+          "trims": [
+            "E",
+            "E HEV",
+            "E Plus HEV",
+            "Grande",
+            "LE HEV",
+            "Lumiere HEV",
+            "Nightshade"
+          ],
+          "engine_sizes": [
+            "2.5L",
+            "3.5L"
+          ],
+          "cylinders": [
+            4,
+            6
+          ],
+          "fuel_types": [
+            "Hybrid",
+            "Petrol"
+          ],
+          "transmissions": [
+            "Automatic"
+          ],
+          "transmission_variants": [
+            "e-CVT"
+          ],
+          "transmission_gears": [
+            8
+          ],
+          "drivetrains": [
+            "AWD",
+            "FWD"
+          ],
+          "body_types": [
+            "Sedan"
+          ]
+        }
+      },
+      "unresearched_fields": {
+        "Corona": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Cresta": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Mark II": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Tercel": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Wish": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Camry": [
+          "seats"
+        ],
+        "Hilux": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Tundra": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "Corona": "NOT_STARTED",
+        "Cresta": "NOT_STARTED",
+        "Mark II": "NOT_STARTED",
+        "Tercel": "NOT_STARTED",
+        "Wish": "NOT_STARTED",
+        "Land Cruiser": "PARTIALLY_RESEARCHED",
+        "Camry": "NEEDS_MORE_SOURCES",
+        "Hilux": "NOT_STARTED",
+        "Tundra": "NOT_STARTED"
+      },
+      "evidence_integrity": {
+        "Land Cruiser": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 12,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 3,
+            "RETRIEVED_UNVERIFIABLE": 25
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 4,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 1,
+            "RETRIEVED_UNVERIFIABLE": 7
+          },
+          "records_passing_integrity_test": 8
+        },
+        "Camry": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 8,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 15
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 1,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 3
+          },
+          "records_passing_integrity_test": 5
+        }
+      },
+      "model_plan": [
+        {
+          "model": "Corona",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 34,
+          "newest_legacy_model_year": 2001,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Cresta",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 11,
+          "newest_legacy_model_year": 2001,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Mark II",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 34,
+          "newest_legacy_model_year": 2006,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Tercel",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 13,
+          "newest_legacy_model_year": 1999,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Wish",
+          "priority_score": 5,
+          "sparse_flags": [
+            "no_recent_years",
+            "few_trims"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 12,
+          "newest_legacy_model_year": 2017,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Land Cruiser",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 73,
+          "newest_legacy_model_year": 2025,
+          "collision_risk": "HIGH",
+          "siblings_to_keep_separate": [
+            "Land Cruiser 70",
+            "Land Cruiser 70 Pickup",
+            "Land Cruiser 76",
+            "Land Cruiser Prado"
+          ],
+          "existing_evidence": "evidence/toyota_land_cruiser.json"
+        },
+        {
+          "model": "Camry",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 114,
+          "newest_legacy_model_year": 2024,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Camry Solara"
+          ],
+          "existing_evidence": "evidence/toyota_camry.json"
+        },
+        {
+          "model": "Hilux",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 80,
+          "newest_legacy_model_year": 2026,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Tundra",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 118,
+          "newest_legacy_model_year": 2021,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-08",
+      "batch_number": 8,
+      "models": [
+        "Corolla",
+        "Land Cruiser Prado",
+        "Yaris",
+        "Highlander",
+        "Supra",
+        "RAV4",
+        "4Runner",
+        "Corolla Cross",
+        "Avalon"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "Corolla": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Land Cruiser Prado": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Yaris": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Highlander": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Supra": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "RAV4": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "4Runner": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Corolla Cross": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Avalon": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "Corolla": "NOT_STARTED",
+        "Land Cruiser Prado": "NOT_STARTED",
+        "Yaris": "NOT_STARTED",
+        "Highlander": "NOT_STARTED",
+        "Supra": "NOT_STARTED",
+        "RAV4": "NOT_STARTED",
+        "4Runner": "NOT_STARTED",
+        "Corolla Cross": "NOT_STARTED",
+        "Avalon": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "Corolla",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 224,
+          "newest_legacy_model_year": 2024,
+          "collision_risk": "HIGH",
+          "siblings_to_keep_separate": [
+            "Corolla Cross",
+            "Corolla Fielder",
+            "Corolla Hatchback",
+            "Corolla iM",
+            "GR Corolla"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Land Cruiser Prado",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 76,
+          "newest_legacy_model_year": 2023,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Land Cruiser",
+            "Land Cruiser 70",
+            "Land Cruiser 70 Pickup",
+            "Land Cruiser 76"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Yaris",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 64,
+          "newest_legacy_model_year": 2024,
+          "collision_risk": "HIGH",
+          "siblings_to_keep_separate": [
+            "Yaris Cross",
+            "Yaris iA"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Highlander",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 30,
+          "newest_legacy_model_year": 2026,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Grand Highlander"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Supra",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 19,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "RAV4",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 98,
+          "newest_legacy_model_year": 2025,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "4Runner",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 50,
+          "newest_legacy_model_year": 2024,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Corolla Cross",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 15,
+          "newest_legacy_model_year": 2025,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Corolla",
+            "Corolla Fielder",
+            "Corolla Hatchback",
+            "Corolla iM",
+            "GR Corolla"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Avalon",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 13,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    },
+    {
+      "batch_id": "toyota-batch-09",
+      "batch_number": 9,
+      "models": [
+        "Hiace",
+        "Tacoma",
+        "Fortuner",
+        "Prius",
+        "Crown",
+        "Sequoia",
+        "Sienna",
+        "Venza",
+        "Auris"
+      ],
+      "status": "NOT_STARTED",
+      "evidence_record_count": 0,
+      "conflicts": {},
+      "provisional_values": {},
+      "needs_source_retrieval_values": {},
+      "unresearched_fields": {
+        "Hiace": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Tacoma": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Fortuner": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Prius": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Crown": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Sequoia": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Sienna": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Venza": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ],
+        "Auris": [
+          "trims",
+          "engine_sizes",
+          "cylinders",
+          "fuel_types",
+          "transmissions",
+          "drivetrains",
+          "body_types",
+          "seats"
+        ]
+      },
+      "model_status": {
+        "Hiace": "NOT_STARTED",
+        "Tacoma": "NOT_STARTED",
+        "Fortuner": "NOT_STARTED",
+        "Prius": "NOT_STARTED",
+        "Crown": "NOT_STARTED",
+        "Sequoia": "NOT_STARTED",
+        "Sienna": "NOT_STARTED",
+        "Venza": "NOT_STARTED",
+        "Auris": "NOT_STARTED"
+      },
+      "evidence_integrity": {},
+      "model_plan": [
+        {
+          "model": "Hiace",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 110,
+          "newest_legacy_model_year": 2026,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Tacoma",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 137,
+          "newest_legacy_model_year": 2024,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Fortuner",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 25,
+          "newest_legacy_model_year": 2020,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Prius",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 17,
+          "newest_legacy_model_year": 2023,
+          "collision_risk": "HIGH",
+          "siblings_to_keep_separate": [
+            "Prius C",
+            "Prius Prime"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Crown",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 112,
+          "newest_legacy_model_year": 2024,
+          "collision_risk": "MEDIUM",
+          "siblings_to_keep_separate": [
+            "Crown Comfort",
+            "Crown Kluger",
+            "Crown Signia"
+          ],
+          "existing_evidence": null
+        },
+        {
+          "model": "Sequoia",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 12,
+          "newest_legacy_model_year": 2022,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Sienna",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 11,
+          "newest_legacy_model_year": 2020,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Venza",
+          "priority_score": 4,
+          "sparse_flags": [],
+          "recent": true,
+          "legacy_spec_rows": 13,
+          "newest_legacy_model_year": 2020,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        },
+        {
+          "model": "Auris",
+          "priority_score": 3,
+          "sparse_flags": [
+            "no_recent_years"
+          ],
+          "recent": false,
+          "legacy_spec_rows": 44,
+          "newest_legacy_model_year": 2018,
+          "collision_risk": "LOW",
+          "siblings_to_keep_separate": [],
+          "existing_evidence": null
+        }
+      ]
+    }
+  ]
+}

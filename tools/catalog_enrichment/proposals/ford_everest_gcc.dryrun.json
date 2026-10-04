@@ -1,6 +1,15 @@
 {
   "schema_version": "carnet.catalog_patch/1",
   "applied": false,
+  "proposal_status": {
+    "state": "stale",
+    "actionable": false,
+    "evidence_integrity_version": null,
+    "stale_since": "2026-10-03",
+    "stale_reason": "Generated before the evidence-integrity rules (source integrity states, preserved snapshots, sha256 + quote validation). Its sources carry self-declared retrieval and sha256 values that were never re-validated against preserved content, and the supporting pilot evidence (evidence/ford_everest.json) was re-fetched on 2026-10-03: only FE-S3 and FE-S8 are integrity-verified and only for some records; FE-S1/FE-S7 remain SNIPPET_ONLY and FE-S2/FE-S6 UNAVAILABLE. No tool in this repository regenerates proposals, so this file cannot be refreshed automatically.",
+    "requires": "Regenerate from an integrity-verified evidence/ford_everest.json (every cited source FULL_TEXT_VERIFIED / PDF_VERIFIED with the quote found), then set state=current, actionable=true and evidence_integrity_version to the current rules version.",
+    "never_apply_to_production": true
+  },
   "generated_at": "2026-10-03",
   "sources": {
     "S1_me_my25_spec_sheet": {

@@ -1,0 +1,351 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Frontlander",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "China (GAC Toyota Frontlander, 2022-): ONLY tier 4/5 sources were found in this run (auto-data.net database, Baidu Baike). No Toyota or GAC Toyota page was retrieved, so every value here is PROVISIONAL by policy",
+    "NOT researched: any official GAC Toyota / Toyota China page, Frontlander Hybrid official specs, trims, model years beyond production start, other markets (e.g. exported as a Corolla Cross sibling)",
+    "Identity: Frontlander is GAC Toyota's sister of FAW Toyota's Corolla Cross; Corolla Cross evidence was not mixed in"
+  ],
+  "not_used_sources": [],
+  "sources": {
+    "FL-S1": {
+      "url": "https://www.auto-data.net/en/toyota-frontlander-2.0-171hp-cvt-46755",
+      "name": "Toyota Frontlander 2.0 (171 Hp) CVT | Technical specs, data, fuel consumption, Dimensions",
+      "publisher": "auto-data.net",
+      "tier": 4,
+      "host_type": "independent",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2022",
+      "market_scope": "China",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    },
+    "FL-S2": {
+      "url": "https://baike.baidu.com/en/item/Frontlander/1411930",
+      "name": "Frontlander (A compact SUV from GAC Toyota.) - Baiduwiki",
+      "publisher": "Baidu Baike",
+      "tier": 5,
+      "host_type": "independent",
+      "retrieval": "search_snippet_only",
+      "accessed_at": "2026-10-03",
+      "model_year_label": null,
+      "market_scope": "China",
+      "integrity": {
+        "state": "SNIPPET_ONLY",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": null,
+        "snapshot_path": null,
+        "origin": "migration:snippet_retrieval",
+        "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated."
+      },
+      "notes": "Search-result snippet only (page text not cached)."
+    }
+  },
+  "records": [
+    {
+      "record_id": "FL-001",
+      "brand": "Toyota",
+      "model": "Frontlander",
+      "generation": null,
+      "year_from": 2022,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": "SUV",
+      "doors": 5,
+      "seats": 5,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": {
+          "value": 1987,
+          "unit": "cm3"
+        },
+        "displacement_cc": 1987,
+        "cylinders": 4,
+        "fuel_type": "Petrol (Gasoline)",
+        "aspiration": null,
+        "horsepower": {
+          "value": 171,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 205,
+          "unit": "Nm"
+        }
+      },
+      "transmission": {
+        "type": "automatic transmission CVT",
+        "gears": null
+      },
+      "drivetrain": "Front wheel drive",
+      "evidence": {
+        "source_id": "FL-S1",
+        "source_url": "https://www.auto-data.net/en/toyota-frontlander-2.0-171hp-cvt-46755",
+        "source_name": "Toyota Frontlander 2.0 (171 Hp) CVT | Technical specs, data, fuel consumption, Dimensions",
+        "source_type": "reputable_spec_database",
+        "source_tier": 4,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.45,
+        "confidence_basis": [
+          "tier4_base:0.6",
+          "retrieval:search_snippet_only:-0.15"
+        ],
+        "supporting_text": "Start of production 2022 … Body type SUV … Seats 5 … Doors 5 … Fuel Type Petrol (Gasoline) … Power 171 Hp @ 6600 rpm. … Torque 205 Nm @ 4600-5000 rpm. … Engine displacement 1987 cm 3 … Number of cylinders 4 … Drive wheel Front wheel drive … automatic transmission CVT"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": 5,
+        "seats": 5,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": 1987,
+        "displacement_nominal_l": 1.987,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 171.0,
+        "torque_nm": 205.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "FWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FL-002",
+      "brand": "Toyota",
+      "model": "Frontlander",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": "SUV",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FL-S2",
+        "source_url": "https://baike.baidu.com/en/item/Frontlander/1411930",
+        "source_name": "Frontlander (A compact SUV from GAC Toyota.) - Baiduwiki",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.15,
+        "confidence_basis": [
+          "tier5_base:0.35",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "The Frontlander is a compact SUV under the GAC Toyota brand."
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FL-003",
+      "brand": "Toyota",
+      "model": "Frontlander",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L naturally aspirated engine",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "gasoline",
+        "aspiration": null,
+        "horsepower": {
+          "value": 171,
+          "unit": "hp"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": "CVT",
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FL-S2",
+        "source_url": "https://baike.baidu.com/en/item/Frontlander/1411930",
+        "source_name": "Frontlander (A compact SUV from GAC Toyota.) - Baiduwiki",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.15,
+        "confidence_basis": [
+          "tier5_base:0.35",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "The gasoline version is equipped with a 2.0L naturally aspirated engine (maximum power of 171 horsepower) paired with a CVT transmission"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": null,
+        "fuel_type": "Petrol",
+        "aspiration": null,
+        "horsepower_hp": 171.0,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "FL-004",
+      "brand": "Toyota",
+      "model": "Frontlander",
+      "generation": null,
+      "year_from": null,
+      "year_to": null,
+      "market": "China",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.0L hybrid system",
+        "displacement_raw": "2.0L",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 196,
+          "unit": "PS",
+          "basis": "combined"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "FL-S2",
+        "source_url": "https://baike.baidu.com/en/item/Frontlander/1411930",
+        "source_name": "Frontlander (A compact SUV from GAC Toyota.) - Baiduwiki",
+        "source_type": "secondary_automotive_website",
+        "source_tier": 5,
+        "source_integrity": "SNIPPET_ONLY",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.15,
+        "confidence_basis": [
+          "tier5_base:0.35",
+          "retrieval:search_snippet_only:-0.15",
+          "no_model_year_stated:-0.05"
+        ],
+        "supporting_text": "The Hybrid version features a 2.0L hybrid system (combined power of 196 Ps)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "cn",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.0L",
+        "engine_size_label": "2.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.0,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 193.3,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

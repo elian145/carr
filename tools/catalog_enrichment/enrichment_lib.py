@@ -495,10 +495,311 @@ RECORD_KEYS = [
 ENGINE_KEYS = ["display_name", "displacement_raw", "displacement_cc", "cylinders", "fuel_type", "aspiration", "horsepower", "torque"]
 TRANSMISSION_KEYS = ["type", "gears"]
 EVIDENCE_KEYS = [
-    "source_id", "source_url", "source_name", "source_type", "source_tier", "accessed_at", "confidence",
+    "source_id", "source_url", "source_name", "source_type", "source_tier", "source_integrity", "accessed_at", "confidence",
     "confidence_basis", "supporting_text",
 ]
-SOURCE_KEYS = ["url", "name", "publisher", "tier", "host_type", "retrieval", "accessed_at", "model_year_label", "market_scope", "sha256", "notes"]
+SOURCE_KEYS = ["url", "name", "publisher", "tier", "host_type", "retrieval", "accessed_at", "model_year_label", "market_scope", "integrity", "notes"]
+
+
+# ----------------------------------------------------------------------------------------
+# evidence integrity (source authority is NOT evidence integrity)
+# ----------------------------------------------------------------------------------------
+INTEGRITY_RULES = SRC["evidence_integrity"]
+INTEGRITY_STATES = list(INTEGRITY_RULES["states"])
+VERIFIED_ELIGIBLE_STATES = frozenset(INTEGRITY_RULES["verified_eligible_states"])
+NOT_VERIFIED_STATES = frozenset(INTEGRITY_RULES["not_verified_states"])
+INTEGRITY_KEYS = [
+    "state", "retrieved_at", "content_sha256", "snapshot_path", "origin", "note",
+    # optional fetch provenance (written by fetch_snapshot.py)
+    "retrieved_by", "final_url", "http_status", "content_type", "raw_sha256", "extractor", "previous_state", "unconfirmed_record_ids",
+]
+INTEGRITY_ORIGINS = INTEGRITY_RULES["integrity_origin_values"]
+QUOTE_SEGMENT_SEPARATOR = "\u2026"  # a supporting_text may join several verbatim passages of ONE source with " … "
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}Z)?$")  # ISO date, or UTC timestamp when the retrieval time was recorded
+_UNSET = object()
+
+
+def source_integrity_state(src: dict | None) -> str | None:
+    integ = (src or {}).get("integrity")
+    return integ.get("state") if isinstance(integ, dict) else None
+
+
+def is_pdf_source(src: dict) -> bool:
+    from urllib.parse import urlparse
+
+    return src.get("retrieval") == "pdf_downloaded_and_parsed" or urlparse(src.get("url") or "").path.lower().endswith(".pdf")
+
+
+def _sha256_file_bytes(raw: bytes) -> str:
+    import hashlib
+
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _ws(s) -> str:
+    return " ".join(str(s).split())
+
+
+def quote_segments(text: str) -> list[str]:
+    return [_ws(seg) for seg in (text or "").split(QUOTE_SEGMENT_SEPARATOR) if seg.strip()]
+
+
+def _snapshot_file(root: Path, snapshot_path: str) -> Path | None:
+    """Resolve a snapshot path; it must stay inside <root>/evidence (no traversal, no absolute paths)."""
+    p = (root / snapshot_path).resolve()
+    base = (root / "evidence").resolve()
+    return p if base in p.parents else None
+
+
+def load_snapshots(doc: dict, root: Path = HERE) -> tuple[dict, list[str]]:
+    """-> ({source_id: whitespace-normalised preserved text or None}, errors).
+
+    Only sources that CLAIM a verifiable state are read. The preserved file must exist and match integrity.content_sha256.
+    A live page is never consulted. A source with an unreadable / tampered snapshot gets None (and an error)."""
+    texts: dict[str, str | None] = {}
+    errs: list[str] = []
+    for sid, s in doc.get("sources", {}).items():
+        integ = s.get("integrity") if isinstance(s.get("integrity"), dict) else {}
+        if integ.get("state") not in VERIFIED_ELIGIBLE_STATES:
+            continue
+        sp = integ.get("snapshot_path")
+        f = _snapshot_file(root, sp) if isinstance(sp, str) and sp else None
+        if f is None:
+            errs.append(f"{sid}: snapshot_path {sp!r} is missing or outside evidence/")
+            texts[sid] = None
+        elif not f.exists():
+            errs.append(f"{sid}: snapshot {sp} is missing")
+            texts[sid] = None
+        else:
+            raw = f.read_bytes()
+            if _sha256_file_bytes(raw) != integ.get("content_sha256"):
+                errs.append(f"{sid}: snapshot {sp} hash does not match integrity.content_sha256 (preserved content was altered)")
+                texts[sid] = None
+            else:
+                texts[sid] = _ws(raw.decode("utf-8", errors="replace"))
+    return texts, errs
+
+
+def assess_records(doc: dict, texts: dict | None) -> dict:
+    """Per record: does it pass the integrity test that allows a tier 1-3 value to be VERIFIED?
+
+    eligible = tier 1-3 AND source state in {FULL_TEXT_VERIFIED, PDF_VERIFIED} AND snapshot readable AND every quote
+    segment found in the snapshot. `texts` = load_snapshots(...)[0] (or an in-memory dict in tests)."""
+    texts = texts or {}
+    out = {}
+    for r in doc["records"]:
+        ev = r.get("evidence") or {}
+        sid = ev.get("source_id")
+        src = doc["sources"].get(sid) or {}
+        state = source_integrity_state(src)
+        tier = src.get("tier")
+        a = {"source_id": sid, "tier": tier, "state": state, "quote_validated": None, "eligible": False, "reason": None}
+        if state not in VERIFIED_ELIGIBLE_STATES:
+            a["reason"] = f"integrity:{state}"
+        elif texts.get(sid) is None:
+            a["quote_validated"], a["reason"] = False, "snapshot_unavailable"
+        else:
+            missing = [s for s in quote_segments(ev.get("supporting_text")) if s not in texts[sid]]
+            a["quote_validated"] = not missing
+            if missing:
+                a["reason"] = "quote_not_in_snapshot"
+            elif not isinstance(tier, int) or tier > 3:
+                a["reason"] = "tier_above_3"
+            else:
+                a["eligible"] = True
+        out[r["record_id"]] = a
+    return out
+
+
+def verify_snapshots(doc: dict, root: Path = HERE) -> tuple[list[str], dict, dict]:
+    """-> (errors, texts, assessments). A doc that CLAIMS a verified state must be backed by its preserved snapshot."""
+    texts, errs = load_snapshots(doc, root)
+    assess = assess_records(doc, texts)
+    # A record may be listed in integrity.unconfirmed_record_ids ONLY if its quote really is absent from the preserved
+    # snapshot (changed page, review needed). It then never verifies; the listing must be exactly accurate.
+    listed = {}
+    for sid, s in doc.get("sources", {}).items():
+        for rid in (s.get("integrity") or {}).get("unconfirmed_record_ids") or []:
+            listed[rid] = sid
+    known = {r["record_id"]: r for r in doc["records"]}
+    for rid, sid in sorted(listed.items()):
+        if rid not in known or known[rid]["evidence"]["source_id"] != sid:
+            errs.append(f"{rid}: listed in unconfirmed_record_ids of {sid} but is not a record citing that source")
+        elif assess[rid]["quote_validated"]:
+            errs.append(f"{rid}: listed as unconfirmed but its quote IS found in the snapshot of {sid} (stale listing; re-run the revalidation)")
+    for rid, a in assess.items():
+        if a["reason"] == "quote_not_in_snapshot" and rid not in listed:
+            for seg in quote_segments(known[rid]["evidence"]["supporting_text"]):
+                if seg not in texts[a["source_id"]]:
+                    errs.append(f"{rid}: quote segment not found in preserved snapshot of {a['source_id']}: {seg[:90]!r}")
+    return errs, texts, assess
+
+
+def integrity_counts(doc: dict) -> dict:
+    """Records and sources per integrity state (every state listed, zeros included)."""
+    rec = {s: 0 for s in INTEGRITY_STATES}
+    srcs = {s: 0 for s in INTEGRITY_STATES}
+    for s in doc["sources"].values():
+        st = source_integrity_state(s)
+        if st in srcs:
+            srcs[st] += 1
+    for r in doc["records"]:
+        st = source_integrity_state(doc["sources"].get(r["evidence"]["source_id"]))
+        if st in rec:
+            rec[st] += 1
+    return {"records": rec, "sources": srcs}
+
+
+def migrate_integrity(doc: dict, snapshot_dir: Path, root: Path = HERE) -> tuple[dict, list[str]]:
+    """Deterministically add `integrity` to sources that have none, from EXISTING metadata only (never overwrites).
+
+    snippet retrieval                          -> SNIPPET_ONLY
+    legacy `sha256` + matching cached text     -> FULL_TEXT_VERIFIED / PDF_VERIFIED (claim; verify_snapshots re-checks it)
+    any other full-text / PDF retrieval record -> RETRIEVED_UNVERIFIABLE (no preserved content exists to prove it)
+    Returns (doc, log lines)."""
+    doc = copy.deepcopy(doc)
+    log = []
+    for sid, s in sorted(doc["sources"].items()):
+        legacy_sha = s.pop("sha256", None)
+        if isinstance(s.get("integrity"), dict):
+            continue
+        if s["retrieval"] == "search_snippet_only":
+            integ = {
+                "state": "SNIPPET_ONLY", "retrieved_at": s["accessed_at"], "content_sha256": None, "snapshot_path": None,
+                "origin": "migration:snippet_retrieval",
+                "note": "Evidence came from a search-result snippet; the underlying page/document was not retrieved or validated.",
+            }
+        else:
+            cache = snapshot_dir / f"{sid}.txt"
+            if legacy_sha and cache.exists() and _sha256_file_bytes(cache.read_bytes()) == legacy_sha:
+                integ = {
+                    "state": "PDF_VERIFIED" if is_pdf_source(s) else "FULL_TEXT_VERIFIED", "retrieved_at": s["accessed_at"],
+                    "content_sha256": legacy_sha, "snapshot_path": cache.resolve().relative_to(root.resolve()).as_posix(),
+                    "origin": "migration:cached_snapshot", "note": None,
+                }
+            else:
+                integ = {
+                    "state": "RETRIEVED_UNVERIFIABLE", "retrieved_at": s["accessed_at"], "content_sha256": None, "snapshot_path": None,
+                    "origin": "migration:legacy_no_snapshot",
+                    "note": f"Retrieval was recorded as {s['retrieval']} but no snapshot/hash was preserved, so the quotes cannot be re-validated against retrieved content.",
+                }
+        s["integrity"] = integ
+        log.append(f"{sid}: {integ['state']}")
+    doc["sources"] = {k: _order_source(v) for k, v in doc["sources"].items()}
+    return doc, log
+
+
+def _order_source(s: dict) -> dict:
+    out = {k: s[k] for k in SOURCE_KEYS if k in s}
+    if isinstance(out.get("integrity"), dict):
+        out["integrity"] = {k: out["integrity"].get(k) for k in INTEGRITY_KEYS if k in out["integrity"]}
+    for k in s:
+        if k not in out:
+            out[k] = s[k]
+    return out
+
+
+def validate_source_integrity(sid: str, s: dict) -> list[str]:
+    errs = []
+    integ = s.get("integrity")
+    if not isinstance(integ, dict):
+        return [f"source {sid}: integrity block is required (run the integrity migration or author it)"]
+    for k in integ:
+        if k not in INTEGRITY_KEYS:
+            errs.append(f"source {sid}: unknown integrity key {k}")
+    st = integ.get("state")
+    if st not in INTEGRITY_STATES:
+        return errs + [f"source {sid}: integrity.state must be one of {INTEGRITY_STATES}"]
+    if integ.get("origin") not in INTEGRITY_ORIGINS:
+        errs.append(f"source {sid}: integrity.origin must be one of {INTEGRITY_ORIGINS}")
+    if not (isinstance(integ.get("retrieved_at"), str) and _DATE_RE.match(integ["retrieved_at"])):
+        errs.append(f"source {sid}: integrity.retrieved_at must be an ISO date or UTC timestamp")
+    unconf = integ.get("unconfirmed_record_ids")
+    if unconf is not None:
+        if st not in VERIFIED_ELIGIBLE_STATES:
+            errs.append(f"source {sid}: unconfirmed_record_ids only applies to a verified state")
+        elif not (isinstance(unconf, list) and all(isinstance(x, str) for x in unconf) and unconf == sorted(set(unconf))):
+            errs.append(f"source {sid}: unconfirmed_record_ids must be a sorted list of unique record ids")
+    sha, sp = integ.get("content_sha256"), integ.get("snapshot_path")
+    if st in VERIFIED_ELIGIBLE_STATES:
+        if s.get("retrieval") == "search_snippet_only":
+            errs.append(f"source {sid}: {st} is impossible for retrieval=search_snippet_only")
+        if not (isinstance(sha, str) and _SHA256_RE.match(sha)):
+            errs.append(f"source {sid}: {st} requires integrity.content_sha256 (64 hex chars)")
+        if not (isinstance(sp, str) and sp.startswith("evidence/")):
+            errs.append(f"source {sid}: {st} requires integrity.snapshot_path under evidence/")
+        if st == "PDF_VERIFIED" and not is_pdf_source(s):
+            errs.append(f"source {sid}: PDF_VERIFIED requires a PDF source (retrieval pdf_downloaded_and_parsed or a .pdf URL)")
+    else:
+        if sha is not None or sp is not None:
+            errs.append(f"source {sid}: {st} must not carry content_sha256 / snapshot_path (no preserved content is claimed)")
+        if s.get("retrieval") == "search_snippet_only" and st not in ("SNIPPET_ONLY", "UNAVAILABLE"):
+            errs.append(f"source {sid}: retrieval=search_snippet_only can only be SNIPPET_ONLY or UNAVAILABLE")
+    return errs
+
+
+PROPOSAL_RULES = INTEGRITY_RULES["proposals"]
+PROPOSAL_INTEGRITY_VERSION = PROPOSAL_RULES["current_integrity_version"]
+PROPOSALS = HERE / "proposals"
+
+
+class ProposalNotActionable(Exception):
+    """Raised when something tries to treat a stale / legacy / unverified proposal as actionable."""
+
+
+def proposal_problems(doc: dict) -> list[str]:
+    """Why `doc` (a proposals/*.json patch set) is NOT actionable. Empty list = actionable.
+
+    Actionable only if: proposal_status present, state=current, actionable=true, evidence_integrity_version is the
+    current rules version, applied=false (a proposal file is never the applied record) and every cited source has an
+    integrity state that is verified-eligible."""
+    ps = doc.get("proposal_status")
+    if not isinstance(ps, dict):
+        return ["proposal has no proposal_status (legacy proposal: treated as stale / non-actionable)"]
+    out = []
+    if ps.get("state") != "current":
+        out.append(f"proposal_status.state is {ps.get('state')!r}, not 'current'")
+    if ps.get("actionable") is not True:
+        out.append("proposal_status.actionable is not true")
+    if ps.get("evidence_integrity_version") != PROPOSAL_INTEGRITY_VERSION:
+        out.append(f"proposal_status.evidence_integrity_version is {ps.get('evidence_integrity_version')!r}, current rules version is {PROPOSAL_INTEGRITY_VERSION}")
+    if doc.get("applied") is not False:
+        out.append("applied must be false in a proposal file")
+    for key, src in sorted((doc.get("sources") or {}).items()):
+        st = (src.get("integrity") or {}).get("state") if isinstance(src, dict) else None
+        if st not in VERIFIED_ELIGIBLE_STATES:
+            out.append(f"source {key}: integrity state {st!r} is not FULL_TEXT_VERIFIED / PDF_VERIFIED")
+    return out
+
+
+def validate_proposal(doc: dict) -> list[str]:
+    """Consistency errors of the proposal's own status declaration (a stale proposal that is correctly declared is valid)."""
+    ps = doc.get("proposal_status")
+    if not isinstance(ps, dict):
+        return ["proposal_status is required: mark a legacy proposal state=stale / actionable=false, or regenerate it"]
+    errs = []
+    if ps.get("state") not in ("current", "stale"):
+        errs.append("proposal_status.state must be 'current' or 'stale'")
+    if not isinstance(ps.get("actionable"), bool):
+        errs.append("proposal_status.actionable must be a boolean")
+    if doc.get("applied") is not False:
+        errs.append("applied must be false in a proposal file")
+    if ps.get("state") == "stale":
+        if ps.get("actionable") is not False:
+            errs.append("a stale proposal must have actionable=false")
+        if not (isinstance(ps.get("stale_reason"), str) and ps["stale_reason"].strip()):
+            errs.append("a stale proposal must give proposal_status.stale_reason")
+    if ps.get("actionable") is True:
+        errs += [f"claims actionable=true but is not actionable: {p}" for p in proposal_problems(doc)]
+    return errs
+
+
+def assert_proposal_actionable(doc: dict) -> None:
+    """Gate for any future apply step. Raises ProposalNotActionable with every reason; never returns for stale proposals."""
+    problems = proposal_problems(doc)
+    if problems:
+        raise ProposalNotActionable("; ".join(problems))
 
 
 def confidence_for(source: dict, rec: dict):
@@ -619,6 +920,7 @@ def prepare_evidence(doc: dict) -> dict:
                 source_name=src.get("name"),
                 source_type=SRC["tiers"][str(src["tier"])]["source_type"],
                 source_tier=src["tier"],
+                source_integrity=source_integrity_state(src),
                 accessed_at=src.get("accessed_at"),
             )
             score, basis = confidence_for(src, r)
@@ -660,6 +962,7 @@ def validate_evidence(doc: dict, models=None) -> list[str]:
             errs.append(f"source {sid}: bad host_type {s.get('host_type')}")
         if s.get("retrieval") not in SRC["retrieval_methods"]:
             errs.append(f"source {sid}: bad retrieval {s.get('retrieval')}")
+        errs += validate_source_integrity(sid, s)
     seen = set()
     for i, r in enumerate(doc["records"]):
         rid = r.get("record_id") or f"#{i}"
@@ -733,7 +1036,7 @@ def boundary_warnings(doc: dict, models) -> list[str]:
 # ----------------------------------------------------------------------------------------
 # evidence manifest: proof that no evidence record is ever silently lost or edited
 # ----------------------------------------------------------------------------------------
-_DERIVED_EVIDENCE_KEYS = {"source_url", "source_name", "source_type", "source_tier", "accessed_at", "confidence", "confidence_basis"}
+_DERIVED_EVIDENCE_KEYS = {"source_url", "source_name", "source_type", "source_tier", "source_integrity", "accessed_at", "confidence", "confidence_basis"}
 
 
 def authored_fingerprint(rec: dict) -> str:
@@ -907,8 +1210,13 @@ def _sort_key(v):
     return (1, 0, str(v).casefold())
 
 
-def build_union(doc: dict, conflicts: list[dict]) -> dict:
+def build_union(doc: dict, conflicts: list[dict], evidence_file: str | None = None, texts=_UNSET, root: Path = HERE) -> dict:
+    """texts: {source_id: preserved snapshot text} used to validate quotes. Default: read the preserved snapshots named by
+    each source's integrity block (under `root`). Passing {} (or no readable snapshot) means nothing can be VERIFIED."""
     recs = doc["records"]
+    if texts is _UNSET:
+        texts = load_snapshots(doc, root)[0]
+    assess = assess_records(doc, texts)
     contested = set()  # (record_id, field): any conflict at all
     conflicted = set()  # (record_id, field): demotes the record (see verification_policy)
     for c in conflicts:
@@ -926,7 +1234,7 @@ def build_union(doc: dict, conflicts: list[dict]) -> dict:
     dim_conf_fields["engine_sizes"] = []
 
     details = {}
-    union_verified, union_prov = {}, {}
+    union_verified, union_prov, union_nsr = {}, {}, {}
     for dim in DIMENSIONS:
         field = DIM_FIELD[dim]
         bucket = {}
@@ -940,15 +1248,19 @@ def build_union(doc: dict, conflicts: list[dict]) -> dict:
         for val, b in bucket.items():
             rs = b["records"]
             fields = dim_conf_fields[dim]
-            strong = [
-                r for r in rs
-                if r["evidence"]["source_tier"] <= 3 and not any((r["record_id"], f) in conflicted for f in fields)
-            ]
+            not_conflicted = [r for r in rs if not any((r["record_id"], f) in conflicted for f in fields)]
+            # VERIFIED needs authority (tier 1-3) AND integrity (preserved snapshot of the source, quote found in it)
+            strong = [r for r in not_conflicted if assess[r["record_id"]]["eligible"]]
+            # tier 1-3 support that fails the integrity test: useful, but the source content was never validated
+            authoritative = [r for r in not_conflicted if r["evidence"]["source_tier"] <= 3]
+            status = "VERIFIED" if strong else ("NEEDS_SOURCE_RETRIEVAL" if authoritative else "PROVISIONAL")
             years = [y for r in rs for y in (r.get("year_from"), r.get("year_to")) if y is not None]
             rows.append(
                 {
                     "value": b["display"],
-                    "status": "VERIFIED" if strong else "PROVISIONAL",
+                    "status": status,
+                    "integrity_states": sorted({assess[r["record_id"]]["state"] or "MISSING" for r in rs}),
+                    "validated_record_ids": sorted(r["record_id"] for r in rs if assess[r["record_id"]]["quote_validated"]),
                     "best_tier": min(r["evidence"]["source_tier"] for r in rs),
                     "max_confidence": max(r["evidence"]["confidence"] for r in rs),
                     "support_count": len(rs),
@@ -965,6 +1277,7 @@ def build_union(doc: dict, conflicts: list[dict]) -> dict:
         details[dim] = [{k: v for k, v in x.items() if not k.startswith("_")} for x in rows]
         union_verified[dim] = [x["value"] for x in rows if x["status"] == "VERIFIED"]
         union_prov[dim] = [x["value"] for x in rows if x["status"] == "PROVISIONAL"]
+        union_nsr[dim] = [x["value"] for x in rows if x["status"] == "NEEDS_SOURCE_RETRIEVAL"]
 
     # per-engine detail
     engines = {}
@@ -1016,37 +1329,33 @@ def build_union(doc: dict, conflicts: list[dict]) -> dict:
         "brand": doc["brand"],
         "model": doc["model"],
         "generated_from": {
-            "evidence_file": f"evidence/{slug(doc['brand'])}_{slug(doc['model'])}.json",
+            "evidence_file": evidence_file or f"evidence/{slug(doc['brand'])}_{slug(doc['model'])}.json",
             "researched_at": doc["researched_at"],
             "record_count": len(recs),
             "source_count": len(used_sources),
             "records_by_source_tier": dict(sorted(tiers.items())),
+            "records_by_integrity_state": integrity_counts(doc)["records"],
+            "sources_by_integrity_state": integrity_counts(doc)["sources"],
+            "records_passing_integrity_test": sum(1 for a in assess.values() if a["eligible"]),
         },
         "research_coverage": doc.get("coverage", []),
         "vocabulary_version": NORM["locked_vocabulary"]["version"],
         "production_policy": {
-            "production_bound_section": "union",
+            "production_bound_section": "verified",
+            "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
             "includes_provisional": False,
+            "includes_needs_source_retrieval": False,
             "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+            "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
             "unresolved_conflicts": len(conflicts),
             "conflicts_block_promotion_until_reviewed": bool(conflicts),
             "review_status": "UNREVIEWED",
         },
-        "union": {
-            "trims": union_verified["trims"],
-            "engine_sizes": union_verified["engine_sizes"],
-            "cylinders": union_verified["cylinders"],
-            "fuel_types": union_verified["fuel_types"],
-            "transmissions": union_verified["transmissions"],
-            "transmission_variants": union_verified["transmission_variants"],
-            "transmission_gears": union_verified["transmission_gears"],
-            "drivetrains": union_verified["drivetrains"],
-            "body_types": union_verified["body_types"],
-            "seats": union_verified["seats"],
-            "doors": union_verified["doors"],
-        },
+        "verified": union_verified,
+        "union": copy.deepcopy(union_verified),  # legacy alias of 'verified' (identical content), kept for existing consumers
         "provisional_only": union_prov,
-        "empty_dimensions": [d for d in DIMENSIONS if not union_verified[d] and not union_prov[d]],
+        "needs_source_retrieval": union_nsr,
+        "empty_dimensions": [d for d in DIMENSIONS if not union_verified[d] and not union_prov[d] and not union_nsr[d]],
         "engines": engine_list,
         "details": details,
         "conflicts": conflicts,
@@ -1173,27 +1482,32 @@ def compare_model(union: dict, current: dict) -> dict:
         cur = {x["key"]: x for x in cur_items}
         ver_det = [x for x in union["details"][dim] if x["status"] == "VERIFIED"]
         prov_det = [x for x in union["details"][dim] if x["status"] == "PROVISIONAL"]
+        nsr_det = [x for x in union["details"][dim] if x["status"] == "NEEDS_SOURCE_RETRIEVAL"]
 
         def keyof(x):
             return _vkey(dim, x["value"])
 
         ver = {keyof(x): x for x in ver_det}
         prov = {keyof(x): x for x in prov_det}
+        nsr = {keyof(x): x for x in nsr_det}
         cur_keys = set(cur)
         entry = {
             "carnet_stores_field": CARNET_STORES[dim],
             "CURRENT_CARNET": [x["value"] for x in cur_items],
             "NEW_VERIFIED": [x["value"] for x in ver_det],
             "NEW_PROVISIONAL_ONLY": [x["value"] for x in prov_det],
+            "NEW_NEEDS_SOURCE_RETRIEVAL": [x["value"] for x in nsr_det],
             "MATCHED": [ver[k]["value"] for k in ver if k in cur_keys],
             "MISSING_FROM_CARNET": [ver[k]["value"] for k in ver if k not in cur_keys],
             "PROVISIONAL_NOT_IN_CARNET": [prov[k]["value"] for k in prov if k not in cur_keys],
+            "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [nsr[k]["value"] for k in nsr if k not in cur_keys],
             "CARNET_VALUE_ONLY_PROVISIONAL": [cur[k]["value"] for k in cur if k in prov and k not in ver],
+            "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [cur[k]["value"] for k in cur if k in nsr and k not in ver],
             "ONLY_IN_CARNET": [],
             "CONFLICTS": [],
         }
         for k, x in cur.items():
-            if k in ver or k in prov:
+            if k in ver or k in prov or k in nsr:
                 continue
             entry["ONLY_IN_CARNET"].append({"value": x["value"], "dataset_rows": x["dataset_rows"]})
         if dim in LEGACY_VIEWS:

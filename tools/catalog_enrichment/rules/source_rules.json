@@ -31,8 +31,10 @@
   },
 
   "verification_policy": {
-    "verified": "A value is VERIFIED when at least one evidence record of tier 1-3 supports it AND that record is not involved in an unresolved conflict on the same field.",
+    "verified": "A value is VERIFIED when at least one evidence record supports it that is (a) tier 1-3 AND (b) from a source whose evidence_integrity state is FULL_TEXT_VERIFIED or PDF_VERIFIED AND (c) its supporting_text was found, segment by segment, in the preserved snapshot whose sha256 matches AND (d) it is not involved in an unresolved conflict on the same field. Source authority (tier) alone never verifies a value.",
+    "needs_source_retrieval": "A value is NEEDS_SOURCE_RETRIEVAL when it is supported by tier 1-3 evidence (not demoted by a conflict) but NO supporting record passes the integrity test above (search-result snippet only, page unavailable, or retrieval recorded without a preserved snapshot). It is useful evidence, it is NOT verified, and it is listed in 'needs_source_retrieval' until the source content is retrieved, snapshotted and the quote validated.",
     "provisional": "A value is PROVISIONAL when it is supported only by tier 4-5 records, or only by tier 1-3 records that are in unresolved conflict on that field. Provisional values are listed separately and are NOT part of the verified union.",
+    "mixed_support": "If a value is supported by both a snippet-only record and a fully validated tier 1-3 record, it is VERIFIED because of the validated record; the snippet-only record stays listed in the value's details.",
     "conflict_lower_tier_rule": "A conflict never removes a tier 1-3 value merely because a tier 4-5 record disagrees: the tier 1-3 value stays VERIFIED (flagged in_conflict=true, conflict listed) and the tier 4-5 value stays PROVISIONAL. A tier 1-3 value is demoted to PROVISIONAL only when another tier 1-3 record asserts a different value for the same configuration and field. Nothing is ever resolved automatically: all records and the conflict are preserved.",
     "conflict": "Two records describing the same configuration (same engine-size label, compatible market, compatible trim, overlapping or unspecified model years) with different non-null values on the same field are a CONFLICT. Both records are preserved, the conflict is listed, nothing is chosen. Conflicts where either side has no stated model year are marked severity 'possible_year_unspecified'.",
     "same_configuration": [
@@ -44,9 +46,31 @@
       "trims are compatible when equal (trim_key) or either is null",
       "years are compatible when ranges overlap or either side has no year"
     ],
-    "production_default": "Production-bound unions use VERIFIED values only (the 'union' section of generated/*.union.json). PROVISIONAL values are never promoted automatically; they stay in 'provisional_only' for later review. Conflicts stay UNRESOLVED until a reviewer decides, and an unreviewed model union is not promotable (production_policy.review_status).",
+    "production_default": "Production-bound unions use VERIFIED values only (the 'verified' section of generated/*.union.json; 'union' is an identical legacy alias). PROVISIONAL and NEEDS_SOURCE_RETRIEVAL values are never promoted automatically; they stay in 'provisional_only' / 'needs_source_retrieval' for later review. Conflicts stay UNRESOLVED until a reviewer decides, and an unreviewed model union is not promotable (production_policy.review_status).",
     "detailed_records_retained": "The model-level union is a projection. The per-record evidence (brand, model, generation, year range, market, trim, variant, engine, transmission, drivetrain, source, quote) stays in evidence/*.json and every union value lists its supporting record_ids in 'details', so the union can always be audited back to its sources.",
     "no_ai_memory": "Every value in an evidence record must be supported by the supporting_text of its own source. Values that a source does not state stay null. Do not copy a value from a different market, year or trim into a record."
+  },
+
+  "evidence_integrity": {
+    "description": "Retrieval/integrity state of each SOURCE (sources.<id>.integrity.state). Authority (tier) and integrity are independent: integrity is never inferred from tier or from the self-declared 'retrieval' method.",
+    "states": {
+      "FULL_TEXT_VERIFIED": "page content was retrieved and preserved (snapshot_path + content_sha256) and every cited supporting_text segment was found in that snapshot",
+      "PDF_VERIFIED": "a PDF/document (retrieval pdf_downloaded_and_parsed, or a URL path ending .pdf) was retrieved, its extracted text preserved (snapshot_path + content_sha256) and every cited supporting_text segment was found in it",
+      "SNIPPET_ONLY": "evidence came only from a search-result snippet or equivalent preview; the underlying page/document was not validated",
+      "UNAVAILABLE": "the source is known but its content could not be retrieved or validated",
+      "RETRIEVED_UNVERIFIABLE": "ADDED STATE for legacy pilot evidence: the author recorded a full-text/PDF retrieval, but no snapshot or hash was preserved, so the quote cannot be re-validated. Never silently upgraded to *_VERIFIED."
+    },
+    "verified_eligible_states": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED"],
+    "not_verified_states": ["SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"],
+    "snapshot_rule": "States FULL_TEXT_VERIFIED / PDF_VERIFIED require integrity.retrieved_at, integrity.content_sha256 (sha256 of the preserved file bytes) and integrity.snapshot_path (relative to tools/catalog_enrichment/, inside evidence/). Quote validation reads ONLY that preserved file; a live page is never consulted. A missing file, a hash mismatch or a quote segment not found is a validation error.",
+    "retrieved_at_precision": "ISO date (the retrieval time of day was not recorded). It equals the source's accessed_at.",
+    "integrity_origin_values": ["authored", "migration:cached_snapshot", "migration:snippet_retrieval", "migration:legacy_no_snapshot", "revalidation:refetch", "revalidation:refetch_unavailable", "revalidation:refetch_content_mismatch"],
+    "revalidation": "fetch_snapshot.py re-fetches a source URL (one explicit URL per source, no crawling), preserves the extracted text, records sha256 / timestamp / HTTP status / extractor, and re-checks the EXISTING quotes against it. All quotes found -> FULL_TEXT_VERIFIED / PDF_VERIFIED. Some quotes missing -> verified state with those records listed in integrity.unconfirmed_record_ids (they never verify; the listing is checked for accuracy). No quote found -> RETRIEVED_UNVERIFIABLE (the retrieved content does not contain the cited text verbatim: the page changed or the original quote was reflowed; nothing is preserved; reported for review). Not retrievable -> UNAVAILABLE (a source that only ever existed as a search snippet stays SNIPPET_ONLY). Authored quotes, record ids and source URLs are never edited.",
+    "proposals": {
+      "current_integrity_version": 1,
+      "description": "A proposal under proposals/ must carry proposal_status. It is actionable ONLY when state=current, actionable=true, evidence_integrity_version equals current_integrity_version and every source it cites has integrity.state FULL_TEXT_VERIFIED or PDF_VERIFIED. A proposal without proposal_status, with state=stale, or with an older integrity version is NON-ACTIONABLE; validation fails if a non-actionable proposal claims to be actionable, and enrichment_lib.assert_proposal_actionable refuses it. Proposals are never applied to production by anything in this repository."
+    },
+    "migration": "Sources written before this rule carry no 'integrity'. `brand_enrichment.py --step integrity` / `run_pilot.py integrity` add it deterministically from existing metadata only: retrieval=search_snippet_only -> SNIPPET_ONLY; a recorded sha256 whose cached text exists and matches -> FULL_TEXT_VERIFIED/PDF_VERIFIED; any other full-text/PDF retrieval -> RETRIEVED_UNVERIFIABLE. The step never overwrites an existing integrity block."
   },
 
   "host_types": ["manufacturer_domain", "official_distributor_domain", "dealer_hosted_copy", "third_party_mirror", "independent"],

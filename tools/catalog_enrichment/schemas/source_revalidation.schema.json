@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "carnet.source_revalidation/1",
+  "title": "Source re-fetch / quote re-validation report (written by fetch_snapshot.py). Review artefact only.",
+  "type": "object",
+  "required": ["schema_version", "evidence_file", "attempts"],
+  "properties": {
+    "schema_version": {"const": "carnet.source_revalidation/1"},
+    "evidence_file": {"type": "string"},
+    "attempts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "url", "tier", "previous_state", "outcome", "new_state", "records_total", "records_confirmed", "records_unconfirmed"],
+        "properties": {
+          "source_id": {"type": "string"},
+          "url": {"type": "string"},
+          "tier": {"enum": [1, 2, 3, 4, 5]},
+          "previous_state": {"type": ["string", "null"]},
+          "http_status": {"type": ["integer", "null"]},
+          "final_url": {"type": ["string", "null"]},
+          "content_type": {"type": ["string", "null"]},
+          "extractor": {"type": ["string", "null"]},
+          "raw_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+          "content_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+          "error": {"type": ["string", "null"]},
+          "retrieved_at": {"type": "string"},
+          "note": {"type": "string"},
+          "outcome": {"enum": ["CONFIRMED", "PARTIAL_CONFIRMED", "CONTENT_MISMATCH", "UNAVAILABLE", "SKIPPED_ALREADY_VERIFIED"]},
+          "new_state": {"enum": ["FULL_TEXT_VERIFIED", "PDF_VERIFIED", "SNIPPET_ONLY", "UNAVAILABLE", "RETRIEVED_UNVERIFIABLE"]},
+          "records_total": {"type": "integer", "minimum": 0},
+          "records_confirmed": {"type": "integer", "minimum": 0},
+          "records_unconfirmed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["record_id", "diagnosis", "missing_segments"],
+              "properties": {
+                "record_id": {"type": "string"},
+                "diagnosis": {"enum": ["typographic_or_case_only", "punctuation_or_layout_only", "not_found_verbatim"], "description": "Diagnostic only; nothing is verified on the strength of it."},
+                "missing_segments": {"type": "array", "items": {"type": "string"}}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

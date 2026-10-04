@@ -1,0 +1,855 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Grand Highlander",
+  "researched_at": "2026-10-03",
+  "coverage": [
+    "US 2024 e-brochure (XLE/Limited/Platinum gas 2.4L turbo; Hybrid XLE/Limited 2.5L; Hybrid MAX Limited/Platinum 2.4L) and US 2025 newsroom release (adds LE grade and Hybrid Nightshade)",
+    "NOT researched: markets outside the US (Middle East, Canada), the Nightshade trim as its own record, engine torque per hybrid trim, doors",
+    "Hybrids are recorded with fuel_type 'Hybrid' (never Petrol); the legacy dataset stores every Grand Highlander hybrid as Petrol"
+  ],
+  "not_used_sources": [],
+  "sources": {
+    "GH-S1": {
+      "url": "https://pressroom.toyota.com/toyota-grand-highlander-adds-hybrid-nightshade-edition-and-le-grade-for-2025/",
+      "name": "Toyota Grand Highlander Adds Hybrid Nightshade Edition and LE Grade for 2025 - Toyota USA Newsroom",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "search_tool_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2025",
+      "market_scope": "United States",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": "f300bd62610c33a0b6f2c9b1d5f94a1d3bb43938bc217eac69493c29a2485ab1",
+        "snapshot_path": "evidence/toyota/_source_text/GH-S1.txt",
+        "origin": "migration:cached_snapshot",
+        "note": null
+      }
+    },
+    "GH-S2": {
+      "url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+      "name": "2024 Grand Highlander e-brochure",
+      "publisher": "Toyota Motor Sales USA",
+      "tier": 2,
+      "host_type": "manufacturer_domain",
+      "retrieval": "search_tool_full_text",
+      "accessed_at": "2026-10-03",
+      "model_year_label": "2024",
+      "market_scope": "United States",
+      "integrity": {
+        "state": "PDF_VERIFIED",
+        "retrieved_at": "2026-10-03",
+        "content_sha256": "4cbfed7df09c51b73ca04034fef6fe7ba503b05f6df8fc8416a9672b1d0ab1b5",
+        "snapshot_path": "evidence/toyota/_source_text/GH-S2.txt",
+        "origin": "migration:cached_snapshot",
+        "note": null
+      }
+    }
+  },
+  "records": [
+    {
+      "record_id": "GH-001",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2024,
+      "market": "US",
+      "trim": "XLE",
+      "variant": "Gas",
+      "body_type": null,
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": "2.4L Turbo I4",
+        "displacement_raw": "2.4L",
+        "displacement_cc": null,
+        "cylinders": "I4",
+        "fuel_type": null,
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 265,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 310,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": 8
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "GH-S2",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+        "source_name": "2024 Grand Highlander e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "source_integrity": "PDF_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.88,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "XLE Includes these standard features Mechanical/Performance 2.4L Turbo I4; 265 hp @ 6000 rpm; 310 lb.-ft. @ 1700 rpm Direct Shift-8AT 8-speed Electronically Controlled automatic Transmission (ECT) Available All-Wheel Drive (AWD) … 7-passenger seating with second-row fold-down"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "XLE",
+        "trim_key": "xle",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": "Turbo",
+        "horsepower_hp": 265.0,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-002",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2024,
+      "market": "US",
+      "trim": "Platinum",
+      "variant": "Gas",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.4L Turbo I4",
+        "displacement_raw": "2.4L",
+        "displacement_cc": null,
+        "cylinders": "I4",
+        "fuel_type": null,
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 265,
+          "unit": "hp"
+        },
+        "torque": {
+          "value": 310,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-8AT",
+        "gears": 8
+      },
+      "drivetrain": "All-Wheel Drive (AWD)",
+      "evidence": {
+        "source_id": "GH-S2",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+        "source_name": "2024 Grand Highlander e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "source_integrity": "PDF_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.88,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Platinum Adds these top features to those offered on Limited Mechanical/Performance 2.4L Turbo I4; 265 hp @ 6000 rpm; 310 lb.-ft. @ 1700 rpm Direct Shift-8AT 8-speed Electronically Controlled automatic Transmission (ECT) All-Wheel Drive (AWD)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": 4,
+        "fuel_type": null,
+        "aspiration": "Turbo",
+        "horsepower_hp": 265.0,
+        "torque_nm": 420.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 8,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-003",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2024,
+      "market": "US",
+      "trim": "XLE",
+      "variant": "Hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": 7,
+      "engine": {
+        "display_name": "2.5L I4 Hybrid",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "I4",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 245,
+          "unit": "hp",
+          "basis": "net system"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "GH-S2",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+        "source_name": "2024 Grand Highlander e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "source_integrity": "PDF_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.88,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Hybrid XLE Includes these top features Mechanical/Performance 2.5L I4 Hybrid; 245 net system hp 46 Available On-Demand Electronic All-Wheel Drive (AWD) … 7-passenger seating with second-row fold-down"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "XLE",
+        "trim_key": "xle",
+        "body_type": null,
+        "doors": null,
+        "seats": 7,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 245.0,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-004",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2024,
+      "market": "US",
+      "trim": "Limited",
+      "variant": "Hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2.5L I4 Hybrid",
+        "displacement_raw": "2.5L",
+        "displacement_cc": null,
+        "cylinders": "I4",
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": {
+          "value": 245,
+          "unit": "hp",
+          "basis": "net system"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": "Electronically controlled Continuously Variable Transmission (ECVT)",
+        "gears": null
+      },
+      "drivetrain": "On-Demand Electronic All-Wheel Drive (AWD)",
+      "evidence": {
+        "source_id": "GH-S2",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+        "source_name": "2024 Grand Highlander e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "source_integrity": "PDF_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.88,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Hybrid Limited Adds these top features to those offered on Hybrid XLE Mechanical/Performance 2.5L I4 Hybrid; 245 net system hp 46 On-Demand Electronic All-Wheel Drive (AWD) Electronically controlled Continuously Variable Transmission (ECVT)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "Limited",
+        "trim_key": "limited",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": 245.0,
+        "torque_nm": null,
+        "transmission_family": "Automatic",
+        "transmission_variant": "e-CVT",
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-005",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2024,
+      "market": "US",
+      "trim": "Limited",
+      "variant": "Hybrid MAX",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "Hybrid MAX 2.4L Turbo I4 Hybrid",
+        "displacement_raw": "2.4L",
+        "displacement_cc": null,
+        "cylinders": "I4",
+        "fuel_type": "Hybrid",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 362,
+          "unit": "hp",
+          "basis": "net system"
+        },
+        "torque": {
+          "value": 400,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-6AT",
+        "gears": 6
+      },
+      "drivetrain": "Full-Time Electronic All-Wheel Drive (AWD)",
+      "evidence": {
+        "source_id": "GH-S2",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+        "source_name": "2024 Grand Highlander e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "source_integrity": "PDF_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.88,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Hybrid MAX Limited Adds these top features to those offered on Hybrid Limited Mechanical/Performance Hybrid MAX 2.4L Turbo I4 Hybrid; 362 net system hp 46 @ 6000 rpm; 400 lb.-ft. @ 2000 rpm Direct Shift-6AT 6-speed Electronically Controlled automatic Transmission (ECT) Full-Time Electronic All-Wheel Drive (AWD)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "Limited",
+        "trim_key": "limited",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": "Turbo",
+        "horsepower_hp": 362.0,
+        "torque_nm": 542.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 6,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-006",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2024,
+      "market": "US",
+      "trim": "Platinum",
+      "variant": "Hybrid MAX",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "Hybrid MAX 2.4L Turbo I4 Hybrid",
+        "displacement_raw": "2.4L",
+        "displacement_cc": null,
+        "cylinders": "I4",
+        "fuel_type": "Hybrid",
+        "aspiration": "Turbo",
+        "horsepower": {
+          "value": 362,
+          "unit": "hp",
+          "basis": "net system"
+        },
+        "torque": {
+          "value": 400,
+          "unit": "lb-ft"
+        }
+      },
+      "transmission": {
+        "type": "Direct Shift-6AT",
+        "gears": 6
+      },
+      "drivetrain": "Full-Time Electronic All-Wheel Drive (AWD)",
+      "evidence": {
+        "source_id": "GH-S2",
+        "source_url": "https://www.toyota.com/content/dam/toyota/brochures/pdf/2024/grand_highlander_ebrochure.pdf",
+        "source_name": "2024 Grand Highlander e-brochure",
+        "source_type": "official_manufacturer_brochure",
+        "source_tier": 2,
+        "source_integrity": "PDF_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.88,
+        "confidence_basis": [
+          "tier2_base:0.9",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Hybrid MAX Platinum Adds these top features to those offered on Hybrid MAX Limited Mechanical/Performance Hybrid MAX 2.4L Turbo I4 Hybrid; 362 net system hp 46 @ 6000 rpm; 400 lb.-ft. @ 2000 rpm Direct Shift-6AT 6-speed Electronically Controlled automatic Transmission (ECT) Full-Time Electronic All-Wheel Drive (AWD)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "Platinum",
+        "trim_key": "platinum",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": 4,
+        "fuel_type": "Hybrid",
+        "aspiration": "Turbo",
+        "horsepower_hp": 362.0,
+        "torque_nm": 542.0,
+        "transmission_family": "Automatic",
+        "transmission_variant": "Direct Shift",
+        "transmission_named_systems": [
+          "Direct Shift"
+        ],
+        "transmission_gears": 6,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-007",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": 2025,
+      "market": "US",
+      "trim": "LE",
+      "variant": "Gas",
+      "body_type": null,
+      "doors": null,
+      "seats": 8,
+      "engine": {
+        "display_name": "2.4-liter, 4 cylinder turbocharged gas-powered",
+        "displacement_raw": "2.4-liter",
+        "displacement_cc": null,
+        "cylinders": "4 cylinder",
+        "fuel_type": "gas",
+        "aspiration": "turbocharged",
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "GH-S1",
+        "source_url": "https://pressroom.toyota.com/toyota-grand-highlander-adds-hybrid-nightshade-edition-and-le-grade-for-2025/",
+        "source_name": "Toyota Grand Highlander Adds Hybrid Nightshade Edition and LE Grade for 2025 - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.93,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Adding even more value to the Grand Highlander family of models is the new LE grade. This new trim is available in a choice of 2.5-liter Hybrid with standard electronic on-demand All Wheel Drive (AWD) or a 2.4-liter, 4 cylinder turbocharged gas-powered variant with available Front- or All Wheel Drive. … it has great standard features like seating for eight"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "LE",
+        "trim_key": "le",
+        "body_type": null,
+        "doors": null,
+        "seats": 8,
+        "seats_is_maximum": false,
+        "engine_group": "2.4L",
+        "engine_size_label": "2.4L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.4,
+        "cylinders": 4,
+        "fuel_type": "Petrol",
+        "aspiration": "Turbo",
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-008",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": 2025,
+      "market": "US",
+      "trim": "LE",
+      "variant": "Hybrid",
+      "body_type": null,
+      "doors": null,
+      "seats": 8,
+      "engine": {
+        "display_name": "2.5-liter Hybrid",
+        "displacement_raw": "2.5-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "All Wheel Drive (AWD)",
+      "evidence": {
+        "source_id": "GH-S1",
+        "source_url": "https://pressroom.toyota.com/toyota-grand-highlander-adds-hybrid-nightshade-edition-and-le-grade-for-2025/",
+        "source_name": "Toyota Grand Highlander Adds Hybrid Nightshade Edition and LE Grade for 2025 - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.93,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Adding even more value to the Grand Highlander family of models is the new LE grade. This new trim is available in a choice of 2.5-liter Hybrid with standard electronic on-demand All Wheel Drive (AWD) or a 2.4-liter, 4 cylinder turbocharged gas-powered variant with available Front- or All Wheel Drive. … it has great standard features like seating for eight"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": "LE",
+        "trim_key": "le",
+        "body_type": null,
+        "doors": null,
+        "seats": 8,
+        "seats_is_maximum": false,
+        "engine_group": "2.5L",
+        "engine_size_label": "2.5L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 2.5,
+        "cylinders": null,
+        "fuel_type": "Hybrid",
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-009",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2024,
+      "year_to": 2025,
+      "market": "US",
+      "trim": null,
+      "variant": null,
+      "body_type": "SUV",
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "GH-S1",
+        "source_url": "https://pressroom.toyota.com/toyota-grand-highlander-adds-hybrid-nightshade-edition-and-le-grade-for-2025/",
+        "source_name": "Toyota Grand Highlander Adds Hybrid Nightshade Edition and LE Grade for 2025 - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.93,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "it set out to build the ultimate family SUV"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "SUV",
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-010",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": 2025,
+      "market": "US",
+      "trim": null,
+      "variant": "FWD",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "Front-Wheel Drive",
+      "evidence": {
+        "source_id": "GH-S1",
+        "source_url": "https://pressroom.toyota.com/toyota-grand-highlander-adds-hybrid-nightshade-edition-and-le-grade-for-2025/",
+        "source_name": "Toyota Grand Highlander Adds Hybrid Nightshade Edition and LE Grade for 2025 - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.93,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "Grand Highlander models are available in a choice of Hybrid MAX, Hybrid, or gas powertrains and All- or Front-Wheel Drive options"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "FWD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "GH-011",
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "generation": null,
+      "year_from": 2025,
+      "year_to": 2025,
+      "market": "US",
+      "trim": null,
+      "variant": "AWD",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "all-wheel drive (AWD)",
+      "evidence": {
+        "source_id": "GH-S1",
+        "source_url": "https://pressroom.toyota.com/toyota-grand-highlander-adds-hybrid-nightshade-edition-and-le-grade-for-2025/",
+        "source_name": "Toyota Grand Highlander Adds Hybrid Nightshade Edition and LE Grade for 2025 - Toyota USA Newsroom",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-03",
+        "confidence": 0.93,
+        "confidence_basis": [
+          "tier1_base:0.95",
+          "retrieval:search_tool_full_text:-0.02"
+        ],
+        "supporting_text": "All powertrains can be equipped with all-wheel drive (AWD)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "us",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "AWD"
+      },
+      "normalization_flags": []
+    }
+  ]
+}

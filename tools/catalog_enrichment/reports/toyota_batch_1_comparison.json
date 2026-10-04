@@ -1,0 +1,4101 @@
+{
+  "schema_version": "carnet.brand_batch_comparison/1",
+  "brand": "Toyota",
+  "batch_id": "toyota-batch-01",
+  "read_only": true,
+  "note": "CURRENT_CARNET is read through catalog_audit_readonly.py + model_boundaries.py; nothing under assets/ or lib/ is written. NEW_VERIFIED holds only values whose supporting source content was preserved (FULL_TEXT_VERIFIED / PDF_VERIFIED) and whose quote was found in it; tier 1-3 values backed only by snippets or unvalidated retrievals are NEW_NEEDS_SOURCE_RETRIEVAL, tier 4-5 values NEW_PROVISIONAL_ONLY. ONLY_IN_CARNET means 'not verified by the research collected so far', NOT 'wrong'. UNKNOWN_NOT_YET_RESEARCHED marks dimensions with no evidence at all. Vocabulary is LOCKED (rules/normalization_rules.json); 'legacy_view' blocks are informational only.",
+  "models": [
+    {
+      "brand": "Toyota",
+      "model": "bZ3",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 2,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 2,
+          "strict_rows": 2,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 2
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "bZ3 49 92 kWh (184 Hp) Electric",
+          "bZ3 65 28 kWh (245 Hp) Electric"
+        ],
+        "dataset_year_span": [
+          2023,
+          2023
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Electric"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Electric"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Electric"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Automatic",
+              "dataset_rows": 2
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "FWD"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "FWD",
+              "dataset_rows": 2
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Sedan"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Sedan"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Sedan"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            4
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [
+            4
+          ],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "NEEDS_MORE_SOURCES",
+      "research_coverage": {
+        "trims": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "trims",
+        "engine_sizes",
+        "cylinders",
+        "transmissions",
+        "drivetrains"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 3,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 2,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 0
+      },
+      "evidence_file": "evidence/toyota/bz3.json",
+      "union_file": "generated/toyota/bz3.union.json",
+      "evidence_record_count": 3,
+      "evidence_coverage_statement": [
+        "China (FAW Toyota bZ3 sedan, announced Oct 2022): Toyota Global newsroom (tier 1, snippet) for body/seats/identity; hiluckev.com parameter sheet (tier 5, snippet) for doors",
+        "NOT researched: motor power/torque and battery per version (a tier-5 sheet lists 135/180 kW and 49.92/65.28 kWh but its column mapping is ambiguous in the snippet, so it was NOT turned into records), trims, drivetrain wording, transmission, model years",
+        "Identity: bZ3 (sedan) is kept separate from bZ3X, bZ3C, bZ4X and bZ5"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "bZ3X",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 3,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 3,
+          "strict_rows": 3,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 3
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "bZ3X 50 03 kWh (204 Hp)",
+          "bZ3X 58 37 kWh (204 Hp)",
+          "bZ3X 67 92 kWh (224 Hp)"
+        ],
+        "dataset_year_span": [
+          2025,
+          2025
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "430 Air",
+            "430 Air+",
+            "520 Pro",
+            "520 Pro Smart",
+            "520 Pro+",
+            "520 Pro+ Smart",
+            "610 Max"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [
+            "430 Air",
+            "430 Air+",
+            "520 Pro",
+            "520 Pro Smart",
+            "520 Pro+",
+            "520 Pro+ Smart",
+            "610 Max"
+          ],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Electric"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Electric"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Electric"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Automatic",
+              "dataset_rows": 3
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "FWD"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "FWD"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "FWD"
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "SUV"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "SUV"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "SUV"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            5
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            5
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            5
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [
+            5
+          ],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "NEEDS_MORE_SOURCES",
+      "research_coverage": {
+        "trims": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 7,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "engine_sizes",
+        "cylinders",
+        "transmissions"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 1,
+          "SNIPPET_ONLY": 9,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 1,
+          "SNIPPET_ONLY": 2,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 0
+      },
+      "evidence_file": "evidence/toyota/bz3x.json",
+      "union_file": "generated/toyota/bz3x.union.json",
+      "evidence_record_count": 10,
+      "evidence_coverage_statement": [
+        "China (GAC Toyota bZ3X, launched March 2025): Toyota Global newsroom (tier 1, snippet) for identity/body/fuel; tier-5 sources (CarNewsChina snippet, hiluckev.com sheet) for doors, seats, drivetrain and per-trim motor power",
+        "Only body type and electric fuel are tier-1 supported; everything else is PROVISIONAL (tier 5)",
+        "NOT researched: any official GAC Toyota page, torque, battery size as a field (not part of the schema), transmission, model years beyond 2025 launch"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "bZ4X",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 8,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 8,
+          "strict_rows": 8,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 8
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "bZ4X 58 kWh (167 Hp) BEV",
+          "bZ4X 71 4 kWh (204 Hp) BEV",
+          "bZ4X 71 4 kWh (218 Hp) BEV 4WD",
+          "bZ4X 72 8 kWh (214 Hp) BEV AWD",
+          "bZ4X 73 kWh (224 Hp) BEV",
+          "bZ4X 73 kWh (343 Hp) BEV AWD",
+          "bZ4X 74 7 kWh (224 Hp) BEV",
+          "bZ4X 74 7 kWh (380 Hp) AWD BEV"
+        ],
+        "dataset_year_span": [
+          2022,
+          2026
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "Design",
+            "Icon",
+            "Limited",
+            "XLE"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "Design",
+            "Icon",
+            "Limited",
+            "XLE"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Electric"
+          ],
+          "NEW_VERIFIED": [
+            "Electric"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "Electric"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Automatic",
+              "dataset_rows": 8
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_VERIFIED": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "AWD",
+            "FWD"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "SUV"
+          ],
+          "NEW_VERIFIED": [
+            "SUV"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "SUV"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [
+            5
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            5
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "PARTIALLY_RESEARCHED",
+      "research_coverage": {
+        "trims": {
+          "class": "GOOD",
+          "verified_values": 4,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 3,
+          "verified_scope_count": 3,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "GOOD",
+          "verified_values": 2,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 5,
+          "verified_scope_count": 4,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "engine_sizes",
+        "cylinders",
+        "transmissions"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 10,
+          "PDF_VERIFIED": 7,
+          "SNIPPET_ONLY": 1,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 2,
+          "PDF_VERIFIED": 3,
+          "SNIPPET_ONLY": 1,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 17
+      },
+      "evidence_file": "evidence/toyota/bz4x.json",
+      "union_file": "generated/toyota/bz4x.union.json",
+      "evidence_record_count": 18,
+      "evidence_coverage_statement": [
+        "US 2023 launch (XLE/Limited, FWD/AWD): Toyota USA newsroom launch release + 2023 e-brochure",
+        "US 2026 model-year update (renamed 'bZ' by Toyota; same model line, XLE/Limited, FWD/AWD): Toyota USA newsroom release + 2026 vehicle page snippet",
+        "UK/Europe 2023-2024 (150 kW FWD / 2 x 80 kW AWD, 71.4 kWh) and UK 2026 (Icon/Design grades) press packs",
+        "NOT researched: Japan, China (bZ4X by GAC/FAW Toyota), Middle East, Australia, bZ4X Touring, doors, transmission (single-speed reduction gear is not stated by any fetched source)",
+        "Identity: Toyota USA states the model 'receives a name change, switching from the Toyota bZ4X to the Toyota bZ' for MY2026; records for 2026 US are kept under bZ4X because the newsroom names it the same vehicle"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Urban Cruiser",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 8,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 12,
+          "strict_rows": 8,
+          "excluded_rows": 4,
+          "excluded_by_reason": {
+            "ambiguous_qualifier:Urban Cruiser": 4
+          },
+          "excluded_examples": {
+            "ambiguous_qualifier:Urban Cruiser": [
+              "Urban Cruiser Hyryder 1 5 (102 Hp) Mild Hybrid",
+              "Urban Cruiser Hyryder 1 5 (102 Hp) Mild Hybrid AWD",
+              "Urban Cruiser Hyryder 1 5 (102 Hp) Mild Hybrid Automatic",
+              "Urban Cruiser Hyryder 1 5 (116 Hp) Hybrid e-Drive"
+            ]
+          },
+          "accepted_by_status": {
+            "engine_descriptor": 8
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 1,
+        "dataset_model_names": [
+          "Urban Cruiser 1 33 VVT-i (100 Hp)",
+          "Urban Cruiser 1 4 D-4D (90 Hp) 4x2",
+          "Urban Cruiser 1 4 D-4D (90 Hp) 4x4",
+          "Urban Cruiser 1 5i (105 Hp)",
+          "Urban Cruiser 1 5i (105 Hp) Mild Hybrid Automatic",
+          "Urban Cruiser 49 kWh (144 Hp)",
+          "Urban Cruiser 61 kWh (174 Hp)",
+          "Urban Cruiser 61 kWh (184 Hp) AWD"
+        ],
+        "dataset_year_span": [
+          2008,
+          2025
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "GL",
+            "GLX"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Design",
+            "Excel",
+            "Icon"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "Design",
+            "Excel",
+            "Icon"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "GL",
+              "dataset_rows": 1
+            },
+            {
+              "value": "GLX",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "1.3L",
+            "1.4L",
+            "1.5L"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "1.3L",
+              "dataset_rows": 1
+            },
+            {
+              "value": "1.4L",
+              "dataset_rows": 2
+            },
+            {
+              "value": "1.5L",
+              "dataset_rows": 2
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": 4,
+              "dataset_rows": 5
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Diesel",
+            "Electric",
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [
+            "Electric"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "Electric"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Diesel",
+              "dataset_rows": 2
+            },
+            {
+              "value": "Petrol",
+              "dataset_rows": 3
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic",
+            "Manual"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic"
+          ],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Manual",
+              "dataset_rows": 4
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            1
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            1
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_VERIFIED": [
+            "FWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "FWD"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "AWD",
+              "dataset_rows": 2
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Hatchback",
+            "SUV"
+          ],
+          "NEW_VERIFIED": [
+            "SUV"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "SUV"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Hatchback",
+              "dataset_rows": 3
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            5
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "PARTIALLY_RESEARCHED",
+      "research_coverage": {
+        "trims": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 3,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "engine_sizes",
+        "cylinders"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 4,
+          "SNIPPET_ONLY": 5,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 1,
+          "SNIPPET_ONLY": 2,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 4
+      },
+      "evidence_file": "evidence/toyota/urban_cruiser.json",
+      "union_file": "generated/toyota/urban_cruiser.union.json",
+      "evidence_record_count": 9,
+      "evidence_coverage_statement": [
+        "UK 2025/2026 all-new battery-electric Urban Cruiser (49 kWh and 61 kWh, FWD): Toyota UK full release PDF, UK media launch page and UK brochure",
+        "NOT researched: the 2009-2014 Urban Cruiser hatchback (1.33L/1.4D-4D, FWD/AWD), the India-market Urban Cruiser (1.5L petrol, 5MT/6AT; Hyryder-based), Urban Cruiser Taisor, AllGrip-e AWD (not offered in UK), markets other than UK",
+        "Identity: only the 2025+ electric model was researched; the legacy dataset spans 2008-2025 and lists petrol/diesel engines that this evidence does not cover"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Frontlander",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 1,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 1,
+          "strict_rows": 1,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 1
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "Frontlander 2 0 (171 Hp) CVT"
+        ],
+        "dataset_year_span": [
+          2022,
+          2022
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "2.0L"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "2.0L"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "2.0L"
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            4
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            4
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "Hybrid",
+            "Petrol"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [
+            "Hybrid"
+          ],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "Petrol"
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "Automatic"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "Automatic"
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "CVT"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [
+            "CVT"
+          ],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "FWD"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "FWD"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "FWD"
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "SUV"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            "SUV"
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            "SUV"
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            5
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [
+            5
+          ],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [
+            5
+          ],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [
+            5
+          ],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "NEEDS_MORE_SOURCES",
+      "research_coverage": {
+        "trims": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 2,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 1,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "trims"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 4,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 2,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 0
+      },
+      "evidence_file": "evidence/toyota/frontlander.json",
+      "union_file": "generated/toyota/frontlander.union.json",
+      "evidence_record_count": 4,
+      "evidence_coverage_statement": [
+        "China (GAC Toyota Frontlander, 2022-): ONLY tier 4/5 sources were found in this run (auto-data.net database, Baidu Baike). No Toyota or GAC Toyota page was retrieved, so every value here is PROVISIONAL by policy",
+        "NOT researched: any official GAC Toyota / Toyota China page, Frontlander Hybrid official specs, trims, model years beyond production start, other markets (e.g. exported as a Corolla Cross sibling)",
+        "Identity: Frontlander is GAC Toyota's sister of FAW Toyota's Corolla Cross; Corolla Cross evidence was not mixed in"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Grand Highlander",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 5,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 5,
+          "strict_rows": 5,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 5
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 3,
+        "dataset_model_names": [
+          "Grand Highlander 2 4 Turbo (265 Hp) AWD Direct Shift ECT",
+          "Grand Highlander 2 4 Turbo (265 Hp) Direct Shift ECT",
+          "Grand Highlander 2 4 Turbo (362 Hp) Hybrid MAX AWD Direct Shift",
+          "Grand Highlander 2 5 (245 Hp) Hybrid AWD e-CVT",
+          "Grand Highlander 2 5 (245 Hp) Hybrid e-CVT"
+        ],
+        "dataset_year_span": [
+          2023,
+          2023
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "LE",
+            "Limited",
+            "Platinum",
+            "XLE"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "LE",
+            "Limited",
+            "Platinum",
+            "XLE"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "2.4L",
+            "2.5L"
+          ],
+          "NEW_VERIFIED": [
+            "2.4L",
+            "2.5L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "2.4L",
+            "2.5L"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4
+          ],
+          "NEW_VERIFIED": [
+            4
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            4
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [
+            "Hybrid",
+            "Petrol"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "Petrol"
+          ],
+          "MISSING_FROM_CARNET": [
+            "Hybrid"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [
+            "Automatic"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "Automatic"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "Direct Shift",
+            "e-CVT"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "Direct Shift",
+            "e-CVT"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            6,
+            8
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            6,
+            8
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_VERIFIED": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "AWD",
+            "FWD"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "SUV"
+          ],
+          "NEW_VERIFIED": [
+            "SUV"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "SUV"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            7
+          ],
+          "NEW_VERIFIED": [
+            7,
+            8
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            7
+          ],
+          "MISSING_FROM_CARNET": [
+            8
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "RESEARCHED",
+      "research_coverage": {
+        "trims": {
+          "class": "GOOD",
+          "verified_values": 4,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "GOOD",
+          "verified_values": 2,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "GOOD",
+          "verified_values": 2,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "GOOD",
+          "verified_values": 2,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "GOOD",
+          "verified_values": 2,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 5,
+          "PDF_VERIFIED": 6,
+          "SNIPPET_ONLY": 0,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 1,
+          "PDF_VERIFIED": 1,
+          "SNIPPET_ONLY": 0,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 11
+      },
+      "evidence_file": "evidence/toyota/grand_highlander.json",
+      "union_file": "generated/toyota/grand_highlander.union.json",
+      "evidence_record_count": 11,
+      "evidence_coverage_statement": [
+        "US 2024 e-brochure (XLE/Limited/Platinum gas 2.4L turbo; Hybrid XLE/Limited 2.5L; Hybrid MAX Limited/Platinum 2.4L) and US 2025 newsroom release (adds LE grade and Hybrid Nightshade)",
+        "NOT researched: markets outside the US (Middle East, Canada), the Nightshade trim as its own record, engine torque per hybrid trim, doors",
+        "Hybrids are recorded with fuel_type 'Hybrid' (never Petrol); the legacy dataset stores every Grand Highlander hybrid as Petrol"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Prius Prime",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 1,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 1,
+          "strict_rows": 1,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 1
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "Prius Prime 1 8 (122 Hp) Plug-in Hybrid e-CVT"
+        ],
+        "dataset_year_span": [
+          2017,
+          2022
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "SE",
+            "XSE",
+            "XSE Premium"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "SE",
+            "XSE",
+            "XSE Premium"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "1.8L"
+          ],
+          "NEW_VERIFIED": [
+            "2.0L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "2.0L"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "1.8L",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4
+          ],
+          "NEW_VERIFIED": [
+            4
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            4
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Electric"
+          ],
+          "NEW_VERIFIED": [
+            "Plug-in Hybrid"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "Plug-in Hybrid"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Electric",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": [
+              "Petrol"
+            ]
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [
+            "Automatic"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "Automatic"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "CVT"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "CVT"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "FWD"
+          ],
+          "NEW_VERIFIED": [
+            "FWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "FWD"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "?Liftback"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "?Liftback",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": 4,
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "PARTIALLY_RESEARCHED",
+      "research_coverage": {
+        "trims": {
+          "class": "PARTIAL",
+          "verified_values": 3,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "body_types",
+        "seats"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 5,
+          "PDF_VERIFIED": 1,
+          "SNIPPET_ONLY": 0,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 1,
+          "PDF_VERIFIED": 1,
+          "SNIPPET_ONLY": 0,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 6
+      },
+      "evidence_file": "evidence/toyota/prius_prime.json",
+      "union_file": "generated/toyota/prius_prime.union.json",
+      "evidence_record_count": 6,
+      "evidence_coverage_statement": [
+        "US 2024 (third-generation, 2.0L plug-in hybrid, SE/XSE/XSE Premium): Toyota USA newsroom release + 2024 e-brochure",
+        "NOT researched: 2017-2022 generation (1.8L plug-in hybrid, the generation the legacy dataset lists), markets outside the US, seats, doors, body type (no fetched source states a Prius Prime body type or seat count in a mappable way)",
+        "Identity: the toyota.com '/priusprime/' URL now serves the Prius hybrid page; it was NOT used because it never says 'Prime'. Prius (HEV) and Prius Prime (PHEV) are kept as separate models"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Veloz",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 1,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 1,
+          "strict_rows": 1,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 1
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "Veloz 1 5 (106 Hp) CVT"
+        ],
+        "dataset_year_span": [
+          2021,
+          2021
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "E",
+            "G",
+            "V"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "E",
+            "G",
+            "V"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "1.5L"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "1.5L"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "1.5L"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            4
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            4
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            4
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Petrol"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Petrol"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic",
+            "Manual"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "Manual"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "CVT"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "CVT"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            7
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            7
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "FWD"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "FWD"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "FWD"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Minivan"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "SUV"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "SUV"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Minivan",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            7
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            7
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            7
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "NEEDS_MORE_SOURCES",
+      "research_coverage": {
+        "trims": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 3,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 2,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 8,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 4,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 0
+      },
+      "evidence_file": "evidence/toyota/veloz.json",
+      "union_file": "generated/toyota/veloz.union.json",
+      "evidence_record_count": 8,
+      "evidence_coverage_statement": [
+        "Malaysia e-brochure (1.5L 2NR-VE, 7-speed CVT, 7-seater crossover), Philippines official site (1.5 V/G/E CVT, FWD) and Indonesia official site (1.5 M/T and 1.5 CVT, 106 PS)",
+        "All three sources are search-result snippets (retrieval 'search_snippet_only'): quotes are exact snippet text but the full pages were not cached",
+        "NOT researched: Veloz Hybrid (Indonesia/Malaysia), earlier Avanza Veloz generations, doors, Thailand/Vietnam, model years (none of the snippets state one)",
+        "Body type: Toyota Malaysia calls it a '7-seater premium crossover'; recorded as stated (crossover maps to SUV). The legacy dataset lists Minivan - not assumed wrong"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Wigo",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 5,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 5,
+          "strict_rows": 5,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 5
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 0,
+        "dataset_model_names": [
+          "Wigo 1 0 VVT-i (66 Hp)",
+          "Wigo 1 0 VVT-i (66 Hp) Automatic",
+          "Wigo 1 0L (67 Hp) Automatic",
+          "Wigo 1 0i (65 Hp)",
+          "Wigo 1 0i (65 Hp) Automatic"
+        ],
+        "dataset_year_span": [
+          2014,
+          2020
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "E",
+            "G",
+            "J"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "E",
+            "G",
+            "J"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "1.0L"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "1.0L"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "1.0L"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            3
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            3
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            3
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Petrol"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Petrol"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic",
+            "Manual"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic",
+            "Manual"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            "Automatic",
+            "Manual"
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            "CVT"
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            "CVT"
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [
+            5
+          ],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "FWD"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "FWD",
+              "dataset_rows": 5
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Hatchback"
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Hatchback",
+              "dataset_rows": 5
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "NO_EVIDENCE",
+          "UNKNOWN_NOT_YET_RESEARCHED": {
+            "all_current_values_unverified": true,
+            "reason": "no VERIFIED, NEEDS_SOURCE_RETRIEVAL or PROVISIONAL evidence for this dimension"
+          }
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [
+            5
+          ],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "NEEDS_MORE_SOURCES",
+      "research_coverage": {
+        "trims": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 3,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 2,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "NO_EVIDENCE",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 0,
+          "needs_source_retrieval_values": 1,
+          "provisional_only_values": 0,
+          "verified_source_count": 0,
+          "verified_scope_count": 0,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [
+        "drivetrains",
+        "body_types"
+      ],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 5,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 0,
+          "SNIPPET_ONLY": 3,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 0
+      },
+      "evidence_file": "evidence/toyota/wigo.json",
+      "union_file": "generated/toyota/wigo.union.json",
+      "evidence_record_count": 5,
+      "evidence_coverage_statement": [
+        "Philippines current Wigo (1.0L 1KR-VE 3-cylinder; G CVT, E CVT, J M/T 5-speed): Toyota Motor Philippines site, its comparison page and a dealer-hosted copy of the Toyota Motor Philippines leaflet (Oct 2024)",
+        "All sources are search-result snippets (retrieval 'search_snippet_only'); full pages were not cached",
+        "NOT researched: Wigo drivetrain (the PH sheet labels 'Drivetrain' but the snippet drops the value), body type, doors, Indonesia/India/Japan markets, the 2014-2022 first generation the legacy dataset mostly lists, model years"
+      ]
+    },
+    {
+      "brand": "Toyota",
+      "model": "Yaris Cross",
+      "current_carnet_meta": {
+        "in_car_catalog_models": true,
+        "dataset_family_rows": 9,
+        "boundary": {
+          "algorithm": "model_boundaries.py (rules/model_boundaries.json)",
+          "legacy_family_rows": 9,
+          "strict_rows": 9,
+          "excluded_rows": 0,
+          "excluded_by_reason": {},
+          "excluded_examples": {},
+          "accepted_by_status": {
+            "engine_descriptor": 9
+          },
+          "accepted_with_flags": []
+        },
+        "petrol_rows_whose_dataset_name_says_hybrid": 5,
+        "dataset_model_names": [
+          "Yaris Cross 1 5 (106 Hp)",
+          "Yaris Cross 1 5 (106 Hp) CVT",
+          "Yaris Cross 1 5 (111 Hp) Hybrid eCVT",
+          "Yaris Cross 1 5 (116 Hp) Hybrid E-Four ECVT",
+          "Yaris Cross 1 5 (116 Hp) Hybrid ECVT",
+          "Yaris Cross 1 5 (120 Hp) 4WD CVT",
+          "Yaris Cross 1 5 (120 Hp) CVT",
+          "Yaris Cross 1 5 (132 Hp) Hybrid AWD-i e-CVT",
+          "Yaris Cross 1 5 (132 Hp) Hybrid e-CVT"
+        ],
+        "dataset_year_span": [
+          2020,
+          2023
+        ]
+      },
+      "dimensions": {
+        "trims": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "Design",
+            "Excel",
+            "GR Sport",
+            "Icon"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "Design",
+            "Excel",
+            "GR Sport",
+            "Icon"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "engine_sizes": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "1.5L"
+          ],
+          "NEW_VERIFIED": [
+            "1.5L"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "1.5L"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "cylinders": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            3,
+            4
+          ],
+          "NEW_VERIFIED": [
+            3
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            3
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": 4,
+              "dataset_rows": 3
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "fuel_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Petrol"
+          ],
+          "NEW_VERIFIED": [
+            "Hybrid"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "Hybrid"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Petrol",
+              "dataset_rows": 9
+            }
+          ],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset stores every hybrid as 'Petrol (Gasoline)'",
+            "mapping": {
+              "Hybrid": "Petrol",
+              "Plug-in Hybrid": "Petrol"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmissions": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "Automatic",
+            "Manual"
+          ],
+          "NEW_VERIFIED": [
+            "Automatic"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "Automatic"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [
+            {
+              "value": "Manual",
+              "dataset_rows": 1
+            }
+          ],
+          "CONFLICTS": [],
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "transmission_variants": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            "e-CVT"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            "e-CVT"
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "transmission_gears": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        },
+        "drivetrains": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_VERIFIED": [
+            "AWD",
+            "FWD"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "AWD",
+            "FWD"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "legacy_view": {
+            "reason": "legacy dataset and Sell/Search pickers have no 4WD value; every 4x4 is stored as AWD",
+            "mapping": {
+              "4WD": "AWD"
+            },
+            "MISSING_FROM_CARNET": []
+          },
+          "research_coverage": "GOOD",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "body_types": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            "SUV"
+          ],
+          "NEW_VERIFIED": [
+            "SUV"
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            "SUV"
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "seats": {
+          "carnet_stores_field": true,
+          "CURRENT_CARNET": [
+            5
+          ],
+          "NEW_VERIFIED": [
+            5
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [
+            5
+          ],
+          "MISSING_FROM_CARNET": [],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "research_coverage": "PARTIAL",
+          "UNKNOWN_NOT_YET_RESEARCHED": false
+        },
+        "doors": {
+          "carnet_stores_field": false,
+          "CURRENT_CARNET": [],
+          "NEW_VERIFIED": [
+            5
+          ],
+          "NEW_PROVISIONAL_ONLY": [],
+          "NEW_NEEDS_SOURCE_RETRIEVAL": [],
+          "MATCHED": [],
+          "MISSING_FROM_CARNET": [
+            5
+          ],
+          "PROVISIONAL_NOT_IN_CARNET": [],
+          "NEEDS_SOURCE_RETRIEVAL_NOT_IN_CARNET": [],
+          "CARNET_VALUE_ONLY_PROVISIONAL": [],
+          "CARNET_VALUE_ONLY_NEEDS_SOURCE_RETRIEVAL": [],
+          "ONLY_IN_CARNET": [],
+          "CONFLICTS": [],
+          "note": "CarNet's dataset does not store this attribute; every verified value is new information."
+        }
+      },
+      "conflict_count": 0,
+      "conflicts_not_attached_to_a_dimension": [],
+      "status": "PARTIALLY_RESEARCHED",
+      "research_coverage": {
+        "trims": {
+          "class": "PARTIAL",
+          "verified_values": 4,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "engine_sizes": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "cylinders": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "fuel_types": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "transmissions": {
+          "class": "GOOD",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "drivetrains": {
+          "class": "GOOD",
+          "verified_values": 2,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 2,
+          "verified_scope_count": 2,
+          "conflicts": []
+        },
+        "body_types": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        },
+        "seats": {
+          "class": "PARTIAL",
+          "verified_values": 1,
+          "needs_source_retrieval_values": 0,
+          "provisional_only_values": 0,
+          "verified_source_count": 1,
+          "verified_scope_count": 1,
+          "conflicts": []
+        }
+      },
+      "unresearched_fields": [],
+      "evidence_integrity": {
+        "records_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 11,
+          "SNIPPET_ONLY": 0,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "sources_by_state": {
+          "FULL_TEXT_VERIFIED": 0,
+          "PDF_VERIFIED": 2,
+          "SNIPPET_ONLY": 0,
+          "UNAVAILABLE": 0,
+          "RETRIEVED_UNVERIFIABLE": 0
+        },
+        "records_passing_integrity_test": 11
+      },
+      "evidence_file": "evidence/toyota/yaris_cross.json",
+      "union_file": "generated/toyota/yaris_cross.union.json",
+      "evidence_record_count": 11,
+      "evidence_coverage_statement": [
+        "UK/Europe hybrid (1.5L M15A-FXE 3-cylinder, 116 hp and 130 hp, FWD and AWD-i, e-CVT): Toyota UK MY24 brochure + January 2026 press pack",
+        "NOT researched: petrol-only Yaris Cross (1.5L CVT/manual) sold in Asia, Latin America and the Middle East; the legacy dataset's 4-cylinder / manual rows; Japan; US (Yaris Cross is not sold there); torque by variant",
+        "Identity: 'Yaris Cross' is kept separate from 'Yaris'; only documents that name Yaris Cross were used"
+      ]
+    }
+  ]
+}

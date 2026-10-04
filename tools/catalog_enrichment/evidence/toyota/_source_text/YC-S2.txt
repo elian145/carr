@@ -1,0 +1,714 @@
+Updated: January 2026
+
+THE TOYOTA YARIS CROSS
+
+• Toyota’s top-selling compact crossover 
+• Dual hybrid strategy includes 129bhp and 114bhp hybrid powertrain options 
+• Significant upgrades in Toyota Safety Sense active safety and driving assistance systems 
+
+Yaris Cross follows the Yaris hatchback in adopting an additional, more powerful hybrid powertrain. This dual hybrid strategy widens the model’s customer appeal, particularly to people who want a more compact vehicle, without forgoing power and performance. Around 50 per cent of customers entering the B segment are looking to downsize their choice of vehicle.
+
+The hybrid powertrain is the number one deciding factor for people choosing to buy Yaris Cross. Now they have more choice than ever before: two different hybrid powertrains (a unique-in-class offer) and front or all-wheel drive.
+
+In the 129bhp version, Toyota’s 1.5-litre full hybrid system has gained a new transaxle with a larger and more powerful electric motor-generator (MG1). This, together with adjustments to the power control unit (PCU), delivers a 12 per cent increase in total system output, from 114bhp (116 DIN hp/85kW) to 129bhp (130 DIN hp/96kW). At the same time, the MG2 motor’s torque has been increased across the entire rev band, with the maximum rising by 30 per cent, from 141 to 185Nm.
+
+The 129bhp powertrain is featured as standard in the Excel and GR Sport models and as an option on Design grade.
+
+The result is faster acceleration, with the 0-62mph time reduced by half a second to 10.7 
+seconds and the 50-75mph overtaking benchmark brought down by 0.4 seconds to 8.9 
+
+seconds (figures for front-wheel drive model). Where CO2 emissions are concerned, the impact is modest: the new system achieves a best-in-class 109-115g/km, while fuel economy is 58.8mpg. This compares to figures for the 114bhp version of 101-115g/km and 62.7 -55.3mpg.
+
+These statistics are only part of the story; equally significant is the impact on the driving experience. Engine, drive motor and hybrid battery performance have all been maximised.
+
+Along with a higher level of torque at all engine speeds, this gives the car a more dynamic and responsive feel with acceleration and deceleration performance that adds enjoyment to every drive, with more responsive performance on urban streets and confident overtaking acceleration on the open road.
+
+The established 114bhp powertrain has built Yaris Cross’s reputation for exceptional efficiency (notably the model set a new record in What Car? magazine’s “real-world” fuel economy testing). This quality remained a prime consideration in development of the new, more powerful system. Its greater electric power allows for EV driving at higher speeds and it also allows the engine to operate in its high efficiency range more frequently, enhancing fuel economy. At the same time, there’s greater acceleration power and sharper response at low speeds.
+
+Further improvement of the engine’s thermal efficiency and reduced losses throughout the powertrain through precise control of every element mean less energy is used, CO2 emissions are reduced, and the vehicle’s driving range is improved.
+
+The increased output from the hybrid battery means the engine can operate at lower rpm at start-up and under acceleration. The increase in initial acceleration responsiveness means there is closer co-ordination between the rise in the engine’s revs and sound and the vehicle’s speed, significantly reducing the “rubber band” effect associated with continuously variable transmissions (CVTs).
+
+NEW TECHNOLOGIES FOR MORE EFFICIENT DRIVING
+
+• Intelligent systems optimise use of battery power for more efficient driving 
+• Predictive Efficient Drive, Predictive Deceleration Support and Predictive State of Charge Control 
+• Featured on new 129bhp hybrid powertrain 
+
+The new hybrid tech features include a function that assists the car’s acceleration or deceleration in line with changes in the road gradient. This mitigates the need for additional pressure on the accelerator when driving uphill and provides downhill control, whereby the vehicle is slowed when the driver takes their foot off the accelerator.
+
+In addition, Predictive Efficient Drive learns driver behaviour and road and traffic conditions on routes programmed into the car’s cloud-based navigation system. This intelligence is
+
+used by the hybrid system to optimise battery charging and discharge control, in line with the road and traffic conditions.
+
+Predictive Deceleration Support collects driving behaviour data which is used to give on screen indications of route locations – “deceleration support points” – where the driver can come off the throttle to increase fuel and power efficiency. When the accelerator is released, engine braking force is increased to higher than normal levels (‘extended regeneration control’), which also allows for more efficient battery charging.
+
+Predictive State of Charge (SOC) Control is another element of Predictive Efficient Drive. This operates in two driving scenarios. First, Downhill SOC Control predicts long downhill route sections from map data and reduces the battery charge level in advance so that more energy can be recovered when descending the slopes. Second, Congestion SOC Control monitors traffic information and, when congestion ahead is indicated, maintains the battery’s charge level so that the vehicle can travel for longer in slow moving traffic without the engine having to be started.
+
+ALL-ROUND BENEFITS OF THE GA-B PLATFORM
+
+• Toyota’s GA-B small car platform is the foundation for the Yaris Cross’s agile and rewarding handling 
+• Fundamental benefits of high body strength and rigidity with light weight and low centre of gravity 
+
+The car’s agile, confidence-inspiring performance is further supported by the capability of its GA-B platform, the foundation for the current generation of small Toyota cars.
+
+It delivers the fundamental benefits of a low centre of gravity, with heavier components located low and close to the middle of the vehicle, and a highly rigid body. The result is a stable, composed drive, with reduced body roll and precise chassis response that’s faithful to the driver’s inputs.
+
+Rigidity is achieved without the penalty of added weight, thanks to advanced construction techniques and the use of strong but lightweight materials in key areas.
+
+Intelligent All-Wheel Drive
+
+Yaris Cross is the only compact hybrid SUV to offer an intelligent all-wheel drive system (AWD-i, for Excel grade). Toyota’s well-proven technology is a hybrid system that deploys an
+
+additional, independent electric motor on the rear axle to provide extra grip and stability when pulling away and cornering, and extra safety when driving on slippery surfaces. The balance of front and rear drive torque is automatically and precisely adjusted between 100:0 and 40:60 according to the driving conditions and driver inputs. The design is compact and lightweight compared to mechanical AWD systems, so there is only modest impact on the vehicle’s fuel and emissions efficiency – in fact, performance is class-leading for a B segment SUV with AWD.
+
+When pulling away, drive force is determined according to front and rear load distribution, with additional rear-wheel drive provided on slippery surfaces to help avoid wheelspin, even when on a slope. In constant-speed driving, the vehicle runs in front-wheel drive for better fuel economy and braking performance.
+
+Reflecting Yaris Cross’s authentic SUV quality, the system has selectable modes for normal driving, “Trail” and “Snow”. The mode selected is shown on the multi-information display, together with the proportion of front and rear wheel drive moment-by-moment.
+
+Trail mode can be used to help negotiate tricky situations where one or more of the wheels cannot grip the road surface, for example on very uneven ground. The AWD-i system will automatically brake any spinning wheels, directing drive force to those with grip.
+
+Snow mode tempers throttle response to help pull away securely from stationary or accelerate to maintain controllability when driving on snow or ice.
+
+Suspension
+
+A new MacPherson strut front suspension has been adopted for Yaris Cross giving high rigidity yet light weight and adding to the car’s agility and fun-to drive character. At the rear there’s a torsion beam system for the front-wheel drive version, and a specific double wishbone arrangement for the all-wheel drive models to accommodate the additional electric motor on the rear axle, providing a high level of ride comfort, stability and controllability.
+
+In tuning the suspension, there was a focus on crisp cornering performance and enhanced line-tracing, whether driving around town or on the open road, with optimised inertia specifications and a reduced roll ratio that also contributes to overall ride comfort.
+
+Braking and steering
+
+The Yaris Cross uses ventilated front disc brakes and solid rear discs, with additional braking systems for added safety and vehicle control. These include Steering-assisted Vehicle Stability Control (S-VSC) which provides co-operative control of the car’s ABS, VSC and TRC functions and the electric power steering system for improved driving and safety
+
+performance; on AWD models the system’s co-operation also includes Active Torque Control.
+
+Other braking systems include Active Cornering Assist (ACA), Secondary Collision Brake (SCB) and Brake Hold (BH). All-wheel drive models are additionally equipped with Downhill Assist Control (DAC) and Trail Mode (see AWD-i section above). An electronic parking brake is fitted as standard to all model versions.
+
+A QUIETER DRIVE WITH IMPROVED NOISE AND VIBRATION PACKAGE
+
+• Noise and vibration reduction a key improvement, responding to customer feedback 
+• Multiple measures adopted to counter road, wind and engine noise 
+• Performance benchmarked against the Yaris Cross’s main segment competitors 
+
+The new Yaris Cross benefits from a range of additional measures to reduce noise and vibration. Responding to customer feedback, it was benchmarked against its principal competitors to manage road, engine and wind noise and raise performance to equal class leading levels.
+
+Where engine noise is concerned, the focus for improvement was on four key areas: a dynamic damper has been added to the left-side engine mount; a resonator has been fitted to the intake hose; the inner dash silencer has been changed from a single layer to a three layer construction; and an extra layer of felt has been added to the cowl top silencer.
+
+To combat wind and road noise, thicker glass is used for the windscreen as well as front and rear side windows on all new Yaris Cross models.
+
+A FULLY DIGITAL USER EXPERIENCE
+
+• 12.3-inch digital driver’s combimeter with customisable display on higher grade models 
+• Toyota Smart Connect multimedia system with cloud-based navigation 
+• Smart digital key coming later in 2024 
+
+Access to information, connectivity and entertainment has been transformed with the introduction of a completely new digital user experience. This includes both a driver’s
+
+instrument display that can be configured and customised to suit the driver’s preference, and a multimedia system that’s more powerful, quicker to respond and offers a wider range of functions. The displays are class-leading in size: seven or 12.3-inch for the driver’s combimeter, and nine or 10.5-inch for the multimedia touchscreen, depending on grade.
+
+The 12.3-inch combimeter (Excel and GR Sport) presents dials, information and graphics in sharp definition for good visibility in all light levels. The driver can customise the display’s appearance to suit their mood or the type of journey with four style options: Smart, Casual, Sporty and Tough. There’s a further choice of two, one or no dials to create 12 layouts in all, plus a change in background colour according to the drive mode selected – Normal, ECO or Sport.
+
+A digital speedometer and the shift position indicator are centrally positioned in all configurations. Multi-information displays (MID) are positioned centre, left and right; the central section presents important data, such as advanced safety system status; those to either side present details such as journey data, fuel consumption and audio.
+
+The driver can view combinations for the three pages in each MID with ease using control switches on the steering wheel. They can also customise the information on each page on the left and right displays; the centre display content is fixed.
+
+The seven-inch combimeter is standard on the Icon and Design grade model.
+
+Toyota Smart Connect
+
+The Toyota Smart Connect multimedia system is designed for easy, intuitive use with quicker response to inputs thanks to increased computing power. Its functions include cloud based navigation as standard, an “always connected” system that accesses up-to-the moment information on routes, traffic, and delays for better journey planning.
+
+It has an enhanced, more responsive voice recognition system and an on-board “Hey Toyota” voice agent that can recognise natural, conversational language and requests. For example, say “Hey Toyota, I’m cold” and the system will automatically raise the climate control temperature.
+
+Easy connectivity is designed-in, with wireless smartphone integration for both Apple CarPlay and Android Auto.
+
+The Design grade provides Toyota Smart Connect with cloud-based navigation function and a 10.5-inch display; Excel and GR Sport models feature Toyota Smart Connect+ with additional functions included an embedded navigation system, in addition to the cloud-based system.
+
+The preference profiles of up to three different users can be stored on the system, automatically applying the user’s favoured audio and navigation settings. Using the MyToyota app, the owner can also store their setting at their chosen Toyota Centre and access on any other vehicle they use that’s equipped with same multimedia system.
+
+The MyToyota app provides other useful functions, including remote locking/unlocking, pre journey climate control operation and activation of the hazard lights to help locate vehicle – for example, in a busy car park.
+
+SAFER, LESS STRESSFUL DRIVING WITH COMPREHENSIVE TOYOTA SAFETY FEATURES
+
+• New and extended Toyota Safety Sense functions • New Proactive Driving Assist and Emergency Driving Stop System
+
+Toyota set out to make Yaris Cross the safest car of its size, equipping it with a wealth of active and passive safety provisions and features that can take much of the familiar stress out of driving.
+
+In the new model, these have been enhanced and extended to be more effective than ever, including the introduction of the latest generation Toyota Safety Sense systems. These features, often extra-cost options or simply not available on other B-SUV models, are provided as standard throughout the new Yaris Cross range.
+
+Adjustment of the functions is made simple, using the control switches on the steering wheel. For example, these can be used to engage the lane trace assist and adjust the distance settings for the dynamic radar cruise control.
+
+The table below provides an overview of the breadth of features and the latest additions and enhancements.
+
+FUNCTION STATUS 
+Pre-Collision 
+System (PCS) 
+
+Pre-collision warning Pre-collision Brake Assist Pre-collision Braking
+
+Vehicle, pedestrian, bicyclist ✓
+
+Motorcycle New Oncoming vehicle New
+
+Crossing vehicles New •• PROTECTED 関係者外秘
+
+Left/right turn ✓
+
+Intersection collision avoidance support
+
+Emergency Steering Assist (ESA) ✓
+
+Dynamic Radar Cruise Control (DRCC)
+
+Lane Departure Alert (LDA)
+
+| | Acceleration suppression at low speed New |
+| --- | --- |
+| Dynamic Radar | ✓ Following preceding vehicle function |
+| | ✓ Turn signal-linked control |
+| | Turn signal-linked control/Deceleration Assist New |
+| | Overtaking prevention support New |
+| | ✓ DRCC linked to Road Sign Assist |
+| | Distance settings Enhanced |
+| | Detection of interrupting/cutting-in vehicle Enhanced |
+| | Consideration of two vehicles ahead New |
+| | Curve speed reduction New |
+| Lane Departure | ✓ Lane Departure Alert |
+| | ✓ Lane Departure Prevention |
+| | ✓ Lane centring |
+| | Offset driving path New |
+| | ✓ Excess speed notification |
+| | ✓ No entry notification |
+| Speed limiter | ✓ Speed limiter |
+| | Co-operation with RSA New |
+| Emergency Driving Stop System (EDSS) Automatic High Beam (AHB) Adaptive High-beam System (AHS) | New ✓ New |
+| | Obstacle Anticipation Assist New |
+| | Deceleration Assist New |
+| | Steering Assist New |
+
+Proactive Driving Assist (PDA)
+
+Lane Trace Assist (LTA)
+
+Road Sign Assist (RSA)
+
+Using a new camera and radar system which can scan further and wider than before, there’s increased scope for detecting accident risks. For example, the Pre-Collision System (PCS) can now recognise a potential head-on impact, crossing vehicles and a wide range of objects and vehicles in the car’s path, including pedestrians, cyclists and now also motorcycles.
+
+Acceleration Suppression is a new addition to the PCS functions. When driving at low speeds, this intervenes to slow any sudden acceleration when it recognises there’s the risk of a collision with a vehicle ahead.
+
+The Dynamic Radar Cruise Control (DRCC) has been revised to respond more quickly and operate with a more natural feel. For example, when another vehicle moves into the car’s lane, deceleration is more gradual. The vehicle-to-vehicle distance settings have been extended so the driver has more choice to suit their preference, and the system’s curve speed reduction is activated earlier, giving smoother speed control.
+
+The DRCC also has new turn signal-linked control and deceleration assist that supports smooth overtaking and rejoining of the traffic lane, at a safe speed and distance from other vehicles.
+
+The driver’s forward vision in night-time driving is improved with the first availability of an Adaptive High-beam System (AHS) on the Yaris Cross. This option integrates LED low and high beam operation for more precisely tuned control of the forward lighting, maximising illumination while automatically avoiding the risk of dazzling oncoming drivers.
+
+Proactive Driving Assist (PDA) is another new feature, designed to help avoid familiar accident hazards when driving at low speed. It has three elements: obstacle anticipation assist, deceleration assist and steering assist.
+
+Obstacle anticipation assist is activated when the system detects obstacles ahead that could be collision risks, such as pedestrians crossing or close to the side of the road, cyclists or parked cars. It provides steering and braking assistance to help the driver safely manoeuvre past the hazard.
+
+Deceleration Assist provides smooth deceleration when the driver releases the accelerator to slow down when approaching a slower vehicle ahead, or entering a bend. Steering Assist recognises a bend in the road ahead and adjusts steering force to help the driver make a smooth and stable turn.
+
+The new Emergency Driving Stop System (EDSS) is able to support the driver, should they be taken ill or incapacitated. If it detects the driver has made no inputs – steering, braking, accelerating – over a certain amount of time, it will sound a warning. If there is no reaction from the driver, it will bring the car to a gentle stop, activate the hazard lights, and unlock the doors.
+
+The Lane Departure Alert (LDA) now recognises when the driver has moved out of lane while trying to avoid an obstacle (pedestrian or other road users) and temporarily cancels its
+
+warning function. The lane-centring function of the Lane Trace Assist (LTA) has been adjusted so that its performance has a more natural feel – for example, it will follow an offset driving path to avoid passing close to parked vehicles.
+
+The Road Sign Assist has been enhanced so just a one-touch adjustment of the speed limiter is all that’s required to match traffic sign information. The vehicle’s speed limiter can also now be linked to the RSA to help ensure conformity with changes in speed restrictions.
+
+The Rear Seat Reminder System (RSRS) will alert the driver with visual and sound warnings if they have left a child or pet on the back seat, helping avoid the risk of “hot car” incidents.
+
+Protection is also provided when the car is stationary, with the optional Safe Exit Assist (SEA), a visual and audible warning system helps guard against a door being inadvertently opened into the path of vehicles and cyclists approaching from the rear. This forms part of a Safety Pack that’s an option for Design grade (standard on Excel). This pack also provides a Blind Spot Monitor; front and rear parking sensors with clearance sonar and auto-braking; and auto-retracting door mirrors.
+
+An Advanced Safety Pack option for the GR Sport further provides a Panoramic View Monitor and Advanced Parking Assist – features that are standard on Excel grade.
+
+DESIGN
+
+• “Easy, Fast, Smart” design concept for small car convenience and agility 
+• Exterior references Toyota’s SUV design cues 
+• Interior packaging provides versatile cabin and load space 
+
+The design theme for Yaris Cross was “Easy, Fast, Smart,” defined with the goal of creating car that is an ideal partner for day-to-day activities. The team at Toyota European Design and Development (ED 2), Toyota’s European design centre in the South of France, reimagined the urban SUV, producing a more robust and minimalist design that sets Yaris Cross apart from its competitors.
+
+Its powerful styling expresses the robustness and agility that European customers favour in a body that’s compact, giving the easy manoeuvrability that’s suitable for urban life. At the same time, the design allows for an interior with plenty of comfort and generous load capacity, following the well-established Yaris “Big-Small” approach to packaging.
+
+The lower body, with a high-set horizontal axis running from the nose to the rear lamps, adds to the sense of a raised, powerful SUV stance. Larger-diameter wheels and tyres – up to 18inch rims – add visual emphasis and also contribute to the car’s ability to tackle different driving conditions. The condensed look is heightened by the rear wings’ pronounced tyre overhang.
+
+The front end presents a strong and robust urban image with the upper and lower grilles forming two stacked trapezoid shapes – a signature design feature for Toyota SUVs. Slim, lozenge-shaped headlights use LED projector lamps (on higher grades), with separate, vertical daytime running lights and circular LED fog lights set at the bottom corners of the lower grille. The rear is defined by the wide tailgate and a square central section that expresses the car’s functionality, framed by the wide rear haunches and C-shaped character lines cut into the lower corners. From Design grade, all the rear lights use LED technology and sequential turn indicators.
+
+The body shape is optimised for aerodynamic efficiency, with aero stability fins at strategic points. There is also an almost entirely flat underfloor, with undercovers contributing to the car’s stability and helping make long-distance journeys less tiring for the driver.
+
+Compared to the hatchback, Yaris Cross is 95mm taller at 1,595mm, 20mm wider (1,765mm) and 240mm longer (4,180mm). The wheelbase is unchanged at 2,560mm, but an increase in ground clearance by 25mm to 170mm reflects its authentic SUV design, together with a high eye-point and excellent visibility for the driver. Urban agility is secured with a 5.3m turning radius/circle (tyre).
+
+According to model grade, Yaris Cross runs on 16, 17 or 18-inch alloy wheels in a variety of designs and finishes.
+
+Interior
+
+Yaris Cross’s interior design presents the modern, quality appearance of the hatchback, while focusing on a “fast access” theme that prioritises day-to-day convenience.
+
+There are new treatments for elements such as the front pillars, sills and centre console, and new trim finishes for the door panels and arm rests. The centre console gains prominence, reflecting the car’s SUV status, forming a strong vertical feature which flows down from the multimedia display to the shift lever and incorporates the heating and ventilation controls. Driving function controls, including the Drive Mode Select and (where specified) all-wheel drive mode switches are grouped immediately in front of the shift lever.
+
+The higher driving position gives the driver good visibility expected of an SUV, with seat and steering wheel design that delivers both comfort and a strong sense of connection with and command of the vehicle.
+
+Toyota Smart Cargo
+
+Practical, easy-to-use load space with plenty of room to accommodate leisure and travel kit as well as day-to-day cargo is an essential SUV quality, addressed by the Yaris Cross’s smart interior packaging. With all seats in place, and including the area beneath the deckboard, there’s 397 litres of cargo space available; drop the rear seats and the volume extends to a maximum of 1,097 litres.
+
+Convenience is designed-in, with 60:40 or, on higher grades, 40:20:40 split-folding rear seats. The ingenious Toyota Smart Cargo system, featured on higher grade models*, has a two-level, 60:40 split deckboard which permits part or all of the floor section to be lowered so larger and taller items can be carried. This adaptability means there’s room enough for two large suitcases or golf bags, skis, a bike or other leisure equipment. Smaller items can be held securely in place with ease using a new Flex Belt accessory option.
+
+Accessing the boot is made simple with the availability of a power tailgate with a kick-sensor for hands-free opening (Excel grade).
+
+*Front-wheel drive models only
+
+UK MODEL RANGE
+
+• Four equipment grades: Icon, Design, GR Sport and Excel 
+• Smartphone integration, reversing camera and Toyota Safety Sense standard on all models 
+
+The Yaris Cross line-up comprises four model grades: Icon, Design, Excel and GR Sport.
+
+Key features of the entry-level Icon specification include smart entry and start, 16-inch alloy wheels, seven-inch driver’s instrument combimeter, auto-dimming rear-view mirrors, Driver Montor Camera, smartphone integration (Apple CarPlay and Android Auto) nine-inch Toyota Touch multimedia system, automatic air conditioning, reversing camera and Toyota Safety Sense active safety and driver assistance systems.
+
+The Design grade introduces 17-inch alloys, Toyota Smart Connect with cloud-based navigation and 10.5-inch touchscreen, rear privacy glass, roof rails and LED headlights with automatic high beam. The options are the Safety Pack and the 128bhp hybrid system.
+
+The GR Sport model adopts motorsports-inspired styling details inside and out, including 10-spoke GR alloy wheels with a grey finish. Other details include Ultrasuede upholstery, ambient cabin lighting, bit-one exterior paint finish, 12.3-inch combimeter, Toyota Smart Connect+ with 10.5-inch touchscreen and a wireless smartphone charger.
+
+The Excel grade provides 18-inch alloys with a machined face finish, part-leather upholstery and a hands-free power back door. Like the GR Sport, it also comes equipped with the 12.3inch combimeter and Toyota Smart Connect+ with 10.5-inch touchscreen’
+
+Up to 10 years/100,000 miles warranty
+
+In common with every new Toyota, Yaris Cross is eligible for Toyota warranty protection for up to 10 years or 100,000 miles (whichever comes first). This comprises an initial three-year manufacturer warranty, followed by up to a further seven years of service-activated warranty.
+
+For the first three years of the car’s life, owners can have it serviced at a place of their choice. When the new car warranty period expires, they can then benefit from an additional 12 months (or 10,000 miles) warranty when their vehicle has a qualifying service at an authorised Toyota workshop. The warranty is provided at no extra cost, up to a limit of 10 years/100,000 miles. Terms and conditions apply; full details are available at www.toyota.co.uk.
+
+TOYOTA YARIS CROSS TECHNICAL SPECIFICATIONS
+
+| POWERTRAIN Type | 1.5-litre Hybrid 114bhp 129bhp 3 cylinders in-line |
+| --- | --- |
+| Valve mechanism | DOHC 12-valve with VVT-iE (intake) and VVT-i (exhaust) |
+| Fuel system | Direct multipoint injection |
+| Displacement (cc) | 1,490 |
+| Bore x stroke (mm) | 80.5 x 97.6 |
+| Compression ratio | 14.0:1 |
+| Max. torque (Nm @ rpm) | 120 @ 3,600 |
+| Max. engine power (bhp/DIN Hp/kW @ rpm) Total hybrid system max. power (bhp/DIN Electric motor/generator (MG2) Motor type | 90/91/68 @ 5,500 114/116/85 129/130/96 114bhp 129bhp Permanent magnet, synchronous motor |
+| Max. voltage (v) Max. power (kW) Max. torque (Nm) Motor type | 580 59 62 141 185 Induction motor |
+| Max. power (kW) | 3.9 |
+| Max. torque (Nm) | 52 |
+| | |
+| Battery type | Lithium-ion |
+| Number of cells | 48 |
+| Nominal voltage (v) | 177.6 |
+| Capacity (amp/h) | 4.3 |
+| | |
+| Type | e-CVT |
+| Front gear ratio | 3.218:1 |
+
+hp/kW)
+
+Electric motor/generator (MG2) 114bhp 129bhp 
+Motor type Permanent magnet, synchronous motor 
+Max. voltage (v) 580 
+Max. power (kW) 59 62 
+Max. torque (Nm) 141 185 
+Rear electric motor (AWD-i) 
+Motor type Induction motor 
+Max. power (kW) 3.9 
+Max. torque (Nm) 52 
+High-voltage battery 
+Battery type Lithium-ion 
+Number of cells 48 
+Nominal voltage (v) 177.6 
+Capacity (amp/h) 4.3 
+TRANSMISSION 
+Type e-CVT 
+Front gear ratio 3.218:1 
+Rear gear ratio (AWD-i) 10.487 
+PERFORMANCE 114bhp 129bhp 
+Max. speed (mph) 109 
+FWD 11.2 10.7 
+
+0-62mph acceleration (sec) AWD 11.8 11.3 FUEL CONSUMPTION (WLTP) 114bhp 129bhp Combined cycle (mpg) 54.6-62.7 56.8-58.8
+
+Fuel tank capacity (l) 36 
+CO2 EMISSIONS (WLTP), INSURANCE, 
+WARRANTY & SERVICING 
+
+114bhp 129bhp
+
+Combined cycle (g/km)
+
+Icon 101 -Design 103 102 Excel FWD - 109 Excel AWD-i - 115 GR Sport - 109 Insurance groups 11E – 14E New vehicle warranty 3 years/60,000 miles Service schedule 10,000 miles/annually BRAKES Front Ventilated discs Rear Solid discs Parking brake Electronic SUSPENSION Front MacPherson struts Rear Torsion beam STEERING Type Rack and pinion, electric power assistance Turns lock-to-lock 2.65 Min. turning radius – body (m) 5.6
+
+| New vehicle warranty | 3 years/60,000 miles |
+| --- | --- |
+| Service schedule | 10,000 miles/annually |
+| | |
+| Front | Ventilated discs |
+| Rear | Solid discs |
+| Parking brake | Electronic |
+| | |
+| Front | MacPherson struts |
+| Rear | Torsion beam |
+| | |
+| Type | Rack and pinion, electric power assistance |
+| Turns lock-to-lock | 2.65 |
+| Min. turning radius – body (m) | 5.6 |
+| Min. turning radius – tyre (m) | 5.3 |
+| | |
+| Overall length (mm) | 4,172 |
+| Overall width (mm) | 1,765 |
+| Overall height (mm) | 1,595 |
+| Wheelbase (mm) | 2,560 |
+| Front overhang (mm) | 845 |
+| Rear overhang (mm) | 767 |
+
+Min. turning radius – tyre (m) 5.3 
+EXTERIOR DIMENSIONS 
+Overall length (mm) 4,172 
+Overall width (mm) 1,765 
+Overall height (mm) 1,595 
+Wheelbase (mm) 2,560 
+Front overhang (mm) 845 
+Rear overhang (mm) 767 
+
+| Front track (mm) | 1,520 |
+| --- | --- |
+| Rear track (mm) | 1,519 |
+| Coefficient of drag (Cd) | 0.35 |
+| INTERIOR DIMENSIONS | |
+| Interior length (mm) | 1,840 |
+| Interior width (mm) | 1,430 |
+| Interior height (mm) Load capacity VDA (l) WEIGHTS Kerb weight (kg) Gross vehicle weight (kg) Towing capacity – | 1,205 Seats up, loaded to tonneau cover (l) Seats up, loaded to roof (l) Seats folded, loaded to roof 114bhp 129bhp FWD 1,190 - 1,275 1,230 – 1,260 AWD-i 1,310 -1,345 1,320 – 1,355 FWD 1,690 1,690 AWD-i 1,775 1,775 braked (kg) 750 |
+| Towing capacity – | unbraked (kg) 550 |
+| WHEELS & TYRES | |
+
+Wheels 16, 17 or 18in alloy 
+Tyres 16in wheel 195/55R16 
+17in wheel 205/45R17 
+18in wheel 215/40R18 
+
+| Front track (mm) | | 1,520 |
+| --- | --- | --- |
+| Rear track (mm) | | 1,519 |
+| Coefficient of drag (Cd) | | 0.35 |
+| | | |
+| Interior length (mm) | | 1,840 |
+| Interior width (mm) | | 1,430 |
+| Interior height (mm) | | 1,205 |
+| | | 350 |
+| | | 460 |
+| WEIGHTS Kerb weight (kg) Towing capacity – | Seats folded, loaded FWD AWD-i FWD AWD-i braked (kg) | 1.097 114bhp 129bhp 1,190 - 1,275 1,230 – 1,260 1,310 -1,345 1,320 – 1,355 1,690 1,690 1,775 1,775 750 |
+| Towing capacity – | unbraked (kg) | 550 |
+| | | |
+| Wheels | | 16, 17 or 18in alloy |
+| Tyres | 16in wheel | 195/55R16 |
+| | 17in wheel | 205/45R17 |
+| | 18in wheel | 215/40R18 |
+
+These specifications are a guide for media only. Customers wishing to check the specification of a specific vehicle should contact their local Toyota centre or visit www.toyota.co.uk.
+
+TOYOTA YARIS CROSS EQUIPMENT SPECIFICATIONS
+
+SAFETY & HANDLING ICON DESIGN GR SPORT EXCEL
+
+Toyota Safety Sense (Pre-Collision 
+System, Lane Trace Assist, Lane 
+Departure Alert, Intelligent 
+Adaptive Cruise Control, Road 
+Sign Assist, Proactive Driving 
+Assist, Emergency Driving Stop 
+and Automatic High 
+Beam/Adaptive High-beam 
+System) 
+
+✓ ✓ ✓ ✓
+
+Driver’s airbag ✓ ✓ ✓ ✓
+
+Front passenger airbag with cut-off switch
+
+✓ ✓ ✓ ✓
+
+Front side airbags ✓ ✓ ✓ ✓
+
+Front centre airbag ✓ ✓ ✓ ✓
+
+Curtain shield airbags ✓ ✓ ✓ ✓
+
+Front centre airbags ✓ ✓ ✓ ✓
+
+ISOFIX child seat fixings on outer rear seats
+
+✓ ✓ ✓ ✓
+
+Safe Exit Assist  Opt 1 Opt 1 ✓
+
+Driver monitor camera ✓ ✓ ✓ ✓
+
+Anti-lock Braking System (ABS) ✓ ✓ ✓ ✓
+
+Vehicle Stability Control (VSC) ✓ ✓ ✓ ✓
+
+Hill-start Assist Control (HAC) ✓ ✓ ✓ ✓
+
+Active head rests ✓ ✓ ✓ ✓
+
+Tyre pressure warning system ✓ ✓ ✓ ✓
+
+Blind Spot Monitor (BSM)  Opt 1 Opt 1 ✓ eCall ✓ ✓ ✓ ✓
+
+Sports-tuned suspension   ✓ 
+
+Intelligent all-wheel drive   Opt 
+
+INSTRUMENTS & CONTROLS ICON DESIGN GR SPORT EXCEL
+
+7in customisable digital combimeter
+
+✓ ✓  
+
+12.3in customisable digital combimeter
+
+  ✓ ✓
+
+Panoramic View Monitor   Opt 2 ✓
+
+Electronic parking brake ✓ ✓ ✓ ✓
+
+Remote control functions using MyToyota app –hazard lights and climate control
+
+  ✓ ✓
+
+COMFORT & CONVENIENCE ICON DESIGN GR SPORT EXCEL Front power windows ✓ ✓ ✓ ✓
+
+Rear power windows  ✓ ✓ ✓
+
+Power tailgate with kick-sensor    ✓
+
+Reversing camera ✓ ✓ ✓ ✓
+
+Auto-dimming rear-view mirror ✓ ✓ ✓ ✓
+
+Front and rear parking sensors, Intelligent Clearance Sonar with automatic braking
+
+ Opt 1 Opt 1 ✓
+
+Tilt and telescopic steering wheel adjustment
+
+✓ ✓ ✓ ✓
+
+Three-spoke steering wheel ✓ ✓ ✓ ✓
+
+Heated steering wheel    ✓
+
+Auxiliary switches on steering wheel
+
+✓ ✓ ✓ ✓
+
+Automatic windscreen wipers ✓ ✓ ✓ ✓
+
+Follow-me-home headlight function ✓ ✓ ✓ ✓
+
+Automatic headlights ✓ ✓ ✓ ✓
+
+Manual headlight levelling ✓ ✓ ✓ ✓
+
+Smart entry and push-button start ✓ ✓ ✓ ✓
+
+Seatback map pockets ✓ ✓ ✓ ✓
+
+Shopping bag hooks (x2) in boot ✓ ✓ ✓ ✓
+
+Adjustable boot height (two-level floor)
+
+✓ ✓ ✓ ✓
+
+VENTILATION ICON DESIGN GR SPORT EXCEL Automatic air conditioning ✓ ✓  
+
+Dual-zone automatic air conditioning
+
+  ✓ ✓
+
+nanoe-X air quality system   ✓ ✓
+
+Pollen filter ✓ ✓ ✓ ✓
+
+AUDIO, COMMUNICATION & INNFORMATION
+
+ICON DESIGN GR SPORT EXCEL
+
+4-speaker audio system ✓ ✓  
+
+6-speaker audio system   ✓ ✓
+
+Toyota Touch 3 multimedia system ✓   
+
+Toyota Smart Connect multimedia system with cloud navigation
+
+ ✓  
+
+Toyota Smart Connect+ multimedia system with embedded and cloud navigation and voice agent
+
+  ✓ ✓
+
+Over-the-air software updates ✓ ✓ ✓ ✓
+
+DAB radio ✓ ✓ ✓ ✓
+
+9in multimedia screen ✓   
+
+10.5in multimedia screen  ✓ ✓ ✓
+
+Smartphone integration – Apple CarPlay & Android Auto
+
+✓ ✓ ✓ ✓
+
+Bluetooth ✓ ✓ ✓ ✓
+
+USB: x1 connector, x1 device charger
+
+✓ ✓ ✓ ✓
+
+Data Communication Module (DCM)
+
+✓ ✓ ✓ ✓
+
+SECURITY ICON DESIGN GR SPORT EXCEL Transponder engine immobiliser ✓ ✓ ✓ ✓
+
+Remote control central double locking
+
+✓ ✓ ✓ ✓ •• PROTECTED 関係者外秘
+
+Alarm ✓ ✓ ✓ ✓
+
+SEATING, UPHOLSTERY & TRIM ICON DESIGN GR SPORT EXCEL Front sports seats   ✓ ✓
+
+60:40 split-fold rear seats ✓ ✓ ✓ ✓
+
+Height-adjustable driver’s seat ✓ ✓ ✓ ✓
+
+Power lumbar adjustment on driver’s seat
+
+ ✓ ✓ ✓
+
+Heated front seats    ✓
+
+Height-adjustable front passenger seat
+
+  ✓ ✓
+
+Fabric upholstery ✓ ✓  
+
+Synthetic suede upholstery with GR Sport badging
+
+  ✓ 
+
+Fabric seat upholstery with synthetic leather bolsters
+
+   ✓
+
+Front arm rest ✓ ✓ ✓ ✓
+
+Black roof lining  ✓ ✓ ✓
+
+Leather gear shift and steering wheel trim
+
+✓ ✓  ✓
+
+Leather gear shift and steering wheel trim with red stitching
+
+  ✓ 
+
+Soft-touch instrument panel trim ✓ ✓ ✓ ✓
+
+Blue interior ambient lighting  ✓ ✓ ✓
+
+Scuff plates ✓ ✓ ✓ ✓
+
+EXTERIOR & BODY ICON DESIGN GR SPORT EXCEL Halogen projector headlights ✓   
+
+LED projector headlights  ✓ ✓ ✓
+
+LED front light guide  ✓ ✓ ✓
+
+LED daytime running lights ✓ ✓ ✓ ✓
+
+LED front fog lights ✓ ✓ ✓ ✓
+
+Full LED rear lights  ✓ ✓ ✓
+
+LED sequential turn indicators  ✓ ✓ ✓
+
+Acoustic windscreen ✓ ✓ ✓ ✓
+
+Rear privacy glass  ✓ ✓ ✓
+
+Rear spoiler ✓ ✓ ✓ ✓
+
+Black roof rails  ✓ ✓ ✓
+
+Black shark fin antenna ✓ ✓ ✓ ✓
+
+Body-colour door mirrors with integrated turn indicators
+
+✓ ✓ ✓ ✓
+
+GR Sport lower and upper grille mesh
+
+  ✓ 
+
+Gloss black upper grille   ✓ 
+
+Chrome upper grille insert   ✓ ✓
+
+Black rear bumper with diffuser   ✓ 
+
+Rear under-run   ✓ (black)
+
+
+
+Rear spoiler ✓ ✓ ✓ ✓
+
+Power-adjustable heated door mirrors
+
+✓ ✓ ✓ ✓
+
+Roof colour-matched door mirrors ✓ ✓ ✓ ✓
+
+Auto-retracting door mirrors  Opt 1 ✓ ✓
+
+Skyview panoramic roof with manual sunshade
+
+  Opt Opt
+
+Metallic paint Opt Opt ✓ ✓
+
+Bi-tone paint finish   ✓ 
+
+Rear diffuser   ✓ 
+
+16in silver alloy wheels ✓   
+
+17in machined alloy wheels  ✓  
+
+18in machined alloy wheels    ✓
+
+18in GR Sport grey 10-spoke alloy wheels
+
+  ✓ 
+
+Tyre repair kit ✓ ✓ ✓ ✓
+
+OPTION PACK ICON DESIGN GR SPORT EXCEL
+
+1Safety Pack: front and rear parking sensors with intelligent  Opt  ✓ •• PROTECTED 関係者外秘 clearance sonars and automatic braking, blind spot monitor, Lane Departure Alert, Safe Exit Assist, auto-retracting door mirrors.
+
+2Advanced Safety Pack: safety pack contents plus Advanced Parking Assist and Panoramic View Monitor
+
+  Opt ✓
+
+These specifications are a guide for media only. Customers wishing to check the specification of a specific vehicle should contact their local Toyota centre or visit www.toyota.co.uk.
+
+ENDS
+
