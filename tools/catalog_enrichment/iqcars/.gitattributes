@@ -1,0 +1,6 @@
+# IQ Cars data artifacts keep their exact committed bytes on every OS / autocrlf setting.
+# build_overlay.py records sha256(raw/iqcars_catalog.json) and sha256(generated/iqcars_model_options.json) in its outputs,
+# so a checkout must reproduce those bytes (CRLF, as written on Windows) rather than re-translate them.
+# -whitespace: these are CRLF files by design, so 'git diff --check' must not flag the CR as trailing whitespace.
+raw/** -text -whitespace
+generated/** -text -whitespace

@@ -1,0 +1,447 @@
+{
+ "_meta": {
+  "generated_at": "2026-10-04T16:53:40+00:00",
+  "source": "IQ Cars public catalog (see raw/iqcars_catalog.json _meta)",
+  "candidate_dataset": true,
+  "not_connected_to_app": true,
+  "fields": "model, trim, engine size, cylinders ONLY. No transmission/drivetrain/seats/hp/torque/body are claimed.",
+  "key_semantics": {
+   "trims/engine_sizes/cylinders": "model-level UNION (what IQ lists for that model)",
+   "trim_details/engine_variants/cylinder_options": "detailed items with IQ IDs and raw values",
+   "relationships.exact_configurations": "exact trim->engine->cylinder rows; only where IQ publishes them (brand-new catalog)"
+  },
+  "coverage": {
+   "brands": 1,
+   "models": 1,
+   "models_with_trims": 1,
+   "models_with_engine_sizes": 1,
+   "models_with_cylinders": 1,
+   "models_with_no_detail": 0,
+   "models_without_cylinder_engine_response": 0,
+   "total_trim_entries": 17,
+   "unique_trim_names_casefold": 17,
+   "unique_engine_sizes": 6,
+   "unique_cylinder_counts": [
+    4,
+    6
+   ],
+   "models_with_exact_configurations": 0,
+   "trim_normalization": {}
+  },
+  "conflicts_summary": {}
+ },
+ "models": [
+  {
+   "brand": "Toyota",
+   "brand_id": 27,
+   "model": "Land Cruiser Prado",
+   "model_id": 288,
+   "model_key": "toyota|land cruiser prado",
+   "names": {
+    "brand": {
+     "en": "Toyota",
+     "ar": "تويوتا",
+     "ku": "تۆیۆتا"
+    },
+    "model": {
+     "en": "Land Cruiser Prado",
+     "ar": "لاند كروزر برادو",
+     "ku": "لاند کروزەر پڕادۆ"
+    }
+   },
+   "model_years": {
+    "from": 1984,
+    "to": null
+   },
+   "trims": [
+    "VXE",
+    "VX",
+    "TXS",
+    "TXL",
+    "TX",
+    "EX.R",
+    "VXL",
+    "GXR",
+    "GX",
+    "VX.R",
+    "RS",
+    "Adventure",
+    "A4 Adventure",
+    "All Rounder",
+    "Standard",
+    "R3",
+    "R2"
+   ],
+   "engine_sizes": [
+    "2.4L",
+    "2.7L",
+    "2.8L",
+    "3.0L",
+    "3.4L",
+    "4.0L"
+   ],
+   "cylinders": [
+    4,
+    6
+   ],
+   "trim_details": [
+    {
+     "name": "VXE",
+     "iqcars_ids": [
+      3996
+     ],
+     "from_year": 2024,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 3996,
+       "raw_name": "VXE",
+       "from_year": 2024,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX",
+     "iqcars_ids": [
+      3997
+     ],
+     "from_year": 2010,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 3997,
+       "raw_name": "VX",
+       "from_year": 2010,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "TXS",
+     "iqcars_ids": [
+      3998
+     ],
+     "from_year": 2009,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 3998,
+       "raw_name": "TXS",
+       "from_year": 2009,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "TXL",
+     "iqcars_ids": [
+      3999
+     ],
+     "from_year": 2010,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 3999,
+       "raw_name": "TXL",
+       "from_year": 2010,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "TX",
+     "iqcars_ids": [
+      4053
+     ],
+     "from_year": 1996,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 4053,
+       "raw_name": "TX",
+       "from_year": 1996,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "EX.R",
+     "iqcars_ids": [
+      4512
+     ],
+     "from_year": 2013,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 4512,
+       "raw_name": "EX.R",
+       "from_year": 2013,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "VXL",
+     "iqcars_ids": [
+      4513
+     ],
+     "from_year": 2009,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 4513,
+       "raw_name": "VXL",
+       "from_year": 2009,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "GXR",
+     "iqcars_ids": [
+      4514
+     ],
+     "from_year": 1996,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 4514,
+       "raw_name": "GXR",
+       "from_year": 1996,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "GX",
+     "iqcars_ids": [
+      4832
+     ],
+     "from_year": 1996,
+     "to_year": 2023,
+     "entries": [
+      {
+       "iqcars_id": 4832,
+       "raw_name": "GX",
+       "from_year": 1996,
+       "to_year": 2023
+      }
+     ]
+    },
+    {
+     "name": "VX.R",
+     "iqcars_ids": [
+      5427
+     ],
+     "from_year": 1996,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5427,
+       "raw_name": "VX.R",
+       "from_year": 1996,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "RS",
+     "iqcars_ids": [
+      6076
+     ],
+     "from_year": 1996,
+     "to_year": 2026,
+     "entries": [
+      {
+       "iqcars_id": 6076,
+       "raw_name": "RS",
+       "from_year": 1996,
+       "to_year": 2026
+      }
+     ]
+    },
+    {
+     "name": "Adventure",
+     "iqcars_ids": [
+      6079
+     ],
+     "from_year": 2024,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6079,
+       "raw_name": "Adventure",
+       "from_year": 2024,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "A4 Adventure",
+     "iqcars_ids": [
+      6174
+     ],
+     "from_year": 2024,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6174,
+       "raw_name": "A4 Adventure",
+       "from_year": 2024,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "All Rounder",
+     "iqcars_ids": [
+      6277
+     ],
+     "from_year": 2009,
+     "to_year": 2026,
+     "entries": [
+      {
+       "iqcars_id": 6277,
+       "raw_name": "All Rounder",
+       "from_year": 2009,
+       "to_year": 2026
+      }
+     ]
+    },
+    {
+     "name": "Standard",
+     "iqcars_ids": [
+      6278
+     ],
+     "from_year": 1990,
+     "to_year": 2026,
+     "entries": [
+      {
+       "iqcars_id": 6278,
+       "raw_name": "Standard",
+       "from_year": 1990,
+       "to_year": 2026
+      }
+     ]
+    },
+    {
+     "name": "R3",
+     "iqcars_ids": [
+      6382
+     ],
+     "from_year": 2024,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6382,
+       "raw_name": "R3",
+       "from_year": 2024,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "R2",
+     "iqcars_ids": [
+      6951
+     ],
+     "from_year": 2024,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6951,
+       "raw_name": "R2",
+       "from_year": 2024,
+       "to_year": null
+      }
+     ]
+    }
+   ],
+   "engine_variants": [
+    {
+     "iqcars_ids": [
+      142
+     ],
+     "raw": "2.4T",
+     "display": "2.4L",
+     "displacement_l": 2.4,
+     "displacement_cc": null,
+     "qualifier": "T"
+    },
+    {
+     "iqcars_ids": [
+      55
+     ],
+     "raw": "2.7",
+     "display": "2.7L",
+     "displacement_l": 2.7,
+     "displacement_cc": null,
+     "qualifier": ""
+    },
+    {
+     "iqcars_ids": [
+      49
+     ],
+     "raw": "2.8TD",
+     "display": "2.8L",
+     "displacement_l": 2.8,
+     "displacement_cc": null,
+     "qualifier": "TD"
+    },
+    {
+     "iqcars_ids": [
+      23
+     ],
+     "raw": "3.0TD",
+     "display": "3.0L",
+     "displacement_l": 3.0,
+     "displacement_cc": null,
+     "qualifier": "TD"
+    },
+    {
+     "iqcars_ids": [
+      40
+     ],
+     "raw": "3.4",
+     "display": "3.4L",
+     "displacement_l": 3.4,
+     "displacement_cc": null,
+     "qualifier": ""
+    },
+    {
+     "iqcars_ids": [
+      69
+     ],
+     "raw": "4.0",
+     "display": "4.0L",
+     "displacement_l": 4.0,
+     "displacement_cc": null,
+     "qualifier": ""
+    }
+   ],
+   "cylinder_options": [
+    {
+     "iqcars_id": 109,
+     "raw": "4 cylinder",
+     "count": 4
+    },
+    {
+     "iqcars_id": 127,
+     "raw": "6 cylinder",
+     "count": 6
+    }
+   ],
+   "engine_unparsed": [],
+   "cylinder_unparsed": [],
+   "relationships": {
+    "trim_to_engine_cylinder": "not_provided_by_iqcars_used_car_catalog",
+    "scope_of_engine_and_cylinder_lists": "model_level_union",
+    "exact_configurations": []
+   },
+   "cylinder_engine_response_present": true,
+   "trim_normalization_stats": {}
+  }
+ ],
+ "conflicts": {}
+}

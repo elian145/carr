@@ -1,0 +1,4964 @@
+{
+ "_meta": {
+  "dataset": "IQ Cars brand-new-car catalog: EXACT trim->engine->cylinder rows (kept separate from the used-car union)",
+  "derived_from_raw_assembled_at": "2026-10-04T23:01:47+00:00",
+  "semantics": "Each configuration row is an exact IQ-published link. Never merged into model-level lists; neither source overrides the other.",
+  "analysis": {
+   "entries": 58,
+   "models_represented": 58,
+   "models_with_exact_configurations": 58,
+   "exact_configuration_records": 131,
+   "fields_available_in_raw_rows(non-null counts)": {
+    "Acceleration": 131,
+    "AndroidAuto": 131,
+    "AppleCarPlay": 131,
+    "AutomaticEmergencyBraking": 131,
+    "AvgFuelConsumption": 131,
+    "BlindSpotMonitor": 131,
+    "BrandNewCar": 131,
+    "BrandNewCarId": 131,
+    "Camera": 130,
+    "CameraId": 130,
+    "CityFuelConsumption": 131,
+    "Cylinder": 128,
+    "CylinderId": 128,
+    "DriveType": 131,
+    "DriveTypeId": 131,
+    "ElectricBatteryCapacity": 131,
+    "ElectricMotor": 4,
+    "ElectricMotorId": 4,
+    "ElectricMotorPower": 131,
+    "ElectricRange": 131,
+    "ElectricRangeUnit": 4,
+    "ElectricRangeUnitId": 4,
+    "ElectricalSeat": 128,
+    "ElectricalSeatId": 128,
+    "EndingPrice": 131,
+    "EndingPriceIQD": 131,
+    "Engine": 128,
+    "EngineId": 128,
+    "ForwardCollisionWarning": 131,
+    "Fuel": 129,
+    "FuelId": 129,
+    "FuelTankCapacity": 131,
+    "Height": 131,
+    "HighwayFuelConsumption": 131,
+    "HorsePower": 131,
+    "ID": 131,
+    "LaneDepartureWarning": 131,
+    "Length": 131,
+    "LoadingCapacity": 131,
+    "MediaDisplaySize": 131,
+    "ModelSFX": 131,
+    "ModelSFXId": 131,
+    "NumberOfAirbags": 131,
+    "ParkingSensor": 130,
+    "ParkingSensorId": 130,
+    "PriceUnit": 131,
+    "RearCooling": 131,
+    "SaveDate": 131,
+    "SeatCooling": 131,
+    "SeatHeating": 131,
+    "SeatMaterial": 131,
+    "SeatMaterialId": 131,
+    "SeatMemory": 131,
+    "SeatNumber": 130,
+    "SeatNumberId": 130,
+    "Sort": 131,
+    "Specifications": 128,
+    "StartButton": 131,
+    "StartingPrice": 131,
+    "StartingPriceIQD": 131,
+    "TopSpeed": 131,
+    "Torque": 131,
+    "TrunkCapacity": 131,
+    "Weight": 131,
+    "WheelSize": 131,
+    "Width": 131
+   },
+   "fields_extracted_here": [
+    "trim",
+    "engine",
+    "cylinder",
+    "year",
+    "model identity"
+   ],
+   "distinct_trim_engine_cylinder_triples": 131,
+   "agreement_with_used_car_union": {
+    "cylinder:AGREE_EXACT": 124,
+    "cylinder:CONFLICT_NOT_IN_USED_LIST": 3,
+    "cylinder:NOT_PROVIDED": 4,
+    "engine:AGREE_EXACT_VARIANT": 110,
+    "engine:AGREE_SIZE_ONLY": 16,
+    "engine:CONFLICT_NOT_IN_USED_LIST": 1,
+    "engine:NOT_PROVIDED": 4,
+    "trim:AGREE_EXACT": 130,
+    "trim:CONFLICT_NOT_IN_USED_LIST": 1
+   },
+   "conflict_count": 5
+  }
+ },
+ "entries": [
+  {
+   "brand_new_car_id": 116,
+   "brand": "Audi",
+   "brand_id": 63,
+   "model": "Q3",
+   "model_id": 605,
+   "year": 2021,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 158,
+   "brand": "Ssangyong",
+   "brand_id": 32,
+   "model": "Musso Grand",
+   "model_id": 316,
+   "year": 2023,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 161,
+   "brand": "ZX AUTO",
+   "brand_id": 97,
+   "model": "Terralord",
+   "model_id": 1122,
+   "year": 2023,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 279,
+   "brand": "ORA",
+   "brand_id": 127,
+   "model": "Good Cat",
+   "model_id": 1192,
+   "year": 2024,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 283,
+   "brand": "GWM",
+   "brand_id": 91,
+   "model": "Wingle",
+   "model_id": 885,
+   "year": 2024,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 312,
+   "brand": "JAC",
+   "brand_id": 73,
+   "model": "T8",
+   "model_id": 1505,
+   "year": 2025,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 319,
+   "brand": "Dodge",
+   "brand_id": 68,
+   "model": "Durango",
+   "model_id": 845,
+   "year": 2024,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 322,
+   "brand": "Jeep",
+   "brand_id": 71,
+   "model": "Grand Cherokee",
+   "model_id": 758,
+   "year": 2025,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 325,
+   "brand": "Ram",
+   "brand_id": 39,
+   "model": "2500",
+   "model_id": 1565,
+   "year": 2025,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 326,
+   "brand": "Geely",
+   "brand_id": 84,
+   "model": "Cityray",
+   "model_id": 1581,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "exact_configuration_rows": 8
+  },
+  {
+   "brand_new_car_id": 353,
+   "brand": "MG",
+   "brand_id": 6,
+   "model": "3",
+   "model_id": 1121,
+   "year": 2025,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 355,
+   "brand": "Jetour",
+   "brand_id": 100,
+   "model": "G700",
+   "model_id": 1609,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 377,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "S-Class",
+   "model_id": 115,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 402,
+   "brand": "HAVAL",
+   "brand_id": 81,
+   "model": "H6",
+   "model_id": 887,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 417,
+   "brand": "Honda",
+   "brand_id": 79,
+   "model": "Odyssey",
+   "model_id": 809,
+   "year": 2025,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 418,
+   "brand": "Soueast",
+   "brand_id": 112,
+   "model": "S08",
+   "model_id": 1655,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 419,
+   "brand": "BYD",
+   "brand_id": 56,
+   "model": "Shark 6",
+   "model_id": 1662,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 428,
+   "brand": "YANGWANG",
+   "brand_id": 152,
+   "model": "U8",
+   "model_id": 1663,
+   "year": 2025,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 443,
+   "brand": "Land Rover",
+   "brand_id": 19,
+   "model": "Discovery Sport",
+   "model_id": 164,
+   "year": 2025,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 459,
+   "brand": "Suzuki",
+   "brand_id": 30,
+   "model": "Fronx",
+   "model_id": 1296,
+   "year": 2025,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 462,
+   "brand": "Mitsubishi",
+   "brand_id": 4,
+   "model": "Outlander",
+   "model_id": 108,
+   "year": 2025,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 478,
+   "brand": "BYD",
+   "brand_id": 56,
+   "model": "SONG PLUS",
+   "model_id": 1559,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 483,
+   "brand": "MHERO",
+   "brand_id": 155,
+   "model": "2",
+   "model_id": 1671,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 500,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "E-Class",
+   "model_id": 39,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 518,
+   "brand": "GAC",
+   "brand_id": 85,
+   "model": "EMKOO",
+   "model_id": 1164,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 530,
+   "brand": "Nissan",
+   "brand_id": 2,
+   "model": "Urvan",
+   "model_id": 69,
+   "year": 2025,
+   "exact_configuration_rows": 5
+  },
+  {
+   "brand_new_car_id": 531,
+   "brand": "OMODA",
+   "brand_id": 158,
+   "model": "C5",
+   "model_id": 1710,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 535,
+   "brand": "JAECOO",
+   "brand_id": 159,
+   "model": "J8",
+   "model_id": 1717,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 546,
+   "brand": "Chery",
+   "brand_id": 52,
+   "model": "Arrizo 8",
+   "model_id": 1374,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 555,
+   "brand": "EXEED",
+   "brand_id": 146,
+   "model": "Exlantix ES",
+   "model_id": 1732,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 556,
+   "brand": "Lexus",
+   "brand_id": 18,
+   "model": "RX",
+   "model_id": 123,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 562,
+   "brand": "BMW",
+   "brand_id": 60,
+   "model": "Z4",
+   "model_id": 661,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "exact_configuration_rows": 7
+  },
+  {
+   "brand_new_car_id": 571,
+   "brand": "TANK",
+   "brand_id": 128,
+   "model": "300",
+   "model_id": 1110,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 575,
+   "brand": "POER",
+   "brand_id": 126,
+   "model": "Double Cab",
+   "model_id": 998,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 580,
+   "brand": "Chevrolet",
+   "brand_id": 51,
+   "model": "Groove",
+   "model_id": 1090,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 582,
+   "brand": "GMC",
+   "brand_id": 82,
+   "model": "Sierra",
+   "model_id": 881,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 583,
+   "brand": "Cadillac",
+   "brand_id": 55,
+   "model": "Escalade",
+   "model_id": 509,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 595,
+   "brand": "Deepal",
+   "brand_id": 144,
+   "model": "G318",
+   "model_id": 1758,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 597,
+   "brand": "Bestune",
+   "brand_id": 103,
+   "model": "B70S",
+   "model_id": 1183,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 600,
+   "brand": "Hongqi",
+   "brand_id": 105,
+   "model": "Ousado",
+   "model_id": 1522,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 607,
+   "brand": "Infiniti",
+   "brand_id": 76,
+   "model": "QX60",
+   "model_id": 713,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 613,
+   "brand": "Changan",
+   "brand_id": 53,
+   "model": "Eado Plus",
+   "model_id": 1302,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 616,
+   "brand": "Renault",
+   "brand_id": 38,
+   "model": "Arkana",
+   "model_id": 1768,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 618,
+   "brand": "Foton",
+   "brand_id": 86,
+   "model": "Tunland G7",
+   "model_id": 1702,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 622,
+   "brand": "Ford",
+   "brand_id": 87,
+   "model": "Taurus",
+   "model_id": 906,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 626,
+   "brand": "Dongfeng",
+   "brand_id": 69,
+   "model": "AX7",
+   "model_id": 983,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 627,
+   "brand": "Rox",
+   "brand_id": 125,
+   "model": "01",
+   "model_id": 1415,
+   "year": 2026,
+   "exact_configuration_rows": 2
+  },
+  {
+   "brand_new_car_id": 629,
+   "brand": "DENZA",
+   "brand_id": 151,
+   "model": "B8",
+   "model_id": 1666,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 641,
+   "brand": "Volkswagen",
+   "brand_id": 26,
+   "model": "Taos",
+   "model_id": 1077,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 645,
+   "brand": "Rolls Royce",
+   "brand_id": 37,
+   "model": "Phantom",
+   "model_id": 412,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 647,
+   "brand": "Voyah",
+   "brand_id": 154,
+   "model": "Taishan",
+   "model_id": 1786,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 649,
+   "brand": "MINI",
+   "brand_id": 5,
+   "model": "Countryman",
+   "model_id": 102,
+   "year": 2026,
+   "exact_configuration_rows": 3
+  },
+  {
+   "brand_new_car_id": 650,
+   "brand": "Mazda",
+   "brand_id": 10,
+   "model": "CX-90",
+   "model_id": 1455,
+   "year": 2026,
+   "exact_configuration_rows": 1
+  },
+  {
+   "brand_new_car_id": 654,
+   "brand": "Hyundai",
+   "brand_id": 77,
+   "model": "Elantra",
+   "model_id": 740,
+   "year": 2026,
+   "exact_configuration_rows": 5
+  },
+  {
+   "brand_new_car_id": 658,
+   "brand": "BAIC",
+   "brand_id": 62,
+   "model": "BJ30",
+   "model_id": 1811,
+   "year": 2026,
+   "exact_configuration_rows": 4
+  },
+  {
+   "brand_new_car_id": 660,
+   "brand": "Toyota",
+   "brand_id": 27,
+   "model": "Land Cruiser FJ",
+   "model_id": 1827,
+   "year": 2027,
+   "exact_configuration_rows": 2
+  }
+ ],
+ "exact_configurations": [
+  {
+   "brand_new_car_id": 116,
+   "brand_new_car_sfx_id": 246,
+   "brand": "Audi",
+   "brand_id": 63,
+   "model": "Q3",
+   "model_id": 605,
+   "year": 2021,
+   "trim": {
+    "trim_id": 5100,
+    "trim_name_raw": "TFSI",
+    "trim_name_normalized": "TFSI"
+   },
+   "engine": {
+    "engine_id": 2,
+    "raw": "1.4",
+    "displacement_normalized": "1.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 116,
+   "brand_new_car_sfx_id": 245,
+   "brand": "Audi",
+   "brand_id": 63,
+   "model": "Q3",
+   "model_id": 605,
+   "year": 2021,
+   "trim": {
+    "trim_id": 5098,
+    "trim_name_raw": "S-Line",
+    "trim_name_normalized": "S-Line"
+   },
+   "engine": {
+    "engine_id": 2,
+    "raw": "1.4",
+    "displacement_normalized": "1.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 158,
+   "brand_new_car_sfx_id": 332,
+   "brand": "Ssangyong",
+   "brand_id": 32,
+   "model": "Musso Grand",
+   "model_id": 316,
+   "year": 2023,
+   "trim": {
+    "trim_id": 5786,
+    "trim_name_raw": "Standard",
+    "trim_name_normalized": "Standard"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "CONFLICT_NOT_IN_USED_LIST",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 161,
+   "brand_new_car_sfx_id": 335,
+   "brand": "ZX AUTO",
+   "brand_id": 97,
+   "model": "Terralord",
+   "model_id": 1122,
+   "year": 2023,
+   "trim": {
+    "trim_id": 5791,
+    "trim_name_raw": "Economy",
+    "trim_name_normalized": "Economy"
+   },
+   "engine": {
+    "engine_id": 79,
+    "raw": "2.4",
+    "displacement_normalized": "2.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 279,
+   "brand_new_car_sfx_id": 575,
+   "brand": "ORA",
+   "brand_id": 127,
+   "model": "Good Cat",
+   "model_id": 1192,
+   "year": 2024,
+   "trim": {
+    "trim_id": 6318,
+    "trim_name_raw": "Standard",
+    "trim_name_normalized": "Standard"
+   },
+   "engine": {
+    "engine_id": 133,
+    "raw": "105 kWh",
+    "displacement_normalized": null,
+    "qualifier": "",
+    "parsed": false
+   },
+   "cylinder": {
+    "cylinder_id": 112,
+    "raw": "Single Motor",
+    "count": null,
+    "parsed": false
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "NOT_PROVIDED",
+    "cylinder": "NOT_PROVIDED"
+   }
+  },
+  {
+   "brand_new_car_id": 283,
+   "brand_new_car_sfx_id": 579,
+   "brand": "GWM",
+   "brand_id": 91,
+   "model": "Wingle",
+   "model_id": 885,
+   "year": 2024,
+   "trim": {
+    "trim_id": 6322,
+    "trim_name_raw": "Upgrade",
+    "trim_name_normalized": "Upgrade"
+   },
+   "engine": {
+    "engine_id": 79,
+    "raw": "2.4",
+    "displacement_normalized": "2.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 312,
+   "brand_new_car_sfx_id": 624,
+   "brand": "JAC",
+   "brand_id": 73,
+   "model": "T8",
+   "model_id": 1505,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6386,
+    "trim_name_raw": "4x2",
+    "trim_name_normalized": "4x2"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 312,
+   "brand_new_car_sfx_id": 623,
+   "brand": "JAC",
+   "brand_id": 73,
+   "model": "T8",
+   "model_id": 1505,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6385,
+    "trim_name_raw": "4x4",
+    "trim_name_normalized": "4x4"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 319,
+   "brand_new_car_sfx_id": 655,
+   "brand": "Dodge",
+   "brand_id": 68,
+   "model": "Durango",
+   "model_id": 845,
+   "year": 2024,
+   "trim": {
+    "trim_id": 5589,
+    "trim_name_raw": "SRT",
+    "trim_name_normalized": "SRT"
+   },
+   "engine": {
+    "engine_id": 16,
+    "raw": "6.4",
+    "displacement_normalized": "6.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 319,
+   "brand_new_car_sfx_id": 654,
+   "brand": "Dodge",
+   "brand_id": 68,
+   "model": "Durango",
+   "model_id": 845,
+   "year": 2024,
+   "trim": {
+    "trim_id": 5454,
+    "trim_name_raw": "GT",
+    "trim_name_normalized": "GT"
+   },
+   "engine": {
+    "engine_id": 105,
+    "raw": "3.6",
+    "displacement_normalized": "3.6L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 322,
+   "brand_new_car_sfx_id": 647,
+   "brand": "Jeep",
+   "brand_id": 71,
+   "model": "Grand Cherokee",
+   "model_id": 758,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6502,
+    "trim_name_raw": "Summit Reserve",
+    "trim_name_normalized": "Summit Reserve"
+   },
+   "engine": {
+    "engine_id": 105,
+    "raw": "3.6",
+    "displacement_normalized": "3.6L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 325,
+   "brand_new_car_sfx_id": 659,
+   "brand": "Ram",
+   "brand_id": 39,
+   "model": "2500",
+   "model_id": 1565,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6487,
+    "trim_name_raw": "POWER WAGON",
+    "trim_name_normalized": "POWER WAGON"
+   },
+   "engine": {
+    "engine_id": 16,
+    "raw": "6.4",
+    "displacement_normalized": "6.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 326,
+   "brand_new_car_sfx_id": 661,
+   "brand": "Geely",
+   "brand_id": 84,
+   "model": "Cityray",
+   "model_id": 1581,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6515,
+    "trim_name_raw": "GC",
+    "trim_name_normalized": "GC"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "CONFLICT_NOT_IN_USED_LIST"
+   }
+  },
+  {
+   "brand_new_car_id": 326,
+   "brand_new_car_sfx_id": 660,
+   "brand": "Geely",
+   "brand_id": 84,
+   "model": "Cityray",
+   "model_id": 1581,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6514,
+    "trim_name_raw": "GK",
+    "trim_name_normalized": "GK"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "CONFLICT_NOT_IN_USED_LIST"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1378,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7045,
+    "trim_name_raw": "High grade",
+    "trim_name_normalized": "High grade"
+   },
+   "engine": {
+    "engine_id": 6,
+    "raw": "2.2TD",
+    "displacement_normalized": "2.2L",
+    "qualifier": "TD",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1377,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6863,
+    "trim_name_raw": "Low grade",
+    "trim_name_normalized": "Low grade"
+   },
+   "engine": {
+    "engine_id": 6,
+    "raw": "2.2TD",
+    "displacement_normalized": "2.2L",
+    "qualifier": "TD",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1203,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6863,
+    "trim_name_raw": "Low grade",
+    "trim_name_normalized": "Low grade"
+   },
+   "engine": {
+    "engine_id": 127,
+    "raw": "2.5T",
+    "displacement_normalized": "2.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1073,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6592,
+    "trim_name_raw": "LX",
+    "trim_name_normalized": "LX"
+   },
+   "engine": {
+    "engine_id": 127,
+    "raw": "2.5T",
+    "displacement_normalized": "2.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1072,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6806,
+    "trim_name_raw": "EX",
+    "trim_name_normalized": "EX"
+   },
+   "engine": {
+    "engine_id": 6,
+    "raw": "2.2TD",
+    "displacement_normalized": "2.2L",
+    "qualifier": "TD",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1071,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6145,
+    "trim_name_raw": "X-Line",
+    "trim_name_normalized": "X-Line"
+   },
+   "engine": {
+    "engine_id": 127,
+    "raw": "2.5T",
+    "displacement_normalized": "2.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 1070,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6805,
+    "trim_name_raw": "X-Pro Plus",
+    "trim_name_normalized": "X-Pro Plus"
+   },
+   "engine": {
+    "engine_id": 127,
+    "raw": "2.5T",
+    "displacement_normalized": "2.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 345,
+   "brand_new_car_sfx_id": 729,
+   "brand": "Kia",
+   "brand_id": 47,
+   "model": "Tasman",
+   "model_id": 1385,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6146,
+    "trim_name_raw": "X-Pro",
+    "trim_name_normalized": "X-Pro"
+   },
+   "engine": {
+    "engine_id": 127,
+    "raw": "2.5T",
+    "displacement_normalized": "2.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 353,
+   "brand_new_car_sfx_id": 722,
+   "brand": "MG",
+   "brand_id": 6,
+   "model": "3",
+   "model_id": 1121,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6225,
+    "trim_name_raw": "STD",
+    "trim_name_normalized": "STD"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 353,
+   "brand_new_car_sfx_id": 721,
+   "brand": "MG",
+   "brand_id": 6,
+   "model": "3",
+   "model_id": 1121,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6224,
+    "trim_name_raw": "COM",
+    "trim_name_normalized": "COM"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 353,
+   "brand_new_car_sfx_id": 720,
+   "brand": "MG",
+   "brand_id": 6,
+   "model": "3",
+   "model_id": 1121,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6223,
+    "trim_name_raw": "LUX",
+    "trim_name_normalized": "LUX"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 355,
+   "brand_new_car_sfx_id": 1418,
+   "brand": "Jetour",
+   "brand_id": 100,
+   "model": "G700",
+   "model_id": 1609,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7072,
+    "trim_name_raw": "Sport PHEV",
+    "trim_name_normalized": "Sport PHEV"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 355,
+   "brand_new_car_sfx_id": 1043,
+   "brand": "Jetour",
+   "brand_id": 100,
+   "model": "G700",
+   "model_id": 1609,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6619,
+    "trim_name_raw": "Luxury PHEV",
+    "trim_name_normalized": "Luxury PHEV"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 355,
+   "brand_new_car_sfx_id": 730,
+   "brand": "Jetour",
+   "brand_id": 100,
+   "model": "G700",
+   "model_id": 1609,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6624,
+    "trim_name_raw": "Premium PHEV",
+    "trim_name_normalized": "Premium PHEV"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 377,
+   "brand_new_car_sfx_id": 756,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "S-Class",
+   "model_id": 115,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5543,
+    "trim_name_raw": "S580",
+    "trim_name_normalized": "S580"
+   },
+   "engine": {
+    "engine_id": 126,
+    "raw": "4.0T",
+    "displacement_normalized": "4.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 377,
+   "brand_new_car_sfx_id": 755,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "S-Class",
+   "model_id": 115,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4428,
+    "trim_name_raw": "S500",
+    "trim_name_normalized": "S500"
+   },
+   "engine": {
+    "engine_id": 107,
+    "raw": "3.0T",
+    "displacement_normalized": "3.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 377,
+   "brand_new_car_sfx_id": 754,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "S-Class",
+   "model_id": 115,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4607,
+    "trim_name_raw": "S450",
+    "trim_name_normalized": "S450"
+   },
+   "engine": {
+    "engine_id": 107,
+    "raw": "3.0T",
+    "displacement_normalized": "3.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 402,
+   "brand_new_car_sfx_id": 799,
+   "brand": "HAVAL",
+   "brand_id": 81,
+   "model": "H6",
+   "model_id": 887,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6869,
+    "trim_name_raw": "HEV MID",
+    "trim_name_normalized": "HEV MID"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 417,
+   "brand_new_car_sfx_id": 834,
+   "brand": "Honda",
+   "brand_id": 79,
+   "model": "Odyssey",
+   "model_id": 809,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6683,
+    "trim_name_raw": "LX",
+    "trim_name_normalized": "LX"
+   },
+   "engine": {
+    "engine_id": 78,
+    "raw": "3.5",
+    "displacement_normalized": "3.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 417,
+   "brand_new_car_sfx_id": 833,
+   "brand": "Honda",
+   "brand_id": 79,
+   "model": "Odyssey",
+   "model_id": 809,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6682,
+    "trim_name_raw": "EX-L",
+    "trim_name_normalized": "EX-L"
+   },
+   "engine": {
+    "engine_id": 78,
+    "raw": "3.5",
+    "displacement_normalized": "3.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 417,
+   "brand_new_car_sfx_id": 832,
+   "brand": "Honda",
+   "brand_id": 79,
+   "model": "Odyssey",
+   "model_id": 809,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6680,
+    "trim_name_raw": "TOURING",
+    "trim_name_normalized": "TOURING"
+   },
+   "engine": {
+    "engine_id": 78,
+    "raw": "3.5",
+    "displacement_normalized": "3.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 418,
+   "brand_new_car_sfx_id": 1040,
+   "brand": "Soueast",
+   "brand_id": 112,
+   "model": "S08",
+   "model_id": 1655,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6796,
+    "trim_name_raw": "DM",
+    "trim_name_normalized": "DM"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 418,
+   "brand_new_car_sfx_id": 835,
+   "brand": "Soueast",
+   "brand_id": 112,
+   "model": "S08",
+   "model_id": 1655,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6684,
+    "trim_name_raw": "PHEV Premium",
+    "trim_name_normalized": "PHEV Premium"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "CONFLICT_NOT_IN_USED_LIST",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 419,
+   "brand_new_car_sfx_id": 836,
+   "brand": "BYD",
+   "brand_id": 56,
+   "model": "Shark 6",
+   "model_id": 1662,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6688,
+    "trim_name_raw": "Flagship ",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 428,
+   "brand_new_car_sfx_id": 846,
+   "brand": "YANGWANG",
+   "brand_id": 152,
+   "model": "U8",
+   "model_id": 1663,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6697,
+    "trim_name_raw": "Luxury",
+    "trim_name_normalized": "Luxury"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 443,
+   "brand_new_car_sfx_id": 890,
+   "brand": "Land Rover",
+   "brand_id": 19,
+   "model": "Discovery Sport",
+   "model_id": 164,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6553,
+    "trim_name_raw": "Dynamic HSE",
+    "trim_name_normalized": "Dynamic HSE"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 443,
+   "brand_new_car_sfx_id": 889,
+   "brand": "Land Rover",
+   "brand_id": 19,
+   "model": "Discovery Sport",
+   "model_id": 164,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6552,
+    "trim_name_raw": "Dynamic SE",
+    "trim_name_normalized": "Dynamic SE"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 443,
+   "brand_new_car_sfx_id": 888,
+   "brand": "Land Rover",
+   "brand_id": 19,
+   "model": "Discovery Sport",
+   "model_id": 164,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6551,
+    "trim_name_raw": "S",
+    "trim_name_normalized": "S"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 459,
+   "brand_new_car_sfx_id": 922,
+   "brand": "Suzuki",
+   "brand_id": 30,
+   "model": "Fronx",
+   "model_id": 1296,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6736,
+    "trim_name_raw": "GLX",
+    "trim_name_normalized": "GLX"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 462,
+   "brand_new_car_sfx_id": 1082,
+   "brand": "Mitsubishi",
+   "brand_id": 4,
+   "model": "Outlander",
+   "model_id": 108,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6597,
+    "trim_name_raw": "GLX",
+    "trim_name_normalized": "GLX"
+   },
+   "engine": {
+    "engine_id": 79,
+    "raw": "2.4",
+    "displacement_normalized": "2.4L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 462,
+   "brand_new_car_sfx_id": 927,
+   "brand": "Mitsubishi",
+   "brand_id": 4,
+   "model": "Outlander",
+   "model_id": 108,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6598,
+    "trim_name_raw": "GLS",
+    "trim_name_normalized": "GLS"
+   },
+   "engine": {
+    "engine_id": 71,
+    "raw": "3.0",
+    "displacement_normalized": "3.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 478,
+   "brand_new_car_sfx_id": 949,
+   "brand": "BYD",
+   "brand_id": 56,
+   "model": "SONG PLUS",
+   "model_id": 1559,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6725,
+    "trim_name_raw": "FWD Type 10",
+    "trim_name_normalized": "FWD Type 10"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 478,
+   "brand_new_car_sfx_id": 948,
+   "brand": "BYD",
+   "brand_id": 56,
+   "model": "SONG PLUS",
+   "model_id": 1559,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6581,
+    "trim_name_raw": "AWD Type 10",
+    "trim_name_normalized": "AWD Type 10"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 478,
+   "brand_new_car_sfx_id": 947,
+   "brand": "BYD",
+   "brand_id": 56,
+   "model": "SONG PLUS",
+   "model_id": 1559,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6582,
+    "trim_name_raw": "Type 40",
+    "trim_name_normalized": "Type 40"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 483,
+   "brand_new_car_sfx_id": 972,
+   "brand": "MHERO",
+   "brand_id": 155,
+   "model": "2",
+   "model_id": 1671,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6719,
+    "trim_name_raw": "Flagship ",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "CONFLICT_NOT_IN_USED_LIST"
+   }
+  },
+  {
+   "brand_new_car_id": 500,
+   "brand_new_car_sfx_id": 1022,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "E-Class",
+   "model_id": 39,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6793,
+    "trim_name_raw": "E200 Exclusive ",
+    "trim_name_normalized": "E200 Exclusive"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 500,
+   "brand_new_car_sfx_id": 1021,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "E-Class",
+   "model_id": 39,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6792,
+    "trim_name_raw": "E200 Avantgarde ",
+    "trim_name_normalized": "E200 Avantgarde"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 500,
+   "brand_new_car_sfx_id": 1020,
+   "brand": "Mercedes-Benz",
+   "brand_id": 8,
+   "model": "E-Class",
+   "model_id": 39,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4397,
+    "trim_name_raw": "E200",
+    "trim_name_normalized": "E200"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 518,
+   "brand_new_car_sfx_id": 1064,
+   "brand": "GAC",
+   "brand_id": 85,
+   "model": "EMKOO",
+   "model_id": 1164,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6802,
+    "trim_name_raw": "GL (HEV)",
+    "trim_name_normalized": "GL (HEV)"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 518,
+   "brand_new_car_sfx_id": 1063,
+   "brand": "GAC",
+   "brand_id": 85,
+   "model": "EMKOO",
+   "model_id": 1164,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5968,
+    "trim_name_raw": "GL",
+    "trim_name_normalized": "GL"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 530,
+   "brand_new_car_sfx_id": 1107,
+   "brand": "Nissan",
+   "brand_id": 2,
+   "model": "Urvan",
+   "model_id": 69,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6820,
+    "trim_name_raw": "Microbus H/R EX",
+    "trim_name_normalized": "Microbus H/R EX"
+   },
+   "engine": {
+    "engine_id": 24,
+    "raw": "2.5TD",
+    "displacement_normalized": "2.5L",
+    "qualifier": "TD",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 530,
+   "brand_new_car_sfx_id": 1106,
+   "brand": "Nissan",
+   "brand_id": 2,
+   "model": "Urvan",
+   "model_id": 69,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6819,
+    "trim_name_raw": "Microbus H/R DX",
+    "trim_name_normalized": "Microbus H/R DX"
+   },
+   "engine": {
+    "engine_id": 72,
+    "raw": "2.5",
+    "displacement_normalized": "2.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 530,
+   "brand_new_car_sfx_id": 1105,
+   "brand": "Nissan",
+   "brand_id": 2,
+   "model": "Urvan",
+   "model_id": 69,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6818,
+    "trim_name_raw": "Panel Van H/R EX",
+    "trim_name_normalized": "Panel Van H/R EX"
+   },
+   "engine": {
+    "engine_id": 72,
+    "raw": "2.5",
+    "displacement_normalized": "2.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 530,
+   "brand_new_car_sfx_id": 1104,
+   "brand": "Nissan",
+   "brand_id": 2,
+   "model": "Urvan",
+   "model_id": 69,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6816,
+    "trim_name_raw": "Panel Van S/R EX",
+    "trim_name_normalized": "Panel Van S/R EX"
+   },
+   "engine": {
+    "engine_id": 72,
+    "raw": "2.5",
+    "displacement_normalized": "2.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 530,
+   "brand_new_car_sfx_id": 1103,
+   "brand": "Nissan",
+   "brand_id": 2,
+   "model": "Urvan",
+   "model_id": 69,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6817,
+    "trim_name_raw": "Panel Van S/R DX",
+    "trim_name_normalized": "Panel Van S/R DX"
+   },
+   "engine": {
+    "engine_id": 72,
+    "raw": "2.5",
+    "displacement_normalized": "2.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 531,
+   "brand_new_car_sfx_id": 1109,
+   "brand": "OMODA",
+   "brand_id": 158,
+   "model": "C5",
+   "model_id": 1710,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6822,
+    "trim_name_raw": "Luxury",
+    "trim_name_normalized": "Luxury"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 531,
+   "brand_new_car_sfx_id": 1108,
+   "brand": "OMODA",
+   "brand_id": 158,
+   "model": "C5",
+   "model_id": 1710,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6821,
+    "trim_name_raw": "Comfort",
+    "trim_name_normalized": "Comfort"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 535,
+   "brand_new_car_sfx_id": 1117,
+   "brand": "JAECOO",
+   "brand_id": 159,
+   "model": "J8",
+   "model_id": 1717,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6830,
+    "trim_name_raw": "Flagship",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 535,
+   "brand_new_car_sfx_id": 1116,
+   "brand": "JAECOO",
+   "brand_id": 159,
+   "model": "J8",
+   "model_id": 1717,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6829,
+    "trim_name_raw": "Comfort",
+    "trim_name_normalized": "Comfort"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 546,
+   "brand_new_car_sfx_id": 1144,
+   "brand": "Chery",
+   "brand_id": 52,
+   "model": "Arrizo 8",
+   "model_id": 1374,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6209,
+    "trim_name_raw": "Comfort",
+    "trim_name_normalized": "Comfort"
+   },
+   "engine": {
+    "engine_id": 97,
+    "raw": "1.6T",
+    "displacement_normalized": "1.6L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 546,
+   "brand_new_car_sfx_id": 1143,
+   "brand": "Chery",
+   "brand_id": 52,
+   "model": "Arrizo 8",
+   "model_id": 1374,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6216,
+    "trim_name_raw": "Luxury",
+    "trim_name_normalized": "Luxury"
+   },
+   "engine": {
+    "engine_id": 97,
+    "raw": "1.6T",
+    "displacement_normalized": "1.6L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 546,
+   "brand_new_car_sfx_id": 1142,
+   "brand": "Chery",
+   "brand_id": 52,
+   "model": "Arrizo 8",
+   "model_id": 1374,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6217,
+    "trim_name_raw": "Premium",
+    "trim_name_normalized": "Premium"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 555,
+   "brand_new_car_sfx_id": 1166,
+   "brand": "EXEED",
+   "brand_id": 146,
+   "model": "Exlantix ES",
+   "model_id": 1732,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6848,
+    "trim_name_raw": "Comfort",
+    "trim_name_normalized": "Comfort"
+   },
+   "engine": null,
+   "cylinder": null,
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "NOT_PROVIDED",
+    "cylinder": "NOT_PROVIDED"
+   }
+  },
+  {
+   "brand_new_car_id": 555,
+   "brand_new_car_sfx_id": 1165,
+   "brand": "EXEED",
+   "brand_id": 146,
+   "model": "Exlantix ES",
+   "model_id": 1732,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6847,
+    "trim_name_raw": "Flagship",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": null,
+   "cylinder": null,
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "NOT_PROVIDED",
+    "cylinder": "NOT_PROVIDED"
+   }
+  },
+  {
+   "brand_new_car_id": 556,
+   "brand_new_car_sfx_id": 1169,
+   "brand": "Lexus",
+   "brand_id": 18,
+   "model": "RX",
+   "model_id": 123,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6339,
+    "trim_name_raw": "350h Prestige",
+    "trim_name_normalized": "350h Prestige"
+   },
+   "engine": {
+    "engine_id": 72,
+    "raw": "2.5",
+    "displacement_normalized": "2.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 556,
+   "brand_new_car_sfx_id": 1168,
+   "brand": "Lexus",
+   "brand_id": 18,
+   "model": "RX",
+   "model_id": 123,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6340,
+    "trim_name_raw": "350h Platinum",
+    "trim_name_normalized": "350h Platinum"
+   },
+   "engine": {
+    "engine_id": 72,
+    "raw": "2.5",
+    "displacement_normalized": "2.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 556,
+   "brand_new_car_sfx_id": 1167,
+   "brand": "Lexus",
+   "brand_id": 18,
+   "model": "RX",
+   "model_id": 123,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6341,
+    "trim_name_raw": "500h F-Sport",
+    "trim_name_normalized": "500h F-Sport"
+   },
+   "engine": {
+    "engine_id": 142,
+    "raw": "2.4T",
+    "displacement_normalized": "2.4L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 562,
+   "brand_new_car_sfx_id": 1181,
+   "brand": "BMW",
+   "brand_id": 60,
+   "model": "Z4",
+   "model_id": 661,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6851,
+    "trim_name_raw": "sDrive30i",
+    "trim_name_normalized": "sDrive30i"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1191,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6860,
+    "trim_name_raw": "R-Dynamic SE (PHEV)",
+    "trim_name_normalized": "R-Dynamic SE (PHEV)"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1190,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6859,
+    "trim_name_raw": "R-Dynamic S",
+    "trim_name_normalized": "R-Dynamic S"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1189,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6858,
+    "trim_name_raw": "R-Dynamic SE",
+    "trim_name_normalized": "R-Dynamic SE"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1188,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6857,
+    "trim_name_raw": "R-Dynamic HSE (PHEV)",
+    "trim_name_normalized": "R-Dynamic HSE (PHEV)"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1187,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6856,
+    "trim_name_raw": "R-Dynamic HSE",
+    "trim_name_normalized": "R-Dynamic HSE"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1186,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 6855,
+    "trim_name_raw": "400 Sport",
+    "trim_name_normalized": "400 Sport"
+   },
+   "engine": {
+    "engine_id": 107,
+    "raw": "3.0T",
+    "displacement_normalized": "3.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 565,
+   "brand_new_car_sfx_id": 1185,
+   "brand": "Jaguar",
+   "brand_id": 72,
+   "model": "F-Pace",
+   "model_id": 804,
+   "year": 2025,
+   "trim": {
+    "trim_id": 5532,
+    "trim_name_raw": "SVR",
+    "trim_name_normalized": "SVR"
+   },
+   "engine": {
+    "engine_id": 59,
+    "raw": "5.0",
+    "displacement_normalized": "5.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 571,
+   "brand_new_car_sfx_id": 1204,
+   "brand": "TANK",
+   "brand_id": 128,
+   "model": "300",
+   "model_id": 1110,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6320,
+    "trim_name_raw": "HEV",
+    "trim_name_normalized": "HEV"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 575,
+   "brand_new_car_sfx_id": 1209,
+   "brand": "POER",
+   "brand_id": 126,
+   "model": "Double Cab",
+   "model_id": 998,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6415,
+    "trim_name_raw": "Deluxe",
+    "trim_name_normalized": "Deluxe"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 580,
+   "brand_new_car_sfx_id": 1225,
+   "brand": "Chevrolet",
+   "brand_id": 51,
+   "model": "Groove",
+   "model_id": 1090,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6871,
+    "trim_name_raw": "LT",
+    "trim_name_normalized": "LT"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 580,
+   "brand_new_car_sfx_id": 1224,
+   "brand": "Chevrolet",
+   "brand_id": 51,
+   "model": "Groove",
+   "model_id": 1090,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6870,
+    "trim_name_raw": "premier",
+    "trim_name_normalized": "premier"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 582,
+   "brand_new_car_sfx_id": 1231,
+   "brand": "GMC",
+   "brand_id": 82,
+   "model": "Sierra",
+   "model_id": 881,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5751,
+    "trim_name_raw": "SLE",
+    "trim_name_normalized": "SLE"
+   },
+   "engine": {
+    "engine_id": 27,
+    "raw": "5.3",
+    "displacement_normalized": "5.3L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 582,
+   "brand_new_car_sfx_id": 1230,
+   "brand": "GMC",
+   "brand_id": 82,
+   "model": "Sierra",
+   "model_id": 881,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5812,
+    "trim_name_raw": "Elevation",
+    "trim_name_normalized": "Elevation"
+   },
+   "engine": {
+    "engine_id": 27,
+    "raw": "5.3",
+    "displacement_normalized": "5.3L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 582,
+   "brand_new_car_sfx_id": 1229,
+   "brand": "GMC",
+   "brand_id": 82,
+   "model": "Sierra",
+   "model_id": 881,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5672,
+    "trim_name_raw": "Denali",
+    "trim_name_normalized": "Denali"
+   },
+   "engine": {
+    "engine_id": 87,
+    "raw": "6.2",
+    "displacement_normalized": "6.2L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 583,
+   "brand_new_car_sfx_id": 1233,
+   "brand": "Cadillac",
+   "brand_id": 55,
+   "model": "Escalade",
+   "model_id": 509,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5535,
+    "trim_name_raw": "Sport",
+    "trim_name_normalized": "Sport"
+   },
+   "engine": {
+    "engine_id": 87,
+    "raw": "6.2",
+    "displacement_normalized": "6.2L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 583,
+   "brand_new_car_sfx_id": 1232,
+   "brand": "Cadillac",
+   "brand_id": 55,
+   "model": "Escalade",
+   "model_id": 509,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5335,
+    "trim_name_raw": "Platinum",
+    "trim_name_normalized": "Platinum"
+   },
+   "engine": {
+    "engine_id": 87,
+    "raw": "6.2",
+    "displacement_normalized": "6.2L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 125,
+    "raw": "8 cylinder",
+    "count": 8,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 595,
+   "brand_new_car_sfx_id": 1261,
+   "brand": "Deepal",
+   "brand_id": 144,
+   "model": "G318",
+   "model_id": 1758,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6885,
+    "trim_name_raw": "STD",
+    "trim_name_normalized": "STD"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 597,
+   "brand_new_car_sfx_id": 1264,
+   "brand": "Bestune",
+   "brand_id": 103,
+   "model": "B70S",
+   "model_id": 1183,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6887,
+    "trim_name_raw": "Premium",
+    "trim_name_normalized": "Premium"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 597,
+   "brand_new_car_sfx_id": 1263,
+   "brand": "Bestune",
+   "brand_id": 103,
+   "model": "B70S",
+   "model_id": 1183,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5972,
+    "trim_name_raw": "Limo",
+    "trim_name_normalized": "Limo"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 600,
+   "brand_new_car_sfx_id": 1271,
+   "brand": "Hongqi",
+   "brand_id": 105,
+   "model": "Ousado",
+   "model_id": 1522,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6890,
+    "trim_name_raw": "Luxury",
+    "trim_name_normalized": "Luxury"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 600,
+   "brand_new_car_sfx_id": 1270,
+   "brand": "Hongqi",
+   "brand_id": 105,
+   "model": "Ousado",
+   "model_id": 1522,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6416,
+    "trim_name_raw": "Flagship ",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 607,
+   "brand_new_car_sfx_id": 1287,
+   "brand": "Infiniti",
+   "brand_id": 76,
+   "model": "QX60",
+   "model_id": 713,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6494,
+    "trim_name_raw": "PURE",
+    "trim_name_normalized": "PURE"
+   },
+   "engine": {
+    "engine_id": 78,
+    "raw": "3.5",
+    "displacement_normalized": "3.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 607,
+   "brand_new_car_sfx_id": 1286,
+   "brand": "Infiniti",
+   "brand_id": 76,
+   "model": "QX60",
+   "model_id": 713,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6497,
+    "trim_name_raw": "SENSORY",
+    "trim_name_normalized": "SENSORY"
+   },
+   "engine": {
+    "engine_id": 78,
+    "raw": "3.5",
+    "displacement_normalized": "3.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 607,
+   "brand_new_car_sfx_id": 1285,
+   "brand": "Infiniti",
+   "brand_id": 76,
+   "model": "QX60",
+   "model_id": 713,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6496,
+    "trim_name_raw": "AUTOGRAPH",
+    "trim_name_normalized": "AUTOGRAPH"
+   },
+   "engine": {
+    "engine_id": 78,
+    "raw": "3.5",
+    "displacement_normalized": "3.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 613,
+   "brand_new_car_sfx_id": 1293,
+   "brand": "Changan",
+   "brand_id": 53,
+   "model": "Eado Plus",
+   "model_id": 1302,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6900,
+    "trim_name_raw": "Lamore",
+    "trim_name_normalized": "Lamore"
+   },
+   "engine": {
+    "engine_id": 58,
+    "raw": "1.4T",
+    "displacement_normalized": "1.4L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 616,
+   "brand_new_car_sfx_id": 1300,
+   "brand": "Renault",
+   "brand_id": 38,
+   "model": "Arkana",
+   "model_id": 1768,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6905,
+    "trim_name_raw": "Evolution",
+    "trim_name_normalized": "Evolution"
+   },
+   "engine": {
+    "engine_id": 116,
+    "raw": "1.3T",
+    "displacement_normalized": "1.3L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 616,
+   "brand_new_car_sfx_id": 1299,
+   "brand": "Renault",
+   "brand_id": 38,
+   "model": "Arkana",
+   "model_id": 1768,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6904,
+    "trim_name_raw": "Techno",
+    "trim_name_normalized": "Techno"
+   },
+   "engine": {
+    "engine_id": 116,
+    "raw": "1.3T",
+    "displacement_normalized": "1.3L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 616,
+   "brand_new_car_sfx_id": 1298,
+   "brand": "Renault",
+   "brand_id": 38,
+   "model": "Arkana",
+   "model_id": 1768,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6903,
+    "trim_name_raw": "Esprit Alpine",
+    "trim_name_normalized": "Esprit Alpine"
+   },
+   "engine": {
+    "engine_id": 116,
+    "raw": "1.3T",
+    "displacement_normalized": "1.3L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 618,
+   "brand_new_car_sfx_id": 1304,
+   "brand": "Foton",
+   "brand_id": 86,
+   "model": "Tunland G7",
+   "model_id": 1702,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6776,
+    "trim_name_raw": "Elite",
+    "trim_name_normalized": "Elite"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 618,
+   "brand_new_car_sfx_id": 1303,
+   "brand": "Foton",
+   "brand_id": 86,
+   "model": "Tunland G7",
+   "model_id": 1702,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6777,
+    "trim_name_raw": "Exclusive ",
+    "trim_name_normalized": "Exclusive"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 618,
+   "brand_new_car_sfx_id": 1302,
+   "brand": "Foton",
+   "brand_id": 86,
+   "model": "Tunland G7",
+   "model_id": 1702,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6778,
+    "trim_name_raw": "Flagship",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 622,
+   "brand_new_car_sfx_id": 1317,
+   "brand": "Ford",
+   "brand_id": 87,
+   "model": "Taurus",
+   "model_id": 906,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6187,
+    "trim_name_raw": "Ambiente",
+    "trim_name_normalized": "Ambiente"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 622,
+   "brand_new_car_sfx_id": 1316,
+   "brand": "Ford",
+   "brand_id": 87,
+   "model": "Taurus",
+   "model_id": 906,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6109,
+    "trim_name_raw": "Trend",
+    "trim_name_normalized": "Trend"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 622,
+   "brand_new_car_sfx_id": 1315,
+   "brand": "Ford",
+   "brand_id": 87,
+   "model": "Taurus",
+   "model_id": 906,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5747,
+    "trim_name_raw": "Titanium",
+    "trim_name_normalized": "Titanium"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 626,
+   "brand_new_car_sfx_id": 1326,
+   "brand": "Dongfeng",
+   "brand_id": 69,
+   "model": "AX7",
+   "model_id": 983,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6913,
+    "trim_name_raw": "E1",
+    "trim_name_normalized": "E1"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 626,
+   "brand_new_car_sfx_id": 1325,
+   "brand": "Dongfeng",
+   "brand_id": 69,
+   "model": "AX7",
+   "model_id": 983,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6912,
+    "trim_name_raw": "E2",
+    "trim_name_normalized": "E2"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 627,
+   "brand_new_car_sfx_id": 1328,
+   "brand": "Rox",
+   "brand_id": 125,
+   "model": "01",
+   "model_id": 1415,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6176,
+    "trim_name_raw": "7-seat version",
+    "trim_name_normalized": "7-seat version"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 627,
+   "brand_new_car_sfx_id": 1327,
+   "brand": "Rox",
+   "brand_id": 125,
+   "model": "01",
+   "model_id": 1415,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6177,
+    "trim_name_raw": "6-seat version",
+    "trim_name_normalized": "6-seat version"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 629,
+   "brand_new_car_sfx_id": 1331,
+   "brand": "DENZA",
+   "brand_id": 151,
+   "model": "B8",
+   "model_id": 1666,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6700,
+    "trim_name_raw": "Flagship ",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 641,
+   "brand_new_car_sfx_id": 1368,
+   "brand": "Volkswagen",
+   "brand_id": 26,
+   "model": "Taos",
+   "model_id": 1077,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6088,
+    "trim_name_raw": "S",
+    "trim_name_normalized": "S"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 641,
+   "brand_new_car_sfx_id": 1367,
+   "brand": "Volkswagen",
+   "brand_id": 26,
+   "model": "Taos",
+   "model_id": 1077,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5737,
+    "trim_name_raw": "SE",
+    "trim_name_normalized": "SE"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 641,
+   "brand_new_car_sfx_id": 1366,
+   "brand": "Volkswagen",
+   "brand_id": 26,
+   "model": "Taos",
+   "model_id": 1077,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5952,
+    "trim_name_raw": "SEL",
+    "trim_name_normalized": "SEL"
+   },
+   "engine": {
+    "engine_id": 102,
+    "raw": "1.5",
+    "displacement_normalized": "1.5L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_SIZE_ONLY",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 645,
+   "brand_new_car_sfx_id": 1373,
+   "brand": "Rolls Royce",
+   "brand_id": 37,
+   "model": "Phantom",
+   "model_id": 412,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6945,
+    "trim_name_raw": "Base",
+    "trim_name_normalized": "Base"
+   },
+   "engine": {
+    "engine_id": 100,
+    "raw": "6.8",
+    "displacement_normalized": "6.8L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 126,
+    "raw": "12 cylinder",
+    "count": 12,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 647,
+   "brand_new_car_sfx_id": 1376,
+   "brand": "Voyah",
+   "brand_id": 154,
+   "model": "Taishan",
+   "model_id": 1786,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6960,
+    "trim_name_raw": "Flagship",
+    "trim_name_normalized": "Flagship"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 649,
+   "brand_new_car_sfx_id": 1395,
+   "brand": "MINI",
+   "brand_id": 5,
+   "model": "Countryman",
+   "model_id": 102,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6768,
+    "trim_name_raw": "JCW ALL4",
+    "trim_name_normalized": "JCW ALL4"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 649,
+   "brand_new_car_sfx_id": 1385,
+   "brand": "MINI",
+   "brand_id": 5,
+   "model": "Countryman",
+   "model_id": 102,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7053,
+    "trim_name_raw": "SE ALL4",
+    "trim_name_normalized": "SE ALL4"
+   },
+   "engine": null,
+   "cylinder": null,
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "NOT_PROVIDED",
+    "cylinder": "NOT_PROVIDED"
+   }
+  },
+  {
+   "brand_new_car_id": 649,
+   "brand_new_car_sfx_id": 1381,
+   "brand": "MINI",
+   "brand_id": 5,
+   "model": "Countryman",
+   "model_id": 102,
+   "year": 2026,
+   "trim": {
+    "trim_id": 6769,
+    "trim_name_raw": "S ALL4",
+    "trim_name_normalized": "S ALL4"
+   },
+   "engine": {
+    "engine_id": 82,
+    "raw": "2.0T",
+    "displacement_normalized": "2.0L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 650,
+   "brand_new_car_sfx_id": 1382,
+   "brand": "Mazda",
+   "brand_id": 10,
+   "model": "CX-90",
+   "model_id": 1455,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7050,
+    "trim_name_raw": "High",
+    "trim_name_normalized": "High"
+   },
+   "engine": {
+    "engine_id": 180,
+    "raw": "3.3T",
+    "displacement_normalized": "3.3L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 127,
+    "raw": "6 cylinder",
+    "count": 6,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 654,
+   "brand_new_car_sfx_id": 1409,
+   "brand": "Hyundai",
+   "brand_id": 77,
+   "model": "Elantra",
+   "model_id": 740,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4938,
+    "trim_name_raw": "Standard",
+    "trim_name_normalized": "Standard"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 654,
+   "brand_new_car_sfx_id": 1408,
+   "brand": "Hyundai",
+   "brand_id": 77,
+   "model": "Elantra",
+   "model_id": 740,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4220,
+    "trim_name_raw": "SE",
+    "trim_name_normalized": "SE"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 654,
+   "brand_new_car_sfx_id": 1407,
+   "brand": "Hyundai",
+   "brand_id": 77,
+   "model": "Elantra",
+   "model_id": 740,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4223,
+    "trim_name_raw": "SEL",
+    "trim_name_normalized": "SEL"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 654,
+   "brand_new_car_sfx_id": 1406,
+   "brand": "Hyundai",
+   "brand_id": 77,
+   "model": "Elantra",
+   "model_id": 740,
+   "year": 2026,
+   "trim": {
+    "trim_id": 4224,
+    "trim_name_raw": "Limited",
+    "trim_name_normalized": "Limited"
+   },
+   "engine": {
+    "engine_id": 76,
+    "raw": "2.0",
+    "displacement_normalized": "2.0L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 654,
+   "brand_new_car_sfx_id": 1405,
+   "brand": "Hyundai",
+   "brand_id": 77,
+   "model": "Elantra",
+   "model_id": 740,
+   "year": 2026,
+   "trim": {
+    "trim_id": 5625,
+    "trim_name_raw": "N Line",
+    "trim_name_normalized": "N Line"
+   },
+   "engine": {
+    "engine_id": 97,
+    "raw": "1.6T",
+    "displacement_normalized": "1.6L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 658,
+   "brand_new_car_sfx_id": 1417,
+   "brand": "BAIC",
+   "brand_id": 62,
+   "model": "BJ30",
+   "model_id": 1811,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7078,
+    "trim_name_raw": "LV2",
+    "trim_name_normalized": "LV2"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 658,
+   "brand_new_car_sfx_id": 1416,
+   "brand": "BAIC",
+   "brand_id": 62,
+   "model": "BJ30",
+   "model_id": 1811,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7079,
+    "trim_name_raw": "LV3",
+    "trim_name_normalized": "LV3"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 658,
+   "brand_new_car_sfx_id": 1415,
+   "brand": "BAIC",
+   "brand_id": 62,
+   "model": "BJ30",
+   "model_id": 1811,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7080,
+    "trim_name_raw": "LV4",
+    "trim_name_normalized": "LV4"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 658,
+   "brand_new_car_sfx_id": 1414,
+   "brand": "BAIC",
+   "brand_id": 62,
+   "model": "BJ30",
+   "model_id": 1811,
+   "year": 2026,
+   "trim": {
+    "trim_id": 7081,
+    "trim_name_raw": "LV5",
+    "trim_name_normalized": "LV5"
+   },
+   "engine": {
+    "engine_id": 98,
+    "raw": "1.5T",
+    "displacement_normalized": "1.5L",
+    "qualifier": "T",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 660,
+   "brand_new_car_sfx_id": 1424,
+   "brand": "Toyota",
+   "brand_id": 27,
+   "model": "Land Cruiser FJ",
+   "model_id": 1827,
+   "year": 2027,
+   "trim": {
+    "trim_id": 7091,
+    "trim_name_raw": "Mid grade",
+    "trim_name_normalized": "Mid grade"
+   },
+   "engine": {
+    "engine_id": 55,
+    "raw": "2.7",
+    "displacement_normalized": "2.7L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  },
+  {
+   "brand_new_car_id": 660,
+   "brand_new_car_sfx_id": 1423,
+   "brand": "Toyota",
+   "brand_id": 27,
+   "model": "Land Cruiser FJ",
+   "model_id": 1827,
+   "year": 2027,
+   "trim": {
+    "trim_id": 7090,
+    "trim_name_raw": "High grade",
+    "trim_name_normalized": "High grade"
+   },
+   "engine": {
+    "engine_id": 55,
+    "raw": "2.7",
+    "displacement_normalized": "2.7L",
+    "qualifier": "",
+    "parsed": true
+   },
+   "cylinder": {
+    "cylinder_id": 109,
+    "raw": "4 cylinder",
+    "count": 4,
+    "parsed": true
+   },
+   "comparison_with_used_car_union": {
+    "model_in_used_catalog": true,
+    "trim": "AGREE_EXACT",
+    "engine": "AGREE_EXACT_VARIANT",
+    "cylinder": "AGREE_EXACT"
+   }
+  }
+ ],
+ "conflicts": [
+  {
+   "brand_new_car_sfx_id": 332,
+   "brand": "Ssangyong",
+   "model": "Musso Grand",
+   "model_id": 316,
+   "dimension": "engine",
+   "status": "CONFLICT_NOT_IN_USED_LIST",
+   "brand_new_value": "2.0T"
+  },
+  {
+   "brand_new_car_sfx_id": 661,
+   "brand": "Geely",
+   "model": "Cityray",
+   "model_id": 1581,
+   "dimension": "cylinder",
+   "status": "CONFLICT_NOT_IN_USED_LIST",
+   "brand_new_value": "4 cylinder"
+  },
+  {
+   "brand_new_car_sfx_id": 660,
+   "brand": "Geely",
+   "model": "Cityray",
+   "model_id": 1581,
+   "dimension": "cylinder",
+   "status": "CONFLICT_NOT_IN_USED_LIST",
+   "brand_new_value": "4 cylinder"
+  },
+  {
+   "brand_new_car_sfx_id": 835,
+   "brand": "Soueast",
+   "model": "S08",
+   "model_id": 1655,
+   "dimension": "trim",
+   "status": "CONFLICT_NOT_IN_USED_LIST",
+   "brand_new_value": "PHEV Premium"
+  },
+  {
+   "brand_new_car_sfx_id": 972,
+   "brand": "MHERO",
+   "model": "2",
+   "model_id": 1671,
+   "dimension": "cylinder",
+   "status": "CONFLICT_NOT_IN_USED_LIST",
+   "brand_new_value": "4 cylinder"
+  }
+ ]
+}

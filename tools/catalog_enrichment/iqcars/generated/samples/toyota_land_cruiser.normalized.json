@@ -1,0 +1,687 @@
+{
+ "_meta": {
+  "generated_at": "2026-10-04T16:53:39+00:00",
+  "source": "IQ Cars public catalog (see raw/iqcars_catalog.json _meta)",
+  "candidate_dataset": true,
+  "not_connected_to_app": true,
+  "fields": "model, trim, engine size, cylinders ONLY. No transmission/drivetrain/seats/hp/torque/body are claimed.",
+  "key_semantics": {
+   "trims/engine_sizes/cylinders": "model-level UNION (what IQ lists for that model)",
+   "trim_details/engine_variants/cylinder_options": "detailed items with IQ IDs and raw values",
+   "relationships.exact_configurations": "exact trim->engine->cylinder rows; only where IQ publishes them (brand-new catalog)"
+  },
+  "coverage": {
+   "brands": 1,
+   "models": 1,
+   "models_with_trims": 1,
+   "models_with_engine_sizes": 1,
+   "models_with_cylinders": 1,
+   "models_with_no_detail": 0,
+   "models_without_cylinder_engine_response": 0,
+   "total_trim_entries": 29,
+   "unique_trim_names_casefold": 29,
+   "unique_engine_sizes": 8,
+   "unique_cylinder_counts": [
+    6,
+    8
+   ],
+   "models_with_exact_configurations": 0,
+   "trim_normalization": {
+    "trim_whitespace_fixed": 9
+   }
+  },
+  "conflicts_summary": {}
+ },
+ "models": [
+  {
+   "brand": "Toyota",
+   "brand_id": 27,
+   "model": "Land Cruiser",
+   "model_id": 249,
+   "model_key": "toyota|land cruiser",
+   "names": {
+    "brand": {
+     "en": "Toyota",
+     "ar": "تويوتا",
+     "ku": "تۆیۆتا"
+    },
+    "model": {
+     "en": "Land Cruiser",
+     "ar": "لاند كروزر",
+     "ku": "لاند کروزەر"
+    }
+   },
+   "model_years": {
+    "from": 1951,
+    "to": null
+   },
+   "trims": [
+    "EX.R",
+    "VX.S",
+    "VX.R",
+    "GX.R",
+    "GX",
+    "G",
+    "GX.R.i",
+    "GX.R Grand Touring",
+    "VX 3.5L Twin-Turbo",
+    "G-XR Twin-Turbo",
+    "GR",
+    "VX.R.i",
+    "GX.R Full Option",
+    "GX.R Limited",
+    "VX Full Option",
+    "VX Limited",
+    "VX 3.5L Twin Turbo",
+    "VX.R Twin Turbo",
+    "GR Twin Turbo",
+    "VX.E",
+    "VX.R Twin Turbo Plus",
+    "G-XR Twin-Turbo LIMITED",
+    "VX",
+    "VX.R Grand Touring",
+    "GR HEV",
+    "VX Twin Turbo Limited",
+    "VX HEV",
+    "VX.R HEV",
+    "GR.S HEV"
+   ],
+   "engine_sizes": [
+    "3.3L",
+    "3.5L",
+    "4.0L",
+    "4.2L",
+    "4.5L",
+    "4.6L",
+    "4.7L",
+    "5.7L"
+   ],
+   "cylinders": [
+    6,
+    8
+   ],
+   "trim_details": [
+    {
+     "name": "EX.R",
+     "iqcars_ids": [
+      3972
+     ],
+     "from_year": 2008,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 3972,
+       "raw_name": "EX.R",
+       "from_year": 2008,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "VX.S",
+     "iqcars_ids": [
+      3973
+     ],
+     "from_year": 2015,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 3973,
+       "raw_name": "VX.S",
+       "from_year": 2015,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "VX.R",
+     "iqcars_ids": [
+      3974
+     ],
+     "from_year": 1990,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 3974,
+       "raw_name": "VX.R ",
+       "from_year": 1990,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "GX.R",
+     "iqcars_ids": [
+      3976
+     ],
+     "from_year": 1990,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 3976,
+       "raw_name": "GX.R ",
+       "from_year": 1990,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "GX",
+     "iqcars_ids": [
+      3977
+     ],
+     "from_year": 1980,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 3977,
+       "raw_name": "GX",
+       "from_year": 1980,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "G",
+     "iqcars_ids": [
+      3978
+     ],
+     "from_year": 1980,
+     "to_year": 1998,
+     "entries": [
+      {
+       "iqcars_id": 3978,
+       "raw_name": "G",
+       "from_year": 1980,
+       "to_year": 1998
+      }
+     ]
+    },
+    {
+     "name": "GX.R.i",
+     "iqcars_ids": [
+      5438
+     ],
+     "from_year": 1998,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 5438,
+       "raw_name": "GX.R.i",
+       "from_year": 1998,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "GX.R Grand Touring",
+     "iqcars_ids": [
+      5472
+     ],
+     "from_year": 2019,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 5472,
+       "raw_name": "GX.R Grand Touring",
+       "from_year": 2019,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "VX 3.5L Twin-Turbo",
+     "iqcars_ids": [
+      5475
+     ],
+     "from_year": 2021,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5475,
+       "raw_name": "VX 3.5L Twin-Turbo",
+       "from_year": 2021,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "G-XR Twin-Turbo",
+     "iqcars_ids": [
+      5477
+     ],
+     "from_year": 2022,
+     "to_year": 2026,
+     "entries": [
+      {
+       "iqcars_id": 5477,
+       "raw_name": "G-XR Twin-Turbo",
+       "from_year": 2022,
+       "to_year": 2026
+      }
+     ]
+    },
+    {
+     "name": "GR",
+     "iqcars_ids": [
+      5592
+     ],
+     "from_year": 2021,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5592,
+       "raw_name": "GR",
+       "from_year": 2021,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX.R.i",
+     "iqcars_ids": [
+      5666
+     ],
+     "from_year": 2008,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 5666,
+       "raw_name": "VX.R.i",
+       "from_year": 2008,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "GX.R Full Option",
+     "iqcars_ids": [
+      5765
+     ],
+     "from_year": 2023,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5765,
+       "raw_name": "GX.R  Full Option ",
+       "from_year": 2023,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "GX.R Limited",
+     "iqcars_ids": [
+      5766
+     ],
+     "from_year": 2023,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5766,
+       "raw_name": "GX.R Limited",
+       "from_year": 2023,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX Full Option",
+     "iqcars_ids": [
+      5767
+     ],
+     "from_year": 2023,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5767,
+       "raw_name": "VX  Full Option ",
+       "from_year": 2023,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX Limited",
+     "iqcars_ids": [
+      5768
+     ],
+     "from_year": 2023,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5768,
+       "raw_name": "VX Limited ",
+       "from_year": 2023,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX 3.5L Twin Turbo",
+     "iqcars_ids": [
+      5769
+     ],
+     "from_year": 2023,
+     "to_year": 2026,
+     "entries": [
+      {
+       "iqcars_id": 5769,
+       "raw_name": "VX 3.5L Twin Turbo",
+       "from_year": 2023,
+       "to_year": 2026
+      }
+     ]
+    },
+    {
+     "name": "VX.R Twin Turbo",
+     "iqcars_ids": [
+      5770
+     ],
+     "from_year": 2022,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5770,
+       "raw_name": "VX.R Twin Turbo",
+       "from_year": 2022,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "GR Twin Turbo",
+     "iqcars_ids": [
+      5771
+     ],
+     "from_year": 2023,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 5771,
+       "raw_name": "GR Twin Turbo",
+       "from_year": 2023,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX.E",
+     "iqcars_ids": [
+      6035
+     ],
+     "from_year": 2015,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 6035,
+       "raw_name": "VX.E",
+       "from_year": 2015,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "VX.R Twin Turbo Plus",
+     "iqcars_ids": [
+      6042
+     ],
+     "from_year": 2021,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6042,
+       "raw_name": "VX.R Twin Turbo Plus",
+       "from_year": 2021,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "G-XR Twin-Turbo LIMITED",
+     "iqcars_ids": [
+      6049
+     ],
+     "from_year": 2021,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6049,
+       "raw_name": "G-XR Twin-Turbo LIMITED",
+       "from_year": 2021,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX",
+     "iqcars_ids": [
+      6242
+     ],
+     "from_year": 1980,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6242,
+       "raw_name": "VX",
+       "from_year": 1980,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX.R Grand Touring",
+     "iqcars_ids": [
+      6427
+     ],
+     "from_year": 2016,
+     "to_year": 2021,
+     "entries": [
+      {
+       "iqcars_id": 6427,
+       "raw_name": "VX.R Grand Touring",
+       "from_year": 2016,
+       "to_year": 2021
+      }
+     ]
+    },
+    {
+     "name": "GR HEV",
+     "iqcars_ids": [
+      6512
+     ],
+     "from_year": 2025,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6512,
+       "raw_name": " GR HEV",
+       "from_year": 2025,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX Twin Turbo Limited",
+     "iqcars_ids": [
+      6518
+     ],
+     "from_year": 2022,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6518,
+       "raw_name": "VX Twin Turbo Limited",
+       "from_year": 2022,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX HEV",
+     "iqcars_ids": [
+      6565
+     ],
+     "from_year": 2025,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6565,
+       "raw_name": "VX HEV ",
+       "from_year": 2025,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "VX.R HEV",
+     "iqcars_ids": [
+      6566
+     ],
+     "from_year": 2025,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6566,
+       "raw_name": "VX.R HEV ",
+       "from_year": 2025,
+       "to_year": null
+      }
+     ]
+    },
+    {
+     "name": "GR.S HEV",
+     "iqcars_ids": [
+      6567
+     ],
+     "from_year": 2025,
+     "to_year": null,
+     "entries": [
+      {
+       "iqcars_id": 6567,
+       "raw_name": "GR.S HEV ",
+       "from_year": 2025,
+       "to_year": null
+      }
+     ]
+    }
+   ],
+   "engine_variants": [
+    {
+     "iqcars_ids": [
+      173
+     ],
+     "raw": "3.3TD",
+     "display": "3.3L",
+     "displacement_l": 3.3,
+     "displacement_cc": null,
+     "qualifier": "TD"
+    },
+    {
+     "iqcars_ids": [
+      113
+     ],
+     "raw": "3.5T",
+     "display": "3.5L",
+     "displacement_l": 3.5,
+     "displacement_cc": null,
+     "qualifier": "T"
+    },
+    {
+     "iqcars_ids": [
+      69
+     ],
+     "raw": "4.0",
+     "display": "4.0L",
+     "displacement_l": 4.0,
+     "displacement_cc": null,
+     "qualifier": ""
+    },
+    {
+     "iqcars_ids": [
+      83
+     ],
+     "raw": "4.2TD",
+     "display": "4.2L",
+     "displacement_l": 4.2,
+     "displacement_cc": null,
+     "qualifier": "TD"
+    },
+    {
+     "iqcars_ids": [
+      9
+     ],
+     "raw": "4.5",
+     "display": "4.5L",
+     "displacement_l": 4.5,
+     "displacement_cc": null,
+     "qualifier": ""
+    },
+    {
+     "iqcars_ids": [
+      50
+     ],
+     "raw": "4.5TD",
+     "display": "4.5L",
+     "displacement_l": 4.5,
+     "displacement_cc": null,
+     "qualifier": "TD"
+    },
+    {
+     "iqcars_ids": [
+      88
+     ],
+     "raw": "4.6",
+     "display": "4.6L",
+     "displacement_l": 4.6,
+     "displacement_cc": null,
+     "qualifier": ""
+    },
+    {
+     "iqcars_ids": [
+      66
+     ],
+     "raw": "4.7",
+     "display": "4.7L",
+     "displacement_l": 4.7,
+     "displacement_cc": null,
+     "qualifier": ""
+    },
+    {
+     "iqcars_ids": [
+      25
+     ],
+     "raw": "5.7",
+     "display": "5.7L",
+     "displacement_l": 5.7,
+     "displacement_cc": null,
+     "qualifier": ""
+    }
+   ],
+   "cylinder_options": [
+    {
+     "iqcars_id": 127,
+     "raw": "6 cylinder",
+     "count": 6
+    },
+    {
+     "iqcars_id": 125,
+     "raw": "8 cylinder",
+     "count": 8
+    }
+   ],
+   "engine_unparsed": [],
+   "cylinder_unparsed": [],
+   "relationships": {
+    "trim_to_engine_cylinder": "not_provided_by_iqcars_used_car_catalog",
+    "scope_of_engine_and_cylinder_lists": "model_level_union",
+    "exact_configurations": []
+   },
+   "cylinder_engine_response_present": true,
+   "trim_normalization_stats": {
+    "whitespace_fixed": 9
+   }
+  }
+ ],
+ "conflicts": {}
+}

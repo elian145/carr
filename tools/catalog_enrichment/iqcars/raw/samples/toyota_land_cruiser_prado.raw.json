@@ -1,0 +1,387 @@
+{
+ "_meta": {
+  "note": "RAW, unnormalized. Values are exactly as returned (including stray whitespace/case).",
+  "initial_data_endpoint": "https://cp.iqcars.net/api/publicCar/App-Initial-Data-For-Android?categoryId=1&langCode=en",
+  "cylinder_engine_endpoint": "https://cp.iqcars.net/api/publicCar/cylinder-and-engine-and-specification?ModelId=288",
+  "captured_at": "2026-10-04T16:52:05+00:00"
+ },
+ "brand": {
+  "ID": 27,
+  "BrandNameen": "Toyota",
+  "BrandNamear": "تويوتا",
+  "BrandNameku": "تۆیۆتا"
+ },
+ "model": {
+  "CarBodyIds": [],
+  "ID": 288,
+  "ModelNameen": "Land Cruiser Prado",
+  "ModelNamear": "لاند كروزر برادو",
+  "ModelNameku": "لاند کروزەر پڕادۆ",
+  "Sort": 288,
+  "FromYearId": 34,
+  "ToYearId": null,
+  "SegmentId": null,
+  "Segment": null,
+  "SubSegmentId": null,
+  "SubSegment": null,
+  "FromYear": {
+   "ID": 34,
+   "YearName": "1984",
+   "Sort": 0
+  },
+  "ToYear": null,
+  "ModelSFXes": [
+   {
+    "ID": 3996,
+    "ModelId": null,
+    "SFXName": "VXE",
+    "FromYearId": 76,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 76,
+     "YearName": "2024",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 3997,
+    "ModelId": null,
+    "SFXName": "VX",
+    "FromYearId": 60,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 60,
+     "YearName": "2010",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 3998,
+    "ModelId": null,
+    "SFXName": "TXS",
+    "FromYearId": 59,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 59,
+     "YearName": "2009",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 3999,
+    "ModelId": null,
+    "SFXName": "TXL",
+    "FromYearId": 60,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 60,
+     "YearName": "2010",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 4053,
+    "ModelId": null,
+    "SFXName": "TX",
+    "FromYearId": 46,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 46,
+     "YearName": "1996",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 4512,
+    "ModelId": null,
+    "SFXName": "EX.R",
+    "FromYearId": 63,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 63,
+     "YearName": "2013",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 4513,
+    "ModelId": null,
+    "SFXName": "VXL",
+    "FromYearId": 59,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 59,
+     "YearName": "2009",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 4514,
+    "ModelId": null,
+    "SFXName": "GXR",
+    "FromYearId": 46,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 46,
+     "YearName": "1996",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 4832,
+    "ModelId": null,
+    "SFXName": "GX",
+    "FromYearId": 46,
+    "ToYearId": 74,
+    "FromYear": {
+     "ID": 46,
+     "YearName": "1996",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5427,
+    "ModelId": null,
+    "SFXName": "VX.R",
+    "FromYearId": 46,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 46,
+     "YearName": "1996",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6076,
+    "ModelId": null,
+    "SFXName": "RS",
+    "FromYearId": 46,
+    "ToYearId": 81,
+    "FromYear": {
+     "ID": 46,
+     "YearName": "1996",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 81,
+     "YearName": "2026",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 6079,
+    "ModelId": null,
+    "SFXName": "Adventure",
+    "FromYearId": 76,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 76,
+     "YearName": "2024",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6174,
+    "ModelId": null,
+    "SFXName": "A4 Adventure",
+    "FromYearId": 76,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 76,
+     "YearName": "2024",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6277,
+    "ModelId": null,
+    "SFXName": "All Rounder",
+    "FromYearId": 59,
+    "ToYearId": 81,
+    "FromYear": {
+     "ID": 59,
+     "YearName": "2009",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 81,
+     "YearName": "2026",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 6278,
+    "ModelId": null,
+    "SFXName": "Standard",
+    "FromYearId": 40,
+    "ToYearId": 81,
+    "FromYear": {
+     "ID": 40,
+     "YearName": "1990",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 81,
+     "YearName": "2026",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 6382,
+    "ModelId": null,
+    "SFXName": "R3",
+    "FromYearId": 76,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 76,
+     "YearName": "2024",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6951,
+    "ModelId": null,
+    "SFXName": "R2",
+    "FromYearId": 76,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 76,
+     "YearName": "2024",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   }
+  ],
+  "Years": null,
+  "Brand": null,
+  "Tags": [],
+  "Deleted": false
+ },
+ "cylinder_engine": {
+  "Cylinders": [
+   {
+    "ID": 109,
+    "CylinderNameen": "4 cylinder",
+    "CylinderNamear": "4 سلندر",
+    "CylinderNameku": "4 پستۆن",
+    "Sort": 0
+   },
+   {
+    "ID": 127,
+    "CylinderNameen": "6 cylinder",
+    "CylinderNamear": "6 سلندر",
+    "CylinderNameku": "6 پستۆن",
+    "Sort": 0
+   }
+  ],
+  "Engines": [
+   {
+    "ID": 55,
+    "EngineNameen": "2.7",
+    "EngineNamear": "2.7",
+    "EngineNameku": "2.7",
+    "Sort": 0
+   },
+   {
+    "ID": 40,
+    "EngineNameen": "3.4",
+    "EngineNamear": "3.4",
+    "EngineNameku": "3.4",
+    "Sort": 0
+   },
+   {
+    "ID": 69,
+    "EngineNameen": "4.0",
+    "EngineNamear": "4.0",
+    "EngineNameku": "4.0",
+    "Sort": 0
+   },
+   {
+    "ID": 23,
+    "EngineNameen": "3.0TD",
+    "EngineNamear": "3.0TD",
+    "EngineNameku": "3.0TD",
+    "Sort": 0
+   },
+   {
+    "ID": 49,
+    "EngineNameen": "2.8TD",
+    "EngineNamear": "2.8TD",
+    "EngineNameku": "2.8TD",
+    "Sort": 0
+   },
+   {
+    "ID": 142,
+    "EngineNameen": "2.4T",
+    "EngineNamear": "2.4T",
+    "EngineNameku": "2.4T",
+    "Sort": 0
+   }
+  ],
+  "specification_options_count": 42,
+  "response_keys": [
+   "Cylinders",
+   "Engines",
+   "SeatNumbers",
+   "Specifications"
+  ]
+ }
+}

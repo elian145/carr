@@ -1,0 +1,1383 @@
+{
+ "_meta": {
+  "rule": "Never auto-merged. The IQ trim in a possible-duplicate relationship is neither added nor merged until a human decides.",
+  "cross_source_groups": 96,
+  "within_iq_trims_held": 2
+ },
+ "groups": [
+  {
+   "brand": "Audi",
+   "model": "A1",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5070
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A3",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-line",
+   "carnet_lookalikes": [
+    "S-Line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5077
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A4",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5067
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A5",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5119
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A6",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5061
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A7",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5081
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A8",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5058
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q3",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5098
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q5",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5103
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q7",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5088
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q8",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5096
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "TT",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5110
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive28i",
+   "carnet_lookalikes": [
+    "Xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4666
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "sDrive28i",
+   "carnet_lookalikes": [
+    "sDrive 28i"
+   ],
+   "loose_key": "sdrive28i",
+   "iq_trim_ids": [
+    4667
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive20i",
+   "carnet_lookalikes": [
+    "Xdrive20i"
+   ],
+   "loose_key": "xdrive20i",
+   "iq_trim_ids": [
+    7027
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X2",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive 28i",
+   "carnet_lookalikes": [
+    "xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4662
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X2",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive20i",
+   "carnet_lookalikes": [
+    "xDrive 20i"
+   ],
+   "loose_key": "xdrive20i",
+   "iq_trim_ids": [
+    6399
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X2",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "sDrive18i",
+   "carnet_lookalikes": [
+    "sDrive 18i"
+   ],
+   "loose_key": "sdrive18i",
+   "iq_trim_ids": [
+    7031
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "30i",
+   "carnet_lookalikes": [
+    "3.0i"
+   ],
+   "loose_key": "30i",
+   "iq_trim_ids": [
+    4711
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive28i",
+   "carnet_lookalikes": [
+    "Xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4712
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "sDrive30i",
+   "carnet_lookalikes": [
+    "sDrive 30i"
+   ],
+   "loose_key": "sdrive30i",
+   "iq_trim_ids": [
+    6138
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "25i",
+   "carnet_lookalikes": [
+    "2.5i"
+   ],
+   "loose_key": "25i",
+   "iq_trim_ids": [
+    7034
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X4",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive28i",
+   "carnet_lookalikes": [
+    "Xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4718
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X4",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive20d",
+   "carnet_lookalikes": [
+    "xDrive20D"
+   ],
+   "loose_key": "xdrive20d",
+   "iq_trim_ids": [
+    5772
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive50i",
+   "carnet_lookalikes": [
+    "Xdrive50i"
+   ],
+   "loose_key": "xdrive50i",
+   "iq_trim_ids": [
+    4687
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive30i",
+   "carnet_lookalikes": [
+    "xDrive 30i"
+   ],
+   "loose_key": "xdrive30i",
+   "iq_trim_ids": [
+    4691
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "30i",
+   "carnet_lookalikes": [
+    "3.0i"
+   ],
+   "loose_key": "30i",
+   "iq_trim_ids": [
+    7037
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X6",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive50i",
+   "carnet_lookalikes": [
+    "Xdrive50i"
+   ],
+   "loose_key": "xdrive50i",
+   "iq_trim_ids": [
+    4673
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X6",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive35i",
+   "carnet_lookalikes": [
+    "Xdrive35i"
+   ],
+   "loose_key": "xdrive35i",
+   "iq_trim_ids": [
+    4674
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X6",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive30d",
+   "carnet_lookalikes": [
+    "xDrive 30d"
+   ],
+   "loose_key": "xdrive30d",
+   "iq_trim_ids": [
+    5412
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X7",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "xDrive40d",
+   "carnet_lookalikes": [
+    "XDrive 40d"
+   ],
+   "loose_key": "xdrive40d",
+   "iq_trim_ids": [
+    5887
+   ]
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Groove",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "premier",
+   "carnet_lookalikes": [
+    "Premier"
+   ],
+   "loose_key": "premier",
+   "iq_trim_ids": [
+    6870
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Challenger",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "RT",
+   "carnet_lookalikes": [
+    "R/T"
+   ],
+   "loose_key": "rt",
+   "iq_trim_ids": [
+    5325
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Challenger",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "RT Shaker",
+   "carnet_lookalikes": [
+    "R/T Shaker"
+   ],
+   "loose_key": "rtshaker",
+   "iq_trim_ids": [
+    5411
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Charger",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "RT",
+   "carnet_lookalikes": [
+    "R/T"
+   ],
+   "loose_key": "rt",
+   "iq_trim_ids": [
+    5320
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "WILDTRAK",
+   "carnet_lookalikes": [
+    "Wildtrak"
+   ],
+   "loose_key": "wildtrak",
+   "iq_trim_ids": [
+    6201
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "OUTER BANKS",
+   "carnet_lookalikes": [
+    "Outer Banks"
+   ],
+   "loose_key": "outerbanks",
+   "iq_trim_ids": [
+    6202
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "BIG BEND",
+   "carnet_lookalikes": [
+    "Big Bend"
+   ],
+   "loose_key": "bigbend",
+   "iq_trim_ids": [
+    6203
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "V-6",
+   "carnet_lookalikes": [
+    "V6"
+   ],
+   "loose_key": "v6",
+   "iq_trim_ids": [
+    4330
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "EcoBoost",
+   "carnet_lookalikes": [
+    "Ecoboost"
+   ],
+   "loose_key": "ecoboost",
+   "iq_trim_ids": [
+    4331
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "EcoBoost Premium",
+   "carnet_lookalikes": [
+    "Ecoboost Premium"
+   ],
+   "loose_key": "ecoboostpremium",
+   "iq_trim_ids": [
+    5436
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Ranger",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "Wild Trak",
+   "carnet_lookalikes": [
+    "Wildtrak"
+   ],
+   "loose_key": "wildtrak",
+   "iq_trim_ids": [
+    4652
+   ]
+  },
+  {
+   "brand": "GMC",
+   "model": "Sierra",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "2500HD",
+   "carnet_lookalikes": [
+    "2500 HD"
+   ],
+   "loose_key": "2500hd",
+   "iq_trim_ids": [
+    5605
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "City",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "SPORT",
+   "carnet_lookalikes": [
+    "Sport"
+   ],
+   "loose_key": "sport",
+   "iq_trim_ids": [
+    6665
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "City",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "LX SPORT",
+   "carnet_lookalikes": [
+    "LX Sport"
+   ],
+   "loose_key": "lxsport",
+   "iq_trim_ids": [
+    6667
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Odyssey",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "TOURING",
+   "carnet_lookalikes": [
+    "Touring"
+   ],
+   "loose_key": "touring",
+   "iq_trim_ids": [
+    6680
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Odyssey",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "EX-L",
+   "carnet_lookalikes": [
+    "Ex-l"
+   ],
+   "loose_key": "exl",
+   "iq_trim_ids": [
+    6682
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Pilot",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "EX-L",
+   "carnet_lookalikes": [
+    "Ex-l"
+   ],
+   "loose_key": "exl",
+   "iq_trim_ids": [
+    6673
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Elantra",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "ECO",
+   "carnet_lookalikes": [
+    "Eco"
+   ],
+   "loose_key": "eco",
+   "iq_trim_ids": [
+    4222
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX60",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "LUXE",
+   "carnet_lookalikes": [
+    "Luxe"
+   ],
+   "loose_key": "luxe",
+   "iq_trim_ids": [
+    6495
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX60",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "AUTOGRAPH",
+   "carnet_lookalikes": [
+    "Autograph"
+   ],
+   "loose_key": "autograph",
+   "iq_trim_ids": [
+    6496
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX60",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "SENSORY",
+   "carnet_lookalikes": [
+    "Sensory"
+   ],
+   "loose_key": "sensory",
+   "iq_trim_ids": [
+    6497
+   ]
+  },
+  {
+   "brand": "Jaguar",
+   "model": "XF",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "RS",
+   "carnet_lookalikes": [
+    "R-S"
+   ],
+   "loose_key": "rs",
+   "iq_trim_ids": [
+    5143
+   ]
+  },
+  {
+   "brand": "Jaguar",
+   "model": "XK",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "RS",
+   "carnet_lookalikes": [
+    "R-S"
+   ],
+   "loose_key": "rs",
+   "iq_trim_ids": [
+    5152
+   ]
+  },
+  {
+   "brand": "Jeep",
+   "model": "Grand Cherokee",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "80 Th Anniversary",
+   "carnet_lookalikes": [
+    "80th Anniversary"
+   ],
+   "loose_key": "80thanniversary",
+   "iq_trim_ids": [
+    5502
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Cadenza",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GDI Mid",
+   "carnet_lookalikes": [
+    "GDi Mid"
+   ],
+   "loose_key": "gdimid",
+   "iq_trim_ids": [
+    4122
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Cadenza",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GDI Top",
+   "carnet_lookalikes": [
+    "GDi Top"
+   ],
+   "loose_key": "gditop",
+   "iq_trim_ids": [
+    4573
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "K4",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GT‐Line",
+   "carnet_lookalikes": [
+    "GT-Line"
+   ],
+   "loose_key": "gtline",
+   "iq_trim_ids": [
+    6457
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Soul",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GT Line",
+   "carnet_lookalikes": [
+    "GT-Line"
+   ],
+   "loose_key": "gtline",
+   "iq_trim_ids": [
+    5943
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "ES",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "F-Sport",
+   "carnet_lookalikes": [
+    "F Sport"
+   ],
+   "loose_key": "fsport",
+   "iq_trim_ids": [
+    5355
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "LS",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "F-Sport",
+   "carnet_lookalikes": [
+    "F Sport"
+   ],
+   "loose_key": "fsport",
+   "iq_trim_ids": [
+    5340
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "NX",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "450h +",
+   "carnet_lookalikes": [
+    "450h+"
+   ],
+   "loose_key": "450h",
+   "iq_trim_ids": [
+    6107
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "RX",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "F-Sport",
+   "carnet_lookalikes": [
+    "F Sport"
+   ],
+   "loose_key": "fsport",
+   "iq_trim_ids": [
+    5547
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "UX",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "UX200",
+   "carnet_lookalikes": [
+    "UX 200"
+   ],
+   "loose_key": "ux200",
+   "iq_trim_ids": [
+    6149
+   ]
+  },
+  {
+   "brand": "Mazda",
+   "model": "6",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "PURE",
+   "carnet_lookalikes": [
+    "Pure"
+   ],
+   "loose_key": "pure",
+   "iq_trim_ids": [
+    6642
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "G550",
+   "carnet_lookalikes": [
+    "G 550"
+   ],
+   "loose_key": "g550",
+   "iq_trim_ids": [
+    4405
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "G500",
+   "carnet_lookalikes": [
+    "G 500"
+   ],
+   "loose_key": "g500",
+   "iq_trim_ids": [
+    4406
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "G350",
+   "carnet_lookalikes": [
+    "G 350"
+   ],
+   "loose_key": "g350",
+   "iq_trim_ids": [
+    4407
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "G580",
+   "carnet_lookalikes": [
+    "G 580"
+   ],
+   "loose_key": "g580",
+   "iq_trim_ids": [
+    6256
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "370Z",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "NISMO",
+   "carnet_lookalikes": [
+    "Nismo"
+   ],
+   "loose_key": "nismo",
+   "iq_trim_ids": [
+    4537
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Ariya",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "ENGAGE",
+   "carnet_lookalikes": [
+    "Engage"
+   ],
+   "loose_key": "engage",
+   "iq_trim_ids": [
+    6305
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Frontier",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "PRO-4X",
+   "carnet_lookalikes": [
+    "Pro-4X"
+   ],
+   "loose_key": "pro4x",
+   "iq_trim_ids": [
+    4060
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Maxima",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "SR2",
+   "carnet_lookalikes": [
+    "SR 2"
+   ],
+   "loose_key": "sr2",
+   "iq_trim_ids": [
+    4545
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Maxima",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "SR1",
+   "carnet_lookalikes": [
+    "SR 1"
+   ],
+   "loose_key": "sr1",
+   "iq_trim_ids": [
+    4546
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Rogue",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "SPECIAL EDITION",
+   "carnet_lookalikes": [
+    "Special Edition"
+   ],
+   "loose_key": "specialedition",
+   "iq_trim_ids": [
+    5469
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "1500",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "Longhorn",
+   "carnet_lookalikes": [
+    "LONG HORN"
+   ],
+   "loose_key": "longhorn",
+   "iq_trim_ids": [
+    5729
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "BIG HORN",
+   "carnet_lookalikes": [
+    "Bighorn"
+   ],
+   "loose_key": "bighorn",
+   "iq_trim_ids": [
+    6485
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "TRADESMAN",
+   "carnet_lookalikes": [
+    "Tradesman"
+   ],
+   "loose_key": "tradesman",
+   "iq_trim_ids": [
+    6486
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "POWER WAGON",
+   "carnet_lookalikes": [
+    "Power Wagon"
+   ],
+   "loose_key": "powerwagon",
+   "iq_trim_ids": [
+    6487
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "LARAMIE",
+   "carnet_lookalikes": [
+    "Laramie"
+   ],
+   "loose_key": "laramie",
+   "iq_trim_ids": [
+    6488
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "LIMITED",
+   "carnet_lookalikes": [
+    "Limited"
+   ],
+   "loose_key": "limited",
+   "iq_trim_ids": [
+    6491
+   ]
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Swift",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GL+",
+   "carnet_lookalikes": [
+    "GL"
+   ],
+   "loose_key": "gl",
+   "iq_trim_ids": [
+    6730
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Corolla",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "iM",
+   "carnet_lookalikes": [
+    "IM"
+   ],
+   "loose_key": "im",
+   "iq_trim_ids": [
+    5441
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Hilux",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GR Sport",
+   "carnet_lookalikes": [
+    "GR-Sport"
+   ],
+   "loose_key": "grsport",
+   "iq_trim_ids": [
+    5615
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "EX.R",
+   "carnet_lookalikes": [
+    "EXR"
+   ],
+   "loose_key": "exr",
+   "iq_trim_ids": [
+    3972
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "VX.S",
+   "carnet_lookalikes": [
+    "VXS"
+   ],
+   "loose_key": "vxs",
+   "iq_trim_ids": [
+    3973
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "VX.R",
+   "carnet_lookalikes": [
+    "VXR"
+   ],
+   "loose_key": "vxr",
+   "iq_trim_ids": [
+    3974
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GX.R",
+   "carnet_lookalikes": [
+    "GXR"
+   ],
+   "loose_key": "gxr",
+   "iq_trim_ids": [
+    3976
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "GX.R Grand Touring",
+   "carnet_lookalikes": [
+    "GXR Grand Touring"
+   ],
+   "loose_key": "gxrgrandtouring",
+   "iq_trim_ids": [
+    5472
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "within_iq",
+   "iq_trim": "VX 3.5L Twin-Turbo",
+   "iq_group": [
+    "VX 3.5L Twin-Turbo",
+    "VX 3.5L Twin Turbo"
+   ],
+   "loose_key": "vx35ltwinturbo",
+   "iq_trim_ids": [
+    5475
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "VX.R.i",
+   "carnet_lookalikes": [
+    "VXRi"
+   ],
+   "loose_key": "vxri",
+   "iq_trim_ids": [
+    5666
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "within_iq",
+   "iq_trim": "VX 3.5L Twin Turbo",
+   "iq_group": [
+    "VX 3.5L Twin-Turbo",
+    "VX 3.5L Twin Turbo"
+   ],
+   "loose_key": "vx35ltwinturbo",
+   "iq_trim_ids": [
+    5769
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "VX.R Grand Touring",
+   "carnet_lookalikes": [
+    "VXR Grand Touring"
+   ],
+   "loose_key": "vxrgrandtouring",
+   "iq_trim_ids": [
+    6427
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser Prado",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "EX.R",
+   "carnet_lookalikes": [
+    "EXR"
+   ],
+   "loose_key": "exr",
+   "iq_trim_ids": [
+    4512
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser Prado",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "VX.R",
+   "carnet_lookalikes": [
+    "VXR"
+   ],
+   "loose_key": "vxr",
+   "iq_trim_ids": [
+    5427
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Tundra",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "CAPSTONE",
+   "carnet_lookalikes": [
+    "Capstone"
+   ],
+   "loose_key": "capstone",
+   "iq_trim_ids": [
+    6093
+   ]
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "R-line",
+   "carnet_lookalikes": [
+    "R-Line"
+   ],
+   "loose_key": "rline",
+   "iq_trim_ids": [
+    5008
+   ]
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Passat",
+   "status": "POSSIBLE_DUPLICATES_HELD_FOR_REVIEW",
+   "kind": "cross_source",
+   "iq_trim": "R-line",
+   "carnet_lookalikes": [
+    "R-Line"
+   ],
+   "loose_key": "rline",
+   "iq_trim_ids": [
+    5044
+   ]
+  }
+ ]
+}

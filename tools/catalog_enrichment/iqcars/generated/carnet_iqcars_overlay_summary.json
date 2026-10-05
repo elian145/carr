@@ -1,0 +1,47 @@
+{
+ "status": "CANDIDATE - NOT connected to CarNet; additive; model-level only",
+ "inputs_sha256": {
+  "raw/iqcars_catalog.json": "eab697d1969319e9b0019faf1344fe4fa27fdcc4f965c3830a907aad82e9b4a9",
+  "generated/iqcars_model_options.json": "e33909d5924391258519aa920b7b438834d6a7ca6e75a2ab5a5585ef776acfda",
+  "assets/car_catalog.json": "901beff8516e3c5cc5e4931a35a93582ecd545e425fd54e82163c4228e1448da",
+  "assets/car_spec_dataset.json": "e7ea3a6ba6035f0ef5369f3be3cd628518407ee0806f0d19c0c1a69f86526cc0"
+ },
+ "models": {
+  "iq_models": 1653,
+  "matched_exact_identity": 1635,
+  "eligible_after_explicit_exclusions": 1635,
+  "included_in_overlay": 1214,
+  "matched_but_no_additions": 421,
+  "excluded_ambiguous": 1,
+  "excluded_unmatched": 17,
+  "excluded_explicit": 1,
+  "total_not_in_overlay": 439
+ },
+ "additions": {
+  "trims_add": 1791,
+  "engine_sizes_add": 1926,
+  "engine_variants_on_added_sizes": 2048,
+  "cylinders_add": 957
+ },
+ "models_with_additions_by_dimension": {
+  "trims": 533,
+  "engine_sizes": 925,
+  "cylinders": 782
+ },
+ "held_for_review": {
+  "trims_held": 98,
+  "models_with_held_trims": 59,
+  "by_kind": {
+   "cross_source": 96,
+   "within_iq": 2
+  }
+ },
+ "unrestricted_default_lists_excluded": {
+  "models_with_default_engine_list": 110,
+  "models_with_default_cylinder_list": 57,
+  "note": "IQ Cars returns the identical full list (139 engines / 10 cylinder counts) for these unrelated models; it is not model-specific information"
+ },
+ "unusual_cylinder_counts_flagged": 14,
+ "unparsed_or_placeholder_values_excluded": 193,
+ "rules": "* ADDITIVE ONLY: a value is emitted only if it is absent from CarNet after safe normalization. Nothing is removed.\n  * MODEL-LEVEL ONLY: trims_add / engine_sizes_add / cylinders_add are independent lists. No trim->engine->cylinder\n    relationship is created or implied. The 58-model brand-new exact dataset is NOT merged here.\n  * IDENTITY: only models matched by EXACT canonical identity (compare_carnet.match_models). Ambiguous and unmatched\n    IQ models never enter the overlay; 'Toyota Land Cruiser FJ' is additionally excluded explicitly.\n  * ENGINES: every IQ engine value keeps raw + normalized size + qualifier (4.5TD -> raw '4.5TD', size '4.5L', qualifier 'TD').\n    The picker list `engine_sizes_add` holds sizes only. Nothing is inferred from TD/T (fuel) or from displacement (cylinders).\n  * CYLINDERS: only counts IQ explicitly supplies. Unusual counts (1, 2, 16 ...) are kept but flagged, never silently dropped.\n  * TRIMS: only safe normalization (done upstream). A trim that is only a punctuation/case lookalike of a CarNet trim, or of\n    another IQ trim (EX.R vs EXR, 'Twin-Turbo' vs 'Twin Turbo'), is NOT added and NOT merged: it is HELD for human review.\n  * UNRESTRICTED DEFAULT LISTS: IQ returns the identical full list (all 139 engines / all 10 cylinder counts) for dozens of\n    unrelated models (EVs, Mirai, Bugatti-less models...). A list shared verbatim by many models carries no model-specific\n    information, so it is excluded (and reported) instead of being added to CarNet."
+}

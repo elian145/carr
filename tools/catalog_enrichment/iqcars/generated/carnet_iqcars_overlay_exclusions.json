@@ -1,0 +1,7535 @@
+{
+ "_meta": {
+  "note": "Everything IQ Cars supplied that is NOT in the overlay, and why. Nothing here is considered wrong; it is simply not proposed."
+ },
+ "ambiguous_iq_models": [
+  {
+   "iq_brand": "Toyota",
+   "iq_brand_id": 27,
+   "iq_model": "Land Cruiser FJ",
+   "iq_model_id": 1827,
+   "reason": "near_sibling_of:Land Cruiser",
+   "boundary_status": "ambiguous_qualifier",
+   "remainder": "fj",
+   "carnet_candidates": [
+    "Land Cruiser"
+   ]
+  }
+ ],
+ "unmatched_iq_models": [
+  {
+   "iq_brand": "Buick",
+   "iq_brand_id": 102,
+   "iq_model": "Roadmaster",
+   "iq_model_id": 1820,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "CFMoto",
+   "iq_brand_id": 124,
+   "iq_model": "ZFORCE 950",
+   "iq_model_id": 1404,
+   "reason": "brand_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Chery",
+   "iq_brand_id": 52,
+   "iq_model": "eQ7",
+   "iq_model_id": 1821,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Foton",
+   "iq_brand_id": 86,
+   "iq_model": "Forland",
+   "iq_model_id": 1825,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Geely",
+   "iq_brand_id": 84,
+   "iq_model": "Galaxy A7",
+   "iq_model_id": 1823,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "JAC",
+   "iq_brand_id": 73,
+   "iq_model": "N350S",
+   "iq_model_id": 1833,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "JAC",
+   "iq_brand_id": 73,
+   "iq_model": "N650S",
+   "iq_model_id": 1834,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Jeep",
+   "iq_brand_id": 71,
+   "iq_model": "KM410",
+   "iq_model_id": 1830,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Karry",
+   "iq_brand_id": 106,
+   "iq_model": "Q22L",
+   "iq_model_id": 1822,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Kia",
+   "iq_brand_id": 47,
+   "iq_model": "Morning",
+   "iq_model_id": 1826,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "LYNK & CO",
+   "iq_brand_id": 110,
+   "iq_model": "10",
+   "iq_model_id": 1832,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Mazda",
+   "iq_brand_id": 10,
+   "iq_model": "Titan",
+   "iq_model_id": 1835,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Mitsubishi",
+   "iq_brand_id": 4,
+   "iq_model": "Space Wagon",
+   "iq_model_id": 1828,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Samsung Commercial Vehicles",
+   "iq_brand_id": 134,
+   "iq_model": "SV110",
+   "iq_model_id": 1537,
+   "reason": "brand_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Suzuki",
+   "iq_brand_id": 30,
+   "iq_model": "Across",
+   "iq_model_id": 1831,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "Toyota",
+   "iq_brand_id": 27,
+   "iq_model": "Mirai",
+   "iq_model_id": 1824,
+   "reason": "model_not_in_carnet_catalog"
+  },
+  {
+   "iq_brand": "VinFast",
+   "iq_brand_id": 165,
+   "iq_model": "VF 8",
+   "iq_model_id": 1829,
+   "reason": "brand_not_in_carnet_catalog"
+  }
+ ],
+ "explicitly_excluded_models": [
+  {
+   "iq_brand": "Toyota",
+   "iq_model": "Land Cruiser FJ",
+   "iq_model_id": 1827,
+   "reason": "explicitly excluded until reviewed (near-sibling of Toyota Land Cruiser)",
+   "also_reported_as": "near_sibling_of:Land Cruiser"
+  }
+ ],
+ "unrestricted_default_engine_lists": [
+  {
+   "brand": "Audi",
+   "model": "Q4 e-tron",
+   "iq_model_id": 1450,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Audi",
+   "model": "RS e-tron",
+   "iq_model_id": 1567,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Austin",
+   "model": "12",
+   "iq_model_id": 1790,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Avatr",
+   "model": "06",
+   "iq_model_id": 1799,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "i3",
+   "iq_model_id": 1261,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "i4",
+   "iq_model_id": 1352,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "i5",
+   "iq_model_id": 1347,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "i7",
+   "iq_model_id": 1815,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "iX",
+   "iq_model_id": 1334,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "iX1",
+   "iq_model_id": 1349,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BMW",
+   "model": "iX3",
+   "iq_model_id": 1510,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "ATTO 3",
+   "iq_model_id": 1598,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "ATTO 8",
+   "iq_model_id": 1694,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "Leopard 3",
+   "iq_model_id": 1693,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "M9",
+   "iq_model_id": 1762,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "SEAL 7",
+   "iq_model_id": 1597,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "SEAL EV",
+   "iq_model_id": 1599,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "SEALION 7",
+   "iq_model_id": 1596,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "Seagull",
+   "iq_model_id": 1356,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "Ti 7",
+   "iq_model_id": 1781,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "BYD",
+   "model": "e2",
+   "iq_model_id": 1590,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Bestune",
+   "model": "E07",
+   "iq_model_id": 1759,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Bestune",
+   "model": "Pony",
+   "iq_model_id": 1489,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Bestune",
+   "model": "T90",
+   "iq_model_id": 1794,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "CEVO Mobility",
+   "model": "CEVO-C SE",
+   "iq_model_id": 1608,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "CMC",
+   "model": "D260",
+   "iq_model_id": 1814,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Lyriq",
+   "iq_model_id": 1442,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Optiq",
+   "iq_model_id": 1742,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Changan",
+   "model": "E-Star",
+   "iq_model_id": 1153,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Changan",
+   "model": "STAR 9",
+   "iq_model_id": 1102,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Changan",
+   "model": "Zhixiang CV8",
+   "iq_model_id": 1804,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Bolt",
+   "iq_model_id": 517,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Corsica",
+   "iq_model_id": 1784,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Silverado EV",
+   "iq_model_id": 1788,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "T-Series",
+   "iq_model_id": 558,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "DENZA",
+   "model": "N9",
+   "iq_model_id": 1816,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Fengguang S560",
+   "iq_model_id": 1787,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Forthing Friday",
+   "iq_model_id": 1512,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Ford",
+   "model": "F-150 Lightning",
+   "iq_model_id": 1557,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang Mach-E",
+   "iq_model_id": 1286,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Forthing",
+   "model": "Friday",
+   "iq_model_id": 1775,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Foton",
+   "model": "MP-X",
+   "iq_model_id": 1817,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "GAC",
+   "model": "Aion ES",
+   "iq_model_id": 1624,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "GAC",
+   "model": "Aion V",
+   "iq_model_id": 1789,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "GAZ",
+   "model": "Gazelle",
+   "iq_model_id": 1796,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "GMC",
+   "model": "Hummer EV",
+   "iq_model_id": 1292,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "GMC",
+   "model": "Hummer EV Pickup",
+   "iq_model_id": 1755,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "GWM",
+   "model": "Wingle 7",
+   "iq_model_id": 1802,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Geely",
+   "model": "Geometry C",
+   "iq_model_id": 1471,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Genesis",
+   "model": "GV60",
+   "iq_model_id": 1402,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "HAVAL",
+   "model": "V7",
+   "iq_model_id": 1783,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Higer",
+   "model": "KLQ6798",
+   "iq_model_id": 1785,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Higer",
+   "model": "KLQ6928",
+   "iq_model_id": 1543,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Honda",
+   "model": "Prologue",
+   "iq_model_id": 1765,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Honda",
+   "model": "e:NP1",
+   "iq_model_id": 1480,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Honda",
+   "model": "eNS1",
+   "iq_model_id": 1133,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Hongqi",
+   "model": "E-HS9",
+   "iq_model_id": 1675,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Hyptec",
+   "model": "HT",
+   "iq_model_id": 1594,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Kona Electric",
+   "iq_model_id": 1362,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Nexo",
+   "iq_model_id": 1389,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q40",
+   "iq_model_id": 1803,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Iran Khodro",
+   "model": "Paykan",
+   "iq_model_id": 1805,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Jaguar",
+   "model": "I-Pace",
+   "iq_model_id": 805,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Kia",
+   "model": "Ceres",
+   "iq_model_id": 1807,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Kia",
+   "model": "EV5",
+   "iq_model_id": 1449,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Kia",
+   "model": "EV6",
+   "iq_model_id": 1208,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Kia",
+   "model": "EV9",
+   "iq_model_id": 1320,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Kia",
+   "model": "Rio 5",
+   "iq_model_id": 1813,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "MG",
+   "model": "MG4 EV",
+   "iq_model_id": 1443,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "MHERO",
+   "model": "1",
+   "iq_model_id": 1670,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "MHERO",
+   "model": "2",
+   "iq_model_id": 1671,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "MINI",
+   "model": "Aceman",
+   "iq_model_id": 1801,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQA",
+   "iq_model_id": 1497,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQB",
+   "iq_model_id": 1483,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE SUV",
+   "iq_model_id": 1457,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE Sedan",
+   "iq_model_id": 1453,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQS",
+   "iq_model_id": 1400,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQV",
+   "iq_model_id": 1289,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "SSK",
+   "iq_model_id": 1069,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Mitsuoka",
+   "model": "Galue",
+   "iq_model_id": 1812,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Neta",
+   "model": "L",
+   "iq_model_id": 1738,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Nissan",
+   "model": "Ariya",
+   "iq_model_id": 1467,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Nissan",
+   "model": "Leaf",
+   "iq_model_id": 381,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "ORA",
+   "model": "Good Cat",
+   "iq_model_id": 1192,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Opel",
+   "model": "Movano",
+   "iq_model_id": 1797,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Peugeot",
+   "model": "404",
+   "iq_model_id": 1800,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Polestar",
+   "model": "Polestar 2",
+   "iq_model_id": 1258,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan",
+   "iq_model_id": 1325,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan Sport Turismo",
+   "iq_model_id": 1577,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Renault",
+   "model": "Dacia Lodgy",
+   "iq_model_id": 1806,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Renault",
+   "model": "Twizy",
+   "iq_model_id": 457,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Renault",
+   "model": "Zoe",
+   "iq_model_id": 458,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Spirit",
+   "iq_model_id": 1818,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Spur",
+   "iq_model_id": 1819,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Spectre",
+   "iq_model_id": 1478,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Smart",
+   "model": "Smart 1",
+   "iq_model_id": 1056,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Ssangyong",
+   "model": "Chairman",
+   "iq_model_id": 1791,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ3X",
+   "iq_model_id": 1792,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.3",
+   "iq_model_id": 1147,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.4",
+   "iq_model_id": 1116,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.6",
+   "iq_model_id": 1145,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "e-Tharu",
+   "iq_model_id": 1359,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Voyah",
+   "model": "Courage",
+   "iq_model_id": 1709,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Voyah",
+   "model": "Dream",
+   "iq_model_id": 1707,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Voyah",
+   "model": "Taishan",
+   "iq_model_id": 1786,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Wuling",
+   "model": "Binguo",
+   "iq_model_id": 1643,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "XPeng",
+   "model": "P7",
+   "iq_model_id": 1699,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "SU7",
+   "iq_model_id": 1615,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "YU7",
+   "iq_model_id": 1795,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  },
+  {
+   "brand": "Zotye",
+   "model": "Hunter",
+   "iq_model_id": 1535,
+   "kind": "unrestricted_default_engine_list",
+   "values": 139,
+   "shared_by_models": 124
+  }
+ ],
+ "unrestricted_default_cylinder_lists": [
+  {
+   "brand": "Austin",
+   "model": "12",
+   "iq_model_id": 1790,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Avatr",
+   "model": "06",
+   "iq_model_id": 1799,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "BAIC",
+   "model": "BJ40 Pro",
+   "iq_model_id": 1808,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "BMW",
+   "model": "i7",
+   "iq_model_id": 1815,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "BYD",
+   "model": "M9",
+   "iq_model_id": 1762,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "BYD",
+   "model": "Ti 7",
+   "iq_model_id": 1781,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Bestune",
+   "model": "E07",
+   "iq_model_id": 1759,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Bestune",
+   "model": "T90",
+   "iq_model_id": 1794,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "CEVO Mobility",
+   "model": "CEVO-C SE",
+   "iq_model_id": 1608,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "CMC",
+   "model": "D260",
+   "iq_model_id": 1814,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Lyriq",
+   "iq_model_id": 1442,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Optiq",
+   "iq_model_id": 1742,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Changan",
+   "model": "E-Star",
+   "iq_model_id": 1153,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Changan",
+   "model": "STAR 9",
+   "iq_model_id": 1102,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Changan",
+   "model": "Zhixiang CV8",
+   "iq_model_id": 1804,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Bolt",
+   "iq_model_id": 517,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Corsica",
+   "iq_model_id": 1784,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Silverado EV",
+   "iq_model_id": 1788,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "T-Series",
+   "iq_model_id": 558,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "DENZA",
+   "model": "N9",
+   "iq_model_id": 1816,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Fengguang S560",
+   "iq_model_id": 1787,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Forthing Friday",
+   "iq_model_id": 1512,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Ford",
+   "model": "F-150 Lightning",
+   "iq_model_id": 1557,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang Mach-E",
+   "iq_model_id": 1286,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Forthing",
+   "model": "Friday",
+   "iq_model_id": 1775,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Foton",
+   "model": "MP-X",
+   "iq_model_id": 1817,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "GAC",
+   "model": "Aion ES",
+   "iq_model_id": 1624,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "GAC",
+   "model": "Aion V",
+   "iq_model_id": 1789,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "GAZ",
+   "model": "Gazelle",
+   "iq_model_id": 1796,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "GMC",
+   "model": "Hummer EV",
+   "iq_model_id": 1292,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "GMC",
+   "model": "Hummer EV Pickup",
+   "iq_model_id": 1755,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "GWM",
+   "model": "Wingle 7",
+   "iq_model_id": 1802,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Geely",
+   "model": "Geometry C",
+   "iq_model_id": 1471,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Genesis",
+   "model": "GV60",
+   "iq_model_id": 1402,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "HAVAL",
+   "model": "V7",
+   "iq_model_id": 1783,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Higer",
+   "model": "KLQ6798",
+   "iq_model_id": 1785,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Higer",
+   "model": "KLQ6928",
+   "iq_model_id": 1543,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Kona Electric",
+   "iq_model_id": 1362,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Nexo",
+   "iq_model_id": 1389,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Infiniti",
+   "model": "G",
+   "iq_model_id": 711,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q40",
+   "iq_model_id": 1803,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Iran Khodro",
+   "model": "Paykan",
+   "iq_model_id": 1805,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Kia",
+   "model": "Ceres",
+   "iq_model_id": 1807,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Kia",
+   "model": "Rio 5",
+   "iq_model_id": 1813,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "MINI",
+   "model": "Aceman",
+   "iq_model_id": 1801,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "SSK",
+   "iq_model_id": 1069,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Mitsuoka",
+   "model": "Galue",
+   "iq_model_id": 1812,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Opel",
+   "model": "Movano",
+   "iq_model_id": 1797,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Peugeot",
+   "model": "404",
+   "iq_model_id": 1800,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Renault",
+   "model": "Dacia Lodgy",
+   "iq_model_id": 1806,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Spirit",
+   "iq_model_id": 1818,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Spur",
+   "iq_model_id": 1819,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Ssangyong",
+   "model": "Chairman",
+   "iq_model_id": 1791,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ3X",
+   "iq_model_id": 1792,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Voyah",
+   "model": "Taishan",
+   "iq_model_id": 1786,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "YU7",
+   "iq_model_id": 1795,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  },
+  {
+   "brand": "Zotye",
+   "model": "Hunter",
+   "iq_model_id": 1535,
+   "kind": "unrestricted_default_cylinder_list",
+   "values": 27,
+   "shared_by_models": 71
+  }
+ ],
+ "unparsed_or_placeholder_values": [
+  {
+   "brand": "Audi",
+   "model": "Q4 e-tron",
+   "iq_model_id": 1450,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Audi",
+   "model": "Q4 e-tron",
+   "iq_model_id": 1450,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Audi",
+   "model": "RS e-tron",
+   "iq_model_id": 1567,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Avatr",
+   "model": "07",
+   "iq_model_id": 1736,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Avatr",
+   "model": "07",
+   "iq_model_id": 1736,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Avatr",
+   "model": "11",
+   "iq_model_id": 1446,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Avatr",
+   "model": "11",
+   "iq_model_id": 1446,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Avatr",
+   "model": "12",
+   "iq_model_id": 1308,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Avatr",
+   "model": "12",
+   "iq_model_id": 1308,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BMW",
+   "model": "i3",
+   "iq_model_id": 1261,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BMW",
+   "model": "i4",
+   "iq_model_id": 1352,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BMW",
+   "model": "i4",
+   "iq_model_id": 1352,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BMW",
+   "model": "i5",
+   "iq_model_id": 1347,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BMW",
+   "model": "i5",
+   "iq_model_id": 1347,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BMW",
+   "model": "iX",
+   "iq_model_id": 1334,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BMW",
+   "model": "iX1",
+   "iq_model_id": 1349,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BMW",
+   "model": "iX1",
+   "iq_model_id": 1349,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BMW",
+   "model": "iX3",
+   "iq_model_id": 1510,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "ATTO 3",
+   "iq_model_id": 1598,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "ATTO 8",
+   "iq_model_id": 1694,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Destroyer 05",
+   "iq_model_id": 1547,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "HAN",
+   "iq_model_id": 1595,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "HAN",
+   "iq_model_id": 1595,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Leopard 3",
+   "iq_model_id": 1693,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Leopard 5",
+   "iq_model_id": 1631,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Leopard 7",
+   "iq_model_id": 1681,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Leopard 8",
+   "iq_model_id": 1683,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "QIN L DM-i",
+   "iq_model_id": 1573,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Qin Plus",
+   "iq_model_id": 1493,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "SEAL 7",
+   "iq_model_id": 1597,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "SEAL 7",
+   "iq_model_id": 1597,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "SEAL EV",
+   "iq_model_id": 1599,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "SEAL EV",
+   "iq_model_id": 1599,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "SEALION 7",
+   "iq_model_id": 1596,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "SEALION 7",
+   "iq_model_id": 1596,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "SONG PLUS",
+   "iq_model_id": 1559,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "SONG PLUS",
+   "iq_model_id": 1559,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "SONG PRO DM-i",
+   "iq_model_id": 1578,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Seagull",
+   "iq_model_id": 1356,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Seal 05 DM-i",
+   "iq_model_id": 1548,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Seal 6",
+   "iq_model_id": 1633,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Sealion 05 DM-i",
+   "iq_model_id": 1634,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Sealion 06 DM-i",
+   "iq_model_id": 1644,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Sealion 5",
+   "iq_model_id": 1733,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Shark 6",
+   "iq_model_id": 1662,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Song L DM-i",
+   "iq_model_id": 1650,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "BYD",
+   "model": "Tang",
+   "iq_model_id": 1744,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "Tang L",
+   "iq_model_id": 1664,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "BYD",
+   "model": "e2",
+   "iq_model_id": 1590,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Bestune",
+   "model": "Pony",
+   "iq_model_id": 1489,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Bestune",
+   "model": "Pony",
+   "iq_model_id": 1489,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Rear-Wheel Drive",
+   "cylinder_id": 132
+  },
+  {
+   "brand": "DENZA",
+   "model": "B5",
+   "iq_model_id": 1665,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "DENZA",
+   "model": "B8",
+   "iq_model_id": 1666,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "DFSK",
+   "model": "E5 Plus",
+   "iq_model_id": 1585,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Deepal",
+   "model": "G318",
+   "iq_model_id": 1758,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Deepal",
+   "model": "G318",
+   "iq_model_id": 1758,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Deepal",
+   "model": "S05",
+   "iq_model_id": 1754,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Deepal",
+   "model": "S07",
+   "iq_model_id": 1627,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Ace 007",
+   "iq_model_id": 1740,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Ace 007",
+   "iq_model_id": 1740,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Ace 008",
+   "iq_model_id": 1741,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "EXEED",
+   "model": "Exlantix ES",
+   "iq_model_id": 1732,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "EXEED",
+   "model": "Exlantix ES",
+   "iq_model_id": 1732,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "EXEED",
+   "model": "Exlantix ET",
+   "iq_model_id": 1731,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "FAW",
+   "model": "Besturn X40",
+   "iq_model_id": 855,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Genesis",
+   "model": "GV70",
+   "iq_model_id": 1058,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Honda",
+   "model": "Prologue",
+   "iq_model_id": 1765,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Honda",
+   "model": "Prologue",
+   "iq_model_id": 1765,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Honda",
+   "model": "e:NP1",
+   "iq_model_id": 1480,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Honda",
+   "model": "eNS1",
+   "iq_model_id": 1133,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Hongqi",
+   "model": "E-HS9",
+   "iq_model_id": 1675,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Hyptec",
+   "model": "HT",
+   "iq_model_id": 1594,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 5",
+   "iq_model_id": 1720,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 5",
+   "iq_model_id": 1720,
+   "kind": "unparsed_cylinder_value",
+   "raw": "75 kWh",
+   "cylinder_id": 118
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 5",
+   "iq_model_id": 1720,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 5",
+   "iq_model_id": 1720,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 6",
+   "iq_model_id": 1719,
+   "kind": "unparsed_cylinder_value",
+   "raw": "75 kWh",
+   "cylinder_id": 118
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 6",
+   "iq_model_id": 1719,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 6",
+   "iq_model_id": 1719,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "JAECOO",
+   "model": "J5",
+   "iq_model_id": 1727,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "JAECOO",
+   "model": "J5",
+   "iq_model_id": 1727,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Jaguar",
+   "model": "I-Pace",
+   "iq_model_id": 805,
+   "kind": "unparsed_cylinder_value",
+   "raw": "90 kWh",
+   "cylinder_id": 116
+  },
+  {
+   "brand": "Jaguar",
+   "model": "I-Pace",
+   "iq_model_id": 805,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Jetour",
+   "model": "G700",
+   "iq_model_id": 1609,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Kia",
+   "model": "EV5",
+   "iq_model_id": 1449,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "Kia",
+   "model": "EV5",
+   "iq_model_id": 1449,
+   "kind": "unparsed_cylinder_value",
+   "raw": "90 kWh",
+   "cylinder_id": 116
+  },
+  {
+   "brand": "Kia",
+   "model": "EV5",
+   "iq_model_id": 1449,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Kia",
+   "model": "EV5",
+   "iq_model_id": 1449,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Kia",
+   "model": "EV6",
+   "iq_model_id": 1208,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Kia",
+   "model": "EV6",
+   "iq_model_id": 1208,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Kia",
+   "model": "EV9",
+   "iq_model_id": 1320,
+   "kind": "unparsed_cylinder_value",
+   "raw": "75 kWh",
+   "cylinder_id": 118
+  },
+  {
+   "brand": "Kia",
+   "model": "EV9",
+   "iq_model_id": 1320,
+   "kind": "unparsed_cylinder_value",
+   "raw": "100 kWh",
+   "cylinder_id": 129
+  },
+  {
+   "brand": "Kia",
+   "model": "EV9",
+   "iq_model_id": 1320,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Kia",
+   "model": "Niro",
+   "iq_model_id": 1144,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "Kia",
+   "model": "Niro",
+   "iq_model_id": 1144,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Kia",
+   "model": "Soul",
+   "iq_model_id": 765,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "Kia",
+   "model": "Soul",
+   "iq_model_id": 765,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "MG",
+   "model": "MG4 EV",
+   "iq_model_id": 1443,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "MG",
+   "model": "MG4 EV",
+   "iq_model_id": 1443,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "MHERO",
+   "model": "1",
+   "iq_model_id": 1670,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "MHERO",
+   "model": "2",
+   "iq_model_id": 1671,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQA",
+   "iq_model_id": 1497,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQA",
+   "iq_model_id": 1497,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQB",
+   "iq_model_id": 1483,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQB",
+   "iq_model_id": 1483,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE SUV",
+   "iq_model_id": 1457,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE SUV",
+   "iq_model_id": 1457,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE Sedan",
+   "iq_model_id": 1453,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE Sedan",
+   "iq_model_id": 1453,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQS",
+   "iq_model_id": 1400,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQS",
+   "iq_model_id": 1400,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQV",
+   "iq_model_id": 1289,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "iq_model_id": 43,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Neta",
+   "model": "L",
+   "iq_model_id": 1738,
+   "kind": "unparsed_cylinder_value",
+   "raw": "40 kWh",
+   "cylinder_id": 115
+  },
+  {
+   "brand": "Neta",
+   "model": "L",
+   "iq_model_id": 1738,
+   "kind": "unparsed_cylinder_value",
+   "raw": "30 kWh",
+   "cylinder_id": 134
+  },
+  {
+   "brand": "Neta",
+   "model": "L",
+   "iq_model_id": 1738,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Nissan",
+   "model": "Ariya",
+   "iq_model_id": 1467,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Nissan",
+   "model": "Leaf",
+   "iq_model_id": 381,
+   "kind": "unparsed_cylinder_value",
+   "raw": "40 kWh",
+   "cylinder_id": 115
+  },
+  {
+   "brand": "Nissan",
+   "model": "Leaf",
+   "iq_model_id": 381,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "ORA",
+   "model": "Good Cat",
+   "iq_model_id": 1192,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "ORA",
+   "model": "Good Cat",
+   "iq_model_id": 1192,
+   "kind": "unparsed_cylinder_value",
+   "raw": "53 kWh",
+   "cylinder_id": 136
+  },
+  {
+   "brand": "ORA",
+   "model": "Good Cat",
+   "iq_model_id": 1192,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "Polestar",
+   "model": "Polestar 2",
+   "iq_model_id": 1258,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Polestar",
+   "model": "Polestar 2",
+   "iq_model_id": 1258,
+   "kind": "unparsed_cylinder_value",
+   "raw": "60 kWh",
+   "cylinder_id": 119
+  },
+  {
+   "brand": "Polestar",
+   "model": "Polestar 2",
+   "iq_model_id": 1258,
+   "kind": "unparsed_cylinder_value",
+   "raw": "75 kWh",
+   "cylinder_id": 118
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan",
+   "iq_model_id": 1325,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan",
+   "iq_model_id": 1325,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan",
+   "iq_model_id": 1325,
+   "kind": "unparsed_cylinder_value",
+   "raw": "75 kWh",
+   "cylinder_id": 118
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan",
+   "iq_model_id": 1325,
+   "kind": "unparsed_cylinder_value",
+   "raw": "95 kWh",
+   "cylinder_id": 122
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan Sport Turismo",
+   "iq_model_id": 1577,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan Sport Turismo",
+   "iq_model_id": 1577,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan Sport Turismo",
+   "iq_model_id": 1577,
+   "kind": "unparsed_cylinder_value",
+   "raw": "75 kWh",
+   "cylinder_id": 118
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan Sport Turismo",
+   "iq_model_id": 1577,
+   "kind": "unparsed_cylinder_value",
+   "raw": "95 kWh",
+   "cylinder_id": 122
+  },
+  {
+   "brand": "Renault",
+   "model": "Twizy",
+   "iq_model_id": 457,
+   "kind": "unparsed_cylinder_value",
+   "raw": "6.1 kWh",
+   "cylinder_id": 114
+  },
+  {
+   "brand": "Renault",
+   "model": "Twizy",
+   "iq_model_id": 457,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Renault",
+   "model": "Zoe",
+   "iq_model_id": 458,
+   "kind": "unparsed_cylinder_value",
+   "raw": "41 kWh",
+   "cylinder_id": 113
+  },
+  {
+   "brand": "Renault",
+   "model": "Zoe",
+   "iq_model_id": 458,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Spectre",
+   "iq_model_id": 1478,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Rox",
+   "model": "01",
+   "iq_model_id": 1415,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Rox",
+   "model": "01",
+   "iq_model_id": 1415,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Smart",
+   "model": "Fortwo",
+   "iq_model_id": 1055,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Smart",
+   "model": "Smart 1",
+   "iq_model_id": 1056,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Rear-Wheel Drive",
+   "cylinder_id": 132
+  },
+  {
+   "brand": "Smart",
+   "model": "Smart 1",
+   "iq_model_id": 1056,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Tesla",
+   "model": "Cybertruck",
+   "iq_model_id": 237,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Tesla",
+   "model": "Cybertruck",
+   "iq_model_id": 237,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Tri Motor",
+   "cylinder_id": 110
+  },
+  {
+   "brand": "Tesla",
+   "model": "Cybertruck",
+   "iq_model_id": 237,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Rear-Wheel Drive",
+   "cylinder_id": 132
+  },
+  {
+   "brand": "Tesla",
+   "model": "Cybertruck",
+   "iq_model_id": 237,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Tesla",
+   "model": "Cybertruck",
+   "iq_model_id": 237,
+   "kind": "unparsed_engine_value",
+   "raw": "Tri Motor",
+   "engine_id": 33
+  },
+  {
+   "brand": "Tesla",
+   "model": "Cybertruck",
+   "iq_model_id": 237,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model 3",
+   "iq_model_id": 1095,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Rear-Wheel Drive",
+   "cylinder_id": 132
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model 3",
+   "iq_model_id": 1095,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model 3",
+   "iq_model_id": 1095,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model 3",
+   "iq_model_id": 1095,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model S",
+   "iq_model_id": 239,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model S",
+   "iq_model_id": 239,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Tri Motor",
+   "cylinder_id": 110
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model S",
+   "iq_model_id": 239,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model S",
+   "iq_model_id": 239,
+   "kind": "unparsed_engine_value",
+   "raw": "Tri Motor",
+   "engine_id": 33
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model X",
+   "iq_model_id": 238,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model X",
+   "iq_model_id": 238,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Tri Motor",
+   "cylinder_id": 110
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model X",
+   "iq_model_id": 238,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model X",
+   "iq_model_id": 238,
+   "kind": "unparsed_engine_value",
+   "raw": "Tri Motor",
+   "engine_id": 33
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model Y",
+   "iq_model_id": 1093,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Rear-Wheel Drive",
+   "cylinder_id": 132
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model Y",
+   "iq_model_id": 1093,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model Y",
+   "iq_model_id": 1093,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Tesla",
+   "model": "Model Y",
+   "iq_model_id": 1093,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ3",
+   "iq_model_id": 1381,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ3",
+   "iq_model_id": 1381,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Rear-Wheel Drive",
+   "cylinder_id": 132
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ3",
+   "iq_model_id": 1381,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ4X",
+   "iq_model_id": 1188,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ4X",
+   "iq_model_id": 1188,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ4X",
+   "iq_model_id": 1188,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ4X",
+   "iq_model_id": 1188,
+   "kind": "unparsed_engine_value",
+   "raw": "Dual Motor",
+   "engine_id": 34
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ5",
+   "iq_model_id": 1697,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ5",
+   "iq_model_id": 1697,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.3",
+   "iq_model_id": 1147,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.4",
+   "iq_model_id": 1116,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.4",
+   "iq_model_id": 1116,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.6",
+   "iq_model_id": 1145,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.6",
+   "iq_model_id": 1145,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "e-Tharu",
+   "iq_model_id": 1359,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Volvo",
+   "model": "XC40",
+   "iq_model_id": 307,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Volvo",
+   "model": "XC40",
+   "iq_model_id": 307,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Voyah",
+   "model": "Courage",
+   "iq_model_id": 1709,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Voyah",
+   "model": "Courage",
+   "iq_model_id": 1709,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Voyah",
+   "model": "Dream",
+   "iq_model_id": 1707,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Voyah",
+   "model": "Free",
+   "iq_model_id": 1706,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Wuling",
+   "model": "Binguo",
+   "iq_model_id": 1643,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "XEV",
+   "model": "Yoyo Pro",
+   "iq_model_id": 1327,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "XEV",
+   "model": "Yoyo Pro",
+   "iq_model_id": 1327,
+   "kind": "unparsed_engine_value",
+   "raw": "Single Motor",
+   "engine_id": 35
+  },
+  {
+   "brand": "XPeng",
+   "model": "P7",
+   "iq_model_id": 1699,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "XPeng",
+   "model": "P7",
+   "iq_model_id": 1699,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "SU7",
+   "iq_model_id": 1615,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Single Motor",
+   "cylinder_id": 112
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "SU7",
+   "iq_model_id": 1615,
+   "kind": "unparsed_cylinder_value",
+   "raw": "Dual Motor",
+   "cylinder_id": 111
+  }
+ ],
+ "trims_held_for_review": [
+  {
+   "brand": "Audi",
+   "model": "A1",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5070
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A3",
+   "kind": "cross_source",
+   "iq_trim": "S-line",
+   "carnet_lookalikes": [
+    "S-Line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5077
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A4",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5067
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A5",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5119
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A6",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5061
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A7",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5081
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "A8",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5058
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q3",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S-line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5098
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q5",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5103
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q7",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5088
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "Q8",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5096
+   ]
+  },
+  {
+   "brand": "Audi",
+   "model": "TT",
+   "kind": "cross_source",
+   "iq_trim": "S-Line",
+   "carnet_lookalikes": [
+    "S line"
+   ],
+   "loose_key": "sline",
+   "iq_trim_ids": [
+    5110
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "kind": "cross_source",
+   "iq_trim": "xDrive28i",
+   "carnet_lookalikes": [
+    "Xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4666
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "kind": "cross_source",
+   "iq_trim": "sDrive28i",
+   "carnet_lookalikes": [
+    "sDrive 28i"
+   ],
+   "loose_key": "sdrive28i",
+   "iq_trim_ids": [
+    4667
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "kind": "cross_source",
+   "iq_trim": "xDrive20i",
+   "carnet_lookalikes": [
+    "Xdrive20i"
+   ],
+   "loose_key": "xdrive20i",
+   "iq_trim_ids": [
+    7027
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X2",
+   "kind": "cross_source",
+   "iq_trim": "xDrive 28i",
+   "carnet_lookalikes": [
+    "xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4662
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X2",
+   "kind": "cross_source",
+   "iq_trim": "xDrive20i",
+   "carnet_lookalikes": [
+    "xDrive 20i"
+   ],
+   "loose_key": "xdrive20i",
+   "iq_trim_ids": [
+    6399
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X2",
+   "kind": "cross_source",
+   "iq_trim": "sDrive18i",
+   "carnet_lookalikes": [
+    "sDrive 18i"
+   ],
+   "loose_key": "sdrive18i",
+   "iq_trim_ids": [
+    7031
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "kind": "cross_source",
+   "iq_trim": "30i",
+   "carnet_lookalikes": [
+    "3.0i"
+   ],
+   "loose_key": "30i",
+   "iq_trim_ids": [
+    4711
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "kind": "cross_source",
+   "iq_trim": "xDrive28i",
+   "carnet_lookalikes": [
+    "Xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4712
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "kind": "cross_source",
+   "iq_trim": "sDrive30i",
+   "carnet_lookalikes": [
+    "sDrive 30i"
+   ],
+   "loose_key": "sdrive30i",
+   "iq_trim_ids": [
+    6138
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "kind": "cross_source",
+   "iq_trim": "25i",
+   "carnet_lookalikes": [
+    "2.5i"
+   ],
+   "loose_key": "25i",
+   "iq_trim_ids": [
+    7034
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X4",
+   "kind": "cross_source",
+   "iq_trim": "xDrive28i",
+   "carnet_lookalikes": [
+    "Xdrive28i"
+   ],
+   "loose_key": "xdrive28i",
+   "iq_trim_ids": [
+    4718
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X4",
+   "kind": "cross_source",
+   "iq_trim": "xDrive20d",
+   "carnet_lookalikes": [
+    "xDrive20D"
+   ],
+   "loose_key": "xdrive20d",
+   "iq_trim_ids": [
+    5772
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "kind": "cross_source",
+   "iq_trim": "xDrive50i",
+   "carnet_lookalikes": [
+    "Xdrive50i"
+   ],
+   "loose_key": "xdrive50i",
+   "iq_trim_ids": [
+    4687
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "kind": "cross_source",
+   "iq_trim": "xDrive30i",
+   "carnet_lookalikes": [
+    "xDrive 30i"
+   ],
+   "loose_key": "xdrive30i",
+   "iq_trim_ids": [
+    4691
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "kind": "cross_source",
+   "iq_trim": "30i",
+   "carnet_lookalikes": [
+    "3.0i"
+   ],
+   "loose_key": "30i",
+   "iq_trim_ids": [
+    7037
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X6",
+   "kind": "cross_source",
+   "iq_trim": "xDrive50i",
+   "carnet_lookalikes": [
+    "Xdrive50i"
+   ],
+   "loose_key": "xdrive50i",
+   "iq_trim_ids": [
+    4673
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X6",
+   "kind": "cross_source",
+   "iq_trim": "xDrive35i",
+   "carnet_lookalikes": [
+    "Xdrive35i"
+   ],
+   "loose_key": "xdrive35i",
+   "iq_trim_ids": [
+    4674
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X6",
+   "kind": "cross_source",
+   "iq_trim": "xDrive30d",
+   "carnet_lookalikes": [
+    "xDrive 30d"
+   ],
+   "loose_key": "xdrive30d",
+   "iq_trim_ids": [
+    5412
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X7",
+   "kind": "cross_source",
+   "iq_trim": "xDrive40d",
+   "carnet_lookalikes": [
+    "XDrive 40d"
+   ],
+   "loose_key": "xdrive40d",
+   "iq_trim_ids": [
+    5887
+   ]
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Groove",
+   "kind": "cross_source",
+   "iq_trim": "premier",
+   "carnet_lookalikes": [
+    "Premier"
+   ],
+   "loose_key": "premier",
+   "iq_trim_ids": [
+    6870
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Challenger",
+   "kind": "cross_source",
+   "iq_trim": "RT",
+   "carnet_lookalikes": [
+    "R/T"
+   ],
+   "loose_key": "rt",
+   "iq_trim_ids": [
+    5325
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Challenger",
+   "kind": "cross_source",
+   "iq_trim": "RT Shaker",
+   "carnet_lookalikes": [
+    "R/T Shaker"
+   ],
+   "loose_key": "rtshaker",
+   "iq_trim_ids": [
+    5411
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Charger",
+   "kind": "cross_source",
+   "iq_trim": "RT",
+   "carnet_lookalikes": [
+    "R/T"
+   ],
+   "loose_key": "rt",
+   "iq_trim_ids": [
+    5320
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "kind": "cross_source",
+   "iq_trim": "WILDTRAK",
+   "carnet_lookalikes": [
+    "Wildtrak"
+   ],
+   "loose_key": "wildtrak",
+   "iq_trim_ids": [
+    6201
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "kind": "cross_source",
+   "iq_trim": "OUTER BANKS",
+   "carnet_lookalikes": [
+    "Outer Banks"
+   ],
+   "loose_key": "outerbanks",
+   "iq_trim_ids": [
+    6202
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "kind": "cross_source",
+   "iq_trim": "BIG BEND",
+   "carnet_lookalikes": [
+    "Big Bend"
+   ],
+   "loose_key": "bigbend",
+   "iq_trim_ids": [
+    6203
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "kind": "cross_source",
+   "iq_trim": "V-6",
+   "carnet_lookalikes": [
+    "V6"
+   ],
+   "loose_key": "v6",
+   "iq_trim_ids": [
+    4330
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "kind": "cross_source",
+   "iq_trim": "EcoBoost",
+   "carnet_lookalikes": [
+    "Ecoboost"
+   ],
+   "loose_key": "ecoboost",
+   "iq_trim_ids": [
+    4331
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "kind": "cross_source",
+   "iq_trim": "EcoBoost Premium",
+   "carnet_lookalikes": [
+    "Ecoboost Premium"
+   ],
+   "loose_key": "ecoboostpremium",
+   "iq_trim_ids": [
+    5436
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Ranger",
+   "kind": "cross_source",
+   "iq_trim": "Wild Trak",
+   "carnet_lookalikes": [
+    "Wildtrak"
+   ],
+   "loose_key": "wildtrak",
+   "iq_trim_ids": [
+    4652
+   ]
+  },
+  {
+   "brand": "GMC",
+   "model": "Sierra",
+   "kind": "cross_source",
+   "iq_trim": "2500HD",
+   "carnet_lookalikes": [
+    "2500 HD"
+   ],
+   "loose_key": "2500hd",
+   "iq_trim_ids": [
+    5605
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "City",
+   "kind": "cross_source",
+   "iq_trim": "SPORT",
+   "carnet_lookalikes": [
+    "Sport"
+   ],
+   "loose_key": "sport",
+   "iq_trim_ids": [
+    6665
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "City",
+   "kind": "cross_source",
+   "iq_trim": "LX SPORT",
+   "carnet_lookalikes": [
+    "LX Sport"
+   ],
+   "loose_key": "lxsport",
+   "iq_trim_ids": [
+    6667
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Odyssey",
+   "kind": "cross_source",
+   "iq_trim": "TOURING",
+   "carnet_lookalikes": [
+    "Touring"
+   ],
+   "loose_key": "touring",
+   "iq_trim_ids": [
+    6680
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Odyssey",
+   "kind": "cross_source",
+   "iq_trim": "EX-L",
+   "carnet_lookalikes": [
+    "Ex-l"
+   ],
+   "loose_key": "exl",
+   "iq_trim_ids": [
+    6682
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Pilot",
+   "kind": "cross_source",
+   "iq_trim": "EX-L",
+   "carnet_lookalikes": [
+    "Ex-l"
+   ],
+   "loose_key": "exl",
+   "iq_trim_ids": [
+    6673
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Elantra",
+   "kind": "cross_source",
+   "iq_trim": "ECO",
+   "carnet_lookalikes": [
+    "Eco"
+   ],
+   "loose_key": "eco",
+   "iq_trim_ids": [
+    4222
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX60",
+   "kind": "cross_source",
+   "iq_trim": "LUXE",
+   "carnet_lookalikes": [
+    "Luxe"
+   ],
+   "loose_key": "luxe",
+   "iq_trim_ids": [
+    6495
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX60",
+   "kind": "cross_source",
+   "iq_trim": "AUTOGRAPH",
+   "carnet_lookalikes": [
+    "Autograph"
+   ],
+   "loose_key": "autograph",
+   "iq_trim_ids": [
+    6496
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX60",
+   "kind": "cross_source",
+   "iq_trim": "SENSORY",
+   "carnet_lookalikes": [
+    "Sensory"
+   ],
+   "loose_key": "sensory",
+   "iq_trim_ids": [
+    6497
+   ]
+  },
+  {
+   "brand": "Jaguar",
+   "model": "XF",
+   "kind": "cross_source",
+   "iq_trim": "RS",
+   "carnet_lookalikes": [
+    "R-S"
+   ],
+   "loose_key": "rs",
+   "iq_trim_ids": [
+    5143
+   ]
+  },
+  {
+   "brand": "Jaguar",
+   "model": "XK",
+   "kind": "cross_source",
+   "iq_trim": "RS",
+   "carnet_lookalikes": [
+    "R-S"
+   ],
+   "loose_key": "rs",
+   "iq_trim_ids": [
+    5152
+   ]
+  },
+  {
+   "brand": "Jeep",
+   "model": "Grand Cherokee",
+   "kind": "cross_source",
+   "iq_trim": "80 Th Anniversary",
+   "carnet_lookalikes": [
+    "80th Anniversary"
+   ],
+   "loose_key": "80thanniversary",
+   "iq_trim_ids": [
+    5502
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Cadenza",
+   "kind": "cross_source",
+   "iq_trim": "GDI Mid",
+   "carnet_lookalikes": [
+    "GDi Mid"
+   ],
+   "loose_key": "gdimid",
+   "iq_trim_ids": [
+    4122
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Cadenza",
+   "kind": "cross_source",
+   "iq_trim": "GDI Top",
+   "carnet_lookalikes": [
+    "GDi Top"
+   ],
+   "loose_key": "gditop",
+   "iq_trim_ids": [
+    4573
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "K4",
+   "kind": "cross_source",
+   "iq_trim": "GT‐Line",
+   "carnet_lookalikes": [
+    "GT-Line"
+   ],
+   "loose_key": "gtline",
+   "iq_trim_ids": [
+    6457
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Soul",
+   "kind": "cross_source",
+   "iq_trim": "GT Line",
+   "carnet_lookalikes": [
+    "GT-Line"
+   ],
+   "loose_key": "gtline",
+   "iq_trim_ids": [
+    5943
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "ES",
+   "kind": "cross_source",
+   "iq_trim": "F-Sport",
+   "carnet_lookalikes": [
+    "F Sport"
+   ],
+   "loose_key": "fsport",
+   "iq_trim_ids": [
+    5355
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "LS",
+   "kind": "cross_source",
+   "iq_trim": "F-Sport",
+   "carnet_lookalikes": [
+    "F Sport"
+   ],
+   "loose_key": "fsport",
+   "iq_trim_ids": [
+    5340
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "NX",
+   "kind": "cross_source",
+   "iq_trim": "450h +",
+   "carnet_lookalikes": [
+    "450h+"
+   ],
+   "loose_key": "450h",
+   "iq_trim_ids": [
+    6107
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "RX",
+   "kind": "cross_source",
+   "iq_trim": "F-Sport",
+   "carnet_lookalikes": [
+    "F Sport"
+   ],
+   "loose_key": "fsport",
+   "iq_trim_ids": [
+    5547
+   ]
+  },
+  {
+   "brand": "Lexus",
+   "model": "UX",
+   "kind": "cross_source",
+   "iq_trim": "UX200",
+   "carnet_lookalikes": [
+    "UX 200"
+   ],
+   "loose_key": "ux200",
+   "iq_trim_ids": [
+    6149
+   ]
+  },
+  {
+   "brand": "Mazda",
+   "model": "6",
+   "kind": "cross_source",
+   "iq_trim": "PURE",
+   "carnet_lookalikes": [
+    "Pure"
+   ],
+   "loose_key": "pure",
+   "iq_trim_ids": [
+    6642
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "kind": "cross_source",
+   "iq_trim": "G550",
+   "carnet_lookalikes": [
+    "G 550"
+   ],
+   "loose_key": "g550",
+   "iq_trim_ids": [
+    4405
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "kind": "cross_source",
+   "iq_trim": "G500",
+   "carnet_lookalikes": [
+    "G 500"
+   ],
+   "loose_key": "g500",
+   "iq_trim_ids": [
+    4406
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "kind": "cross_source",
+   "iq_trim": "G350",
+   "carnet_lookalikes": [
+    "G 350"
+   ],
+   "loose_key": "g350",
+   "iq_trim_ids": [
+    4407
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "kind": "cross_source",
+   "iq_trim": "G580",
+   "carnet_lookalikes": [
+    "G 580"
+   ],
+   "loose_key": "g580",
+   "iq_trim_ids": [
+    6256
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "370Z",
+   "kind": "cross_source",
+   "iq_trim": "NISMO",
+   "carnet_lookalikes": [
+    "Nismo"
+   ],
+   "loose_key": "nismo",
+   "iq_trim_ids": [
+    4537
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Ariya",
+   "kind": "cross_source",
+   "iq_trim": "ENGAGE",
+   "carnet_lookalikes": [
+    "Engage"
+   ],
+   "loose_key": "engage",
+   "iq_trim_ids": [
+    6305
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Frontier",
+   "kind": "cross_source",
+   "iq_trim": "PRO-4X",
+   "carnet_lookalikes": [
+    "Pro-4X"
+   ],
+   "loose_key": "pro4x",
+   "iq_trim_ids": [
+    4060
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Maxima",
+   "kind": "cross_source",
+   "iq_trim": "SR2",
+   "carnet_lookalikes": [
+    "SR 2"
+   ],
+   "loose_key": "sr2",
+   "iq_trim_ids": [
+    4545
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Maxima",
+   "kind": "cross_source",
+   "iq_trim": "SR1",
+   "carnet_lookalikes": [
+    "SR 1"
+   ],
+   "loose_key": "sr1",
+   "iq_trim_ids": [
+    4546
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Rogue",
+   "kind": "cross_source",
+   "iq_trim": "SPECIAL EDITION",
+   "carnet_lookalikes": [
+    "Special Edition"
+   ],
+   "loose_key": "specialedition",
+   "iq_trim_ids": [
+    5469
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "1500",
+   "kind": "cross_source",
+   "iq_trim": "Longhorn",
+   "carnet_lookalikes": [
+    "LONG HORN"
+   ],
+   "loose_key": "longhorn",
+   "iq_trim_ids": [
+    5729
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "kind": "cross_source",
+   "iq_trim": "BIG HORN",
+   "carnet_lookalikes": [
+    "Bighorn"
+   ],
+   "loose_key": "bighorn",
+   "iq_trim_ids": [
+    6485
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "kind": "cross_source",
+   "iq_trim": "TRADESMAN",
+   "carnet_lookalikes": [
+    "Tradesman"
+   ],
+   "loose_key": "tradesman",
+   "iq_trim_ids": [
+    6486
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "kind": "cross_source",
+   "iq_trim": "POWER WAGON",
+   "carnet_lookalikes": [
+    "Power Wagon"
+   ],
+   "loose_key": "powerwagon",
+   "iq_trim_ids": [
+    6487
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "kind": "cross_source",
+   "iq_trim": "LARAMIE",
+   "carnet_lookalikes": [
+    "Laramie"
+   ],
+   "loose_key": "laramie",
+   "iq_trim_ids": [
+    6488
+   ]
+  },
+  {
+   "brand": "Ram",
+   "model": "2500",
+   "kind": "cross_source",
+   "iq_trim": "LIMITED",
+   "carnet_lookalikes": [
+    "Limited"
+   ],
+   "loose_key": "limited",
+   "iq_trim_ids": [
+    6491
+   ]
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Swift",
+   "kind": "cross_source",
+   "iq_trim": "GL+",
+   "carnet_lookalikes": [
+    "GL"
+   ],
+   "loose_key": "gl",
+   "iq_trim_ids": [
+    6730
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Corolla",
+   "kind": "cross_source",
+   "iq_trim": "iM",
+   "carnet_lookalikes": [
+    "IM"
+   ],
+   "loose_key": "im",
+   "iq_trim_ids": [
+    5441
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Hilux",
+   "kind": "cross_source",
+   "iq_trim": "GR Sport",
+   "carnet_lookalikes": [
+    "GR-Sport"
+   ],
+   "loose_key": "grsport",
+   "iq_trim_ids": [
+    5615
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "EX.R",
+   "carnet_lookalikes": [
+    "EXR"
+   ],
+   "loose_key": "exr",
+   "iq_trim_ids": [
+    3972
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "VX.S",
+   "carnet_lookalikes": [
+    "VXS"
+   ],
+   "loose_key": "vxs",
+   "iq_trim_ids": [
+    3973
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "VX.R",
+   "carnet_lookalikes": [
+    "VXR"
+   ],
+   "loose_key": "vxr",
+   "iq_trim_ids": [
+    3974
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "GX.R",
+   "carnet_lookalikes": [
+    "GXR"
+   ],
+   "loose_key": "gxr",
+   "iq_trim_ids": [
+    3976
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "GX.R Grand Touring",
+   "carnet_lookalikes": [
+    "GXR Grand Touring"
+   ],
+   "loose_key": "gxrgrandtouring",
+   "iq_trim_ids": [
+    5472
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "within_iq",
+   "iq_trim": "VX 3.5L Twin-Turbo",
+   "iq_group": [
+    "VX 3.5L Twin-Turbo",
+    "VX 3.5L Twin Turbo"
+   ],
+   "loose_key": "vx35ltwinturbo",
+   "iq_trim_ids": [
+    5475
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "VX.R.i",
+   "carnet_lookalikes": [
+    "VXRi"
+   ],
+   "loose_key": "vxri",
+   "iq_trim_ids": [
+    5666
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "within_iq",
+   "iq_trim": "VX 3.5L Twin Turbo",
+   "iq_group": [
+    "VX 3.5L Twin-Turbo",
+    "VX 3.5L Twin Turbo"
+   ],
+   "loose_key": "vx35ltwinturbo",
+   "iq_trim_ids": [
+    5769
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "kind": "cross_source",
+   "iq_trim": "VX.R Grand Touring",
+   "carnet_lookalikes": [
+    "VXR Grand Touring"
+   ],
+   "loose_key": "vxrgrandtouring",
+   "iq_trim_ids": [
+    6427
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser Prado",
+   "kind": "cross_source",
+   "iq_trim": "EX.R",
+   "carnet_lookalikes": [
+    "EXR"
+   ],
+   "loose_key": "exr",
+   "iq_trim_ids": [
+    4512
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser Prado",
+   "kind": "cross_source",
+   "iq_trim": "VX.R",
+   "carnet_lookalikes": [
+    "VXR"
+   ],
+   "loose_key": "vxr",
+   "iq_trim_ids": [
+    5427
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "Tundra",
+   "kind": "cross_source",
+   "iq_trim": "CAPSTONE",
+   "carnet_lookalikes": [
+    "Capstone"
+   ],
+   "loose_key": "capstone",
+   "iq_trim_ids": [
+    6093
+   ]
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf",
+   "kind": "cross_source",
+   "iq_trim": "R-line",
+   "carnet_lookalikes": [
+    "R-Line"
+   ],
+   "loose_key": "rline",
+   "iq_trim_ids": [
+    5008
+   ]
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Passat",
+   "kind": "cross_source",
+   "iq_trim": "R-line",
+   "carnet_lookalikes": [
+    "R-Line"
+   ],
+   "loose_key": "rline",
+   "iq_trim_ids": [
+    5044
+   ]
+  }
+ ],
+ "matched_models_with_no_additions": [
+  {
+   "brand": "Acura",
+   "model": "ILX",
+   "iq_model_id": 1503,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Acura",
+   "model": "NSX",
+   "iq_model_id": 612,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Acura",
+   "model": "RDX",
+   "iq_model_id": 1079,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Acura",
+   "model": "TLX",
+   "iq_model_id": 610,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Alfa Romeo",
+   "model": "159",
+   "iq_model_id": 622,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Alfa Romeo",
+   "model": "166",
+   "iq_model_id": 626,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Alfa Romeo",
+   "model": "Brera",
+   "iq_model_id": 615,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Alfa Romeo",
+   "model": "Giulia",
+   "iq_model_id": 619,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Alfa Romeo",
+   "model": "Giulietta",
+   "iq_model_id": 613,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Aston Martin",
+   "model": "DBS",
+   "iq_model_id": 607,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Aston Martin",
+   "model": "One-77",
+   "iq_model_id": 580,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Aston Martin",
+   "model": "V8 Vantage",
+   "iq_model_id": 633,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Aston Martin",
+   "model": "V8 Vantage S",
+   "iq_model_id": 1401,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "80",
+   "iq_model_id": 1317,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "RS3",
+   "iq_model_id": 1687,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "RS5",
+   "iq_model_id": 600,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "RS6",
+   "iq_model_id": 666,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "RS7",
+   "iq_model_id": 1463,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "RSQ8",
+   "iq_model_id": 1515,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "S4",
+   "iq_model_id": 1187,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "S5",
+   "iq_model_id": 601,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "S7",
+   "iq_model_id": 595,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "S8",
+   "iq_model_id": 586,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "SQ5",
+   "iq_model_id": 1499,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Audi",
+   "model": "SQ8",
+   "iq_model_id": 1202,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Austin",
+   "model": "12",
+   "iq_model_id": 1790,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Avatr",
+   "model": "06",
+   "iq_model_id": 1799,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "X4",
+   "iq_model_id": 660,
+   "held_trims": 2,
+   "excluded_items": []
+  },
+  {
+   "brand": "BMW",
+   "model": "X7",
+   "iq_model_id": 691,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "BMW",
+   "model": "i8",
+   "iq_model_id": 578,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "BMW",
+   "model": "iX",
+   "iq_model_id": 1334,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "BMW",
+   "model": "iX3",
+   "iq_model_id": 1510,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "BYD",
+   "model": "F0",
+   "iq_model_id": 996,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "BYD",
+   "model": "F6",
+   "iq_model_id": 503,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "BYD",
+   "model": "Leopard 3",
+   "iq_model_id": 1693,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "BYD",
+   "model": "M9",
+   "iq_model_id": 1762,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "BYD",
+   "model": "Seagull",
+   "iq_model_id": 1356,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "BYD",
+   "model": "Song L DM-i",
+   "iq_model_id": 1650,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "BYD",
+   "model": "e2",
+   "iq_model_id": 1590,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Bentley",
+   "model": "Arnage",
+   "iq_model_id": 685,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Bentley",
+   "model": "Azure",
+   "iq_model_id": 679,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Bentley",
+   "model": "Brooklands",
+   "iq_model_id": 681,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Bentley",
+   "model": "Continental",
+   "iq_model_id": 682,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Bentley",
+   "model": "Flying Spur",
+   "iq_model_id": 683,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Bentley",
+   "model": "Mulsanne",
+   "iq_model_id": 684,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Bestune",
+   "model": "Pony",
+   "iq_model_id": 1489,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Bestune",
+   "model": "T90",
+   "iq_model_id": 1794,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "CEVO Mobility",
+   "model": "CEVO-C SE",
+   "iq_model_id": 1608,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "CMC",
+   "model": "D260",
+   "iq_model_id": 1814,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Cadillac",
+   "model": "ATS",
+   "iq_model_id": 465,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "ATS-V",
+   "iq_model_id": 466,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "BLS",
+   "iq_model_id": 468,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "CTS",
+   "iq_model_id": 514,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "CTS-V",
+   "iq_model_id": 515,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "DTS",
+   "iq_model_id": 505,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "DeVille",
+   "iq_model_id": 1091,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Eldorado",
+   "iq_model_id": 1061,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Lyriq",
+   "iq_model_id": 1442,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Optiq",
+   "iq_model_id": 1742,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Cadillac",
+   "model": "Seville",
+   "iq_model_id": 1311,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "XT4",
+   "iq_model_id": 467,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "XT5",
+   "iq_model_id": 512,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Cadillac",
+   "model": "XT6",
+   "iq_model_id": 516,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "CS15",
+   "iq_model_id": 1345,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "CS35",
+   "iq_model_id": 474,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "CS55",
+   "iq_model_id": 1782,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "CS85",
+   "iq_model_id": 1015,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "CS95",
+   "iq_model_id": 473,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "E-Star",
+   "iq_model_id": 1153,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Changan",
+   "model": "Eado",
+   "iq_model_id": 471,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "STAR 9",
+   "iq_model_id": 1102,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Changan",
+   "model": "UNI-T",
+   "iq_model_id": 1066,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "UNI-V",
+   "iq_model_id": 1245,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "UNI-Z",
+   "iq_model_id": 1714,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Changan",
+   "model": "Zhixiang CV8",
+   "iq_model_id": 1804,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Chery",
+   "model": "QQ6",
+   "iq_model_id": 1737,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chery",
+   "model": "Tiggo 2",
+   "iq_model_id": 1034,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chery",
+   "model": "Tiggo 5",
+   "iq_model_id": 480,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chery",
+   "model": "Tiggo 7",
+   "iq_model_id": 481,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Aveo",
+   "iq_model_id": 574,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Bolt",
+   "iq_model_id": 517,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Captiva",
+   "iq_model_id": 520,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Corsica",
+   "iq_model_id": 1784,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Groove",
+   "iq_model_id": 1090,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "LUV D-Max",
+   "iq_model_id": 1430,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Metro",
+   "iq_model_id": 1743,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Monte Carlo",
+   "iq_model_id": 964,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "SS",
+   "iq_model_id": 1120,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Silverado EV",
+   "iq_model_id": 1788,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "T-Series",
+   "iq_model_id": 558,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Tahoe",
+   "iq_model_id": 555,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Venture",
+   "iq_model_id": 1365,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "300M",
+   "iq_model_id": 1413,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "Aspen",
+   "iq_model_id": 1630,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "Concorde",
+   "iq_model_id": 1238,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "Crossfire",
+   "iq_model_id": 528,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "PT Cruiser",
+   "iq_model_id": 521,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "Pacifica",
+   "iq_model_id": 522,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "Sebring",
+   "iq_model_id": 525,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Chrysler",
+   "model": "Voyager",
+   "iq_model_id": 1414,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "DENZA",
+   "model": "N9",
+   "iq_model_id": 1816,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Dodge",
+   "model": "Dakota",
+   "iq_model_id": 848,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dodge",
+   "model": "Dart",
+   "iq_model_id": 840,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dodge",
+   "model": "Intrepid",
+   "iq_model_id": 1486,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dodge",
+   "model": "Neon",
+   "iq_model_id": 841,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dodge",
+   "model": "Spirit",
+   "iq_model_id": 1660,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dodge",
+   "model": "Stratus",
+   "iq_model_id": 1412,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dodge",
+   "model": "Viper",
+   "iq_model_id": 851,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Fengguang S560",
+   "iq_model_id": 1787,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Dongfeng",
+   "model": "Forthing Friday",
+   "iq_model_id": 1512,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Ferrari",
+   "model": "458",
+   "iq_model_id": 814,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "612 Scaglietti",
+   "iq_model_id": 861,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "California",
+   "iq_model_id": 857,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "F430",
+   "iq_model_id": 816,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "FF",
+   "iq_model_id": 839,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "GTC4Lusso",
+   "iq_model_id": 863,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "LaFerrari",
+   "iq_model_id": 812,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "Portofino",
+   "iq_model_id": 856,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ferrari",
+   "model": "Roma",
+   "iq_model_id": 1391,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco Sport",
+   "iq_model_id": 1035,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Crown Victoria",
+   "iq_model_id": 895,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Excursion",
+   "iq_model_id": 1685,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "F-150 Lightning",
+   "iq_model_id": 1557,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Ford",
+   "model": "Focus",
+   "iq_model_id": 832,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Freestyle",
+   "iq_model_id": 1689,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "GT",
+   "iq_model_id": 910,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Ka",
+   "iq_model_id": 1332,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Maverick",
+   "iq_model_id": 1101,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Scorpio",
+   "iq_model_id": 1257,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Sierra",
+   "iq_model_id": 1410,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Taurus X",
+   "iq_model_id": 1087,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Territory",
+   "iq_model_id": 1127,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Tourneo Courier",
+   "iq_model_id": 1603,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Ford",
+   "model": "Windstar",
+   "iq_model_id": 987,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Forthing",
+   "model": "Friday",
+   "iq_model_id": 1775,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Foton",
+   "model": "MP-X",
+   "iq_model_id": 1817,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "GAC",
+   "model": "Aion V",
+   "iq_model_id": 1789,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "GAZ",
+   "model": "Gazelle",
+   "iq_model_id": 1796,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "GMC",
+   "model": "Canyon",
+   "iq_model_id": 1193,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "GMC",
+   "model": "Envoy",
+   "iq_model_id": 884,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "GMC",
+   "model": "Safari",
+   "iq_model_id": 1451,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "GMC",
+   "model": "Terrain",
+   "iq_model_id": 880,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "GWM",
+   "model": "Wingle 7",
+   "iq_model_id": 1802,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Geely",
+   "model": "Emgrand GT",
+   "iq_model_id": 872,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Geely",
+   "model": "Emgrand X7",
+   "iq_model_id": 869,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Geely",
+   "model": "GC6",
+   "iq_model_id": 874,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Geely",
+   "model": "Geometry C",
+   "iq_model_id": 1471,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Geely",
+   "model": "STARRAY",
+   "iq_model_id": 1342,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Geely",
+   "model": "Tugella",
+   "iq_model_id": 1181,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Genesis",
+   "model": "GV60",
+   "iq_model_id": 1402,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Genesis",
+   "model": "GV70",
+   "iq_model_id": 1058,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Genesis",
+   "model": "GV80",
+   "iq_model_id": 1111,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Higer",
+   "model": "KLQ6798",
+   "iq_model_id": 1785,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Higer",
+   "model": "KLQ6928",
+   "iq_model_id": 1543,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "CRX",
+   "iq_model_id": 892,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "City",
+   "iq_model_id": 732,
+   "held_trims": 2,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Civic",
+   "iq_model_id": 893,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Concerto",
+   "iq_model_id": 1728,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Element",
+   "iq_model_id": 1363,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "HR-V",
+   "iq_model_id": 866,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Insight",
+   "iq_model_id": 1264,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Jazz",
+   "iq_model_id": 731,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Legend",
+   "iq_model_id": 724,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Odyssey",
+   "iq_model_id": 809,
+   "held_trims": 2,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Passport",
+   "iq_model_id": 1047,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Pilot",
+   "iq_model_id": 727,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "Prologue",
+   "iq_model_id": 1765,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "Ridgeline",
+   "iq_model_id": 1658,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "S2000",
+   "iq_model_id": 730,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Honda",
+   "model": "e:NP1",
+   "iq_model_id": 1480,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Honda",
+   "model": "eNS1",
+   "iq_model_id": 1133,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Hyptec",
+   "model": "HT",
+   "iq_model_id": 1594,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Coupe",
+   "iq_model_id": 700,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq",
+   "iq_model_id": 1160,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 5",
+   "iq_model_id": 1720,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_engine_value",
+    "unparsed_engine_value",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq 6",
+   "iq_model_id": 1719,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_engine_value",
+    "unparsed_engine_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Kona Electric",
+   "iq_model_id": 1362,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Nexo",
+   "iq_model_id": 1389,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Palisade",
+   "iq_model_id": 723,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Reina",
+   "iq_model_id": 955,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Santa Cruz",
+   "iq_model_id": 1104,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Stargazer",
+   "iq_model_id": 1393,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Trajet",
+   "iq_model_id": 744,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Hyundai",
+   "model": "XG",
+   "iq_model_id": 956,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "EX",
+   "iq_model_id": 752,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "G",
+   "iq_model_id": 711,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q30",
+   "iq_model_id": 783,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q40",
+   "iq_model_id": 1803,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q45",
+   "iq_model_id": 707,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q50",
+   "iq_model_id": 706,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "Q70",
+   "iq_model_id": 710,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX4",
+   "iq_model_id": 1305,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX50",
+   "iq_model_id": 779,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX55",
+   "iq_model_id": 1452,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX56",
+   "iq_model_id": 709,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Infiniti",
+   "model": "QX70",
+   "iq_model_id": 714,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Iran Khodro",
+   "model": "Paykan",
+   "iq_model_id": 1805,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Isuzu",
+   "model": "D-Max",
+   "iq_model_id": 786,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Isuzu",
+   "model": "Trooper",
+   "iq_model_id": 789,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Jaguar",
+   "model": "XF",
+   "iq_model_id": 796,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Jaguar",
+   "model": "XK",
+   "iq_model_id": 801,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Jeep",
+   "model": "Liberty",
+   "iq_model_id": 984,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Jeep",
+   "model": "Renegade",
+   "iq_model_id": 763,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Kia",
+   "model": "Ceres",
+   "iq_model_id": 1807,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "EV6",
+   "iq_model_id": 1208,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "K3",
+   "iq_model_id": 1227,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Kia",
+   "model": "Opirus",
+   "iq_model_id": 772,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Kia",
+   "model": "Potentia",
+   "iq_model_id": 1341,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Kia",
+   "model": "Rio 5",
+   "iq_model_id": 1813,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Kia",
+   "model": "Sephia",
+   "iq_model_id": 1186,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Kia",
+   "model": "Spectra",
+   "iq_model_id": 1265,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Kia",
+   "model": "Stonic",
+   "iq_model_id": 1348,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lamborghini",
+   "model": "Aventador",
+   "iq_model_id": 154,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lamborghini",
+   "model": "Gallardo",
+   "iq_model_id": 157,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lamborghini",
+   "model": "Murcielago",
+   "iq_model_id": 158,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lamborghini",
+   "model": "Temerario",
+   "iq_model_id": 1757,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lamborghini",
+   "model": "Urus",
+   "iq_model_id": 152,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lexus",
+   "model": "CT",
+   "iq_model_id": 127,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lexus",
+   "model": "LC",
+   "iq_model_id": 119,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lexus",
+   "model": "LFA",
+   "iq_model_id": 131,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lexus",
+   "model": "RC F",
+   "iq_model_id": 126,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lexus",
+   "model": "SC",
+   "iq_model_id": 142,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "Aviator",
+   "iq_model_id": 138,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "MKC",
+   "iq_model_id": 141,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "MKS",
+   "iq_model_id": 133,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "MKX",
+   "iq_model_id": 140,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "MKZ",
+   "iq_model_id": 137,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "Nautilus",
+   "iq_model_id": 139,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Lincoln",
+   "model": "Navigator",
+   "iq_model_id": 135,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "MG",
+   "model": "Midget",
+   "iq_model_id": 1174,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "MG",
+   "model": "One",
+   "iq_model_id": 1146,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "MINI",
+   "model": "Aceman",
+   "iq_model_id": 1801,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Maserati",
+   "model": "Grecale",
+   "iq_model_id": 1191,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Maserati",
+   "model": "Spyder",
+   "iq_model_id": 215,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Maybach",
+   "model": "57",
+   "iq_model_id": 220,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "2",
+   "iq_model_id": 175,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "323",
+   "iq_model_id": 1281,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "5",
+   "iq_model_id": 1074,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "626",
+   "iq_model_id": 1155,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "929",
+   "iq_model_id": 1682,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "B-Series",
+   "iq_model_id": 226,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "CX-7",
+   "iq_model_id": 225,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "CX-70",
+   "iq_model_id": 1772,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "CX-9",
+   "iq_model_id": 203,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "MX-5",
+   "iq_model_id": 202,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "Navajo",
+   "iq_model_id": 1656,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mazda",
+   "model": "Tribute",
+   "iq_model_id": 1562,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQE Sedan",
+   "iq_model_id": 1453,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "EQV",
+   "iq_model_id": 1289,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "Ponton",
+   "iq_model_id": 1244,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "SLS AMG",
+   "iq_model_id": 28,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "SSK",
+   "iq_model_id": 1069,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Attrage",
+   "iq_model_id": 62,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Eclipse",
+   "iq_model_id": 60,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Endeavor",
+   "iq_model_id": 1364,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Galant",
+   "iq_model_id": 111,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Grandis",
+   "iq_model_id": 109,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Lancer",
+   "iq_model_id": 105,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Lancer Evolution",
+   "iq_model_id": 106,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Pajero",
+   "iq_model_id": 87,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Mitsuoka",
+   "model": "Galue",
+   "iq_model_id": 1812,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Neta",
+   "model": "L",
+   "iq_model_id": 1738,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "350Z",
+   "iq_model_id": 380,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "370Z",
+   "iq_model_id": 378,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Almera",
+   "iq_model_id": 1506,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Bluebird",
+   "iq_model_id": 1555,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Cedric",
+   "iq_model_id": 1043,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Cube",
+   "iq_model_id": 1516,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Juke",
+   "iq_model_id": 384,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Kicks",
+   "iq_model_id": 383,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Leaf",
+   "iq_model_id": 381,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Nissan",
+   "model": "Magnite",
+   "iq_model_id": 1589,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Prairie",
+   "iq_model_id": 1696,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Primera",
+   "iq_model_id": 943,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Rogue",
+   "iq_model_id": 927,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Rogue Sport",
+   "iq_model_id": 975,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Teana",
+   "iq_model_id": 946,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Nissan",
+   "model": "Z",
+   "iq_model_id": 1326,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Opel",
+   "model": "Movano",
+   "iq_model_id": 1797,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Peugeot",
+   "model": "2008",
+   "iq_model_id": 362,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "208",
+   "iq_model_id": 358,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "3008",
+   "iq_model_id": 351,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "301",
+   "iq_model_id": 361,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "306",
+   "iq_model_id": 990,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "308",
+   "iq_model_id": 348,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "404",
+   "iq_model_id": 1800,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Peugeot",
+   "model": "405",
+   "iq_model_id": 1006,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "406",
+   "iq_model_id": 1105,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "407",
+   "iq_model_id": 355,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "408",
+   "iq_model_id": 350,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "5008",
+   "iq_model_id": 352,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "508",
+   "iq_model_id": 354,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "607",
+   "iq_model_id": 356,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "Partner",
+   "iq_model_id": 376,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "RCZ",
+   "iq_model_id": 357,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Peugeot",
+   "model": "Traveller",
+   "iq_model_id": 1764,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "911",
+   "iq_model_id": 374,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "911 GT3",
+   "iq_model_id": 432,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "911 Turbo",
+   "iq_model_id": 405,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "Cayenne",
+   "iq_model_id": 366,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "Macan",
+   "iq_model_id": 369,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "Panamera",
+   "iq_model_id": 365,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Porsche",
+   "model": "Taycan",
+   "iq_model_id": 1325,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Renault",
+   "model": "Captur",
+   "iq_model_id": 406,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Clio",
+   "iq_model_id": 431,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Clio RS",
+   "iq_model_id": 459,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Dacia Lodgy",
+   "iq_model_id": 1806,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Renault",
+   "model": "Duster",
+   "iq_model_id": 407,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Espace",
+   "iq_model_id": 451,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Fluence",
+   "iq_model_id": 449,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Kangoo",
+   "iq_model_id": 1136,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Laguna",
+   "iq_model_id": 453,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Megane",
+   "iq_model_id": 446,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Megane RS",
+   "iq_model_id": 448,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Scenic",
+   "iq_model_id": 454,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Symbol",
+   "iq_model_id": 460,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Talisman",
+   "iq_model_id": 455,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Trafic",
+   "iq_model_id": 444,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Renault",
+   "model": "Twizy",
+   "iq_model_id": 457,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Renault",
+   "model": "Zoe",
+   "iq_model_id": 458,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Dawn",
+   "iq_model_id": 408,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Seraph",
+   "iq_model_id": 413,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Spirit",
+   "iq_model_id": 1818,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Silver Spur",
+   "iq_model_id": 1819,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Spectre",
+   "iq_model_id": 1478,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Rolls Royce",
+   "model": "Wraith",
+   "iq_model_id": 409,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Fabia",
+   "iq_model_id": 428,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Kodiaq",
+   "iq_model_id": 426,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Kushaq",
+   "iq_model_id": 1445,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Octavia",
+   "iq_model_id": 425,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Rapid",
+   "iq_model_id": 1097,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Roomster",
+   "iq_model_id": 424,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Superb",
+   "iq_model_id": 427,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Skoda",
+   "model": "Yeti",
+   "iq_model_id": 429,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Smart",
+   "model": "Smart 1",
+   "iq_model_id": 1056,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Ssangyong",
+   "model": "Chairman",
+   "iq_model_id": 1791,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Subaru",
+   "model": "Ascent",
+   "iq_model_id": 270,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "BRZ",
+   "iq_model_id": 272,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Crosstrek",
+   "iq_model_id": 1299,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Impreza",
+   "iq_model_id": 264,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Impreza WRX",
+   "iq_model_id": 265,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Impreza WRX STI",
+   "iq_model_id": 266,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Legacy",
+   "iq_model_id": 269,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Outback",
+   "iq_model_id": 268,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Subaru",
+   "model": "Tribeca",
+   "iq_model_id": 271,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Alto",
+   "iq_model_id": 284,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Baleno",
+   "iq_model_id": 285,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Ciaz",
+   "iq_model_id": 275,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Dzire",
+   "iq_model_id": 259,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Ertiga",
+   "iq_model_id": 279,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Grand Vitara",
+   "iq_model_id": 277,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Ignis",
+   "iq_model_id": 273,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Kizashi",
+   "iq_model_id": 281,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Reno",
+   "iq_model_id": 1274,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "S-Presso",
+   "iq_model_id": 1225,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "Swift",
+   "iq_model_id": 260,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Suzuki",
+   "model": "XL7",
+   "iq_model_id": 282,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "TANK",
+   "model": "700",
+   "iq_model_id": 1747,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "4Runner",
+   "iq_model_id": 928,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Alphard",
+   "iq_model_id": 1255,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Auris",
+   "iq_model_id": 929,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Avensis",
+   "iq_model_id": 930,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Carina",
+   "iq_model_id": 1383,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Celica",
+   "iq_model_id": 1474,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Celsior",
+   "iq_model_id": 1418,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Chaser",
+   "iq_model_id": 1350,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Corona",
+   "iq_model_id": 932,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Cresta",
+   "iq_model_id": 1270,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Echo",
+   "iq_model_id": 1260,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Frontlander",
+   "iq_model_id": 1267,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Ipsum",
+   "iq_model_id": 1206,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Mark II",
+   "iq_model_id": 1230,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Matrix",
+   "iq_model_id": 935,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Paseo",
+   "iq_model_id": 936,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Supra",
+   "iq_model_id": 320,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Tacoma",
+   "iq_model_id": 938,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Tercel",
+   "iq_model_id": 1221,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Veloz",
+   "iq_model_id": 1427,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Venza",
+   "iq_model_id": 940,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Wish",
+   "iq_model_id": 1399,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "Yaris Cross",
+   "iq_model_id": 1360,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ3",
+   "iq_model_id": 1381,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_engine_value",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ4X",
+   "iq_model_id": 1188,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_engine_value",
+    "unparsed_engine_value",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Toyota",
+   "model": "bZ5",
+   "iq_model_id": 1697,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_engine_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Bora",
+   "iq_model_id": 1094,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Caddy",
+   "iq_model_id": 1086,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf",
+   "iq_model_id": 329,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf R",
+   "iq_model_id": 331,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "ID.3",
+   "iq_model_id": 1147,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Passat",
+   "iq_model_id": 341,
+   "held_trims": 1,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Routan",
+   "iq_model_id": 1373,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "T-Cross",
+   "iq_model_id": 1438,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "T-Roc",
+   "iq_model_id": 1108,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Taigo",
+   "iq_model_id": 1126,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Taos",
+   "iq_model_id": 1077,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Touareg",
+   "iq_model_id": 317,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Touran",
+   "iq_model_id": 340,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Transporter",
+   "iq_model_id": 1340,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "e-Tharu",
+   "iq_model_id": 1359,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Volvo",
+   "model": "940",
+   "iq_model_id": 1165,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "C30",
+   "iq_model_id": 292,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "C70",
+   "iq_model_id": 304,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "S40",
+   "iq_model_id": 298,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "S60 Polestar",
+   "iq_model_id": 299,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "S80",
+   "iq_model_id": 294,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "V40",
+   "iq_model_id": 291,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "V50",
+   "iq_model_id": 303,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "V60",
+   "iq_model_id": 301,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "V60 Polestar",
+   "iq_model_id": 302,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "V70",
+   "iq_model_id": 306,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "V90",
+   "iq_model_id": 296,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "XC40",
+   "iq_model_id": 307,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Volvo",
+   "model": "XC60",
+   "iq_model_id": 300,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "XC70",
+   "iq_model_id": 305,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Volvo",
+   "model": "XC90",
+   "iq_model_id": 295,
+   "held_trims": 0,
+   "excluded_items": []
+  },
+  {
+   "brand": "Wuling",
+   "model": "Binguo",
+   "iq_model_id": 1643,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "XEV",
+   "model": "Yoyo Pro",
+   "iq_model_id": 1327,
+   "held_trims": 0,
+   "excluded_items": [
+    "unparsed_engine_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "XPeng",
+   "model": "P7",
+   "iq_model_id": 1699,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "SU7",
+   "iq_model_id": 1615,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unparsed_cylinder_value",
+    "unparsed_cylinder_value"
+   ]
+  },
+  {
+   "brand": "Xiaomi",
+   "model": "YU7",
+   "iq_model_id": 1795,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  },
+  {
+   "brand": "Zotye",
+   "model": "Hunter",
+   "iq_model_id": 1535,
+   "held_trims": 0,
+   "excluded_items": [
+    "unrestricted_default_engine_list",
+    "unrestricted_default_cylinder_list"
+   ]
+  }
+ ],
+ "counts": {
+  "iq_models": 1653,
+  "matched_exact_identity": 1635,
+  "eligible_after_explicit_exclusions": 1635,
+  "included_in_overlay": 1214,
+  "matched_but_no_additions": 421,
+  "excluded_ambiguous": 1,
+  "excluded_unmatched": 17,
+  "excluded_explicit": 1,
+  "total_not_in_overlay": 439,
+  "default_engine_list_models": 110,
+  "default_cylinder_list_models": 57,
+  "trims_held": 98,
+  "unparsed_or_placeholder": 193
+ }
+}

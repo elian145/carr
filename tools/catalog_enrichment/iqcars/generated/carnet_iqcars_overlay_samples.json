@@ -1,0 +1,1337 @@
+[
+ {
+  "brand": "Ford",
+  "model": "Everest",
+  "iq_model_id": 904,
+  "CURRENT_CARNET": {
+   "trims": [
+    "Limited",
+    "XLT",
+    "Mid Range",
+    "XLS"
+   ],
+   "engine_sizes": [
+    "2.0L",
+    "3.0L",
+    "3.2L"
+   ],
+   "cylinders": [
+    4,
+    5,
+    6
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "Titanium",
+    "Trend",
+    "Ambiente",
+    "Limited",
+    "XLS",
+    "XLT"
+   ],
+   "engine_sizes": [
+    "2.0L",
+    "2.2L",
+    "2.3L",
+    "2.5L",
+    "2.7L",
+    "3.0L",
+    "3.2L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "2.0L",
+     "qualifier": "TD",
+     "raw": [
+      "2.0TD"
+     ]
+    },
+    {
+     "size": "2.2L",
+     "qualifier": "TD",
+     "raw": [
+      "2.2TD"
+     ]
+    },
+    {
+     "size": "2.3L",
+     "qualifier": "T",
+     "raw": [
+      "2.3T"
+     ]
+    },
+    {
+     "size": "2.5L",
+     "qualifier": "",
+     "raw": [
+      "2.5"
+     ]
+    },
+    {
+     "size": "2.7L",
+     "qualifier": "T",
+     "raw": [
+      "2.7T"
+     ]
+    },
+    {
+     "size": "3.0L",
+     "qualifier": "TD",
+     "raw": [
+      "3.0TD"
+     ]
+    },
+    {
+     "size": "3.2L",
+     "qualifier": "TD",
+     "raw": [
+      "3.2TD"
+     ]
+    }
+   ],
+   "cylinders": [
+    4,
+    5,
+    6
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "Titanium",
+    "Trend",
+    "Ambiente"
+   ],
+   "engine_sizes_add": [
+    "2.2L",
+    "2.3L",
+    "2.5L",
+    "2.7L"
+   ],
+   "engine_variants": [
+    {
+     "size": "2.2L",
+     "raw_values": [
+      "2.2TD"
+     ],
+     "qualifier": "TD",
+     "iq_engine_ids": [
+      6
+     ]
+    },
+    {
+     "size": "2.3L",
+     "raw_values": [
+      "2.3T"
+     ],
+     "qualifier": "T",
+     "iq_engine_ids": [
+      3
+     ]
+    },
+    {
+     "size": "2.5L",
+     "raw_values": [
+      "2.5"
+     ],
+     "qualifier": "",
+     "iq_engine_ids": [
+      72
+     ]
+    },
+    {
+     "size": "2.7L",
+     "raw_values": [
+      "2.7T"
+     ],
+     "qualifier": "T",
+     "iq_engine_ids": [
+      86
+     ]
+    }
+   ],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ },
+ {
+  "brand": "Toyota",
+  "model": "Land Cruiser",
+  "iq_model_id": 249,
+  "CURRENT_CARNET": {
+   "trims": [
+    "Base",
+    "LX",
+    "GX",
+    "EXR",
+    "GXR",
+    "VXR",
+    "GR-Sport",
+    "4.0L",
+    "4.6L",
+    "5.7L",
+    "Black Edition",
+    "Executive Lounge Edition",
+    "EXR 4.0L",
+    "GR-SPORT 3.5L",
+    "GXR 3.5L",
+    "GXR 4.0L",
+    "GXR 60th Anniversary",
+    "GXR Grand Touring",
+    "GXR MID",
+    "GXR Plus",
+    "GXR TOP",
+    "Heritage",
+    "Special Edition",
+    "SWB",
+    "V8 Turbo",
+    "VX",
+    "VXR 3.5L",
+    "VXR 4.0L",
+    "VXR Base",
+    "VXR Grand Touring",
+    "VXR TOP",
+    "VXRi",
+    "VXS",
+    "ZX"
+   ],
+   "engine_sizes": [
+    "2.4L",
+    "2.7L",
+    "2.8L",
+    "3.0L",
+    "3.3L",
+    "3.4L",
+    "3.5L",
+    "4.0L",
+    "4.2L",
+    "4.5L",
+    "4.6L",
+    "4.7L",
+    "5.7L"
+   ],
+   "cylinders": [
+    4,
+    5,
+    6,
+    8
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "EX.R",
+    "VX.S",
+    "VX.R",
+    "GX.R",
+    "GX",
+    "G",
+    "GX.R.i",
+    "GX.R Grand Touring",
+    "VX 3.5L Twin-Turbo",
+    "G-XR Twin-Turbo",
+    "GR",
+    "VX.R.i",
+    "GX.R Full Option",
+    "GX.R Limited",
+    "VX Full Option",
+    "VX Limited",
+    "VX 3.5L Twin Turbo",
+    "VX.R Twin Turbo",
+    "GR Twin Turbo",
+    "VX.E",
+    "VX.R Twin Turbo Plus",
+    "G-XR Twin-Turbo LIMITED",
+    "VX",
+    "VX.R Grand Touring",
+    "GR HEV",
+    "VX Twin Turbo Limited",
+    "VX HEV",
+    "VX.R HEV",
+    "GR.S HEV"
+   ],
+   "engine_sizes": [
+    "3.3L",
+    "3.5L",
+    "4.0L",
+    "4.2L",
+    "4.5L",
+    "4.6L",
+    "4.7L",
+    "5.7L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "3.3L",
+     "qualifier": "TD",
+     "raw": [
+      "3.3TD"
+     ]
+    },
+    {
+     "size": "3.5L",
+     "qualifier": "T",
+     "raw": [
+      "3.5T"
+     ]
+    },
+    {
+     "size": "4.0L",
+     "qualifier": "",
+     "raw": [
+      "4.0"
+     ]
+    },
+    {
+     "size": "4.2L",
+     "qualifier": "TD",
+     "raw": [
+      "4.2TD"
+     ]
+    },
+    {
+     "size": "4.5L",
+     "qualifier": "",
+     "raw": [
+      "4.5"
+     ]
+    },
+    {
+     "size": "4.5L",
+     "qualifier": "TD",
+     "raw": [
+      "4.5TD"
+     ]
+    },
+    {
+     "size": "4.6L",
+     "qualifier": "",
+     "raw": [
+      "4.6"
+     ]
+    },
+    {
+     "size": "4.7L",
+     "qualifier": "",
+     "raw": [
+      "4.7"
+     ]
+    },
+    {
+     "size": "5.7L",
+     "qualifier": "",
+     "raw": [
+      "5.7"
+     ]
+    }
+   ],
+   "cylinders": [
+    6,
+    8
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "G",
+    "GX.R.i",
+    "G-XR Twin-Turbo",
+    "GR",
+    "GX.R Full Option",
+    "GX.R Limited",
+    "VX Full Option",
+    "VX Limited",
+    "VX.R Twin Turbo",
+    "GR Twin Turbo",
+    "VX.E",
+    "VX.R Twin Turbo Plus",
+    "G-XR Twin-Turbo LIMITED",
+    "GR HEV",
+    "VX Twin Turbo Limited",
+    "VX HEV",
+    "VX.R HEV",
+    "GR.S HEV"
+   ],
+   "engine_sizes_add": [],
+   "engine_variants": [],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [
+    {
+     "kind": "cross_source",
+     "iq_trim": "EX.R",
+     "carnet_lookalikes": [
+      "EXR"
+     ],
+     "loose_key": "exr",
+     "iq_trim_ids": [
+      3972
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "VX.S",
+     "carnet_lookalikes": [
+      "VXS"
+     ],
+     "loose_key": "vxs",
+     "iq_trim_ids": [
+      3973
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "VX.R",
+     "carnet_lookalikes": [
+      "VXR"
+     ],
+     "loose_key": "vxr",
+     "iq_trim_ids": [
+      3974
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "GX.R",
+     "carnet_lookalikes": [
+      "GXR"
+     ],
+     "loose_key": "gxr",
+     "iq_trim_ids": [
+      3976
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "GX.R Grand Touring",
+     "carnet_lookalikes": [
+      "GXR Grand Touring"
+     ],
+     "loose_key": "gxrgrandtouring",
+     "iq_trim_ids": [
+      5472
+     ]
+    },
+    {
+     "kind": "within_iq",
+     "iq_trim": "VX 3.5L Twin-Turbo",
+     "iq_group": [
+      "VX 3.5L Twin-Turbo",
+      "VX 3.5L Twin Turbo"
+     ],
+     "loose_key": "vx35ltwinturbo",
+     "iq_trim_ids": [
+      5475
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "VX.R.i",
+     "carnet_lookalikes": [
+      "VXRi"
+     ],
+     "loose_key": "vxri",
+     "iq_trim_ids": [
+      5666
+     ]
+    },
+    {
+     "kind": "within_iq",
+     "iq_trim": "VX 3.5L Twin Turbo",
+     "iq_group": [
+      "VX 3.5L Twin-Turbo",
+      "VX 3.5L Twin Turbo"
+     ],
+     "loose_key": "vx35ltwinturbo",
+     "iq_trim_ids": [
+      5769
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "VX.R Grand Touring",
+     "carnet_lookalikes": [
+      "VXR Grand Touring"
+     ],
+     "loose_key": "vxrgrandtouring",
+     "iq_trim_ids": [
+      6427
+     ]
+    }
+   ],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": [
+    {
+     "status": "POSSIBLE_DUPLICATES",
+     "loose_key": "vx35ltwinturbo",
+     "names": [
+      "VX 3.5L Twin-Turbo",
+      "VX 3.5L Twin Turbo"
+     ],
+     "trim_ids": {
+      "VX 3.5L Twin-Turbo": [
+       5475
+      ],
+      "VX 3.5L Twin Turbo": [
+       5769
+      ]
+     }
+    }
+   ]
+  }
+ },
+ {
+  "brand": "Toyota",
+  "model": "Land Cruiser Prado",
+  "iq_model_id": 288,
+  "CURRENT_CARNET": {
+   "trims": [
+    "TX",
+    "EXR",
+    "GXR",
+    "GXL",
+    "VXR",
+    "VXL",
+    "TXL",
+    "TZ-G",
+    "Limited",
+    "60th Anniversary Edition",
+    "Adventure",
+    "Adventure First Edition",
+    "GX Basic",
+    "GX MID",
+    "GX TOP",
+    "Tx-l MID",
+    "Tx-l MID TOP",
+    "Tx-l TOP",
+    "TXR",
+    "VX Basic",
+    "VX MID",
+    "VX TOP",
+    "Vx-l MID",
+    "Vx-l TOP"
+   ],
+   "engine_sizes": [
+    "2.4L",
+    "2.7L",
+    "2.8L",
+    "3.0L",
+    "3.4L",
+    "4.0L"
+   ],
+   "cylinders": [
+    4,
+    6
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "VXE",
+    "VX",
+    "TXS",
+    "TXL",
+    "TX",
+    "EX.R",
+    "VXL",
+    "GXR",
+    "GX",
+    "VX.R",
+    "RS",
+    "Adventure",
+    "A4 Adventure",
+    "All Rounder",
+    "Standard",
+    "R3",
+    "R2"
+   ],
+   "engine_sizes": [
+    "2.4L",
+    "2.7L",
+    "2.8L",
+    "3.0L",
+    "3.4L",
+    "4.0L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "2.4L",
+     "qualifier": "T",
+     "raw": [
+      "2.4T"
+     ]
+    },
+    {
+     "size": "2.7L",
+     "qualifier": "",
+     "raw": [
+      "2.7"
+     ]
+    },
+    {
+     "size": "2.8L",
+     "qualifier": "TD",
+     "raw": [
+      "2.8TD"
+     ]
+    },
+    {
+     "size": "3.0L",
+     "qualifier": "TD",
+     "raw": [
+      "3.0TD"
+     ]
+    },
+    {
+     "size": "3.4L",
+     "qualifier": "",
+     "raw": [
+      "3.4"
+     ]
+    },
+    {
+     "size": "4.0L",
+     "qualifier": "",
+     "raw": [
+      "4.0"
+     ]
+    }
+   ],
+   "cylinders": [
+    4,
+    6
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "VXE",
+    "VX",
+    "TXS",
+    "GX",
+    "RS",
+    "A4 Adventure",
+    "All Rounder",
+    "Standard",
+    "R3",
+    "R2"
+   ],
+   "engine_sizes_add": [],
+   "engine_variants": [],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [
+    {
+     "kind": "cross_source",
+     "iq_trim": "EX.R",
+     "carnet_lookalikes": [
+      "EXR"
+     ],
+     "loose_key": "exr",
+     "iq_trim_ids": [
+      4512
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "VX.R",
+     "carnet_lookalikes": [
+      "VXR"
+     ],
+     "loose_key": "vxr",
+     "iq_trim_ids": [
+      5427
+     ]
+    }
+   ],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ },
+ {
+  "brand": "Toyota",
+  "model": "Camry",
+  "iq_model_id": 254,
+  "CURRENT_CARNET": {
+   "trims": [
+    "Base",
+    "L",
+    "E",
+    "LE",
+    "GL",
+    "GLI",
+    "XLI",
+    "GLX",
+    "GLE",
+    "XSE",
+    "SE",
+    "Sport",
+    "TRD",
+    "XLE",
+    "Limited",
+    "Touring",
+    "Platinum",
+    "Royal",
+    "Grande",
+    "Hybrid",
+    "Hybrid LE",
+    "Hybrid SE",
+    "Hybrid XLE",
+    "Hybrid XSE",
+    "40th Anniversary",
+    "60 Years Edition",
+    "G",
+    "GLI Limited",
+    "Nightshade",
+    "RZ",
+    "S",
+    "S Plus",
+    "SE Plus"
+   ],
+   "engine_sizes": [
+    "1.8L",
+    "2.0L",
+    "2.2L",
+    "2.4L",
+    "2.5L",
+    "3.0L",
+    "3.3L",
+    "3.5L"
+   ],
+   "cylinders": [
+    4,
+    6
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "XSE",
+    "SE",
+    "XLE",
+    "GLE",
+    "LE",
+    "GLX",
+    "GLI",
+    "GL",
+    "L",
+    "XLI",
+    "Base",
+    "TRD",
+    "Grande",
+    "E Plus",
+    "Mid Grade (Hybrid)",
+    "Mid Grade (Gasoline)",
+    "High Grade (Gasoline)",
+    "High Grade (Hybrid)",
+    "GLE HEV LIMITED",
+    "Mid Grade",
+    "High Grade"
+   ],
+   "engine_sizes": [
+    "2.0L",
+    "2.2L",
+    "2.4L",
+    "2.5L",
+    "3.0L",
+    "3.5L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "2.0L",
+     "qualifier": "",
+     "raw": [
+      "2.0"
+     ]
+    },
+    {
+     "size": "2.2L",
+     "qualifier": "",
+     "raw": [
+      "2.2"
+     ]
+    },
+    {
+     "size": "2.4L",
+     "qualifier": "",
+     "raw": [
+      "2.4"
+     ]
+    },
+    {
+     "size": "2.5L",
+     "qualifier": "",
+     "raw": [
+      "2.5"
+     ]
+    },
+    {
+     "size": "3.0L",
+     "qualifier": "",
+     "raw": [
+      "3.0"
+     ]
+    },
+    {
+     "size": "3.5L",
+     "qualifier": "",
+     "raw": [
+      "3.5"
+     ]
+    }
+   ],
+   "cylinders": [
+    4,
+    6
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "E Plus",
+    "Mid Grade (Hybrid)",
+    "Mid Grade (Gasoline)",
+    "High Grade (Gasoline)",
+    "High Grade (Hybrid)",
+    "GLE HEV LIMITED",
+    "Mid Grade",
+    "High Grade"
+   ],
+   "engine_sizes_add": [],
+   "engine_variants": [],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ },
+ {
+  "brand": "Lexus",
+  "model": "LX",
+  "iq_model_id": 118,
+  "CURRENT_CARNET": {
+   "trims": [
+    "600",
+    "Luxury",
+    "Special Edition"
+   ],
+   "engine_sizes": [
+    "3.3L",
+    "3.4L",
+    "4.5L",
+    "4.7L",
+    "5.7L"
+   ],
+   "cylinders": [
+    6,
+    8
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "570",
+    "450d",
+    "470",
+    "600",
+    "600 Prestige",
+    "600 Platinum",
+    "600 F Sport Mid",
+    "600 F Sport Full",
+    "VIP-Black Edition",
+    "700h ULTRA LUXURY",
+    "700h",
+    "700h Platinum",
+    "700h OVERTRAIL",
+    "700h F Sport",
+    "500d"
+   ],
+   "engine_sizes": [
+    "3.3L",
+    "3.4L",
+    "3.5L",
+    "4.7L",
+    "5.7L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "3.3L",
+     "qualifier": "TD",
+     "raw": [
+      "3.3TD"
+     ]
+    },
+    {
+     "size": "3.4L",
+     "qualifier": "T",
+     "raw": [
+      "3.4T"
+     ]
+    },
+    {
+     "size": "3.5L",
+     "qualifier": "T",
+     "raw": [
+      "3.5T"
+     ]
+    },
+    {
+     "size": "4.7L",
+     "qualifier": "",
+     "raw": [
+      "4.7"
+     ]
+    },
+    {
+     "size": "5.7L",
+     "qualifier": "",
+     "raw": [
+      "5.7"
+     ]
+    }
+   ],
+   "cylinders": [
+    6,
+    8
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "570",
+    "450d",
+    "470",
+    "600 Prestige",
+    "600 Platinum",
+    "600 F Sport Mid",
+    "600 F Sport Full",
+    "VIP-Black Edition",
+    "700h ULTRA LUXURY",
+    "700h",
+    "700h Platinum",
+    "700h OVERTRAIL",
+    "700h F Sport",
+    "500d"
+   ],
+   "engine_sizes_add": [
+    "3.5L"
+   ],
+   "engine_variants": [
+    {
+     "size": "3.5L",
+     "raw_values": [
+      "3.5T"
+     ],
+     "qualifier": "T",
+     "iq_engine_ids": [
+      113
+     ]
+    }
+   ],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ },
+ {
+  "brand": "Nissan",
+  "model": "Patrol",
+  "iq_model_id": 75,
+  "CURRENT_CARNET": {
+   "trims": [
+    "LE",
+    "GL",
+    "SE",
+    "Desert Edition",
+    "LE City-60th Anniversary",
+    "LE PI",
+    "LE PJ",
+    "LE PK",
+    "LE PL2",
+    "LE PL4",
+    "LE Platinum",
+    "LE Platinum City",
+    "LE T1",
+    "LE T2",
+    "LE Titanium",
+    "LEPro4X",
+    "Nismo",
+    "Safari AT",
+    "SE P2",
+    "SE P3",
+    "SE P3L",
+    "SE P4",
+    "SE P5",
+    "SE P7",
+    "SE Platinum",
+    "SE Platinum City",
+    "SE PS2",
+    "SE T2",
+    "SE T3 60th Anniversary",
+    "SE T3 Limited Edition",
+    "SE Titanium",
+    "VVIP Edition",
+    "XE"
+   ],
+   "engine_sizes": [
+    "2.8L",
+    "3.0L",
+    "3.2L",
+    "3.5L",
+    "3.8L",
+    "4.0L",
+    "4.2L",
+    "4.5L",
+    "4.8L",
+    "5.6L"
+   ],
+   "cylinders": [
+    4,
+    6,
+    8
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "SE Platinum",
+    "SE T2",
+    "XE",
+    "LE T2",
+    "Nismo",
+    "LE Platinum City",
+    "LE T1",
+    "SE Titanium",
+    "SE Platinum City",
+    "LE Titanium",
+    "SE",
+    "PLATINUM",
+    "LE",
+    "TITANIUM"
+   ],
+   "engine_sizes": [
+    "2.8L",
+    "3.0L",
+    "3.5L",
+    "3.8L",
+    "4.0L",
+    "4.2L",
+    "4.5L",
+    "4.8L",
+    "5.6L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "2.8L",
+     "qualifier": "TD",
+     "raw": [
+      "2.8TD"
+     ]
+    },
+    {
+     "size": "3.0L",
+     "qualifier": "TD",
+     "raw": [
+      "3.0TD"
+     ]
+    },
+    {
+     "size": "3.5L",
+     "qualifier": "T",
+     "raw": [
+      "3.5T"
+     ]
+    },
+    {
+     "size": "3.8L",
+     "qualifier": "",
+     "raw": [
+      "3.8"
+     ]
+    },
+    {
+     "size": "4.0L",
+     "qualifier": "",
+     "raw": [
+      "4.0"
+     ]
+    },
+    {
+     "size": "4.2L",
+     "qualifier": "TD",
+     "raw": [
+      "4.2TD"
+     ]
+    },
+    {
+     "size": "4.5L",
+     "qualifier": "",
+     "raw": [
+      "4.5"
+     ]
+    },
+    {
+     "size": "4.8L",
+     "qualifier": "",
+     "raw": [
+      "4.8"
+     ]
+    },
+    {
+     "size": "5.6L",
+     "qualifier": "",
+     "raw": [
+      "5.6"
+     ]
+    }
+   ],
+   "cylinders": [
+    6,
+    8
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "PLATINUM",
+    "TITANIUM"
+   ],
+   "engine_sizes_add": [],
+   "engine_variants": [],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ },
+ {
+  "brand": "BMW",
+  "model": "X5",
+  "iq_model_id": 644,
+  "CURRENT_CARNET": {
+   "trims": [
+    "Sport",
+    "M Sport",
+    "M50i",
+    "M60i",
+    "M60iXDrive",
+    "X5M",
+    "3.0i",
+    "3.0si",
+    "4.4i",
+    "4.6is",
+    "4.8i",
+    "4.8is",
+    "M",
+    "M Performance",
+    "sDrive35i",
+    "sDrive35i Luxury-Line",
+    "sDrive35i M Sport",
+    "sDrive40i",
+    "X5M Competition",
+    "xDrive 30i",
+    "xDrive 50i xLine",
+    "xDrive35i",
+    "Xdrive35i Exclusive",
+    "xDrive35i Luxury-Line",
+    "Xdrive35i M Dominator",
+    "xDrive35i M Sport",
+    "xDrive40e",
+    "xDrive40i",
+    "xDrive40i M Sport",
+    "xDrive40i M Sport Excellence",
+    "xDrive40i M Sport Pro",
+    "xDrive45e",
+    "Xdrive50i",
+    "xDrive50i Luxury-Line",
+    "xDrive50i M Sport",
+    "xLine"
+   ],
+   "engine_sizes": [
+    "2.0L",
+    "2.9L",
+    "3.0L",
+    "4.4L",
+    "4.6L",
+    "4.8L"
+   ],
+   "cylinders": [
+    4,
+    6,
+    8
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [
+    "X5M",
+    "xDrive50i",
+    "40i",
+    "35i",
+    "xDrive30d",
+    "xDrive30i",
+    "xDrive45e",
+    "M60i",
+    "xDrive40i M Sport",
+    "xDrive40i",
+    "M Competition",
+    "sDrive40i",
+    "xDrive40d",
+    "M50i",
+    "30i",
+    "4.8i",
+    "xDrive48i"
+   ],
+   "engine_sizes": [
+    "3.0L",
+    "4.4L",
+    "4.8L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "3.0L",
+     "qualifier": "",
+     "raw": [
+      "3.0"
+     ]
+    },
+    {
+     "size": "3.0L",
+     "qualifier": "T",
+     "raw": [
+      "3.0T"
+     ]
+    },
+    {
+     "size": "3.0L",
+     "qualifier": "TD",
+     "raw": [
+      "3.0TD"
+     ]
+    },
+    {
+     "size": "4.4L",
+     "qualifier": "T",
+     "raw": [
+      "4.4T"
+     ]
+    },
+    {
+     "size": "4.8L",
+     "qualifier": "",
+     "raw": [
+      "4.8"
+     ]
+    }
+   ],
+   "cylinders": [
+    6,
+    8
+   ]
+  },
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [
+    "40i",
+    "35i",
+    "xDrive30d",
+    "M Competition",
+    "xDrive40d",
+    "xDrive48i"
+   ],
+   "engine_sizes_add": [],
+   "engine_variants": [],
+   "cylinders_add": []
+  },
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [
+    {
+     "kind": "cross_source",
+     "iq_trim": "xDrive50i",
+     "carnet_lookalikes": [
+      "Xdrive50i"
+     ],
+     "loose_key": "xdrive50i",
+     "iq_trim_ids": [
+      4687
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "xDrive30i",
+     "carnet_lookalikes": [
+      "xDrive 30i"
+     ],
+     "loose_key": "xdrive30i",
+     "iq_trim_ids": [
+      4691
+     ]
+    },
+    {
+     "kind": "cross_source",
+     "iq_trim": "30i",
+     "carnet_lookalikes": [
+      "3.0i"
+     ],
+     "loose_key": "30i",
+     "iq_trim_ids": [
+      7037
+     ]
+    }
+   ],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ },
+ {
+  "brand": "Volkswagen",
+  "model": "Golf R",
+  "iq_model_id": 331,
+  "CURRENT_CARNET": {
+   "trims": [
+    "Base",
+    "First Edition",
+    "Special Edition"
+   ],
+   "engine_sizes": [
+    "2.0L"
+   ],
+   "cylinders": [
+    4
+   ]
+  },
+  "IQ_CARS": {
+   "trims": [],
+   "engine_sizes": [
+    "2.0L"
+   ],
+   "engine_variants_raw": [
+    {
+     "size": "2.0L",
+     "qualifier": "T",
+     "raw": [
+      "2.0T"
+     ]
+    }
+   ],
+   "cylinders": [
+    4
+   ]
+  },
+  "PROPOSED_ADDITIONS": null,
+  "POSSIBLE_DUPLICATES_AND_WARNINGS": {
+   "held_trims_for_review": [],
+   "warnings": [],
+   "excluded": [],
+   "within_iq_possible_duplicates": []
+  }
+ }
+]

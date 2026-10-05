@@ -1,0 +1,17 @@
+# IQ Cars pipeline: local-only operational files. Everything canonical is kept; see raw/iqcars_catalog.json.
+# raw/iqcars_catalog.json embeds every cached response verbatim (1,653 cylinder_engine responses, the
+# initial_data brands/models, 58 brand-new entries + their SFXes) and the run summaries (_meta.extraction_runs),
+# so the per-request cache and logs are redundant and are not committed. Keep them locally if you want to re-assemble.
+
+# per-request HTTP cache (1,713 files) and request/run logs
+raw/cache/
+raw/*.log
+raw/request_log.jsonl
+raw/run_summaries.jsonl
+
+# task-baseline snapshots of unrelated working-tree state (git status dumps, diffs of other tools' files)
+reports/baseline/
+
+# bytecode
+__pycache__/
+*.pyc

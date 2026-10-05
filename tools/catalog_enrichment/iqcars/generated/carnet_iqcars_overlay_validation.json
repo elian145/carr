@@ -1,0 +1,17 @@
+{
+ "checks": {
+  "no_unmatched_iq_model_in_overlay": true,
+  "no_ambiguous_iq_model_in_overlay": true,
+  "land_cruiser_fj_not_in_overlay": true,
+  "one_overlay_entry_per_iq_model": true,
+  "one_overlay_entry_per_carnet_model": true,
+  "overlay_model_is_exact_canonical_identity": true,
+  "no_duplicate_additions": true,
+  "no_addition_already_in_carnet": true,
+  "every_addition_traces_to_own_iq_model_in_raw": true,
+  "engine_variants_have_raw_and_belong_to_added_sizes": true,
+  "no_relationship_fields": true
+ },
+ "failures": [],
+ "ok": true
+}

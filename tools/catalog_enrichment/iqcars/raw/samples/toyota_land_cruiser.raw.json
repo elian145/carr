@@ -1,0 +1,582 @@
+{
+ "_meta": {
+  "note": "RAW, unnormalized. Values are exactly as returned (including stray whitespace/case).",
+  "initial_data_endpoint": "https://cp.iqcars.net/api/publicCar/App-Initial-Data-For-Android?categoryId=1&langCode=en",
+  "cylinder_engine_endpoint": "https://cp.iqcars.net/api/publicCar/cylinder-and-engine-and-specification?ModelId=249",
+  "captured_at": "2026-10-04T16:52:04+00:00"
+ },
+ "brand": {
+  "ID": 27,
+  "BrandNameen": "Toyota",
+  "BrandNamear": "تويوتا",
+  "BrandNameku": "تۆیۆتا"
+ },
+ "model": {
+  "CarBodyIds": [],
+  "ID": 249,
+  "ModelNameen": "Land Cruiser",
+  "ModelNamear": "لاند كروزر",
+  "ModelNameku": "لاند کروزەر",
+  "Sort": 296,
+  "FromYearId": 1,
+  "ToYearId": null,
+  "SegmentId": null,
+  "Segment": null,
+  "SubSegmentId": null,
+  "SubSegment": null,
+  "FromYear": {
+   "ID": 1,
+   "YearName": "1951",
+   "Sort": 0
+  },
+  "ToYear": null,
+  "ModelSFXes": [
+   {
+    "ID": 3972,
+    "ModelId": null,
+    "SFXName": "EX.R",
+    "FromYearId": 58,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 58,
+     "YearName": "2008",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 3973,
+    "ModelId": null,
+    "SFXName": "VX.S",
+    "FromYearId": 65,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 65,
+     "YearName": "2015",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 3974,
+    "ModelId": null,
+    "SFXName": "VX.R ",
+    "FromYearId": 40,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 40,
+     "YearName": "1990",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 3976,
+    "ModelId": null,
+    "SFXName": "GX.R ",
+    "FromYearId": 40,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 40,
+     "YearName": "1990",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 3977,
+    "ModelId": null,
+    "SFXName": "GX",
+    "FromYearId": 30,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 30,
+     "YearName": "1980",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 3978,
+    "ModelId": null,
+    "SFXName": "G",
+    "FromYearId": 30,
+    "ToYearId": 48,
+    "FromYear": {
+     "ID": 30,
+     "YearName": "1980",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 48,
+     "YearName": "1998",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5438,
+    "ModelId": null,
+    "SFXName": "GX.R.i",
+    "FromYearId": 48,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 48,
+     "YearName": "1998",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5472,
+    "ModelId": null,
+    "SFXName": "GX.R Grand Touring",
+    "FromYearId": 69,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 69,
+     "YearName": "2019",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5475,
+    "ModelId": null,
+    "SFXName": "VX 3.5L Twin-Turbo",
+    "FromYearId": 71,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5477,
+    "ModelId": null,
+    "SFXName": "G-XR Twin-Turbo",
+    "FromYearId": 72,
+    "ToYearId": 81,
+    "FromYear": {
+     "ID": 72,
+     "YearName": "2022",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 81,
+     "YearName": "2026",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5592,
+    "ModelId": null,
+    "SFXName": "GR",
+    "FromYearId": 71,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5666,
+    "ModelId": null,
+    "SFXName": "VX.R.i",
+    "FromYearId": 58,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 58,
+     "YearName": "2008",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5765,
+    "ModelId": null,
+    "SFXName": "GX.R  Full Option ",
+    "FromYearId": 74,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5766,
+    "ModelId": null,
+    "SFXName": "GX.R Limited",
+    "FromYearId": 74,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5767,
+    "ModelId": null,
+    "SFXName": "VX  Full Option ",
+    "FromYearId": 74,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5768,
+    "ModelId": null,
+    "SFXName": "VX Limited ",
+    "FromYearId": 74,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5769,
+    "ModelId": null,
+    "SFXName": "VX 3.5L Twin Turbo",
+    "FromYearId": 74,
+    "ToYearId": 81,
+    "FromYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 81,
+     "YearName": "2026",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 5770,
+    "ModelId": null,
+    "SFXName": "VX.R Twin Turbo",
+    "FromYearId": 72,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 72,
+     "YearName": "2022",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 5771,
+    "ModelId": null,
+    "SFXName": "GR Twin Turbo",
+    "FromYearId": 74,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 74,
+     "YearName": "2023",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6035,
+    "ModelId": null,
+    "SFXName": "VX.E",
+    "FromYearId": 65,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 65,
+     "YearName": "2015",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 6042,
+    "ModelId": null,
+    "SFXName": "VX.R Twin Turbo Plus",
+    "FromYearId": 71,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6049,
+    "ModelId": null,
+    "SFXName": "G-XR Twin-Turbo LIMITED",
+    "FromYearId": 71,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6242,
+    "ModelId": null,
+    "SFXName": "VX",
+    "FromYearId": 30,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 30,
+     "YearName": "1980",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6427,
+    "ModelId": null,
+    "SFXName": "VX.R Grand Touring",
+    "FromYearId": 66,
+    "ToYearId": 71,
+    "FromYear": {
+     "ID": 66,
+     "YearName": "2016",
+     "Sort": 0
+    },
+    "ToYear": {
+     "ID": 71,
+     "YearName": "2021",
+     "Sort": 0
+    },
+    "Deleted": false
+   },
+   {
+    "ID": 6512,
+    "ModelId": null,
+    "SFXName": " GR HEV",
+    "FromYearId": 80,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 80,
+     "YearName": "2025",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6518,
+    "ModelId": null,
+    "SFXName": "VX Twin Turbo Limited",
+    "FromYearId": 72,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 72,
+     "YearName": "2022",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6565,
+    "ModelId": null,
+    "SFXName": "VX HEV ",
+    "FromYearId": 80,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 80,
+     "YearName": "2025",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6566,
+    "ModelId": null,
+    "SFXName": "VX.R HEV ",
+    "FromYearId": 80,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 80,
+     "YearName": "2025",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   },
+   {
+    "ID": 6567,
+    "ModelId": null,
+    "SFXName": "GR.S HEV ",
+    "FromYearId": 80,
+    "ToYearId": null,
+    "FromYear": {
+     "ID": 80,
+     "YearName": "2025",
+     "Sort": 0
+    },
+    "ToYear": null,
+    "Deleted": false
+   }
+  ],
+  "Years": null,
+  "Brand": null,
+  "Tags": [
+   "مۆنیکا",
+   "وەنەوشە",
+   "لاندکرۆز",
+   "جكسار",
+   "لاندكروز"
+  ],
+  "Deleted": false
+ },
+ "cylinder_engine": {
+  "Cylinders": [
+   {
+    "ID": 127,
+    "CylinderNameen": "6 cylinder",
+    "CylinderNamear": "6 سلندر",
+    "CylinderNameku": "6 پستۆن",
+    "Sort": 0
+   },
+   {
+    "ID": 125,
+    "CylinderNameen": "8 cylinder",
+    "CylinderNamear": "8 سلندر",
+    "CylinderNameku": "8 پستۆن",
+    "Sort": 0
+   }
+  ],
+  "Engines": [
+   {
+    "ID": 9,
+    "EngineNameen": "4.5",
+    "EngineNamear": "4.5",
+    "EngineNameku": "4.5",
+    "Sort": 0
+   },
+   {
+    "ID": 83,
+    "EngineNameen": "4.2TD",
+    "EngineNamear": "4.2TD",
+    "EngineNameku": "4.2TD",
+    "Sort": 0
+   },
+   {
+    "ID": 66,
+    "EngineNameen": "4.7",
+    "EngineNamear": "4.7",
+    "EngineNameku": "4.7",
+    "Sort": 0
+   },
+   {
+    "ID": 69,
+    "EngineNameen": "4.0",
+    "EngineNamear": "4.0",
+    "EngineNameku": "4.0",
+    "Sort": 0
+   },
+   {
+    "ID": 88,
+    "EngineNameen": "4.6",
+    "EngineNamear": "4.6",
+    "EngineNameku": "4.6",
+    "Sort": 0
+   },
+   {
+    "ID": 25,
+    "EngineNameen": "5.7",
+    "EngineNamear": "5.7",
+    "EngineNameku": "5.7",
+    "Sort": 0
+   },
+   {
+    "ID": 50,
+    "EngineNameen": "4.5TD",
+    "EngineNamear": "4.5TD",
+    "EngineNameku": "4.5TD",
+    "Sort": 0
+   },
+   {
+    "ID": 113,
+    "EngineNameen": "3.5T",
+    "EngineNamear": "3.5T",
+    "EngineNameku": "3.5T",
+    "Sort": 0
+   },
+   {
+    "ID": 173,
+    "EngineNameen": "3.3TD",
+    "EngineNamear": "3.3TD",
+    "EngineNameku": "3.3TD",
+    "Sort": 0
+   }
+  ],
+  "specification_options_count": 50,
+  "response_keys": [
+   "Cylinders",
+   "Engines",
+   "SeatNumbers",
+   "Specifications"
+  ]
+ }
+}

@@ -1,0 +1,1404 @@
+{
+ "_meta": {
+  "ranking": "by total additions (trims + engine sizes + cylinders); ties by brand, model"
+ },
+ "top_models": [
+  {
+   "rank": 1,
+   "brand": "Mercedes-Benz",
+   "model": "S-Class",
+   "total": 26,
+   "trims": 26,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 2,
+   "brand": "Mercedes-Benz",
+   "model": "E-Class",
+   "total": 25,
+   "trims": 25,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 3,
+   "brand": "Mercedes-Benz",
+   "model": "SL-Class",
+   "total": 24,
+   "trims": 11,
+   "engine_sizes": 9,
+   "cylinders": 4
+  },
+  {
+   "rank": 4,
+   "brand": "BMW",
+   "model": "5-Series",
+   "total": 23,
+   "trims": 21,
+   "engine_sizes": 1,
+   "cylinders": 1
+  },
+  {
+   "rank": 5,
+   "brand": "Toyota",
+   "model": "RAV4",
+   "total": 22,
+   "trims": 22,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 6,
+   "brand": "BMW",
+   "model": "3-Series",
+   "total": 21,
+   "trims": 21,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 7,
+   "brand": "BMW",
+   "model": "7-Series",
+   "total": 18,
+   "trims": 18,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 8,
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "total": 18,
+   "trims": 18,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 9,
+   "brand": "Ford",
+   "model": "F-150",
+   "total": 17,
+   "trims": 7,
+   "engine_sizes": 8,
+   "cylinders": 2
+  },
+  {
+   "rank": 10,
+   "brand": "Land Rover",
+   "model": "Range Rover Vogue",
+   "total": 17,
+   "trims": 7,
+   "engine_sizes": 7,
+   "cylinders": 3
+  },
+  {
+   "rank": 11,
+   "brand": "Mercedes-Benz",
+   "model": "CLK-Class",
+   "total": 17,
+   "trims": 7,
+   "engine_sizes": 7,
+   "cylinders": 3
+  },
+  {
+   "rank": 12,
+   "brand": "Mercedes-Benz",
+   "model": "SLK-Class",
+   "total": 17,
+   "trims": 8,
+   "engine_sizes": 6,
+   "cylinders": 3
+  },
+  {
+   "rank": 13,
+   "brand": "Ford",
+   "model": "Transit",
+   "total": 15,
+   "trims": 6,
+   "engine_sizes": 6,
+   "cylinders": 3
+  },
+  {
+   "rank": 14,
+   "brand": "Land Rover",
+   "model": "Range Rover Velar",
+   "total": 15,
+   "trims": 11,
+   "engine_sizes": 2,
+   "cylinders": 2
+  },
+  {
+   "rank": 15,
+   "brand": "Lexus",
+   "model": "LX",
+   "total": 15,
+   "trims": 14,
+   "engine_sizes": 1,
+   "cylinders": 0
+  },
+  {
+   "rank": 16,
+   "brand": "Mercedes-Benz",
+   "model": "ML-Class",
+   "total": 15,
+   "trims": 6,
+   "engine_sizes": 7,
+   "cylinders": 2
+  },
+  {
+   "rank": 17,
+   "brand": "MINI",
+   "model": "Cooper",
+   "total": 14,
+   "trims": 9,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 18,
+   "brand": "BMW",
+   "model": "1-Series",
+   "total": 13,
+   "trims": 13,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 19,
+   "brand": "Dodge",
+   "model": "Ram",
+   "total": 13,
+   "trims": 10,
+   "engine_sizes": 3,
+   "cylinders": 0
+  },
+  {
+   "rank": 20,
+   "brand": "Land Rover",
+   "model": "Defender",
+   "total": 13,
+   "trims": 10,
+   "engine_sizes": 3,
+   "cylinders": 0
+  },
+  {
+   "rank": 21,
+   "brand": "Land Rover",
+   "model": "Range Rover Evoque",
+   "total": 13,
+   "trims": 13,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 22,
+   "brand": "Lexus",
+   "model": "LS",
+   "total": 13,
+   "trims": 13,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 23,
+   "brand": "Mercedes-Benz",
+   "model": "CLC-Class",
+   "total": 13,
+   "trims": 6,
+   "engine_sizes": 5,
+   "cylinders": 2
+  },
+  {
+   "rank": 24,
+   "brand": "Nissan",
+   "model": "Patrol Safari",
+   "total": 13,
+   "trims": 6,
+   "engine_sizes": 5,
+   "cylinders": 2
+  },
+  {
+   "rank": 25,
+   "brand": "Toyota",
+   "model": "CH-R",
+   "total": 13,
+   "trims": 9,
+   "engine_sizes": 3,
+   "cylinders": 1
+  },
+  {
+   "rank": 26,
+   "brand": "Kia",
+   "model": "Carens",
+   "total": 12,
+   "trims": 10,
+   "engine_sizes": 1,
+   "cylinders": 1
+  },
+  {
+   "rank": 27,
+   "brand": "Mercedes-Benz",
+   "model": "AMG GT 4-door Coupe",
+   "total": 12,
+   "trims": 6,
+   "engine_sizes": 3,
+   "cylinders": 3
+  },
+  {
+   "rank": 28,
+   "brand": "Mercedes-Benz",
+   "model": "SLC-Class",
+   "total": 12,
+   "trims": 3,
+   "engine_sizes": 6,
+   "cylinders": 3
+  },
+  {
+   "rank": 29,
+   "brand": "BMW",
+   "model": "2-Series",
+   "total": 11,
+   "trims": 11,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 30,
+   "brand": "Ford",
+   "model": "F-150 Raptor",
+   "total": 11,
+   "trims": 6,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 31,
+   "brand": "Ford",
+   "model": "F-250",
+   "total": 11,
+   "trims": 2,
+   "engine_sizes": 7,
+   "cylinders": 2
+  },
+  {
+   "rank": 32,
+   "brand": "GMC",
+   "model": "Savana",
+   "total": 11,
+   "trims": 0,
+   "engine_sizes": 9,
+   "cylinders": 2
+  },
+  {
+   "rank": 33,
+   "brand": "Mercedes-Benz",
+   "model": "CL-Class",
+   "total": 11,
+   "trims": 4,
+   "engine_sizes": 5,
+   "cylinders": 2
+  },
+  {
+   "rank": 34,
+   "brand": "Mercedes-Benz",
+   "model": "GL-Class",
+   "total": 11,
+   "trims": 5,
+   "engine_sizes": 4,
+   "cylinders": 2
+  },
+  {
+   "rank": 35,
+   "brand": "Mercedes-Benz",
+   "model": "GLC-Class Coupe",
+   "total": 11,
+   "trims": 5,
+   "engine_sizes": 3,
+   "cylinders": 3
+  },
+  {
+   "rank": 36,
+   "brand": "Nissan",
+   "model": "Urvan",
+   "total": 11,
+   "trims": 7,
+   "engine_sizes": 3,
+   "cylinders": 1
+  },
+  {
+   "rank": 37,
+   "brand": "Ssangyong",
+   "model": "Korando",
+   "total": 11,
+   "trims": 2,
+   "engine_sizes": 6,
+   "cylinders": 3
+  },
+  {
+   "rank": 38,
+   "brand": "BMW",
+   "model": "4-Series",
+   "total": 10,
+   "trims": 10,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 39,
+   "brand": "Chery",
+   "model": "Tiggo 8 Pro Max",
+   "total": 10,
+   "trims": 7,
+   "engine_sizes": 2,
+   "cylinders": 1
+  },
+  {
+   "rank": 40,
+   "brand": "Ford",
+   "model": "F-350",
+   "total": 10,
+   "trims": 1,
+   "engine_sizes": 7,
+   "cylinders": 2
+  },
+  {
+   "rank": 41,
+   "brand": "Kia",
+   "model": "Sorento",
+   "total": 10,
+   "trims": 10,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 42,
+   "brand": "Land Rover",
+   "model": "Range Rover Sport",
+   "total": 10,
+   "trims": 7,
+   "engine_sizes": 3,
+   "cylinders": 0
+  },
+  {
+   "rank": 43,
+   "brand": "Lexus",
+   "model": "GX",
+   "total": 10,
+   "trims": 10,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 44,
+   "brand": "Mercedes-Benz",
+   "model": "CLS",
+   "total": 10,
+   "trims": 9,
+   "engine_sizes": 1,
+   "cylinders": 0
+  },
+  {
+   "rank": 45,
+   "brand": "Mercedes-Benz",
+   "model": "GLE",
+   "total": 10,
+   "trims": 10,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 46,
+   "brand": "Nissan",
+   "model": "X-Terra",
+   "total": 10,
+   "trims": 5,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 47,
+   "brand": "Oldsmobile",
+   "model": "Cutlass Ciera",
+   "total": 10,
+   "trims": 0,
+   "engine_sizes": 8,
+   "cylinders": 2
+  },
+  {
+   "rank": 48,
+   "brand": "Opel",
+   "model": "Kadett",
+   "total": 10,
+   "trims": 0,
+   "engine_sizes": 9,
+   "cylinders": 1
+  },
+  {
+   "rank": 49,
+   "brand": "Opel",
+   "model": "Vectra",
+   "total": 10,
+   "trims": 0,
+   "engine_sizes": 8,
+   "cylinders": 2
+  },
+  {
+   "rank": 50,
+   "brand": "Toyota",
+   "model": "Hilux",
+   "total": 10,
+   "trims": 10,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 51,
+   "brand": "Toyota",
+   "model": "Land Cruiser 70 Pickup",
+   "total": 10,
+   "trims": 3,
+   "engine_sizes": 4,
+   "cylinders": 3
+  },
+  {
+   "rank": 52,
+   "brand": "Toyota",
+   "model": "Land Cruiser Prado",
+   "total": 10,
+   "trims": 10,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 53,
+   "brand": "Bestune",
+   "model": "B70",
+   "total": 9,
+   "trims": 4,
+   "engine_sizes": 4,
+   "cylinders": 1
+  },
+  {
+   "rank": 54,
+   "brand": "Buick",
+   "model": "Regal",
+   "total": 9,
+   "trims": 0,
+   "engine_sizes": 6,
+   "cylinders": 3
+  },
+  {
+   "rank": 55,
+   "brand": "Chevrolet",
+   "model": "Lumina",
+   "total": 9,
+   "trims": 5,
+   "engine_sizes": 3,
+   "cylinders": 1
+  },
+  {
+   "rank": 56,
+   "brand": "Hyundai",
+   "model": "Grand i10",
+   "total": 9,
+   "trims": 5,
+   "engine_sizes": 3,
+   "cylinders": 1
+  },
+  {
+   "rank": 57,
+   "brand": "Hyundai",
+   "model": "i30",
+   "total": 9,
+   "trims": 9,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 58,
+   "brand": "Jaguar",
+   "model": "XJ",
+   "total": 9,
+   "trims": 9,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 59,
+   "brand": "Mercedes-Benz",
+   "model": "S-Class Maybach",
+   "total": 9,
+   "trims": 5,
+   "engine_sizes": 2,
+   "cylinders": 2
+  },
+  {
+   "rank": 60,
+   "brand": "Nissan",
+   "model": "Titan",
+   "total": 9,
+   "trims": 9,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 61,
+   "brand": "Opel",
+   "model": "Astra",
+   "total": 9,
+   "trims": 0,
+   "engine_sizes": 7,
+   "cylinders": 2
+  },
+  {
+   "rank": 62,
+   "brand": "Opel",
+   "model": "Corsa",
+   "total": 9,
+   "trims": 0,
+   "engine_sizes": 7,
+   "cylinders": 2
+  },
+  {
+   "rank": 63,
+   "brand": "Opel",
+   "model": "Omega",
+   "total": 9,
+   "trims": 0,
+   "engine_sizes": 7,
+   "cylinders": 2
+  },
+  {
+   "rank": 64,
+   "brand": "Ssangyong",
+   "model": "Rexton",
+   "total": 9,
+   "trims": 2,
+   "engine_sizes": 4,
+   "cylinders": 3
+  },
+  {
+   "rank": 65,
+   "brand": "Toyota",
+   "model": "Corolla",
+   "total": 9,
+   "trims": 9,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 66,
+   "brand": "Toyota",
+   "model": "Land Cruiser 70",
+   "total": 9,
+   "trims": 2,
+   "engine_sizes": 4,
+   "cylinders": 3
+  },
+  {
+   "rank": 67,
+   "brand": "Volkswagen",
+   "model": "Multivan Alltrack",
+   "total": 9,
+   "trims": 7,
+   "engine_sizes": 1,
+   "cylinders": 1
+  },
+  {
+   "rank": 68,
+   "brand": "BMW",
+   "model": "6-Series",
+   "total": 8,
+   "trims": 6,
+   "engine_sizes": 1,
+   "cylinders": 1
+  },
+  {
+   "rank": 69,
+   "brand": "BMW",
+   "model": "Z4",
+   "total": 8,
+   "trims": 7,
+   "engine_sizes": 1,
+   "cylinders": 0
+  },
+  {
+   "rank": 70,
+   "brand": "Buick",
+   "model": "Electra",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 6,
+   "cylinders": 2
+  },
+  {
+   "rank": 71,
+   "brand": "Cadillac",
+   "model": "SLS",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 5,
+   "cylinders": 3
+  },
+  {
+   "rank": 72,
+   "brand": "Chevrolet",
+   "model": "Bel Air",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 6,
+   "cylinders": 2
+  },
+  {
+   "rank": 73,
+   "brand": "Fiat",
+   "model": "Tipo",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 7,
+   "cylinders": 1
+  },
+  {
+   "rank": 74,
+   "brand": "Ford",
+   "model": "Gran Torino",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 6,
+   "cylinders": 2
+  },
+  {
+   "rank": 75,
+   "brand": "HAVAL",
+   "model": "H6",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 76,
+   "brand": "Hongqi",
+   "model": "Ousado",
+   "total": 8,
+   "trims": 6,
+   "engine_sizes": 1,
+   "cylinders": 1
+  },
+  {
+   "rank": 77,
+   "brand": "Hyundai",
+   "model": "Accent",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 78,
+   "brand": "Hyundai",
+   "model": "Avante",
+   "total": 8,
+   "trims": 5,
+   "engine_sizes": 2,
+   "cylinders": 1
+  },
+  {
+   "rank": 79,
+   "brand": "Hyundai",
+   "model": "Azera",
+   "total": 8,
+   "trims": 4,
+   "engine_sizes": 3,
+   "cylinders": 1
+  },
+  {
+   "rank": 80,
+   "brand": "Hyundai",
+   "model": "Genesis",
+   "total": 8,
+   "trims": 7,
+   "engine_sizes": 1,
+   "cylinders": 0
+  },
+  {
+   "rank": 81,
+   "brand": "Hyundai",
+   "model": "Grandeur",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 6,
+   "cylinders": 2
+  },
+  {
+   "rank": 82,
+   "brand": "Infiniti",
+   "model": "FX",
+   "total": 8,
+   "trims": 2,
+   "engine_sizes": 4,
+   "cylinders": 2
+  },
+  {
+   "rank": 83,
+   "brand": "Jaguar",
+   "model": "F-Type",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 84,
+   "brand": "Jeep",
+   "model": "Grand Cherokee",
+   "total": 8,
+   "trims": 7,
+   "engine_sizes": 1,
+   "cylinders": 0
+  },
+  {
+   "rank": 85,
+   "brand": "Kia",
+   "model": "K900",
+   "total": 8,
+   "trims": 3,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 86,
+   "brand": "Kia",
+   "model": "Lotze",
+   "total": 8,
+   "trims": 5,
+   "engine_sizes": 2,
+   "cylinders": 1
+  },
+  {
+   "rank": 87,
+   "brand": "Kia",
+   "model": "Mohave",
+   "total": 8,
+   "trims": 5,
+   "engine_sizes": 2,
+   "cylinders": 1
+  },
+  {
+   "rank": 88,
+   "brand": "Kia",
+   "model": "Tasman",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 89,
+   "brand": "MG",
+   "model": "7",
+   "total": 8,
+   "trims": 2,
+   "engine_sizes": 4,
+   "cylinders": 2
+  },
+  {
+   "rank": 90,
+   "brand": "MINI",
+   "model": "Countryman",
+   "total": 8,
+   "trims": 3,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 91,
+   "brand": "Mercedes-Benz",
+   "model": "C-Class",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 92,
+   "brand": "Mercedes-Benz",
+   "model": "G-Class",
+   "total": 8,
+   "trims": 7,
+   "engine_sizes": 1,
+   "cylinders": 0
+  },
+  {
+   "rank": 93,
+   "brand": "Mercedes-Benz",
+   "model": "GLE Coupe",
+   "total": 8,
+   "trims": 3,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 94,
+   "brand": "Mercedes-Benz",
+   "model": "GLK-Class",
+   "total": 8,
+   "trims": 3,
+   "engine_sizes": 3,
+   "cylinders": 2
+  },
+  {
+   "rank": 95,
+   "brand": "Mitsubishi",
+   "model": "L200",
+   "total": 8,
+   "trims": 2,
+   "engine_sizes": 5,
+   "cylinders": 1
+  },
+  {
+   "rank": 96,
+   "brand": "Pontiac",
+   "model": "Grand Am",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 5,
+   "cylinders": 3
+  },
+  {
+   "rank": 97,
+   "brand": "Ram",
+   "model": "1500",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 98,
+   "brand": "Renault Samsung Motors",
+   "model": "SM5",
+   "total": 8,
+   "trims": 0,
+   "engine_sizes": 6,
+   "cylinders": 2
+  },
+  {
+   "rank": 99,
+   "brand": "Toyota",
+   "model": "Camry",
+   "total": 8,
+   "trims": 8,
+   "engine_sizes": 0,
+   "cylinders": 0
+  },
+  {
+   "rank": 100,
+   "brand": "BAIC",
+   "model": "X7",
+   "total": 7,
+   "trims": 5,
+   "engine_sizes": 1,
+   "cylinders": 1
+  }
+ ],
+ "priority_models": [
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 8,
+   "additions": {
+    "trims": 18,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 18
+   },
+   "held_trims": 9,
+   "note": null
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser Prado",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 52,
+   "additions": {
+    "trims": 10,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 10
+   },
+   "held_trims": 2,
+   "note": null
+  },
+  {
+   "brand": "Toyota",
+   "model": "Camry",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 99,
+   "additions": {
+    "trims": 8,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 8
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Toyota",
+   "model": "Corolla",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 65,
+   "additions": {
+    "trims": 9,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 9
+   },
+   "held_trims": 1,
+   "note": null
+  },
+  {
+   "brand": "Toyota",
+   "model": "Hilux",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 50,
+   "additions": {
+    "trims": 10,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 10
+   },
+   "held_trims": 1,
+   "note": null
+  },
+  {
+   "brand": "Toyota",
+   "model": "RAV4",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 5,
+   "additions": {
+    "trims": 22,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 22
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Lexus",
+   "model": "LX",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 15,
+   "additions": {
+    "trims": 14,
+    "engine_sizes": 1,
+    "cylinders": 0,
+    "total": 15
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Lexus",
+   "model": "GX",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 43,
+   "additions": {
+    "trims": 10,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 10
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Lexus",
+   "model": "RX",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 127,
+   "additions": {
+    "trims": 7,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 7
+   },
+   "held_trims": 1,
+   "note": null
+  },
+  {
+   "brand": "Lexus",
+   "model": "ES",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 689,
+   "additions": {
+    "trims": 2,
+    "engine_sizes": 1,
+    "cylinders": 0,
+    "total": 3
+   },
+   "held_trims": 1,
+   "note": null
+  },
+  {
+   "brand": "Ford",
+   "model": "Everest",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 114,
+   "additions": {
+    "trims": 3,
+    "engine_sizes": 4,
+    "cylinders": 0,
+    "total": 7
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Ford",
+   "model": "Explorer",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 608,
+   "additions": {
+    "trims": 2,
+    "engine_sizes": 1,
+    "cylinders": 0,
+    "total": 3
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Ford",
+   "model": "Expedition",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 250,
+   "additions": {
+    "trims": 5,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 5
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Ford",
+   "model": "F-150",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 9,
+   "additions": {
+    "trims": 7,
+    "engine_sizes": 8,
+    "cylinders": 2,
+    "total": 17
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Tahoe",
+   "status": "matched_but_no_additions",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": false,
+   "rank": null,
+   "additions": null,
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Suburban",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 1096,
+   "additions": {
+    "trims": 1,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 1
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Silverado",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 1094,
+   "additions": {
+    "trims": 1,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 1
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Camaro",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 1087,
+   "additions": {
+    "trims": 1,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 1
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Nissan",
+   "model": "Patrol",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 985,
+   "additions": {
+    "trims": 2,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 2
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Nissan",
+   "model": "Sunny",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 987,
+   "additions": {
+    "trims": 2,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 2
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Nissan",
+   "model": "Altima",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 713,
+   "additions": {
+    "trims": 3,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 3
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Nissan",
+   "model": "X-Trail",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 209,
+   "additions": {
+    "trims": 6,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 6
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "BMW",
+   "model": "X1",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 1072,
+   "additions": {
+    "trims": 1,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 1
+   },
+   "held_trims": 3,
+   "note": null
+  },
+  {
+   "brand": "BMW",
+   "model": "X3",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 227,
+   "additions": {
+    "trims": 5,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 5
+   },
+   "held_trims": 4,
+   "note": null
+  },
+  {
+   "brand": "BMW",
+   "model": "X5",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 152,
+   "additions": {
+    "trims": 6,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 6
+   },
+   "held_trims": 3,
+   "note": null
+  },
+  {
+   "brand": "BMW",
+   "model": "3-Series",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 6,
+   "additions": {
+    "trims": 21,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 21
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "BMW",
+   "model": "5-Series",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 4,
+   "additions": {
+    "trims": 21,
+    "engine_sizes": 1,
+    "cylinders": 1,
+    "total": 23
+   },
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf",
+   "status": "matched_but_no_additions",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": false,
+   "rank": null,
+   "additions": null,
+   "held_trims": 1,
+   "note": null
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf R",
+   "status": "matched_but_no_additions",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": false,
+   "rank": null,
+   "additions": null,
+   "held_trims": 0,
+   "note": null
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Tiguan",
+   "status": "included_in_overlay",
+   "exact_name_in_carnet": true,
+   "matched_to_iq": true,
+   "in_overlay": true,
+   "rank": 1049,
+   "additions": {
+    "trims": 2,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 2
+   },
+   "held_trims": 0,
+   "note": null
+  }
+ ]
+}
