@@ -1,0 +1,625 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Yaris iA",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/yaris_ia.json",
+    "researched_at": "2026-10-04",
+    "record_count": 14,
+    "source_count": 3,
+    "records_by_source_tier": {
+      "1": 9,
+      "4": 5
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 9,
+      "PDF_VERIFIED": 5,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 2,
+      "PDF_VERIFIED": 1,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 9
+  },
+  "research_coverage": [
+    "US only: MY2017 launch release + MY2017 e-brochure (third-party mirror, Tier 4) and the MY2019 release in which Toyota states 'The Yaris sedan, previously the Yaris iA' (identity is carried in the quote of every 2019 record)",
+    "IDENTITY NOTE: the 2019-2020 'Yaris sedan' is included here only because Toyota's own release names it as the former Yaris iA; Yaris hatchback / Yaris Cross / GR Yaris are different models and are not used",
+    "NOT researched: MY2016 (Scion iA), MY2018 individually, MY2020 Yaris sedan, non-US markets; fuel type is not stated by the fetched sources, so fuel is left null"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 2,
+    "conflicts_block_promotion_until_reviewed": true,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [
+      "L",
+      "LE",
+      "XLE"
+    ],
+    "engine_sizes": [
+      "1.5L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [
+      6
+    ],
+    "drivetrains": [],
+    "body_types": [
+      "Sedan"
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "union": {
+    "trims": [
+      "L",
+      "LE",
+      "XLE"
+    ],
+    "engine_sizes": [
+      "1.5L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [
+      6
+    ],
+    "drivetrains": [],
+    "body_types": [
+      "Sedan"
+    ],
+    "seats": [],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [
+      "Automatic",
+      "Manual"
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [
+      "FWD"
+    ],
+    "body_types": [],
+    "seats": [
+      5
+    ],
+    "doors": []
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "fuel_types",
+    "transmission_variants",
+    "doors"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "1.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 106.0,
+          "record_id": "YIA-001",
+          "trim": null
+        },
+        {
+          "value": 106.0,
+          "record_id": "YIA-004",
+          "trim": null
+        },
+        {
+          "value": 106.0,
+          "record_id": "YIA-012",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 140.0,
+          "record_id": "YIA-004",
+          "trim": null
+        },
+        {
+          "value": 140.0,
+          "record_id": "YIA-012",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "YIA-001",
+        "YIA-004",
+        "YIA-012"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-009"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "YIA-009"
+        ],
+        "source_ids": [
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2019,
+          2019
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "LE",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-010"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "YIA-010"
+        ],
+        "source_ids": [
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2019,
+          2019
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "XLE",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-011"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "YIA-011"
+        ],
+        "source_ids": [
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2019,
+          2019
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "1.5L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-001",
+          "YIA-004",
+          "YIA-012"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "YIA-001",
+          "YIA-004",
+          "YIA-012"
+        ],
+        "source_ids": [
+          "YIA-S1",
+          "YIA-S2",
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2019
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-001",
+          "YIA-004",
+          "YIA-012"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "YIA-001",
+          "YIA-004",
+          "YIA-012"
+        ],
+        "source_ids": [
+          "YIA-S1",
+          "YIA-S2",
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2019
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-003",
+          "YIA-006",
+          "YIA-013"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "YIA-003",
+          "YIA-006",
+          "YIA-013"
+        ],
+        "source_ids": [
+          "YIA-S1",
+          "YIA-S2",
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2019
+        ],
+        "in_conflict": true
+      },
+      {
+        "value": "Manual",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-002",
+          "YIA-005",
+          "YIA-014"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "YIA-002",
+          "YIA-005",
+          "YIA-014"
+        ],
+        "source_ids": [
+          "YIA-S1",
+          "YIA-S2",
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2019
+        ],
+        "in_conflict": true
+      }
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-002",
+          "YIA-003",
+          "YIA-005",
+          "YIA-006",
+          "YIA-013"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "YIA-002",
+          "YIA-003",
+          "YIA-005",
+          "YIA-006",
+          "YIA-013"
+        ],
+        "source_ids": [
+          "YIA-S1",
+          "YIA-S2",
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2019
+        ],
+        "in_conflict": false
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "FWD",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-007"
+        ],
+        "best_tier": 4,
+        "max_confidence": 0.5,
+        "support_count": 1,
+        "record_ids": [
+          "YIA-007"
+        ],
+        "source_ids": [
+          "YIA-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2017
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "Sedan",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-001",
+          "YIA-009",
+          "YIA-010",
+          "YIA-011"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 4,
+        "record_ids": [
+          "YIA-001",
+          "YIA-009",
+          "YIA-010",
+          "YIA-011"
+        ],
+        "source_ids": [
+          "YIA-S1",
+          "YIA-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2019
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "YIA-008"
+        ],
+        "best_tier": 4,
+        "max_confidence": 0.5,
+        "support_count": 1,
+        "record_ids": [
+          "YIA-008"
+        ],
+        "source_ids": [
+          "YIA-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2017,
+          2017
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": []
+  },
+  "conflicts": [
+    {
+      "conflict_id": "CF-toyota-yaris_ia-001",
+      "field": "transmission_family",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "YIA-002",
+          "value": "Manual",
+          "source_id": "YIA-S1",
+          "source_tier": 1,
+          "market": "us",
+          "trim": null,
+          "year_from": 2017,
+          "year_to": 2017
+        },
+        {
+          "record_id": "YIA-003",
+          "value": "Automatic",
+          "source_id": "YIA-S1",
+          "source_tier": 1,
+          "market": "us",
+          "trim": null,
+          "year_from": 2017,
+          "year_to": 2017
+        },
+        {
+          "record_id": "YIA-005",
+          "value": "Manual",
+          "source_id": "YIA-S2",
+          "source_tier": 4,
+          "market": "us",
+          "trim": null,
+          "year_from": 2017,
+          "year_to": 2017
+        },
+        {
+          "record_id": "YIA-006",
+          "value": "Automatic",
+          "source_id": "YIA-S2",
+          "source_tier": 4,
+          "market": "us",
+          "trim": null,
+          "year_from": 2017,
+          "year_to": 2017
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    },
+    {
+      "conflict_id": "CF-toyota-yaris_ia-002",
+      "field": "transmission_family",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "YIA-013",
+          "value": "Automatic",
+          "source_id": "YIA-S3",
+          "source_tier": 1,
+          "market": "us",
+          "trim": null,
+          "year_from": 2019,
+          "year_to": 2019
+        },
+        {
+          "record_id": "YIA-014",
+          "value": "Manual",
+          "source_id": "YIA-S3",
+          "source_tier": 1,
+          "market": "us",
+          "trim": null,
+          "year_from": 2019,
+          "year_to": 2019
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    }
+  ]
+}

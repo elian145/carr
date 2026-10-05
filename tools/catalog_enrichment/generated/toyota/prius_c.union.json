@@ -1,0 +1,687 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Prius C",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/prius_c.json",
+    "researched_at": "2026-10-04",
+    "record_count": 21,
+    "source_count": 5,
+    "records_by_source_tier": {
+      "1": 16,
+      "4": 5
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 16,
+      "PDF_VERIFIED": 5,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 4,
+      "PDF_VERIFIED": 1,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 16
+  },
+  "research_coverage": [
+    "US: MY2012 launch release + pricing release (grades One / Two / Three / Four) and MY2018 refresh release; Canada: MY2018 release (Prius c / Technology). 2018 US brochure (hosted on a third-party mirror) as Tier 4 corroboration only",
+    "NOT researched: Japan-market Aqua (a different catalog name, deliberately excluded), MY2013-MY2017 and MY2019 individually, other markets"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 0,
+    "conflicts_block_promotion_until_reviewed": false,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [
+      "Four",
+      "One",
+      "Technology",
+      "Three",
+      "Two"
+    ],
+    "engine_sizes": [
+      "1.5L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [
+      "Hybrid"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "CVT"
+    ],
+    "transmission_gears": [],
+    "drivetrains": [
+      "FWD"
+    ],
+    "body_types": [
+      "Hatchback"
+    ],
+    "seats": [],
+    "doors": [
+      5
+    ]
+  },
+  "union": {
+    "trims": [
+      "Four",
+      "One",
+      "Technology",
+      "Three",
+      "Two"
+    ],
+    "engine_sizes": [
+      "1.5L"
+    ],
+    "cylinders": [
+      4
+    ],
+    "fuel_types": [
+      "Hybrid"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [
+      "CVT"
+    ],
+    "transmission_gears": [],
+    "drivetrains": [
+      "FWD"
+    ],
+    "body_types": [
+      "Hatchback"
+    ],
+    "seats": [],
+    "doors": [
+      5
+    ]
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [
+      5
+    ],
+    "doors": []
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "transmission_gears"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "1.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Hybrid"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 73.0,
+          "record_id": "PRC-001",
+          "trim": null
+        },
+        {
+          "value": 73.0,
+          "record_id": "PRC-009",
+          "trim": null
+        },
+        {
+          "value": 73.0,
+          "record_id": "PRC-017",
+          "trim": null
+        },
+        {
+          "value": 99.0,
+          "record_id": "PRC-013",
+          "trim": null
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 111.0,
+          "record_id": "PRC-001",
+          "trim": null
+        },
+        {
+          "value": 111.0,
+          "record_id": "PRC-009",
+          "trim": null
+        },
+        {
+          "value": 111.0,
+          "record_id": "PRC-017",
+          "trim": null
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "PRC-001",
+        "PRC-003",
+        "PRC-009",
+        "PRC-013",
+        "PRC-017"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "Four",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-008",
+          "PRC-012"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "PRC-008",
+          "PRC-012"
+        ],
+        "source_ids": [
+          "PRC-S2",
+          "PRC-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "One",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-005",
+          "PRC-011"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "PRC-005",
+          "PRC-011"
+        ],
+        "source_ids": [
+          "PRC-S2",
+          "PRC-S3"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Technology",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-016"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "PRC-016"
+        ],
+        "source_ids": [
+          "PRC-S4"
+        ],
+        "markets": [
+          "canada"
+        ],
+        "years": [
+          2018,
+          2018
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Three",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "PRC-007"
+        ],
+        "source_ids": [
+          "PRC-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2012,
+          2012
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Two",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-006"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "PRC-006"
+        ],
+        "source_ids": [
+          "PRC-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2012,
+          2012
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "1.5L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-001",
+          "PRC-003",
+          "PRC-009",
+          "PRC-013",
+          "PRC-017"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 5,
+        "record_ids": [
+          "PRC-001",
+          "PRC-003",
+          "PRC-009",
+          "PRC-013",
+          "PRC-017"
+        ],
+        "source_ids": [
+          "PRC-S1",
+          "PRC-S2",
+          "PRC-S3",
+          "PRC-S4",
+          "PRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-001",
+          "PRC-009",
+          "PRC-013"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "PRC-001",
+          "PRC-009",
+          "PRC-013"
+        ],
+        "source_ids": [
+          "PRC-S1",
+          "PRC-S3",
+          "PRC-S4"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Hybrid",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-001",
+          "PRC-002",
+          "PRC-003",
+          "PRC-009",
+          "PRC-013",
+          "PRC-017"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 6,
+        "record_ids": [
+          "PRC-001",
+          "PRC-002",
+          "PRC-003",
+          "PRC-009",
+          "PRC-013",
+          "PRC-017"
+        ],
+        "source_ids": [
+          "PRC-S1",
+          "PRC-S2",
+          "PRC-S3",
+          "PRC-S4",
+          "PRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-004",
+          "PRC-010",
+          "PRC-015",
+          "PRC-018"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 4,
+        "record_ids": [
+          "PRC-004",
+          "PRC-010",
+          "PRC-015",
+          "PRC-018"
+        ],
+        "source_ids": [
+          "PRC-S1",
+          "PRC-S3",
+          "PRC-S4",
+          "PRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [
+      {
+        "value": "CVT",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-004",
+          "PRC-010",
+          "PRC-015",
+          "PRC-018"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 4,
+        "record_ids": [
+          "PRC-004",
+          "PRC-010",
+          "PRC-015",
+          "PRC-018"
+        ],
+        "source_ids": [
+          "PRC-S1",
+          "PRC-S3",
+          "PRC-S4",
+          "PRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_gears": [],
+    "drivetrains": [
+      {
+        "value": "FWD",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-014",
+          "PRC-019"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "PRC-014",
+          "PRC-019"
+        ],
+        "source_ids": [
+          "PRC-S4",
+          "PRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2018,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "Hatchback",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-006",
+          "PRC-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "PRC-006",
+          "PRC-007"
+        ],
+        "source_ids": [
+          "PRC-S2"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2012,
+          2012
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-020"
+        ],
+        "best_tier": 4,
+        "max_confidence": 0.5,
+        "support_count": 1,
+        "record_ids": [
+          "PRC-020"
+        ],
+        "source_ids": [
+          "PRC-S5"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2018,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": [
+      {
+        "value": 5,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "PRC-006",
+          "PRC-007",
+          "PRC-021"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "PRC-006",
+          "PRC-007",
+          "PRC-021"
+        ],
+        "source_ids": [
+          "PRC-S2",
+          "PRC-S5"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2012,
+          2018
+        ],
+        "in_conflict": false
+      }
+    ]
+  },
+  "conflicts": []
+}

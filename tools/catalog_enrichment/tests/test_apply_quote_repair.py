@@ -383,16 +383,21 @@ class RealTree(unittest.TestCase):
             errs, notes = L.check_manifest(L.read_json(HERE / "evidence" / f"{s}.json"), manifest[s])
             self.assertEqual((errs, notes), ([], []), s)
 
+    # The frozen Batch 1 set. Later batches (Batch 2 ...) add further files next to these under evidence/toyota/, so this test
+    # pins the Batch 1 files by NAME through their manifest instead of counting everything in the directory.
+    TOYOTA_BATCH_1 = ["bz3", "bz3x", "bz4x", "frontlander", "grand_highlander", "prius_prime", "urban_cruiser", "veloz", "wigo", "yaris_cross"]
+
     def test_toyota_batch_1_is_unchanged(self):
         manifest = L.read_json(HERE / "reports" / "toyota_evidence_manifest.json")
-        files = sorted((HERE / "evidence" / "toyota").glob("*.json"))
-        self.assertEqual(len(files), 10)
+        self.assertEqual(sorted(manifest), self.TOYOTA_BATCH_1)  # the manifest still freezes exactly Batch 1
+        files = [HERE / "evidence" / "toyota" / f"{stem}.json" for stem in self.TOYOTA_BATCH_1]
         for f in files:
+            self.assertTrue(f.is_file(), f.name)
             errs, notes = L.check_manifest(L.read_json(f), manifest.get(f.stem))
             self.assertEqual((errs, notes), ([], []), f.name)
         v = n = 0
-        for f in sorted((HERE / "generated" / "toyota").glob("*.union.json")):
-            u = L.read_json(f)
+        for stem in self.TOYOTA_BATCH_1:
+            u = L.read_json(HERE / "generated" / "toyota" / f"{stem}.union.json")
             v += sum(len(x) for x in u["verified"].values())
             n += sum(len(x) for x in u["needs_source_retrieval"].values())
         self.assertEqual((v, n), (54, 36))

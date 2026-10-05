@@ -3,3 +3,18 @@
 evidence/**/_source_text/*.txt -text -whitespace
 # Candidate snapshots used by quote_repair.py (sha256 is compared with the re-validation fetch): same rule.
 reports/quote_repair_snapshots/**/*.txt -text -whitespace
+
+# ---- Line-ending portability -------------------------------------------------------------------------------------------
+# `-text` above means Git NEVER converts these files, on any platform or core.autocrlf setting: the committed blob bytes are
+# the bytes that were hashed. The committed blob of every snapshot must therefore hash to its recorded integrity.content_sha256
+# (tests/test_snapshot_portability.py checks the index blobs, the working tree and the attribute coverage).
+#
+# The generated / authored JSON files are different: they are written by enrichment_lib.write_json (CRLF, see JSON_NEWLINE),
+# compared byte-for-byte with regenerated output, and quote_repair.py records sha256(evidence/*.json bytes) in
+# reports/pilot_quote_repair_proposals.json. Pin their working-tree form to CRLF on every platform and every core.autocrlf
+# setting (the blobs stay LF; only checkout/add conversions are fixed) so those bytes are identical on Windows
+# (autocrlf true/false), Linux, macOS, CI clones and `git archive`.
+evidence/**/*.json text eol=crlf
+generated/**/*.json text eol=crlf
+reports/**/*.json text eol=crlf
+proposals/**/*.json text eol=crlf

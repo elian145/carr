@@ -1549,10 +1549,21 @@ def assert_not_production(path: Path):
             raise SystemExit(f"refusing to write under {forbidden} (pilot is tooling only)")
 
 
+# Generated/authored JSON is written with an explicit, platform-independent line ending (never the OS default), so the bytes -
+# which are compared byte-for-byte with regenerated output and hashed by quote_repair.py - are the same on Windows, Linux and
+# macOS. tools/catalog_enrichment/.gitattributes pins the same form (`text eol=crlf`) for checkouts on every platform.
+JSON_NEWLINE = "\r\n"
+
+
+def json_bytes(data) -> bytes:
+    """Canonical on-disk form of every JSON file written by this tooling."""
+    return (json.dumps(data, indent=2, ensure_ascii=False) + "\n").replace("\n", JSON_NEWLINE).encode("utf-8")
+
+
 def write_json(path: Path, data):
     assert_not_production(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_bytes(json_bytes(data))
 
 
 def read_json(path: Path):

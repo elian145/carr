@@ -1,0 +1,971 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "GR Corolla",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/gr_corolla.json",
+    "researched_at": "2026-10-04",
+    "record_count": 26,
+    "source_count": 9,
+    "records_by_source_tier": {
+      "1": 16,
+      "2": 10
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 15,
+      "PDF_VERIFIED": 10,
+      "SNIPPET_ONLY": 1,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 6,
+      "PDF_VERIFIED": 2,
+      "SNIPPET_ONLY": 1,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 25
+  },
+  "research_coverage": [
+    "US: 2026 newsroom release + 2026 e-brochure (grades GR Corolla / Premium Plus, G16E-GTS 1.6L turbo 3-cylinder, GR-FOUR AWD, 6-speed iMT and 8-speed DAT); 2023 launch release (Core / Circuit Edition / MORIZO Edition); 2024 Circuit Edition release",
+    "Canada: 2026 Toyota Canada features page (grades Core / Premium MT / Premium AT). Australia: January 2026 Toyota Australia spec table (GTS) + AU range page as a search snippet only (page blocked, HTTP 403)",
+    "NOT researched: Japan-market GR Corolla (RZ / Morizo RR), GRMN Corolla limited edition, other markets, years before MY2023; fuel type is only stated by the Australian range snippet (nothing else in the fetched sources states petrol)"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 4,
+    "conflicts_block_promotion_until_reviewed": true,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [
+      "Circuit Edition",
+      "Core",
+      "GTS",
+      "MORIZO Edition",
+      "Premium",
+      "Premium Plus"
+    ],
+    "engine_sizes": [
+      "1.6L"
+    ],
+    "cylinders": [
+      3
+    ],
+    "fuel_types": [],
+    "transmissions": [
+      "Automatic",
+      "Manual"
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      8
+    ],
+    "drivetrains": [
+      "AWD"
+    ],
+    "body_types": [
+      "Hatchback"
+    ],
+    "seats": [
+      5
+    ],
+    "doors": []
+  },
+  "union": {
+    "trims": [
+      "Circuit Edition",
+      "Core",
+      "GTS",
+      "MORIZO Edition",
+      "Premium",
+      "Premium Plus"
+    ],
+    "engine_sizes": [
+      "1.6L"
+    ],
+    "cylinders": [
+      3
+    ],
+    "fuel_types": [],
+    "transmissions": [
+      "Automatic",
+      "Manual"
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      8
+    ],
+    "drivetrains": [
+      "AWD"
+    ],
+    "body_types": [
+      "Hatchback"
+    ],
+    "seats": [
+      5
+    ],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [
+      6
+    ],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [
+      "Petrol"
+    ],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": [
+      5
+    ]
+  },
+  "empty_dimensions": [
+    "transmission_variants"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "1.6L",
+      "displacement_cc": [
+        1618
+      ],
+      "cylinders": [
+        3
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 296.4,
+          "record_id": "GRC-014",
+          "trim": null
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-001",
+          "trim": null
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-008",
+          "trim": null
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-021",
+          "trim": "Core"
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-022",
+          "trim": "Circuit Edition"
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-023",
+          "trim": "MORIZO Edition"
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-025",
+          "trim": "MORIZO Edition"
+        },
+        {
+          "value": 300.0,
+          "record_id": "GRC-026",
+          "trim": "Circuit Edition"
+        }
+      ],
+      "torque_nm": [
+        {
+          "value": 370.0,
+          "record_id": "GRC-021",
+          "trim": "Core"
+        },
+        {
+          "value": 370.0,
+          "record_id": "GRC-022",
+          "trim": "Circuit Edition"
+        },
+        {
+          "value": 370.0,
+          "record_id": "GRC-026",
+          "trim": "Circuit Edition"
+        },
+        {
+          "value": 400.0,
+          "record_id": "GRC-001",
+          "trim": null
+        },
+        {
+          "value": 400.0,
+          "record_id": "GRC-008",
+          "trim": null
+        },
+        {
+          "value": 400.0,
+          "record_id": "GRC-014",
+          "trim": null
+        },
+        {
+          "value": 400.0,
+          "record_id": "GRC-023",
+          "trim": "MORIZO Edition"
+        },
+        {
+          "value": 400.0,
+          "record_id": "GRC-025",
+          "trim": "MORIZO Edition"
+        }
+      ],
+      "best_tier": 1,
+      "record_ids": [
+        "GRC-001",
+        "GRC-003",
+        "GRC-008",
+        "GRC-014",
+        "GRC-020",
+        "GRC-021",
+        "GRC-022",
+        "GRC-023",
+        "GRC-025",
+        "GRC-026"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "Circuit Edition",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-022",
+          "GRC-026"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-022",
+          "GRC-026"
+        ],
+        "source_ids": [
+          "GRC-S6",
+          "GRC-S8"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2023,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Core",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-009",
+          "GRC-021"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-009",
+          "GRC-021"
+        ],
+        "source_ids": [
+          "GRC-S4",
+          "GRC-S6"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2023,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "GTS",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "GRC-018"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.9,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-018",
+          "GRC-020"
+        ],
+        "source_ids": [
+          "GRC-S5",
+          "GRC-S9"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "MORIZO Edition",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-023",
+          "GRC-025"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-023",
+          "GRC-025"
+        ],
+        "source_ids": [
+          "GRC-S6",
+          "GRC-S7"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2023,
+          2023
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Premium",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-010",
+          "GRC-011"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-010",
+          "GRC-011"
+        ],
+        "source_ids": [
+          "GRC-S4"
+        ],
+        "markets": [
+          "canada"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Premium Plus",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-002"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "GRC-002"
+        ],
+        "source_ids": [
+          "GRC-S1"
+        ],
+        "markets": [
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "1.6L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "GRC-001",
+          "GRC-003",
+          "GRC-008",
+          "GRC-014",
+          "GRC-021",
+          "GRC-022",
+          "GRC-023",
+          "GRC-025",
+          "GRC-026"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 10,
+        "record_ids": [
+          "GRC-001",
+          "GRC-003",
+          "GRC-008",
+          "GRC-014",
+          "GRC-020",
+          "GRC-021",
+          "GRC-022",
+          "GRC-023",
+          "GRC-025",
+          "GRC-026"
+        ],
+        "source_ids": [
+          "GRC-S1",
+          "GRC-S2",
+          "GRC-S4",
+          "GRC-S5",
+          "GRC-S6",
+          "GRC-S7",
+          "GRC-S8",
+          "GRC-S9"
+        ],
+        "markets": [
+          "canada",
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2023,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 3,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED",
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [
+          "GRC-001",
+          "GRC-003",
+          "GRC-008",
+          "GRC-014",
+          "GRC-026"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 6,
+        "record_ids": [
+          "GRC-001",
+          "GRC-003",
+          "GRC-008",
+          "GRC-014",
+          "GRC-020",
+          "GRC-026"
+        ],
+        "source_ids": [
+          "GRC-S1",
+          "GRC-S2",
+          "GRC-S4",
+          "GRC-S5",
+          "GRC-S8",
+          "GRC-S9"
+        ],
+        "markets": [
+          "canada",
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2024,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Petrol",
+        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 1,
+        "max_confidence": 0.75,
+        "support_count": 1,
+        "record_ids": [
+          "GRC-020"
+        ],
+        "source_ids": [
+          "GRC-S9"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": null,
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-005",
+          "GRC-012",
+          "GRC-017"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "GRC-005",
+          "GRC-012",
+          "GRC-017"
+        ],
+        "source_ids": [
+          "GRC-S2",
+          "GRC-S4",
+          "GRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": true
+      },
+      {
+        "value": "Manual",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-004",
+          "GRC-016",
+          "GRC-024",
+          "GRC-026"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 4,
+        "record_ids": [
+          "GRC-004",
+          "GRC-016",
+          "GRC-024",
+          "GRC-026"
+        ],
+        "source_ids": [
+          "GRC-S2",
+          "GRC-S5",
+          "GRC-S6",
+          "GRC-S8"
+        ],
+        "markets": [
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2023,
+          2026
+        ],
+        "in_conflict": true
+      }
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      {
+        "value": 6,
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-004",
+          "GRC-016"
+        ],
+        "best_tier": 2,
+        "max_confidence": 0.9,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-004",
+          "GRC-016"
+        ],
+        "source_ids": [
+          "GRC-S2",
+          "GRC-S5"
+        ],
+        "markets": [
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": true
+      },
+      {
+        "value": 8,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-005",
+          "GRC-012",
+          "GRC-017"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "GRC-005",
+          "GRC-012",
+          "GRC-017"
+        ],
+        "source_ids": [
+          "GRC-S2",
+          "GRC-S4",
+          "GRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": true
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "AWD",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-001",
+          "GRC-006",
+          "GRC-013",
+          "GRC-015"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 4,
+        "record_ids": [
+          "GRC-001",
+          "GRC-006",
+          "GRC-013",
+          "GRC-015"
+        ],
+        "source_ids": [
+          "GRC-S1",
+          "GRC-S2",
+          "GRC-S4",
+          "GRC-S5"
+        ],
+        "markets": [
+          "canada",
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "body_types": [
+      {
+        "value": "Hatchback",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-007",
+          "GRC-012"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-007",
+          "GRC-012"
+        ],
+        "source_ids": [
+          "GRC-S3",
+          "GRC-S4"
+        ],
+        "markets": [
+          "canada",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 5,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GRC-007",
+          "GRC-019"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GRC-007",
+          "GRC-019"
+        ],
+        "source_ids": [
+          "GRC-S3",
+          "GRC-S5"
+        ],
+        "markets": [
+          "other:au",
+          "us"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": [
+      {
+        "value": 5,
+        "status": "NEEDS_SOURCE_RETRIEVAL",
+        "integrity_states": [
+          "SNIPPET_ONLY"
+        ],
+        "validated_record_ids": [],
+        "best_tier": 1,
+        "max_confidence": 0.75,
+        "support_count": 1,
+        "record_ids": [
+          "GRC-020"
+        ],
+        "source_ids": [
+          "GRC-S9"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": null,
+        "in_conflict": false
+      }
+    ]
+  },
+  "conflicts": [
+    {
+      "conflict_id": "CF-toyota-gr_corolla-001",
+      "field": "transmission_family",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "GRC-004",
+          "value": "Manual",
+          "source_id": "GRC-S2",
+          "source_tier": 2,
+          "market": "us",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "GRC-005",
+          "value": "Automatic",
+          "source_id": "GRC-S2",
+          "source_tier": 2,
+          "market": "us",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    },
+    {
+      "conflict_id": "CF-toyota-gr_corolla-002",
+      "field": "transmission_family",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "GRC-016",
+          "value": "Manual",
+          "source_id": "GRC-S5",
+          "source_tier": 2,
+          "market": "other:au",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "GRC-017",
+          "value": "Automatic",
+          "source_id": "GRC-S5",
+          "source_tier": 2,
+          "market": "other:au",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    },
+    {
+      "conflict_id": "CF-toyota-gr_corolla-003",
+      "field": "transmission_gears",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "GRC-004",
+          "value": 6,
+          "source_id": "GRC-S2",
+          "source_tier": 2,
+          "market": "us",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "GRC-005",
+          "value": 8,
+          "source_id": "GRC-S2",
+          "source_tier": 2,
+          "market": "us",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    },
+    {
+      "conflict_id": "CF-toyota-gr_corolla-004",
+      "field": "transmission_gears",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "GRC-016",
+          "value": 6,
+          "source_id": "GRC-S5",
+          "source_tier": 2,
+          "market": "other:au",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        },
+        {
+          "record_id": "GRC-017",
+          "value": 8,
+          "source_id": "GRC-S5",
+          "source_tier": 2,
+          "market": "other:au",
+          "trim": null,
+          "year_from": 2026,
+          "year_to": null
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    }
+  ]
+}

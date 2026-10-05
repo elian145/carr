@@ -1,0 +1,31 @@
+75 Years of TOYOTA | TOYOTA MOTOR CORPORATION GLOBAL WEBSITE | Vehicle Lineage | In-depth Vehicle Information, Specification
+Japan
+Toyota
+60005969
+1st
+Granvia
+Released date : 1995/ 8/22
+1BOX
+1BOX
+1st
+| | Grade | 2.7_16 valve_EFI_2WD_Q | 3.0 Diesel Turbo_2WD_Q | 3.0 Diesel Turbo_4WD_Q |
+| Model type & weight | Model type | E-RCH11W-GFSQK | KD-KCH10W-GFSQT | KD-KCH16W-GFSQT |
+| Curb mass(kg) | 1820 | 1940 | 2060 |
+| Dimensions | Length(mm) | 4715 | 4715 | 4715 |
+| Width(mm) | 1800 | 1800 | 1800 |
+| Height(mm) | 1965 | 1965 | 1995 |
+| Wheelbase(mm) | 2985 | 2985 | 2985 |
+| Engine | Engine code | 3RZ-FE | 1KZ-TE | 1KZ-TE |
+| Engine type | Water-cooled, in-line 4-cylinder, DOHC | Water-cooled, in-line 4-cylinder, OHC, turbo-charged | Water-cooled, in-line 4-cylinder, OHC, turbo-charged |
+| Displacement(cm 3 ) | 2963 | 2982 | 2982 |
+| Max. output kW(PS)/r.p.m. | -/145/4800 | -/130/3600 | -/130/3600 |
+| * | The specifications are those of representative model grades. |
+| * | Max. output represents a net rating. In the above table, digits separated by slashes ( / / ) stand for kW, PS, and r.p.m., respectively. |
+| * | The model numbers of these vehicles are RCH11W(2700), KCH10W(3000), KCH16W(3000). |
+Introduced in August 1995, the Granvia was a minivan with three rows of seats accommodating seven or eight passengers. While its body length and width were the same as those of the first-generation Estima at 4,715 mm and 1,800 mm, respectively, the height was extended to nearly 2 meters.
+The engine that was mounted lengthwise in the front was either an inline 4-cylinder 2.7-liter DOHC gasoline engine producing 145 PS, or a 3.0-liter SOHC turbo diesel unit producing 130 PS. The Granvia was available in a rear-wheel-drive or full-time 4-wheel-drive layout. In April 1997, a derivative model that reduced the length and width of the Granvia to fit the "5 number" vehicle category was introduced as the Hiace Regius (renamed Regius Wagon in August 1999). A 3.4-liter 180 PS V6 gasoline engine was also made available in August 1997, which became the only engine offered for the Granvia in 1998. In August 1999, the Grand Hiace and the Touring Hiace (models that derived from the Granvia) were launched from their respective sales channels.
+The four sister models were discontinued and replaced by the Alphard, the next-generation top-end minivan, in May 2002.
+| Plant | Toyota Auto Body Co., Ltd. |
+A combination of the Italian words "gran" (great) and "via" (road).
+This page is part of TOYOTA A HISTORY OF THE FIRST 75 YEARS website. For information on currently marketed vehicles, please refer to the Toyota Motor Corporation website.
+Concept to Vehicle LineageCopyright & Terms of Use

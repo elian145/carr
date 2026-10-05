@@ -1,0 +1,877 @@
+{
+  "schema_version": "carnet.enrichment_evidence/1",
+  "brand": "Toyota",
+  "model": "Aristo",
+  "researched_at": "2026-10-04",
+  "coverage": [
+    "Japan: Toyota Motor Corporation global newsroom release 'ARISTO DEBUTS' (11 Oct 1991) and the '75 Years of TOYOTA' Vehicle Lineage pages for the 1st (1991) and 2nd (1997) generation",
+    "The Aristo was sold in North America as the Lexus GS; Lexus GS is a separate catalog entry and no Lexus data is used here. The sources are historical, so fuel type, transmission and seat counts are not stated and are left null",
+    "NOT researched: Aristo brochures / owner manuals, Toyota newsroom release for the 1997 generation, V8 (1UZ-FE) 4WD Aristo displacement / output, transmission variants"
+  ],
+  "not_used_sources": [
+    {
+      "url": "https://global.toyota/en/download/8168282/",
+      "reason": "Image download page; no specification text"
+    }
+  ],
+  "sources": {
+    "ARS-S1": {
+      "url": "https://global.toyota/en/detail/7835896",
+      "name": "ARISTO DEBUTS | Toyota Motor Corporation Official Global Website (11 Oct 1991)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-04",
+      "model_year_label": "1991",
+      "market_scope": "Japan",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-04T15:24:34Z",
+        "content_sha256": "0f44078c4948cb3cdbb589578cfc7ac0b876f8c8001af0fa57e679e0dfe12299",
+        "snapshot_path": "evidence/toyota/_source_text/ARS-S1.txt",
+        "origin": "authored",
+        "note": "Re-fetched and preserved; every cited quote was found in the preserved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://global.toyota/en/detail/7835896",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "e261b451886ff93c9fc00c1cca2899da9ba3c4c8ca6863db59fee410b030b5ee",
+        "extractor": "html-text/1"
+      },
+      "notes": null
+    },
+    "ARS-S2": {
+      "url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000091/index.html",
+      "name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (1st generation, 1991)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-04",
+      "model_year_label": "1991",
+      "market_scope": "Japan",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-04T15:24:34Z",
+        "content_sha256": "72083071af1a691c2233ee446dd309ec035a796e8d4db739b85701e9153e0893",
+        "snapshot_path": "evidence/toyota/_source_text/ARS-S2.txt",
+        "origin": "authored",
+        "note": "Re-fetched and preserved; every cited quote was found in the preserved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000091/index.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "391df5541213e77ea3feed497f846d6b78f5b662f85de51a8b303f4ceab9dd17",
+        "extractor": "html-text/1"
+      },
+      "notes": null
+    },
+    "ARS-S3": {
+      "url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+      "name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (2nd generation, 1997)",
+      "publisher": "Toyota Motor Corporation",
+      "tier": 1,
+      "host_type": "manufacturer_domain",
+      "retrieval": "fetched_full_text",
+      "accessed_at": "2026-10-04",
+      "model_year_label": "1997",
+      "market_scope": "Japan",
+      "integrity": {
+        "state": "FULL_TEXT_VERIFIED",
+        "retrieved_at": "2026-10-04T15:24:34Z",
+        "content_sha256": "b7c905a9a309defe0bc49fd0832480fc39d6bd768aa16d6b88fba9f1848675cc",
+        "snapshot_path": "evidence/toyota/_source_text/ARS-S3.txt",
+        "origin": "authored",
+        "note": "Re-fetched and preserved; every cited quote was found in the preserved content.",
+        "retrieved_by": "fetch_snapshot.py/1",
+        "final_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+        "http_status": 200,
+        "content_type": "text/html",
+        "raw_sha256": "a5bc3ef29c13480a504679e3de9ee2bd4c5679b52c026267c1b47e67309181e8",
+        "extractor": "html-text/1"
+      },
+      "notes": null
+    }
+  },
+  "records": [
+    {
+      "record_id": "ARS-001",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": null,
+      "year_from": 1991,
+      "year_to": 1991,
+      "market": "Japan",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2JZ-GTE",
+        "displacement_raw": "3-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": "twin turbo",
+        "horsepower": {
+          "value": 280,
+          "unit": "ps"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S1",
+        "source_url": "https://global.toyota/en/detail/7835896",
+        "source_name": "ARISTO DEBUTS | Toyota Motor Corporation Official Global Website (11 Oct 1991)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "the 3-liter, straight-six cylinder 2JZ-GTE, with a two-way twin turbo (maximum output 280ps at 5,600rpm)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": "Twin-turbo",
+        "horsepower_hp": 276.2,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-002",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": null,
+      "year_from": 1991,
+      "year_to": 1991,
+      "market": "Japan",
+      "trim": null,
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2JZ-GE",
+        "displacement_raw": "3-liter",
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 230,
+          "unit": "ps"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S1",
+        "source_url": "https://global.toyota/en/detail/7835896",
+        "source_name": "ARISTO DEBUTS | Toyota Motor Corporation Official Global Website (11 Oct 1991)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "the extremely quiet 3-liter straight-six cylinder 2JZ-GE (max. output 230ps at 6,000rpm)"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": null,
+        "displacement_nominal_l": 3.0,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 226.9,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-003",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "1st",
+      "year_from": 1991,
+      "year_to": 1997,
+      "market": "Japan",
+      "trim": "3.0V",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2JZ-GTE",
+        "displacement_raw": {
+          "value": 2997,
+          "unit": "cc"
+        },
+        "displacement_cc": 2997,
+        "cylinders": "6-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 280,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S2",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000091/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (1st generation, 1991)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "1st Aristo Released date : 1991/10/31 … Grade | 3.0V | 3.0Q … Engine code | 2JZ-GTE | 2JZ-GE … Engine type | In-line 6-cylinder, DOHC … Displacement(cm 3 ) | 2997 | 2997 … Max. output kW(PS)/r.p.m. | -/280/5600"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "3.0V",
+        "trim_key": "3.0v",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": 2997,
+        "displacement_nominal_l": 2.997,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 276.2,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-004",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "1st",
+      "year_from": 1991,
+      "year_to": 1997,
+      "market": "Japan",
+      "trim": "3.0Q",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2JZ-GE",
+        "displacement_raw": {
+          "value": 2997,
+          "unit": "cc"
+        },
+        "displacement_cc": 2997,
+        "cylinders": "6-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 230,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S2",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000091/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (1st generation, 1991)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "1st Aristo Released date : 1991/10/31 … Grade | 3.0V | 3.0Q … Engine code | 2JZ-GTE | 2JZ-GE … Engine type | In-line 6-cylinder, DOHC … Displacement(cm 3 ) | 2997 | 2997 … -/230/6000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "3.0Q",
+        "trim_key": "3.0q",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": 2997,
+        "displacement_nominal_l": 2.997,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 226.9,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-005",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "1st",
+      "year_from": 1991,
+      "year_to": 1997,
+      "market": "Japan",
+      "trim": null,
+      "variant": null,
+      "body_type": "sedan",
+      "doors": "4-door",
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S2",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000091/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (1st generation, 1991)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "1st Aristo Released date : 1991/10/31 … Developed as a high-performance 4-door sedan"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": "Sedan",
+        "doors": 4,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-006",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "1st",
+      "year_from": 1992,
+      "year_to": 1997,
+      "market": "Japan",
+      "trim": null,
+      "variant": "V8 4WD model",
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": "V8",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": "4-wheel-drive",
+      "evidence": {
+        "source_id": "ARS-S2",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000091/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (1st generation, 1991)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "1st Aristo Released date : 1991/10/31 … A 4-wheel-drive model with a V8 engine was added to the lineup in October 1992"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": null,
+        "trim_key": null,
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "unlabeled_engine",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": 8,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": "4WD"
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-007",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "2nd",
+      "year_from": 1997,
+      "year_to": 2005,
+      "market": "Japan",
+      "trim": "V300",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S3",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (2nd generation, 1997)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "2nd Aristo Released date : 1997/ 8/27 … Grade | VERTEX EDITION | V300 | S300"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "V300",
+        "trim_key": "v300",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-008",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "2nd",
+      "year_from": 1997,
+      "year_to": 2005,
+      "market": "Japan",
+      "trim": "S300",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S3",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (2nd generation, 1997)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "2nd Aristo Released date : 1997/ 8/27 … Grade | VERTEX EDITION | V300 | S300"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "S300",
+        "trim_key": "s300",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-009",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "2nd",
+      "year_from": 1997,
+      "year_to": 2005,
+      "market": "Japan",
+      "trim": "Vertex Edition",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": null,
+        "displacement_raw": null,
+        "displacement_cc": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": null,
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S3",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (2nd generation, 1997)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "2nd Aristo Released date : 1997/ 8/27 … Grade | VERTEX EDITION | V300 | S300"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "Vertex Edition",
+        "trim_key": "vertex edition",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "model_level",
+        "engine_size_label": null,
+        "displacement_cc": null,
+        "displacement_nominal_l": null,
+        "cylinders": null,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": null,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-010",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "2nd",
+      "year_from": 1997,
+      "year_to": 2005,
+      "market": "Japan",
+      "trim": "V300",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2JZ-GTE",
+        "displacement_raw": {
+          "value": 2997,
+          "unit": "cc"
+        },
+        "displacement_cc": 2997,
+        "cylinders": "6-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 280,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S3",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (2nd generation, 1997)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "2nd Aristo Released date : 1997/ 8/27 … Grade | VERTEX EDITION | V300 | S300 … Engine code | 2JZ-GTE | 2JZ-GTE | 2JZ-GE … Engine type | Water-cooled, in-line 6-cylinder, DOHC … Displacement(cm 3 ) | 2997 | 2997 | 2997 … Max. output kW(PS)/r.p.m. | -/280/5600 | -/280/5600"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "V300",
+        "trim_key": "v300",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": 2997,
+        "displacement_nominal_l": 2.997,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 276.2,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    },
+    {
+      "record_id": "ARS-011",
+      "brand": "Toyota",
+      "model": "Aristo",
+      "generation": "2nd",
+      "year_from": 1997,
+      "year_to": 2005,
+      "market": "Japan",
+      "trim": "S300",
+      "variant": null,
+      "body_type": null,
+      "doors": null,
+      "seats": null,
+      "engine": {
+        "display_name": "2JZ-GE",
+        "displacement_raw": {
+          "value": 2997,
+          "unit": "cc"
+        },
+        "displacement_cc": 2997,
+        "cylinders": "6-cylinder",
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower": {
+          "value": 230,
+          "unit": "PS"
+        },
+        "torque": null
+      },
+      "transmission": {
+        "type": null,
+        "gears": null
+      },
+      "drivetrain": null,
+      "evidence": {
+        "source_id": "ARS-S3",
+        "source_url": "https://www.toyota-global.com/company/history_of_toyota/75years/vehicle_lineage/car/id60000160/index.html",
+        "source_name": "75 Years of TOYOTA - Vehicle Lineage: Aristo (2nd generation, 1997)",
+        "source_type": "official_manufacturer_website",
+        "source_tier": 1,
+        "source_integrity": "FULL_TEXT_VERIFIED",
+        "accessed_at": "2026-10-04",
+        "confidence": 0.95,
+        "confidence_basis": [
+          "tier1_base:0.95"
+        ],
+        "supporting_text": "2nd Aristo Released date : 1997/ 8/27 … Grade | VERTEX EDITION | V300 | S300 … Engine code | 2JZ-GTE | 2JZ-GTE | 2JZ-GE … Engine type | Water-cooled, in-line 6-cylinder, DOHC … Displacement(cm 3 ) | 2997 | 2997 | 2997 … -/230/6000"
+      },
+      "notes": null,
+      "normalized": {
+        "market": "other:jp",
+        "trim": "S300",
+        "trim_key": "s300",
+        "body_type": null,
+        "doors": null,
+        "seats": null,
+        "seats_is_maximum": false,
+        "engine_group": "3.0L",
+        "engine_size_label": "3.0L",
+        "displacement_cc": 2997,
+        "displacement_nominal_l": 2.997,
+        "cylinders": 6,
+        "fuel_type": null,
+        "aspiration": null,
+        "horsepower_hp": 226.9,
+        "torque_nm": null,
+        "transmission_family": null,
+        "transmission_variant": null,
+        "transmission_named_systems": [],
+        "transmission_gears": null,
+        "drivetrain": null
+      },
+      "normalization_flags": []
+    }
+  ]
+}

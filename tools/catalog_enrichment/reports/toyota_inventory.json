@@ -8,7 +8,7 @@
     "models": 86,
     "models_with_zero_legacy_rows": 26,
     "models_sparse_or_incomplete": 65,
-    "models_with_enrichment_evidence": 12,
+    "models_with_enrichment_evidence": 22,
     "legacy_spec_rows": 2000,
     "collision_risk": {
       "HIGH": 4,
@@ -170,8 +170,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/aristo.json",
+        "record_count": 11,
+        "source_count": 3,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [],
         "engines": [
@@ -220,8 +226,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/aurion.json",
+        "record_count": 16,
+        "source_count": 4,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [],
         "engines": [
@@ -1057,8 +1069,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/celsior.json",
+        "record_count": 17,
+        "source_count": 3,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [],
         "engines": [
@@ -1204,8 +1222,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/coaster.json",
+        "record_count": 9,
+        "source_count": 3,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [
           "Basic"
@@ -1928,8 +1952,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/echo.json",
+        "record_count": 8,
+        "source_count": 3,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [],
         "engines": [
@@ -2188,8 +2218,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/gr_corolla.json",
+        "record_count": 26,
+        "source_count": 9,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [
           "Circuit",
@@ -2235,8 +2271,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/gr86.json",
+        "record_count": 17,
+        "source_count": 4,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [
           "Base",
@@ -2336,8 +2378,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/granvia.json",
+        "record_count": 16,
+        "source_count": 4,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [],
         "engines": [
@@ -3583,8 +3631,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/prius_c.json",
+        "record_count": 21,
+        "source_count": 5,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [
           "Four",
@@ -5116,8 +5170,14 @@
         "rows_borrowed_from_siblings_by_loose_rule": 0,
         "rows_quarantined_ambiguous_qualifier": 0
       },
-      "has_enrichment_evidence": false,
-      "enrichment_evidence": null,
+      "has_enrichment_evidence": true,
+      "enrichment_evidence": {
+        "evidence_file": "evidence/toyota/yaris_ia.json",
+        "record_count": 14,
+        "source_count": 3,
+        "researched_at": "2026-10-04",
+        "pilot_evidence": false
+      },
       "current_known_dimensions": {
         "trims": [
           "L",

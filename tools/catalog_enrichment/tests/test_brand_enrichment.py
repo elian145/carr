@@ -116,16 +116,27 @@ class EvidenceIntegrity(Base):
     def _files(self):
         return sorted((HERE / "evidence").glob("*.json")) + sorted((HERE / "evidence").glob("*/*.json"))
 
+    # Model-specific prefixes: two letters in Batch 1 (BT-001), three or four characters later (ARS-001, G86-001).
+    # Same syntax as schemas/evidence_record.schema.json.
+    ID_RE = r"^[A-Z][A-Z0-9]{1,3}-\d{3}$"
+
     def test_no_duplicate_evidence_ids_anywhere(self):
         seen = {}
+        prefix_owner = {}
         for p in self._files():
             doc = L.read_json(p)
             ids = [r["record_id"] for r in doc["records"]]
             self.assertEqual(len(ids), len(set(ids)), p.name)
             for i in ids:
-                self.assertRegex(i, r"^[A-Z]{2}-\d{3}$")
+                self.assertRegex(i, self.ID_RE)
                 self.assertNotIn(i, seen, f"{i} in {p.name} and {seen.get(i)}")
                 seen[i] = p.name
+            # stable identity: one prefix per evidence file, and a prefix is never shared between two files
+            prefixes = {i.rsplit("-", 1)[0] for i in ids}
+            self.assertEqual(len(prefixes), 1, f"{p.name} mixes record-id prefixes {sorted(prefixes)}")
+            prefix = next(iter(prefixes))
+            self.assertNotIn(prefix, prefix_owner, f"prefix {prefix} used by {p.name} and {prefix_owner.get(prefix)}")
+            prefix_owner[prefix] = p.name
 
     def test_batch_1_evidence_validates(self):
         for m in BATCH1:
@@ -438,15 +449,54 @@ class DeterministicReports(Base):
                 self.assertIn(k, b)
         self.assertEqual(self.b1["status"], "RESEARCHED_PENDING_REVIEW")
         self.assertEqual(Counter(self.b1["model_status"].values())["NOT_STARTED"], 0)
-        for b in self.plan["batches"][1:]:
-            # batch 7 only differs because the two pilot models (Land Cruiser, Camry) were researched before this task
-            self.assertEqual(b["status"], "IN_PROGRESS" if b["batch_number"] == 7 else "NOT_STARTED", b["batch_id"])
 
-    def test_only_batch_1_has_evidence(self):
-        for b in self.plan["batches"][1:]:
-            if b["batch_number"] == 7:  # pilot models Land Cruiser + Camry already had evidence before this task
-                continue
-            self.assertEqual(b["evidence_record_count"], 0, b["batch_id"])
+    def _evidence_files_by_model(self):
+        """model name -> (evidence file, record count) for every model of the plan that has an evidence file on disk."""
+        out = {}
+        for b in self.plan["batches"]:
+            for m in b["models"]:
+                p = B.evidence_path(BRAND, m)
+                if p.is_file():
+                    out[m] = (p, len(L.read_json(p)["records"]))
+        return out
+
+    def test_plan_status_agrees_with_the_evidence_on_disk(self):
+        """The invariant (instead of 'only batch 1 / batch 7 have evidence'): a batch's recorded status, record count and
+        per-model status must follow from the evidence files that really exist - whichever batches have been researched."""
+        have = self._evidence_files_by_model()
+        for b in self.plan["batches"]:
+            researched = [m for m in b["models"] if m in have]
+            self.assertEqual(b["evidence_record_count"], sum(have[m][1] for m in researched), b["batch_id"])
+            for m in b["models"]:  # NOT_STARTED  <=>  no evidence file
+                self.assertEqual(b["model_status"][m] == "NOT_STARTED", m not in have, f"{b['batch_id']} {m}")
+            if not researched:
+                expected = "NOT_STARTED"
+            elif len(researched) == len(b["models"]):
+                expected = "RESEARCHED_PENDING_REVIEW"
+            else:
+                expected = "IN_PROGRESS"
+            self.assertEqual(b["status"], expected, b["batch_id"])
+            # research is never declared 'complete' or approved by the tooling
+            self.assertIn(b["status"], {"NOT_STARTED", "IN_PROGRESS", "RESEARCHED_PENDING_REVIEW"}, b["batch_id"])
+
+    def test_every_evidence_file_belongs_to_a_batch_that_records_research(self):
+        have = self._evidence_files_by_model()
+        planned = {m for b in self.plan["batches"] for m in b["models"]}
+        self.assertEqual(Counter(m for b in self.plan["batches"] for m in b["models"]).most_common(1)[0][1], 1)  # each model once
+        on_disk = {p.stem for p, _ in have.values()}
+        toyota_dir = {p.stem for p in (HERE / "evidence" / "toyota").glob("*.json")}
+        self.assertLessEqual(toyota_dir, on_disk, f"evidence/toyota files not accounted for by any planned model: {sorted(toyota_dir - on_disk)}")
+        self.assertLessEqual(set(have), planned)
+        # the inventory agrees with the plan about which models have evidence
+        flagged = {m["model"] for m in self.inv["models"] if m["has_enrichment_evidence"]}
+        self.assertEqual(flagged, set(have))
+        self.assertEqual(self.inv["totals"]["models_with_enrichment_evidence"], len(have))
+
+    def test_batch_2_is_recorded_as_researched_pending_review(self):
+        b2 = self.plan["batches"][1]
+        self.assertEqual((b2["batch_id"], b2["status"]), ("toyota-batch-02", "RESEARCHED_PENDING_REVIEW"))
+        self.assertEqual(sorted(b2["models"]), sorted(["GR Corolla", "Prius C", "GR86", "Yaris iA", "Coaster", "Aristo", "Aurion", "Celsior", "Echo", "Granvia"]))
+        self.assertEqual(b2["evidence_record_count"], 155)
 
 
 if __name__ == "__main__":

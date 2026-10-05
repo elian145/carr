@@ -176,10 +176,12 @@ def _diagnose(segments: list[str], norm_text: str) -> str:
     return "not_found_verbatim"
 
 
-def classify_source(doc: dict, sid: str, result: dict, now: str, snapshot_dir: Path, root: Path = HERE) -> tuple[dict, dict, bytes | None, dict]:
+def classify_source(doc: dict, sid: str, result: dict, now: str, snapshot_dir: Path, root: Path = HERE, origin: str | None = None) -> tuple[dict, dict, bytes | None, dict]:
     """-> (new integrity block, new source fields, snapshot bytes or None, review entry).
 
-    Never edits records. `result` is the dict returned by fetch()."""
+    Never edits records. `result` is the dict returned by fetch().
+    `origin` (default None -> the revalidation origins) is used for sources AUTHORED in this run (new research: the snapshot is
+    created at authoring time, there is no earlier state to re-validate); pass 'authored'."""
     s = doc["sources"][sid]
     prev = L.source_integrity_state(s)
     recs = [r for r in doc["records"] if r["evidence"]["source_id"] == sid]
@@ -201,7 +203,7 @@ def classify_source(doc: dict, sid: str, result: dict, now: str, snapshot_dir: P
         # anything else that cannot be re-fetched is UNAVAILABLE. Either way it is non-verified.
         keep = "SNIPPET_ONLY" if s.get("retrieval") == "search_snippet_only" else "UNAVAILABLE"
         entry.update(outcome="UNAVAILABLE", new_state=keep, error=err, retrieved_at=now)
-        integ = dict(base, state=keep, content_sha256=None, snapshot_path=None, origin="revalidation:refetch_unavailable",
+        integ = dict(base, state=keep, content_sha256=None, snapshot_path=None, origin=origin or "revalidation:refetch_unavailable",
                      note=f"Re-fetch attempt failed: {err}. The quotes could not be validated against retrieved content" + (" (the source remains a search-result snippet)." if keep == "SNIPPET_ONLY" else "."))
         return integ, {}, None, entry
     snap = snapshot_bytes(text)
@@ -217,12 +219,12 @@ def classify_source(doc: dict, sid: str, result: dict, now: str, snapshot_dir: P
     if recs and len(missing) == len(recs):
         keep = "SNIPPET_ONLY" if s.get("retrieval") == "search_snippet_only" else "RETRIEVED_UNVERIFIABLE"
         entry.update(outcome="CONTENT_MISMATCH", new_state=keep, retrieved_at=now)
-        integ = dict(base, state=keep, content_sha256=None, snapshot_path=None, origin="revalidation:refetch_content_mismatch",
+        integ = dict(base, state=keep, content_sha256=None, snapshot_path=None, origin=origin or "revalidation:refetch_content_mismatch",
                      note=f"Re-fetched (HTTP {result.get('status')}, extracted text sha256 {entry['content_sha256'][:16]}...) but none of the {len(recs)} cited quotes occur in the current content (page changed or extraction differs). Original quotes unchanged; needs an authoritative archived source.")
         return integ, {}, None, entry
     state = "PDF_VERIFIED" if (is_pdf and L.is_pdf_source(s)) else "FULL_TEXT_VERIFIED"
     path = (snapshot_dir / f"{sid}.txt").resolve().relative_to(root.resolve()).as_posix()
-    integ = dict(base, state=state, content_sha256=entry["content_sha256"], snapshot_path=path, origin="revalidation:refetch",
+    integ = dict(base, state=state, content_sha256=entry["content_sha256"], snapshot_path=path, origin=origin or "revalidation:refetch",
                  note=("Re-fetched and preserved; " + (f"{len(missing)} of {len(recs)} records' quotes are NOT in the current content (listed in unconfirmed_record_ids, never verified)." if missing else "every cited quote was found in the preserved content.")))
     if missing:
         integ["unconfirmed_record_ids"] = sorted(missing)
@@ -236,8 +238,9 @@ def classify_source(doc: dict, sid: str, result: dict, now: str, snapshot_dir: P
     return integ, fields, snap, entry
 
 
-def revalidate_doc(doc: dict, snapshot_dir: Path, now: str, only: list[str] | None = None, force: bool = False, fetcher=fetch, root: Path = HERE, write: bool = True) -> tuple[dict, list[dict]]:
-    """Re-fetch the selected sources of `doc`. Returns (new doc, review entries). Writes snapshots when `write`."""
+def revalidate_doc(doc: dict, snapshot_dir: Path, now: str, only: list[str] | None = None, force: bool = False, fetcher=fetch, root: Path = HERE, write: bool = True, origin: str | None = None) -> tuple[dict, list[dict]]:
+    """Re-fetch the selected sources of `doc`. Returns (new doc, review entries). Writes snapshots when `write`.
+    `origin='authored'` marks sources that are being retrieved for the first time while the evidence is authored."""
     doc = copy.deepcopy(doc)
     entries = []
     for sid in sorted(doc["sources"]):
@@ -248,7 +251,7 @@ def revalidate_doc(doc: dict, snapshot_dir: Path, now: str, only: list[str] | No
             entries.append({"source_id": sid, "url": s["url"], "tier": s["tier"], "outcome": "SKIPPED_ALREADY_VERIFIED", "new_state": s["integrity"]["state"]})
             continue
         result = fetcher(s["url"])
-        integ, fields, snap, entry = classify_source(doc, sid, result, now, snapshot_dir, root)
+        integ, fields, snap, entry = classify_source(doc, sid, result, now, snapshot_dir, root, origin)
         if snap is not None and write:
             snapshot_dir.mkdir(parents=True, exist_ok=True)
             (snapshot_dir / f"{sid}.txt").write_bytes(snap)
@@ -273,12 +276,13 @@ def main(argv=None) -> int:
     ap.add_argument("--force", action="store_true", help="re-fetch even sources that are already verified")
     ap.add_argument("--dry-run", action="store_true", help="fetch and classify; write nothing")
     ap.add_argument("--report", help="review report path (default reports/<evidence stem>_revalidation.json)")
+    ap.add_argument("--origin", choices=["authored"], help="mark the integrity origin as 'authored' (first retrieval of a newly researched source) instead of 'revalidation:*'")
     a = ap.parse_args(argv)
     p = Path(a.evidence)
     p = p if p.is_absolute() else HERE / p
     doc = L.read_json(p)
     snap_dir = p.parent / "_source_text"
-    new, entries = revalidate_doc(doc, snap_dir, utc_now(), a.source, a.force, write=not a.dry_run)
+    new, entries = revalidate_doc(doc, snap_dir, utc_now(), a.source, a.force, write=not a.dry_run, origin=a.origin)
     for e in entries:
         extra = f" confirmed={e.get('records_confirmed')}/{e.get('records_total')} unconfirmed={[u['record_id'] for u in e['records_unconfirmed']]}" if e.get("records_unconfirmed") else ""
         print(f"{e['source_id']:7} t{e['tier']} {e['outcome']:22} {e.get('previous_state') or '-':24} -> {e['new_state']:22} http={e.get('http_status')}{extra}")

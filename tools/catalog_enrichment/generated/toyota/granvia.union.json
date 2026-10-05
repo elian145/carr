@@ -1,0 +1,824 @@
+{
+  "schema_version": "carnet.model_union/2",
+  "brand": "Toyota",
+  "model": "Granvia",
+  "generated_from": {
+    "evidence_file": "evidence/toyota/granvia.json",
+    "researched_at": "2026-10-04",
+    "record_count": 16,
+    "source_count": 4,
+    "records_by_source_tier": {
+      "1": 9,
+      "3": 3,
+      "4": 4
+    },
+    "records_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 12,
+      "PDF_VERIFIED": 4,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "sources_by_integrity_state": {
+      "FULL_TEXT_VERIFIED": 3,
+      "PDF_VERIFIED": 1,
+      "SNIPPET_ONLY": 0,
+      "UNAVAILABLE": 0,
+      "RETRIEVED_UNVERIFIABLE": 0
+    },
+    "records_passing_integrity_test": 12
+  },
+  "research_coverage": [
+    "Two distinct Toyota 'Granvia' eras are kept separate by year range and market: (1) Japan 1995-2002 (Toyota global newsroom release + 75-Years lineage page); (2) 2019+ H300-based Granvia: Australia March 2024 brochure (third-party host, Tier 4) and Toyota UAE 2026 page (Tier 3)",
+    "The Hiace Regius / Grand Hiace / Touring Hiace derivatives and the Chinese-market XL40 Granvia named on other pages are different models and are NOT used",
+    "ANOMALY: the Toyota lineage page lists displacement 2963 cm3 for the 3RZ-FE 2.7-liter petrol engine while its own text (and the newsroom release) says 2.7-liter; that table figure is deliberately not recorded and the 2.7-liter text value is used instead",
+    "NOT researched: Kuwait / Saudi / Thailand / Taiwan markets, drivetrain of the 2019+ model (not stated in the fetched sources), Toyota Australia's own range page (blocked)"
+  ],
+  "vocabulary_version": "carnet.vocabulary/1",
+  "production_policy": {
+    "production_bound_section": "verified",
+    "verified_requires": "tier 1-3 AND source integrity FULL_TEXT_VERIFIED or PDF_VERIFIED AND quote found in the preserved snapshot AND no unresolved tier 1-3 conflict",
+    "includes_provisional": false,
+    "includes_needs_source_retrieval": false,
+    "provisional_values_live_in": "provisional_only (research output only; never auto-promoted)",
+    "needs_source_retrieval_values_live_in": "needs_source_retrieval (tier 1-3 evidence whose source content was never validated; never auto-promoted)",
+    "unresolved_conflicts": 1,
+    "conflicts_block_promotion_until_reviewed": true,
+    "review_status": "UNREVIEWED"
+  },
+  "verified": {
+    "trims": [],
+    "engine_sizes": [
+      "2.7L",
+      "3.0L",
+      "3.4L",
+      "3.5L"
+    ],
+    "cylinders": [
+      4,
+      6
+    ],
+    "fuel_types": [
+      "Diesel",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      6
+    ],
+    "drivetrains": [],
+    "body_types": [
+      "Minivan"
+    ],
+    "seats": [
+      6,
+      7
+    ],
+    "doors": []
+  },
+  "union": {
+    "trims": [],
+    "engine_sizes": [
+      "2.7L",
+      "3.0L",
+      "3.4L",
+      "3.5L"
+    ],
+    "cylinders": [
+      4,
+      6
+    ],
+    "fuel_types": [
+      "Diesel",
+      "Petrol"
+    ],
+    "transmissions": [
+      "Automatic"
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      6
+    ],
+    "drivetrains": [],
+    "body_types": [
+      "Minivan"
+    ],
+    "seats": [
+      6,
+      7
+    ],
+    "doors": []
+  },
+  "provisional_only": {
+    "trims": [
+      "VX"
+    ],
+    "engine_sizes": [
+      "2.8L"
+    ],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [
+      "4WD",
+      "RWD"
+    ],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "needs_source_retrieval": {
+    "trims": [],
+    "engine_sizes": [],
+    "cylinders": [],
+    "fuel_types": [],
+    "transmissions": [],
+    "transmission_variants": [],
+    "transmission_gears": [],
+    "drivetrains": [],
+    "body_types": [],
+    "seats": [],
+    "doors": []
+  },
+  "empty_dimensions": [
+    "transmission_variants",
+    "doors"
+  ],
+  "engines": [
+    {
+      "engine_size_label": "2.7L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 143.0,
+          "record_id": "GVA-005",
+          "trim": null
+        }
+      ],
+      "torque_nm": [],
+      "best_tier": 1,
+      "record_ids": [
+        "GVA-001",
+        "GVA-005"
+      ]
+    },
+    {
+      "engine_size_label": "2.8L",
+      "displacement_cc": [],
+      "cylinders": [],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [],
+      "torque_nm": [],
+      "best_tier": 4,
+      "record_ids": [
+        "GVA-010"
+      ]
+    },
+    {
+      "engine_size_label": "3.0L",
+      "displacement_cc": [],
+      "cylinders": [
+        4
+      ],
+      "fuel_types": [
+        "Diesel"
+      ],
+      "aspirations": [
+        "Turbo"
+      ],
+      "power_hp": [
+        {
+          "value": 128.2,
+          "record_id": "GVA-006",
+          "trim": null
+        }
+      ],
+      "torque_nm": [],
+      "best_tier": 1,
+      "record_ids": [
+        "GVA-002",
+        "GVA-006"
+      ]
+    },
+    {
+      "engine_size_label": "3.4L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [
+        "Petrol"
+      ],
+      "aspirations": [],
+      "power_hp": [
+        {
+          "value": 177.5,
+          "record_id": "GVA-007",
+          "trim": null
+        }
+      ],
+      "torque_nm": [],
+      "best_tier": 1,
+      "record_ids": [
+        "GVA-007"
+      ]
+    },
+    {
+      "engine_size_label": "3.5L",
+      "displacement_cc": [],
+      "cylinders": [
+        6
+      ],
+      "fuel_types": [],
+      "aspirations": [],
+      "power_hp": [],
+      "torque_nm": [],
+      "best_tier": 3,
+      "record_ids": [
+        "GVA-014"
+      ]
+    }
+  ],
+  "details": {
+    "trims": [
+      {
+        "value": "VX",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-013"
+        ],
+        "best_tier": 4,
+        "max_confidence": 0.5,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-013"
+        ],
+        "source_ids": [
+          "GVA-S3"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      }
+    ],
+    "engine_sizes": [
+      {
+        "value": "2.7L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-001",
+          "GVA-005"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-001",
+          "GVA-005"
+        ],
+        "source_ids": [
+          "GVA-S1",
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "2.8L",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-010"
+        ],
+        "best_tier": 4,
+        "max_confidence": 0.5,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-010"
+        ],
+        "source_ids": [
+          "GVA-S3"
+        ],
+        "markets": [
+          "other:au"
+        ],
+        "years": [
+          2024,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "3.0L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-002",
+          "GVA-006"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-002",
+          "GVA-006"
+        ],
+        "source_ids": [
+          "GVA-S1",
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "3.4L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-007"
+        ],
+        "source_ids": [
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1997,
+          2002
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "3.5L",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-014"
+        ],
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-014"
+        ],
+        "source_ids": [
+          "GVA-S4"
+        ],
+        "markets": [
+          "gcc"
+        ],
+        "years": [
+          2026,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "cylinders": [
+      {
+        "value": 4,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-005",
+          "GVA-006"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-005",
+          "GVA-006"
+        ],
+        "source_ids": [
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-007",
+          "GVA-014"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-007",
+          "GVA-014"
+        ],
+        "source_ids": [
+          "GVA-S2",
+          "GVA-S4"
+        ],
+        "markets": [
+          "gcc",
+          "other:jp"
+        ],
+        "years": [
+          1997,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "fuel_types": [
+      {
+        "value": "Diesel",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-002",
+          "GVA-006",
+          "GVA-010"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "GVA-002",
+          "GVA-006",
+          "GVA-010"
+        ],
+        "source_ids": [
+          "GVA-S1",
+          "GVA-S2",
+          "GVA-S3"
+        ],
+        "markets": [
+          "other:au",
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2024
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": "Petrol",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-001",
+          "GVA-005",
+          "GVA-007"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 3,
+        "record_ids": [
+          "GVA-001",
+          "GVA-005",
+          "GVA-007"
+        ],
+        "source_ids": [
+          "GVA-S1",
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmissions": [
+      {
+        "value": "Automatic",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-011",
+          "GVA-015"
+        ],
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-011",
+          "GVA-015"
+        ],
+        "source_ids": [
+          "GVA-S3",
+          "GVA-S4"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2024,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "transmission_variants": [],
+    "transmission_gears": [
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-011",
+          "GVA-015"
+        ],
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-011",
+          "GVA-015"
+        ],
+        "source_ids": [
+          "GVA-S3",
+          "GVA-S4"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2024,
+          2026
+        ],
+        "in_conflict": false
+      }
+    ],
+    "drivetrains": [
+      {
+        "value": "4WD",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-003",
+          "GVA-009"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-003",
+          "GVA-009"
+        ],
+        "source_ids": [
+          "GVA-S1",
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": true
+      },
+      {
+        "value": "RWD",
+        "status": "PROVISIONAL",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-008"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-008"
+        ],
+        "source_ids": [
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": true
+      }
+    ],
+    "body_types": [
+      {
+        "value": "Minivan",
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-004"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-004"
+        ],
+        "source_ids": [
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": false
+      }
+    ],
+    "seats": [
+      {
+        "value": 6,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED",
+          "PDF_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-012",
+          "GVA-016"
+        ],
+        "best_tier": 3,
+        "max_confidence": 0.8,
+        "support_count": 2,
+        "record_ids": [
+          "GVA-012",
+          "GVA-016"
+        ],
+        "source_ids": [
+          "GVA-S3",
+          "GVA-S4"
+        ],
+        "markets": [
+          "gcc",
+          "other:au"
+        ],
+        "years": [
+          2024,
+          2026
+        ],
+        "in_conflict": false
+      },
+      {
+        "value": 7,
+        "status": "VERIFIED",
+        "integrity_states": [
+          "FULL_TEXT_VERIFIED"
+        ],
+        "validated_record_ids": [
+          "GVA-004"
+        ],
+        "best_tier": 1,
+        "max_confidence": 0.95,
+        "support_count": 1,
+        "record_ids": [
+          "GVA-004"
+        ],
+        "source_ids": [
+          "GVA-S2"
+        ],
+        "markets": [
+          "other:jp"
+        ],
+        "years": [
+          1995,
+          2002
+        ],
+        "in_conflict": false
+      }
+    ],
+    "doors": []
+  },
+  "conflicts": [
+    {
+      "conflict_id": "CF-toyota-granvia-001",
+      "field": "drivetrain",
+      "engine_group": "model_level",
+      "severity": "definite",
+      "values": [
+        {
+          "record_id": "GVA-003",
+          "value": "4WD",
+          "source_id": "GVA-S1",
+          "source_tier": 1,
+          "market": "other:jp",
+          "trim": null,
+          "year_from": 1995,
+          "year_to": 1995
+        },
+        {
+          "record_id": "GVA-008",
+          "value": "RWD",
+          "source_id": "GVA-S2",
+          "source_tier": 1,
+          "market": "other:jp",
+          "trim": null,
+          "year_from": 1995,
+          "year_to": 2002
+        },
+        {
+          "record_id": "GVA-009",
+          "value": "4WD",
+          "source_id": "GVA-S2",
+          "source_tier": 1,
+          "market": "other:jp",
+          "trim": null,
+          "year_from": 1995,
+          "year_to": 2002
+        }
+      ],
+      "resolution": "UNRESOLVED (both records preserved; reviewer decides)"
+    }
+  ]
+}

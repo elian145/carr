@@ -7,10 +7,11 @@
   "batch_count": 9,
   "all_models_assigned_exactly_once": true,
   "model_status_counts": {
-    "NEEDS_MORE_SOURCES": 5,
-    "NOT_STARTED": 74,
-    "PARTIALLY_RESEARCHED": 5,
-    "RESEARCHED": 2
+    "CONFLICT": 7,
+    "NEEDS_MORE_SOURCES": 6,
+    "NOT_STARTED": 64,
+    "PARTIALLY_RESEARCHED": 6,
+    "RESEARCHED": 3
   },
   "batches": [
     {
@@ -577,126 +578,376 @@
         "Echo",
         "Granvia"
       ],
-      "status": "NOT_STARTED",
-      "evidence_record_count": 0,
-      "conflicts": {},
-      "provisional_values": {},
-      "needs_source_retrieval_values": {},
-      "unresearched_fields": {
+      "status": "RESEARCHED_PENDING_REVIEW",
+      "evidence_record_count": 155,
+      "conflicts": {
         "GR Corolla": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
-          "drivetrains",
-          "body_types",
-          "seats"
-        ],
-        "Prius C": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
-          "drivetrains",
-          "body_types",
-          "seats"
+          "CF-toyota-gr_corolla-001",
+          "CF-toyota-gr_corolla-002",
+          "CF-toyota-gr_corolla-003",
+          "CF-toyota-gr_corolla-004"
         ],
         "GR86": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
-          "drivetrains",
-          "body_types",
-          "seats"
+          "CF-toyota-gr86-001",
+          "CF-toyota-gr86-002",
+          "CF-toyota-gr86-003"
         ],
         "Yaris iA": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
-          "drivetrains",
-          "body_types",
-          "seats"
+          "CF-toyota-yaris_ia-001",
+          "CF-toyota-yaris_ia-002"
+        ],
+        "Aristo": [
+          "CF-toyota-aristo-001"
+        ],
+        "Celsior": [
+          "CF-toyota-celsior-001",
+          "CF-toyota-celsior-002",
+          "CF-toyota-celsior-003"
+        ],
+        "Echo": [
+          "CF-toyota-echo-001",
+          "CF-toyota-echo-002",
+          "CF-toyota-echo-003"
+        ],
+        "Granvia": [
+          "CF-toyota-granvia-001"
+        ]
+      },
+      "provisional_values": {
+        "GR Corolla": {
+          "transmission_gears": [
+            6
+          ]
+        },
+        "Prius C": {
+          "seats": [
+            5
+          ]
+        },
+        "GR86": {
+          "transmissions": [
+            "Automatic",
+            "Manual"
+          ],
+          "seats": [
+            2
+          ]
+        },
+        "Yaris iA": {
+          "transmissions": [
+            "Automatic",
+            "Manual"
+          ],
+          "drivetrains": [
+            "FWD"
+          ],
+          "seats": [
+            5
+          ]
+        },
+        "Aurion": {
+          "trims": [
+            "AT-X",
+            "Presara",
+            "Prodigy",
+            "Sportivo ZR6"
+          ]
+        },
+        "Celsior": {
+          "transmission_gears": [
+            4,
+            5,
+            6
+          ]
+        },
+        "Echo": {
+          "engine_sizes": [
+            "1.5L"
+          ],
+          "cylinders": [
+            4
+          ],
+          "transmissions": [
+            "Automatic",
+            "Manual"
+          ],
+          "transmission_gears": [
+            4,
+            5
+          ],
+          "seats": [
+            5
+          ],
+          "doors": [
+            2,
+            4
+          ]
+        },
+        "Granvia": {
+          "trims": [
+            "VX"
+          ],
+          "engine_sizes": [
+            "2.8L"
+          ],
+          "drivetrains": [
+            "4WD",
+            "RWD"
+          ]
+        }
+      },
+      "needs_source_retrieval_values": {
+        "GR Corolla": {
+          "fuel_types": [
+            "Petrol"
+          ],
+          "doors": [
+            5
+          ]
+        },
+        "Aurion": {
+          "trims": [
+            "Sportivo SX6"
+          ],
+          "engine_sizes": [
+            "3.5L"
+          ],
+          "cylinders": [
+            6
+          ],
+          "fuel_types": [
+            "Petrol"
+          ],
+          "transmissions": [
+            "Automatic"
+          ],
+          "transmission_gears": [
+            6
+          ],
+          "drivetrains": [
+            "FWD"
+          ],
+          "seats": [
+            5
+          ]
+        }
+      },
+      "unresearched_fields": {
+        "GR86": [
+          "fuel_types"
+        ],
+        "Yaris iA": [
+          "fuel_types"
         ],
         "Coaster": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
           "drivetrains",
           "body_types",
           "seats"
         ],
         "Aristo": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
           "fuel_types",
           "transmissions",
-          "drivetrains",
-          "body_types",
           "seats"
         ],
         "Aurion": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
-          "drivetrains",
-          "body_types",
-          "seats"
+          "body_types"
         ],
         "Celsior": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
           "fuel_types",
-          "transmissions",
           "drivetrains",
-          "body_types",
           "seats"
         ],
         "Echo": [
           "trims",
-          "engine_sizes",
-          "cylinders",
           "fuel_types",
-          "transmissions",
           "drivetrains",
-          "body_types",
-          "seats"
-        ],
-        "Granvia": [
-          "trims",
-          "engine_sizes",
-          "cylinders",
-          "fuel_types",
-          "transmissions",
-          "drivetrains",
-          "body_types",
-          "seats"
+          "body_types"
         ]
       },
       "model_status": {
-        "GR Corolla": "NOT_STARTED",
-        "Prius C": "NOT_STARTED",
-        "GR86": "NOT_STARTED",
-        "Yaris iA": "NOT_STARTED",
-        "Coaster": "NOT_STARTED",
-        "Aristo": "NOT_STARTED",
-        "Aurion": "NOT_STARTED",
-        "Celsior": "NOT_STARTED",
-        "Echo": "NOT_STARTED",
-        "Granvia": "NOT_STARTED"
+        "GR Corolla": "CONFLICT",
+        "Prius C": "RESEARCHED",
+        "GR86": "CONFLICT",
+        "Yaris iA": "CONFLICT",
+        "Coaster": "PARTIALLY_RESEARCHED",
+        "Aristo": "CONFLICT",
+        "Aurion": "NEEDS_MORE_SOURCES",
+        "Celsior": "CONFLICT",
+        "Echo": "CONFLICT",
+        "Granvia": "CONFLICT"
       },
-      "evidence_integrity": {},
+      "evidence_integrity": {
+        "GR Corolla": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 15,
+            "PDF_VERIFIED": 10,
+            "SNIPPET_ONLY": 1,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 6,
+            "PDF_VERIFIED": 2,
+            "SNIPPET_ONLY": 1,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 25
+        },
+        "Prius C": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 16,
+            "PDF_VERIFIED": 5,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 4,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 16
+        },
+        "GR86": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 5,
+            "PDF_VERIFIED": 12,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 2,
+            "PDF_VERIFIED": 2,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 17
+        },
+        "Yaris iA": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 9,
+            "PDF_VERIFIED": 5,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 2,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 9
+        },
+        "Coaster": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 3,
+            "PDF_VERIFIED": 6,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 1,
+            "PDF_VERIFIED": 2,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 9
+        },
+        "Aristo": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 11,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 3,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 11
+        },
+        "Aurion": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 11,
+            "SNIPPET_ONLY": 5,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 0,
+            "PDF_VERIFIED": 3,
+            "SNIPPET_ONLY": 1,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "Celsior": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 17,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 3,
+            "PDF_VERIFIED": 0,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 17
+        },
+        "Echo": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 2,
+            "PDF_VERIFIED": 6,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 2,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 0
+        },
+        "Granvia": {
+          "records_by_state": {
+            "FULL_TEXT_VERIFIED": 12,
+            "PDF_VERIFIED": 4,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "sources_by_state": {
+            "FULL_TEXT_VERIFIED": 3,
+            "PDF_VERIFIED": 1,
+            "SNIPPET_ONLY": 0,
+            "UNAVAILABLE": 0,
+            "RETRIEVED_UNVERIFIABLE": 0
+          },
+          "records_passing_integrity_test": 12
+        }
+      },
       "model_plan": [
         {
           "model": "GR Corolla",
@@ -717,7 +968,7 @@
             "Corolla Hatchback",
             "Corolla iM"
           ],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/gr_corolla.json"
         },
         {
           "model": "Prius C",
@@ -734,7 +985,7 @@
           "siblings_to_keep_separate": [
             "Prius"
           ],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/prius_c.json"
         },
         {
           "model": "GR86",
@@ -749,7 +1000,7 @@
           "newest_legacy_model_year": null,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/gr86.json"
         },
         {
           "model": "Yaris iA",
@@ -766,7 +1017,7 @@
           "siblings_to_keep_separate": [
             "Yaris"
           ],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/yaris_ia.json"
         },
         {
           "model": "Coaster",
@@ -782,7 +1033,7 @@
           "newest_legacy_model_year": null,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/coaster.json"
         },
         {
           "model": "Aristo",
@@ -797,7 +1048,7 @@
           "newest_legacy_model_year": 2005,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/aristo.json"
         },
         {
           "model": "Aurion",
@@ -812,7 +1063,7 @@
           "newest_legacy_model_year": 2017,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/aurion.json"
         },
         {
           "model": "Celsior",
@@ -827,7 +1078,7 @@
           "newest_legacy_model_year": 2003,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/celsior.json"
         },
         {
           "model": "Echo",
@@ -842,7 +1093,7 @@
           "newest_legacy_model_year": 2005,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/echo.json"
         },
         {
           "model": "Granvia",
@@ -858,7 +1109,7 @@
           "newest_legacy_model_year": 2002,
           "collision_risk": "LOW",
           "siblings_to_keep_separate": [],
-          "existing_evidence": null
+          "existing_evidence": "evidence/toyota/granvia.json"
         }
       ]
     },
