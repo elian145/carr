@@ -46,7 +46,9 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersColor {
             setState(() {
               selectedCylinderCount =
                   value == null || value.isEmpty ? null : value;
-              _applyMoreFiltersEngineSyncFromCylinder(selectedCylinderCount);
+              if (selectedCylinderCount != null) {
+                _homeReconcileLinkedSpecs(SellSpecField.cylinders);
+              }
             });
             setStateDialog(() {});
             _persistFilters();
@@ -112,9 +114,9 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersColor {
                         setState(() {
                           selectedEngineSize =
                               value == null || value.isEmpty ? null : value;
-                          _applyMoreFiltersCylinderSyncFromEngine(
-                            selectedEngineSize,
-                          );
+                          if (selectedEngineSize != null) {
+                            _homeReconcileLinkedSpecs(SellSpecField.engine);
+                          }
                         });
                         setStateDialog(() {});
                         _persistFilters();
@@ -136,10 +138,9 @@ mixin _HomePageMoreFiltersSpecsEngine on _HomePageMoreFiltersColor {
                       ],
                       onChanged: (value) {
                         setState(() {
+                          // Free typing is not a catalog engine label: it never
+                          // reconciles the linked fields.
                           selectedEngineSize = value.isEmpty ? null : value;
-                          _applyMoreFiltersCylinderSyncFromEngine(
-                            selectedEngineSize,
-                          );
                         });
                         setStateDialog(() {});
                         _persistFilters();

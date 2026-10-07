@@ -1,38 +1,44 @@
 part of 'car_spec_index.dart';
 
 mixin CarSpecIndexHelpers on CarSpecIndexBase {
+  /// Every dataset row (model + trim) of the model line of [appModel], across
+  /// ALL years. This is the one source of every specification option and every
+  /// linked-spec relationship: BRAND + MODEL defines the options. Neither the
+  /// selected year nor the selected trim narrows it (an approved IQ overlay only
+  /// ever widens it, elsewhere).
+  List<({_Model model, _Trim trim})> _modelLevelRows(
+    int brandId,
+    String appModel,
+  ) {
+    final out = <({_Model model, _Trim trim})>[];
+    for (final m in _familyModels(brandId, appModel)) {
+      for (final t in _trimsByModelId[m.id] ?? const <_Trim>[]) {
+        out.add((model: m, trim: t));
+      }
+    }
+    return out;
+  }
+
   List<({int datasetModelId, CatalogSpecFields fields, OnlineSpecVariant variant})>
       _catalogSellRowsDeduped(
     int brandId,
     String appModel,
-    String appTrim,
-    int year,
+    int? preferYear,
   ) {
-    final family = _familyModels(brandId, appModel);
-    if (family.isEmpty) return const [];
-    final models = _modelsForSellFieldAggregation(brandId, appModel, appTrim, year);
-    final anyStrictFamily =
-        family.any((m) => _hasStrictTrimCoveringYear(m.id, year));
-    final narrowIds = _modelsForCatalogSellScope(brandId, appModel, appTrim)
-        .map((m) => m.id)
-        .toSet();
-    // Only suppress tail-reused MY rows when the user narrowed to a subset of the
-    // family. Full-line autofill (empty trim → narrowIds == family) must still union
-    // carry-over engines (e.g. 4.0L LC) when another variant has a strict 2025 row.
-    final narrowIsStrictSubset = narrowIds.length < family.length;
     final out =
         <({int datasetModelId, CatalogSpecFields fields, OnlineSpecVariant variant})>[];
     final seen = <String>{};
-    for (final m in models) {
-      if (!_hasStrictTrimCoveringYear(m.id, year)) {
-        if (anyStrictFamily &&
-            narrowIds.contains(m.id) &&
-            narrowIsStrictSubset) {
-          continue;
-        }
-      }
-      final trim = _trimForModelYear(m.id, year);
-      if (trim == null) continue;
+    var scoped = _modelLevelRows(brandId, appModel);
+    if (preferYear != null) {
+      // Only used to choose the DEFAULT row an explicit "Apply specs" pre-fills
+      // (never to filter options): rows of that model year first, else all.
+      final inYear =
+          scoped.where((r) => r.trim.coversYear(preferYear)).toList();
+      if (inYear.isNotEmpty) scoped = inYear;
+    }
+    for (final row in scoped) {
+      final m = row.model;
+      final trim = row.trim;
       final spec = _specForTrim(trim.id);
       if (spec == null) continue;
       final CatalogSpecFields f;
@@ -47,7 +53,7 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
         f.cylinderCount?.toString(),
         f.transmission,
         f.driveType,
-        f.bodyType,
+        (f.bodyTypes.toList()..sort()).join('+'),
         f.engineType,
         f.fuelType,
         f.seating?.toString(),
@@ -95,13 +101,30 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     final fam = appModel.trim();
     if (fam.isEmpty) return const [];
     final famLower = fam.toLowerCase();
+    final catalogModels = CarCatalog.models;
     return _familyModelsCache.putIfAbsent(
-      '$brandId\x1e$famLower',
+      '$brandId\x1e$famLower\x1e${identityHashCode(catalogModels)}',
       () {
         final list = _modelsByBrandId[brandId] ?? const <_Model>[];
+        final brandName = _brandsById[brandId]?.name ?? '';
+        // Sibling isolation: a row whose dataset name is also claimed by a
+        // MORE SPECIFIC catalog model of the same brand ("Land Cruiser Prado
+        // 2 7" for "Land Cruiser", "Golf R 2 0" for "Golf") belongs to that
+        // longer model only. Longest canonical model wins, exactly like the
+        // tooling's `ModelIndex.resolve`.
+        final longer = _longerCatalogSiblings(catalogModels, brandName, fam);
         return List<_Model>.unmodifiable(
           list
-              .where((m) => _datasetNameMatchesAppFamily(m.name, famLower))
+              .where(
+                (m) =>
+                    carSpecDatasetNameMatchesFamily(brandName, fam, m.name) &&
+                    !longer.any(
+                      (x) => carSpecDatasetNameMatchesFamily(brandName, x, m.name),
+                    ) &&
+                    // Last step: reviewed qualifier exclusions (a different
+                    // vehicle line that merely starts with this model name).
+                    !carSpecDatasetNameIsReviewedExclusion(brandName, fam, m.name),
+              )
               .toList()
             ..sort(
               (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
@@ -109,6 +132,36 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
         );
       },
     );
+  }
+
+  /// Catalog models per spaced brand key (rebuilt only when the catalog map
+  /// instance changes). Source of the sibling boundaries.
+  Map<String, List<String>>? _siblingModelsByBrandKey;
+  Object? _siblingModelsSource;
+
+  /// Catalog models of [brandName] that are whole-word extensions of [family]
+  /// ("Land Cruiser Prado" for "Land Cruiser"), i.e. the only models that can
+  /// own a row [family] would otherwise absorb. Empty when the catalog does
+  /// not list the brand or the model has no longer sibling.
+  List<String> _longerCatalogSiblings(
+    Map<String, List<String>> catalogModels,
+    String brandName,
+    String family,
+  ) {
+    if (!identical(_siblingModelsSource, catalogModels)) {
+      _siblingModelsSource = catalogModels;
+      _siblingModelsByBrandKey = <String, List<String>>{
+        for (final e in catalogModels.entries)
+          carSpecSpacedNameKey(e.key): e.value,
+      };
+    }
+    final models = _siblingModelsByBrandKey![carSpecSpacedNameKey(brandName)];
+    if (models == null) return const <String>[];
+    final famKey = carSpecSpacedNameKey(family);
+    return <String>[
+      for (final x in models)
+        if (carSpecSpacedNameKey(x).startsWith('$famKey ')) x,
+    ];
   }
 
   /// Memoized [_mapSpecToFormFields] for a dataset trim. The mapping depends
@@ -127,22 +180,6 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     );
     _formFieldsByTrimIdCache[trim.id] = f;
     return f;
-  }
-
-  /// True when [datasetVariantName] belongs to the app catalog model line [familyLower].
-  ///
-  /// Supports multi-word lines (e.g. app "5 Series" ↔ dataset "5 Series 540i …") and
-  /// single-word lines (e.g. "Sportage" ↔ "Sportage 2 0 …") via first-token match.
-  bool _datasetNameMatchesAppFamily(
-    String datasetVariantName,
-    String familyLower,
-  ) {
-    final dn = datasetVariantName.trim().toLowerCase();
-    if (dn.isEmpty) return false;
-    if (dn == familyLower) return true;
-    if (dn.startsWith('$familyLower ')) return true;
-    final first = dn.split(RegExp(r'\s+')).first;
-    return first == familyLower;
   }
 
   /// Score how well a dataset variant name matches the app trim label.
@@ -196,58 +233,15 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     return family;
   }
 
-  /// Raw JSON range only (no tail-year fallback) — used to decide real MY coverage.
-  bool _hasStrictTrimCoveringYear(int modelId, int year) {
-    for (final t in _trimsByModelId[modelId] ?? const <_Trim>[]) {
-      if (t.coversYear(year)) return true;
-    }
-    return false;
-  }
-
-  /// Models to aggregate fuel/engine/drivetrain options: trim scope plus any same-line
-  /// variant that has a **real** catalog row for [year] (so e.g. VX trim still picks up
-  /// hybrid LC 300 for 2025 even when "VX" does not appear in that dataset name).
-  List<_Model> _modelsForSellFieldAggregation(
-    int brandId,
-    String appModel,
-    String appTrim,
-    int year,
-  ) {
-    final family = _familyModels(brandId, appModel);
-    if (family.isEmpty) return const [];
-    final narrow = _modelsForCatalogSellScope(brandId, appModel, appTrim);
-    final ids = <int>{};
-    for (final m in narrow) {
-      ids.add(m.id);
-    }
-    for (final m in family) {
-      if (_hasStrictTrimCoveringYear(m.id, year)) {
-        ids.add(m.id);
-      }
-    }
-    return family.where((m) => ids.contains(m.id)).toList();
-  }
-
-  _Trim? _trimForModelYear(int datasetModelId, int year) {
-    final rows = _trimsByModelId[datasetModelId] ?? const <_Trim>[];
-    for (final t in rows) {
+  /// The row of [datasetModelId] whose explicit year range contains [year], or
+  /// null. Only used for per-row facts (e.g. the default row of an explicit
+  /// "Apply specs"), never to narrow option lists.
+  _Trim? _strictTrimForModelYear(int datasetModelId, int year) {
+    for (final t in _trimsByModelId[datasetModelId] ?? const <_Trim>[]) {
       if (t.coversYear(year)) return t;
-    }
-    final cap = _openEndedModelYearCap();
-    if (year > cap) return null;
-    _Trim? best;
-    for (final t in rows) {
-      if (t.yearStart > year) continue;
-      if (best == null || t.yearEnd > best.yearEnd) best = t;
-    }
-    if (best != null &&
-        year > best.yearEnd &&
-        best.yearEnd >= cap - _kCatalogStaleExportGraceYears) {
-      return best;
     }
     return null;
   }
-
   _Spec? _specForTrim(int trimId) => _specByTrimId[trimId];
 
   /// Resolved specs for a dataset model row and model year, or null if missing.
@@ -350,37 +344,13 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     final ts = (s.transmission ?? '').toLowerCase();
     if (ts.contains('manual')) transmission = 'manual';
 
-    String driveType = 'fwd';
-    final traction = (raw['Traction:'] ?? '').toString().toLowerCase();
-    final dr = '${s.drivetrain ?? ''} $traction'.toLowerCase();
-    if (dr.contains('awd')) {
-      driveType = 'awd';
-    } else if (dr.contains('4wd') || dr.contains('4-wd')) {
-      driveType = '4wd';
-    } else if (dr.contains('rwd') || dr.contains('rear-wheel')) {
-      driveType = 'rwd';
-    } else if (dr.contains('fwd') || dr.contains('front-wheel')) {
-      driveType = 'fwd';
-    }
+    // Evidence only: blank / unknown / contradictory source text yields null
+    // (see car_spec_index_body_drive.dart). Never a factual default.
+    final String? driveType =
+        carSpecDriveKey(s.drivetrain, raw['Traction:']?.toString());
 
-    String bodyType = 'sedan';
-    final b = (s.bodyType ?? '').toLowerCase();
-    if (b.contains('suv') ||
-        b.contains('sport-utility') ||
-        b.contains('off-road') ||
-        (b.contains('wagon') && b.contains('sport'))) {
-      bodyType = 'suv';
-    } else if (b.contains('hatch')) {
-      bodyType = 'hatchback';
-    } else if (b.contains('coupe')) {
-      bodyType = 'coupe';
-    } else if (b.contains('pickup') || b.contains('truck')) {
-      bodyType = 'pickup';
-    } else if (b.contains('van')) {
-      bodyType = 'van';
-    } else if (b.contains('sedan') || b.contains('saloon')) {
-      bodyType = 'sedan';
-    }
+    final bodyTypes = carSpecBodyKeys(s.bodyType);
+    final String? bodyType = carSpecSingleBodyKey(bodyTypes);
 
     final engineLiters = _resolveEngineLitersForForm(
       s,
@@ -417,6 +387,7 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
       transmission: transmission,
       driveType: driveType,
       bodyType: bodyType,
+      bodyTypes: bodyTypes,
       engineSizeLiters: engineLiters,
       displacementSuffix: displacementSuffix,
       cylinderCount: cylinders,
@@ -425,7 +396,9 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     );
   }
 
-  String _normBrand(String s) => s.toLowerCase().trim();
+  /// Brand identity: case-insensitive, trimmed, with cosmetic `-`/`_` folded to
+  /// a space so catalog `Rolls Royce` resolves dataset `Rolls-Royce`.
+  String _normBrand(String s) => carSpecSpacedNameKey(s);
 
   /// Parses nominal displacement from a dataset model/trim label (e.g. `3 5L`, `2 25L`,
   /// `2 4 i-force`, `3 0 d-4d`, `4 0 v6`, `4 0 (`).
@@ -504,4 +477,114 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     if (tail != null) return int.tryParse(tail.group(1)!);
     return null;
   }
+}
+
+/// Lower-cases and folds the purely cosmetic separators `-` and `_` to a
+/// single space (`"5-Series"` == `"5 Series"`, `"ATS-V"` == `"ATS V"`,
+/// `"Rolls-Royce"` == `"Rolls Royce"`). Everything else is kept verbatim: no
+/// other punctuation is stripped, so token/family identity is preserved (`/`
+/// in particular is NOT folded: `"2500/3500"` stays one token).
+String carSpecSpacedNameKey(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp(r'[-_]'), ' ')
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .trim();
+
+/// Explicit, reviewed dataset-name prefixes for catalog families whose dataset
+/// spelling cannot be bridged by [carSpecSpacedNameKey]. Keyed
+/// `"<spaced brand>|<spaced model>"`; every prefix is matched as a whole
+/// leading phrase. Deliberately tiny and exact (no fuzzy matching).
+///
+/// * Ram 2500: the dataset only has the combined `"2500/3500 2500 ..."` /
+///   `"2500/3500 3500 ..."` rows. Only rows explicitly labelled `2500` belong to
+///   the catalog's `2500` model; the `3500` rows stay unmatched.
+const Map<String, List<String>> _reviewedDatasetFamilyPrefixes =
+    <String, List<String>>{
+  'ram|2500': <String>['2500/3500 2500'],
+};
+
+/// Reviewed qualifier exclusions: dataset-name prefixes that start with a
+/// catalog model's name but identify a DIFFERENT vehicle line (or are a
+/// model-number / displacement split), so the model must not absorb them.
+/// Keyed `"<spaced brand>|<spaced model>"`; every entry is a spaced whole-phrase
+/// prefix of the dataset name.
+///
+/// Source of truth: `recommendation.exclusion_entries` of
+/// `tools/catalog_enrichment/iqcars/generated/iqcars_qualifier_quarantine_audit.json`
+/// (18 entries, 572 dataset rows, 13 models). It is deliberately NOT the
+/// tooling's whole `ambiguous_qualifier` quarantine: trims, engine designations,
+/// series names and the still-ambiguous grades (S, R, V, E, K, M, N, DRW, ...)
+/// keep matching. Never add an entry without an audit row behind it.
+@visibleForTesting
+const Map<String, List<String>> carSpecReviewedFamilyExclusions =
+    <String, List<String>>{
+  'ford|transit': <String>['transit connect'],
+  'gmc|sierra': <String>['sierra 2500hd', 'sierra 3500hd'],
+  'suzuki|sx4': <String>['sx4 s cross'],
+  'suzuki|vitara': <String>['vitara brezza', 'vitara e vitara'],
+  'toyota|crown': <String>['crown majesta'],
+  'toyota|corolla': <String>['corolla verso', 'corolla spacio', 'corolla rumion'],
+  'toyota|avensis': <String>['avensis verso'],
+  'toyota|urban cruiser': <String>['urban cruiser hyryder'],
+  'volkswagen|polo': <String>['polo vivo'],
+  'mercedes benz|eqs': <String>['eqs suv'],
+  'renault|megane': <String>['megane grandcoupe'],
+  'hyundai|ioniq': <String>['ioniq 9'],
+  'chery|tiggo 2': <String>['tiggo 2 0', 'tiggo 2 4'],
+};
+
+/// True when [datasetName] is one of the reviewed exclusions of the catalog
+/// model [familyName] of brand [brandName] (model-specific: an entry never
+/// applies to another brand or model). Visible for tests; the production caller
+/// is `CarSpecIndex._familyModels`.
+@visibleForTesting
+bool carSpecDatasetNameIsReviewedExclusion(
+  String brandName,
+  String familyName,
+  String datasetName,
+) {
+  final prefixes = carSpecReviewedFamilyExclusions[
+      '${carSpecSpacedNameKey(brandName)}|${carSpecSpacedNameKey(familyName)}'];
+  if (prefixes == null) return false;
+  final dn = carSpecSpacedNameKey(datasetName);
+  for (final p in prefixes) {
+    if (dn == p || dn.startsWith('$p ')) return true;
+  }
+  return false;
+}
+
+/// True when the dataset model [datasetName] belongs to the app catalog model
+/// line [familyName] of brand [brandName].
+///
+/// Three additive rules, nothing fuzzy:
+/// 1. legacy: equality, `"<family> ..."` prefix, or first token == family
+///    (multi-word `"5 Series 540i"` and single-word `"Sportage 2 0 ..."`);
+/// 2. the same equality / whole-word prefix on [carSpecSpacedNameKey] forms, so
+///    hyphen/underscore vs space spelling (`5-Series` / `5 Series`) bridges;
+/// 3. a reviewed explicit prefix alias (see [_reviewedDatasetFamilyPrefixes]).
+///
+/// Visible for tests; the production caller is `CarSpecIndex._familyModels`.
+@visibleForTesting
+bool carSpecDatasetNameMatchesFamily(
+  String brandName,
+  String familyName,
+  String datasetName,
+) {
+  final famLower = familyName.trim().toLowerCase();
+  if (famLower.isEmpty) return false;
+  final dn = datasetName.trim().toLowerCase();
+  if (dn.isEmpty) return false;
+  if (dn == famLower || dn.startsWith('$famLower ')) return true;
+  if (dn.split(RegExp(r'\s+')).first == famLower) return true;
+  final famKey = carSpecSpacedNameKey(famLower);
+  final dnKey = carSpecSpacedNameKey(dn);
+  if (dnKey == famKey || dnKey.startsWith('$famKey ')) return true;
+  final aliases =
+      _reviewedDatasetFamilyPrefixes['${carSpecSpacedNameKey(brandName)}|$famKey'];
+  if (aliases == null) return false;
+  final flat = dn.replaceAll(RegExp(r'\s+'), ' ');
+  for (final p in aliases) {
+    if (flat == p || flat.startsWith('$p ')) return true;
+  }
+  return false;
 }

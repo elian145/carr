@@ -172,8 +172,6 @@ abstract class _HomePageFields extends State<HomePage> {
   CarSpecIndex? _homeCarSpecIdx;
   String? _homeCatalogOptsCacheKey;
   CatalogSellFieldOptions? _homeCatalogOptsCache;
-  String? _homeEngineCatalogOptsCacheKey;
-  CatalogSellFieldOptions? _homeEngineCatalogOptsCache;
   String? _homeFilterSpecVariantsCacheKey;
   List<OnlineSpecVariant>? _homeFilterSpecVariantsCache;
 

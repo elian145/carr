@@ -4,31 +4,12 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
   void _invalidateHomeCatalogFilterCaches() {
     _homeCatalogOptsCacheKey = null;
     _homeCatalogOptsCache = null;
-    _homeEngineCatalogOptsCacheKey = null;
-    _homeEngineCatalogOptsCache = null;
     _homeFilterSpecVariantsCacheKey = null;
     _homeFilterSpecVariantsCache = null;
     _homeVehicleFieldOptionsCacheKey = null;
     _homeVehicleFieldOptionsCacheIdx = null;
     _homeVehicleFieldOptionsCache = null;
     _homeVehicleFieldOptionsCacheProvisional = false;
-  }
-
-  /// Parsed min/max year from the home filter (empty string = unbounded). Swaps if inverted.
-  ({int? minY, int? maxY}) _homeFilterYearBounds() {
-    var minY = int.tryParse((selectedMinYear ?? '').trim());
-    var maxY = int.tryParse((selectedMaxYear ?? '').trim());
-    if (minY != null && maxY != null && minY > maxY) {
-      final t = minY;
-      minY = maxY;
-      maxY = t;
-    }
-    return (minY: minY, maxY: maxY);
-  }
-
-  void _afterHomeYearBoundsChanged() {
-    _invalidateHomeCatalogFilterCaches();
-    syncDependentFiltersToVehicle();
   }
 
   /// Spec rows for correlating engine ↔ cylinders in More Filters (cached per scope).
@@ -38,158 +19,128 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     if (singleBrand.isEmpty || m == null || m.isEmpty) return const [];
     final idx = _homeCarSpecIdx;
     if (idx == null) return const [];
-    final trimKey = selectedTrim?.trim() ?? '';
-    final yb = _homeFilterYearBounds();
-    final key =
-        'sv|$singleBrand|\x1e|$m|\x1e|$trimKey|\x1e|${yb.minY ?? ''}|\x1e|${yb.maxY ?? ''}';
+    // Brand + model only: the trim never changes the rows.
+    final key = 'sv|$singleBrand|\x1e|$m';
     if (_homeFilterSpecVariantsCacheKey == key &&
         _homeFilterSpecVariantsCache != null) {
       return _homeFilterSpecVariantsCache!;
     }
-    final appTrim = trimKey.isEmpty
-        ? CarSpecIndex.catalogAutofillModelOnly
-        : trimKey;
     final list = idx.homeFilterSpecVariantsUnion(
       singleBrand,
       m,
-      appTrim,
-      rangeMinYear: yb.minY,
-      rangeMaxYear: yb.maxY,
+      CarSpecIndex.catalogAutofillModelOnly,
     );
     _homeFilterSpecVariantsCacheKey = key;
     _homeFilterSpecVariantsCache = list;
     return list;
   }
 
-  /// When catalog data ties engine size to cylinders, align cylinder count with engine.
-  /// Only runs if the user already chose a concrete cylinder count (not Any / unset).
-  void _applyMoreFiltersCylinderSyncFromEngine(String? engineLabel) {
-    if (engineLabel == null || engineLabel.trim().isEmpty) return;
-    final prevCyl = selectedCylinderCount;
-    if (prevCyl == null || prevCyl.isEmpty || prevCyl.toLowerCase() == 'any') {
-      return;
-    }
-    final vs = _homeMoreFiltersSpecVariants();
-    if (vs.isEmpty) return;
-
-    final t = engineLabel.trim();
-    var narrowed = vs.where((v) {
-      if (v.engineSizeLiters == null || v.engineSizeLiters! <= 0.001) {
-        return false;
-      }
-      final label =
-          '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
-      return label == t;
-    }).toList();
-
-    if (narrowed.isEmpty) {
-      final lit = OnlineSpecVariant.parseLeadingEngineLiters(t);
-      if (lit == null) return;
-      final lit1 = double.parse(lit.toStringAsFixed(1));
-      narrowed = vs.where((v) {
-        if (v.engineSizeLiters == null) return false;
-        return (v.engineSizeLiters! - lit1).abs() < 0.06;
-      }).toList();
-    }
-    if (narrowed.isEmpty) return;
-
-    final cyls = narrowed
-        .map((v) => v.cylinderCount)
-        .whereType<int>()
-        .where((c) => c > 0)
-        .toSet();
-    if (cyls.isEmpty) return;
-
-    int? nextCyl;
-    if (cyls.length == 1) {
-      nextCyl = cyls.first;
-    } else {
-      final lit = OnlineSpecVariant.parseLeadingEngineLiters(t);
-      final lit1 = lit == null ? null : double.parse(lit.toStringAsFixed(1));
-      final pick = OnlineSpecVariant.matchBestAnchored(narrowed, {
-        'e',
-      }, engineLiters: lit1);
-      if (pick?.cylinderCount != null && pick!.cylinderCount! > 0) {
-        nextCyl = pick.cylinderCount;
-      }
-    }
-    if (nextCyl == null) return;
-
-    final nextStr = '$nextCyl';
-    if (selectedCylinderCount == nextStr) return;
-    if (!getAvailableCylinderCounts().contains(nextStr)) return;
-
-    selectedCylinderCount = nextStr;
-    _moreFiltersDialogFieldGeneration++;
+  /// The shared trusted resolver ([SellSpecReconciler], the same one Sell uses)
+  /// over the CarNet rows scoped to the current Search vehicle (make + model +
+  /// trim + year window). Null when the catalog cannot answer. The approved IQ
+  /// model-level engine / cylinder lists only widen the AVAILABLE engine labels;
+  /// they never create a relationship.
+  SearchSpecReconciler? _homeLinkedSpecReconciler() {
+    if (_homeVehicleResolutionDeferred) return null;
+    final rows = _homeMoreFiltersSpecVariants();
+    if (rows.isEmpty) return null;
+    return SearchSpecReconciler(
+      SellSpecReconciler(
+        rows: rows,
+        availableEngines: getAvailableEngineSizes(),
+        fuelKeyOf: (v) {
+          final f = (v.fuelType ?? v.engineType)?.trim();
+          if (f == null || f.isEmpty) return null;
+          return sellFlowFuelLabel(f).toLowerCase();
+        },
+      ),
+    );
   }
 
-  /// When catalog data ties cylinder count to engine size, align engine with cylinders.
-  /// Only runs if the user already chose a concrete engine size (not Any / unset).
-  void _applyMoreFiltersEngineSyncFromCylinder(String? newCylinderStr) {
-    final prevEng = selectedEngineSize;
-    if (prevEng == null || prevEng.isEmpty || prevEng.toLowerCase() == 'any') {
-      return;
+  SearchSpecState _homeLinkedSpecState() {
+    final eng = selectedEngineSize?.trim() ?? '';
+    // A hand-typed engine is not a catalog label: never reconciled or replaced.
+    final engineLabel =
+        isEngineSizeDropdown && eng.isNotEmpty && eng.toLowerCase() != 'any'
+            ? eng
+            : null;
+    final cyl = int.tryParse((selectedCylinderCount ?? '').trim());
+    return SearchSpecState(
+      engine: engineLabel,
+      cylinders: cyl,
+      fuels: [
+        for (final f in homeFilterDecodeList(selectedFuelType))
+          f.trim().toLowerCase(),
+      ],
+    );
+  }
+
+  /// Writes [next] into the filter state (plain assignments, no callbacks) and
+  /// reports whether anything changed. Only values the current option lists
+  /// offer are applied.
+  bool _homeApplyLinkedSpecState(SearchSpecState cur, SearchSpecState next) {
+    if (next == cur) return false;
+    var changed = false;
+    final e = next.engine;
+    if (e != null && e != cur.engine && getAvailableEngineSizes().contains(e)) {
+      selectedEngineSize = e;
+      _engineSizeController.text = e;
+      changed = true;
     }
-    if (newCylinderStr == null ||
-        newCylinderStr.isEmpty ||
-        newCylinderStr.toLowerCase() == 'any') {
-      return;
+    final c = next.cylinders;
+    if (c != null &&
+        c != cur.cylinders &&
+        getAvailableCylinderCounts().contains('$c')) {
+      selectedCylinderCount = '$c';
+      changed = true;
     }
-    final cyl = int.tryParse(newCylinderStr);
-    if (cyl == null || cyl <= 0) return;
-
-    final vs = _homeMoreFiltersSpecVariants();
-    if (vs.isEmpty) return;
-
-    final narrowed = vs
-        .where((v) => v.cylinderCount != null && v.cylinderCount == cyl)
-        .toList();
-    if (narrowed.isEmpty) return;
-
-    String? labelFromVariant(OnlineSpecVariant v) {
-      if (v.engineSizeLiters == null || v.engineSizeLiters! <= 0.001) {
-        return null;
+    if (next.fuels.join('|') != cur.fuels.join('|') && next.fuels.isNotEmpty) {
+      final offered = getAvailableFuelTypes();
+      final labels = <String>[
+        for (final k in next.fuels)
+          if (offered.contains(sellFlowFuelLabel(k))) sellFlowFuelLabel(k),
+      ];
+      if (labels.isNotEmpty) {
+        selectedFuelType = homeFilterEncodeList(labels);
+        changed = true;
       }
-      return '${v.engineSizeLiters!.toStringAsFixed(1)}${v.displacementSuffix}';
     }
+    if (changed) _moreFiltersDialogFieldGeneration++;
+    return changed;
+  }
 
-    final labels = narrowed.map(labelFromVariant).whereType<String>().toSet();
-    if (labels.isEmpty) return;
+  /// One cheap, deterministic reconciliation pass after the user changed the
+  /// engine, cylinders or fuel (a concrete value; picking `Any` never calls
+  /// this). The changed field is preserved; see [SearchSpecReconciler].
+  bool _homeReconcileLinkedSpecs(SellSpecField changed, {String? addedFuel}) {
+    final r = _homeLinkedSpecReconciler();
+    if (r == null) return false;
+    final cur = _homeLinkedSpecState();
+    final next = switch (changed) {
+      SellSpecField.engine => r.afterEngine(cur),
+      SellSpecField.cylinders => r.afterCylinders(cur),
+      SellSpecField.fuel => r.afterFuel(cur, added: addedFuel?.toLowerCase()),
+    };
+    return _homeApplyLinkedSpecState(cur, next);
+  }
 
-    String? nextLabel;
-    if (labels.length == 1) {
-      nextLabel = labels.first;
-    } else {
-      final prevLit = OnlineSpecVariant.parseLeadingEngineLiters(prevEng);
-      final prevLit1 = prevLit == null
-          ? null
-          : double.parse(prevLit.toStringAsFixed(1));
-      final pick = OnlineSpecVariant.matchBestAnchored(
-        narrowed,
-        {'c'},
-        cylinders: cyl,
-        engineLiters: prevLit1,
-      );
-      nextLabel = pick == null ? null : labelFromVariant(pick);
-    }
-    if (nextLabel == null || nextLabel.isEmpty) return;
-    if (selectedEngineSize == nextLabel) return;
-    if (!getAvailableEngineSizes().contains(nextLabel)) return;
-
-    selectedEngineSize = nextLabel;
-    _engineSizeController.text = nextLabel;
-    _moreFiltersDialogFieldGeneration++;
+  /// Restored / re-validated filters: keep compatible selections, let the stored
+  /// engine pull a conflicting concrete cylinder / fuel to its trusted value.
+  bool _homeRestoreLinkedSpecs() {
+    if (_homeCarSpecIdx == null) return false;
+    final cur = _homeLinkedSpecState();
+    if (cur.engine == null) return false;
+    final r = _homeLinkedSpecReconciler();
+    if (r == null) return false;
+    return _homeApplyLinkedSpecState(cur, r.afterRestore(cur));
   }
 
   /// The current Search vehicle selection (make / model / trim / year window).
   HomeVehicleContext _homeVehicleContext() {
-    final yb = _homeFilterYearBounds();
     return HomeVehicleContext(
       brand: homeFilterDecodeSingle(selectedBrand),
       model: selectedModel,
       trim: selectedTrim,
-      minYear: yb.minY,
-      maxYear: yb.maxY,
     );
   }
 
@@ -213,26 +164,10 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
     return resolved;
   }
 
-  /// Trim-aware catalog values (make + model + trim + year window). Engine size
-  /// only: Search's pre-existing trim narrowing for engines, which Sell lacks.
-  CatalogSellFieldOptions? _homeEngineCatalogFieldOptions() {
-    final idx = _homeCarSpecIdx;
-    if (idx == null) return null;
-    final ctx = _homeVehicleContext();
-    // Without a trim the trim-aware resolution is identical to the model-level
-    // one (see [resolveHomeVehicleEngineCatalogOptions]): reuse it instead of
-    // scanning the catalog a second time.
-    if ((ctx.trim?.trim() ?? '').isEmpty) return _homeCatalogFieldOptions();
-    final key = ctx.engineCacheKey;
-    if (_homeEngineCatalogOptsCacheKey == key) {
-      return _homeEngineCatalogOptsCache;
-    }
-    if (_homeVehicleResolutionDeferred) return null;
-    final resolved = resolveHomeVehicleEngineCatalogOptions(idx, ctx);
-    _homeEngineCatalogOptsCacheKey = key;
-    _homeEngineCatalogOptsCache = resolved;
-    return resolved;
-  }
+  /// Engine-size catalog values: make + model only (trim and year never change
+  /// them), i.e. the same answer as [_homeCatalogFieldOptions].
+  CatalogSellFieldOptions? _homeEngineCatalogFieldOptions() =>
+      _homeCatalogFieldOptions();
 
   HomeVehicleFieldDefaults _homeVehicleFieldDefaults() =>
       HomeVehicleFieldDefaults(
@@ -279,6 +214,15 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
       catalog: _homeCatalogFieldOptions(),
       engineCatalog: _homeEngineCatalogFieldOptions(),
       defaults: _homeVehicleFieldDefaults(),
+      // A catalog Brand + Model is selected, the index is loaded and no result
+      // tap is pending: the catalog's answer (or silence) for engine/cylinder is
+      // final. A model the CarNet catalog does not list at all (e.g. a stale
+      // saved search) keeps the generic defaults and is never wiped.
+      vehicleResolved: idx != null &&
+          !_homeVehicleResolutionDeferred &&
+          (CarCatalog.models[_homeVehicleContext().brand?.trim() ?? '']
+                  ?.contains(_homeVehicleContext().model?.trim() ?? '') ??
+              false),
     );
     _homeVehicleFieldOptionsCacheKey = key;
     _homeVehicleFieldOptionsCacheIdx = idx;
@@ -345,7 +289,11 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
       _homeVehicleFieldOptions(),
       pruneEngineSize: isEngineSizeDropdown,
     );
-    if (after == before) return false;
+    if (after == before) {
+      // Nothing was ruled out: still let a stored concrete engine pull a
+      // conflicting concrete cylinder / fuel to its trusted value.
+      return _homeRestoreLinkedSpecs();
+    }
     selectedBodyType = after.bodyType;
     selectedTransmission = after.transmission;
     selectedFuelType = after.fuelType;
@@ -356,6 +304,9 @@ mixin _HomePageFilterCatalog on _HomePageFetch {
       selectedEngineSize = after.engineSize;
       _engineSizeController.text = after.engineSize ?? '';
     }
+    // Valid selections stay; a stored engine then reconciles its conflicting
+    // concrete dependents (trusted evidence only).
+    _homeRestoreLinkedSpecs();
     // Remount dropdowns so they drop stale internal state.
     _moreFiltersDialogFieldGeneration++;
     return true;

@@ -9,6 +9,14 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     return null;
   }
 
+  /// Dataset model names the family of [appModel] resolves to (audit/tests).
+  @visibleForTesting
+  List<String> debugFamilyDatasetModelNames(String appBrand, String appModel) {
+    final bid = datasetBrandId(appBrand);
+    if (bid == null) return const <String>[];
+    return [for (final m in _familyModels(bid, appModel)) m.name];
+  }
+
   /// Whether this brand + model line appears in the spec dataset (any variant).
   bool hasCoverage(String appBrand, String appModel) {
     final bid = datasetBrandId(appBrand);
@@ -114,6 +122,11 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
 
   /// Years for the catalog card: union across [variantsForCatalogSellScope].
   /// Empty [appTrim] unions years across the full model line ([catalogAutofillModelOnly]).
+  ///
+  /// This is the list of SELECTABLE model years only (the explicit year ranges of
+  /// the dataset rows plus the recent-years tail). It is independent of the
+  /// specification options: a year never disappears because a spec row for that
+  /// exact year is missing, and a year never changes any option list.
   List<int> yearsForCatalogStep(
     String appBrand,
     String appModel,
@@ -136,24 +149,27 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     return out;
   }
 
-  /// Distinct equipment rows for [year] across dataset models in scope for [appTrim].
-  /// Empty [appTrim] uses the full model line ([catalogAutofillModelOnly]).
+  /// Distinct equipment rows of the whole model line (brand + model), deduped and
+  /// sorted by engine size. [appTrim] and [year] are accepted for call-site
+  /// compatibility and have NO effect: specification options are model-level.
   List<OnlineSpecVariant> catalogSellSpecVariants(
     String appBrand,
-    String appModel,
-    String appTrim,
-    int year,
-  ) {
+    String appModel, [
+    String appTrim = CarSpecIndexBase.catalogAutofillModelOnly,
+    int? year,
+  ]) {
     final bid = datasetBrandId(appBrand);
     if (bid == null) return const [];
-    final rows = _catalogSellRowsDeduped(bid, appModel, appTrim, year);
+    final rows = _catalogSellRowsDeduped(bid, appModel, null);
     if (rows.isEmpty) return const [];
     _sortCatalogSellRows(rows);
     return rows.map((e) => e.variant).toList();
   }
 
-  /// Default row for catalog apply — matches the first [catalogSellSpecVariants] entry
-  /// (deduped equipment, sorted by engine litres then cylinders).
+  /// Default row for an explicit catalog "Apply specs" for [year]: the first
+  /// [catalogSellSpecVariants] entry among the rows that cover that model year,
+  /// or among all model rows when none does. It only picks the PRE-FILLED
+  /// default; it never narrows the available options.
   CatalogSellRepresentative? representativeForCatalogSell(
     String appBrand,
     String appModel,
@@ -162,7 +178,7 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
   ) {
     final bid = datasetBrandId(appBrand);
     if (bid == null) return null;
-    final rows = _catalogSellRowsDeduped(bid, appModel, appTrim, year);
+    final rows = _catalogSellRowsDeduped(bid, appModel, year);
     if (rows.isEmpty) return null;
     _sortCatalogSellRows(rows);
     final r = rows.first;
@@ -171,7 +187,6 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
       fields: r.fields,
     );
   }
-
   int? suggestDatasetModelId(int brandId, String appModel, String appTrim) {
     final fam = _familyModels(brandId, appModel);
     if (fam.isEmpty) return null;
@@ -184,9 +199,9 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     return scored.first.key;
   }
 
-  /// True if [year] is covered by raw ranges or by [recent export tail] logic.
+  /// True if [year] is inside the explicit year range of this dataset row.
   bool datasetVariantCoversYear(int datasetModelId, int year) {
-    return _trimForModelYear(datasetModelId, year) != null;
+    return _strictTrimForModelYear(datasetModelId, year) != null;
   }
 
   /// Production years for UI hints, e.g. `2017–2023` or `2020`.
@@ -274,27 +289,23 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     return out;
   }
 
-  /// Union of sell-step values for every catalog row that matches brand, model family, trim, and [year].
-  /// Empty [appTrim] unions the full model line ([catalogAutofillModelOnly]).
-  /// Null when there is no coverage or no spec rows for that year.
+  /// Union of sell-step values for EVERY catalog row of the model line (brand +
+  /// model, all years). The model alone defines these option lists: [year] and
+  /// [appTrim] are accepted for call-site compatibility and have NO effect (the
+  /// dataset rows AND the model-level IQ additions are the same for every trim).
+  /// Null when there is no coverage or no spec rows.
   CatalogSellFieldOptions? sellFieldOptionsUnion(
     String appBrand,
     String appModel,
-    String appTrim,
-    int year,
-  ) {
+    String appTrim, [
+    int? year,
+  ]) {
     final bid = datasetBrandId(appBrand);
-    if (bid == null) return null;
+    if (bid == null) return iqOnlyFieldOptions(appBrand, appModel, appTrim);
     final family = _familyModels(bid, appModel);
-    if (family.isEmpty) return null;
-    final models = _modelsForSellFieldAggregation(bid, appModel, appTrim, year);
-    if (models.isEmpty) return null;
-    final anyStrictFamily =
-        family.any((m) => _hasStrictTrimCoveringYear(m.id, year));
-    final narrowIds = _modelsForCatalogSellScope(bid, appModel, appTrim)
-        .map((m) => m.id)
-        .toSet();
-    final narrowIsStrictSubset = narrowIds.length < family.length;
+    if (family.isEmpty) return iqOnlyFieldOptions(appBrand, appModel, appTrim);
+    final scoped = _modelLevelRows(bid, appModel);
+    if (scoped.isEmpty) return null;
 
     final transmissions = <String>{};
     final fuelTypes = <String>{};
@@ -305,24 +316,22 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     final seatings = <String>{};
 
     var anySpec = false;
-    for (final m in models) {
-      if (!_hasStrictTrimCoveringYear(m.id, year)) {
-        if (anyStrictFamily &&
-            narrowIds.contains(m.id) &&
-            narrowIsStrictSubset) {
-          continue;
-        }
-      }
-      final trim = _trimForModelYear(m.id, year);
-      if (trim == null) continue;
+    for (final row in scoped) {
+      final m = row.model;
+      final trim = row.trim;
       final spec = _specForTrim(trim.id);
       if (spec == null) continue;
       anySpec = true;
       final f = _formFieldsForTrim(m, trim, spec);
       transmissions.add(sellFlowTransmissionLabel(f.transmission));
       fuelTypes.add(sellFlowFuelLabel(f.fuelType));
-      bodyTypes.add(sellFlowBodyLabel(f.bodyType));
-      driveTypes.add(sellFlowDriveLabel(f.driveType));
+      // Evidence only: a row without a recognised body / drivetrain adds nothing.
+      for (final k in f.bodyTypes) {
+        final label = sellFlowBodyLabel(k);
+        if (label != null) bodyTypes.add(label);
+      }
+      final driveLabel = sellFlowDriveLabel(f.driveType);
+      if (driveLabel != null) driveTypes.add(driveLabel);
       if (f.cylinderCount != null && f.cylinderCount! > 0) {
         cylinderCounts.add('${f.cylinderCount}');
       }
@@ -336,6 +345,14 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     }
 
     if (!anySpec) return null;
+    // Approved IQ Cars additions (additive, model-level, whatever the trim is).
+    // They are a plain UNION of option labels; IQ publishes no trim / engine /
+    // cylinder / fuel relationship, so none is ever derived from them (linked
+    // selection stays in the trusted reconcilers). It also fills an empty CarNet
+    // set (no "baseline must be non-empty" rule).
+    _iqOverlay.addEngineSizes(engineSizes, appBrand, appModel);
+    _iqOverlay.addCylinderCounts(cylinderCounts, appBrand, appModel);
+    final iqCylinders = _iqOverlay.approvedCylinderLabels(appBrand, appModel);
     return CatalogSellFieldOptions(
       transmissions: transmissions,
       fuelTypes: fuelTypes,
@@ -344,8 +361,54 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
       cylinderCounts: cylinderCounts,
       engineSizes: engineSizes,
       seatings: seatings,
+      iqCylinderCounts: iqCylinders,
     );
   }
+
+  /// Field-aware coverage for a model the spec dataset has NO rows for
+  /// ([hasCoverage] is false). The approved IQ overlay counts as coverage for
+  /// the specific field it provides and for nothing else:
+  ///
+  /// * engine sizes -> only if IQ approved engine sizes for this Brand + Model;
+  /// * cylinder counts -> only if IQ approved cylinder counts;
+  /// * every other field stays empty, so callers keep their defaults for it.
+  ///
+  /// Returns null (callers keep their existing fallback, exactly as before)
+  /// when IQ has neither. A selected trim never changes the result: the lists are
+  /// model-level.
+  CatalogSellFieldOptions? iqOnlyFieldOptions(
+    String appBrand,
+    String appModel,
+    String appTrim,
+  ) {
+    final overlay = _iqOverlay;
+    final hasEngines = overlay.hasEngineSizes(appBrand, appModel);
+    final hasCylinders = overlay.hasCylinderCounts(appBrand, appModel);
+    if (!hasEngines && !hasCylinders) return null;
+    final engineSizes = <String>{};
+    final cylinderCounts = <String>{};
+    overlay.addEngineSizes(engineSizes, appBrand, appModel);
+    overlay.addCylinderCounts(cylinderCounts, appBrand, appModel);
+    if (engineSizes.isEmpty && cylinderCounts.isEmpty) return null;
+    return CatalogSellFieldOptions(
+      transmissions: <String>{},
+      fuelTypes: <String>{},
+      bodyTypes: <String>{},
+      driveTypes: <String>{},
+      cylinderCounts: cylinderCounts,
+      engineSizes: engineSizes,
+      seatings: <String>{},
+      iqCylinderCounts: Set<String>.of(cylinderCounts),
+    );
+  }
+
+  /// Approved IQ Cars additions merged into [sellFieldOptionsUnion] (and thus
+  /// every Search / Sell engine-size and cylinder option set). [IqCarsOverlay.empty]
+  /// until [CarSpecIndexHomeFilter.attachIqCarsOverlay] is called.
+  IqCarsOverlay _iqOverlay = IqCarsOverlay.empty;
+
+  /// The attached overlay (read-only), mainly for tests and diagnostics.
+  IqCarsOverlay get iqCarsOverlay => _iqOverlay;
 
   List<String>? _allCatalogEngineSizeLabelsCache;
 

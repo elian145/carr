@@ -235,6 +235,7 @@ mixin _SellStep2BuildCore on _SellStep2CatalogHydrate {
                 setState(() {
                   selectedCylinderCount = value;
                   if (errCylinderCount) errCylinderCount = false;
+                  _reconcileSellSpecs(SellSpecField.cylinders);
                   _syncStep2ToOnlineVariant({'c'});
                 });
                 _syncStep2DraftToParent();
@@ -309,6 +310,7 @@ mixin _SellStep2BuildCore on _SellStep2CatalogHydrate {
                             setState(() {
                               selectedEngineSize = value;
                               if (errEngineSize) errEngineSize = false;
+                              _applyTrustedCylinderForSelectedEngine();
                               _syncStep2ToOnlineVariant({'e'});
                             });
                             _syncStep2DraftToParent();
@@ -325,6 +327,7 @@ mixin _SellStep2BuildCore on _SellStep2CatalogHydrate {
                         isEngineSizeManualInput = false;
                         if (_engineSizeController.text.isNotEmpty) {
                           selectedEngineSize = _engineSizeController.text.trim();
+                          _applyTrustedCylinderForSelectedEngine();
                           _syncStep2ToOnlineVariant({'e'});
                         }
                       });
@@ -433,6 +436,7 @@ mixin _SellStep2BuildCore on _SellStep2CatalogHydrate {
         onSelected: (value) {
           setState(() {
             selectedFuelType = value;
+            _reconcileSellSpecs(SellSpecField.fuel);
             _syncStep2ToOnlineVariant({'fuel'});
           });
           _syncStep2DraftToParent();

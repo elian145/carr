@@ -35,6 +35,7 @@ class _SellStep2PageState extends _SellStep2Fields
       setState(() {
         _specIdx = idx;
         _refreshCatalogOptsFromParent();
+        _clearSelectionsOutsideOwnLists();
       });
     });
   }

@@ -34,11 +34,16 @@ abstract class CarSpecIndexBase {
     if (override != null) return override();
     try {
       final sw = Stopwatch()..start();
+      // Compact IQ Cars additions load in parallel with the (much larger) spec
+      // dataset; ensureLoaded() never throws and resolves to an empty overlay
+      // when the asset is missing or malformed.
+      final overlayFuture = IqCarsOverlay.ensureLoaded();
       final raw = await rootBundle.loadString(assetPath);
       appLog(
         'CarSpecIndex: read asset ${(raw.length / 1024 / 1024).toStringAsFixed(2)} MiB in ${sw.elapsedMilliseconds} ms',
       );
       final result = await compute(parseCarSpecDatasetJsonString, raw);
+      result.index?.attachIqCarsOverlay(await overlayFuture);
       appLog(
         'CarSpecIndex: parse + index build finished in ${sw.elapsedMilliseconds} ms (ok=${result.isOk})',
       );

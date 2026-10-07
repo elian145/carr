@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'car_catalog.dart';
 import '../services/api_service.dart';
 import '../services/config.dart';
+import '../services/iqcars_overlay.dart';
 import '../shared/debug/app_log.dart';
 
 /// Parses [assets/car_catalog.json] text. Top-level for [compute].
@@ -62,6 +63,14 @@ class CarCatalogLoader {
     } catch (e, st) {
       logNonFatal(e, st, 'CarCatalogLoader');
       appLog('CarCatalogLoader: using embedded CarCatalog');
+    }
+
+    // Approved IQ Cars trim additions. Small asset, loaded once; a missing or
+    // malformed file resolves to an empty overlay (catalog behaviour unchanged).
+    try {
+      CarCatalog.applyIqCarsOverlay(await IqCarsOverlay.ensureLoaded());
+    } catch (e, st) {
+      logNonFatal(e, st, 'CarCatalogLoader.iqOverlay');
     }
 
     // Never await remote overlay on the critical path (cold Render / N+1 models).
@@ -149,11 +158,15 @@ class CarCatalogLoader {
       for (final b in CarCatalog.brands) {
         final byModel = <String, List<String>>{};
         for (final m in (CarCatalog.models[b] ?? const <String>[])) {
-          final trims = CarCatalog.trimsFor(b, m);
+          // Baseline only: IQ Cars additions are re-applied by CarCatalog on read,
+          // so they must not be baked into the preserved trims.
+          final trims = CarCatalog.baselineTrimsFor(b, m);
           if (trims.isNotEmpty && !(trims.length == 1 && trims.first == 'Base')) {
             byModel[m] = List<String>.from(trims);
-          } else if (CarCatalog.trimsByBrandModel[b]?[m] != null) {
-            byModel[m] = List<String>.from(CarCatalog.trimsByBrandModel[b]![m]!);
+          } else if (CarCatalog.baselineTrimsByBrandModel[b]?[m] != null) {
+            byModel[m] = List<String>.from(
+              CarCatalog.baselineTrimsByBrandModel[b]![m]!,
+            );
           }
         }
         if (byModel.isNotEmpty) existingTrims[b] = byModel;

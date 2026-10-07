@@ -39,6 +39,9 @@ OUT_MODELS = HERE / "generated" / "iqcars_model_options.json"
 OUT_BRAND_NEW = HERE / "generated" / "iqcars_brand_new_exact_configs.json"
 SAMPLES_OUT = HERE / "generated" / "samples"
 
+sys.path.insert(0, str(HERE))
+from canonical_io import write_text_canonical  # noqa: E402
+
 try:  # reuse CarNet's canonical key so downstream matching lines up
     sys.path.insert(0, str(HERE.parent))
     from model_boundaries import mkey  # type: ignore
@@ -400,7 +403,7 @@ def _agreement(cfg: dict, used_rec: dict | None) -> dict:
 
 def _dump(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    write_text_canonical(path, json.dumps(obj, ensure_ascii=False, indent=1) + "\n")
 
 
 def main(argv=None) -> int:

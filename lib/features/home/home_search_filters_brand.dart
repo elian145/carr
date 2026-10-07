@@ -495,9 +495,11 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
         style: filterDropdownHintStyle(_searchMoreFiltersStyle(context)),
       ),
       onChanged: (value) {
-        _homeApplyVehicleSelection(context, setStateDialog, () {
-          selectedTrim = value;
-        });
+        // The trim is a listing filter only: it never changes a spec option list
+        // (those are Brand + Model), so there is nothing to re-resolve and no
+        // selected spec value may be touched.
+        setState(() => selectedTrim = value);
+        setStateDialog(() {});
       },
     );
   }

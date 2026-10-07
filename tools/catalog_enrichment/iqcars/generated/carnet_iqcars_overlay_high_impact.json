@@ -1146,12 +1146,17 @@
   {
    "brand": "Chevrolet",
    "model": "Tahoe",
-   "status": "matched_but_no_additions",
+   "status": "included_in_overlay",
    "exact_name_in_carnet": true,
    "matched_to_iq": true,
-   "in_overlay": false,
-   "rank": null,
-   "additions": null,
+   "in_overlay": true,
+   "rank": 1283,
+   "additions": {
+    "trims": 0,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 0
+   },
    "held_trims": 0,
    "note": null
   },
@@ -1362,24 +1367,34 @@
   {
    "brand": "Volkswagen",
    "model": "Golf",
-   "status": "matched_but_no_additions",
+   "status": "included_in_overlay",
    "exact_name_in_carnet": true,
    "matched_to_iq": true,
-   "in_overlay": false,
-   "rank": null,
-   "additions": null,
+   "in_overlay": true,
+   "rank": 1532,
+   "additions": {
+    "trims": 0,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 0
+   },
    "held_trims": 1,
    "note": null
   },
   {
    "brand": "Volkswagen",
    "model": "Golf R",
-   "status": "matched_but_no_additions",
+   "status": "included_in_overlay",
    "exact_name_in_carnet": true,
    "matched_to_iq": true,
-   "in_overlay": false,
-   "rank": null,
-   "additions": null,
+   "in_overlay": true,
+   "rank": 1533,
+   "additions": {
+    "trims": 0,
+    "engine_sizes": 0,
+    "cylinders": 0,
+    "total": 0
+   },
    "held_trims": 0,
    "note": null
   },

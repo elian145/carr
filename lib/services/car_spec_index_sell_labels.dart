@@ -22,8 +22,13 @@ String sellFlowFuelLabel(String api) {
   }
 }
 
-String sellFlowBodyLabel(String api) {
-  switch (api.toLowerCase()) {
+/// Display label of an app body key, or null for anything that is not an
+/// explicit, known body key. There is deliberately NO default: an unknown or
+/// blank value must never become Sedan (or any other factual spec).
+String? sellFlowBodyLabel(String? api) {
+  switch ((api ?? '').trim().toLowerCase()) {
+    case 'sedan':
+      return 'Sedan';
     case 'suv':
       return 'SUV';
     case 'hatchback':
@@ -32,23 +37,34 @@ String sellFlowBodyLabel(String api) {
       return 'Coupe';
     case 'pickup':
       return 'Pickup';
+    case 'wagon':
+      return 'Wagon';
+    case 'convertible':
+      return 'Convertible';
+    case 'minivan':
+      return 'Minivan';
     case 'van':
       return 'Van';
     default:
-      return 'Sedan';
+      return null;
   }
 }
 
-String sellFlowDriveLabel(String api) {
-  switch (api.toLowerCase()) {
+/// Display label of an app drivetrain key, or null for anything that is not an
+/// explicit, known drivetrain key. There is deliberately NO default: an unknown
+/// or blank value must never become FWD. `4wd` is CarNet's AWD (the Search/Sell
+/// lists only offer FWD / RWD / AWD).
+String? sellFlowDriveLabel(String? api) {
+  switch ((api ?? '').trim().toLowerCase()) {
+    case 'fwd':
+      return 'FWD';
     case 'rwd':
       return 'RWD';
     case 'awd':
-      return 'AWD';
     case '4wd':
-      return '4WD';
+      return 'AWD';
     default:
-      return 'FWD';
+      return null;
   }
 }
 

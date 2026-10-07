@@ -1,17 +1,17 @@
 part of 'car_spec_index.dart';
 
 mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
-  /// Union of **every** catalog-derived Sell field ([sellFieldOptionsUnion] — the
-  /// exact resolver Sell step 2 uses) across the catalog years in scope for the
-  /// home/search filters.
+  /// Union of **every** catalog-derived Sell field ([sellFieldOptionsUnion], the
+  /// exact resolver Sell step 2 uses) for the make + model.
   ///
-  /// With no year bounds all catalog years for the make/model(/trim) are unioned;
-  /// with [rangeMinYear]/[rangeMaxYear] only the years inside that window are.
+  /// BRAND + MODEL ONLY defines these options. [rangeMinYear] / [rangeMaxYear] are
+  /// accepted for call-site compatibility and have NO effect: a Search year or
+  /// year range only filters the listings, never the specification options.
   /// Each field set is independent: an empty set means "the catalog has no data
   /// for this field" (callers fall back to defaults for that field only).
   ///
-  /// Returns null when the catalog cannot answer at all (unknown brand/model, no
-  /// spec rows, or the year window excludes every catalog year).
+  /// Returns null when the catalog cannot answer at all (unknown brand/model or
+  /// no spec rows).
   CatalogSellFieldOptions? homeFilterFieldOptions(
     String appBrand,
     String appModel,
@@ -19,82 +19,51 @@ mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
     int? rangeMinYear,
     int? rangeMaxYear,
   }) {
-    // The index is immutable, so the answer for one (vehicle, year window) never
-    // changes: re-selecting a model (or flipping between two) is then free.
-    final cacheKey =
-        '$appBrand\x1e$appModel\x1e$appTrim\x1e${rangeMinYear ?? ''}\x1e${rangeMaxYear ?? ''}';
+    // The index is immutable, so the answer for one vehicle never changes:
+    // re-selecting a model (or flipping between two) is then free.
+    // Keyed by brand + model only: [appTrim] never changes the options.
+    final cacheKey = '$appBrand\x1e$appModel';
     if (_homeFilterFieldOptionsCache.containsKey(cacheKey)) {
       return _homeFilterFieldOptionsCache[cacheKey];
     }
-    final resolved = _resolveHomeFilterFieldOptions(
-      appBrand,
-      appModel,
-      appTrim,
-      rangeMinYear: rangeMinYear,
-      rangeMaxYear: rangeMaxYear,
-    );
+    final resolved = _resolveHomeFilterFieldOptions(appBrand, appModel, appTrim);
     _homeFilterFieldOptionsCache[cacheKey] = resolved;
     return resolved;
   }
-
   final Map<String, CatalogSellFieldOptions?> _homeFilterFieldOptionsCache =
       <String, CatalogSellFieldOptions?>{};
+
+  /// Attaches the approved IQ Cars additions. Memoised resolutions made before
+  /// the overlay arrived are dropped so they are recomputed once with it.
+  /// Passing null / [IqCarsOverlay.empty] restores the pure catalog behaviour.
+  void attachIqCarsOverlay(IqCarsOverlay? overlay) {
+    final next = overlay ?? IqCarsOverlay.empty;
+    if (identical(next, _iqOverlay)) return;
+    _iqOverlay = next;
+    _homeFilterFieldOptionsCache.clear();
+  }
 
   CatalogSellFieldOptions? _resolveHomeFilterFieldOptions(
     String appBrand,
     String appModel,
-    String appTrim, {
-    int? rangeMinYear,
-    int? rangeMaxYear,
-  }) {
-    if (!hasCoverage(appBrand, appModel)) return null;
-    final years = yearsForCatalogStep(appBrand, appModel, appTrim);
-    if (years.isEmpty) return null;
-    var yearList = years;
-    if (rangeMinYear != null || rangeMaxYear != null) {
-      final lo = rangeMinYear;
-      final hi = rangeMaxYear;
-      yearList = years
-          .where(
-            (y) => (lo == null || y >= lo) && (hi == null || y <= hi),
-          )
-          .toList();
+    String appTrim,
+  ) {
+    // Legacy gate: the spec dataset must know the model line. A model it does
+    // not know can still be answered, field by field, by the approved IQ
+    // overlay (model-level, independent of year and trim).
+    if (!hasCoverage(appBrand, appModel)) {
+      return iqOnlyFieldOptions(appBrand, appModel, appTrim);
     }
-    if (yearList.isEmpty) return null;
-    final transmissions = <String>{};
-    final fuelTypes = <String>{};
-    final bodyTypes = <String>{};
-    final driveTypes = <String>{};
-    final cylinderCounts = <String>{};
-    final engineSizes = <String>{};
-    final seatings = <String>{};
-    var anyRow = false;
-    for (final y in yearList) {
-      final o = sellFieldOptionsUnion(appBrand, appModel, appTrim, y);
-      if (o == null) continue;
-      anyRow = true;
-      transmissions.addAll(o.transmissions);
-      fuelTypes.addAll(o.fuelTypes);
-      bodyTypes.addAll(o.bodyTypes);
-      driveTypes.addAll(o.driveTypes);
-      cylinderCounts.addAll(o.cylinderCounts);
-      engineSizes.addAll(o.engineSizes);
-      seatings.addAll(o.seatings);
-    }
-    if (!anyRow) return null;
-    return CatalogSellFieldOptions(
-      transmissions: transmissions,
-      fuelTypes: fuelTypes,
-      bodyTypes: bodyTypes,
-      driveTypes: driveTypes,
-      cylinderCounts: cylinderCounts,
-      engineSizes: engineSizes,
-      seatings: seatings,
-    );
+    // Brand + model defines the options: ONE model-level union, regardless of
+    // any selected year or year range (those only filter listings).
+    return sellFieldOptionsUnion(appBrand, appModel, appTrim);
   }
 
-  /// Deduped [OnlineSpecVariant] rows across all catalog years in scope for home filters
-  /// (same year window as [homeFilterFieldOptions]).
+  /// Deduped [OnlineSpecVariant] rows of the whole model line (brand + model),
+  /// the relationship evidence for Search's linked engine / cylinders / fuel.
+  /// [rangeMinYear] / [rangeMaxYear] are accepted for call-site compatibility
+  /// and have NO effect: the model defines the rows, the year range only filters
+  /// listings.
   List<OnlineSpecVariant> homeFilterSpecVariantsUnion(
     String appBrand,
     String appModel,
@@ -103,28 +72,10 @@ mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
     int? rangeMaxYear,
   }) {
     if (!hasCoverage(appBrand, appModel)) return const [];
-    final years = yearsForCatalogStep(appBrand, appModel, appTrim);
-    if (years.isEmpty) return const [];
-    var yearList = years;
-    if (rangeMinYear != null || rangeMaxYear != null) {
-      final lo = rangeMinYear;
-      final hi = rangeMaxYear;
-      yearList = years
-          .where(
-            (y) => (lo == null || y >= lo) && (hi == null || y <= hi),
-          )
-          .toList();
-    }
-    if (yearList.isEmpty) return const [];
     final seen = <String>{};
     final out = <OnlineSpecVariant>[];
-    for (final y in yearList) {
-      for (final v in catalogSellSpecVariants(appBrand, appModel, appTrim, y)) {
-        final key = _homeFilterVariantDedupeKey(v);
-        if (seen.add(key)) {
-          out.add(v);
-        }
-      }
+    for (final v in catalogSellSpecVariants(appBrand, appModel, appTrim)) {
+      if (seen.add(_homeFilterVariantDedupeKey(v))) out.add(v);
     }
     out.sort((a, b) {
       final ae = a.engineSizeLiters ?? 0;
@@ -135,7 +86,6 @@ mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
     });
     return out;
   }
-
   static String _homeFilterVariantDedupeKey(OnlineSpecVariant v) {
     return <String?>[
       v.engineSizeLiters?.toStringAsFixed(2),
@@ -152,7 +102,7 @@ mixin CarSpecIndexHomeFilter on CarSpecIndexCatalog {
   }
 
   CatalogSpecFields? appliedFieldsFor(int datasetModelId, int year) {
-    final trim = _trimForModelYear(datasetModelId, year);
+    final trim = _strictTrimForModelYear(datasetModelId, year);
     if (trim == null) return null;
     final spec = _specForTrim(trim.id);
     if (spec == null) return null;

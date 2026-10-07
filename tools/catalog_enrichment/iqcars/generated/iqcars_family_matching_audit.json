@@ -1,0 +1,3733 @@
+{
+ "_meta": {
+  "name": "iqcars_family_matching_audit",
+  "read_only": true,
+  "algorithm": "row R belongs to catalog model M iff M matches R (legacy: equality / '<M> ...' prefix / first token; hyphen-underscore->space whole-word prefix; reviewed alias) AND no catalog model of the same brand that is a whole-word extension of M also matches R (longest canonical model wins)"
+ },
+ "summary": {
+  "catalog_models": 1635,
+  "models_whose_matched_rows_changed": 35,
+  "models_whose_baseline_engines_changed": 13,
+  "models_whose_baseline_cylinders_changed": 7,
+  "models_whose_other_options_changed": 17,
+  "models_whose_coverage_changed": 0,
+  "models_whose_effective_search_engines_changed": 13,
+  "models_whose_effective_search_cylinders_changed": 6,
+  "models_whose_effective_sell_cylinders_changed": 6,
+  "classification": {
+   "CLEAR SIBLING CONTAMINATION": 35
+  },
+  "python_vs_dart_parity_failures": [],
+  "strict_rows_total_old": 33632,
+  "strict_rows_total_new": 33056,
+  "NOT_PORTED_qualifier_quarantine": {
+   "note": "The tooling additionally quarantines a row when the text between the model and the engine is not a known trim/grammar (e.g. 'Corolla Verso 1 8'). That is a separate, much broader filter; it is NOT part of the sibling boundary and is not ported.",
+   "rows_kept_by_strict_but_not_accepted_by_tooling_by_tooling_status": {
+    "ambiguous_qualifier": 2265
+   },
+   "models_affected": 316,
+   "rows_accepted_by_tooling_but_not_in_strict_by_tooling_status": {
+    "engine_descriptor": 22
+   }
+  }
+ },
+ "land_cruiser_acceptance": {
+  "Land Cruiser": {
+   "old_rows": 151,
+   "strict_rows": 74,
+   "old_engines": [
+    "2.4",
+    "2.4 D",
+    "2.4 T",
+    "2.7",
+    "2.8 D",
+    "2.8 TD",
+    "3.0 D",
+    "3.0 TD",
+    "3.3 D",
+    "3.4",
+    "3.4 D",
+    "3.5",
+    "3.5 D",
+    "3.5 T",
+    "4.0",
+    "4.0 D",
+    "4.0 TD",
+    "4.2",
+    "4.2 D",
+    "4.5",
+    "4.5 D",
+    "4.5 TD",
+    "4.6",
+    "4.7",
+    "5.7"
+   ],
+   "strict_engines": [
+    "2.4",
+    "2.4 D",
+    "2.4 T",
+    "2.7",
+    "2.8 D",
+    "3.0 D",
+    "3.3 D",
+    "3.4 D",
+    "3.5",
+    "3.5 D",
+    "3.5 T",
+    "4.0",
+    "4.0 D",
+    "4.0 TD",
+    "4.2",
+    "4.2 D",
+    "4.5",
+    "4.5 D",
+    "4.5 TD",
+    "4.6",
+    "4.7",
+    "5.7"
+   ],
+   "old_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "iq_overlay": {
+    "trims_add": [
+     "G",
+     "GX.R.i",
+     "G-XR Twin-Turbo",
+     "GR",
+     "GX.R Full Option",
+     "GX.R Limited",
+     "VX Full Option",
+     "VX Limited",
+     "VX.R Twin Turbo",
+     "GR Twin Turbo",
+     "VX.E",
+     "VX.R Twin Turbo Plus",
+     "G-XR Twin-Turbo LIMITED",
+     "GR HEV",
+     "VX Twin Turbo Limited",
+     "VX HEV",
+     "VX.R HEV",
+     "GR.S HEV"
+    ],
+    "engine_variants_add": [
+     "3.3TD",
+     "3.5T",
+     "4.0",
+     "4.2TD",
+     "4.5",
+     "4.5TD",
+     "4.6",
+     "4.7",
+     "5.7"
+    ],
+    "cylinders": [
+     6,
+     8
+    ]
+   }
+  },
+  "Land Cruiser Prado": {
+   "old_rows": 77,
+   "strict_rows": 77,
+   "old_engines": [
+    "2.4 D",
+    "2.7",
+    "2.8 TD",
+    "3.0 D",
+    "3.0 TD",
+    "3.4",
+    "4.0"
+   ],
+   "strict_engines": [
+    "2.4 D",
+    "2.7",
+    "2.8 TD",
+    "3.0 D",
+    "3.0 TD",
+    "3.4",
+    "4.0"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "iq_overlay": {
+    "trims_add": [
+     "VXE",
+     "VX",
+     "TXS",
+     "GX",
+     "RS",
+     "A4 Adventure",
+     "All Rounder",
+     "Standard",
+     "R3",
+     "R2"
+    ],
+    "engine_variants_add": [
+     "2.4T",
+     "2.7",
+     "2.8TD",
+     "3.0TD",
+     "3.4",
+     "4.0"
+    ],
+    "cylinders": [
+     4,
+     6
+    ]
+   }
+  },
+  "land_cruiser_strict_rows_that_are_prado_rows": [],
+  "prado_strict_rows_that_are_land_cruiser_only_rows": [],
+  "land_cruiser_rows_removed_were_all_prado_named": true,
+  "rows_shared_between_the_two_strict_sets": [],
+  "old_land_cruiser_rows_that_were_not_prado_named": 70
+ },
+ "changed_models": [
+  {
+   "brand": "Alfa Romeo",
+   "model": "Giulia",
+   "old_rows": 30,
+   "strict_rows": 26,
+   "rows_removed": 4,
+   "removed_rows_belong_to": {
+    "Giulia Quadrifoglio": 4
+   },
+   "tooling_owner_of_removed_rows": {
+    "Giulia Quadrifoglio": 4
+   },
+   "removed_row_examples": [
+    "Giulia Quadrifoglio 2 9 V6 (510 Hp)",
+    "Giulia Quadrifoglio 2 9 V6 (510 Hp) Automatic",
+    "Giulia Quadrifoglio 2 9 V6 Bi-Turbo (520 Hp) Automatic",
+    "Giulia Quadrifoglio 2 9 V6 BiTurbo (510 Hp) Automatic"
+   ],
+   "old_engines": [
+    "1.3",
+    "1.6",
+    "1.8 D",
+    "2.0",
+    "2.0 T",
+    "2.2 D",
+    "2.9",
+    "2.9 T"
+   ],
+   "strict_engines": [
+    "1.3",
+    "1.6",
+    "1.8 D",
+    "2.0",
+    "2.0 T",
+    "2.2 D",
+    "2.9"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Aston Martin",
+   "model": "V8 Vantage",
+   "old_rows": 28,
+   "strict_rows": 23,
+   "rows_removed": 3,
+   "removed_rows_belong_to": {
+    "V8 Vantage S": 3
+   },
+   "tooling_owner_of_removed_rows": {
+    "V8 Vantage S": 3
+   },
+   "removed_row_examples": [
+    "V8 Vantage S 4 0 V8 (680 Hp) Automatic",
+    "V8 Vantage S 4 7 V8 (436 Hp)",
+    "V8 Vantage S 4 7 V8 (436 Hp) Sportshift"
+   ],
+   "old_engines": [
+    "4.0",
+    "4.3",
+    "4.7",
+    "5.3"
+   ],
+   "strict_engines": [
+    "4.0",
+    "4.3",
+    "4.7",
+    "5.3"
+   ],
+   "old_cylinders": [
+    "8"
+   ],
+   "strict_cylinders": [
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Cadillac",
+   "model": "ATS",
+   "old_rows": 19,
+   "strict_rows": 13,
+   "rows_removed": 3,
+   "removed_rows_belong_to": {
+    "ATS-V": 3
+   },
+   "tooling_owner_of_removed_rows": {
+    "ATS-V": 3
+   },
+   "removed_row_examples": [
+    "ATS V 3 6 V6 (461 Hp) Automatic",
+    "ATS V 3 6 V6 (471 Hp)",
+    "ATS V 3 6 V6 (471 Hp) Automatic"
+   ],
+   "old_engines": [
+    "2.0",
+    "2.5",
+    "3.6"
+   ],
+   "strict_engines": [
+    "2.0",
+    "2.5",
+    "3.6"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Cadillac",
+   "model": "CTS",
+   "old_rows": 41,
+   "strict_rows": 32,
+   "rows_removed": 5,
+   "removed_rows_belong_to": {
+    "CTS-V": 5
+   },
+   "tooling_owner_of_removed_rows": {
+    "CTS-V": 5
+   },
+   "removed_row_examples": [
+    "CTS V 5 7 i V8 (405 Hp)",
+    "CTS V 6 0 i V8 (405 Hp)",
+    "CTS V 6 2 V8 (564 Hp)",
+    "CTS V 6 2 V8 (564 Hp) Automatic",
+    "CTS V 6 2 V8 (649 Hp) Automatic"
+   ],
+   "old_engines": [
+    "2.0",
+    "2.6",
+    "2.8",
+    "3.0",
+    "3.2",
+    "3.6",
+    "5.7",
+    "6.0",
+    "6.2"
+   ],
+   "strict_engines": [
+    "2.0",
+    "2.6",
+    "2.8",
+    "3.0",
+    "3.2",
+    "3.6"
+   ],
+   "old_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Chery",
+   "model": "Tiggo 7",
+   "old_rows": 11,
+   "strict_rows": 10,
+   "rows_removed": 1,
+   "removed_rows_belong_to": {
+    "Tiggo 7 Pro": 1
+   },
+   "tooling_owner_of_removed_rows": {
+    "Tiggo 7 Pro": 1
+   },
+   "removed_row_examples": [
+    "Tiggo 7 Pro 1 5 TCI (145 Hp) CVT"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.6",
+    "1.6 T",
+    "2.0"
+   ],
+   "strict_engines": [
+    "1.5",
+    "1.6",
+    "1.6 T",
+    "2.0"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Chery",
+   "model": "Tiggo 8",
+   "old_rows": 21,
+   "strict_rows": 13,
+   "rows_removed": 8,
+   "removed_rows_belong_to": {
+    "Tiggo 8 Pro": 8
+   },
+   "tooling_owner_of_removed_rows": {
+    "Tiggo 8 Pro": 8
+   },
+   "removed_row_examples": [
+    "Tiggo 8 Pro 1 5T (326 Hp) Plug-in Hybrid DHT",
+    "Tiggo 8 Pro 1 5T (326 Hp) Plug-in Hybrid DHT 7 Seat",
+    "Tiggo 8 Pro 290TGDI (197 Hp) DCT",
+    "Tiggo 8 Pro 290TGDI (197 Hp) DCT 7 Seat",
+    "Tiggo 8 Pro 390TGDI (254 Hp) 4WD DCT",
+    "Tiggo 8 Pro 390TGDI (254 Hp) 4WD DCT 7 Seat"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.5 T",
+    "1.6 T",
+    "2.0 T"
+   ],
+   "strict_engines": [
+    "1.5",
+    "1.5 T",
+    "1.6 T",
+    "2.0 T"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [
+    "fuel"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Chevrolet",
+   "model": "Silverado",
+   "old_rows": 400,
+   "strict_rows": 394,
+   "rows_removed": 6,
+   "removed_rows_belong_to": {
+    "Silverado EV": 6
+   },
+   "tooling_owner_of_removed_rows": {
+    "Silverado EV": 6
+   },
+   "removed_row_examples": [
+    "Silverado EV 3WT 167 kWh (510 Hp) Dual Motor e4WD",
+    "Silverado EV 4WT 200 kWh (515 Hp) Dual Motor e4WD",
+    "Silverado EV LT Extended Range 167 kWh (645 Hp) Dual Motor e4WD",
+    "Silverado EV RST 200 kWh (754 Hp) Dual Motor e4WD",
+    "Silverado EV RST Extended Range 167 kWh (645 Hp) Dual Motor e4WD",
+    "Silverado EV RST Max Range 200 kWh (760 Hp) Dual Motor e4WD"
+   ],
+   "old_engines": [
+    "2.7 T",
+    "3.0 D",
+    "4.3",
+    "4.8",
+    "5.3",
+    "6.0",
+    "6.0 D",
+    "6.2",
+    "6.6",
+    "6.6 D"
+   ],
+   "strict_engines": [
+    "2.7 T",
+    "3.0 D",
+    "4.3",
+    "4.8",
+    "5.3",
+    "6.0",
+    "6.0 D",
+    "6.2",
+    "6.6",
+    "6.6 D"
+   ],
+   "old_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "fuel"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Ford",
+   "model": "Bronco",
+   "old_rows": 42,
+   "strict_rows": 40,
+   "rows_removed": 2,
+   "removed_rows_belong_to": {
+    "Bronco Sport": 2
+   },
+   "tooling_owner_of_removed_rows": {
+    "Bronco Sport": 2
+   },
+   "removed_row_examples": [
+    "Bronco Sport 1 5 EcoBoost (181 Hp) 4x4 Automatic",
+    "Bronco Sport 2 0 EcoBoost (245 Hp) 4x4 Automatic"
+   ],
+   "old_engines": [
+    "1.5 T",
+    "2.0 T",
+    "2.3 T",
+    "2.7 T",
+    "2.8",
+    "3.0 T",
+    "3.3",
+    "4.2",
+    "4.7",
+    "4.9",
+    "5.0",
+    "5.8",
+    "6.6"
+   ],
+   "strict_engines": [
+    "2.3 T",
+    "2.7 T",
+    "2.8",
+    "3.0 T",
+    "3.3",
+    "4.2",
+    "4.7",
+    "4.9",
+    "5.0",
+    "5.8",
+    "6.6"
+   ],
+   "old_cylinders": [
+    "3",
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Ford",
+   "model": "Mustang",
+   "old_rows": 144,
+   "strict_rows": 125,
+   "rows_removed": 13,
+   "removed_rows_belong_to": {
+    "Mustang Mach-E": 13
+   },
+   "tooling_owner_of_removed_rows": {
+    "Mustang Mach-E": 13
+   },
+   "removed_row_examples": [
+    "Mustang Mach-E Extended Range 98 7 kWh (294 Hp)",
+    "Mustang Mach-E Extended Range 98 7 kWh (351 Hp) AWD",
+    "Mustang Mach-E Extended Range 98 7 kWh (370 Hp) AWD",
+    "Mustang Mach-E Extended Range 99 kWh (276 Hp)",
+    "Mustang Mach-E Extended Range 99 kWh (375 Hp) AWD",
+    "Mustang Mach-E GT 98 7 kWh (487 Hp) AWD"
+   ],
+   "old_engines": [
+    "2.3",
+    "2.3 T",
+    "2.8",
+    "3.7",
+    "3.8",
+    "4.0",
+    "4.1",
+    "4.3",
+    "4.6",
+    "4.7",
+    "4.8",
+    "4.9",
+    "5.0",
+    "5.2",
+    "5.8",
+    "7.0"
+   ],
+   "strict_engines": [
+    "2.3",
+    "2.3 T",
+    "2.8",
+    "3.7",
+    "3.8",
+    "4.0",
+    "4.1",
+    "4.3",
+    "4.6",
+    "4.7",
+    "4.8",
+    "4.9",
+    "5.0",
+    "5.2",
+    "5.8",
+    "7.0"
+   ],
+   "old_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4"
+    ]
+   },
+   "other_option_fields_changed": [
+    "body",
+    "fuel",
+    "drive",
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Ford",
+   "model": "Taurus",
+   "old_rows": 44,
+   "strict_rows": 42,
+   "rows_removed": 2,
+   "removed_rows_belong_to": {
+    "Taurus X": 2
+   },
+   "tooling_owner_of_removed_rows": {
+    "Taurus X": 2
+   },
+   "removed_row_examples": [
+    "Taurus X 3 5i V6 (260 Hp)",
+    "Taurus X 3 5i V6 (260 Hp) AWD"
+   ],
+   "old_engines": [
+    "1.5 T",
+    "2.0 T",
+    "2.5",
+    "2.7 T",
+    "3.0",
+    "3.2",
+    "3.4",
+    "3.5",
+    "3.8"
+   ],
+   "strict_engines": [
+    "1.5 T",
+    "2.0 T",
+    "2.5",
+    "2.7 T",
+    "3.0",
+    "3.2",
+    "3.4",
+    "3.5",
+    "3.8"
+   ],
+   "old_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5",
+     "6"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Foton",
+   "model": "Tunland",
+   "old_rows": 12,
+   "strict_rows": 6,
+   "rows_removed": 4,
+   "removed_rows_belong_to": {
+    "Tunland G7": 4
+   },
+   "tooling_owner_of_removed_rows": {
+    "Tunland G7": 4
+   },
+   "removed_row_examples": [
+    "Tunland G7 2 0 T-GDI (235 Hp)",
+    "Tunland G7 2 0 TD (163 Hp)",
+    "Tunland G7 2 0 TD (163 Hp) 4x4",
+    "Tunland G7 2 0 TD (163 Hp) 4x4 Automatic"
+   ],
+   "old_engines": [
+    "2.0",
+    "2.0 D"
+   ],
+   "strict_engines": [
+    "2.0 D"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "fuel",
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Geely",
+   "model": "Emgrand",
+   "old_rows": 16,
+   "strict_rows": 4,
+   "rows_removed": 12,
+   "removed_rows_belong_to": {
+    "Emgrand GS": 1,
+    "Emgrand GT": 4,
+    "Emgrand X7": 7
+   },
+   "tooling_owner_of_removed_rows": {
+    "Emgrand GS": 1,
+    "Emgrand GT": 4,
+    "Emgrand X7": 7
+   },
+   "removed_row_examples": [
+    "Emgrand GS 1 8 (133 Hp) DCT",
+    "Emgrand GT 1 8 (163 Hp) Automatic",
+    "Emgrand GT 2 4 (148 Hp) Automatic",
+    "Emgrand GT 2 4 (162 Hp) Automatic",
+    "Emgrand GT 3 5 V6 (275 Hp) Automatic",
+    "Emgrand X7 1 4 T (133 Hp) CVT"
+   ],
+   "old_engines": [
+    "1.4",
+    "1.8",
+    "2.0",
+    "2.4",
+    "3.5"
+   ],
+   "strict_engines": [
+    "1.8"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [],
+   "old_other_options": {
+    "body": [
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "body",
+    "drive"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Honda",
+   "model": "Civic",
+   "old_rows": 212,
+   "strict_rows": 199,
+   "rows_removed": 9,
+   "removed_rows_belong_to": {
+    "Civic Type R": 9
+   },
+   "tooling_owner_of_removed_rows": {
+    "Civic Type R": 9
+   },
+   "removed_row_examples": [
+    "Civic Type R 1 6 (185 Hp)",
+    "Civic Type R 2 0 (200 Hp)",
+    "Civic Type R 2 0 (201 Hp)",
+    "Civic Type R 2 0 (225 Hp)",
+    "Civic Type R 2 0 (306 Hp)",
+    "Civic Type R 2 0 (310 Hp)"
+   ],
+   "old_engines": [
+    "1.0",
+    "1.0 T",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5",
+    "1.5 T",
+    "1.6",
+    "1.6 D",
+    "1.7",
+    "1.7 TD",
+    "1.8",
+    "2.0",
+    "2.0 D",
+    "2.2 D",
+    "2.4"
+   ],
+   "strict_engines": [
+    "1.0",
+    "1.0 T",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5",
+    "1.5 T",
+    "1.6",
+    "1.6 D",
+    "1.7",
+    "1.7 TD",
+    "1.8",
+    "2.0",
+    "2.0 D",
+    "2.2 D",
+    "2.4"
+   ],
+   "old_cylinders": [
+    "3",
+    "4"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Hyundai",
+   "model": "Ioniq",
+   "old_rows": 27,
+   "strict_rows": 9,
+   "rows_removed": 18,
+   "removed_rows_belong_to": {
+    "Ioniq 5": 11,
+    "Ioniq 6": 7
+   },
+   "tooling_owner_of_removed_rows": {
+    "Ioniq 5": 11,
+    "Ioniq 6": 7
+   },
+   "removed_row_examples": [
+    "IONIQ 5 77 4 kWh (228 Hp) Electric",
+    "IONIQ 5 77 4 kWh (325 Hp) Electric AWD",
+    "IONIQ 5 Long Range 72 6 kWh (218 Hp) Electric",
+    "IONIQ 5 Long Range 72 6 kWh (305 Hp) Electric AWD",
+    "IONIQ 5 Long Range 84 kWh (229 Hp) Electric",
+    "IONIQ 5 Long Range 84 kWh (325 Hp) Electric AWD"
+   ],
+   "old_engines": [
+    "1.6"
+   ],
+   "strict_engines": [
+    "1.6"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "5",
+     "6"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "5",
+     "6"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Land Rover",
+   "model": "Discovery",
+   "old_rows": 110,
+   "strict_rows": 59,
+   "rows_removed": 51,
+   "removed_rows_belong_to": {
+    "Discovery Sport": 51
+   },
+   "tooling_owner_of_removed_rows": {
+    "Discovery Sport": 51
+   },
+   "removed_row_examples": [
+    "Discovery Sport 1 5 P300e (309 Hp) Plug-in Hybrid AWD Automatic",
+    "Discovery Sport 2 0 (150 Hp) AWD Automatic Ingenium engine",
+    "Discovery Sport 2 0 (150 Hp) AWD Automatic Ingenium engine 7 Seat",
+    "Discovery Sport 2 0 (150 Hp) AWD Ingenium engine",
+    "Discovery Sport 2 0 (150 Hp) AWD Ingenium engine 7 Seat",
+    "Discovery Sport 2 0 (180 Hp) AWD Automatic Ingenium engine"
+   ],
+   "old_engines": [
+    "1.5",
+    "2.0",
+    "2.0 D",
+    "2.2 D",
+    "2.5 TD",
+    "2.7 D",
+    "2.7 TD",
+    "3.0",
+    "3.0 D",
+    "3.5",
+    "3.9",
+    "4.0",
+    "4.4",
+    "5.0"
+   ],
+   "strict_engines": [
+    "2.0",
+    "2.0 D",
+    "2.5 TD",
+    "2.7 D",
+    "2.7 TD",
+    "3.0",
+    "3.0 D",
+    "3.5",
+    "3.9",
+    "4.0",
+    "4.4",
+    "5.0"
+   ],
+   "old_cylinders": [
+    "3",
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [
+    "fuel",
+    "drive"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Lexus",
+   "model": "RC",
+   "old_rows": 12,
+   "strict_rows": 9,
+   "rows_removed": 3,
+   "removed_rows_belong_to": {
+    "RC F": 3
+   },
+   "tooling_owner_of_removed_rows": {
+    "RC F": 3
+   },
+   "removed_row_examples": [
+    "RC F 5 0 (467 Hp) Automatic",
+    "RC F 5 0 (477 Hp) Automatic",
+    "RC F Track Edition 5 0 V8 (472 Hp) Automatic"
+   ],
+   "old_engines": [
+    "2.0",
+    "3.5",
+    "5.0"
+   ],
+   "strict_engines": [
+    "2.0",
+    "3.5"
+   ],
+   "old_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "4"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "4"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Mercedes-Benz",
+   "model": "AMG GT",
+   "old_rows": 21,
+   "strict_rows": 16,
+   "rows_removed": 5,
+   "removed_rows_belong_to": {
+    "AMG GT 4-door Coupe": 5
+   },
+   "tooling_owner_of_removed_rows": {
+    "AMG GT 4-door Coupe": 5
+   },
+   "removed_row_examples": [
+    "AMG GT 4-Door Coupe 43 (367 Hp) EQ Boost 4MATIC+ AMG SPEEDSHIFT TCT 9G",
+    "AMG GT 4-Door Coupe 53 (435 Hp) EQ Boost 4MATIC+ AMG SPEEDSHIFT TCT 9G",
+    "AMG GT 4-Door Coupe 63 S E PERFORMANCE V8 (843 Hp) Plug-in Hybrid 4MATIC+ AMG SPEEDSHIFT MCT 9G",
+    "AMG GT 4-Door Coupe 63 S V8 (639 Hp) 4MATIC+ MCT",
+    "AMG GT 4-Door Coupe 63 V8 (585 Hp) 4MATIC+ MCT"
+   ],
+   "old_engines": [
+    "2.0",
+    "3.0",
+    "4.0"
+   ],
+   "strict_engines": [
+    "2.0",
+    "4.0"
+   ],
+   "old_cylinders": [
+    "4",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "2",
+     "4"
+    ]
+   },
+   "other_option_fields_changed": [
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Eclipse",
+   "old_rows": 55,
+   "strict_rows": 45,
+   "rows_removed": 9,
+   "removed_rows_belong_to": {
+    "Eclipse Cross": 9
+   },
+   "tooling_owner_of_removed_rows": {
+    "Eclipse Cross": 9
+   },
+   "removed_row_examples": [
+    "Eclipse Cross 1 5 MIVEC (152 Hp) AWC CVT",
+    "Eclipse Cross 1 5 MIVEC (152 Hp) CVT",
+    "Eclipse Cross 1 5 MIVEC (152 Hp) S-AWC CVT",
+    "Eclipse Cross 1 5 T-MIVEC (163 Hp)",
+    "Eclipse Cross 1 5 T-MIVEC (163 Hp) 4WD CVT",
+    "Eclipse Cross 1 5 T-MIVEC (163 Hp) CVT"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.8",
+    "2.0",
+    "2.0 T",
+    "2.2 D",
+    "2.4",
+    "3.0",
+    "3.8"
+   ],
+   "strict_engines": [
+    "1.8",
+    "2.0",
+    "2.0 T",
+    "2.4",
+    "3.0",
+    "3.8"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4"
+    ]
+   },
+   "other_option_fields_changed": [
+    "body",
+    "fuel",
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Lancer",
+   "old_rows": 110,
+   "strict_rows": 93,
+   "rows_removed": 12,
+   "removed_rows_belong_to": {
+    "Lancer Evolution": 12
+   },
+   "tooling_owner_of_removed_rows": {
+    "Lancer Evolution": 12
+   },
+   "removed_row_examples": [
+    "Lancer Evolution 2 0 (265 Hp) 4WD",
+    "Lancer Evolution 2 0 (270 Hp) 4WD",
+    "Lancer Evolution 2 0 (280 Hp) 4WD",
+    "Lancer Evolution 2 0 MIVEC (280 Hp) 4WD",
+    "Lancer Evolution 2 0 MIVEC (286 Hp) 4WD",
+    "Lancer Evolution 2 0 MIVEC (295 Hp) S-AWC"
+   ],
+   "old_engines": [
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5",
+    "1.6",
+    "1.8",
+    "1.8 D",
+    "2.0",
+    "2.0 D",
+    "2.0 T",
+    "2.4"
+   ],
+   "strict_engines": [
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5",
+    "1.6",
+    "1.8",
+    "1.8 D",
+    "2.0",
+    "2.0 D",
+    "2.0 T",
+    "2.4"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Montero",
+   "old_rows": 30,
+   "strict_rows": 7,
+   "rows_removed": 23,
+   "removed_rows_belong_to": {
+    "Montero Sport": 23
+   },
+   "tooling_owner_of_removed_rows": {
+    "Montero Sport": 23
+   },
+   "removed_row_examples": [
+    "Montero Sport 2 4 Clean Diesel (181 Hp)",
+    "Montero Sport 2 4 Clean Diesel (181 Hp) Automatic",
+    "Montero Sport 2 4 MIVEC (181 Hp)",
+    "Montero Sport 2 4 MIVEC (181 Hp) Automatic",
+    "Montero Sport 2 4 MIVEC (181 Hp) Super Select 4WD",
+    "Montero Sport 2 4 MIVEC (181 Hp) Super Select 4WD Automatic"
+   ],
+   "old_engines": [
+    "2.4 D",
+    "2.5 D",
+    "3.0",
+    "3.5",
+    "3.8"
+   ],
+   "strict_engines": [
+    "3.0",
+    "3.5",
+    "3.8"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [
+    "fuel",
+    "drive",
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Mitsubishi",
+   "model": "Pajero",
+   "old_rows": 101,
+   "strict_rows": 78,
+   "rows_removed": 21,
+   "removed_rows_belong_to": {
+    "Pajero Sport": 21
+   },
+   "tooling_owner_of_removed_rows": {
+    "Pajero Sport": 21
+   },
+   "removed_row_examples": [
+    "Pajero Sport 2 4 DI-D (181 Hp)",
+    "Pajero Sport 2 4 DI-D (181 Hp) 4WD",
+    "Pajero Sport 2 4 DI-D (181 Hp) 4WD Automatic",
+    "Pajero Sport 2 4 DI-D (181 Hp) Automatic",
+    "Pajero Sport 2 5 DI-D (136 Hp)",
+    "Pajero Sport 2 5 DI-D (136 Hp) 4WD"
+   ],
+   "old_engines": [
+    "0.7",
+    "0.7 T",
+    "1.1",
+    "1.8",
+    "2.0",
+    "2.3 D",
+    "2.4",
+    "2.4 D",
+    "2.5",
+    "2.5 D",
+    "2.8 D",
+    "3.0",
+    "3.2 D",
+    "3.5",
+    "3.8"
+   ],
+   "strict_engines": [
+    "0.7",
+    "0.7 T",
+    "1.1",
+    "1.8",
+    "2.0",
+    "2.3 D",
+    "2.4",
+    "2.5",
+    "2.5 D",
+    "2.8 D",
+    "3.0",
+    "3.2 D",
+    "3.5",
+    "3.8"
+   ],
+   "old_cylinders": [
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5",
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [
+    "drive"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Nissan",
+   "model": "Rogue",
+   "old_rows": 21,
+   "strict_rows": 17,
+   "rows_removed": 4,
+   "removed_rows_belong_to": {
+    "Rogue Sport": 4
+   },
+   "tooling_owner_of_removed_rows": {
+    "Rogue Sport": 4
+   },
+   "removed_row_examples": [
+    "Rogue Sport 2 0 (141 Hp) AWD CVT",
+    "Rogue Sport 2 0 (141 Hp) AWD Xtronic",
+    "Rogue Sport 2 0 (141 Hp) CVT",
+    "Rogue Sport 2 0 (141 Hp) Xtronic"
+   ],
+   "old_engines": [
+    "1.5 T",
+    "2.0",
+    "2.4",
+    "2.5"
+   ],
+   "strict_engines": [
+    "1.5 T",
+    "2.0",
+    "2.4",
+    "2.5"
+   ],
+   "old_cylinders": [
+    "3",
+    "4"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Porsche",
+   "model": "911",
+   "old_rows": 306,
+   "strict_rows": 250,
+   "rows_removed": 40,
+   "removed_rows_belong_to": {
+    "911 GT2": 5,
+    "911 GT3": 14,
+    "911 Turbo": 21
+   },
+   "tooling_owner_of_removed_rows": {
+    "911 GT2": 5,
+    "911 GT3": 14,
+    "911 Turbo": 21
+   },
+   "removed_row_examples": [
+    "911 GT2 3 6 (430 Hp)",
+    "911 GT2 3 6 (483 Hp)",
+    "911 GT2 3 6 (530 Hp)",
+    "911 GT2 RS 3 6 (620 Hp)",
+    "911 GT2 RS 3 8 (700 Hp) PDK",
+    "911 GT3 3 6 (360 Hp)"
+   ],
+   "old_engines": [
+    "2.0",
+    "2.2",
+    "2.3",
+    "2.7",
+    "3.0",
+    "3.0 T",
+    "3.2",
+    "3.3 T",
+    "3.4",
+    "3.6",
+    "3.6 T",
+    "3.7",
+    "3.8",
+    "3.8 T",
+    "4.0"
+   ],
+   "strict_engines": [
+    "2.0",
+    "2.2",
+    "2.3",
+    "2.7",
+    "3.0",
+    "3.0 T",
+    "3.2",
+    "3.3 T",
+    "3.4",
+    "3.6",
+    "3.7",
+    "3.8",
+    "4.0"
+   ],
+   "old_cylinders": [
+    "6"
+   ],
+   "strict_cylinders": [
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Renault",
+   "model": "Clio",
+   "old_rows": 226,
+   "strict_rows": 221,
+   "rows_removed": 5,
+   "removed_rows_belong_to": {
+    "Clio RS": 5
+   },
+   "tooling_owner_of_removed_rows": {
+    "Clio RS": 5
+   },
+   "removed_row_examples": [
+    "Clio RS 1 6 (200 Hp) EDC S&S",
+    "Clio RS 2 0 16V (197 Hp)",
+    "Clio RS 2 0 16V (200 Hp)",
+    "Clio RS 2 0 16V (201 Hp)",
+    "Clio RS Trophy 1 6 (220 Hp) EDC S&S"
+   ],
+   "old_engines": [
+    "0.9",
+    "1.0",
+    "1.1",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5 D",
+    "1.6",
+    "1.8",
+    "1.9 D",
+    "2.0",
+    "2.9",
+    "3.0"
+   ],
+   "strict_engines": [
+    "0.9",
+    "1.0",
+    "1.1",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5 D",
+    "1.6",
+    "1.8",
+    "1.9 D",
+    "2.0",
+    "2.9",
+    "3.0"
+   ],
+   "old_cylinders": [
+    "3",
+    "4",
+    "6"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Renault",
+   "model": "Megane",
+   "old_rows": 435,
+   "strict_rows": 376,
+   "rows_removed": 30,
+   "removed_rows_belong_to": {
+    "Megane GT": 14,
+    "Megane RS": 16
+   },
+   "tooling_owner_of_removed_rows": {
+    "Megane GT": 14,
+    "Megane RS": 16
+   },
+   "removed_row_examples": [
+    "Megane GT 1 2 Energy TCe (115 Hp) Start&Stop",
+    "Megane GT 1 6 Energy TCe (205 Hp) EDC",
+    "Megane GT 1 6 Energy dCi (163 Hp) EDC",
+    "Megane GT 1 6 Energy dCi (165 Hp) EDC",
+    "Megane GT 1 9 dCi (110 Hp) FAP",
+    "Megane GT 1 9 dCi (130 Hp) FAP"
+   ],
+   "old_engines": [
+    "1.0",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5 D",
+    "1.6",
+    "1.6 D",
+    "1.7 D",
+    "1.8",
+    "1.9 D",
+    "2.0",
+    "2.0 D",
+    "2.0 T"
+   ],
+   "strict_engines": [
+    "1.0",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5 D",
+    "1.6",
+    "1.6 D",
+    "1.7 D",
+    "1.8",
+    "1.9 D",
+    "2.0",
+    "2.0 D",
+    "2.0 T"
+   ],
+   "old_cylinders": [
+    "3",
+    "4"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "SUV",
+     "Sedan",
+     "Van"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "SUV",
+     "Sedan",
+     "Van"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Subaru",
+   "model": "Impreza",
+   "old_rows": 129,
+   "strict_rows": 110,
+   "rows_removed": 13,
+   "removed_rows_belong_to": {
+    "Impreza WRX": 7,
+    "Impreza WRX STI": 6
+   },
+   "tooling_owner_of_removed_rows": {
+    "Impreza WRX": 7,
+    "Impreza WRX STI": 6
+   },
+   "removed_row_examples": [
+    "Impreza WRX 2 0 (225 Hp) AWD",
+    "Impreza WRX 2 0 16V (218 Hp) 4WD",
+    "Impreza WRX 2 0i 16V (218 Hp) 4WD",
+    "Impreza WRX 2 5 (224 Hp) AWD",
+    "Impreza WRX 2 5 (224 Hp) AWD Automatic",
+    "Impreza WRX 2 5 (230 Hp) AWD"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.6",
+    "1.8",
+    "2.0",
+    "2.0 T",
+    "2.2",
+    "2.5"
+   ],
+   "strict_engines": [
+    "1.5",
+    "1.6",
+    "1.8",
+    "2.0",
+    "2.0 T",
+    "2.2",
+    "2.5"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Subaru",
+   "model": "Impreza WRX",
+   "old_rows": 19,
+   "strict_rows": 13,
+   "rows_removed": 6,
+   "removed_rows_belong_to": {
+    "Impreza WRX STI": 6
+   },
+   "tooling_owner_of_removed_rows": {
+    "Impreza WRX STI": 6
+   },
+   "removed_row_examples": [
+    "Impreza WRX STI 2 5 (280 Hp) AWD",
+    "Impreza WRX STI 2 5 (293 Hp) AWD",
+    "Impreza WRX STI 2 5 (300 Hp) AWD",
+    "Impreza WRX STI 2 5 (305 Hp) AWD",
+    "Impreza WRX STI 2 5 (330 Hp) AWD",
+    "Impreza WRX STi 2 0 (265 Hp) AWD"
+   ],
+   "old_engines": [
+    "2.0",
+    "2.5"
+   ],
+   "strict_engines": [
+    "2.0",
+    "2.5"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Toyota",
+   "model": "Corolla",
+   "old_rows": 273,
+   "strict_rows": 258,
+   "rows_removed": 12,
+   "removed_rows_belong_to": {
+    "Corolla Cross": 12
+   },
+   "tooling_owner_of_removed_rows": {
+    "Corolla Cross": 12
+   },
+   "removed_row_examples": [
+    "Corolla Cross 1 8 (122 Hp) Full Hybrid E-CVT",
+    "Corolla Cross 1 8 (122 Hp) Hybrid e-CVT",
+    "Corolla Cross 1 8 (140 Hp) Hybrid e-CVT",
+    "Corolla Cross 1 8 (140 Hp) Super CVT-i",
+    "Corolla Cross 1 8 Sport (140 Hp) CVT-i",
+    "Corolla Cross 2 0 (169 Hp) AWD CVTi-S"
+   ],
+   "old_engines": [
+    "1.1",
+    "1.2",
+    "1.2 T",
+    "1.3",
+    "1.4",
+    "1.4 TD",
+    "1.5",
+    "1.6",
+    "1.8",
+    "1.8 D",
+    "2.0",
+    "2.0 D",
+    "2.0 TD",
+    "2.2 D",
+    "2.2 TD"
+   ],
+   "strict_engines": [
+    "1.1",
+    "1.2",
+    "1.2 T",
+    "1.3",
+    "1.4",
+    "1.4 TD",
+    "1.5",
+    "1.6",
+    "1.8",
+    "1.8 D",
+    "2.0",
+    "2.0 D",
+    "2.0 TD",
+    "2.2 D",
+    "2.2 TD"
+   ],
+   "old_cylinders": [
+    "3",
+    "4"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5",
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [
+    "body"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Toyota",
+   "model": "Land Cruiser",
+   "old_rows": 151,
+   "strict_rows": 74,
+   "rows_removed": 50,
+   "removed_rows_belong_to": {
+    "Land Cruiser Prado": 50
+   },
+   "tooling_owner_of_removed_rows": {
+    "Land Cruiser Prado": 50
+   },
+   "removed_row_examples": [
+    "Land Cruiser Prado 2 4 DT (97 Hp) 4WD",
+    "Land Cruiser Prado 2 7 (163 Hp) 4WD",
+    "Land Cruiser Prado 2 7 (163 Hp) 4WD Automatic",
+    "Land Cruiser Prado 2 7 16V (150 Hp) 4WD ECT",
+    "Land Cruiser Prado 2 7 16V (152 Hp) 4WD",
+    "Land Cruiser Prado 2 7 16V (152 Hp) 4WD Automatic"
+   ],
+   "old_engines": [
+    "2.4",
+    "2.4 D",
+    "2.4 T",
+    "2.7",
+    "2.8 D",
+    "2.8 TD",
+    "3.0 D",
+    "3.0 TD",
+    "3.3 D",
+    "3.4",
+    "3.4 D",
+    "3.5",
+    "3.5 D",
+    "3.5 T",
+    "4.0",
+    "4.0 D",
+    "4.0 TD",
+    "4.2",
+    "4.2 D",
+    "4.5",
+    "4.5 D",
+    "4.5 TD",
+    "4.6",
+    "4.7",
+    "5.7"
+   ],
+   "strict_engines": [
+    "2.4",
+    "2.4 D",
+    "2.4 T",
+    "2.7",
+    "2.8 D",
+    "3.0 D",
+    "3.3 D",
+    "3.4 D",
+    "3.5",
+    "3.5 D",
+    "3.5 T",
+    "4.0",
+    "4.0 D",
+    "4.0 TD",
+    "4.2",
+    "4.2 D",
+    "4.5",
+    "4.5 D",
+    "4.5 TD",
+    "4.6",
+    "4.7",
+    "5.7"
+   ],
+   "old_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5",
+     "6",
+     "7",
+     "8"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "SUV",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5",
+     "6",
+     "7",
+     "8"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Toyota",
+   "model": "Prius",
+   "old_rows": 18,
+   "strict_rows": 17,
+   "rows_removed": 1,
+   "removed_rows_belong_to": {
+    "Prius Prime": 1
+   },
+   "tooling_owner_of_removed_rows": {
+    "Prius Prime": 1
+   },
+   "removed_row_examples": [
+    "Prius Prime 1 8 (122 Hp) Plug-in Hybrid e-CVT"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.8",
+    "2.0"
+   ],
+   "strict_engines": [
+    "1.5",
+    "1.8",
+    "2.0"
+   ],
+   "old_cylinders": [
+    "4"
+   ],
+   "strict_cylinders": [
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "4",
+     "5",
+     "7"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic"
+    ],
+    "seating": [
+     "5",
+     "7"
+    ]
+   },
+   "other_option_fields_changed": [
+    "seating"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Toyota",
+   "model": "Yaris",
+   "old_rows": 84,
+   "strict_rows": 75,
+   "rows_removed": 9,
+   "removed_rows_belong_to": {
+    "Yaris Cross": 9
+   },
+   "tooling_owner_of_removed_rows": {
+    "Yaris Cross": 9
+   },
+   "removed_row_examples": [
+    "Yaris Cross 1 5 (106 Hp)",
+    "Yaris Cross 1 5 (106 Hp) CVT",
+    "Yaris Cross 1 5 (111 Hp) Hybrid eCVT",
+    "Yaris Cross 1 5 (116 Hp) Hybrid E-Four ECVT",
+    "Yaris Cross 1 5 (116 Hp) Hybrid ECVT",
+    "Yaris Cross 1 5 (120 Hp) 4WD CVT"
+   ],
+   "old_engines": [
+    "1.0",
+    "1.2",
+    "1.3",
+    "1.4 D",
+    "1.4 TD",
+    "1.5",
+    "1.5 T",
+    "1.6",
+    "1.6 T",
+    "1.8"
+   ],
+   "strict_engines": [
+    "1.0",
+    "1.2",
+    "1.3",
+    "1.4 D",
+    "1.4 TD",
+    "1.5",
+    "1.5 T",
+    "1.6",
+    "1.6 T",
+    "1.8"
+   ],
+   "old_cylinders": [
+    "3",
+    "4"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4"
+   ],
+   "old_other_options": {
+    "body": [
+     "Hatchback",
+     "SUV",
+     "Sedan",
+     "Van"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan",
+     "Van"
+    ],
+    "fuel": [
+     "Diesel",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "2",
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "body"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Golf",
+   "old_rows": 686,
+   "strict_rows": 657,
+   "rows_removed": 17,
+   "removed_rows_belong_to": {
+    "Golf R": 17
+   },
+   "tooling_owner_of_removed_rows": {
+    "Golf R": 17
+   },
+   "removed_row_examples": [
+    "Golf R 2 0 TSI (256 Hp) 4MOTION",
+    "Golf R 2 0 TSI (265 Hp) DSG",
+    "Golf R 2 0 TSI (270 Hp) 4MOTION",
+    "Golf R 2 0 TSI (270 Hp) 4MOTION DSG",
+    "Golf R 2 0 TSI (288 Hp) 4MOTION",
+    "Golf R 2 0 TSI (288 Hp) 4MOTION DSG"
+   ],
+   "old_engines": [
+    "1.0",
+    "1.0 T",
+    "1.1",
+    "1.2 T",
+    "1.3",
+    "1.4",
+    "1.4 T",
+    "1.5",
+    "1.5 D",
+    "1.5 T",
+    "1.6",
+    "1.6 D",
+    "1.6 TD",
+    "1.8",
+    "1.8 T",
+    "1.9 D",
+    "1.9 TD",
+    "2.0",
+    "2.0 D",
+    "2.0 T",
+    "2.0 TD",
+    "2.3",
+    "2.5",
+    "2.8",
+    "2.9",
+    "3.2"
+   ],
+   "strict_engines": [
+    "1.0",
+    "1.0 T",
+    "1.1",
+    "1.2 T",
+    "1.3",
+    "1.4",
+    "1.4 T",
+    "1.5",
+    "1.5 D",
+    "1.5 T",
+    "1.6",
+    "1.6 D",
+    "1.6 TD",
+    "1.8",
+    "1.8 T",
+    "1.9 D",
+    "1.9 TD",
+    "2.0",
+    "2.0 D",
+    "2.0 T",
+    "2.0 TD",
+    "2.3",
+    "2.5",
+    "2.8",
+    "2.9",
+    "3.2"
+   ],
+   "old_cylinders": [
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "strict_cylinders": [
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan",
+     "Van"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan",
+     "Van"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD",
+     "RWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Volkswagen",
+   "model": "Passat",
+   "old_rows": 493,
+   "strict_rows": 446,
+   "rows_removed": 47,
+   "removed_rows_belong_to": {
+    "Passat CC": 47
+   },
+   "tooling_owner_of_removed_rows": {
+    "Passat CC": 47
+   },
+   "removed_row_examples": [
+    "Passat CC 1 4 TSI (150 Hp)",
+    "Passat CC 1 4 TSI (150 Hp) 5 Seat",
+    "Passat CC 1 4 TSI (150 Hp) DSG",
+    "Passat CC 1 4 TSI (150 Hp) DSG 5 Seat",
+    "Passat CC 1 4 TSI (160 Hp)",
+    "Passat CC 1 4 TSI (160 Hp) 5 Seat"
+   ],
+   "old_engines": [
+    "1.3",
+    "1.4 T",
+    "1.5",
+    "1.5 D",
+    "1.5 T",
+    "1.6",
+    "1.6 D",
+    "1.6 TD",
+    "1.8",
+    "1.8 T",
+    "1.9",
+    "1.9 D",
+    "1.9 TD",
+    "2.0",
+    "2.0 T",
+    "2.0 TD",
+    "2.2",
+    "2.3",
+    "2.5",
+    "2.5 TD",
+    "2.8",
+    "2.9",
+    "3.2",
+    "3.6",
+    "4.0"
+   ],
+   "strict_engines": [
+    "1.3",
+    "1.4 T",
+    "1.5",
+    "1.5 D",
+    "1.5 T",
+    "1.6",
+    "1.6 D",
+    "1.6 TD",
+    "1.8",
+    "1.8 T",
+    "1.9",
+    "1.9 D",
+    "1.9 TD",
+    "2.0",
+    "2.0 T",
+    "2.0 TD",
+    "2.2",
+    "2.3",
+    "2.5",
+    "2.5 TD",
+    "2.8",
+    "2.9",
+    "3.2",
+    "3.6",
+    "4.0"
+   ],
+   "old_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "strict_cylinders": [
+    "4",
+    "5",
+    "6",
+    "8"
+   ],
+   "old_other_options": {
+    "body": [
+     "Coupe",
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Hatchback",
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "4",
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [
+    "body"
+   ],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Volvo",
+   "model": "S60",
+   "old_rows": 98,
+   "strict_rows": 95,
+   "rows_removed": 3,
+   "removed_rows_belong_to": {
+    "S60 Polestar": 3
+   },
+   "tooling_owner_of_removed_rows": {
+    "S60 Polestar": 3
+   },
+   "removed_row_examples": [
+    "S60 Polestar 2 0 T6 (367 Hp) AWD Geartronic",
+    "S60 Polestar 2 0 T8 Twin Engine (318 Hp) Plug-in Hybrid AWD Geartronic",
+    "S60 Polestar 3 0 T6 (350 Hp) AWD Geartronic"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.6",
+    "1.6 D",
+    "2.0",
+    "2.0 D",
+    "2.3",
+    "2.4",
+    "2.4 D",
+    "2.5",
+    "3.0"
+   ],
+   "strict_engines": [
+    "1.5",
+    "1.6",
+    "1.6 D",
+    "2.0",
+    "2.0 D",
+    "2.3",
+    "2.4",
+    "2.4 D",
+    "2.5",
+    "3.0"
+   ],
+   "old_cylinders": [
+    "4",
+    "5",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "5",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  },
+  {
+   "brand": "Volvo",
+   "model": "V60",
+   "old_rows": 104,
+   "strict_rows": 101,
+   "rows_removed": 3,
+   "removed_rows_belong_to": {
+    "V60 Polestar": 3
+   },
+   "tooling_owner_of_removed_rows": {
+    "V60 Polestar": 3
+   },
+   "removed_row_examples": [
+    "V60 Polestar 2 0 T6 (367 Hp) AWD Geartronic",
+    "V60 Polestar 2 0 T8 TwEn (318 Hp) Plug-in Hybrid AWD Geartronic",
+    "V60 Polestar 3 0 T6 (350 Hp) AWD Geartronic"
+   ],
+   "old_engines": [
+    "1.5",
+    "1.6",
+    "1.6 D",
+    "2.0",
+    "2.0 D",
+    "2.4 D",
+    "2.5",
+    "3.0"
+   ],
+   "strict_engines": [
+    "1.5",
+    "1.6",
+    "1.6 D",
+    "2.0",
+    "2.0 D",
+    "2.4 D",
+    "2.5",
+    "3.0"
+   ],
+   "old_cylinders": [
+    "4",
+    "5",
+    "6"
+   ],
+   "strict_cylinders": [
+    "4",
+    "5",
+    "6"
+   ],
+   "old_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "strict_other_options": {
+    "body": [
+     "Sedan"
+    ],
+    "fuel": [
+     "Diesel",
+     "Electric",
+     "Gasoline"
+    ],
+    "drive": [
+     "AWD",
+     "FWD"
+    ],
+    "transmission": [
+     "Automatic",
+     "Manual"
+    ],
+    "seating": [
+     "5"
+    ]
+   },
+   "other_option_fields_changed": [],
+   "coverage_old": true,
+   "coverage_strict": true,
+   "classification": "CLEAR SIBLING CONTAMINATION",
+   "reason": "every removed row's longest canonical model (app and tooling) is the longer sibling"
+  }
+ ]
+}

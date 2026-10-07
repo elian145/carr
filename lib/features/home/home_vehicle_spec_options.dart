@@ -15,8 +15,10 @@ enum HomeVehicleField {
 }
 
 /// Search's vehicle selection context. Search resolves options with the same
-/// catalog resolver as Sell; the only difference is Search has an optional
-/// model-year *window* instead of one concrete year.
+/// catalog resolver as Sell: BRAND + MODEL define every option. [minYear] /
+/// [maxYear] (the Search model-year window) only filter listings; they are
+/// carried for completeness but have NO effect on the option lists or their
+/// cache keys.
 class HomeVehicleContext {
   const HomeVehicleContext({
     this.brand,
@@ -33,54 +35,47 @@ class HomeVehicleContext {
   final int? maxYear;
 
   /// Cache key for the model-level resolution (trim is NOT an input).
-  String get modelCacheKey =>
-      '${brand ?? ''}\x1e${model ?? ''}\x1e${minYear ?? ''}\x1e${maxYear ?? ''}';
+  String get modelCacheKey => '${brand ?? ''}\x1e${model ?? ''}';
 
-  /// Cache key for the trim-aware engine-size resolution.
-  String get engineCacheKey => '$modelCacheKey\x1e${trim ?? ''}';
+  /// Cache key for the engine-size resolution: also brand + model only (trim,
+  /// like the year window, never changes an option list).
+  String get engineCacheKey => modelCacheKey;
 }
 
-CatalogSellFieldOptions? _resolve(
-  CarSpecIndex? idx,
-  HomeVehicleContext ctx,
-  String trim,
-) {
+CatalogSellFieldOptions? _resolve(CarSpecIndex? idx, HomeVehicleContext ctx) {
   final brand = ctx.brand?.trim() ?? '';
   final model = ctx.model?.trim() ?? '';
   if (idx == null || brand.isEmpty || model.isEmpty) return null;
   return idx.homeFilterFieldOptions(
     brand,
     model,
-    trim.isEmpty ? CarSpecIndex.catalogAutofillModelOnly : trim,
-    rangeMinYear: ctx.minYear,
-    rangeMaxYear: ctx.maxYear,
+    CarSpecIndex.catalogAutofillModelOnly,
   );
 }
 
-/// Model-level catalog resolution — **make + model + year window**, trim is
-/// deliberately ignored. This is Sell step 2's dependency depth
-/// (`catalogAutofillModelOnly`), used for cylinders, body type, transmission,
+/// Model-level catalog resolution: **make + model only**. Neither the Search year
+/// window nor the trim is an input. This is Sell step 2's dependency depth
+/// (catalogAutofillModelOnly), used for cylinders, body type, transmission,
 /// fuel type, drive type and seating.
 ///
 /// Returns null ("catalog cannot answer") when no index is loaded, no model is
-/// selected, the model is unknown to the catalog, or the year window excludes
-/// every catalog year. Individual fields inside a non-null result can still be
-/// empty sets (catalog knows the model but not that field).
+/// selected, or the model is unknown to the catalog. Individual fields inside a
+/// non-null result can still be empty sets (catalog knows the model but not that
+/// field).
 CatalogSellFieldOptions? resolveHomeVehicleCatalogOptions(
   CarSpecIndex? idx,
   HomeVehicleContext ctx,
 ) =>
-    _resolve(idx, ctx, CarSpecIndex.catalogAutofillModelOnly);
+    _resolve(idx, ctx);
 
-/// Trim-aware resolution — **make + model + trim + year window**. Used ONLY for
-/// engine size: Search has always narrowed engine sizes by the selected trim
-/// (pre-existing, Search-only behavior; Sell step 2 does not). With no trim
-/// selected this equals [resolveHomeVehicleCatalogOptions].
+/// Engine-size resolution: **make + model only**. Kept as a separate entry point
+/// for call-site compatibility, but a selected trim (like a year) never changes
+/// the result: it is always equal to [resolveHomeVehicleCatalogOptions].
 CatalogSellFieldOptions? resolveHomeVehicleEngineCatalogOptions(
   CarSpecIndex? idx,
   HomeVehicleContext ctx,
 ) =>
-    _resolve(idx, ctx, ctx.trim?.trim() ?? '');
+    _resolve(idx, ctx);
 
 /// Default/global option lists for every catalog-dependent Search field (the
 /// lists Search shows when the catalog has nothing to say).
@@ -132,16 +127,35 @@ class HomeVehicleFieldOptions {
   /// [catalog] null (or a field missing from it) -> that field's [defaults].
   ///
   /// [catalog] (model-level) drives every field except engine size.
-  /// [engineCatalog] (trim-aware) drives engine size only. Pass the same object
-  /// as [catalog] when no trim-specific resolution applies; null means "catalog
-  /// has nothing for engine size" (defaults), never "reuse [catalog]".
+  /// [engineCatalog] drives engine size only. It is also the model-level answer
+  /// (pass the same object as [catalog]); null means "catalog has nothing for
+  /// engine size" (defaults), never "reuse [catalog]".
   factory HomeVehicleFieldOptions.resolve({
     required CatalogSellFieldOptions? catalog,
     required CatalogSellFieldOptions? engineCatalog,
     required HomeVehicleFieldDefaults defaults,
+    bool vehicleResolved = false,
   }) {
     final engineSource = engineCatalog;
     final narrowed = <HomeVehicleField>{};
+
+    /// Engine size and cylinder count are model facts. Once Brand + Model are
+    /// selected and the catalog index has answered ([vehicleResolved]), a model
+    /// for which neither CarNet nor the approved IQ overlay holds a trusted
+    /// value must not fall back to the generic all-vehicles ladder (which would
+    /// advertise engines/cylinders the model never had): it offers only `Any`.
+    /// Before a model is selected (or while the index is not ready) the generic
+    /// defaults are unchanged.
+    ///
+    /// Body type and drivetrain follow the same rule: they are evidence-only
+    /// model facts, so with a resolved Brand + Model and no explicit source
+    /// value the Search list is `Any` only, never the generic ladder.
+    const anyOnly = <String>['Any'];
+    const evidenceOnlyFields = <HomeVehicleField>{
+      HomeVehicleField.cylinderCount,
+      HomeVehicleField.bodyType,
+      HomeVehicleField.driveType,
+    };
 
     // `narrowOptionsToCatalog` returns the very same [defaults] instance when it
     // falls back, so identity tells us whether the catalog narrowed the field.
@@ -151,13 +165,22 @@ class HomeVehicleFieldOptions {
       Set<String>? known,
     ) {
       final out = narrowOptionsToCatalog(base, known);
-      if (!identical(out, base)) narrowed.add(field);
+      if (!identical(out, base)) {
+        narrowed.add(field);
+      } else if (vehicleResolved && evidenceOnlyFields.contains(field)) {
+        narrowed.add(field);
+        return anyOnly;
+      }
       return out;
     }
 
     List<String> engines() {
       final known = engineSource?.engineSizes;
-      if (known == null || known.isEmpty) return defaults.resolvedEngineSizes;
+      if (known == null || known.isEmpty) {
+        if (!vehicleResolved) return defaults.resolvedEngineSizes;
+        narrowed.add(HomeVehicleField.engineSize);
+        return anyOnly;
+      }
       narrowed.add(HomeVehicleField.engineSize);
       return <String>['Any', ...sortCatalogEngineSizeLabels(known)];
     }

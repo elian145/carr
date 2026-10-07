@@ -61,8 +61,17 @@ mixin _HomePageFilterLogic on _HomePageFilterPersist {
       _homeSetSelectedFuelTypes([]);
       return;
     }
+    final wasSelected = _homeSelectedFuelTypes.contains(fuelType);
     _homeSetSelectedFuelTypes(
       homeFilterToggleValue(_homeSelectedFuelTypes, fuelType),
+    );
+    // Linked specs (shared trusted resolver): reconcile against the FINAL
+    // post-toggle fuel set on every change (add AND remove). The engine may stay
+    // while it is compatible with at least one selected fuel; an emptied set is
+    // `Any` and never moves the engine. The user's fuel set is never rewritten.
+    _homeReconcileLinkedSpecs(
+      SellSpecField.fuel,
+      addedFuel: wasSelected ? null : fuelType,
     );
   }
 

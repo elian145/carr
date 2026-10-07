@@ -19,10 +19,13 @@ int? _jsonIntOpt(dynamic v) {
 /// Cap ranges through the current calendar year + 1 so new model years stay selectable.
 int _openEndedModelYearCap() => DateTime.now().year + 1;
 
-/// Bundled JSON often lags by a model year. If the newest [year_end] in the file is still
-/// “recent”, we extend catalog years through [_openEndedModelYearCap] and reuse the latest
-/// spec row for gap years (same idea as Autodata with no end-of-production date).
-const int _kCatalogStaleExportGraceYears = 10;
+/// The bundled export often lags by a model year. If the newest `year_end` of a
+/// model line is still "recent", the Year *selector* is extended through
+/// [_openEndedModelYearCap] so newer model years stay selectable.
+///
+/// This only shapes the list of selectable YEARS. Year never selects, filters or
+/// narrows specification options: those are model-level (brand + model).
+const int _kCatalogYearListRecentGraceYears = 10;
 
 void _addRecentModelYearTail(Set<int> years) {
   if (years.isEmpty) return;
@@ -31,7 +34,7 @@ void _addRecentModelYearTail(Set<int> years) {
   for (final y in years) {
     if (y > mx) mx = y;
   }
-  if (mx >= cap - _kCatalogStaleExportGraceYears) {
+  if (mx >= cap - _kCatalogYearListRecentGraceYears) {
     for (var y = mx + 1; y <= cap; y++) {
       years.add(y);
     }

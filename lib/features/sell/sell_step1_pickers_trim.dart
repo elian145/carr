@@ -71,7 +71,6 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
             b,
             m,
             CarSpecIndex.catalogAutofillModelOnly,
-            _catYear!,
           )
         : null;
 
@@ -84,8 +83,12 @@ mixin _SellStep1PickersTrim on _SellStep1Catalog {
         _translateValueGlobal(context, preview.engineType) ?? preview.engineType,
         _translateValueGlobal(context, preview.transmission) ??
             preview.transmission,
-        _translateValueGlobal(context, preview.driveType) ?? preview.driveType,
-        _translateValueGlobal(context, preview.bodyType) ?? preview.bodyType,
+        // Drive / body appear only when the source had explicit evidence.
+        if (preview.driveType != null)
+          _translateValueGlobal(context, preview.driveType) ??
+              preview.driveType!,
+        if (preview.bodyType != null)
+          _translateValueGlobal(context, preview.bodyType) ?? preview.bodyType!,
       ].where((s) => s.trim().isNotEmpty).join(' · ');
     }
 

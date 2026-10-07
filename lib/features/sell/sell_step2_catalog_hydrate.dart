@@ -6,21 +6,23 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
     CarSpecIndex? idx,
   ) {
     if (carData == null || idx == null) return null;
-    // Only narrow Step 2 lists when the user opted into catalog autofill.
-    // Skipping "Apply specs" should leave the full static option sets available.
-    final hasApplied = carData['_catalog_specs_applied'] != null ||
-        carData['_online_specs_applied'] != null;
-    if (!hasApplied) return null;
     final b = carData['brand']?.toString().trim() ?? '';
     final m = carData['model']?.toString().trim() ?? '';
-    final y = int.tryParse(carData['year']?.toString().trim() ?? '');
-    if (b.isEmpty || m.isEmpty || y == null) return null;
-    if (!idx.hasCoverage(b, m)) return null;
+    if (b.isEmpty || m.isEmpty) return null;
+    // A model the spec dataset has no rows for has no "Apply specs" path at
+    // all. The approved IQ overlay is coverage for the specific field it
+    // supplies (engine sizes / cylinders); every other field, and any field IQ
+    // has nothing for, keeps the full static option set (null -> defaults).
+    if (!idx.hasCoverage(b, m)) {
+      return idx.iqOnlyFieldOptions(b, m, CarSpecIndex.catalogAutofillModelOnly);
+    }
+    // Brand + model defines the options, always: before AND after "Apply specs".
+    // Neither the listing year, the trim nor Apply is an input; Apply only
+    // prefills selected values. ("availableOptions" vs "selectedValues".)
     return idx.sellFieldOptionsUnion(
       b,
       m,
       CarSpecIndex.catalogAutofillModelOnly,
-      y,
     );
   }
 
@@ -133,23 +135,26 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
         selectedVin = rawVin;
         _vinController.text = rawVin;
       }
-      takeScalarOrOnlineOpt(
-        'cylinder_count',
-        '_online_opts_cylinder',
-        (v) => selectedCylinderCount = v,
-      );
+      // Each is restored from its OWN stored value (never from "the first"
+      // entry of a multi-value option list). The engine is never rewritten;
+      // its trusted cylinder count is applied after this block.
+      final cylDirect = d['cylinder_count']?.toString().trim();
+      if (cylDirect != null && cylDirect.isNotEmpty) {
+        selectedCylinderCount = cylDirect;
+      } else {
+        final raw = d['_online_opts_cylinder'];
+        if (raw is List && raw.length == 1) {
+          final s = raw.first.toString().trim();
+          if (s.isNotEmpty) selectedCylinderCount = s;
+        }
+      }
       String? es = d['engine_size']?.toString().trim();
       if (es == null || es.isEmpty) {
         final raw = d['_online_opts_engine_size'];
-        if (raw is List && raw.isNotEmpty) {
-          for (final c in raw) {
-            final t = c.toString().trim();
-            final lit = OnlineSpecVariant.parseLeadingEngineLiters(t);
-            if (lit != null && lit > 0.001) {
-              es = t;
-              break;
-            }
-          }
+        if (raw is List && raw.length == 1) {
+          final t = raw.first.toString().trim();
+          final lit = OnlineSpecVariant.parseLeadingEngineLiters(t);
+          if (lit != null && lit > 0.001) es = t;
         }
       }
       if (es != null && es.isNotEmpty) {
@@ -159,25 +164,47 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
         }
       }
       if (es != null && es.isNotEmpty) {
-        // Prefer staying in picker mode by snapping to an available option
-        // based on leading liters (preserves suffix labels like "T").
         final available = getAvailableEngineSizes()
             .where((e) => e != 'Any')
             .map((e) => e.trim())
             .toList();
-        String? resolved = available.contains(es) ? es : null;
-        final lit = OnlineSpecVariant.parseLeadingEngineLiters(es);
-        if (resolved == null && lit != null) {
-          for (final opt in available) {
-            final oL = OnlineSpecVariant.parseLeadingEngineLiters(opt);
-            if (oL != null && (oL - lit).abs() < 0.06) {
-              resolved = opt;
-              break;
+        final wasManual = d['_engine_size_manual'] == true;
+        final onlineEngineList = _onlineMultiFromCarData(
+              '_online_opts_engine_size',
+            ) !=
+            null;
+        // The spec index is still loading and nothing narrows the list yet:
+        // keep the stored pick untouched; it is re-checked once the index loads.
+        final listPending = _specIdx == null && !onlineEngineList;
+        final narrowing = _engineListIsNarrowed();
+        String? resolved;
+        if (!wasManual) {
+          if (available.contains(es) || listPending) {
+            resolved = es;
+          } else if (!narrowing) {
+            // Generic ladder only: snap a plain typed size to its ladder entry.
+            final lit = OnlineSpecVariant.parseLeadingEngineLiters(es);
+            if (lit != null) {
+              for (final opt in available) {
+                final oL = OnlineSpecVariant.parseLeadingEngineLiters(opt);
+                if (oL != null && (oL - lit).abs() < 0.06) {
+                  resolved = opt;
+                  break;
+                }
+              }
             }
+          } else {
+            // The catalog narrowed the list and this pick is not in it any more
+            // (year / trim change): clear ONLY the engine.
+            selectedEngineSize = null;
+            isEngineSizeManualInput = false;
+            _engineSizeController.text = '';
+            es = null;
           }
         }
-
-        if (resolved != null && resolved.isNotEmpty) {
+        if (es == null) {
+          // cleared above
+        } else if (resolved != null && resolved.isNotEmpty) {
           selectedEngineSize = resolved;
           isEngineSizeManualInput = false;
           _engineSizeController.text =
@@ -196,7 +223,60 @@ mixin _SellStep2CatalogHydrate on _SellStep2CatalogOptions {
               : _engineSizeController.text.trim();
         }
       }
+      // The restored engine keeps its exact label; its trusted cylinder count
+      // (when the evidence is unique) is then recomputed and applied.
+      _applyTrustedCylinderForSelectedEngine();
+      _clearCylinderIfNotInOwnList();
     });
+  }
+
+  /// True when the engine list is the catalog / IQ list for this vehicle rather
+  /// than the generic ladder (manual typing is then the only way past it).
+  bool _engineListIsNarrowed() {
+    if (_onlineMultiFromCarData('_online_opts_engine_size') != null) return true;
+    return _specIdx != null && (_catalogSellOpts?.engineSizes.isNotEmpty ?? false);
+  }
+
+  bool _cylinderListIsNarrowed() {
+    if (_onlineMultiFromCarData('_online_opts_cylinder') != null) return true;
+    final o = _catalogSellOpts;
+    return _specIdx != null &&
+        o != null &&
+        (o.cylinderCounts.isNotEmpty || o.iqCylinderCounts.isNotEmpty);
+  }
+
+  /// Clears the cylinder pick ONLY, and only when the narrowed cylinder list no
+  /// longer offers it. Never touches or derives the engine.
+  bool _clearCylinderIfNotInOwnList() {
+    final c = selectedCylinderCount?.trim();
+    if (c == null || c.isEmpty || !_cylinderListIsNarrowed()) return false;
+    final avail = getAvailableCylinderCounts().where((e) => e != 'Any');
+    if (avail.contains(c)) return false;
+    selectedCylinderCount = null;
+    return true;
+  }
+
+  /// Once the spec index (and so the real option lists) is available, drop a
+  /// restored engine / cylinder that its OWN list no longer contains. Each field
+  /// is checked independently: an invalid engine clears the engine only, an
+  /// invalid cylinder clears the cylinder only.
+  void _clearSelectionsOutsideOwnLists() {
+    var changed = false;
+    final es = selectedEngineSize?.trim();
+    if (!isEngineSizeManualInput &&
+        es != null &&
+        es.isNotEmpty &&
+        _engineListIsNarrowed()) {
+      final avail = getAvailableEngineSizes().where((e) => e != 'Any');
+      if (!avail.contains(es)) {
+        selectedEngineSize = null;
+        _engineSizeController.text = '';
+        changed = true;
+      }
+    }
+    if (_applyTrustedCylinderForSelectedEngine()) changed = true;
+    if (_clearCylinderIfNotInOwnList()) changed = true;
+    if (changed) _syncStep2DraftToParent();
   }
 
   Future<void> _saveDraft() async {

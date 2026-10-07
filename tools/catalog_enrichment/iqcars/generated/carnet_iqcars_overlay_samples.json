@@ -1326,7 +1326,12 @@
     4
    ]
   },
-  "PROPOSED_ADDITIONS": null,
+  "PROPOSED_ADDITIONS": {
+   "trims_add": [],
+   "engine_sizes_add": [],
+   "engine_variants": [],
+   "cylinders_add": []
+  },
   "POSSIBLE_DUPLICATES_AND_WARNINGS": {
    "held_trims_for_review": [],
    "warnings": [],

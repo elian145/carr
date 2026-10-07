@@ -179,7 +179,10 @@
 - cylinders: 4
 
 **PROPOSED ADDITIONS**
-- (none)
+- trims (0): -
+- engine sizes: -
+- engine variants kept: -
+- cylinders: -
 
 **POSSIBLE DUPLICATES / WARNINGS**
 - none

@@ -28,6 +28,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
+from canonical_io import NEWLINE, write_text_canonical  # noqa: E402
 from iqcars_client import BASE_URL, ENDPOINTS, IqCarsClient, StopRequested  # noqa: E402
 
 RAW_DIR = HERE / "raw"
@@ -39,7 +40,7 @@ LANG = "en"  # one response carries en/ar/ku names for every entity
 
 def _write_json(path: Path, obj) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    write_text_canonical(path, json.dumps(obj, ensure_ascii=False, indent=1) + "\n")
 
 
 def _brands(client: IqCarsClient) -> list[dict]:
@@ -125,7 +126,7 @@ def _record_run(kind: str, started: datetime, client: IqCarsClient, **extra) -> 
     rec = {"run": kind, "start_utc": started.isoformat(timespec="seconds"),
            "end_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "duration_s": round((datetime.now(timezone.utc) - started).total_seconds(), 1), **client.stats(), **extra}
-    with open(RAW_DIR / "run_summaries.jsonl", "a", encoding="utf-8") as f:
+    with open(RAW_DIR / "run_summaries.jsonl", "a", encoding="utf-8", newline=NEWLINE) as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 

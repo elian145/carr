@@ -40,6 +40,7 @@ sys.path.insert(0, str(HERE.parent))
 from model_boundaries import ModelIndex  # noqa: E402
 from compare_carnet import carnet_profiles, carnet_trims, match_models  # noqa: E402
 from normalize import loose_key  # noqa: E402
+from canonical_io import write_text_canonical  # noqa: E402
 
 REPO = HERE.parents[2]
 GEN = HERE / "generated"
@@ -58,6 +59,11 @@ OUT = {
 
 # Explicit exclusions on top of the automatic ambiguity detection (until reviewed by a human).
 EXPLICIT_EXCLUSIONS = {("Toyota", "Land Cruiser FJ"): "explicitly excluded until reviewed (near-sibling of Toyota Land Cruiser)"}
+# Value-level quarantine: an IQ cylinder count that contradicts better evidence is kept in the raw IQ response and in the audit/
+# provenance, but is never proposed and never exported to the runtime overlay. (brand, model) -> {count: reason}.
+QUARANTINED_CYLINDERS = {
+    ("Geely", "Cityray"): {3: "IQ used-car cylinder list [3] is disjoint from the exact brand-new dataset [4] and from CarNet [4]"},
+}
 PLACEHOLDER_TRIMS = {"other", ""}
 TYPICAL_CYLINDERS = {3, 4, 5, 6, 8, 10, 12}   # outside this set => kept, but flagged UNUSUAL_CYLINDER_COUNT
 DEFAULT_DUMP_MIN_MODELS = 20                   # an identical list shared by >= this many models ...
@@ -164,7 +170,11 @@ def build_entry(m: dict, iq: dict, cat: dict, prof: dict, dumps: dict) -> tuple[
             row = {"size": v["display"], "raw_values": list(v["raw_values"]), "qualifier": v["qualifier"], "iq_engine_ids": list(v["engine_ids"])}
             (variants_add if v["display"] in engine_sizes_add else variants_existing).append(row)
     # ---------------- cylinders
-    cylinders_add = []
+    # `cylinders` = the FULL approved IQ set for the model (what the runtime overlay carries; the app computes
+    # CarNet-baseline UNION this set itself). `cylinders_add` = the diff against the TOOLING's CarNet baseline, kept for
+    # reports only -- it must never be the runtime payload because the app's own baseline can differ (e.g. empty).
+    cylinders_add, cylinders_full = [], []
+    cylinders_add_unquarantined = []  # the pre-quarantine diff: decides the export SCOPE (engines/trims) only
     cyl_sig = tuple(sorted(r["cylinder_id"] for r in iq["cylinder_records"]))
     if iq["cylinder_records"] and cyl_sig in dumps["cylinders"]:
         diag["excluded"].append({"kind": "unrestricted_default_cylinder_list", "values": len(cyl_sig),
@@ -173,7 +183,14 @@ def build_entry(m: dict, iq: dict, cat: dict, prof: dict, dumps: dict) -> tuple[
         for r in iq["cylinder_records"]:
             if not r["parsed"]:
                 diag["excluded"].append({"kind": "unparsed_cylinder_value", "raw": r["raw"], "cylinder_id": r["cylinder_id"]})
-        cylinders_add = sorted({r["count"] for r in iq["cylinder_records"] if r["parsed"]} - set(c_cyl))
+        quarantined = QUARANTINED_CYLINDERS.get((b, model), {})
+        approved = {r["count"] for r in iq["cylinder_records"] if r["parsed"]}
+        cylinders_add_unquarantined = sorted(approved - set(c_cyl))
+        for c in sorted(approved & set(quarantined)):
+            diag["excluded"].append({"kind": "quarantined_cylinder_value", "value": c, "reason": quarantined[c]})
+        approved -= set(quarantined)
+        cylinders_full = sorted(approved)
+        cylinders_add = sorted(approved - set(c_cyl))
     for c in cylinders_add:
         if c not in TYPICAL_CYLINDERS:
             diag["warnings"].append({"kind": "UNUSUAL_CYLINDER_COUNT", "value": c, "note": "kept; supplied explicitly by IQ Cars; review"})
@@ -186,6 +203,12 @@ def build_entry(m: dict, iq: dict, cat: dict, prof: dict, dumps: dict) -> tuple[
         "trims_add_details": trims_add_records,
         "engine_sizes_add": engine_sizes_add,
         "engine_variants": variants_add,
+        # "cylinders_only": the model has no trim/engine-size/cylinder DIFF (nothing to add against the tooling's CarNet
+        # baseline), so before format 3 it had no runtime entry at all. It now carries its full approved cylinder set
+        # (and nothing else) so the app never depends on the tooling baseline equalling its own.
+        "cylinders_only": not (trims_add or engine_sizes_add or cylinders_add_unquarantined),
+        "cylinders": cylinders_full,
+        "cylinders_iq_ids": {str(c): cyl_ids[c] for c in cylinders_full},
         "cylinders_add": cylinders_add,
         "cylinders_add_iq_ids": {str(c): cyl_ids[c] for c in cylinders_add},
         "warnings": diag["warnings"],
@@ -225,7 +248,7 @@ def build(iq: dict, cat: dict, ds: dict, idx: ModelIndex | None = None) -> dict:
     for x in sorted(matched_ok, key=lambda x: (x["carnet_brand"], x["carnet_model"])):
         e, d = build_entry(x, iq_by_id[x["iq_model_id"]], cat, prof, dumps)
         diags[(e["brand"], e["model"])] = d
-        if n_additions(e):
+        if n_additions(e) or e["cylinders"] or not e["cylinders_only"]:
             entries.append(e)
         else:
             no_add.append({"brand": e["brand"], "model": e["model"], "iq_model_id": e["iq_model_id"],
@@ -269,7 +292,8 @@ def make_reports(res: dict, iq: dict, cat: dict, input_hashes: dict) -> dict:
         "additions": tot,
         "models_with_additions_by_dimension": {
             "trims": sum(1 for e in entries if e["trims_add"]), "engine_sizes": sum(1 for e in entries if e["engine_sizes_add"]),
-            "cylinders": sum(1 for e in entries if e["cylinders_add"])},
+            "cylinders": sum(1 for e in entries if e["cylinders_add"]),
+            "cylinders_full_approved_set": sum(1 for e in entries if e["cylinders"])},
         "held_for_review": {"trims_held": len(held), "models_with_held_trims": len({(b, m) for b, m, _ in held}),
                             "by_kind": dict(Counter(h["kind"] for _, _, h in held))},
         "unrestricted_default_lists_excluded": {
@@ -287,6 +311,10 @@ def make_reports(res: dict, iq: dict, cat: dict, input_hashes: dict) -> dict:
         "unrestricted_default_engine_lists": dump_eng,
         "unrestricted_default_cylinder_lists": dump_cyl,
         "unparsed_or_placeholder_values": unparsed,
+        "quarantined_cylinder_values": sorted(
+            ({"brand": d["brand"], "model": d["model"], "iq_model_id": d["iq_model_id"], "value": i["value"], "reason": i["reason"]}
+             for d in diags.values() for i in d["excluded"] if i["kind"] == "quarantined_cylinder_value"),
+            key=lambda r: (r["brand"], r["model"], r["value"])),
         "trims_held_for_review": [{"brand": b, "model": m, **h} for b, m, h in held],
         "matched_models_with_no_additions": res["no_additions"],
         "counts": {k: v for k, v in summary["models"].items()} | {
@@ -439,7 +467,7 @@ def validate(res: dict, iq: dict, cat: dict, raw: dict) -> dict:
             for eid in v["iq_engine_ids"]:
                 if eid not in raw_eng:
                     leaks.append((e["brand"], e["model"], "engine", eid))
-        for c, cid in e["cylinders_add_iq_ids"].items():
+        for c, cid in {**e["cylinders_iq_ids"], **e["cylinders_add_iq_ids"]}.items():
             if cid not in raw_cyl:
                 leaks.append((e["brand"], e["model"], "cylinder", cid))
     check("every_addition_traces_to_own_iq_model_in_raw", not leaks, leaks[:20])
@@ -486,14 +514,14 @@ def run() -> dict:
 
 def write_all(out: dict) -> None:
     GEN.mkdir(parents=True, exist_ok=True)
-    OUT["overlay"].write_text(dump(out["overlay"]), encoding="utf-8")
-    OUT["summary"].write_text(dump(out["reports"]["summary"]), encoding="utf-8")
-    OUT["exclusions"].write_text(dump(out["reports"]["exclusions"]), encoding="utf-8")
-    OUT["dups"].write_text(dump(out["reports"]["dups"]), encoding="utf-8")
-    OUT["impact"].write_text(dump(out["reports"]["impact"]), encoding="utf-8")
-    OUT["samples_json"].write_text(dump(out["samples"]), encoding="utf-8")
-    OUT["samples_md"].write_text(samples_markdown(out["samples"]), encoding="utf-8")
-    OUT["validation"].write_text(dump(out["validation"]), encoding="utf-8")
+    write_text_canonical(OUT["overlay"], dump(out["overlay"]))
+    write_text_canonical(OUT["summary"], dump(out["reports"]["summary"]))
+    write_text_canonical(OUT["exclusions"], dump(out["reports"]["exclusions"]))
+    write_text_canonical(OUT["dups"], dump(out["reports"]["dups"]))
+    write_text_canonical(OUT["impact"], dump(out["reports"]["impact"]))
+    write_text_canonical(OUT["samples_json"], dump(out["samples"]))
+    write_text_canonical(OUT["samples_md"], samples_markdown(out["samples"]))
+    write_text_canonical(OUT["validation"], dump(out["validation"]))
 
 
 def main() -> int:

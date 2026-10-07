@@ -93,7 +93,9 @@ void main() {
     test('every dependent field matches Sell for the same concrete year', () {
       const b = 'Chevrolet';
       const m = 'Camaro';
-      const year = 2024;
+      // Policy D2: Camaro is a discontinued line, so its newest catalog year is
+      // its last real year (no extrapolated 2024).
+      final year = idx.yearsForCatalogStep(b, m, '').first;
       final sell = sellOptions(b, m, year);
       final search = searchOptions(b, m, minYear: year, maxYear: year);
 
@@ -116,7 +118,8 @@ void main() {
       const b = 'Chevrolet';
       const m = 'Camaro';
       final all = searchOptions(b, m);
-      final one = searchOptions(b, m, minYear: 2024, maxYear: 2024);
+      final lastYear = idx.yearsForCatalogStep(b, m, '').first;
+      final one = searchOptions(b, m, minYear: lastYear, maxYear: lastYear);
       for (final f in [
         (all.cylinderCounts, one.cylinderCounts),
         (all.transmissions, one.transmissions),
@@ -131,15 +134,20 @@ void main() {
       expect(_real(all.cylinderCounts), union);
     });
 
-    test('year window only unions the catalog years inside the window', () {
+    test('a year window never changes the options (brand + model only)', () {
       const b = 'Chevrolet';
       const m = 'Camaro';
-      final windowed = searchOptions(b, m, minYear: 2018, maxYear: 2020);
-      final expected = <String>{};
-      for (final y in [2018, 2019, 2020]) {
-        expected.addAll(sellOptions(b, m, y).engineSizes);
+      final any = searchOptions(b, m);
+      for (final w in [(2018, 2020), (2018, 2018), (1800, 1801), (2030, 2031)]) {
+        final windowed = searchOptions(b, m, minYear: w.$1, maxYear: w.$2);
+        expect(windowed.engineSizes, any.engineSizes, reason: '$w');
+        expect(windowed.cylinderCounts, any.cylinderCounts, reason: '$w');
+        expect(windowed.fuelTypes, any.fuelTypes, reason: '$w');
+        expect(windowed.transmissions, any.transmissions, reason: '$w');
+        expect(windowed.bodyTypes, any.bodyTypes, reason: '$w');
+        expect(windowed.driveTypes, any.driveTypes, reason: '$w');
+        expect(windowed.seatings, any.seatings, reason: '$w');
       }
-      expect(_real(windowed.engineSizes), expected);
     });
 
     test('J. Chevrolet Camaro no longer shows unrelated global options', () {
@@ -217,10 +225,11 @@ void main() {
       );
     });
 
-    test('year window that excludes every catalog year -> defaults', () {
+    test('a year window that excludes every catalog year still narrows by model',
+        () {
       final o = searchOptions('Chevrolet', 'Camaro', minYear: 1800, maxYear: 1801);
-      expect(o.narrowedFields, isEmpty);
-      expect(o.cylinderCounts, _anyCylinders);
+      expect(o.narrowedFields, HomeVehicleField.values.toSet());
+      expect(o.cylinderCounts, searchOptions('Chevrolet', 'Camaro').cylinderCounts);
     });
 
     test('B/I. a field with no catalog data uses defaults; others stay narrowed',
@@ -308,19 +317,18 @@ void main() {
       }
     });
 
-    test('engine size keeps its pre-existing Search-only trim narrowing', () {
-      var sawTrimNarrowing = false;
+    test('engine size follows the same year-first resolver as Sell for every trim', () {
       final modelLevel = sellOptions(b, m, year).engineSizes;
       for (final trim in trims) {
         final direct = idx.sellFieldOptionsUnion(b, m, trim, year)!;
         final o = searchOptions(b, m, trim: trim, minYear: year, maxYear: year);
         expect(_real(o.engineSizes), direct.engineSizes, reason: trim);
-        if (direct.engineSizes.length < modelLevel.length) {
-          sawTrimNarrowing = true;
-        }
+        // Policy D2: the year applies first. A trim can never bring in rows that
+        // are outside the selected year, so it can only equal or narrow the
+        // model-level in-range set (it used to narrow only by dropping carried
+        // expired rows).
+        expect(modelLevel.containsAll(direct.engineSizes), isTrue, reason: trim);
       }
-      expect(sawTrimNarrowing, isTrue,
-          reason: 'at least one trim should narrow engines below model level');
     });
 
     test('no trim == Sell step 2 (model-level) resolution', () {
@@ -337,6 +345,8 @@ void main() {
 
   group('H. normalization resolves identically in Search and Sell', () {
     test('case / whitespace variants of make and model resolve the same', () {
+      final lastYear =
+          idx.yearsForCatalogStep('Chevrolet', 'Camaro', '').first;
       final canonical = searchOptions('Chevrolet', 'Camaro');
       for (final v in [
         ['chevrolet', 'camaro'],
@@ -352,11 +362,11 @@ void main() {
           v[0].trim(),
           v[1].trim(),
           '',
-          2024,
+          lastYear,
         );
         expect(sell, isNotNull, reason: '$v');
         expect(
-          _real(searchOptions(v[0], v[1], minYear: 2024, maxYear: 2024)
+          _real(searchOptions(v[0], v[1], minYear: lastYear, maxYear: lastYear)
               .cylinderCounts),
           sell!.cylinderCounts,
           reason: '$v',
@@ -425,12 +435,12 @@ void main() {
     test('multi-select drops only the invalid entries', () {
       final b = searchOptions('Toyota', 'Camry', minYear: 2023, maxYear: 2023);
       final after = sanitizeHomeVehicleDependentSelections(
-        const HomeVehicleDependentSelections(bodyType: 'Coupe,Sedan'),
+        const HomeVehicleDependentSelections(bodyType: 'Pickup,Sedan'),
         b,
       );
       expect(after.bodyType, 'Sedan');
       final none = sanitizeHomeVehicleDependentSelections(
-        const HomeVehicleDependentSelections(bodyType: 'Coupe'),
+        const HomeVehicleDependentSelections(bodyType: 'Pickup'),
         b,
       );
       expect(none.bodyType, isNull);
@@ -507,8 +517,8 @@ void main() {
   });
 
   group('G. saved / restored filters', () {
-    // Restored filters for a concrete model-year window (Camry 2023: automatic
-    // gasoline sedan, 4/6 cylinders).
+    // Restored filters for a Camry with a model-year window (the window never
+    // changes the model-level option lists).
     HomeVehicleFieldOptions camry2023() =>
         searchOptions('Toyota', 'Camry', minYear: 2023, maxYear: 2023);
 
@@ -530,7 +540,7 @@ void main() {
     test('stale restored values are sanitized, valid ones kept', () {
       final o = camry2023();
       const stale = HomeVehicleDependentSelections(
-        transmission: 'Manual', // Camry catalog is automatic only
+        transmission: 'Not A Transmission',
         cylinderCount: '16',
         bodyType: 'Pickup,Sedan',
         fuelType: 'Gasoline',

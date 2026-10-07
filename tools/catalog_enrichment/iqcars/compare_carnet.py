@@ -39,6 +39,7 @@ sys.path.insert(0, str(HERE.parent))
 from model_boundaries import ACCEPTED, REJECTED, ModelIndex, mkey  # noqa: E402
 from catalog_audit_readonly import cylinders as ds_cylinders, resolve_liters  # noqa: E402
 from normalize import loose_key, norm_ws  # noqa: E402
+from canonical_io import write_text_canonical  # noqa: E402
 
 REPO = HERE.parents[2]
 GEN = HERE / "generated"
@@ -246,13 +247,13 @@ def main() -> int:
         "unmatched_iq_models": unmatched, "ambiguous_iq_models": ambiguous, "unmatched_carnet_models": carnet_unmatched,
     }
     GEN.mkdir(parents=True, exist_ok=True)
-    (GEN / "iqcars_model_matching_report.json").write_text(json.dumps(matching, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    (GEN / "iqcars_vs_carnet_comparison.json").write_text(json.dumps(
+    write_text_canonical(GEN / "iqcars_model_matching_report.json", json.dumps(matching, ensure_ascii=False, indent=1) + "\n")
+    write_text_canonical(GEN / "iqcars_vs_carnet_comparison.json", json.dumps(
         {"_meta": {"semantics": __doc__.split("Comparison semantics")[1].strip(), "matched_models": mm, "summary": summary},
-         "models": sorted(comps, key=lambda c: (c["brand"], c["model"]))}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    (GEN / "iqcars_coverage_report.json").write_text(json.dumps(
+         "models": sorted(comps, key=lambda c: (c["brand"], c["model"]))}, ensure_ascii=False, indent=1) + "\n")
+    write_text_canonical(GEN / "iqcars_coverage_report.json", json.dumps(
         {"IQ_CARS": iq_cov, "CARNET": cn_cov, "MATCHED_MODELS_ONLY": matched_cov, "comparison_summary": summary,
-         "identity": matching["_meta"]["counts"]}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+         "identity": matching["_meta"]["counts"]}, ensure_ascii=False, indent=1) + "\n")
     print(json.dumps({"identity": matching["_meta"]["counts"], "coverage": {"IQ": iq_cov, "CarNet": cn_cov, "matched": matched_cov},
                       "summary": summary}, ensure_ascii=False, indent=1))
     return 0

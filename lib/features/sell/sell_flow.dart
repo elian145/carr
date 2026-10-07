@@ -45,6 +45,7 @@ import '../../features/listing/listing_spec_item.dart';
 import '../../globals.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/online_spec_variant.dart';
+import '../../models/sell_spec_reconcile.dart';
 import '../../navigation/app_page_route.dart';
 import '../../pages/listing_image_gallery_page.dart';
 import '../../services/ai_service.dart';
@@ -164,28 +165,6 @@ void _clearOnlineSpecOptionsInCarData(Map<String, dynamic> d) {
     d.remove(k);
   }
   d.remove(_kOnlineSpecVariantsKey);
-}
-
-void _applyCatalogSpecConstrainedOptionsToCarData(
-  Map<String, dynamic> d,
-  CatalogSpecFields f,
-) {
-  d['_online_opts_transmission'] = [sellFlowTransmissionLabel(f.transmission)];
-  d['_online_opts_drive'] = [sellFlowDriveLabel(f.driveType)];
-  d['_online_opts_body'] = [sellFlowBodyLabel(f.bodyType)];
-  d['_online_opts_fuel'] = [sellFlowFuelLabel(f.fuelType)];
-  if (f.engineSizeLiters != null && f.engineSizeLiters! > 0.001) {
-    d['_online_opts_engine_size'] = [
-      '${f.engineSizeLiters!.toStringAsFixed(1)}${f.displacementSuffix}',
-    ];
-  }
-  if (f.cylinderCount != null && f.cylinderCount! > 0) {
-    d['_online_opts_cylinder'] = ['${f.cylinderCount}'];
-  }
-  final seatLabel = sellFlowNearestSeatingLabel(f.seating);
-  if (seatLabel != null) {
-    d['_online_opts_seating'] = [seatLabel];
-  }
 }
 
 void _applyCatalogSellFieldUnionToCarData(

@@ -20,6 +20,8 @@ import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
 
+from canonical_io import NEWLINE
+
 BASE_URL = "https://cp.iqcars.net/api/"
 USER_AGENT = "CarNet-catalog-research/0.1 (read-only; low-rate; cache-first)"
 
@@ -125,5 +127,5 @@ class IqCarsClient:
                "bytes": size}
         if note:
             rec["note"] = note
-        with open(self.log_path, "a", encoding="utf-8") as f:
+        with open(self.log_path, "a", encoding="utf-8", newline=NEWLINE) as f:
             f.write(json.dumps(rec) + "\n")

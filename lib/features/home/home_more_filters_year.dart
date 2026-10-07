@@ -58,7 +58,6 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
               if (min != null && max != null && min > max) {
                 selectedMaxYear = selectedMinYear;
               }
-              _afterHomeYearBoundsChanged();
             });
             setStateDialog(() {});
           },
@@ -102,7 +101,6 @@ mixin _HomePageMoreFiltersYear on _HomePageMoreFiltersPrice {
               if (min != null && max != null && max < min) {
                 selectedMinYear = selectedMaxYear;
               }
-              _afterHomeYearBoundsChanged();
             });
             setStateDialog(() {});
           },

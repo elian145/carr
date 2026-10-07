@@ -233,8 +233,21 @@ mixin _SellStep1Catalog on _SellStep1Fields {
     parent.carData['transmission'] = sellFlowTransmissionLabel(f.transmission);
     parent.carData['fuel_type'] = sellFlowFuelLabel(f.fuelType);
     parent.carData['engine_type'] = f.engineType;
-    parent.carData['body_type'] = sellFlowBodyLabel(f.bodyType);
-    parent.carData['drive_type'] = sellFlowDriveLabel(f.driveType);
+    // Body / drivetrain are pre-filled only from explicit source evidence. A row
+    // with none (or several body categories) pre-selects nothing; the user then
+    // picks from the narrowed catalog options or the manual Sell choices.
+    final bodyLabel = sellFlowBodyLabel(f.bodyType);
+    if (bodyLabel != null) {
+      parent.carData['body_type'] = bodyLabel;
+    } else {
+      parent.carData.remove('body_type');
+    }
+    final driveLabel = sellFlowDriveLabel(f.driveType);
+    if (driveLabel != null) {
+      parent.carData['drive_type'] = driveLabel;
+    } else {
+      parent.carData.remove('drive_type');
+    }
     if (f.engineSizeLiters != null && f.engineSizeLiters! > 0) {
       // Keep suffix (T/D/TD) for display, while the API submit parses leading liters.
       parent.carData['engine_size'] =
@@ -255,7 +268,6 @@ mixin _SellStep1Catalog on _SellStep1Fields {
             b,
             m,
             CarSpecIndex.catalogAutofillModelOnly,
-            _catYear!,
           )
         : null;
     var catVs = (b.isNotEmpty && m.isNotEmpty)
@@ -263,16 +275,15 @@ mixin _SellStep1Catalog on _SellStep1Fields {
             b,
             m,
             CarSpecIndex.catalogAutofillModelOnly,
-            _catYear!,
           )
         : const <OnlineSpecVariant>[];
     if (catVs.isEmpty) {
       catVs = [_onlineSpecVariantFromCatalogFields(f)];
     }
+    // The option lists are the Brand + Model union (never narrowed to the
+    // applied row); Apply only prefills the selected values above.
     if (union != null) {
       _applyCatalogSellFieldUnionToCarData(parent.carData, union);
-    } else {
-      _applyCatalogSpecConstrainedOptionsToCarData(parent.carData, f);
     }
     if (catVs.isNotEmpty) {
       parent.carData[_kOnlineSpecVariantsKey] = catVs

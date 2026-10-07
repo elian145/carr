@@ -62,6 +62,53 @@ class OnlineSpecVariant {
     return double.tryParse(m.group(1)!);
   }
 
+  /// The exact engine identity of a row: litres + qualifier (`3.0`, `3.0 D`,
+  /// `3.0 T`, `3.0 TD` are four different engines).
+  static String? engineLabelOf(OnlineSpecVariant v) {
+    final l = v.engineSizeLiters;
+    if (l == null || l <= 0.001) return null;
+    return '${l.toStringAsFixed(1)}${v.displacementSuffix}';
+  }
+
+  /// The cylinder count a selected engine is TRUSTED to have, from catalog rows
+  /// that are already scoped to the selected Brand + Model + Year (+ trim scope).
+  /// Returns null whenever the evidence is missing or conflicting (never guess).
+  ///
+  /// A. Exact rows: rows whose engine label equals [engineLabel] exactly. If any
+  ///    exist, their cylinder counts must all agree on ONE value.
+  /// B. No exact row (an IQ-only engine such as `3.0 T`): every row of the SAME
+  ///    displacement (any qualifier) must agree on ONE cylinder count; that
+  ///    count is inherited for the cylinder only.
+  ///
+  /// This only derives a cylinder count. It never selects, replaces or
+  /// normalises an engine label, and it does not read any IQ model-level list.
+  static int? trustedCylinderForEngine(
+    Iterable<OnlineSpecVariant> rows,
+    String? engineLabel,
+  ) {
+    final label = engineLabel?.trim() ?? '';
+    if (label.isEmpty) return null;
+    final lit = parseLeadingEngineLiters(label);
+    if (lit == null || lit <= 0.001) return null;
+
+    int? uniqueCount(Iterable<OnlineSpecVariant> rs) {
+      final counts = <int>{
+        for (final r in rs)
+          if (r.cylinderCount != null && r.cylinderCount! > 0) r.cylinderCount!,
+      };
+      return counts.length == 1 ? counts.first : null;
+    }
+
+    final exact = rows.where((r) => engineLabelOf(r) == label).toList();
+    if (exact.isNotEmpty) return uniqueCount(exact);
+
+    final family = rows.where((r) {
+      final l = r.engineSizeLiters;
+      return l != null && (l - lit).abs() < 0.06;
+    });
+    return uniqueCount(family);
+  }
+
   /// [anchors] names which fields the user just changed (those gate the strict filter).
   /// Other parameters should reflect **current** form values: variants that disagree on those
   /// fields are dropped when possible so e.g. gasoline + AWD is not replaced by diesel + AWD.

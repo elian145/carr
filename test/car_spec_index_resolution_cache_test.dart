@@ -61,7 +61,8 @@ void main() {
     final b = idx.homeFilterFieldOptions('Chevrolet', 'Camaro', '');
     expect(a, isNotNull);
     expect(identical(a, b), isTrue);
-    // A different year window is a different answer, not a stale cache hit.
+    // A year window never changes the answer (brand + model only), so it is the
+    // very same cache entry.
     final c = idx.homeFilterFieldOptions(
       'Chevrolet',
       'Camaro',
@@ -69,7 +70,7 @@ void main() {
       rangeMinYear: 2016,
       rangeMaxYear: 2016,
     );
-    expect(identical(a, c), isFalse);
+    expect(identical(a, c), isTrue);
   });
 
   test('per-year Sell-style resolution is unchanged by trim-spec memoization', () {

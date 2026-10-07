@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:car_listing_app/features/home/home_flow.dart' show HomePage;
 import 'package:car_listing_app/l10n/app_localizations.dart';
 import 'package:car_listing_app/services/car_spec_index.dart';
+import 'package:car_listing_app/services/iqcars_overlay.dart';
 
 import 'cached_image_store_test_support.dart';
 import 'fake_api_server.dart';
@@ -42,6 +43,11 @@ void main() {
     await FakeApiServer.ensureStarted();
     final raw = File('assets/car_spec_dataset.json').readAsStringSync();
     idx = parseCarSpecDatasetJsonString(raw).index!;
+    // The page attaches the bundled IQ overlay to its index (additive engine /
+    // cylinder variants); the expectation must resolve through the same data.
+    idx.attachIqCarsOverlay(IqCarsOverlay.parse(
+      File('assets/car_iqcars_overlay.json').readAsStringSync(),
+    ));
   });
 
   tearDownAll(() async {
@@ -196,7 +202,7 @@ void main() {
         'model': 'Camry',
         'min_year': '2023',
         'max_year': '2023',
-        'transmission': 'Manual', // Camry 2023 is automatic only
+        'transmission': 'Not A Transmission', // stale for any model
         'cylinder_count': validCyl, // valid
         'fuel_type': 'Gasoline', // valid
         'body_type': 'Pickup,Sedan', // Pickup stale, Sedan valid
@@ -217,6 +223,35 @@ void main() {
       expect(s.selectedTransmission, 'Manual');
       expect(real(s.getAvailableCylinderCounts()), contains('16'));
 
+      // ---- H. Data-quality fix: model families + FULL IQ cylinder sets. ----
+      Future<List<String>> cylindersFor(String brand, String model) async {
+        s.selectedBrand = brand;
+        s.selectedModel = model;
+        s.syncDependentFiltersToVehicle();
+        final expected = idx.homeFilterFieldOptions(brand, model, '');
+        if (expected != null) await waitForCatalog(tester, s, expected);
+        await tester.pump();
+        return (s.getAvailableCylinderCounts() as List).cast<String>();
+      }
+
+      // CarNet [3,4,6] + IQ [4,6]; the app now resolves "4 Series" for "4-Series".
+      expect(await cylindersFor('BMW', '4-Series'), ['Any', '3', '4', '6']);
+      // CarNet [4,6,8] + FULL IQ [4,6,8,10] (was just "Any,10").
+      expect(await cylindersFor('BMW', '5-Series'), ['Any', '4', '6', '8', '10']);
+      // CarNet [4,6,8] + IQ [6,8,10].
+      expect(await cylindersFor('BMW', '6-Series'), ['Any', '4', '6', '8', '10']);
+      // No trusted data from either source: only Any, never the generic ladder.
+      expect(await cylindersFor('Toyota', 'bZ4X'), ['Any']);
+      expect((s.getAvailableEngineSizes() as List).cast<String>(), ['Any']);
+      // Geely Cityray: the contradicted IQ count 3 never appears.
+      expect(await cylindersFor('Geely', 'Cityray'), isNot(contains('3')));
+      // Clearing the model restores the generic ladder.
+      s.selectedModel = null;
+      s.selectedBrand = null;
+      s.syncDependentFiltersToVehicle();
+      await tester.pump();
+      expect(real(s.getAvailableCylinderCounts()),
+          containsAll(<String>['1', '4', '8', '12', '16']));
       // Dispose and let cached_network_image's 10 s cleanup timer fire so the
       // framework's pending-timer invariant holds.
       await tester.pumpWidget(const SizedBox());

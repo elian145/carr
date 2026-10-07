@@ -10,23 +10,24 @@
   "iq_models": 1653,
   "matched_exact_identity": 1635,
   "eligible_after_explicit_exclusions": 1635,
-  "included_in_overlay": 1214,
-  "matched_but_no_additions": 421,
+  "included_in_overlay": 1558,
+  "matched_but_no_additions": 77,
   "excluded_ambiguous": 1,
   "excluded_unmatched": 17,
   "excluded_explicit": 1,
-  "total_not_in_overlay": 439
+  "total_not_in_overlay": 95
  },
  "additions": {
   "trims_add": 1791,
   "engine_sizes_add": 1926,
   "engine_variants_on_added_sizes": 2048,
-  "cylinders_add": 957
+  "cylinders_add": 956
  },
  "models_with_additions_by_dimension": {
   "trims": 533,
   "engine_sizes": 925,
-  "cylinders": 782
+  "cylinders": 781,
+  "cylinders_full_approved_set": 1510
  },
  "held_for_review": {
   "trims_held": 98,
