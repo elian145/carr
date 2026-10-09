@@ -49,6 +49,10 @@ abstract class _HomePageFields extends State<HomePage> {
   HomeInterestProfile? _homeInterestProfile;
   String? _defaultFeedSortBy;
 
+  /// SRCH-3: stable seed for `sort_by=random` across load-more pages.
+  /// Rotated on deliberate refresh / new random browsing session.
+  String? _randomSortSeed;
+
   // Filter variables
   String? selectedBrand;
   String? selectedModel;

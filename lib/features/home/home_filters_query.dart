@@ -199,6 +199,10 @@ Map<String, String> homeFiltersToApiQuery(
 
   put('brand', homeFilterDecodeSingle(filters.brand));
   put('model', filters.model);
+  // SRCH-2: exact model matching so pagination totals match the UI.
+  if (HomeFiltersSnapshot._has(filters.model)) {
+    put('model_match', 'exact');
+  }
   put('trim', filters.trim);
   // Free-text keyword: backend param is `q` (see kk/routes/cars.py). Trim
   // before sending so a whitespace-only keyword never reaches the API.
@@ -317,6 +321,9 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
 
   put('brand', homeFilterDecodeSingle(filters.brand));
   put('model', filters.model);
+  if (HomeFiltersSnapshot._has(filters.model)) {
+    put('model_match', 'exact');
+  }
   put('trim', filters.trim);
   // Free-text keyword: backend/matcher param is `q` (see kk/routes/cars.py
   // and kk/listing_filters.py). Trim so a whitespace-only keyword is never
@@ -423,6 +430,45 @@ bool _ciEquals(String? left, String right) {
   return l.toLowerCase() == right.trim().toLowerCase();
 }
 
+/// SRCH-1: compact brand key so ``Land Rover`` matches ``land-rover``.
+String homeBrandMatchKey(String? raw) {
+  final s = (raw ?? '').trim().toLowerCase();
+  if (s.isEmpty) return '';
+  return s.replaceAll(RegExp(r'[\s\-_]+'), '');
+}
+
+bool homeBrandsMatch(String? stored, String? filter) {
+  final a = homeBrandMatchKey(stored);
+  final b = homeBrandMatchKey(filter);
+  if (a.isEmpty || b.isEmpty) return false;
+  return a == b;
+}
+
+/// SRCH-3: mint a session seed for random-sort pagination.
+String homeMintRandomSortSeed({int? micros, int salt = 0}) {
+  final now = micros ?? DateTime.now().microsecondsSinceEpoch;
+  return '${now.toRadixString(16)}${(now ^ salt).toRadixString(16)}';
+}
+
+/// Resolve the seed for one browsing session.
+///
+/// - [refreshSession] (pull-to-refresh / sort change with bypassCache): mint new
+/// - otherwise reuse [existing] across page 1 / load-more / filter rebuilds
+/// - when sort is not random, returns null and leaves [existing] untouched
+String? homeResolveRandomSortSeed({
+  required String? existing,
+  required bool isRandomSort,
+  required bool refreshSession,
+  int salt = 0,
+  int? micros,
+}) {
+  if (!isRandomSort) return null;
+  if (refreshSession || existing == null || existing.isEmpty) {
+    return homeMintRandomSortSeed(micros: micros, salt: salt);
+  }
+  return existing;
+}
+
 bool _matchesSelectedList(String? listingValue, String? encodedFilter) {
   final selected = homeFilterDecodeList(encodedFilter)
       .map((v) => v.toLowerCase())
@@ -458,14 +504,16 @@ bool listingMatchesHomeFilters(
 ) {
   final brand = homeFilterDecodeSingle(filters.brand);
   if (HomeFiltersSnapshot._has(brand) &&
-      !_ciContains(
+      !homeBrandsMatch(
         _listingStringField(listing, const ['brand']),
-        brand!,
+        brand,
       )) {
     return false;
   }
+  // SRCH-2: model filter is exact on the server when model_match=exact;
+  // keep client offline/cache matching aligned.
   if (HomeFiltersSnapshot._has(filters.model) &&
-      !_ciContains(
+      !_ciEquals(
         _listingStringField(listing, const ['model']),
         filters.model!,
       )) {
@@ -644,10 +692,11 @@ List<Map<String, dynamic>> filterListingsByHomeFilters(
 /// the backend returns every model containing that substring -- including
 /// "Land Cruiser Prado" -- with `pagination.total` counting them all.
 ///
-/// Per-instruction constraint, the backend is intentionally left
-/// unmodified; this restores exactness purely on the client by dropping
-/// any row whose `model` field is not an exact (case-insensitive, trimmed)
-/// match for [selectedModel] once the API response is already in hand.
+/// Client-side exact model filter.
+///
+/// SRCH-2: modern clients send `model_match=exact`, so the server already
+/// returns only exact rows and this becomes a no-op defense-in-depth for
+/// stale/cached responses. Kept so older backends remain correct.
 List<Map<String, dynamic>> applyExactModelListingFilter(
   List<Map<String, dynamic>> source, {
   required String? selectedModel,

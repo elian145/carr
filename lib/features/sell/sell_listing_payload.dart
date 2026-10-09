@@ -111,7 +111,10 @@ Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
 
   return {
     'title': '$brand $model $trim'.trim(),
-    'brand': brand.toLowerCase().replaceAll(' ', '-'),
+    // SRCH-1: persist catalog display identity (e.g. "Land Rover"). Do not
+    // slugify spaces to hyphens — Search filters send display names, and the
+    // server normalizes both forms for legacy slug rows.
+    'brand': brand.trim(),
     'model': model,
     'trim': trim,
     'year': year,
@@ -204,7 +207,8 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
 
   return {
     'title': title,
-    'brand': brand.toLowerCase().replaceAll(' ', '-'),
+    // SRCH-1: persist catalog display identity (see update payload).
+    'brand': brand.trim(),
     'model': model,
     'trim': trim,
     'year': year,

@@ -23,7 +23,15 @@ from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
-from ..listing_search import apply_listing_text_search, like_escape as _like_escape
+from ..listing_search import (
+    apply_listing_text_search,
+    brand_match_clause,
+    legacy_deterministic_sort_seed,
+    like_escape as _like_escape,
+    model_match_is_exact,
+    sanitize_sort_seed,
+    seeded_random_order_expr,
+)
 from ..listing_visibility import (
     MODERATION_LISTING_STATUSES as _MODERATION_LISTING_STATUSES,
     listing_visible_to_viewer as _listing_visible_to_viewer,
@@ -243,12 +251,62 @@ def _apply_interest_ordering(
         score = price_score if score is None else (score + price_score)
 
     if score is None:
-        return query.order_by(Car.effective_featured_expr().desc(), func.random())
+        return _order_with_seeded_random(query)
 
     return query.order_by(
         Car.effective_featured_expr().desc(),
         score.desc(),
         Car.created_at.desc(),
+    )
+
+
+def _request_sort_seed_arg() -> str | None:
+    """Read ``sort_seed`` when a request context exists; else ``None``."""
+    try:
+        return request.args.get("sort_seed")
+    except RuntimeError:
+        return None
+
+
+def _legacy_seed_from_request() -> str:
+    """Deterministic seed for clients that never send ``sort_seed``."""
+    try:
+        items = [(k, v) for k, v in request.args.items(multi=True)]
+    except RuntimeError:
+        items = []
+    return legacy_deterministic_sort_seed(items)
+
+
+def _resolve_sort_seed(raw: str | None) -> str:
+    """Return a stable seed for random pagination (SRCH-3).
+
+    Prefer a sanitized client-provided seed (new apps). When omitted or
+    invalid (old apps / malformed input), fall back to a deterministic
+    filter+day seed so page N and page N+1 share the same order without
+    requiring the client to echo ``pagination.sort_seed``.
+    """
+    seed = sanitize_sort_seed(raw)
+    if seed:
+        return seed
+    return _legacy_seed_from_request()
+
+
+def _stash_sort_seed(seed: str) -> None:
+    try:
+        request.environ["carnet_sort_seed"] = seed
+    except RuntimeError:
+        pass
+
+
+def _order_with_seeded_random(query, seed_raw: str | None = None):
+    if seed_raw is None:
+        seed_raw = _request_sort_seed_arg()
+    seed = _resolve_sort_seed(seed_raw)
+    _stash_sort_seed(seed)
+    return query.order_by(
+        Car.effective_featured_expr().desc(),
+        seeded_random_order_expr(seed),
+        Car.id.asc(),
     )
 
 
@@ -259,6 +317,9 @@ def _order_cars_query(query, sort_by: str, *, rank_expr=None):
     the raw `is_featured` column, so a listing whose `featured_until` has
     passed stops ranking as featured immediately -- independent of whether
     the Celery cleanup task has run yet.
+
+    SRCH-3: ``sort_by=random`` (and the unseeded recommended fallback) use a
+    deterministic seeded key so page N+1 continues the same shuffle.
     """
     if sort_by in ("relevance", "rank") and rank_expr is not None:
         # `rank_expr` is a raw `sqlalchemy.text(...)` TextClause (see
@@ -268,6 +329,8 @@ def _order_cars_query(query, sort_by: str, *, rank_expr=None):
         return query.order_by(desc(rank_expr), Car.effective_featured_expr().desc(), Car.created_at.desc())
     if sort_by == "newest":
         return query.order_by(Car.effective_featured_expr().desc(), Car.created_at.desc())
+    if sort_by == "oldest":
+        return query.order_by(Car.effective_featured_expr().desc(), Car.created_at.asc(), Car.id.asc())
     if sort_by == "price_asc":
         return query.order_by(Car.effective_featured_expr().desc(), Car.price.asc(), Car.created_at.desc())
     if sort_by == "price_desc":
@@ -281,7 +344,7 @@ def _order_cars_query(query, sort_by: str, *, rank_expr=None):
     if sort_by == "mileage_desc":
         return query.order_by(Car.effective_featured_expr().desc(), Car.mileage.desc(), Car.created_at.desc())
     if sort_by == "random":
-        return query.order_by(Car.effective_featured_expr().desc(), func.random())
+        return _order_with_seeded_random(query)
     if sort_by == "recommended":
         brands = _split_prefer_csv(request.args.get("prefer_brand"))
         body_types = _split_prefer_csv(request.args.get("prefer_body_type"))
@@ -693,11 +756,19 @@ def get_cars():
 
         brands = _split_multi_filter(brand)
         if brands:
-            query = query.filter(
-                or_(*[Car.brand.ilike(f"%{_like_escape(b)}%", escape="\\") for b in brands])
-            )
+            brand_clauses = [
+                c for b in brands if (c := brand_match_clause(Car.brand, b)) is not None
+            ]
+            if brand_clauses:
+                query = query.filter(or_(*brand_clauses))
         if model:
-            query = query.filter(Car.model.ilike(f"%{_like_escape(model)}%", escape="\\"))
+            # SRCH-2: default remains substring for older clients; exact when requested.
+            if model_match_is_exact(request.args.get("model_match")):
+                query = query.filter(func.lower(Car.model) == model.strip().lower())
+            else:
+                query = query.filter(
+                    Car.model.ilike(f"%{_like_escape(model)}%", escape="\\")
+                )
         if trim:
             query = query.filter(Car.trim.ilike(f"%{_like_escape(trim)}%", escape="\\"))
         if year_min:
@@ -762,19 +833,26 @@ def get_cars():
 
         pagination = query.paginate(page=page, per_page=per_page, error_out=False)
         cars = [_with_media_compat(c) for c in pagination.items]
+        pagination_payload = {
+            "page": page,
+            "per_page": per_page,
+            "total": pagination.total,
+            "pages": pagination.pages,
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+        try:
+            sort_seed = request.environ.get("carnet_sort_seed")
+        except RuntimeError:
+            sort_seed = None
+        if sort_seed:
+            pagination_payload["sort_seed"] = sort_seed
 
         return (
             jsonify(
                 {
                     "cars": cars,
-                    "pagination": {
-                        "page": page,
-                        "per_page": per_page,
-                        "total": pagination.total,
-                        "pages": pagination.pages,
-                        "has_next": pagination.has_next,
-                        "has_prev": pagination.has_prev,
-                    },
+                    "pagination": pagination_payload,
                 }
             ),
             200,
@@ -858,11 +936,18 @@ def get_cars_alias():
         )
         brands = _split_multi_filter(brand)
         if brands:
-            query = query.filter(
-                or_(*[Car.brand.ilike(f"%{_like_escape(b)}%", escape="\\") for b in brands])
-            )
+            brand_clauses = [
+                c for b in brands if (c := brand_match_clause(Car.brand, b)) is not None
+            ]
+            if brand_clauses:
+                query = query.filter(or_(*brand_clauses))
         if model:
-            query = query.filter(Car.model.ilike(f"%{_like_escape(model)}%", escape="\\"))
+            if model_match_is_exact(request.args.get("model_match")):
+                query = query.filter(func.lower(Car.model) == model.strip().lower())
+            else:
+                query = query.filter(
+                    Car.model.ilike(f"%{_like_escape(model)}%", escape="\\")
+                )
         if year_min:
             query = query.filter(Car.year >= year_min)
         if year_max:

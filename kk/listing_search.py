@@ -131,6 +131,131 @@ def like_escape(value: str) -> str:
     )
 
 
+def normalize_brand_key(raw: str | None) -> str:
+    """Compact brand identity: lowercase, strip spaces/hyphens/underscores.
+
+    SRCH-1: ``Land Rover``, ``land-rover``, and ``land rover`` collapse to
+    the same key so Sell slug rows match Search display-name filters without
+    a destructive DB backfill.
+    """
+    return re.sub(r"[\s\-_]+", "", (raw or "").strip().lower())
+
+
+def brand_filter_variants(raw: str | None) -> list[str]:
+    """Display / slug / spaced forms used to match stored ``Car.brand`` values."""
+    token = (raw or "").strip()
+    if not token:
+        return []
+    lower = token.lower()
+    spaced = re.sub(r"[\-_]+", " ", lower)
+    spaced = re.sub(r"\s+", " ", spaced).strip()
+    slug = re.sub(r"\s+", "-", spaced)
+    out: list[str] = []
+    for value in (token, lower, spaced, slug):
+        if value and value not in out:
+            out.append(value)
+    return out
+
+
+def brand_match_clause(brand_column, brand_token: str):
+    """SQL clause matching display names and legacy Sell slug brands (SRCH-1)."""
+    variants = brand_filter_variants(brand_token)
+    if not variants:
+        return None
+    key = normalize_brand_key(brand_token)
+    clauses = [
+        brand_column.ilike(f"%{like_escape(v)}%", escape="\\") for v in variants
+    ]
+    # Compact equality covers odd mixtures (e.g. ``Land-Rover`` vs ``land rover``).
+    compact_col = func.replace(
+        func.replace(func.replace(func.lower(brand_column), "-", ""), " ", ""),
+        "_",
+        "",
+    )
+    if key:
+        clauses.append(compact_col == key)
+    return or_(*clauses)
+
+
+def model_match_is_exact(raw: str | None) -> bool:
+    """True when the client requested exact model matching (SRCH-2)."""
+    return (raw or "").strip().lower() in {"exact", "eq", "1", "true", "yes", "on"}
+
+
+_SORT_SEED_MAX_LEN = 64
+_SORT_SEED_SAFE = re.compile(r"[^A-Za-z0-9_\-.:]+")
+_SORT_SEED_PAGINATION_KEYS = frozenset({"page", "per_page", "sort_seed"})
+
+
+def sanitize_sort_seed(raw: str | None) -> str | None:
+    """Normalize client ``sort_seed``; return ``None`` when unusable.
+
+    Rejects empty / whitespace-only values, strips unsafe characters, and
+    truncates length so the value is safe to hash into a bound integer for
+    ``ORDER BY`` (never interpolated as raw SQL text).
+    """
+    if raw is None:
+        return None
+    try:
+        text = str(raw).strip()
+    except Exception:
+        return None
+    if not text:
+        return None
+    text = _SORT_SEED_SAFE.sub("", text)[:_SORT_SEED_MAX_LEN]
+    return text or None
+
+
+def legacy_deterministic_sort_seed(
+    args_items: list[tuple[str, str]] | None = None,
+    *,
+    day_key: str | None = None,
+) -> str:
+    """Stable seed for older clients that omit ``sort_seed`` (SRCH-3).
+
+    Same filter/sort query (excluding page/per_page) on the same UTC day
+    always yields the same seed, so page 1/2/3 stay consistent without a
+    client-held session seed. The day bucket reshuffles browse order daily.
+    """
+    import hashlib
+    from datetime import datetime, timezone
+
+    day = day_key or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    parts: list[str] = [day]
+    if args_items:
+        for key, value in sorted(args_items):
+            if key in _SORT_SEED_PAGINATION_KEYS:
+                continue
+            v = (value or "").strip()
+            if not v:
+                continue
+            parts.append(f"{key}={v}")
+    digest = hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
+    return digest[:16]
+
+
+def seeded_random_order_expr(seed: str, *, id_column=None):
+    """Deterministic order key for stable random pagination (SRCH-3).
+
+    Uses a portable ``(id * seed_int)`` mix so SQLite tests and Postgres
+    production share the same semantics. Always pair with ``id`` as a
+    unique tie-breaker in ``ORDER BY``. Avoids ``random()`` re-roll per page.
+
+    Note: Postgres still sorts the filtered result set by this expression
+    (plus featured/id). It does not avoid an ``ORDER BY``; it avoids
+    non-deterministic ``random()`` reshuffles between pages.
+    """
+    import zlib
+
+    id_col = id_column if id_column is not None else Car.id
+    seed_s = sanitize_sort_seed(seed) or "0"
+    seed_int = (zlib.crc32(seed_s.encode("utf-8")) & 0x7FFFFFFF) or 1
+    # Keep the multiplier odd/non-zero so distinct ids stay distinct modulo 2^31.
+    return ((id_col * literal(seed_int)) + literal(seed_int * 17)) % literal(
+        2147483647
+    )
+
+
 def _dialect_name() -> str:
     try:
         bind = db.session.get_bind()

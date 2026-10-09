@@ -33,7 +33,7 @@ void main() {
       final payload = buildSellCarUpdatePayload(sampleCarData);
 
       expect(payload['title'], 'Toyota Camry LE');
-      expect(payload['brand'], 'toyota');
+      expect(payload['brand'], 'Toyota');
       expect(payload['model'], 'Camry');
       expect(payload['year'], 2020);
       expect(payload['price'], 12500);
@@ -123,7 +123,7 @@ void main() {
       final payload = buildSellCarCreatePayload(sampleCarData);
 
       expect(payload['title'], 'Toyota Camry LE');
-      expect(payload['brand'], 'toyota');
+      expect(payload['brand'], 'Toyota');
       expect(payload['price'], 12500);
       expect(payload['city'], 'baghdad');
       expect(payload['location'], 'baghdad');

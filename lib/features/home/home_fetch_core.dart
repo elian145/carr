@@ -208,12 +208,22 @@ mixin _HomePageFetchCore on _HomePageFields {
     }
     await _resolveHomeInterestForFeed();
     if (!mounted) return;
+    // SRCH-3: deliberate refresh / sort change starts a new random session.
+    if (bypassCache) {
+      _randomSortSeed = homeResolveRandomSortSeed(
+        existing: _randomSortSeed,
+        isRandomSort: true,
+        refreshSession: true,
+        salt: hashCode,
+      );
+    }
     Map<String, String> filters = _buildFilters();
     final hasSearchIntent = filters.keys.any(
       (k) =>
           k != 'page' &&
           k != 'per_page' &&
           k != 'sort_by' &&
+          k != 'sort_seed' &&
           (filters[k] ?? '').trim().isNotEmpty,
     );
     if (hasSearchIntent) {
@@ -869,6 +879,19 @@ mixin _HomePageFetchCore on _HomePageFields {
         apiSortValue == 'recommended' &&
         _homeInterestProfile != null) {
       out.addAll(_homeInterestProfile!.toPreferQueryParams());
+    }
+    // SRCH-3: reuse one seed for every page in this random browsing session.
+    if (includeSort && apiSortValue == 'random') {
+      final seed = homeResolveRandomSortSeed(
+        existing: _randomSortSeed,
+        isRandomSort: true,
+        refreshSession: false,
+        salt: hashCode,
+      );
+      _randomSortSeed = seed;
+      if (seed != null) {
+        out['sort_seed'] = seed;
+      }
     }
     return out;
   }
