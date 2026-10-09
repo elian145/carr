@@ -641,19 +641,21 @@ def init_jwt_callbacks(jwt) -> None:
         jti = str(jwt_payload.get("jti") or "")
 
         if jti:
-            # Prefer Redis in production (O(1) lookup, no DB query per request).
+            # Prefer Redis in production (O(1) lookup). SEC-001: a Redis miss
+            # (exists=0) must still consult the DB blacklist — Redis being
+            # "up" is not proof the JTI was never revoked (write failure,
+            # TTL eviction, partial outage). Only a Redis hit is authoritative
+            # for the positive path; otherwise dual-read the DB.
             r = _redis_client()
             if r is not None:
                 try:
                     if r.exists(f"bl:jti:{jti}"):
                         return True
                 except Exception:
-                    # If Redis is down/misconfigured, fall back to DB.
-                    r = None
-            if r is None:
-                token = TokenBlacklist.query.filter_by(jti=jti).first()
-                if token is not None:
-                    return True
+                    pass
+            token = TokenBlacklist.query.filter_by(jti=jti).first()
+            if token is not None:
+                return True
 
         # H-01/H-02: even when this specific JTI was never individually
         # blacklisted, reject it if the user is now inactive, or if it was
@@ -741,23 +743,55 @@ def _ensure_user_public_id(user: User) -> str:
     return str(user.public_id)
 
 
-def _access_token_for_user(user: User) -> str:
-    identity = _ensure_user_public_id(user)
-    claims = {}
-    if getattr(user, "is_admin", False):
+def _token_claims_for_user(
+    user: User,
+    *,
+    admin_scope: bool = False,
+    auth_method: str | None = None,
+) -> dict:
+    """Build JWT claims for access/refresh issuance.
+
+    ADM-1 / SEC-005: Admin API access requires an explicit
+    ``account_scope=admin`` claim. That claim is only granted when the
+    caller opts in via ``admin_scope=True`` after a successful
+    ``AdminAccount`` dashboard password login. Mobile password login and
+    phone-OTP paths must leave ``admin_scope`` false so ``admin_required``
+    rejects the token even if ``user.is_admin``.
+    """
+    claims: dict = {}
+    if auth_method:
+        claims["auth_method"] = auth_method
+    if admin_scope and getattr(user, "is_admin", False):
         claims["is_admin"] = True
         claims["account_scope"] = "admin"
+    return claims
+
+
+def _access_token_for_user(
+    user: User,
+    *,
+    admin_scope: bool = False,
+    auth_method: str | None = None,
+) -> str:
+    identity = _ensure_user_public_id(user)
+    claims = _token_claims_for_user(
+        user, admin_scope=admin_scope, auth_method=auth_method
+    )
     if claims:
         return create_access_token(identity=identity, additional_claims=claims)
     return create_access_token(identity=identity)
 
 
-def _refresh_token_for_user(user: User) -> str:
+def _refresh_token_for_user(
+    user: User,
+    *,
+    admin_scope: bool = False,
+    auth_method: str | None = None,
+) -> str:
     identity = _ensure_user_public_id(user)
-    claims = {}
-    if getattr(user, "is_admin", False):
-        claims["is_admin"] = True
-        claims["account_scope"] = "admin"
+    claims = _token_claims_for_user(
+        user, admin_scope=admin_scope, auth_method=auth_method
+    )
     if claims:
         return create_refresh_token(identity=identity, additional_claims=claims)
     return create_refresh_token(identity=identity)
@@ -898,8 +932,15 @@ def login():
             admin_account.last_login = user.last_login
         db.session.commit()
 
-        access_token = _access_token_for_user(user)
-        refresh_token = _refresh_token_for_user(user)
+        # ADM-1: only AdminAccount dashboard password login mints admin scope.
+        # Mobile User password login never does, even when user.is_admin.
+        admin_scope = bool(account_scope == "admin" and admin_account is not None)
+        access_token = _access_token_for_user(
+            user, admin_scope=admin_scope, auth_method="password"
+        )
+        refresh_token = _refresh_token_for_user(
+            user, admin_scope=admin_scope, auth_method="password"
+        )
 
         log_user_action(user, "login")
 
@@ -963,8 +1004,32 @@ def refresh():
                 except Exception:
                     pass
 
-        new_access_token = _access_token_for_user(user)
-        new_refresh_token = _refresh_token_for_user(user)
+        # Preserve admin scope from the presented refresh token only — never
+        # escalate a phone-OTP / mobile-password refresh into admin APIs just
+        # because user.is_admin is True (ADM-1 / SEC-005). Also require an
+        # active AdminAccount principal so demoted/detached rows cannot keep
+        # refreshing admin-scoped tokens.
+        prior_admin_scope = bool(
+            jwt_payload.get("account_scope") == "admin"
+            and getattr(user, "is_admin", False)
+            and AdminAccount.query.filter_by(
+                principal_user_id=user.id,
+                is_active=True,
+            ).first()
+        )
+        prior_auth_method = jwt_payload.get("auth_method")
+        if prior_auth_method is not None:
+            prior_auth_method = str(prior_auth_method)
+        new_access_token = _access_token_for_user(
+            user,
+            admin_scope=prior_admin_scope,
+            auth_method=prior_auth_method,
+        )
+        new_refresh_token = _refresh_token_for_user(
+            user,
+            admin_scope=prior_admin_scope,
+            auth_method=prior_auth_method,
+        )
 
         return jsonify({"access_token": new_access_token, "refresh_token": new_refresh_token}), 200
 
@@ -1969,9 +2034,8 @@ def send_phone_verification():
         verification_code = f"{secrets.randbelow(1_000_000):06d}"
         user.phone_verification_code_hash = _hash_phone_verification_code(phone_digits, verification_code)
         user.phone_verification_expires_at = now + timedelta(minutes=10)
-        user.phone_verification_attempts = 0
+        # SEC-002 / OTP-1: do not clear attempts or lockout on resend.
         user.phone_verification_last_sent_at = now
-        user.phone_verification_locked_until = None
         db.session.commit()
 
         from ..sms_service import send_verification_sms_result
@@ -1981,10 +2045,9 @@ def send_phone_verification():
         )
         if not sms_sent:
             # Do not leave a potentially valid code in DB if SMS failed.
+            # Preserve attempt/lockout counters (SEC-002).
             user.phone_verification_code_hash = None
             user.phone_verification_expires_at = None
-            user.phone_verification_attempts = 0
-            user.phone_verification_locked_until = None
             db.session.commit()
             err_msg = "Failed to send verification code"
             current_app.logger.error(
@@ -2124,9 +2187,8 @@ def phone_start():
         verification_code = f"{secrets.randbelow(1_000_000):06d}"
         user.phone_verification_code_hash = _hash_phone_verification_code(phone_digits, verification_code)
         user.phone_verification_expires_at = now + timedelta(minutes=10)
-        user.phone_verification_attempts = 0
+        # SEC-002 / OTP-1: do not clear attempts or lockout on resend.
         user.phone_verification_last_sent_at = now
-        user.phone_verification_locked_until = None
         db.session.commit()
 
         from ..sms_service import send_verification_sms_result
@@ -2137,8 +2199,6 @@ def phone_start():
         if not sms_sent:
             user.phone_verification_code_hash = None
             user.phone_verification_expires_at = None
-            user.phone_verification_attempts = 0
-            user.phone_verification_locked_until = None
             db.session.commit()
             current_app.logger.error(
                 "phone_start SMS failed provider=%s detail=%s",
@@ -2201,8 +2261,8 @@ def _google_review_login_success_response():
     user.last_login = utcnow()
     db.session.commit()
 
-    access_token = _access_token_for_user(user)
-    refresh_token = _refresh_token_for_user(user)
+    access_token = _access_token_for_user(user, auth_method="phone_otp")
+    refresh_token = _refresh_token_for_user(user, auth_method="phone_otp")
     if first_login:
         log_user_action(user, "signup")
     log_user_action(user, "login_phone")
@@ -2321,8 +2381,8 @@ def phone_verify():
         user.last_login = now
         db.session.commit()
 
-        access_token = _access_token_for_user(user)
-        refresh_token = _refresh_token_for_user(user)
+        access_token = _access_token_for_user(user, auth_method="phone_otp")
+        refresh_token = _refresh_token_for_user(user, auth_method="phone_otp")
         if first_login:
             log_user_action(user, "signup")
         log_user_action(user, "login_phone")
@@ -2434,8 +2494,8 @@ def compat_signup():
         )
         db.session.commit()
         log_user_action(user, "phone_verified")
-        access_token = _access_token_for_user(user)
-        refresh_token = _refresh_token_for_user(user)
+        access_token = _access_token_for_user(user, auth_method="phone_otp")
+        refresh_token = _refresh_token_for_user(user, auth_method="phone_otp")
         return jsonify({
             "message": "Signup successful",
             "token": access_token,

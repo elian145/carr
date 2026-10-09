@@ -99,6 +99,7 @@ def _make_seller(app_ctx, *, is_active: bool = True):
 
 def _make_admin(app_ctx):
     from flask_jwt_extended import create_access_token
+    from kk.tests.admin_auth_helpers import attach_admin_account
 
     app, _client, db, User, _Car = app_ctx
     with app.app_context():
@@ -116,7 +117,16 @@ def _make_admin(app_ctx):
         user.set_password("Aa123456!")
         db.session.add(user)
         db.session.commit()
-        token = create_access_token(identity=str(user.id))
+        attach_admin_account(db, user, password="Aa123456!", username=user.username)
+        # ADM-1 / SEC-005: admin_required needs account_scope=admin + principal.
+        token = create_access_token(
+            identity=str(user.id),
+            additional_claims={
+                "is_admin": True,
+                "account_scope": "admin",
+                "auth_method": "password",
+            },
+        )
         return token
 
 

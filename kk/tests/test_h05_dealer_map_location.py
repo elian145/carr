@@ -68,9 +68,9 @@ def _unique_phone() -> str:
 
 
 def _login(client, username: str, password: str = "Aa123456!") -> str:
-    r = client.post("/api/auth/login", json={"username": username, "password": password})
-    assert r.status_code == 200, r.data
-    return r.get_json()["access_token"]
+    from kk.tests.admin_auth_helpers import login_preferring_admin_scope
+
+    return login_preferring_admin_scope(client, username, password)
 
 
 def _auth(token: str) -> dict:
@@ -132,6 +132,8 @@ def buyer_ctx(app_ctx):
 
 @pytest.fixture(scope="module")
 def admin_ctx(app_ctx):
+    from kk.tests.admin_auth_helpers import attach_admin_account
+
     app, _client, db, User, _Car = app_ctx
     username = f"h05_admin_{uuid.uuid4().hex[:8]}"
     with app.app_context():
@@ -150,6 +152,7 @@ def admin_ctx(app_ctx):
         user.set_password("Aa123456!")
         db.session.add(user)
         db.session.commit()
+        attach_admin_account(db, user, password="Aa123456!", username=username)
         return username, user.public_id
 
 

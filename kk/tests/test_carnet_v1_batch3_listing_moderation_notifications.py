@@ -91,6 +91,8 @@ def _auth(token: str) -> dict:
 
 
 def _make_user(app_ctx, *, tag: str, locale: str | None = None, is_admin: bool = False, firebase_token: str | None = None):
+    from kk.tests.admin_auth_helpers import attach_admin_account
+
     app, _socketio, _client, db, User, *_ = app_ctx
     with app.app_context():
         user = User(
@@ -109,6 +111,8 @@ def _make_user(app_ctx, *, tag: str, locale: str | None = None, is_admin: bool =
         user.set_password(_PASSWORD)
         db.session.add(user)
         db.session.commit()
+        if is_admin:
+            attach_admin_account(db, user, password=_PASSWORD, username=user.username)
         return user.id, user.username, user.public_id
 
 
@@ -139,9 +143,9 @@ def _make_car(app_ctx, *, seller_id: int, tag: str, status: str = "active", is_a
 
 
 def _login(client, username: str) -> str:
-    r = client.post("/api/auth/login", json={"username": username, "password": _PASSWORD})
-    assert r.status_code == 200, r.data
-    return r.get_json()["access_token"]
+    from kk.tests.admin_auth_helpers import login_preferring_admin_scope
+
+    return login_preferring_admin_scope(client, username, _PASSWORD)
 
 
 def _latest_notification(app_ctx, user_id: int, notification_type: str = "listing_status"):

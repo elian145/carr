@@ -95,6 +95,8 @@ def client(app_ctx):
 
 
 def _make_user(app_ctx, *, is_admin: bool = False) -> tuple[str, int, str]:
+    from kk.tests.admin_auth_helpers import attach_admin_account
+
     app, _client, db, User, *_ = app_ctx
     username = f"cnv1b2_{uuid.uuid4().hex[:10]}"
     with app.app_context():
@@ -112,15 +114,15 @@ def _make_user(app_ctx, *, is_admin: bool = False) -> tuple[str, int, str]:
         user.set_password(_PASSWORD)
         db.session.add(user)
         db.session.commit()
+        if is_admin:
+            attach_admin_account(db, user, password=_PASSWORD, username=username)
         return user.public_id, user.id, username
 
 
 def _login(client, username: str) -> str:
-    r = client.post(
-        "/api/auth/login", json={"username": username, "password": _PASSWORD}
-    )
-    assert r.status_code == 200, r.data
-    return r.get_json()["access_token"]
+    from kk.tests.admin_auth_helpers import login_preferring_admin_scope
+
+    return login_preferring_admin_scope(client, username, _PASSWORD)
 
 
 def _auth(token: str) -> dict:

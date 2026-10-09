@@ -208,6 +208,8 @@ def _phone() -> str:
 
 
 def _make_user(app_ctx, *, tag: str, locale: str | None = None, is_admin: bool = False):
+    from kk.tests.admin_auth_helpers import attach_admin_account
+
     app, _socketio, _client, db, User, *_ = app_ctx
     with app.app_context():
         user = User(
@@ -225,6 +227,8 @@ def _make_user(app_ctx, *, tag: str, locale: str | None = None, is_admin: bool =
         user.set_password(_PASSWORD)
         db.session.add(user)
         db.session.commit()
+        if is_admin:
+            attach_admin_account(db, user, password=_PASSWORD, username=user.username)
         return user.id
 
 
@@ -382,11 +386,9 @@ def test_dealer_decision_approved_localized_via_full_admin_route(app_ctx):
         admin_username = admin_user.username
         applicant_pub = db.session.get(User, applicant_id).public_id
 
-    login = client.post(
-        "/api/auth/login", json={"username": admin_username, "password": _PASSWORD}
-    )
-    assert login.status_code == 200, login.data
-    token = login.get_json()["access_token"]
+    from kk.tests.admin_auth_helpers import login_with_admin_scope
+
+    token = login_with_admin_scope(client, admin_username, _PASSWORD)
 
     resp = client.post(
         f"/api/admin/dealers/{applicant_pub}/approve",

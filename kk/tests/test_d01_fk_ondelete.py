@@ -67,13 +67,14 @@ def _auth(token: str) -> dict:
 
 
 def _login(client, username: str) -> str:
-    r = client.post("/api/auth/login", json={"username": username, "password": _PASSWORD})
-    assert r.status_code == 200, r.data
-    return r.get_json()["access_token"]
+    from kk.tests.admin_auth_helpers import login_preferring_admin_scope
+
+    return login_preferring_admin_scope(client, username, _PASSWORD)
 
 
 def _make_user(app, db, *, username=None, is_admin=False, **extra):
     from kk.models import User
+    from kk.tests.admin_auth_helpers import attach_admin_account
 
     username = username or f"u_{uuid.uuid4().hex[:10]}"
     with app.app_context():
@@ -92,6 +93,8 @@ def _make_user(app, db, *, username=None, is_admin=False, **extra):
         user.set_password(_PASSWORD)
         db.session.add(user)
         db.session.commit()
+        if is_admin:
+            attach_admin_account(db, user, password=_PASSWORD, username=username)
         return user.id, user.public_id, username
 
 
@@ -355,15 +358,8 @@ class TestSqliteFkPolicies:
 
         uid, pub, name = _make_user(app, db, is_admin=True)
         with app.app_context():
-            acct = AdminAccount(
-                principal_user_id=uid,
-                origin_user_public_id=pub,
-                username=f"dash_{name}",
-                password_hash="x" * 60,
-                admin_role="super_admin",
-            )
-            db.session.add(acct)
-            db.session.commit()
+            # ADM-1 helper already attached an AdminAccount principal.
+            assert AdminAccount.query.filter_by(principal_user_id=uid).first()
             db.session.delete(db.session.get(User, uid))
             with pytest.raises(IntegrityError):
                 db.session.commit()
@@ -608,16 +604,8 @@ class TestDeleteAccountHttp:
 
         uid, pub, name = _make_user(app, db, is_admin=True)
         with app.app_context():
-            db.session.add(
-                AdminAccount(
-                    principal_user_id=uid,
-                    origin_user_public_id=pub,
-                    username=f"dash_{name}",
-                    password_hash="x" * 60,
-                    admin_role="super_admin",
-                )
-            )
-            db.session.commit()
+            # ADM-1 helper already attached an AdminAccount principal.
+            assert AdminAccount.query.filter_by(principal_user_id=uid).first()
             token = create_access_token(identity=pub)
 
         resp = client.post(

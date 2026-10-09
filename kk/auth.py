@@ -42,12 +42,35 @@ def validate_phone_number(phone):
     return True
 
 def admin_required(f):
-    """Decorator to require admin privileges"""
+    """Decorator to require admin privileges.
+
+    SEC-005 / ADM-1: ``User.is_admin`` alone is not enough. Admin APIs require:
+    - a JWT issued with ``account_scope=admin`` (AdminAccount dashboard login)
+    - an active ``AdminAccount`` whose principal is the current user
+    Pure mobile phone-OTP / mobile password tokens never satisfy this gate,
+    even when the underlying ``User.is_admin`` flag is true.
+    """
     @wraps(f)
     @jwt_required()
     def decorated_function(*args, **kwargs):
+        from .models import AdminAccount
+
         current_user = get_current_user()
-        if not current_user or not current_user.is_admin:
+        claims = get_jwt() or {}
+        has_principal = bool(
+            current_user
+            and AdminAccount.query.filter_by(
+                principal_user_id=current_user.id,
+                is_active=True,
+            ).first()
+        )
+        if (
+            not current_user
+            or not current_user.is_admin
+            or claims.get("account_scope") != "admin"
+            or claims.get("auth_method") == "phone_otp"
+            or not has_principal
+        ):
             return jsonify({'message': 'Admin privileges required'}), 403
         return f(*args, **kwargs)
     return decorated_function

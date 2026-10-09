@@ -119,9 +119,9 @@ def _auth(token: str) -> dict:
 
 
 def _login(client, username: str) -> str:
-    r = client.post("/api/auth/login", json={"username": username, "password": _PASSWORD})
-    assert r.status_code == 200, r.data
-    return r.get_json()["access_token"]
+    from kk.tests.admin_auth_helpers import login_preferring_admin_scope
+
+    return login_preferring_admin_scope(client, username, _PASSWORD)
 
 
 def _make_user(
@@ -133,6 +133,8 @@ def _make_user(
     firebase_token: str | None = None,
     is_admin: bool = False,
 ):
+    from kk.tests.admin_auth_helpers import attach_admin_account
+
     with app.app_context():
         username = f"be05_{tag}_{uuid.uuid4().hex[:10]}"
         user = User(
@@ -150,6 +152,8 @@ def _make_user(
         user.set_password(_PASSWORD)
         db.session.add(user)
         db.session.commit()
+        if is_admin:
+            attach_admin_account(db, user, password=_PASSWORD, username=username)
         return user.id, user.public_id, username
 
 
