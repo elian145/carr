@@ -41,36 +41,51 @@ def validate_phone_number(phone):
     
     return True
 
+def request_has_admin_privileges(user=None) -> bool:
+    """True only for an AdminAccount-scoped dashboard admin JWT session.
+
+    Batch 1 / 1B: ``User.is_admin`` alone never grants elevated access on
+    admin APIs or on user-facing ownership/moderation bypasses. Requires:
+    - ``user.is_admin``
+    - JWT ``account_scope=admin`` (not phone-OTP)
+    - an active ``AdminAccount`` principal for ``user``
+    """
+    if user is None:
+        user = get_current_user()
+    if not user or not getattr(user, "is_admin", False):
+        return False
+    try:
+        claims = get_jwt() or {}
+    except Exception:
+        return False
+    if claims.get("account_scope") != "admin":
+        return False
+    if claims.get("auth_method") == "phone_otp":
+        return False
+    from .models import AdminAccount
+
+    return (
+        AdminAccount.query.filter_by(
+            principal_user_id=user.id,
+            is_active=True,
+        ).first()
+        is not None
+    )
+
+
 def admin_required(f):
     """Decorator to require admin privileges.
 
-    SEC-005 / ADM-1: ``User.is_admin`` alone is not enough. Admin APIs require:
-    - a JWT issued with ``account_scope=admin`` (AdminAccount dashboard login)
-    - an active ``AdminAccount`` whose principal is the current user
-    Pure mobile phone-OTP / mobile password tokens never satisfy this gate,
-    even when the underlying ``User.is_admin`` flag is true.
+    SEC-005 / ADM-1: ``User.is_admin`` alone is not enough. Admin APIs require
+    a request that satisfies ``request_has_admin_privileges`` (AdminAccount
+    dashboard JWT). Pure mobile phone-OTP / mobile password tokens never
+    satisfy this gate, even when the underlying ``User.is_admin`` flag is true.
     """
     @wraps(f)
     @jwt_required()
     def decorated_function(*args, **kwargs):
-        from .models import AdminAccount
-
         current_user = get_current_user()
-        claims = get_jwt() or {}
-        has_principal = bool(
-            current_user
-            and AdminAccount.query.filter_by(
-                principal_user_id=current_user.id,
-                is_active=True,
-            ).first()
-        )
-        if (
-            not current_user
-            or not current_user.is_admin
-            or claims.get("account_scope") != "admin"
-            or claims.get("auth_method") == "phone_otp"
-            or not has_principal
-        ):
+        if not request_has_admin_privileges(current_user):
             return jsonify({'message': 'Admin privileges required'}), 403
         return f(*args, **kwargs)
     return decorated_function
@@ -131,7 +146,9 @@ def phone_verification_error_payload(user) -> dict | None:
     """Return an error payload dict, or None when the user may proceed."""
     if not user:
         return {"message": "User not found", "code": None}
-    if getattr(user, "is_admin", False):
+    # Batch 1B: only a real AdminAccount dashboard session is exempt — not
+    # a mobile row that merely has ``User.is_admin=True``.
+    if request_has_admin_privileges(user):
         return None
     if not user_phone_verified(user):
         return {

@@ -10,7 +10,12 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
 from werkzeug.utils import safe_join
 
-from ..auth import get_current_user, log_user_action, phone_verification_required_response
+from ..auth import (
+    get_current_user,
+    log_user_action,
+    phone_verification_required_response,
+    request_has_admin_privileges,
+)
 from ..job_ownership import (
     get_idempotent_job_task_id,
     get_registered_job_owner,
@@ -486,7 +491,7 @@ def set_car_primary_image(car_id: str):
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to update images for this listing"}), 403
 
         data = request.get_json(silent=True) or {}
@@ -522,7 +527,7 @@ def update_car_image_layout(car_id: str):
         car = _get_car_by_any_id(car_id)
         if not car:
             return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to update images for this listing"}), 403
 
         data = request.get_json(silent=True) or {}
@@ -699,7 +704,7 @@ def delete_car_image(car_id: str, image_id: int):
         car = _get_car_by_any_id(car_id)
         if not car:
             return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to modify images for this listing"}), 403
 
         image = CarImage.query.filter_by(id=image_id, car_id=car.id).first()
@@ -781,7 +786,7 @@ def delete_car_video(car_id: str, video_id: int):
         car = _get_car_by_any_id(car_id)
         if not car:
             return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to modify videos for this listing"}), 403
 
         video = CarVideo.query.filter_by(id=video_id, car_id=car.id).first()
@@ -1119,7 +1124,7 @@ def finalize_video_source_upload():
             car = _get_car_by_any_id(car_id_raw)
             if not car:
                 return jsonify({"message": "Car not found"}), 404
-            if car.seller_id != current_user.id and not current_user.is_admin:
+            if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
                 return (
                     jsonify({"message": "Not authorized to upload video for this listing"}),
                     403,
@@ -1508,7 +1513,7 @@ def attach_transcoded_video():
         car = _get_car_by_any_id(car_id_raw)
         if not car:
             return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return (
                 jsonify({"message": "Not authorized to attach video for this listing"}),
                 403,
@@ -1890,7 +1895,7 @@ def upload_car_images(car_id: str):
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to upload images for this listing"}), 403
 
         incoming_files = []
@@ -2189,7 +2194,7 @@ def attach_car_images(car_id: str):
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to attach images for this listing"}), 403
 
         data = request.get_json(silent=True) or {}
@@ -2252,7 +2257,7 @@ def attach_car_images(car_id: str):
                     if not _allowed_attach_media_url(rel_str):
                         continue
                     if (
-                        not current_user.is_admin
+                        not request_has_admin_privileges(current_user)
                         and not _http_url_owned_by_user(rel_str, current_user.id)
                         and not _http_url_staged_by_user(
                             rel_str, current_user.public_id
@@ -2342,7 +2347,7 @@ def upload_car_videos(car_id: str):
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to upload videos for this listing"}), 403
 
         if "files" not in request.files:

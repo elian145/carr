@@ -35,14 +35,17 @@ def listing_is_public(car) -> bool:
 def listing_visible_to_viewer(car, viewer) -> bool:
     """Public statuses (from an active seller) are visible to everyone;
     pending/hidden/draft -- and anything from a deactivated seller -- are
-    owner/admin only. An admin can always inspect/moderate a deactivated
-    seller's listings; the owner's own view is unaffected (deactivation
-    hides listings from everyone else, it does not delete/alter them)."""
+    owner/admin only. A dashboard AdminAccount session can inspect/moderate
+    a deactivated seller's listings; ``User.is_admin`` alone is not enough
+    (Batch 1B). The owner's own view is unaffected (deactivation hides
+    listings from everyone else, it does not delete/alter them)."""
     if listing_is_public(car):
         return True
     if viewer is None:
         return False
-    if getattr(viewer, "is_admin", False):
+    from .auth import request_has_admin_privileges
+
+    if request_has_admin_privileges(viewer):
         return True
     return getattr(viewer, "id", None) == getattr(car, "seller_id", None)
 
@@ -61,12 +64,14 @@ def public_listings_filter(query):
 
 def listings_visible_to_viewer_filter(query, viewer):
     """SQL filter matching ``listing_visible_to_viewer`` for active rows."""
+    from .auth import request_has_admin_privileges
+
     query = query.join(User, Car.seller_id == User.id).filter(Car.is_active.is_(True))
     public = or_(
         Car.status.is_(None),
         Car.status.in_(tuple(PUBLIC_LISTING_STATUSES)),
     ) & User.is_active.is_(True)
-    if viewer is not None and getattr(viewer, "is_admin", False):
+    if viewer is not None and request_has_admin_privileges(viewer):
         return query
     if viewer is not None and getattr(viewer, "id", None) is not None:
         return query.filter(or_(public, Car.seller_id == viewer.id))

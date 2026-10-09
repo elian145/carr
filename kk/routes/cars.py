@@ -13,7 +13,12 @@ from collections import Counter
 from sqlalchemy import case, desc, or_, select, update, func
 from sqlalchemy.orm import joinedload, selectinload
 
-from ..auth import get_current_user, log_user_action, phone_verification_required_response
+from ..auth import (
+    get_current_user,
+    log_user_action,
+    phone_verification_required_response,
+    request_has_admin_privileges,
+)
 from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
@@ -944,7 +949,7 @@ def get_car(car_id: str):
         include_private = bool(
             current_user
             and (
-                getattr(current_user, "is_admin", False)
+                request_has_admin_privileges(current_user)
                 or car.seller_id == current_user.id
             )
         )
@@ -1272,7 +1277,9 @@ def remove_expected_media_item(car_id: str, client_media_id: str):
         if not car:
             db.session.rollback()
             return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(
+            current_user
+        ):
             db.session.rollback()
             return (
                 jsonify({"message": "Not authorized to modify this listing's media"}),
@@ -1311,7 +1318,9 @@ def get_car_media_summary(car_id: str):
                 car = None
         if not car:
             return jsonify({"message": "Car not found"}), 404
-        if car.seller_id != current_user.id and not current_user.is_admin:
+        if car.seller_id != current_user.id and not request_has_admin_privileges(
+            current_user
+        ):
             return jsonify({"message": "Not authorized to view this listing's media"}), 403
 
         return jsonify(media_summary(car)), 200
@@ -1329,9 +1338,11 @@ def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True, requ
             car = None
     if not car:
         return None, (jsonify({"message": "Car not found"}), 404)
-    if require_active and not car.is_active and not getattr(user, "is_admin", False):
+    if require_active and not car.is_active and not request_has_admin_privileges(user):
         return None, (jsonify({"message": "Car not found"}), 404)
-    if require_owner and car.seller_id != user.id and not user.is_admin:
+    if require_owner and car.seller_id != user.id and not request_has_admin_privileges(
+        user
+    ):
         return None, (
             jsonify({"message": "Not authorized to update this listing"}),
             403,
@@ -1508,7 +1519,7 @@ def update_car(car_id: str):
             if (
                 current_status in _MODERATION_LISTING_STATUSES
                 and st == "active"
-                and not getattr(current_user, "is_admin", False)
+                and not request_has_admin_privileges(current_user)
             ):
                 return (
                     jsonify(

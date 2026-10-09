@@ -252,9 +252,14 @@ class TestDetailAndContactHideDeactivatedSeller:
         assert resp.status_code == 404, resp.data
 
     def test_detail_still_visible_to_admin_when_deactivated(self, app_ctx, client):
-        """Admins must still be able to inspect/moderate a deactivated
-        seller's listings -- the ``User.is_admin`` branch in
-        ``listing_visible_to_viewer()`` bypasses the seller-active check."""
+        """Dashboard AdminAccount sessions can still inspect a deactivated
+        seller's listings. ``User.is_admin`` alone (mobile JWT) is not enough
+        after Batch 1B."""
+        from kk.tests.admin_auth_helpers import (
+            attach_admin_account,
+            login_with_admin_scope,
+        )
+
         app, _client, db, User, _Car, _utcnow = app_ctx
         _public_id, seller_id = _make_seller(app_ctx)
         car_public_id, _car_num_id = _make_car(app_ctx, seller_id)
@@ -262,9 +267,14 @@ class TestDetailAndContactHideDeactivatedSeller:
 
         _admin_public_id, admin_id = _make_seller(app_ctx)
         with app.app_context():
-            User.query.get(admin_id).is_admin = True
+            admin = User.query.get(admin_id)
+            admin.is_admin = True
             db.session.commit()
-        token = _login_token(app_ctx, client, admin_id)
+            attach_admin_account(
+                db, admin, password="Aa123456!", username=admin.username
+            )
+            admin_username = admin.username
+        token = login_with_admin_scope(client, admin_username, "Aa123456!")
 
         resp = client.get(f"/api/cars/{car_public_id}", headers=_auth(token))
         assert resp.status_code == 200, resp.data
