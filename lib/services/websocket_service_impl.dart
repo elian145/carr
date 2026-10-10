@@ -278,7 +278,9 @@ class WebSocketService {
     }
   }
 
-  // Send chat message
+  /// Legacy Socket.IO text emit — **do not use for composer sends** (CHAT-2).
+  /// Text goes through [OutgoingChatSendService] (REST + pending/retry).
+  /// Kept for rare low-level callers / tests; no ACK or durable recovery.
   static void sendChatMessage(
     String carId,
     String content, {

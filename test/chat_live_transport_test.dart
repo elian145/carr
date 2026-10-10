@@ -10,4 +10,9 @@ void main() {
   test('fallback poll interval is slower than former always-on 7s', () {
     expect(kChatHttpFallbackPollInterval.inSeconds, greaterThanOrEqualTo(10));
   });
+
+  test('CHAT-2 text send never uses WebSocket emit', () {
+    expect(chatTextSendUsesWebSocket(socketConnected: true), isFalse);
+    expect(chatTextSendUsesWebSocket(socketConnected: false), isFalse);
+  });
 }

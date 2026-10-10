@@ -29,23 +29,38 @@ Recommended for scale:
 - `CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com` (browser clients)
 - `LOG_JSON=true` (structured logs)
 
-## Socket.IO scaling (important)
+## Socket.IO scaling (important) — CHAT-1
 
-If you run **more than 1 Gunicorn worker**, you **must** configure a Socket.IO message queue:
+**Recommended on Render today:** single Gunicorn worker + threaded HTTP.
 
-- Set `SOCKETIO_MESSAGE_QUEUE` (Redis URL) **or** set `REDIS_URL` (production defaults to it).
+| Variable | Recommended value | Notes |
+|----------|-------------------|--------|
+| `WEB_CONCURRENCY` | `1` | Default in `gunicorn.conf.py`. Do **not** raise without sticky sessions. |
+| `GUNICORN_THREADS` | `4` (or higher if CPU allows) | Scale concurrent HTTP/API work here. |
+| `REDIS_URL` | set (Celery / rate limit / JWT blocklist) | Also used as Socket.IO message queue in production. |
+| `SOCKETIO_ASYNC_MODE` | unset / `threading` | Must match `gthread`. |
+| `SOCKETIO_ALLOW_EVENTLET` | unset | Eventlet break-glass only; causes Render 502s. |
 
-Without a message queue, chat broadcasts can appear “randomly broken” because each worker is isolated.
+Why not 2 workers by default when Redis exists?
 
-`gunicorn.conf.py` defaults `WEB_CONCURRENCY` to:
-- `1` when no message queue is configured
-- `2` when a message queue is configured
+- Redis Socket.IO message queue fans out **broadcasts** across processes.
+- Engine.IO **long-polling** sessions are still pinned to the worker that
+  created them. Render’s load balancer is **not sticky**, so polling hops
+  between workers → intermittent connect failures (local check: ~8/20 with
+  2 workers vs 20/20 with 1 worker).
+- Flutter keeps `polling` + `websocket` transports because `gthread` may not
+  complete a websocket upgrade; forcing websocket-only would break clients.
+
+If you later run `WEB_CONCURRENCY>1` you need **all** of:
+
+1. `REDIS_URL` / `SOCKETIO_MESSAGE_QUEUE` (broadcast fan-out)
+2. Sticky sessions for `/socket.io/*` at the load balancer
+3. Explicit ops opt-in via `WEB_CONCURRENCY`
 
 ### Recommended production async mode
 
 **Default (required on Render):** leave `SOCKETIO_ASYNC_MODE` unset (or set
-`threading`). Gunicorn uses `gthread` and Socket.IO uses `threading`. Redis is
-still used as the Socket.IO message queue when `REDIS_URL` is set.
+`threading`). Gunicorn uses `gthread` and Socket.IO uses `threading`.
 
 Do **not** set `SOCKETIO_ASYNC_MODE=eventlet` on Render. Eventlet is deprecated
 and currently breaks boot (`monkey_patch` after Flask import → LocalProxy/RLock
@@ -59,14 +74,16 @@ the break-glass flag `SOCKETIO_ALLOW_EVENTLET=1` and a Redis message queue.
 Run the backend on an internal port (example `:5003`) and put it behind a reverse proxy for HTTPS:
 
 - `APP_ENV=production gunicorn "kk.wsgi:app" -c "gunicorn.conf.py"`
-- Keep `REDIS_URL` for Socket.IO fan-out across workers; do not enable eventlet.
+- Keep `WEB_CONCURRENCY=1` and raise `GUNICORN_THREADS` for HTTP concurrency.
+- Keep `REDIS_URL` for Celery / rate limits; do not enable eventlet.
 
-### Multiple workers (only with Redis message queue)
+### Multiple workers (only with Redis MQ **and** sticky sessions)
 
-If you scale workers above 1, you **must** set Redis:
+If you scale workers above 1:
 
 - `REDIS_URL=redis://...`
 - optionally `SOCKETIO_MESSAGE_QUEUE=redis://...` (defaults to `REDIS_URL` in production)
+- sticky sessions for `/socket.io/*`
 - then set `WEB_CONCURRENCY=2` (or more) and restart.
 
 ## Reverse proxy (Nginx) example

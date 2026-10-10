@@ -7,6 +7,26 @@ mixin _ChatConversationTransportStore on _ChatConversationFields {
       _messages[index] = message;
       return;
     }
+    // CHAT-2: REST pending bubble + Socket.IO new_message race — collapse the
+    // oldest matching pending (same sender + type), never by text content.
+    if (!message.isPending) {
+      final pendingIdx = _messages.indexWhere(
+        (m) => shouldCollapsePendingChatBubble(
+          incomingIsPending: message.isPending,
+          incomingId: message.id,
+          incomingSenderId: message.senderId,
+          incomingMessageType: message.messageType,
+          pendingId: m.id,
+          pendingIsPending: m.isPending,
+          pendingSenderId: m.senderId,
+          pendingMessageType: m.messageType,
+        ),
+      );
+      if (pendingIdx != -1) {
+        _messages[pendingIdx] = message;
+        return;
+      }
+    }
     _messages.add(message);
   }
 
@@ -16,7 +36,12 @@ mixin _ChatConversationTransportStore on _ChatConversationFields {
       _addMessageIfMissing(message);
       return;
     }
-    _messages[index] = message;
+    final confirmed = message;
+    _messages[index] = confirmed;
+    // If Socket.IO already inserted the same server id, drop the extra row.
+    _messages.removeWhere(
+      (m) => m.id == confirmed.id && !identical(m, confirmed),
+    );
   }
 
   void _removeMessage(String id) {

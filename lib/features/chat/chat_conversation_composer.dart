@@ -148,25 +148,10 @@ mixin _ChatConversationComposer on _ChatConversationMessageActions {
       final listingPreviewForMessage = _pendingInitialListingContext
           ? _listingPreview
           : null;
-      if (WebSocketService.isConnected) {
-        WebSocketService.sendChatMessage(
-          widget.carId,
-          content,
-          receiverId: widget.receiverId,
-          listingPreview: listingPreviewForMessage,
-          replyToMessageId: replyingToMessageId,
-        );
-        if (mounted) {
-          setState(() {
-            _pendingInitialListingContext = false;
-            _replyingToMessage = null;
-          });
-        } else {
-          _pendingInitialListingContext = false;
-          _replyingToMessage = null;
-        }
-        return;
-      }
+      // CHAT-2: always send text via REST (OutgoingChatSendService). Socket.IO
+      // has no ACK/retry — a stale "connected" flag cleared the composer and
+      // silently dropped the message. Keep WebSocket for receive/typing only
+      // (`chatTextSendUsesWebSocket` is locked false).
 
       // F-11: give the REST send a visible, durably-recoverable pending
       // bubble (same treatment as media/audio sends) instead of only
