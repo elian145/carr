@@ -65,7 +65,7 @@ from __future__ import annotations
 import logging
 import re
 
-from sqlalchemy import and_, case, func, literal, or_, text
+from sqlalchemy import BigInteger, and_, case, cast, func, literal, or_, text
 
 from .models import Car, db
 
@@ -241,6 +241,12 @@ def seeded_random_order_expr(seed: str, *, id_column=None):
     production share the same semantics. Always pair with ``id`` as a
     unique tie-breaker in ``ORDER BY``. Avoids ``random()`` re-roll per page.
 
+    Cast ``id`` (and the seed literals) to ``BigInteger`` before multiply /
+    add: Postgres ``integer`` arithmetic raises ``integer out of range`` when
+    ``id * seed_int`` exceeds int32 (common for ``id >= 2`` with a full-width
+    CRC seed). SQLite promotes integers automatically, which hid the bug in
+    the SQLite-only suite.
+
     Note: Postgres still sorts the filtered result set by this expression
     (plus featured/id). It does not avoid an ``ORDER BY``; it avoids
     non-deterministic ``random()`` reshuffles between pages.
@@ -251,9 +257,11 @@ def seeded_random_order_expr(seed: str, *, id_column=None):
     seed_s = sanitize_sort_seed(seed) or "0"
     seed_int = (zlib.crc32(seed_s.encode("utf-8")) & 0x7FFFFFFF) or 1
     # Keep the multiplier odd/non-zero so distinct ids stay distinct modulo 2^31.
-    return ((id_col * literal(seed_int)) + literal(seed_int * 17)) % literal(
-        2147483647
-    )
+    # Explicit bigint casts keep Postgres from overflowing int32 mid-expression.
+    id_bi = cast(id_col, BigInteger)
+    seed_bi = cast(literal(seed_int), BigInteger)
+    offset_bi = cast(literal(seed_int * 17), BigInteger)
+    return ((id_bi * seed_bi) + offset_bi) % literal(2147483647)
 
 
 def _dialect_name() -> str:
