@@ -407,6 +407,11 @@ mixin _SellStep4Logic on _SellStep4Fields {
       draftId: draftId,
       namePrefix: 'video',
     );
+    // Snapshot the live selection again AFTER the awaits: a concurrent
+    // delete may have cleared `_selectedImages` while this call was
+    // copying files. Prefer that authoritative live list over the
+    // pre-await persist result so a completed upload/copy cannot restore
+    // a photo the user already removed.
     final resolvedImages = _persistedOrLiveMedia(_selectedImages, images);
     final resolvedBlurred = _persistedOrLiveMedia(_blurredImages, blurred);
     final resolvedDamage = _persistedOrLiveMedia(_damageImages, damage);
@@ -414,7 +419,6 @@ mixin _SellStep4Logic on _SellStep4Fields {
       _selectedVideos.map((f) => f.path).toList(),
       videos,
     );
-    if (!mounted) return;
     if (gen != _mediaSyncGeneration) {
       // A newer sync call has started since this one began -- this
       // result is stale (it may have been built from a `_selectedImages`
@@ -423,14 +427,26 @@ mixin _SellStep4Logic on _SellStep4Fields {
       // write/has already written in its place.
       return;
     }
-    setState(() {
+    // Stale draft-card thumbnail fix: do NOT bail on `!mounted` before
+    // writing parent `carData` + persisting the draft snapshot. Leaving
+    // Sell (or switching tabs) often disposes Step 4 while this durable
+    // copy is still in flight; aborting here used to leave
+    // `carData['images']` stuck on the pre-delete list that My Listings
+    // reads for draft thumbnails. Still skip `setState` when unmounted.
+    void applyLocalResolved() {
       _selectedImages = resolvedImages;
       _blurredImages = resolvedBlurred;
       _damageImages = resolvedDamage;
       _selectedVideos
         ..clear()
         ..addAll(ListingImageMedia.localFiles(resolvedVideos));
-    });
+    }
+
+    if (mounted) {
+      setState(applyLocalResolved);
+    } else {
+      applyLocalResolved();
+    }
     _writeMediaListsToParent(
       parentState,
       images: resolvedImages,
@@ -446,7 +462,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
     } else {
       parentState.carData.remove('processed_image_paths');
     }
-    parentState.setState(() {});
+    if (parentState.mounted) {
+      parentState.setState(() {});
+    }
     unawaited(parentState._saveSellDraftSnapshot());
   }
 
@@ -544,11 +562,15 @@ mixin _SellStep4Logic on _SellStep4Fields {
   }
 
   /// Keep live picker files when a persist pass drops unreadable paths.
+  ///
+  /// An empty [live] list always wins: the user (or a newer sync) cleared
+  /// the selection, and returning [persisted] would resurrect deleted
+  /// draft photos onto My Listings cards / parent `carData`.
   List<dynamic> _persistedOrLiveMedia(
     List<dynamic> live,
     List<dynamic> persisted,
   ) {
-    if (live.isEmpty) return persisted;
+    if (live.isEmpty) return live;
     if (persisted.isEmpty) return live;
     if (persisted.length >= live.length) return persisted;
     return SellDraftMediaPersistence.mergeRawMediaLists([persisted, live]);
@@ -958,6 +980,17 @@ mixin _SellStep4Logic on _SellStep4Fields {
       parentState.carData['original_images'] = List<dynamic>.from(
         _selectedImages,
       );
+      // Stale My Listings draft-card fix: the draft thumbnail reads
+      // `carData['images']` (see `my_listings_page_widgets.dart`), NOT
+      // `original_images`. The previous blur-race fix only synced
+      // originals/blurred synchronously; `images` stayed on the
+      // pre-delete list until async `_syncMediaDraftToParent` finished
+      // -- and that sync often aborted on `!mounted` when the user left
+      // Sell immediately, so dispose persisted the deleted photo forever.
+      // Mirror the remaining selection into the active `images` list
+      // (blur preference was cleared above) before any navigation/save.
+      parentState.carData['images'] = List<dynamic>.from(_selectedImages);
+      parentState.carData['primary_image_index'] = _primaryImageIndex;
       final currentBlurred = parentState.carData['blurred_images'];
       if (currentBlurred is List && currentBlurred.isNotEmpty) {
         final pruned = _pruneBlurredToCurrentSelection(
@@ -967,6 +1000,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData['blurred_images'] = pruned;
         if (mounted) setState(() => _blurredImages = pruned);
       } else if (_selectedImages.isEmpty) {
+        parentState.carData['blurred_images'] = <dynamic>[];
+        parentState.carData['images_processed'] = false;
+        parentState.carData.remove('processed_image_paths');
         if (mounted) {
           setState(() {
             _blurredImages = [];
@@ -984,6 +1020,22 @@ mixin _SellStep4Logic on _SellStep4Fields {
         );
         if (mounted) setState(() => _blurredImages = pruned);
       }
+      if (_selectedImages.isEmpty) {
+        parentState.carData['images_processed'] = false;
+        parentState.carData.remove('processed_image_paths');
+      } else {
+        final processed = parentState.carData['processed_image_paths'];
+        if (processed is List && processed.isNotEmpty) {
+          parentState.carData['processed_image_paths'] =
+              _pruneBlurredToCurrentSelection(
+                List<dynamic>.from(processed),
+                _selectedImages,
+              )
+                  .map(ListingImageMedia.source)
+                  .where((s) => s.trim().isNotEmpty)
+                  .toList();
+        }
+      }
     }
     // `clearBlurred: false` -- unlike its other callers, this one already
     // correctly PRUNED `carData['blurred_images']` immediately above
@@ -995,6 +1047,12 @@ mixin _SellStep4Logic on _SellStep4Fields {
     // progress is still correctly ignored once it resolves.
     parentState?.invalidatePlateBlurJob(clearBlurred: false);
     parentState?.invalidatePhotoPrestage();
+    // Persist the post-delete `images`/`original_images` immediately so
+    // My Listings (which reads the draft archive/snapshot) cannot race
+    // a still-in-flight durable media copy and show a deleted thumbnail.
+    if (parentState != null) {
+      unawaited(parentState._saveSellDraftSnapshot());
+    }
     unawaited(_syncMediaDraftToParent());
     if (_selectedImages.isNotEmpty) {
       unawaited(parentState?.startBackgroundPlateBlur());
@@ -1023,11 +1081,16 @@ mixin _SellStep4Logic on _SellStep4Fields {
       parentState.carData['original_damage_images'] = List<dynamic>.from(
         _damageImages,
       );
+      // Keep active damage list in lockstep with originals (same stale
+      // draft / dispose-persist race as listing `images` above).
+      parentState.carData['damage_images'] = List<dynamic>.from(_damageImages);
       final existingBlurred =
           parentState.carData['blurred_damage_images'];
       if (existingBlurred is List && existingBlurred.isNotEmpty) {
         parentState.carData['blurred_damage_images'] =
             _pruneBlurredToCurrentSelection(existingBlurred, _damageImages);
+      } else if (_damageImages.isEmpty) {
+        parentState.carData['blurred_damage_images'] = <dynamic>[];
       }
     }
     // `clearBlurred: false` -- see `_removePhotoAt`'s identical comment;
@@ -1035,6 +1098,9 @@ mixin _SellStep4Logic on _SellStep4Fields {
     // immediately above.
     parentState?.invalidatePlateBlurJob(clearBlurred: false);
     parentState?.invalidatePhotoPrestage();
+    if (parentState != null) {
+      unawaited(parentState._saveSellDraftSnapshot());
+    }
     unawaited(_syncMediaDraftToParent());
     if (_damageImages.isNotEmpty || _selectedImages.isNotEmpty) {
       unawaited(parentState?.startBackgroundPlateBlur());

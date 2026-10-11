@@ -93,6 +93,17 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
     );
   }
 
+  /// Max width for the trailing relative-age chip so Arabic plurals can wrap
+  /// inside the original end-side slot instead of being ellipsized.
+  double _relativeAgeMaxWidth(BuildContext context, {required bool hasCity}) {
+    final contentWidth = (MediaQuery.sizeOf(context).width - 32).clamp(
+      1.0,
+      double.infinity,
+    );
+    if (!hasCity) return contentWidth;
+    return math.max(112.0, contentWidth * 0.48);
+  }
+
   double _metaBlockHeight(BuildContext context) {
     final cityDetail = (listingFirstNonEmpty(car!, ['city', 'location']) ?? '')
         .trim();
@@ -105,11 +116,8 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       height: 1.2,
     );
     final textDir = Directionality.of(context);
-    final contentWidth = (MediaQuery.sizeOf(context).width - 32).clamp(
-      1.0,
-      double.infinity,
-    );
 
+    double uploadedWidth = 0;
     double uploadedHeight = 0;
     if (uploadedDetail.isNotEmpty) {
       final uploadedPainter = TextPainter(
@@ -123,7 +131,13 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         textDirection: textDir,
         textScaler: TextScaler.noScaling,
         maxLines: 2,
-      )..layout(maxWidth: contentWidth);
+      )..layout(
+          maxWidth: _relativeAgeMaxWidth(
+            context,
+            hasCity: cityDetail.isNotEmpty,
+          ),
+        );
+      uploadedWidth = uploadedPainter.width;
       uploadedHeight = uploadedPainter.height;
     }
 
@@ -132,7 +146,11 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       final cityText =
           '${AppLocalizations.of(context)!.cityLabel}: '
           '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}';
-      final cityTextMaxWidth = contentWidth - (14 + 6);
+      var cityTextMaxWidth = MediaQuery.sizeOf(context).width - 32;
+      cityTextMaxWidth -= 14 + 6;
+      if (uploadedDetail.isNotEmpty) {
+        cityTextMaxWidth -= 8 + uploadedWidth;
+      }
       final cityPainter = TextPainter(
         text: TextSpan(text: cityText, style: cityLabelStyle),
         textDirection: textDir,
@@ -142,15 +160,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       cityRowHeight = math.max(14.0, cityPainter.height);
     }
 
-    // City and relative age sit on separate rows so Arabic plurals are never
-    // ellipsized by sharing a single crowded line with the city label.
-    var total = 16.0;
-    if (cityDetail.isNotEmpty) total += cityRowHeight;
-    if (uploadedDetail.isNotEmpty) {
-      if (cityDetail.isNotEmpty) total += 6;
-      total += uploadedHeight;
-    }
-    return total;
+    return 16 + math.max(cityRowHeight, uploadedHeight);
   }
 
   double _specsTitleBlockHeight(BuildContext context) {
@@ -276,45 +286,70 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 16),
-                      if (cityDetail.isNotEmpty)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.location_city,
-                              size: 14,
-                              color: isLightShell
-                                  ? const Color(0xFF757575)
-                                  : Colors.white70,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
+                      // Original placement: city under the title (start),
+                      // relative age under the price (end), same row.
+                      // Constrained trailing slot + wrap (no ellipsis) keeps
+                      // Arabic ages fully visible without a second row.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: cityDetail.isEmpty
+                                ? const SizedBox.shrink()
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.location_city,
+                                        size: 14,
+                                        color: isLightShell
+                                            ? const Color(0xFF757575)
+                                            : Colors.white70,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          '${AppLocalizations.of(context)!.cityLabel}: '
+                                          '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
+                                          textScaler: const TextScaler.linear(
+                                            1.0,
+                                          ),
+                                          style: cityLabelStyle,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.clip,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                          if (uploadedDetail.isNotEmpty) ...[
+                            if (cityDetail.isNotEmpty) const SizedBox(width: 8),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: _relativeAgeMaxWidth(
+                                  context,
+                                  hasCity: cityDetail.isNotEmpty,
+                                ),
+                              ),
                               child: Text(
-                                '${AppLocalizations.of(context)!.cityLabel}: '
-                                '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
+                                key: const ValueKey<String>(
+                                  'listing-relative-age',
+                                ),
+                                uploadedDetail,
                                 textScaler: const TextScaler.linear(1.0),
-                                style: cityLabelStyle,
+                                textAlign: TextAlign.end,
+                                style: cityLabelStyle.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                                softWrap: true,
                                 maxLines: 2,
                                 overflow: TextOverflow.clip,
                               ),
                             ),
                           ],
-                        ),
-                      if (uploadedDetail.isNotEmpty) ...[
-                        if (cityDetail.isNotEmpty) const SizedBox(height: 6),
-                        Text(
-                          uploadedDetail,
-                          textScaler: const TextScaler.linear(1.0),
-                          textAlign: TextAlign.start,
-                          style: cityLabelStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                          softWrap: true,
-                          maxLines: 2,
-                          overflow: TextOverflow.visible,
-                        ),
-                      ],
+                        ],
+                      ),
                     ],
                   );
                 },

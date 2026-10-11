@@ -430,6 +430,15 @@ class _HomePageState extends _HomePageFields
         if (!mounted) return;
         _scrollHomeToTopAndResetCardImages();
       };
+      // Saved Searches is pushed without a Home `parentState`; deliver
+      // applied filters through this live callback onto the authoritative
+      // Home filter fields (not a parallel prefs-only state Home ignores
+      // after first mount).
+      HomeTabActions.onApplySavedSearchFilters =
+          (Map<String, dynamic> normalized) =>
+              applySavedSearchFiltersAndRefresh(normalized);
+      HomeTabActions.onConsumePendingSavedSearch =
+          () => consumePendingSavedSearchFiltersAndRefresh();
     }
     final seededOffset = _HomeFeedScrollPersistence.initialOffset;
     _homeScrollController = ScrollController(
@@ -517,26 +526,12 @@ class _HomePageState extends _HomePageFields
       }
       await _restoreFilters();
       if (!mounted) return;
-      final oneTimeFilters = await SavedSearchHomeBridge.consumeOneTimeFilters();
-      final pendingSavedSearch = await SavedSearchHomeBridge.consumePendingFetch();
-      if (oneTimeFilters != null) {
-        setState(() {
-          applyFiltersFromHomePersistMap(oneTimeFilters);
-        });
-      }
-      if (pendingSavedSearch || oneTimeFilters != null) {
-        _HomePageFields._homeFeedCache.clear();
-        _HomePageFields._homeFeedCacheDefaultSort = null;
-        _HomePageFields._homeFeedCacheFetchedAt = null;
-        if (mounted) {
-          setState(() {
-            cars = [];
-            _page = 1;
-            _hasNext = true;
-            _loadMoreFailed = false;
-          });
-        }
-        fetchCars(bypassCache: true);
+      // Prefer the shared consume/apply path so Saved Searches → Home and
+      // cold-start one-time prefs share identical filter + refresh behavior.
+      final appliedPending =
+          await consumePendingSavedSearchFiltersAndRefresh();
+      if (appliedPending) {
+        // Refresh already started inside consume/apply.
       } else if (cars.isEmpty) {
         // If we already rehydrated listings from memory (tab return), do not run an
         // immediate fetchCars(): the first-page API response would replace a deep
@@ -625,6 +620,8 @@ class _HomePageState extends _HomePageFields
   void dispose() {
     if (!widget.isSearchFiltersHost) {
       HomeTabActions.onScrollToTop = null;
+      HomeTabActions.onApplySavedSearchFilters = null;
+      HomeTabActions.onConsumePendingSavedSearch = null;
     }
     if (widget.isSearchFiltersHost) {
       _sortDebounceTimer?.cancel();

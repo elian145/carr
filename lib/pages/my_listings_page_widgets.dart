@@ -163,12 +163,11 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     ];
     final stepLabel = labels[currentStep.clamp(0, 5).toInt()];
     final title = _draftTitle(carData);
+    // Prefer `original_images` (authoritative after Sell photo delete),
+    // including when empty — never fall back to a stale `images` entry
+    // that still points at a deleted draft photo.
     final images = SellDraftMediaPersistence.resolveDynamicMediaList(
-      (carData['images'] is List)
-          ? List<dynamic>.from(carData['images'] as List)
-          : (carData['image_paths'] is List)
-          ? List<dynamic>.from(carData['image_paths'] as List)
-          : null,
+      sellDraftCardRawImages(carData),
     );
     final hasPhotos = images.isNotEmpty;
     final isLight = Theme.of(context).brightness == Brightness.light;
@@ -240,7 +239,11 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     }
 
     Widget photoPreview() {
-      final url = ListingImageMedia.source(images.first);
+      final coverIndex = sellDraftCardPrimaryImageIndex(
+        carData,
+        length: images.length,
+      );
+      final url = ListingImageMedia.source(images[coverIndex]);
       if (url.trim().isEmpty) return emptyPhotoState();
       return SizedBox(
         height: mediaHeight,

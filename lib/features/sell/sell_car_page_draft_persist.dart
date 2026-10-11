@@ -228,7 +228,13 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         final live = carData[entry.key];
         final persistedEmpty = persisted is! List || persisted.isEmpty;
         final liveHas = live is List && live.isNotEmpty;
+        // Don't wipe live picker files when durable copy dropped them.
         if (persistedEmpty && liveHas) continue;
+        // Stale-save-after-delete: an older `prepareCarDataForStorage`
+        // that started before the user cleared photos must not resurrect
+        // those paths onto a live list that is now intentionally empty.
+        final liveCleared = live is List && live.isEmpty;
+        if (liveCleared && !persistedEmpty) continue;
         carData[entry.key] = persisted;
       } else {
         carData[entry.key] = entry.value;

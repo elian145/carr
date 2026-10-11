@@ -122,6 +122,59 @@ mixin _HomePageFilterPersist on _HomePageFilterCatalog {
     _syncHomeFilterTextControllersFromSelection();
   }
 
+  /// Clears in-memory feed cache + pagination so the next fetch cannot reuse
+  /// unfiltered (or previously filtered) pages.
+  void _resetHomeFeedForFilterChange() {
+    _HomePageFields._homeFeedCache.clear();
+    _HomePageFields._homeFeedCacheDefaultSort = null;
+    _HomePageFields._homeFeedCacheFetchedAt = null;
+    cars = [];
+    _page = 1;
+    _hasNext = true;
+    _loadMoreFailed = false;
+  }
+
+  /// Restores [normalized] onto the live Home filter state, persists the
+  /// session snapshot, drops stale feed rows, and starts a refresh.
+  /// Used by Saved Searches via [HomeTabActions.onApplySavedSearchFilters].
+  Future<bool> applySavedSearchFiltersAndRefresh(
+    Map<String, dynamic> normalized,
+  ) async {
+    if (!mounted || widget.isSearchFiltersHost) return false;
+    setState(() {
+      applyFiltersFromSavedSearch(normalized);
+      _resetHomeFeedForFilterChange();
+    });
+    await _persistFilters();
+    if (!mounted) return false;
+    // Cross-mixin scroll helper lives on fetch core; use the shell hook.
+    HomeTabActions.scrollToTop();
+    // Drop one-time prefs so a later cold path cannot re-apply / race.
+    await SavedSearchHomeBridge.consumeOneTimeFilters();
+    await SavedSearchHomeBridge.consumePendingFetch();
+    if (!mounted) return false;
+    fetchCars(bypassCache: true);
+    return true;
+  }
+
+  /// Consumes one-time bridge prefs (if any) and applies them on Home.
+  Future<bool> consumePendingSavedSearchFiltersAndRefresh() async {
+    if (!mounted || widget.isSearchFiltersHost) return false;
+    final oneTimeFilters = await SavedSearchHomeBridge.consumeOneTimeFilters();
+    await SavedSearchHomeBridge.consumePendingFetch();
+    if (oneTimeFilters == null) return false;
+    if (!mounted) return false;
+    setState(() {
+      applyFiltersFromHomePersistMap(oneTimeFilters);
+      _resetHomeFeedForFilterChange();
+    });
+    await _persistFilters();
+    if (!mounted) return false;
+    HomeTabActions.scrollToTop();
+    fetchCars(bypassCache: true);
+    return true;
+  }
+
   Future<void> _restoreFilters() async {
     try {
       // Drop disk leftovers from older builds; filters are session-memory only.

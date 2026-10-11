@@ -6,10 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:car_listing_app/app/production_app.dart' as legacy;
-import 'package:car_listing_app/l10n/app_localizations.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
-import 'package:car_listing_app/shared/listings/listing_uploaded_ago.dart';
 import 'package:car_listing_app/shared/prefs/legacy_sell_draft_prefs.dart';
 
 import 'fake_api_server.dart';
@@ -205,64 +203,7 @@ void main() {
     );
   });
 
-  group('Fix 4A — Arabic relative age does not truncate', () {
-    testWidgets(
-      'Arabic listing age renders the full localized string on a phone width',
-      (tester) async {
-        final createdAt = DateTime.now()
-            .subtract(const Duration(days: 12))
-            .toUtc()
-            .toIso8601String();
-        late String expectedAge;
-        late String renderedAge;
-
-        await tester.pumpWidget(
-          MaterialApp(
-            locale: const Locale('ar'),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: MediaQuery(
-              data: const MediaQueryData(size: Size(390, 844)),
-              child: Builder(
-                builder: (context) {
-                  expectedAge = AppLocalizations.of(context)!.timeDaysAgo(12);
-                  renderedAge = listingUploadedAgo(context, {
-                    'created_at': createdAt,
-                  });
-                  return Scaffold(
-                    body: SizedBox(
-                      width: 390,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Text('Toyota Avalon 2021'),
-                          const Text(r'$6,555'),
-                          const Text('المدينة: بغداد'),
-                          Text(
-                            renderedAge,
-                            softWrap: true,
-                            maxLines: 2,
-                            overflow: TextOverflow.visible,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(expectedAge, 'قبل 12 يوماً');
-        expect(renderedAge, expectedAge);
-        expect(find.text(expectedAge), findsOneWidget);
-        expect(find.textContaining('يو...'), findsNothing);
-        expect(tester.takeException(), isNull);
-      },
-    );
-  });
+  // Fix 4A layout regression: test/listing_relative_age_row_layout_test.dart
 
   group('Fix 4B — VIDEO badge respects iPhone top safe area', () {
     testWidgets(

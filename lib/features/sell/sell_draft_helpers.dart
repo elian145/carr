@@ -98,6 +98,44 @@ bool isVisibleSellDraft(Map<String, dynamic> draft) {
   return hasMeaningfulSellDraftValue(draft['carData']);
 }
 
+/// Raw listing-photo list for draft-card thumbnails (My Listings, etc.).
+///
+/// When `original_images` is present as a List — including an empty list
+/// after the user deleted every photo — that list is authoritative. Do
+/// not fall back to `images`, which can still hold a pre-delete path
+/// until the async media sync finishes (or forever if that sync aborted
+/// on unmount).
+List<dynamic>? sellDraftCardRawImages(Map<String, dynamic> carData) {
+  final originals = carData['original_images'];
+  if (originals is List) {
+    return List<dynamic>.from(originals);
+  }
+  final images = carData['images'];
+  if (images is List) {
+    return List<dynamic>.from(images);
+  }
+  final paths = carData['image_paths'];
+  if (paths is List) {
+    return List<dynamic>.from(paths);
+  }
+  return null;
+}
+
+/// Cover index for a draft card, clamped to [0, length).
+int sellDraftCardPrimaryImageIndex(
+  Map<String, dynamic> carData, {
+  int length = 0,
+}) {
+  final raw = carData['primary_image_index'];
+  final parsed = raw is int
+      ? raw
+      : int.tryParse(raw?.toString() ?? '') ?? 0;
+  if (length <= 0) return parsed < 0 ? 0 : parsed;
+  if (parsed < 0) return 0;
+  if (parsed >= length) return 0;
+  return parsed;
+}
+
 /// Widget-independent equivalent of `_SellCarPageDraftPersist._clearSubmittedDraftOnly`,
 /// usable from `PendingSellSubmissionService` when a submission completes
 /// with no `SellCarPage` mounted (e.g. resumed at app startup).

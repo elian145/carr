@@ -57,6 +57,7 @@ abstract final class SavedSearchHomeBridge {
         'brand': filters['brand'],
         'model': filters['model'],
         'trim': filters['trim'],
+        'keyword': filters['q'] ?? filters['keyword'],
         'price_min': filters['min_price'] ?? filters['price_min'],
         'price_max': filters['max_price'] ?? filters['price_max'],
         'year_min': filters['min_year'] ?? filters['year_min'],

@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 import '../app/listing_shell.dart' show navigateMainShellTab;
+import '../app/widgets/home_tab_actions.dart';
 import '../data/car_name_translations.dart';
 import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../l10n/app_localizations.dart';

@@ -3,11 +3,17 @@ part of 'saved_searches_page.dart';
 mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
   void _applySearch(Map<String, dynamic> filters) async {
     final normalized = SavedSearchService.normalizeFilters(filters);
+    // Persist as a cold-start / late-registration backup. The live Home
+    // host (MainShell IndexedStack) must also be told via HomeTabActions —
+    // prefs alone are only consumed in Home's first post-frame callback,
+    // which never re-runs when Home is already mounted.
     await SavedSearchHomeBridge.persistFiltersForHome(normalized);
 
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
-    final successText = AppLocalizations.of(context)!.searchAppliedSuccessfully;
+    final loc = AppLocalizations.of(context)!;
+    final successText = loc.searchAppliedSuccessfully;
+    final failText = loc.errorTitle;
 
     final parent = widget.parentState;
     if (parent != null && parent.mounted) {
@@ -16,6 +22,10 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
         parent.applyFiltersFromSavedSearch(normalized);
       });
       parent.fetchCars(bypassCache: true);
+      // Clear bridge so the live Home host (if also mounted) does not
+      // double-apply from one-time prefs.
+      await SavedSearchHomeBridge.consumeOneTimeFilters();
+      await SavedSearchHomeBridge.consumePendingFetch();
       messenger.showSnackBar(
         SnackBar(
           content: Text(successText),
@@ -26,17 +36,30 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
       return;
     }
 
-    Navigator.pop(context);
-    await SavedSearchHomeBridge.markPendingFetch();
-    if (!mounted) return;
+    if (Navigator.of(context).canPop()) {
+      Navigator.pop(context);
+    }
     navigateMainShellTab(context, '/');
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(successText),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+
+    final applied = await HomeTabActions.applySavedSearchFilters(normalized);
+    if (!mounted) return;
+    if (applied) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(successText),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(failText),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _showFilterDetails(String searchName, Map<String, dynamic> filters) {
@@ -90,7 +113,7 @@ mixin _SavedSearchesPageActions on _SavedSearchesPageFilterDetails {
               Navigator.pop(context);
               _applySearch(filters);
             },
-            style: ElevatedButton.styleFrom(
+            style: TextButton.styleFrom(
               backgroundColor: AppColors.brandOrange,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
