@@ -2425,6 +2425,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get draftBadgeLabel => 'DRAFT';
 
   @override
+  String get untitledDraftTitle => 'Untitled draft';
+
+  @override
+  String get continueEditing => 'Continue editing';
+
+  @override
+  String get addPhotosToContinue => 'Add photos to continue';
+
+  @override
   String get failedToBlurPlatesPleaseTryAgain =>
       'Failed to blur plates. Please try again.';
 

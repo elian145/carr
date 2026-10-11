@@ -2432,6 +2432,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get draftBadgeLabel => 'مسودة';
 
   @override
+  String get untitledDraftTitle => 'مسودة بدون عنوان';
+
+  @override
+  String get continueEditing => 'متابعة التعديل';
+
+  @override
+  String get addPhotosToContinue => 'أضف صوراً للمتابعة';
+
+  @override
   String get failedToBlurPlatesPleaseTryAgain =>
       'فشل تمويه اللوحات. حاول مرة أخرى.';
 

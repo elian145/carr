@@ -2427,6 +2427,15 @@ class AppLocalizationsKu extends AppLocalizations {
   String get draftBadgeLabel => 'ڕەشنووس';
 
   @override
+  String get untitledDraftTitle => 'ڕەشنووسی بێناو';
+
+  @override
+  String get continueEditing => 'بەردەوامبوون لە دەستکاری';
+
+  @override
+  String get addPhotosToContinue => 'وێنە زیاد بکە بۆ بەردەوامبوون';
+
+  @override
   String get failedToBlurPlatesPleaseTryAgain =>
       'شاردنەوەی ڕەقەم سەرنەکەوت. دووبارە هەوڵ بدە.';
 

@@ -663,18 +663,27 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
   /// two branches (plain remote preview, and the owner-fallback widget) --
   /// extracted so the optimistic-local-media fix's fallback branch does
   /// not have to duplicate this markup.
+  ///
+  /// Top inset uses [MediaQuery.padding] once (not a nested [SafeArea]) so the
+  /// badge clears the iOS status bar / Dynamic Island without double-padding,
+  /// then clears the floating AppBar toolbar so it stays on the media plane.
+  /// Horizontal placement uses the trailing/end edge so RTL keeps the badge
+  /// away from the leading back control.
   List<Widget> _heroVideoSlideOverlayIcons() {
+    final topInset = MediaQuery.paddingOf(context).top;
     return [
-      Positioned(
-        top: 12,
-        right: 12,
+      Positioned.directional(
+        textDirection: Directionality.of(context),
+        top: topInset + kToolbarHeight + 8,
+        end: 12,
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          key: const ValueKey<String>('listing-hero-video-badge'),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.black54,
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Text(
+          child: const Text(
             'VIDEO',
             style: TextStyle(
               color: Colors.white,
@@ -686,12 +695,12 @@ mixin _CarDetailsPageMedia on _CarDetailsPageOwner {
       ),
       Center(
         child: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.black54,
             shape: BoxShape.circle,
           ),
-          padding: EdgeInsets.all(14),
-          child: Icon(Icons.play_arrow, color: Colors.white, size: 36),
+          padding: const EdgeInsets.all(14),
+          child: const Icon(Icons.play_arrow, color: Colors.white, size: 36),
         ),
       ),
     ];

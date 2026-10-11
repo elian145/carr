@@ -105,8 +105,11 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       height: 1.2,
     );
     final textDir = Directionality.of(context);
+    final contentWidth = (MediaQuery.sizeOf(context).width - 32).clamp(
+      1.0,
+      double.infinity,
+    );
 
-    double uploadedWidth = 0;
     double uploadedHeight = 0;
     if (uploadedDetail.isNotEmpty) {
       final uploadedPainter = TextPainter(
@@ -119,9 +122,8 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         ),
         textDirection: textDir,
         textScaler: TextScaler.noScaling,
-        maxLines: 1,
-      )..layout();
-      uploadedWidth = uploadedPainter.width;
+        maxLines: 2,
+      )..layout(maxWidth: contentWidth);
       uploadedHeight = uploadedPainter.height;
     }
 
@@ -130,11 +132,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       final cityText =
           '${AppLocalizations.of(context)!.cityLabel}: '
           '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}';
-      var cityTextMaxWidth = MediaQuery.sizeOf(context).width - 32;
-      cityTextMaxWidth -= 14 + 6;
-      if (uploadedDetail.isNotEmpty) {
-        cityTextMaxWidth -= 8 + uploadedWidth;
-      }
+      final cityTextMaxWidth = contentWidth - (14 + 6);
       final cityPainter = TextPainter(
         text: TextSpan(text: cityText, style: cityLabelStyle),
         textDirection: textDir,
@@ -144,7 +142,15 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
       cityRowHeight = math.max(14.0, cityPainter.height);
     }
 
-    return 16 + math.max(cityRowHeight, uploadedHeight);
+    // City and relative age sit on separate rows so Arabic plurals are never
+    // ellipsized by sharing a single crowded line with the city label.
+    var total = 16.0;
+    if (cityDetail.isNotEmpty) total += cityRowHeight;
+    if (uploadedDetail.isNotEmpty) {
+      if (cityDetail.isNotEmpty) total += 6;
+      total += uploadedHeight;
+    }
+    return total;
   }
 
   double _specsTitleBlockHeight(BuildContext context) {
@@ -270,53 +276,45 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: cityDetail.isEmpty
-                                ? const SizedBox.shrink()
-                                : Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.location_city,
-                                        size: 14,
-                                        color: isLightShell
-                                            ? const Color(0xFF757575)
-                                            : Colors.white70,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          '${AppLocalizations.of(context)!.cityLabel}: '
-                                          '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
-                                          textScaler: const TextScaler.linear(
-                                            1.0,
-                                          ),
-                                          style: cityLabelStyle,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.clip,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
-                          if (uploadedDetail.isNotEmpty) ...[
-                            if (cityDetail.isNotEmpty) const SizedBox(width: 8),
-                            Text(
-                              uploadedDetail,
-                              textScaler: const TextScaler.linear(1.0),
-                              style: cityLabelStyle.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                      if (cityDetail.isNotEmpty)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.location_city,
+                              size: 14,
+                              color: isLightShell
+                                  ? const Color(0xFF757575)
+                                  : Colors.white70,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '${AppLocalizations.of(context)!.cityLabel}: '
+                                '${translateListingValue(context, listingFirstNonEmpty(car!, ['city', 'location'])) ?? listingFirstNonEmpty(car!, ['city', 'location'])}',
+                                textScaler: const TextScaler.linear(1.0),
+                                style: cityLabelStyle,
+                                maxLines: 2,
+                                overflow: TextOverflow.clip,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                        ],
-                      ),
+                        ),
+                      if (uploadedDetail.isNotEmpty) ...[
+                        if (cityDetail.isNotEmpty) const SizedBox(height: 6),
+                        Text(
+                          uploadedDetail,
+                          textScaler: const TextScaler.linear(1.0),
+                          textAlign: TextAlign.start,
+                          style: cityLabelStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                          softWrap: true,
+                          maxLines: 2,
+                          overflow: TextOverflow.visible,
+                        ),
+                      ],
                     ],
                   );
                 },

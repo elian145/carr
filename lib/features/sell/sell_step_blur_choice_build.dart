@@ -372,27 +372,10 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
         if (hasAnyBlurredEntries) ...[
           labeledGrid(loc.blurredPhotos, blurred),
           labeledGrid(loc.blurredDamagePhotos, damageBlurred),
-          if (blurring)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      loc.stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else if (!blurReady)
+          // Per-tile overlays ("Generating blurred preview…",
+          // "Not blurred — no plate detected") carry live status — do not
+          // add a redundant bottom paragraph while jobs are still running.
+          if (!blurring && !blurReady)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -410,33 +393,7 @@ mixin _SellStepBlurChoiceBuild on _SellStepBlurChoiceLogic {
               ),
             ),
         ] else if (blurring)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: kFilterAccentColor.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: kFilterAccentColor.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    loc.stillBlurringPlatesInTheBackgroundPhotosWillAppearHereWhenReady,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                  ),
-                ),
-              ],
-            ),
-          )
+          const SizedBox.shrink()
         else ...[
           Text(
             loc.blurredPhotosAreNotReadyYet,

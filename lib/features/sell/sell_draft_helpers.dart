@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/car_name_translations.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_step.dart';
@@ -184,7 +185,9 @@ String localizedSellDraftTitle(
 
   final title = [locBrand, locModel].where((v) => v.isNotEmpty).join(' ');
   final suffix = [trim, year].where((v) => v.isNotEmpty).join(' • ');
-  if (title.isEmpty && suffix.isEmpty) return 'Untitled draft';
+  if (title.isEmpty && suffix.isEmpty) {
+    return AppLocalizations.of(context)?.untitledDraftTitle ?? 'Untitled draft';
+  }
   if (title.isEmpty) return suffix;
   if (suffix.isEmpty) return title;
   return '$title • $suffix';

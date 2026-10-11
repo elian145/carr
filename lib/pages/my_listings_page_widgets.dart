@@ -161,94 +161,222 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
       draftCardLoc.sellStep5Plates,
       draftCardLoc.sellStep6Review,
     ];
-    final label = labels[currentStep.clamp(0, 5).toInt()];
-    final draftListing = <String, dynamic>{
-      ...carData,
-      'title': _draftTitle(carData),
-      'price': carData['price']?.toString().trim(),
-      'images': SellDraftMediaPersistence.resolveDynamicMediaList(
-        (carData['images'] is List)
-            ? List<dynamic>.from(carData['images'] as List)
-            : (carData['image_paths'] is List)
-            ? List<dynamic>.from(carData['image_paths'] as List)
-            : null,
-      ),
-      'videos': (carData['videos'] is List)
-          ? List<dynamic>.from(carData['videos'] as List)
-          : (carData['video_paths'] is List)
-          ? List<dynamic>.from(carData['video_paths'] as List)
-          : const <dynamic>[],
-    };
+    final stepLabel = labels[currentStep.clamp(0, 5).toInt()];
+    final title = _draftTitle(carData);
+    final images = SellDraftMediaPersistence.resolveDynamicMediaList(
+      (carData['images'] is List)
+          ? List<dynamic>.from(carData['images'] as List)
+          : (carData['image_paths'] is List)
+          ? List<dynamic>.from(carData['image_paths'] as List)
+          : null,
+    );
+    final hasPhotos = images.isNotEmpty;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final cardFill = isLight
+        ? Colors.white
+        : Colors.white.withValues(alpha: 0.10);
+    final titleColor = isLight
+        ? Theme.of(context).colorScheme.onSurface
+        : Colors.white;
+    final metaColor = isLight
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : Colors.white70;
+    final discardTooltip = _text(
+      'Discard draft',
+      ar: 'حذف المسودة',
+      ku: 'سڕینەوەی ڕەشنووس',
+    );
+
+    final mediaHeight = listLayout ? 120.0 : 140.0;
+
+    Widget emptyPhotoState() {
+      return Container(
+        height: mediaHeight,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.brandOrange.withValues(alpha: isLight ? 0.10 : 0.18),
+              AppColors.brandOrangeSoft.withValues(alpha: isLight ? 0.06 : 0.12),
+            ],
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: AppColors.brandOrange.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add_a_photo_outlined,
+                color: AppColors.brandOrange,
+                size: 26,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                draftCardLoc.addPhotosToContinue,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: metaColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget photoPreview() {
+      final url = ListingImageMedia.source(images.first);
+      if (url.trim().isEmpty) return emptyPhotoState();
+      return SizedBox(
+        height: mediaHeight,
+        width: double.infinity,
+        child: listingNetworkImage(
+          url,
+          fit: BoxFit.cover,
+          placeholder: emptyPhotoState(),
+          errorWidget: emptyPhotoState(),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.all(4),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          buildGlobalCarCard(
-            context,
-            draftListing,
-            listLayout: listLayout,
-            onCardTap: () => unawaited(_resumeDraft(snapshot)),
-          ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.62),
-                borderRadius: BorderRadius.circular(999),
+      child: Material(
+        color: cardFill,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        elevation: isLight ? 1.5 : 0,
+        shadowColor: Colors.black26,
+        child: InkWell(
+          key: ValueKey('draft-card-${snapshot['draftId']}'),
+          onTap: () => unawaited(_resumeDraft(snapshot)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Stack(
+                children: [
+                  hasPhotos ? photoPreview() : emptyPhotoState(),
+                  Positioned.directional(
+                    textDirection: Directionality.of(context),
+                    top: 10,
+                    start: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.62),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        draftCardLoc.draftBadgeLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned.directional(
+                    textDirection: Directionality.of(context),
+                    top: 6,
+                    end: 6,
+                    child: Material(
+                      color: Colors.black.withValues(alpha: 0.62),
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        key: ValueKey(
+                          'draft-delete-${snapshot['draftId']}',
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => unawaited(_discardDraft(snapshot)),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                        ),
+                        tooltip: discardTooltip,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                draftCardLoc.draftBadgeLabel,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                  letterSpacing: 0.8,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: listLayout ? 15 : 16,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                        color: titleColor,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      stepLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: metaColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        key: ValueKey(
+                          'draft-continue-${snapshot['draftId']}',
+                        ),
+                        onPressed: () => unawaited(_resumeDraft(snapshot)),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.brandOrange,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          draftCardLoc.continueEditing,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
+            ],
           ),
-          Positioned(
-            top: 10,
-            right: 10,
-            child: Material(
-              color: Colors.black.withValues(alpha: 0.62),
-              shape: const CircleBorder(),
-              child: IconButton(
-                visualDensity: VisualDensity.compact,
-                onPressed: () => unawaited(_discardDraft(snapshot)),
-                icon: const Icon(Icons.delete_outline, color: Colors.white),
-                tooltip: _text(
-                  'Discard draft',
-                  ar: 'حذف المسودة',
-                  ku: 'سڕینەوەی ڕەشنووس',
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.62),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

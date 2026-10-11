@@ -429,6 +429,14 @@ void main() {
               'both jobs are still pending',
         );
         expect(
+          find.text(
+            'Still blurring plates in the background. Photos will appear here when ready.',
+          ),
+          findsNothing,
+          reason: 'bottom status paragraph must stay removed while '
+              'thumbnail overlays carry live processing status',
+        );
+        expect(
           _renderedNetworkImageUrls(tester),
           isEmpty,
           reason: 'no genuine blurred (network) image exists yet -- both '

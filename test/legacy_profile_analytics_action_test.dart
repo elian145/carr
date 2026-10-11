@@ -10,26 +10,16 @@ import 'package:car_listing_app/services/auth_service.dart';
 
 import 'fake_api_server.dart';
 
-/// B-01: `AnalyticsPage` was routed at `/analytics` but had zero live
-/// `pushNamed('/analytics')` call sites — a dead screen. This test covers
-/// the fix: a visible "Analytics Dashboard" action on the profile actions
-/// screen that navigates to `/analytics`.
+/// Final UI polish: Analytics must not appear as a Profile menu entry.
+/// Per-listing analytics remain available from listing detail (owner icon).
 ///
 /// Deliberately does NOT use the full `legacy.MyApp()` shell — that builds
 /// `MainShell`/`BottomNavigationBar`, which currently crashes on this
 /// Flutter 3.41.6 environment with a pre-existing, unrelated
-/// `MediaQuery.withClampedTextScaling` assertion (reproduced identically by
-/// untouched tests such as `legacy_profile_widget_test.dart` and
-/// `legacy_analytics_empty_widget_test.dart`). Instead, this test mounts the
-/// real, unmodified `ProfilePage` widget (`embedInShell: true`, which itself
-/// skips `buildFloatingBottomNav`/`BottomNavigationBar`) inside a minimal
-/// `MaterialApp` with only the providers/routes it actually needs, and a
-/// simple marker widget standing in for the real `AnalyticsPage` at
-/// `/analytics` — so the test proves the actual navigation wiring without
-/// loading the real `AnalyticsPage` or its backend calls.
+/// `MediaQuery.withClampedTextScaling` assertion. Instead, this test mounts
+/// the real `ProfilePage` widget (`embedInShell: true`) inside a minimal
+/// `MaterialApp`.
 void main() {
-  const analyticsMarkerKey = ValueKey<String>('analytics-route-marker');
-
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await FakeApiServer.ensureStarted();
@@ -62,7 +52,7 @@ void main() {
   });
 
   testWidgets(
-    'Profile actions show a localized Analytics Dashboard entry that navigates to /analytics',
+    'Profile actions do not show an Analytics Dashboard entry',
     (tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider<AuthService>.value(
@@ -72,8 +62,12 @@ void main() {
             supportedLocales: AppLocalizations.supportedLocales,
             home: const ProfilePage(embedInShell: true),
             routes: {
-              '/analytics': (context) =>
-                  const Scaffold(body: Center(child: Text('Analytics route marker', key: analyticsMarkerKey))),
+              '/analytics': (context) => const Scaffold(
+                body: Center(child: Text('Analytics route marker')),
+              ),
+              '/my_listings': (context) => const Scaffold(
+                body: Center(child: Text('My listings route marker')),
+              ),
             },
           ),
         ),
@@ -83,30 +77,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await tester.pump(const Duration(milliseconds: 400));
 
-      // The BottomNavigationBar/MainShell tree must not be present — this
-      // test targets ProfilePage directly, not the full legacy app shell.
       expect(find.byType(BottomNavigationBar), findsNothing);
 
-      // The action is visible and uses the existing localized
-      // `analyticsDashboard` key (English value from app_en.arb), not an
-      // inline/hardcoded string.
-      final analyticsAction = find.text('Analytics Dashboard');
       expect(
-        analyticsAction,
-        findsOneWidget,
-        reason: 'Analytics Dashboard action should be visible on the profile actions screen',
+        find.text('Analytics Dashboard'),
+        findsNothing,
+        reason: 'Profile must not expose a top-level Analytics entry',
       );
+      expect(find.text('Analytics'), findsNothing);
 
-      await tester.tap(analyticsAction);
-      await tester.pumpAndSettle();
-
-      // Tapping navigates to the real `/analytics` route name (proved here
-      // via a lightweight marker route rather than the real AnalyticsPage).
-      expect(
-        find.byKey(analyticsMarkerKey),
-        findsOneWidget,
-        reason: 'Tapping the Analytics Dashboard action should navigate to /analytics',
-      );
+      // Sanity: other account actions still render.
+      expect(find.text('My listings'), findsOneWidget);
+      expect(find.byIcon(Icons.insights_outlined), findsNothing);
     },
   );
 }

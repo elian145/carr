@@ -4543,6 +4543,24 @@ abstract class AppLocalizations {
   /// **'DRAFT'**
   String get draftBadgeLabel;
 
+  /// No description provided for @untitledDraftTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled draft'**
+  String get untitledDraftTitle;
+
+  /// No description provided for @continueEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue editing'**
+  String get continueEditing;
+
+  /// No description provided for @addPhotosToContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photos to continue'**
+  String get addPhotosToContinue;
+
   /// No description provided for @failedToBlurPlatesPleaseTryAgain.
   ///
   /// In en, this message translates to:
