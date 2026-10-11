@@ -69,6 +69,24 @@ class SellDraftMediaPersistence {
     return dir;
   }
 
+  /// Deletes only this draft's local `sell_draft_media/<draftId>/` folder.
+  /// Never touches remote/upload paths or other drafts' folders.
+  static Future<void> deleteLocalDraftFolder(String draftId) async {
+    final id = draftId.trim();
+    if (id.isEmpty) return;
+    try {
+      final docs = await getApplicationDocumentsDirectory();
+      final dir = Directory(
+        p.join(docs.path, 'sell_draft_media', _safeDraftId(id)),
+      );
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+  }
+
   static bool _isInDraftDir(String local, String draftId) {
     final norm = p.normalize(_localPath(local));
     return norm.contains(

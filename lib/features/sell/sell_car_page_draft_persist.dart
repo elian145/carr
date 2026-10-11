@@ -119,6 +119,87 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     return sell_draft_helpers.hasMeaningfulSellDraftValue(value);
   }
 
+  /// Clears active draft prefs + removes [draftId] from the archive when the
+  /// in-memory draft no longer has meaningful content. Does NOT bump the
+  /// persist epoch by itself (callers that need to kill in-flight saves must
+  /// call [LegacySellDraftPrefs.invalidatePersist] first).
+  Future<void> _purgeEmptyDraftFromStorage({
+    required String draftId,
+    required int epoch,
+  }) async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
+      await LegacySellDraftPrefs.clearActiveStorage();
+      final id = draftId.trim();
+      if (id.isNotEmpty) {
+        final archive =
+            _decodeSellDraftArchive(sp.getString(_sellDraftArchiveKey));
+        archive.removeWhere((item) => item['draftId']?.toString() == id);
+        if (archive.isEmpty) {
+          await sp.remove(_sellDraftArchiveKey);
+        } else {
+          await sp.setString(
+            _sellDraftArchiveKey,
+            _encodeSellDraftArchive(archive),
+          );
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _hasDraftSnapshot = false;
+        });
+      }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+  }
+
+  /// Auto-discards a NEW-listing draft after the user deletes its last photo
+  /// (and any other media) when no other meaningful fields remain. Never runs
+  /// in edit-existing-listing mode.
+  Future<void> _discardEmptyDraftAfterLastMediaRemoved() async {
+    if (_isEditMode) return;
+    if (sell_draft_helpers.carDataHasMeaningfulNonMediaContent(carData)) {
+      return;
+    }
+    final draftId = _currentDraftId;
+    try {
+      _skipDraftPersistOnDispose = true;
+      LegacySellDraftPrefs.invalidatePersist();
+      await sell_draft_helpers.discardSellDraftById(draftId);
+      await LegacySellDraftPrefs.clearActiveStepStorage();
+      if (!mounted) {
+        LegacySellDraftPrefs.allowPersist();
+        return;
+      }
+      setState(() {
+        carData = <String, dynamic>{};
+        _hasDraftSnapshot = false;
+        _hideDraftBanner = true;
+        _draftPreviewStep = 0;
+        _draftPreviewCarData = null;
+        _currentDraftId = _newSellDraftId();
+        _sellPageResetToken++;
+        _draftResumeToken++;
+        currentStep = 0;
+        completedSteps = <int>{};
+      });
+      try {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(0);
+        }
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
+    } catch (e, st) {
+      logNonFatal(e, st);
+    } finally {
+      LegacySellDraftPrefs.allowPersist();
+      _skipDraftPersistOnDispose = false;
+    }
+  }
+
   Future<void> _saveSellDraftSnapshot() async {
     if (_isEditMode) return;
     if (_skipDraftPersistOnDispose || LegacySellDraftPrefs.suppressPersist) {
@@ -150,25 +231,17 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     try {
       final sp = await SharedPreferences.getInstance();
       if (!LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) return;
-      final hasExistingSnapshot =
-          (sp.getString(_SellCarPageFields._draftSnapshotKey)?.trim().isNotEmpty == true);
       if (!_hasMeaningfulDraftValue(carData)) {
-        if (hasExistingSnapshot) {
-          if (mounted) {
-            setState(() {
-              _hasDraftSnapshot = true;
-            });
-          }
-          return;
-        }
-        await sp.remove(_SellCarPageFields._draftCurrentStepKey);
-        await sp.remove(_SellCarPageFields._draftSnapshotKey);
-        await LegacySellDraftPrefs.clearActiveStepStorage();
-        if (mounted) {
-          setState(() {
-            _hasDraftSnapshot = false;
-          });
-        }
+        // Last-photo / empty-draft fix: previously, when a draft became
+        // empty AFTER having a snapshot (e.g. user deleted the only photo
+        // with no other fields), this path returned early and LEFT the
+        // old snapshot intact -- so the deleted photo reappeared in My
+        // Listings and last-photo deletion looked "blocked". Clear the
+        // active snapshot + this draft's archive entry instead.
+        await _purgeEmptyDraftFromStorage(
+          draftId: _currentDraftId,
+          epoch: epoch,
+        );
         return;
       }
       final persistedStep = _effectivePersistedDraftStep();

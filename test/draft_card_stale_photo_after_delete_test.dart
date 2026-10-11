@@ -320,11 +320,13 @@ void main() {
         expect(carData['original_images'], isNotEmpty);
 
         await deletePhotoAt(tester, 0);
-        // Synchronous publish — no need to wait for durable sync.
+        await settleMedia(tester);
+        // Photo-only draft: last-photo delete auto-discards the whole draft
+        // (clears in-memory carData + prefs). Empty lists are not left behind.
         carData = carDataOf(tester);
-        expect(carData['original_images'], isEmpty);
-        expect(carData['images'], isEmpty);
-        expect(carData['processed_image_paths'], isNull);
+        expect(hasMeaningfulSellDraftValue(carData), isFalse);
+        final sp = await SharedPreferences.getInstance();
+        expect(sp.getString(LegacySellDraftPrefs.snapshotKey), isNull);
       },
     );
 
@@ -388,8 +390,17 @@ void main() {
 
         await deletePhotoAt(tester, 0);
         var carData = carDataOf(tester);
-        expect(carData['images'], isEmpty);
-        expect(carData['original_images'], isEmpty);
+        // Immediate sync clears media; empty photo-only draft may already
+        // be mid-discard.
+        expect(
+          carData['images'] == null || (carData['images'] as List).isEmpty,
+          isTrue,
+        );
+        expect(
+          carData['original_images'] == null ||
+              (carData['original_images'] as List).isEmpty,
+          isTrue,
+        );
 
         // Release any blocked copies (pick + delete syncs).
         for (final c in List<Completer<void>>.from(gate)) {
@@ -398,8 +409,9 @@ void main() {
         await settleMedia(tester);
 
         carData = carDataOf(tester);
-        expect(carData['images'], isEmpty);
-        expect(carData['original_images'], isEmpty);
+        expect(hasMeaningfulSellDraftValue(carData), isFalse);
+        final sp = await SharedPreferences.getInstance();
+        expect(sp.getString(LegacySellDraftPrefs.snapshotKey), isNull);
       },
     );
   });

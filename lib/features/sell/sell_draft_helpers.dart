@@ -8,6 +8,7 @@ import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 
 const String kSellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
@@ -69,7 +70,13 @@ bool hasMeaningfulSellDraftValue(dynamic value, {String? key}) {
     return false;
   }
   if (value == null) return false;
-  if (value is String) return value.trim().isNotEmpty;
+  if (value is String) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return false;
+    // Default "Any" filter placeholders are not user content.
+    if (trimmed.toLowerCase() == 'any') return false;
+    return true;
+  }
   if (value is num) return value != 0;
   if (value is bool) return value;
   if (value is XFile) return value.path.trim().isNotEmpty;
@@ -90,12 +97,42 @@ bool hasMeaningfulSellDraftValue(dynamic value, {String? key}) {
     }
     return false;
   }
-  return value.toString().trim().isNotEmpty;
+  final asString = value.toString().trim();
+  if (asString.isEmpty || asString.toLowerCase() == 'any') return false;
+  return true;
 }
 
 bool isVisibleSellDraft(Map<String, dynamic> draft) {
   if (draft['isPlaceholder'] == true) return false;
   return hasMeaningfulSellDraftValue(draft['carData']);
+}
+
+/// True when [carData] still has user-entered listing content after media
+/// lists are ignored (used when deciding whether deleting the last photo
+/// should auto-discard the whole draft).
+bool carDataHasMeaningfulNonMediaContent(Map<String, dynamic>? carData) {
+  if (carData == null || carData.isEmpty) return false;
+  const mediaKeys = <String>{
+    'images',
+    'original_images',
+    'blurred_images',
+    'damage_images',
+    'original_damage_images',
+    'blurred_damage_images',
+    'videos',
+    'processed_image_paths',
+    'image_paths',
+    'damage_image_paths',
+    'video_paths',
+    'existing_video_records',
+    'server_transcode_videos',
+  };
+  for (final entry in carData.entries) {
+    final key = entry.key.toString();
+    if (mediaKeys.contains(key)) continue;
+    if (hasMeaningfulSellDraftValue(entry.value, key: key)) return true;
+  }
+  return false;
 }
 
 /// Raw listing-photo list for draft-card thumbnails (My Listings, etc.).
@@ -176,6 +213,8 @@ Future<void> discardSellDraftById(String draftId) async {
         encodeSellDraftArchive(archive),
       );
     }
+    // Best-effort local media cleanup for this draft only.
+    await SellDraftMediaPersistence.deleteLocalDraftFolder(id);
   } catch (e, st) {
     logNonFatal(e, st);
   }

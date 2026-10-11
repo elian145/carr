@@ -1047,6 +1047,38 @@ mixin _SellStep4Logic on _SellStep4Fields {
     // progress is still correctly ignored once it resolves.
     parentState?.invalidatePlateBlurJob(clearBlurred: false);
     parentState?.invalidatePhotoPrestage();
+
+    // Last-photo + empty-draft: if the user removed every listing photo and
+    // the draft has no other meaningful fields, discard the whole draft
+    // (snapshot, archive entry, local media) instead of leaving a zombie
+    // that `_saveSellDraftSnapshot` used to resurrect from the old prefs.
+    // Edit-existing-listing mode never auto-discards.
+    //
+    // Media lists were already synced to empty above; use the non-media
+    // content check so leftover empty `images`/`original_images` arrays
+    // cannot affect the decision. Local damage/video lists must also be
+    // empty (and carData media must have no remaining meaningful paths).
+    if (_selectedImages.isEmpty &&
+        parentState != null &&
+        !parentState._isEditMode &&
+        _damageImages.isEmpty &&
+        _selectedVideos.isEmpty &&
+        !sell_draft_helpers.carDataHasMeaningfulNonMediaContent(
+          parentState.carData,
+        ) &&
+        !sell_draft_helpers.hasMeaningfulSellDraftValue(
+          parentState.carData['videos'],
+        ) &&
+        !sell_draft_helpers.hasMeaningfulSellDraftValue(
+          parentState.carData['damage_images'],
+        ) &&
+        !sell_draft_helpers.hasMeaningfulSellDraftValue(
+          parentState.carData['original_damage_images'],
+        )) {
+      await parentState._discardEmptyDraftAfterLastMediaRemoved();
+      return;
+    }
+
     // Persist the post-delete `images`/`original_images` immediately so
     // My Listings (which reads the draft archive/snapshot) cannot race
     // a still-in-flight durable media copy and show a deleted thumbnail.
