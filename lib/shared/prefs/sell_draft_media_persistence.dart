@@ -71,21 +71,113 @@ class SellDraftMediaPersistence {
 
   /// Deletes only this draft's local `sell_draft_media/<draftId>/` folder.
   /// Never touches remote/upload paths or other drafts' folders.
+  ///
+  /// Returns immediately after marking the folder for deletion. Physical
+  /// removal waits (event-driven) until every [withLocalMediaLeases] reader
+  /// for this draft has released — never force-deletes on a timer, so a
+  /// slow blur/prestage upload cannot lose source files mid-stream.
+  ///
+  /// Empty-draft discard calls this on the UI path; the await here must
+  /// not block the wizard. Callers that need the folder gone (tests)
+  /// should await [debugAwaitPendingFolderDeletes].
+  ///
+  /// If the process dies while a delete is deferred behind an active
+  /// lease, the folder may remain on disk after prefs are cleared (orphan
+  /// media). That is intentional: surviving files are safer than deleting
+  /// mid-upload. A later empty-draft / optimistic-media cleanup can remove
+  /// leftovers; pending-submission paths never call this while a durable
+  /// submission record still exists.
   static Future<void> deleteLocalDraftFolder(String draftId) async {
     final id = draftId.trim();
     if (id.isEmpty) return;
+    final key = _safeDraftId(id);
+    _folderDeleteRequested.add(key);
+    if (_pendingFolderDeletes.containsKey(key)) return;
+    late final Future<void> future;
+    future = _deleteLocalDraftFolderBody(id).whenComplete(() {
+      if (identical(_pendingFolderDeletes[key], future)) {
+        _pendingFolderDeletes.remove(key);
+      }
+    });
+    _pendingFolderDeletes[key] = future;
+    // Surface unexpected async failures (should already be caught inside
+    // the body) without creating an unhandled Future error.
+    unawaited(future.catchError((Object e, StackTrace st) {
+      logNonFatal(e, st, 'SellDraftMediaPersistence.deleteLocalDraftFolder');
+    }));
+  }
+
+  static final Map<String, Future<void>> _pendingFolderDeletes = {};
+  static final Set<String> _folderDeleteRequested = {};
+  /// Armed synchronously after leases are confirmed idle, before any
+  /// `await` in the physical delete path. Blocks new lease acquires for
+  /// this draft so a reader cannot sneak in during `getApplicationDocuments`
+  /// / `Directory.delete` awaits.
+  static final Set<String> _folderDeleteArmed = {};
+
+  static Future<void> _deleteLocalDraftFolderBody(String id) async {
+    final key = _safeDraftId(id);
     try {
-      final docs = await getApplicationDocumentsDirectory();
-      final dir = Directory(
-        p.join(docs.path, 'sell_draft_media', _safeDraftId(id)),
-      );
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
+      while (_folderDeleteRequested.contains(key)) {
+        // Wait outside the persist serialize chain so a long upload does
+        // not block unrelated persist work for this draft id.
+        await _awaitLeasesIdle(key);
+
+        var deleted = false;
+        await _serializedForDraft(id, () async {
+          if (!_folderDeleteRequested.contains(key)) return;
+          if ((_readLeases[key] ?? 0) > 0) return;
+
+          // Arm before any await — see [_folderDeleteArmed].
+          _folderDeleteArmed.add(key);
+          try {
+            if ((_readLeases[key] ?? 0) > 0) return;
+            final docs = await getApplicationDocumentsDirectory();
+            if ((_readLeases[key] ?? 0) > 0) return;
+            final dir = Directory(
+              p.join(docs.path, 'sell_draft_media', key),
+            );
+            if (await dir.exists()) {
+              await dir.delete(recursive: true);
+            }
+            _folderDeleteRequested.remove(key);
+            deleted = true;
+          } finally {
+            _folderDeleteArmed.remove(key);
+          }
+        });
+
+        if (deleted || !_folderDeleteRequested.contains(key)) break;
+        // A new lease appeared between idle wake and the serialized
+        // re-check — loop and wait for the next idle signal.
       }
     } catch (e, st) {
-      logNonFatal(e, st);
+      logNonFatal(e, st, 'SellDraftMediaPersistence._deleteLocalDraftFolderBody');
     }
   }
+
+  /// Awaits in-flight [deleteLocalDraftFolder] jobs (test helper).
+  ///
+  /// When [draftId] is set, waits only for that draft (avoids blocking on
+  /// unrelated deletes still waiting on a media lease from another test).
+  /// When omitted, waits until every pending delete has finished.
+  @visibleForTesting
+  static Future<void> debugAwaitPendingFolderDeletes([String? draftId]) async {
+    if (draftId != null) {
+      final pending = _pendingFolderDeletes[_safeDraftId(draftId.trim())];
+      if (pending != null) await pending;
+      return;
+    }
+    while (_pendingFolderDeletes.isNotEmpty) {
+      await Future.wait(
+        List<Future<void>>.from(_pendingFolderDeletes.values),
+      );
+    }
+  }
+
+  @visibleForTesting
+  static bool debugFolderDeleteRequested(String draftId) =>
+      _folderDeleteRequested.contains(_safeDraftId(draftId));
 
   static bool _isInDraftDir(String local, String draftId) {
     final norm = p.normalize(_localPath(local));
@@ -95,6 +187,20 @@ class SellDraftMediaPersistence {
   }
 
   static final Map<String, Future<void>> _persistChains = {};
+
+  /// In-flight readers of durable draft files (e.g. multipart blur/prestage
+  /// uploads). [deleteLocalDraftFolder] waits for these so empty-draft
+  /// cleanup cannot truncate a live `MultipartFile.fromPath` stream —
+  /// production symptom: `Content size below specified contentLength`.
+  static final Map<String, int> _readLeases = {};
+  static final Map<String, Completer<void>> _leaseIdle = {};
+
+  /// Test-only stand-in for the old "90s" wall clock. Used by tests to
+  /// assert the folder still exists after this duration while a lease is
+  /// held. Production deletion does **not** force-delete when this elapses
+  /// — cleanup stays deferred until the last lease is released.
+  @visibleForTesting
+  static Duration deleteLeaseWaitTimeout = const Duration(seconds: 90);
 
   static Future<T> _serializedForDraft<T>(
     String draftId,
@@ -112,6 +218,75 @@ class SellDraftMediaPersistence {
       if (identical(_persistChains[key], completer.future)) {
         _persistChains.remove(key);
       }
+    }
+  }
+
+  /// Draft id embedded in a durable local path under `sell_draft_media/`, or
+  /// null when [raw] is remote / picker-cache / unrelated.
+  static String? draftIdFromMediaPath(String raw) {
+    final local = _localPath(raw);
+    if (local.isEmpty) return null;
+    final parts = p.split(p.normalize(local));
+    for (var i = 0; i < parts.length - 1; i++) {
+      if (parts[i] == 'sell_draft_media') {
+        final id = parts[i + 1].trim();
+        if (id.isNotEmpty && id != '.' && id != '..') return id;
+      }
+    }
+    return null;
+  }
+
+  /// Holds a read lease for every distinct draft id in [localPaths] for the
+  /// duration of [action]. No-op when no path is under `sell_draft_media/`.
+  ///
+  /// Refuses new leases while physical folder deletion is armed (the short
+  /// window after leases are confirmed idle and before `Directory.delete`
+  /// finishes) so a late reader cannot race the delete awaits.
+  static Future<T> withLocalMediaLeases<T>(
+    Iterable<String> localPaths,
+    Future<T> Function() action,
+  ) async {
+    final ids = <String>{};
+    for (final path in localPaths) {
+      final id = draftIdFromMediaPath(path);
+      if (id != null) ids.add(_safeDraftId(id));
+    }
+    if (ids.isEmpty) return action();
+    for (final id in ids) {
+      if (_folderDeleteArmed.contains(id)) {
+        throw StateError(
+          'SellDraftMediaPersistence: refusing media lease for $id '
+          'while folder delete is in progress',
+        );
+      }
+      _readLeases[id] = (_readLeases[id] ?? 0) + 1;
+    }
+    try {
+      return await action();
+    } finally {
+      for (final id in ids) {
+        final next = (_readLeases[id] ?? 1) - 1;
+        if (next <= 0) {
+          _readLeases.remove(id);
+          final idle = _leaseIdle.remove(id);
+          if (idle != null && !idle.isCompleted) idle.complete();
+        } else {
+          _readLeases[id] = next;
+        }
+      }
+    }
+  }
+
+  @visibleForTesting
+  static int debugReadLeaseCount(String draftId) =>
+      _readLeases[_safeDraftId(draftId)] ?? 0;
+
+  /// Event-driven wait until this draft has zero read leases.
+  /// Never force-returns while leases remain (no timeout bypass).
+  static Future<void> _awaitLeasesIdle(String key) async {
+    while ((_readLeases[key] ?? 0) > 0) {
+      final idle = _leaseIdle[key] ??= Completer<void>();
+      await idle.future;
     }
   }
 

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'config.dart';
 import 'api_service.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/prefs/sell_draft_media_persistence.dart';
 
 class AiService {
   /// Analyze a single car image and extract vehicle information
@@ -214,38 +215,50 @@ class AiService {
       '?async=1'
       '${skipBlur ? '&skip_blur=1' : ''}',
     );
-    final request = http.MultipartRequest('POST', url);
-    request.headers['Authorization'] = 'Bearer $token';
-    for (final f in imageFiles) {
-      request.files.add(await http.MultipartFile.fromPath('images', f.path));
-    }
-    // Route through ApiService's effective client (test-bound client in
-    // widget/unit tests, the shared production client otherwise) instead
-    // of this class's other multipart methods' `request.send()` pattern --
-    // that pattern always creates its own throwaway default `Client()`,
-    // which never honors `ApiService.testHttpClient` and would make this
-    // method untestable.
-    final streamed = await ApiService.effectiveHttpClient
-        .send(request)
-        .timeout(
-          const Duration(seconds: 60),
-          onTimeout: () => throw TimeoutException('Enqueue images timed out'),
-        );
-    final response = await http.Response.fromStream(streamed);
-    if (response.statusCode != 202 && response.statusCode != 200) {
-      appLog(
-        'AI Service: Enqueue images failed: ${response.statusCode} ${response.body}',
-      );
-      return null;
-    }
-    final data = json.decode(response.body);
-    final rawJobIds = (data is Map) ? data['job_ids'] : null;
-    if (rawJobIds is! List) return null;
-    final jobIds = rawJobIds
-        .map((e) => e.toString())
-        .where((s) => s.trim().isNotEmpty)
-        .toList();
-    return jobIds;
+    // Hold durable draft-media leases for the whole fromPath+send window so
+    // empty-draft folder deletion cannot shrink/remove files mid-stream
+    // (`ClientException: Content size below specified contentLength`).
+    return SellDraftMediaPersistence.withLocalMediaLeases(
+      imageFiles.map((f) => f.path),
+      () async {
+        final request = http.MultipartRequest('POST', url);
+        request.headers['Authorization'] = 'Bearer $token';
+        for (final f in imageFiles) {
+          request.files.add(
+            await http.MultipartFile.fromPath('images', f.path),
+          );
+        }
+        // Route through ApiService's effective client (test-bound client in
+        // widget/unit tests, the shared production client otherwise) instead
+        // of this class's other multipart methods' `request.send()` pattern --
+        // that pattern always creates its own throwaway default `Client()`,
+        // which never honors `ApiService.testHttpClient` and would make this
+        // method untestable.
+        final streamed = await ApiService.effectiveHttpClient
+            .send(request)
+            .timeout(
+              const Duration(seconds: 60),
+              onTimeout: () =>
+                  throw TimeoutException('Enqueue images timed out'),
+            );
+        final response = await http.Response.fromStream(streamed);
+        if (response.statusCode != 202 && response.statusCode != 200) {
+          appLog(
+            'AI Service: Enqueue images failed: '
+            '${response.statusCode} ${response.body}',
+          );
+          return null;
+        }
+        final data = json.decode(response.body);
+        final rawJobIds = (data is Map) ? data['job_ids'] : null;
+        if (rawJobIds is! List) return null;
+        final jobIds = rawJobIds
+            .map((e) => e.toString())
+            .where((s) => s.trim().isNotEmpty)
+            .toList();
+        return jobIds;
+      },
+    );
   }
 
   /// Blur/store images on the server (single request) and return both:

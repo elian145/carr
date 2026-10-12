@@ -108,7 +108,11 @@ class RecentlyViewedService {
     final local = await _loadLocal();
     if (local.isEmpty) return [];
     final hydrated = await _hydrateIds(local);
-    return hydrated.isNotEmpty ? hydrated : local;
+    if (hydrated.isNotEmpty) return hydrated;
+    // Re-read prefs: [_hydrateIds] may have pruned definitive 404 stubs.
+    // Falling back to the pre-hydrate [local] list would resurrect them.
+    // Bare id stubs that only failed transiently remain for the next pass.
+    return _loadLocal();
   }
 
   static Future<List<Map<String, dynamic>>> _loadLocal() async {
@@ -147,7 +151,18 @@ class RecentlyViewedService {
         if (inner is Map) {
           out.add(Map<String, dynamic>.from(inner.cast<String, dynamic>()));
         }
-      } catch (e, st) { logNonFatal(e, st); }
+      } on ApiException catch (e, st) {
+        // Expected: deleted / not-visible listing. Drop the stale local
+        // stub quietly — do not report as a Sentry error. Other failures
+        // (5xx, auth, transport) still go through [logNonFatal].
+        if (e.statusCode == 404) {
+          await _removeLocal(id);
+          continue;
+        }
+        logNonFatal(e, st);
+      } catch (e, st) {
+        logNonFatal(e, st);
+      }
     }
     return out;
   }

@@ -75,6 +75,11 @@ void main() {
       'push_enabled': false,
       'app_locale': 'en',
     });
+    // Empty-draft cleanup schedules folder deletes that may wait on a
+    // background blur lease; keep that wait short in this suite so later
+    // tests are not blocked by leftover scheduled deletes.
+    SellDraftMediaPersistence.deleteLeaseWaitTimeout =
+        const Duration(seconds: 2);
     await ApiService.clearTokens();
     await AuthService().adoptTestSession(
       user: {
@@ -104,6 +109,8 @@ void main() {
     ApiService.testHttpClient = null;
     await ApiService.clearTokens();
     AuthService().resetTestSession();
+    SellDraftMediaPersistence.deleteLeaseWaitTimeout =
+        const Duration(seconds: 90);
     try {
       tempDir.deleteSync(recursive: true);
     } catch (_) {}
@@ -556,7 +563,13 @@ void main() {
         expect(await marker.exists(), isTrue);
 
         // Empty-draft / post-display cleanup may still delete the folder.
+        // deleteLocalDraftFolder schedules work and returns immediately so
+        // the Sell UI never freezes on a held media lease — await the
+        // pending job before asserting the folder is gone.
         await SellDraftMediaPersistence.deleteLocalDraftFolder(
+          'draft_keep_media',
+        );
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(
           'draft_keep_media',
         );
         expect(await draftDir.exists(), isFalse);
