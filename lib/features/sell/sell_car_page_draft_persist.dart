@@ -144,6 +144,14 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
             _encodeSellDraftArchive(archive),
           );
         }
+        // Disposable empty-draft media only — never while a pending
+        // submission still needs the folder for upload/retry.
+        final pending =
+            await PendingSellSubmissionService.instance.peek(id);
+        if (pending == null &&
+            LegacySellDraftPrefs.isCurrentPersistEpoch(epoch)) {
+          await SellDraftMediaPersistence.deleteLocalDraftFolder(id);
+        }
       }
       if (mounted) {
         setState(() {
@@ -167,8 +175,15 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     try {
       _skipDraftPersistOnDispose = true;
       LegacySellDraftPrefs.invalidatePersist();
+      // Never wipe media for a draft that already handed off to submission
+      // (prefs discard alone is fine; folder delete is not).
+      final pending =
+          await PendingSellSubmissionService.instance.peek(draftId);
       await sell_draft_helpers.discardSellDraftById(draftId);
       await LegacySellDraftPrefs.clearActiveStepStorage();
+      if (pending == null && draftId.trim().isNotEmpty) {
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
+      }
       if (!mounted) {
         LegacySellDraftPrefs.allowPersist();
         return;

@@ -540,5 +540,35 @@ void main() {
         expect(archive.single['draftId'], 'd2');
       },
     );
+
+    test(
+      'submission handoff: discardSellDraftById must NOT delete '
+      'sell_draft_media (uploads still need those files)',
+      () async {
+        final draftDir =
+            await SellDraftMediaPersistence.draftDirectory('draft_keep_media');
+        final marker = File(p.join(draftDir.path, 'listing_keep.jpg'))
+          ..writeAsBytesSync(<int>[0xFF, 0xD8, 0xFF, 0xD9]);
+
+        await discardSellDraftById('draft_keep_media');
+
+        expect(await draftDir.exists(), isTrue);
+        expect(await marker.exists(), isTrue);
+
+        // Empty-draft / post-display cleanup may still delete the folder.
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(
+          'draft_keep_media',
+        );
+        expect(await draftDir.exists(), isFalse);
+
+        final helpersBody =
+            File('lib/features/sell/sell_draft_helpers.dart').readAsStringSync();
+        expect(
+          helpersBody.contains('deleteLocalDraftFolder'),
+          isFalse,
+          reason: 'discardSellDraftById must not call deleteLocalDraftFolder',
+        );
+      },
+    );
   });
 }

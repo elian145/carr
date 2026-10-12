@@ -8,7 +8,6 @@ import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
-import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 
 const String kSellDraftArchiveKey = 'legacy_sell_draft_archive_v1';
@@ -181,6 +180,13 @@ int sellDraftCardPrimaryImageIndex(
 /// [draftId] (so finishing a background submission for one draft can never
 /// wipe a *different* draft the user is actively editing in the
 /// foreground) and always removes any matching archive entry.
+///
+/// Does **not** delete `sell_draft_media/<draftId>/`. Submission calls this
+/// immediately after listing create so My Listings no longer shows a draft,
+/// but upload/retry/owner-optimistic fallback still read those local files
+/// until [OwnerOptimisticMediaCleanup] (or empty-draft auto-delete) releases
+/// them. Deleting the folder here caused PathNotFoundException mid-upload
+/// (Codemagic ios-testflight / e2a4693 regression).
 Future<void> discardSellDraftById(String draftId) async {
   final id = draftId.trim();
   if (id.isEmpty) return;
@@ -213,8 +219,6 @@ Future<void> discardSellDraftById(String draftId) async {
         encodeSellDraftArchive(archive),
       );
     }
-    // Best-effort local media cleanup for this draft only.
-    await SellDraftMediaPersistence.deleteLocalDraftFolder(id);
   } catch (e, st) {
     logNonFatal(e, st);
   }
