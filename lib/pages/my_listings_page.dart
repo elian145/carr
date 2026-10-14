@@ -298,6 +298,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
       // filter by an active pending-submission record below (see
       // `SellDraftGatePage._loadDrafts` for the full explanation) rather
       // than relying solely on resume timing to keep this list correct.
+      await SellDraftMediaPersistence.ensureDocumentsPathCached();
       final resumed = await SellPendingMediaResume.tryResume();
       final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();

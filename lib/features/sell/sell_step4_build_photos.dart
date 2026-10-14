@@ -87,12 +87,18 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                       final isHeicPreviewPending =
                           ListingImageMedia.previewSource(image) == null &&
                           _heicPreviewPending.contains(keyStr);
+                      final isMissingLocal =
+                          ListingImageMedia.isLocalMissing(image);
                       final isPrimary = index == _primaryImageIndex;
                       return Stack(
                         key: ValueKey(keyStr),
                         children: [
                           GestureDetector(
                             onTap: () {
+                              if (ListingImageMedia.isLocalMissing(image)) {
+                                unawaited(_pickImages());
+                                return;
+                              }
                               Navigator.of(context).push(
                                 AppPageRoute(
                                   builder: (_) => ListingPreviewGalleryPage(
@@ -121,7 +127,9 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
                                 ),
                               ),
                               clipBehavior: Clip.antiAlias,
-                              child: isHeicPreviewPending
+                              child: isMissingLocal
+                                  ? _missingDraftPhotoReplaceTile()
+                                  : isHeicPreviewPending
                                   ? Container(
                                       color: Colors.grey.shade200,
                                       alignment: Alignment.center,
@@ -303,5 +311,38 @@ mixin _SellStep4BuildPhotos on _SellStep4BuildIntro {
         ),
       ),
     ];
+  }
+
+  Widget _missingDraftPhotoReplaceTile() {
+    final loc = AppLocalizations.of(context)!;
+    return Container(
+      color: Colors.grey.shade200,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.add_a_photo_outlined,
+            color: AppColors.brandOrange,
+            size: 28,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              loc.replacePhoto,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

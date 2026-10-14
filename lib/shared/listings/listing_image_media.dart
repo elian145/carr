@@ -68,6 +68,7 @@ abstract final class ListingImageMedia {
     bool preserveFocus = true,
     String? previewSource,
     String? uiMediaId,
+    bool? localMissing,
   }) {
     final existing = item is Map
         ? Map<String, dynamic>.from(
@@ -128,7 +129,20 @@ abstract final class ListingImageMedia {
         existing['_ui_media_id'] = trimmed;
       }
     }
+    if (localMissing == true) {
+      existing['local_missing'] = true;
+    } else if (localMissing == false) {
+      existing.remove('local_missing');
+    }
     return existing;
+  }
+
+  /// Durable draft photo whose file is gone (stale iOS sandbox path, or
+  /// a listing_orig that never survived an app-container change). Kept in
+  /// UI as a replace-photo tile; [localFile] is null so blur/upload skip it.
+  static bool isLocalMissing(dynamic item) {
+    if (item is! Map) return false;
+    return item['local_missing'] == true;
   }
 
   /// See [map]'s `uiMediaId` doc comment above. `null` for anything that
@@ -176,6 +190,7 @@ abstract final class ListingImageMedia {
   }
 
   static XFile? localFile(dynamic item) {
+    if (isLocalMissing(item)) return null;
     if (item is XFile) return item;
     final raw = source(item);
     if (raw.isEmpty ||

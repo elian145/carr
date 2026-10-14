@@ -4,13 +4,16 @@
 // once its own item is confirmed remote-display-ready on THIS device,
 // never merely because the backend has finished. Covers the exact 8
 // scenarios from the audit spec (numbered below to match).
+import 'dart:async';
 import 'dart:io';
 
 import 'package:car_listing_app/shared/listings/owner_media_overlay.dart';
 import 'package:car_listing_app/shared/listings/owner_optimistic_media_cleanup.dart';
 import 'package:car_listing_app/shared/prefs/owner_optimistic_media_prefs.dart';
 import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
+import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,7 +39,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes();
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     try {
       tempDir.deleteSync(recursive: true);
     } catch (_) {}
@@ -209,6 +214,7 @@ void main() {
         );
       }
 
+      await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
       expect(
         await draftDir.exists(),
         isFalse,
@@ -276,6 +282,104 @@ void main() {
         listingId: listingId,
         clientMediaId: 'cmid_0',
       );
+      expect(await OwnerOptimisticMediaPrefs.load(listingId), isNull);
+    },
+  );
+
+  test(
+    'cleanup uses lease-safe delete: folder survives while a read lease '
+    'is held, new leases are refused, then folder is removed',
+    () async {
+      const draftId = 'draft_cleanup_lease';
+      final draftDir = await SellDraftMediaPersistence.draftDirectory(draftId);
+      final marker = File(p.join(draftDir.path, 'listing_orig_hold.jpg'))
+        ..writeAsBytesSync(const [0xFF, 0xD8, 0xFF, 0xD9]);
+
+      final seeded = await seedRecord(count: 1, draftId: draftId);
+      final release = Completer<void>();
+      final held = Completer<void>();
+      final lease = SellDraftMediaPersistence.withLocalMediaLeases(
+        [marker.path],
+        () async {
+          held.complete();
+          await release.future;
+          return true;
+        },
+      );
+      await held.future;
+
+      await OwnerOptimisticMediaCleanup.markRemoteDisplayReadyAndCleanup(
+        listingId: listingId,
+        clientMediaId: seeded.items.single.clientMediaId,
+      );
+
+      expect(await marker.exists(), isTrue);
+      expect(SellDraftMediaPersistence.debugFolderDeleteRequested(draftId), isTrue);
+      await expectLater(
+        SellDraftMediaPersistence.withLocalMediaLeases(
+          [marker.path],
+          () async => true,
+        ),
+        throwsA(
+          isA<StateError>().having(
+            (e) => e.message,
+            'message',
+            contains('refusing media lease'),
+          ),
+        ),
+      );
+
+      release.complete();
+      await lease;
+      await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+      expect(await draftDir.exists(), isFalse);
+      expect(SellDraftMediaPersistence.isDraftMediaTombstoned(draftId), isTrue);
+    },
+  );
+
+  test(
+    'cleanup skips folder delete while a retryable submission still needs '
+    'the media, then deletes after the pending record is gone',
+    () async {
+      const draftId = 'draft_cleanup_pending';
+      final draftDir = await SellDraftMediaPersistence.draftDirectory(draftId);
+      File(p.join(draftDir.path, 'listing_orig_keep.jpg'))
+          .writeAsBytesSync(const [1, 2, 3]);
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.retryable,
+          carData: const {'brand': 'toyota'},
+          idempotencyKey: 'sell-create-$draftId',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final seeded = await seedRecord(count: 1, draftId: draftId);
+      await OwnerOptimisticMediaCleanup.markRemoteDisplayReadyAndCleanup(
+        listingId: listingId,
+        clientMediaId: seeded.items.single.clientMediaId,
+      );
+      await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+
+      expect(await draftDir.exists(), isTrue);
+      expect(SellDraftMediaPersistence.isDraftMediaTombstoned(draftId), isFalse);
+      final kept = await OwnerOptimisticMediaPrefs.load(listingId);
+      expect(kept, isNotNull);
+      expect(kept!.allRemoteDisplayReady, isTrue);
+
+      await SellSubmissionStatePrefs.remove(draftId);
+      await OwnerOptimisticMediaCleanup.snapshotAtSubmissionCompleteAndMaybeFinalize(
+        listingId: listingId,
+        freshItems: kept.items,
+        draftId: draftId,
+      );
+      await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+
+      expect(await draftDir.exists(), isFalse);
       expect(await OwnerOptimisticMediaPrefs.load(listingId), isNull);
     },
   );

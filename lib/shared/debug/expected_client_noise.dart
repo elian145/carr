@@ -15,6 +15,7 @@ bool isExpectedClientNoise(Object error) {
   if (isListingImageNotFoundError(error)) return true;
   if (isUnparseableImageUrlError(error)) return true;
   if (isStaleHttpClientError(error)) return true;
+  if (isExpectedMissingDraftMediaError(error)) return true;
   return false;
 }
 
@@ -58,6 +59,22 @@ bool isUnparseableImageUrlError(Object error) {
   final lower = error.toString().toLowerCase();
   return lower.contains('scheme not starting with alphabetic') ||
       (lower.contains('formatexception') && lower.contains('illegal scheme'));
+}
+
+/// Expected ENOENT for old-draft / discarded `sell_draft_media` files
+/// (stale iOS container UUID, or a listing_orig already cleaned up).
+/// Unrelated PathNotFound errors are NOT dropped.
+bool isExpectedMissingDraftMediaError(Object error) {
+  final text = error.toString();
+  final lower = text.toLowerCase();
+  final isEnoent = lower.contains('pathnotfound') ||
+      lower.contains('no such file or directory') ||
+      lower.contains('cannot retrieve length of file') ||
+      lower.contains('cannot find the path specified');
+  if (!isEnoent) return false;
+  return lower.contains('sell_draft_media') ||
+      lower.contains('listing_orig_') ||
+      lower.contains('/containers/data/application/');
 }
 
 /// Dart/iOS reused a connection the OS already closed (app backgrounded).

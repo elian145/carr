@@ -69,6 +69,7 @@ mixin _SellStep4Logic on _SellStep4Fields {
         parentState.carData.remove('primary_image_index');
       }
     } else {
+      await SellDraftMediaPersistence.ensureDocumentsPathCached();
       final parentImages = parentState?.carData['original_images'] ??
           parentState?.carData['images'];
       final parentBlurred = parentState?.carData['blurred_images'];
@@ -374,6 +375,15 @@ mixin _SellStep4Logic on _SellStep4Fields {
     final gen = ++_mediaSyncGeneration;
     final parentState = context.findAncestorStateOfType<_SellCarPageState>();
     if (parentState == null) return;
+    // Empty-draft discard invalidates persist and tombstones the folder;
+    // abort before durable I/O so stale sync cannot probe deleted paths.
+    if (LegacySellDraftPrefs.suppressPersist ||
+        parentState._skipDraftPersistOnDispose ||
+        SellDraftMediaPersistence.isDraftMediaTombstoned(
+          parentState._currentDraftId,
+        )) {
+      return;
+    }
     final draftId = parentState._currentDraftId;
     // Latent concurrency fix, surfaced by the same overlapping-calls
     // scenario this generation guard exists for: `_selectedImages`/
@@ -392,16 +402,34 @@ mixin _SellStep4Logic on _SellStep4Fields {
       draftId: draftId,
       namePrefix: 'listing_orig',
     );
+    if (gen != _mediaSyncGeneration ||
+        LegacySellDraftPrefs.suppressPersist ||
+        parentState._skipDraftPersistOnDispose ||
+        SellDraftMediaPersistence.isDraftMediaTombstoned(draftId)) {
+      return;
+    }
     final blurred = await SellDraftMediaPersistence.persistDynamicMediaList(
       List<dynamic>.of(_blurredImages),
       draftId: draftId,
       namePrefix: 'listing_blur',
     );
+    if (gen != _mediaSyncGeneration ||
+        LegacySellDraftPrefs.suppressPersist ||
+        parentState._skipDraftPersistOnDispose ||
+        SellDraftMediaPersistence.isDraftMediaTombstoned(draftId)) {
+      return;
+    }
     final damage = await SellDraftMediaPersistence.persistDynamicMediaList(
       List<dynamic>.of(_damageImages),
       draftId: draftId,
       namePrefix: 'damage',
     );
+    if (gen != _mediaSyncGeneration ||
+        LegacySellDraftPrefs.suppressPersist ||
+        parentState._skipDraftPersistOnDispose ||
+        SellDraftMediaPersistence.isDraftMediaTombstoned(draftId)) {
+      return;
+    }
     final videos = await SellDraftMediaPersistence.persistDynamicMediaList(
       List<XFile>.of(_selectedVideos),
       draftId: draftId,

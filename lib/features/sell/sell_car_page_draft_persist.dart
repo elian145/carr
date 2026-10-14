@@ -360,6 +360,8 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         return;
       }
       if (!mounted) return;
+      await SellDraftMediaPersistence.ensureDocumentsPathCached();
+      if (!mounted) return;
       setState(() {
         final migratedStep = migrateSellWizardStep(restoredStep, restoredCarData);
         currentStep = migratedStep;
@@ -425,6 +427,16 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     } catch (e, st) { logNonFatal(e, st); }
   }
 
+  Future<void> _relocateRestoredDraftMedia() async {
+    await SellDraftMediaPersistence.ensureDocumentsPathCached();
+    if (!mounted) return;
+    final remapped = _resolveCarDataMedia(carData);
+    if (!mounted) return;
+    setState(() {
+      _mergePersistedCarData(remapped);
+    });
+  }
+
   Map<String, dynamic> _resolveCarDataMedia(Map<String, dynamic> data) {
     final copy = Map<String, dynamic>.from(data);
     for (final key in [
@@ -475,6 +487,7 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
     _hasDraftSnapshot = true;
     _draftPreviewStep = currentStep;
     _draftPreviewCarData = carData;
+    unawaited(_relocateRestoredDraftMedia());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _pageController.hasClients) {
         _pageController.jumpToPage(currentStep);
@@ -515,9 +528,13 @@ mixin _SellCarPageDraftPersist on _SellCarPageFields {
         return;
       }
       if (!mounted) return;
+      await SellDraftMediaPersistence.ensureDocumentsPathCached();
+      if (!mounted) return;
       setState(() {
         _hasDraftSnapshot = true;
-        final previewData = Map<String, dynamic>.from(restoredCarData);
+        final previewData = _resolveCarDataMedia(
+          Map<String, dynamic>.from(restoredCarData),
+        );
         _draftPreviewStep = migrateSellWizardStep(restoredStep, previewData);
         _draftPreviewCarData = previewData;
       });

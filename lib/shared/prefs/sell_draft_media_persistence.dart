@@ -58,15 +58,82 @@ class SellDraftMediaPersistence {
 
   static Future<Directory> draftDirectory(String draftId) => _draftDir(draftId);
 
+  /// Last known application Documents path. Used to rewrite stale iOS
+  /// container UUIDs in saved draft media without an extra await on every
+  /// sync resolve. Populated by [_draftDir] / [ensureDocumentsPathCached].
+  static String? _cachedDocsPath;
+
   static Future<Directory> _draftDir(String draftId) async {
     final docs = await getApplicationDocumentsDirectory();
+    _cachedDocsPath = docs.path;
     final dir = Directory(
       p.join(docs.path, 'sell_draft_media', _safeDraftId(draftId)),
     );
+    // Never recreate a folder that was intentionally tombstoned — stale
+    // persist/blur must not reopen deleted draft media.
+    if (_folderTombstoned.contains(_safeDraftId(draftId))) {
+      return dir;
+    }
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     return dir;
+  }
+
+  /// Warms [_cachedDocsPath] so [resolveDynamicMediaList] can remap stale
+  /// iOS sandbox paths synchronously when an old draft is reopened.
+  static Future<void> ensureDocumentsPathCached() async {
+    if (_cachedDocsPath != null && _cachedDocsPath!.trim().isNotEmpty) {
+      return;
+    }
+    final docs = await getApplicationDocumentsDirectory();
+    _cachedDocsPath = docs.path;
+  }
+
+  /// Relative `sell_draft_media/<draftId>/<file>` suffix, or null.
+  static String? sellDraftMediaRelativeSuffix(String raw) {
+    final norm = p.normalize(_localPath(raw)).replaceAll(r'\', '/');
+    final marker = 'sell_draft_media/';
+    final idx = norm.toLowerCase().indexOf(marker);
+    if (idx < 0) return null;
+    final suffix = norm.substring(idx);
+    if (suffix.contains('..')) return null;
+    return suffix;
+  }
+
+  /// If [raw] is a stale absolute path (old iOS container UUID) but the
+  /// same file still exists under the current Documents directory, return
+  /// the current path. Otherwise null.
+  static String? relocateStaleDraftMediaPath(String raw) {
+    final suffix = sellDraftMediaRelativeSuffix(raw);
+    if (suffix == null) return null;
+    final docs = _cachedDocsPath;
+    if (docs == null || docs.trim().isEmpty) return null;
+    final candidate = p.normalize(p.join(docs, suffix));
+    final current = p.normalize(_localPath(raw));
+    if (p.equals(current, candidate)) {
+      return File(candidate).existsSync() ? candidate : null;
+    }
+    if (File(candidate).existsSync()) return candidate;
+    return null;
+  }
+
+  static bool _isIosContainerPath(String local) {
+    final n = local.replaceAll(r'\', '/');
+    return n.contains('/Containers/Data/Application/');
+  }
+
+  /// True when [raw] is a durable draft / iOS-container file that is gone
+  /// even after remapping onto the current Documents directory.
+  static bool isConfirmedMissingDurableLocal(String raw) {
+    final local = _localPath(raw);
+    if (local.isEmpty || local.startsWith('content://')) return false;
+    if (!_isUnderSellDraftMedia(local) && !_isIosContainerPath(local)) {
+      return false;
+    }
+    final relocated = relocateStaleDraftMediaPath(local);
+    if (relocated != null && File(relocated).existsSync()) return false;
+    return !File(local).existsSync();
   }
 
   /// Deletes only this draft's local `sell_draft_media/<draftId>/` folder.
@@ -87,11 +154,17 @@ class SellDraftMediaPersistence {
   /// mid-upload. A later empty-draft / optimistic-media cleanup can remove
   /// leftovers; pending-submission paths never call this while a durable
   /// submission record still exists.
+  ///
+  /// Tombstones the draft id immediately so stale blur/persist/multipart
+  /// work cannot acquire a NEW lease (or re-probe deleted `listing_orig_*`
+  /// paths) after intentional cleanup — the prior lease gate alone only
+  /// covered readers that already held a lease before delete.
   static Future<void> deleteLocalDraftFolder(String draftId) async {
     final id = draftId.trim();
     if (id.isEmpty) return;
     final key = _safeDraftId(id);
     _folderDeleteRequested.add(key);
+    _folderTombstoned.add(key);
     if (_pendingFolderDeletes.containsKey(key)) return;
     late final Future<void> future;
     future = _deleteLocalDraftFolderBody(id).whenComplete(() {
@@ -114,6 +187,10 @@ class SellDraftMediaPersistence {
   /// this draft so a reader cannot sneak in during `getApplicationDocuments`
   /// / `Directory.delete` awaits.
   static final Set<String> _folderDeleteArmed = {};
+  /// Sticky after [deleteLocalDraftFolder]: draft media is intentionally
+  /// gone. Survives physical delete so a late `MultipartFile.fromPath` /
+  /// `_persistLocalPath` cannot treat obsolete paths as live sources.
+  static final Set<String> _folderTombstoned = {};
 
   static Future<void> _deleteLocalDraftFolderBody(String id) async {
     final key = _safeDraftId(id);
@@ -140,6 +217,8 @@ class SellDraftMediaPersistence {
             if (await dir.exists()) {
               await dir.delete(recursive: true);
             }
+            // Keep [_folderTombstoned] — stale async work may still hold
+            // obsolete listing_orig paths after the folder is gone.
             _folderDeleteRequested.remove(key);
             deleted = true;
           } finally {
@@ -154,6 +233,14 @@ class SellDraftMediaPersistence {
     } catch (e, st) {
       logNonFatal(e, st, 'SellDraftMediaPersistence._deleteLocalDraftFolderBody');
     }
+  }
+
+  /// True when [deleteLocalDraftFolder] has marked this draft's local media
+  /// for intentional removal (including after physical delete completed).
+  static bool isDraftMediaTombstoned(String draftId) {
+    final id = draftId.trim();
+    if (id.isEmpty) return false;
+    return _folderTombstoned.contains(_safeDraftId(id));
   }
 
   /// Awaits in-flight [deleteLocalDraftFolder] jobs (test helper).
@@ -178,6 +265,19 @@ class SellDraftMediaPersistence {
   @visibleForTesting
   static bool debugFolderDeleteRequested(String draftId) =>
       _folderDeleteRequested.contains(_safeDraftId(draftId));
+
+  /// Clears in-memory delete/lease bookkeeping between tests.
+  @visibleForTesting
+  static void debugResetMediaLifecycleForTest() {
+    _folderDeleteRequested.clear();
+    _folderDeleteArmed.clear();
+    _folderTombstoned.clear();
+    _readLeases.clear();
+    _leaseIdle.clear();
+    _pendingFolderDeletes.clear();
+    _persistChains.clear();
+    _cachedDocsPath = null;
+  }
 
   static bool _isInDraftDir(String local, String draftId) {
     final norm = p.normalize(_localPath(local));
@@ -239,9 +339,9 @@ class SellDraftMediaPersistence {
   /// Holds a read lease for every distinct draft id in [localPaths] for the
   /// duration of [action]. No-op when no path is under `sell_draft_media/`.
   ///
-  /// Refuses new leases while physical folder deletion is armed (the short
-  /// window after leases are confirmed idle and before `Directory.delete`
-  /// finishes) so a late reader cannot race the delete awaits.
+  /// Refuses new leases when folder deletion was requested, is armed, or
+  /// the draft is tombstoned (delete already completed) so a late blur /
+  /// multipart reader cannot `fromPath` intentionally deleted files.
   static Future<T> withLocalMediaLeases<T>(
     Iterable<String> localPaths,
     Future<T> Function() action,
@@ -253,7 +353,9 @@ class SellDraftMediaPersistence {
     }
     if (ids.isEmpty) return action();
     for (final id in ids) {
-      if (_folderDeleteArmed.contains(id)) {
+      if (_folderTombstoned.contains(id) ||
+          _folderDeleteRequested.contains(id) ||
+          _folderDeleteArmed.contains(id)) {
         throw StateError(
           'SellDraftMediaPersistence: refusing media lease for $id '
           'while folder delete is in progress',
@@ -367,15 +469,25 @@ class SellDraftMediaPersistence {
     if (local.isEmpty) return null;
     if (isRetainedMediaReference(local)) return local;
 
-    if (_isInDraftDir(local, draftId)) {
-      if (await File(local).exists()) return local;
-      try {
-        await XFile(local).length();
-        return local;
-      } catch (e, st) {
-        logNonFatal(e, st);
-        return null;
-      }
+    final safeId = _safeDraftId(draftId);
+    // Intentional empty-draft / discard cleanup: do not recreate the folder
+    // or probe deleted listing_orig paths (PathNotFound → Sentry spam).
+    if (_folderTombstoned.contains(safeId) ||
+        _folderDeleteRequested.contains(safeId)) {
+      return null;
+    }
+
+    await ensureDocumentsPathCached();
+    final relocated = relocateStaleDraftMediaPath(local);
+    final effective =
+        (relocated != null && relocated.isNotEmpty) ? relocated : local;
+
+    if (_isInDraftDir(effective, draftId) || _isInDraftDir(local, draftId)) {
+      if (await File(effective).exists()) return effective;
+      // Genuinely missing durable draft file (corrupt/old draft, or a
+      // sibling deleted this path). Drop quietly — callers already skip
+      // null; re-probing via XFile.length only produces Sentry noise.
+      return null;
     }
 
     final dir = await _draftDir(draftId);
@@ -411,6 +523,13 @@ class SellDraftMediaPersistence {
     for (final item in items) {
       final raw = ListingImageMedia.source(item);
       if (raw.isEmpty) continue;
+      if (ListingImageMedia.isLocalMissing(item)) {
+        final id = canonicalMediaIdentity(item);
+        if (id.isNotEmpty && seen.add(id)) {
+          out.add(ListingImageMedia.map(item, source: raw, localMissing: true));
+        }
+        continue;
+      }
       if (isRetainedMediaReference(raw)) {
         final id = canonicalMediaIdentity(raw);
         if (seen.add(id)) {
@@ -625,18 +744,36 @@ class SellDraftMediaPersistence {
       dynamic resolved;
       if (isRetainedMediaReference(raw)) {
         resolved = item is Map ? ListingImageMedia.map(item, source: raw) : raw;
+      } else if (ListingImageMedia.isLocalMissing(item)) {
+        resolved = ListingImageMedia.map(item, source: raw, localMissing: true);
       } else {
         final local = _localPath(raw);
-        if (File(local).existsSync()) {
+        final relocated = relocateStaleDraftMediaPath(local);
+        final candidate =
+            (relocated != null && relocated.isNotEmpty) ? relocated : local;
+        if (File(candidate).existsSync()) {
+          resolved = item is Map
+              ? ListingImageMedia.map(
+                  item,
+                  source: candidate,
+                  localMissing: false,
+                )
+              : XFile(candidate);
+        } else if (local.startsWith('content://')) {
+          // Android picker/cache URIs often fail File.existsSync even when
+          // XFile can still read them. Keep them so review/upload can proceed.
           resolved = item is Map
               ? ListingImageMedia.map(item, source: local)
-              : XFile(local);
-        } else if (local.startsWith('content://') ||
-            includeMissingLocalPaths ||
-            _isUnderSellDraftMedia(local) ||
-            p.isAbsolute(local)) {
-          // Android picker/cache paths often fail File.existsSync even when
-          // XFile can still read them. Keep them so review/upload can proceed.
+              : (item is XFile ? item : XFile(local));
+        } else if (_isUnderSellDraftMedia(local) || _isIosContainerPath(local)) {
+          // Stale iOS sandbox / missing durable draft file — keep a
+          // replace-photo slot, never hand the dead path to blur/upload.
+          resolved = ListingImageMedia.map(
+            item,
+            source: local,
+            localMissing: true,
+          );
+        } else if (includeMissingLocalPaths || p.isAbsolute(local)) {
           resolved = item is Map
               ? ListingImageMedia.map(item, source: local)
               : (item is XFile ? item : XFile(local));

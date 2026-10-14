@@ -21,6 +21,7 @@ import 'dart:io';
 import '../debug/app_log.dart';
 import '../prefs/owner_optimistic_media_prefs.dart';
 import '../prefs/sell_draft_media_persistence.dart';
+import '../prefs/sell_submission_state_prefs.dart';
 import 'owner_media_overlay.dart';
 
 abstract final class OwnerOptimisticMediaCleanup {
@@ -139,19 +140,32 @@ abstract final class OwnerOptimisticMediaCleanup {
   /// catches any untracked sibling file (e.g. a blur-choice preview, a
   /// damage-disclosure photo) this record never had its own item for.
   /// A no-op if [OwnerOptimisticMediaRecord.draftId] is unknown.
+  ///
+  /// Uses [SellDraftMediaPersistence.deleteLocalDraftFolder] (tombstone +
+  /// lease wait, non-blocking) so an in-flight blur/upload cannot lose
+  /// files, and a stale job cannot reopen deleted media. Skips while a
+  /// pending/retryable/needs-attention submission still needs the folder.
   static Future<void> _deleteDraftDirectoryIfKnown(
     OwnerOptimisticMediaRecord record,
   ) async {
     final draftId = record.draftId;
     if (draftId == null || draftId.trim().isEmpty) return;
     try {
-      final dir = await SellDraftMediaPersistence.draftDirectory(draftId);
-      if (await dir.exists()) {
-        await dir.delete(recursive: true);
+      final pending = await SellSubmissionStatePrefs.load(draftId.trim());
+      if (pending != null &&
+          pending.status != SellSubmissionStatus.completed) {
+        return;
       }
+      await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
     } catch (e, st) {
       logNonFatal(e, st);
     }
+  }
+
+  static bool _folderCleanupBlocked(OwnerOptimisticMediaRecord record) {
+    final draftId = record.draftId?.trim() ?? '';
+    if (draftId.isEmpty) return false;
+    return !SellDraftMediaPersistence.isDraftMediaTombstoned(draftId);
   }
 
   /// Seeds a `car_details_page_fields.dart`-style in-memory
@@ -239,7 +253,16 @@ abstract final class OwnerOptimisticMediaCleanup {
         final allReady = updatedItems.every((i) => i.remoteDisplayReady);
         if (allReady) {
           await _deleteDraftDirectoryIfKnown(record);
-          await OwnerOptimisticMediaPrefs.remove(listingId);
+          if (_folderCleanupBlocked(record)) {
+            await OwnerOptimisticMediaPrefs.upsert(
+              record.copyWith(
+                items: updatedItems,
+                updatedAt: DateTime.now().millisecondsSinceEpoch,
+              ),
+            );
+          } else {
+            await OwnerOptimisticMediaPrefs.remove(listingId);
+          }
         } else {
           await OwnerOptimisticMediaPrefs.upsert(
             record.copyWith(
@@ -286,7 +309,9 @@ abstract final class OwnerOptimisticMediaCleanup {
       if (record == null || record.isEmpty) return;
       if (record.allRemoteDisplayReady) {
         await _deleteDraftDirectoryIfKnown(record);
-        await OwnerOptimisticMediaPrefs.remove(listingId);
+        if (!_folderCleanupBlocked(record)) {
+          await OwnerOptimisticMediaPrefs.remove(listingId);
+        }
       }
     } catch (e, st) {
       logNonFatal(e, st);

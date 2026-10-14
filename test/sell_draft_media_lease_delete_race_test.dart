@@ -16,6 +16,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 
 import 'package:car_listing_app/services/ai_service.dart';
 import 'package:car_listing_app/services/api_service.dart';
+import 'package:car_listing_app/shared/debug/app_log.dart';
 import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
 
 class _FakeDocsPathProvider extends PathProviderPlatform {
@@ -50,7 +51,9 @@ void main() {
 
   tearDown(() async {
     SellDraftMediaPersistence.debugBeforeCopyOverride = null;
+    debugLogNonFatalOverride = null;
     await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes();
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     PathProviderPlatform.instance = previousProvider;
     SellDraftMediaPersistence.deleteLeaseWaitTimeout =
         const Duration(seconds: 90);
@@ -395,5 +398,222 @@ void main() {
       );
       expect(SellDraftMediaPersistence.debugReadLeaseCount(draftId), 0);
     });
+  });
+
+  group('I/J/K: post-delete stale async (Sentry PathNotFound race)', () {
+    setUp(() async {
+      await ApiService.setTokens(
+        accessToken: 'lease_test_token',
+        refreshToken: 'lease_test_refresh',
+      );
+    });
+
+    test(
+      'I: refuses new media lease after folder delete completed '
+      '(stale blur must not fromPath deleted listing_orig)',
+      () async {
+        const draftId = '1791818348089061';
+        final file = await markerInDraft(
+          draftId,
+          name: 'listing_orig_99529487.png',
+        );
+        final path = file.path;
+
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+        expect(await File(path).exists(), isFalse);
+
+        // Stale background blur / multipart prep that still holds the old
+        // path must NOT acquire a lease after intentional deletion — that
+        // is the window where MultipartFile.fromPath hits PathNotFound.
+        await expectLater(
+          SellDraftMediaPersistence.withLocalMediaLeases(
+            [path],
+            () async => true,
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('refusing media lease'),
+            ),
+          ),
+        );
+        expect(SellDraftMediaPersistence.debugReadLeaseCount(draftId), 0);
+      },
+    );
+
+    test(
+      'J: persist of deleted listing_orig returns empty without Sentry',
+      () async {
+        final logged = <Object>[];
+        debugLogNonFatalOverride = (error, stackTrace, context) {
+          logged.add(error);
+        };
+
+        const draftId = 'persist_after_delete_draft';
+        final file = await markerInDraft(
+          draftId,
+          name: 'listing_orig_280574444.jpg',
+        );
+        final path = file.path;
+
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+
+        final out = await SellDraftMediaPersistence.persistDynamicMediaList(
+          [path],
+          draftId: draftId,
+          namePrefix: 'listing_orig',
+        );
+        expect(out, isEmpty);
+        expect(
+          logged,
+          isEmpty,
+          reason:
+              'PathNotFound / Cannot retrieve length of file must not be '
+              'reported to Sentry for intentionally deleted draft media',
+        );
+      },
+    );
+
+    test(
+      'K: delete-requested refuses NEW leases while an older lease is held',
+      () async {
+        const draftId = 'delete_requested_blocks_new_lease';
+        final file = await markerInDraft(
+          draftId,
+          name: 'listing_orig_hold.png',
+        );
+
+        final release = Completer<void>();
+        final held = Completer<void>();
+        final leaseFuture = SellDraftMediaPersistence.withLocalMediaLeases(
+          [file.path],
+          () async {
+            held.complete();
+            await release.future;
+            return true;
+          },
+        );
+        await held.future;
+
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
+        expect(SellDraftMediaPersistence.debugFolderDeleteRequested(draftId), isTrue);
+
+        await expectLater(
+          SellDraftMediaPersistence.withLocalMediaLeases(
+            [file.path],
+            () async => true,
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('refusing media lease'),
+            ),
+          ),
+        );
+
+        release.complete();
+        await leaseFuture;
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+        expect(await file.exists(), isFalse);
+      },
+    );
+
+    test(
+      'L: enqueueCarImagesAsync after folder delete returns null '
+      '(no multipart PathNotFound Sentry)',
+      () async {
+        final logged = <Object>[];
+        debugLogNonFatalOverride = (error, stackTrace, context) {
+          logged.add(error);
+        };
+
+        const draftId = 'enqueue_after_delete';
+        final file = await markerInDraft(
+          draftId,
+          name: 'listing_orig_99529487.png',
+        );
+        final path = file.path;
+
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+
+        ApiService.testHttpClient = MockClient((request) async {
+          fail('HTTP must not run after draft media was deleted');
+        });
+
+        final ids = await AiService.enqueueCarImagesAsync([XFile(path)]);
+        expect(ids, isNull);
+        expect(
+          logged.where(
+            (e) =>
+                e.toString().contains('PathNotFound') ||
+                e.toString().contains('No such file') ||
+                e.toString().contains('Cannot retrieve length'),
+          ),
+          isEmpty,
+        );
+        expect(SellDraftMediaPersistence.debugReadLeaseCount(draftId), 0);
+      },
+    );
+
+    test(
+      'M: realistic ordering — delayed stale blur after rapid delete',
+      () async {
+        final logged = <Object>[];
+        debugLogNonFatalOverride = (error, stackTrace, context) {
+          logged.add(error);
+        };
+
+        const draftId = 'rapid_multi_photo_race';
+        final a = await markerInDraft(
+          draftId,
+          name: 'listing_orig_99529487.png',
+        );
+        final b = await markerInDraft(
+          draftId,
+          name: 'listing_orig_280574444.jpg',
+        );
+
+        // Stale blur: captured paths, then yields (simulates phone-verify /
+        // scheduling gap) before acquiring the lease + fromPath.
+        final staleBlur = () async {
+          await Future<void>.delayed(const Duration(milliseconds: 30));
+          return AiService.enqueueCarImagesAsync([
+            XFile(a.path),
+            XFile(b.path),
+          ]);
+        }();
+
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await SellDraftMediaPersistence.deleteLocalDraftFolder(draftId);
+        await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
+
+        // Concurrent stale persist (in-flight _syncMediaDraftToParent).
+        final stalePersist = SellDraftMediaPersistence.persistDynamicMediaList(
+          [a.path, b.path],
+          draftId: draftId,
+          namePrefix: 'listing_orig',
+        );
+
+        final ids = await staleBlur;
+        final persisted = await stalePersist;
+
+        expect(ids, isNull);
+        expect(persisted, isEmpty);
+        expect(
+          logged.where(
+            (e) =>
+                e.toString().contains('PathNotFound') ||
+                e.toString().contains('No such file') ||
+                e.toString().contains('Cannot retrieve length'),
+          ),
+          isEmpty,
+        );
+      },
+    );
   });
 }

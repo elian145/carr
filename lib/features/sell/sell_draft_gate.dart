@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../services/feature_flags.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
+import '../../shared/prefs/sell_draft_media_persistence.dart';
 import '../../shared/prefs/sell_draft_step.dart';
 import '../../theme_provider.dart';
 import 'pending_sell_submission_service.dart';
@@ -87,6 +88,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
       // (below) so a still-in-flight resume never causes a flash of the
       // wrong UI.
       appLog('[SELL RESUME] draft gate: loading, triggering resume check');
+      await SellDraftMediaPersistence.ensureDocumentsPathCached();
       unawaited(PendingSellSubmissionService.instance.resumeAll());
 
       final sp = await SharedPreferences.getInstance();

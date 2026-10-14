@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_image_media.dart';
+import '../../shared/prefs/sell_draft_media_persistence.dart';
 
 /// Cached [ImageProvider] for remote listing / media URLs (avatars, covers, precache).
 ImageProvider listingCachedNetworkImageProvider(
@@ -196,6 +197,9 @@ Widget listingNetworkImage(
   }
   final local = ListingImageMedia.localFile(resolved);
   if (local != null) {
+    if (SellDraftMediaPersistence.isConfirmedMissingDurableLocal(local.path)) {
+      return _listingImageErrorShell(errorWidget);
+    }
     return _ListingXFileImage(
       file: local,
       fit: fit,
@@ -206,6 +210,9 @@ Widget listingNetworkImage(
       errorWidget: errorWidget,
       placeholder: placeholder,
     );
+  }
+  if (SellDraftMediaPersistence.isLocalMediaPath(resolved)) {
+    return _listingImageErrorShell(errorWidget);
   }
   return _RetryingListingNetworkImage(
     url: resolved,

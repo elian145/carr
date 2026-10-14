@@ -168,7 +168,7 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     // that still points at a deleted draft photo.
     final images = SellDraftMediaPersistence.resolveDynamicMediaList(
       sellDraftCardRawImages(carData),
-    );
+    ).where((item) => !ListingImageMedia.isLocalMissing(item)).toList();
     final hasPhotos = images.isNotEmpty;
     final isLight = Theme.of(context).brightness == Brightness.light;
     final cardFill = isLight

@@ -65,6 +65,25 @@ void main() {
       expect(isPermanentHttpImageError('SocketException: timed out'), isFalse);
     });
 
+    test('drops expected draft-media ENOENT, not unrelated PathNotFound', () {
+      expect(
+        isExpectedMissingDraftMediaError(
+          'PathNotFoundException: Cannot retrieve length of file, path = '
+          '/var/mobile/Containers/Data/Application/ABC/Documents/'
+          'sell_draft_media/1791/listing_orig_99529487.png '
+          '(OS Error: No such file or directory, errno = 2)',
+        ),
+        isTrue,
+      );
+      expect(
+        isExpectedClientNoise(
+          'FileSystemException: Cannot open file, path = '
+          '/tmp/secrets.json (OS Error: No such file or directory, errno = 2)',
+        ),
+        isFalse,
+      );
+    });
+
     test('drops Uri.parse of local media map leaks', () {
       expect(
         isUnparseableImageUrlError(

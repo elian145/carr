@@ -1304,6 +1304,7 @@ void main() {
         listingId: carId,
         clientMediaId: record!.items.last.clientMediaId,
       );
+      await SellDraftMediaPersistence.debugAwaitPendingFolderDeletes(draftId);
       expect(await draftDir.exists(), isFalse);
       expect(await OwnerOptimisticMediaPrefs.load(carId), isNull);
     },
