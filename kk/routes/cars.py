@@ -1194,6 +1194,32 @@ def create_car():
             return jsonify({"message": str(e)}), 400
         has_expected_media = bool(expected_media)
 
+        # Data-integrity backstop (optional, additive -- old clients simply
+        # never send it): a client that KNOWS the seller selected N>0
+        # media files declares `media_required_count`. An empty
+        # `expected_media` is otherwise indistinguishable from a deliberate
+        # media-less listing and would be published `active` with
+        # media_status "ready" and ZERO images. Refuse it instead; the
+        # client keeps its durable record and surfaces a recoverable state.
+        try:
+            media_required_count = int(raw.get("media_required_count") or 0)
+        except (TypeError, ValueError):
+            media_required_count = 0
+        if media_required_count > 0 and not has_expected_media:
+            return (
+                jsonify(
+                    {
+                        "message": (
+                            "media_required_count is %d but expected_media is empty; "
+                            "refusing to create a listing without its media"
+                            % media_required_count
+                        ),
+                        "code": "expected_media_missing",
+                    }
+                ),
+                400,
+            )
+
         # Clients cannot self-publish past moderation; status is server-controlled.
         # A listing with any expected_media is FORCED pending regardless of
         # LISTING_REQUIRE_APPROVAL -- it must never become active before its

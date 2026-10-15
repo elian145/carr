@@ -116,11 +116,28 @@ class SellSubmissionRecord {
     this.lastErrorRetryable = false,
     this.attempts = 0,
     this.ownerUserId,
+    this.requiredMediaCount = 0,
+    this.expectedMedia,
     Map<String, String>? pendingAsyncImageJobs,
     Map<String, ServerTranscodeVideoState>? serverTranscodeVideos,
   }) : pendingAsyncImageJobs = pendingAsyncImageJobs ?? const <String, String>{},
        serverTranscodeVideos =
            serverTranscodeVideos ?? const <String, ServerTranscodeVideoState>{};
+
+  /// How many local (not-yet-uploaded) photos/videos the user had selected
+  /// when Submit was pressed -- counted from the form data BEFORE any
+  /// durable-copy step could drop an item. A new listing may never be
+  /// created declaring fewer media items than this (see
+  /// `PendingSellSubmissionService._runSubmission`); `0` for records written
+  /// by older builds, which disables that guard (back-compat).
+  final int requiredMediaCount;
+
+  /// The `expected_media` manifest declared to `create_car`, FROZEN
+  /// (persisted before the network call) so every retry/resume/replay of
+  /// the same submission declares and later uploads against exactly the
+  /// same `client_media_id`s. `null` until frozen; legacy records are
+  /// frozen lazily from their carData on first resume.
+  final List<Map<String, String>>? expectedMedia;
 
   final String draftId;
   final SellSubmissionStatus status;
@@ -207,6 +224,13 @@ class SellSubmissionRecord {
     bool clearLastError = false,
     Map<String, String>? pendingAsyncImageJobs,
     Map<String, ServerTranscodeVideoState>? serverTranscodeVideos,
+    String? ownerUserId,
+    int? requiredMediaCount,
+    List<Map<String, String>>? expectedMedia,
+    // Drops the frozen manifest again. ONLY valid when the server
+    // definitively answered the create call with a 4xx (so no listing and
+    // no manifest exist server-side and nothing is bound to the key).
+    bool clearExpectedMedia = false,
   }) {
     return SellSubmissionRecord(
       draftId: draftId,
@@ -230,7 +254,10 @@ class SellSubmissionRecord {
       attempts: attempts ?? this.attempts,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now().millisecondsSinceEpoch,
-      ownerUserId: ownerUserId,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      requiredMediaCount: requiredMediaCount ?? this.requiredMediaCount,
+      expectedMedia:
+          clearExpectedMedia ? null : (expectedMedia ?? this.expectedMedia),
       pendingAsyncImageJobs:
           pendingAsyncImageJobs ?? this.pendingAsyncImageJobs,
       serverTranscodeVideos:
@@ -258,6 +285,8 @@ class SellSubmissionRecord {
         'createdAt': createdAt,
         'updatedAt': updatedAt,
         if (ownerUserId != null) 'ownerUserId': ownerUserId,
+        if (requiredMediaCount > 0) 'requiredMediaCount': requiredMediaCount,
+        if (expectedMedia != null) 'expectedMedia': expectedMedia,
         if (pendingAsyncImageJobs.isNotEmpty)
           'pendingAsyncImageJobs': pendingAsyncImageJobs,
         if (serverTranscodeVideos.isNotEmpty)
@@ -307,6 +336,8 @@ class SellSubmissionRecord {
         ownerUserId: (map['ownerUserId']?.toString().trim().isNotEmpty ?? false)
             ? map['ownerUserId'].toString().trim()
             : null,
+        requiredMediaCount: (map['requiredMediaCount'] as num?)?.toInt() ?? 0,
+        expectedMedia: _expectedMediaFromJson(map['expectedMedia']),
         pendingAsyncImageJobs: _pendingAsyncImageJobsFromJson(
           map['pendingAsyncImageJobs'],
         ),
@@ -319,6 +350,21 @@ class SellSubmissionRecord {
       return null;
     }
   }
+}
+
+/// `null` (not frozen) for anything that is not a list; malformed entries
+/// are skipped rather than failing the whole record.
+List<Map<String, String>>? _expectedMediaFromJson(dynamic raw) {
+  if (raw is! List) return null;
+  final out = <Map<String, String>>[];
+  for (final item in raw) {
+    if (item is! Map) continue;
+    final id = (item['client_media_id'] ?? '').toString().trim();
+    final kind = (item['kind'] ?? '').toString().trim();
+    if (id.isEmpty || kind.isEmpty) continue;
+    out.add(<String, String>{'client_media_id': id, 'kind': kind});
+  }
+  return out;
 }
 
 Map<String, String> _pendingAsyncImageJobsFromJson(dynamic raw) {

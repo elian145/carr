@@ -49,6 +49,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_api_server.dart';
 import 'legacy_test_support.dart';
+import 'support/fake_media_summary.dart';
 
 /// Controls the network side of a single `startBackgroundPlateBlur()` run
 /// with zero real time and zero Timers -- every `GET /api/jobs/<id>` poll
@@ -246,6 +247,8 @@ Future<List<String>> _submitAndCaptureImageBytes({
   var jobIdCounter = 0;
   final jobRelPathByJobId = <String, String>{};
   final carsById = <String, Map<String, dynamic>>{};
+  // Server-side manifest: registered at create, accepted on transfer.
+  final manifest = FakeMediaManifest();
 
   ApiService.testHttpClient = MockClient((request) async {
     final method = request.method.toUpperCase();
@@ -255,6 +258,10 @@ Future<List<String>> _submitAndCaptureImageBytes({
       carIdCounter++;
       final id = 'car_race_$carIdCounter';
       carsById[id] = {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]};
+      manifest.registerCreate(
+        id,
+        json.decode(request.body) as Map<String, dynamic>,
+      );
       return http.Response(
         json.encode({'car': carsById[id]}),
         201,
@@ -266,6 +273,7 @@ Future<List<String>> _submitAndCaptureImageBytes({
     if (method == 'POST' && enqueueMatch != null) {
       final parts = _multipartFieldContents(request, 'images');
       fileContentsCaptured.addAll(parts);
+      manifest.noteUpload(enqueueMatch.group(1)!, 'image');
       final jobIds = <String>[];
       for (final content in parts) {
         jobIdCounter++;
@@ -312,7 +320,7 @@ Future<List<String>> _submitAndCaptureImageBytes({
     final mediaSummaryMatch = RegExp(r'^/api/cars/([^/]+)/media-summary$').firstMatch(path);
     if (method == 'GET' && mediaSummaryMatch != null) {
       return http.Response(
-        json.encode({'media_status': 'ready', 'items': <dynamic>[], 'phase_a_complete': true}),
+        json.encode(await manifest.summary(mediaSummaryMatch.group(1)!)),
         200,
         headers: {'content-type': 'application/json'},
       );

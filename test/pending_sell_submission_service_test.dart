@@ -54,6 +54,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_media_summary.dart';
+
 class _FakeDocsPathProvider extends PathProviderPlatform {
   _FakeDocsPathProvider(this._path);
   final String _path;
@@ -142,8 +144,12 @@ void main() {
   // media (see the "Bug-3: resume/background/foreground never deletes"
   // group near the end of this file).
   late List<String> deleteCallsLog;
+  // Server-side `CarMediaItem` manifest model (see support/).
+  late FakeMediaManifest fakeManifest;
 
   setUp(() async {
+    fakeManifest = FakeMediaManifest()
+      ..carLookup = (id) => carsById[id];
     tempDir = Directory.systemTemp.createTempSync('pending_sell_sub_');
     final docsDir = Directory('${tempDir.path}/docs')
       ..createSync(recursive: true);
@@ -205,6 +211,7 @@ void main() {
           'images': <dynamic>[],
           'videos': <dynamic>[],
         };
+        fakeManifest.registerCreate(id, body);
         return http.Response(
           json.encode({'car': carsById[id]}),
           201,
@@ -223,6 +230,7 @@ void main() {
         final paths = List<String>.from(decoded['paths'] as List);
         final kind = (decoded['kind'] ?? 'listing').toString();
         attachCallsLog.add(paths);
+        fakeManifest.noteUpload(id, 'image', viaClientAttach: true);
         final car = carsById.putIfAbsent(
           id,
           () => {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]},
@@ -258,6 +266,7 @@ void main() {
           'name="images"',
         ).allMatches(bodyText).length;
         imagesEnqueueFileCounts.add(fileCount);
+        fakeManifest.noteUpload(enqueueMatch.group(1)!, 'image');
         final jobIds = <String>[];
         for (var i = 0; i < fileCount; i++) {
           jobIdCounter++;
@@ -328,6 +337,7 @@ void main() {
           () => {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]},
         );
         (car['videos'] as List).add({'id': videoUploadLog.length});
+        fakeManifest.noteUpload(id, 'video');
         return http.Response(
           json.encode({'videos': [{'id': videoUploadLog.length}]}),
           201,
@@ -342,16 +352,19 @@ void main() {
       // `pending_sell_submission_fast_submit_test.dart` for THAT), so
       // Phase A is always already "complete" here, matching a listing
       // whose `expected_media` was empty/already satisfied.
+      //
+      // Fidelity fix: a real server registers one manifest row per declared
+      // `expected_media` entry atomically with create_car, and the client
+      // now verifies those exact ids before calling a submission complete.
+      // [FakeMediaManifest] mirrors that (accepted/Phase-A-complete items).
       final mediaSummaryMatch = RegExp(
         r'^/api/cars/([^/]+)/media-summary$',
       ).firstMatch(path);
       if (method == 'GET' && mediaSummaryMatch != null) {
         return http.Response(
-          json.encode({
-            'media_status': 'ready',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          }),
+          json.encode(
+            await fakeManifest.summary(mediaSummaryMatch.group(1)!),
+          ),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -2132,6 +2145,8 @@ void main() {
           var createAttempts = 0;
           final localCarsById = <String, Map<String, dynamic>>{};
 
+          // These bespoke servers do not model media transfer at all.
+          fakeManifest.acceptAll = true;
           ApiService.testHttpClient = MockClient((request) async {
             final method = request.method.toUpperCase();
             final path = request.url.path;
@@ -2160,11 +2175,9 @@ void main() {
             if (method == 'GET' &&
                 RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
               return http.Response(
-                json.encode({
-                  'media_status': 'ready',
-                  'items': <dynamic>[],
-                  'phase_a_complete': true,
-                }),
+                json.encode(
+                  await fakeManifest.summary(path.split('/')[3]),
+                ),
                 200,
                 headers: {'content-type': 'application/json'},
               );
@@ -2463,6 +2476,8 @@ void main() {
           final localCarsById = <String, Map<String, dynamic>>{};
           var localCarIdCounter = 0;
 
+          // These bespoke servers do not model media transfer at all.
+          fakeManifest.acceptAll = true;
           ApiService.testHttpClient = MockClient((request) async {
             final method = request.method.toUpperCase();
             final path = request.url.path;
@@ -2497,11 +2512,9 @@ void main() {
             if (method == 'GET' &&
                 RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
               return http.Response(
-                json.encode({
-                  'media_status': 'ready',
-                  'items': <dynamic>[],
-                  'phase_a_complete': true,
-                }),
+                json.encode(
+                  await fakeManifest.summary(path.split('/')[3]),
+                ),
                 200,
                 headers: {'content-type': 'application/json'},
               );
@@ -2627,6 +2640,11 @@ void main() {
   // ===========================================================================
   group('Issue 2: persisted progress reflects every confirmed media item, '
       'never resets to 0/N', () {
+    // These tests pin per-confirmed-item progress of the client-driven
+    // attach flow; the fake server must not report enqueued images as
+    // already accepted (which would make the client skip that flow).
+    setUp(() => fakeManifest.legacyClientAttachFlow = true);
+
     test(
       'listing photos (3), a video, and damage photos (2) are all part of '
       'one submission; the video upload permanently fails, but the '
@@ -2753,6 +2771,7 @@ void main() {
             );
             final vrow = {'id': 901, 'kind': 'listing'};
             (vcar['videos'] as List).add(vrow);
+            fakeManifest.noteUpload(vid, 'video');
             return http.Response(
               json.encode({'videos': [vrow]}),
               201,
@@ -2762,11 +2781,12 @@ void main() {
           if (method == 'GET' &&
               RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
             return http.Response(
-              json.encode({
-                'media_status': 'processing',
-                'items': <dynamic>[],
-                'phase_a_complete': true,
-              }),
+              json.encode(
+                await fakeManifest.summary(
+                  path.split('/')[3],
+                  mediaStatus: 'processing',
+                ),
+              ),
               200,
               headers: {'content-type': 'application/json'},
             );
@@ -2787,6 +2807,7 @@ void main() {
             final id = attachMatch.group(1)!;
             final decoded = json.decode(request.body) as Map;
             final paths = List<String>.from(decoded['paths'] as List);
+            fakeManifest.noteUpload(id, 'image', viaClientAttach: true);
             final car = carsById.putIfAbsent(
               id,
               () => {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]},

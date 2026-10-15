@@ -430,6 +430,139 @@ extension _MyListingsPageWidgets on _MyListingsPageState {
     );
   }
 
+  /// Visible, recoverable representation of a submission the user pressed
+  /// Submit on but the server has not yet confirmed complete (queued,
+  /// uploading, waiting to retry, or needing the user's attention). Never
+  /// destructive: it offers Retry only -- the durable photos and the record
+  /// are kept until the server verifies the listing's media.
+  Widget _buildPendingSubmissionCard(
+    SellSubmissionRecord record, {
+    required bool listLayout,
+  }) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final titleColor = isLight
+        ? Theme.of(context).colorScheme.onSurface
+        : Colors.white;
+    final metaColor = isLight
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : Colors.white70;
+    final needsAttention = record.status == SellSubmissionStatus.needsAttention;
+    final retryable = record.status == SellSubmissionStatus.retryable;
+    final running = PendingSellSubmissionService.instance.isPreparing(
+      record.draftId,
+    );
+    final title = _draftTitle(record.carData);
+    final statusText = needsAttention
+        ? _text(
+            'Needs attention',
+            ar: 'يحتاج إلى انتباهك',
+            ku: 'پێویستی بە سەرنجە',
+          )
+        : retryable
+        ? _text(
+            'Waiting to retry',
+            ar: 'بانتظار إعادة المحاولة',
+            ku: 'چاوەڕێی هەوڵدانەوەیە',
+          )
+        : _text(
+            'Submitting your listing…',
+            ar: 'جارٍ إرسال إعلانك…',
+            ku: 'ڕێکلامەکەت دەنێردرێت…',
+          );
+    final detail = (needsAttention || retryable)
+        ? (record.lastErrorMessage ?? '').trim()
+        : '';
+    final canRetry = (needsAttention || retryable) && !running;
+    final accent = needsAttention ? Colors.red.shade400 : AppColors.brandOrange;
+
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: Material(
+        key: ValueKey('pending-submission-${record.draftId}'),
+        color: isLight ? Colors.white : Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        elevation: isLight ? 1.5 : 0,
+        shadowColor: Colors.black26,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    needsAttention
+                        ? Icons.error_outline_rounded
+                        : Icons.cloud_upload_outlined,
+                    color: accent,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      statusText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: accent,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: titleColor,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                ),
+              ),
+              if (detail.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Expanded(
+                  child: Text(
+                    detail,
+                    maxLines: listLayout ? 2 : 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: metaColor, fontSize: 11),
+                  ),
+                ),
+              ] else
+                const Spacer(),
+              if (canRetry)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    key: ValueKey('pending-submission-retry-${record.draftId}'),
+                    onPressed: () async {
+                      await PendingSellSubmissionService.instance.retryNow(
+                        record.draftId,
+                      );
+                      if (mounted) await _loadDrafts();
+                    },
+                    child: Text(
+                      _text('Retry', ar: 'إعادة المحاولة', ku: 'دووبارە هەوڵبدەوە'),
+                    ),
+                  ),
+                )
+              else
+                LinearProgressIndicator(
+                  minHeight: 3,
+                  color: AppColors.brandOrange,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState({required _MyListingsFilter filter}) {
     final loc = AppLocalizations.of(context);
     final (title, hint) = switch (filter) {

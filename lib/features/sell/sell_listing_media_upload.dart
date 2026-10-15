@@ -59,6 +59,54 @@ SellMediaUploadPhase _mediaUploadPhaseForTranscode(
   }
 }
 
+/// Result of [SellListingMediaUpload.verifyExpectedMedia]: the per-item
+/// server-side state of the manifest a submission declared at create time.
+class SellMediaVerification {
+  const SellMediaVerification({
+    this.missing = const <String>[],
+    this.failed = const <String>[],
+    this.notAccepted = const <String>[],
+    this.summaryUnavailable = false,
+  });
+
+  /// Expected ids the server manifest does not contain at all (e.g. an
+  /// idempotent `create_car` replay of a listing created with a different
+  /// or empty manifest). Definitive -- retrying cannot fix it.
+  final List<String> missing;
+
+  /// Expected ids the server reports as permanently failed.
+  final List<String> failed;
+
+  /// Expected ids present on the server but not yet accepted (Phase A
+  /// incomplete) -- the upload has not landed; retryable.
+  final List<String> notAccepted;
+
+  /// The summary could not be read at all (network); retryable.
+  final bool summaryUnavailable;
+
+  bool get permanent => missing.isNotEmpty || failed.isNotEmpty;
+  bool get ok =>
+      !summaryUnavailable &&
+      missing.isEmpty &&
+      failed.isEmpty &&
+      notAccepted.isEmpty;
+
+  String describe() {
+    if (summaryUnavailable) return 'could not read the server media status';
+    final parts = <String>[];
+    if (missing.isNotEmpty) {
+      parts.add('${missing.length} item(s) unknown to the server');
+    }
+    if (failed.isNotEmpty) {
+      parts.add('${failed.length} item(s) rejected by the server');
+    }
+    if (notAccepted.isNotEmpty) {
+      parts.add('${notAccepted.length} item(s) not yet uploaded');
+    }
+    return parts.isEmpty ? 'ok' : parts.join(', ');
+  }
+}
+
 /// Uploads listing / damage / video media for a car that already exists on the server.
 class SellListingMediaUpload {
   SellListingMediaUpload._();
@@ -1133,6 +1181,72 @@ class SellListingMediaUpload {
       }
     }
     return false;
+  }
+
+  /// Server-authoritative check that EVERY id in [expectedIds] exists in
+  /// [carId]'s media manifest (`GET /api/cars/{id}/media-summary`), none has
+  /// failed, and each one has been accepted by the server (Phase A complete,
+  /// or already `attached`).
+  ///
+  /// This is what a submission must satisfy before it may be called
+  /// COMPLETED (and before its durable record/photos may be released). It
+  /// deliberately does NOT trust `phase_a_complete` alone: that aggregate is
+  /// vacuously `true` over an EMPTY manifest, which is exactly what an
+  /// idempotent `create_car` replay of a listing created with no declared
+  /// media (or with a different manifest) looks like.
+  ///
+  /// `missing`/`failed` are definitive (returned immediately); only
+  /// `notAccepted` / an unreachable summary are retried (bounded).
+  static Future<SellMediaVerification> verifyExpectedMedia({
+    required String carId,
+    required Iterable<String> expectedIds,
+    int maxAttempts = 5,
+    Duration retryDelay = const Duration(milliseconds: 400),
+  }) async {
+    final expected = expectedIds.where((e) => e.trim().isNotEmpty).toSet();
+    if (expected.isEmpty) return const SellMediaVerification();
+    var last = const SellMediaVerification(summaryUnavailable: true);
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) await Future<void>.delayed(retryDelay);
+      try {
+        final summary = await ApiService.getCarMediaSummary(carId);
+        final rawItems = summary['items'];
+        final byId = <String, Map>{};
+        if (rawItems is List) {
+          for (final it in rawItems) {
+            if (it is! Map) continue;
+            final id = (it['client_media_id'] ?? '').toString().trim();
+            if (id.isNotEmpty) byId[id] = it;
+          }
+        }
+        final missing = <String>[];
+        final failed = <String>[];
+        final notAccepted = <String>[];
+        for (final id in expected) {
+          final it = byId[id];
+          if (it == null) {
+            missing.add(id);
+            continue;
+          }
+          final status = (it['status'] ?? '').toString();
+          if (status == 'failed') {
+            failed.add(id);
+          } else if (status != 'attached' && it['phase_a_complete'] != true) {
+            notAccepted.add(id);
+          }
+        }
+        last = SellMediaVerification(
+          missing: missing,
+          failed: failed,
+          notAccepted: notAccepted,
+        );
+        if (last.ok || last.permanent) return last;
+      } catch (e, st) {
+        logNonFatal(e, st, 'SellListingMediaUpload.verifyExpectedMedia');
+        last = const SellMediaVerification(summaryUnavailable: true);
+      }
+    }
+    return last;
   }
 
   /// Two-video regression fix (real-device evidence): per-item

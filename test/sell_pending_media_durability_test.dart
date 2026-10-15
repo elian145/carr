@@ -66,14 +66,38 @@ void main() {
         final prepareIdx = body.indexOf(
           'SellDraftMediaPersistence\n        .prepareCarDataForStorage(',
         );
+        // The durable copy goes through `_hardenMediaOrThrow`, a thin
+        // fail-closed wrapper that calls `prepareCarDataForStorage` and
+        // refuses to continue with a silently shortened media list.
         final prepareIdxAlt = prepareIdx >= 0
             ? prepareIdx
-            : body.indexOf('.prepareCarDataForStorage(');
+            : (body.indexOf('.prepareCarDataForStorage(') >= 0
+                  ? body.indexOf('.prepareCarDataForStorage(')
+                  : body.indexOf('_hardenMediaOrThrow('));
         expect(
           prepareIdxAlt,
           greaterThanOrEqualTo(0),
           reason: '_prepareSubmissionRecord() must durably copy media via '
-              'prepareCarDataForStorage()',
+              'prepareCarDataForStorage() (directly or through the '
+              'fail-closed _hardenMediaOrThrow wrapper)',
+        );
+        final hardenStart = content.indexOf(
+          'Future<Map<String, dynamic>> _hardenMediaOrThrow(',
+        );
+        expect(hardenStart, greaterThanOrEqualTo(0));
+        expect(
+          content
+              .substring(hardenStart, hardenStart + 1500)
+              .contains('SellDraftMediaPersistence.prepareCarDataForStorage('),
+          isTrue,
+          reason: '_hardenMediaOrThrow must perform the real durable copy',
+        );
+        expect(
+          content
+              .substring(hardenStart, hardenStart + 1500)
+              .contains('droppedOut'),
+          isTrue,
+          reason: 'the durable copy must report dropped media (fail closed)',
         );
         final firstUpsertIdx = body.indexOf('SellSubmissionStatePrefs.upsert(');
         expect(
@@ -87,9 +111,10 @@ void main() {
           reason: 'submit INTENT must be upserted BEFORE prepare so a kill '
               'mid-copy still leaves a resumable pending record',
         );
-        final secondUpsertIdx = body.indexOf(
+        // The FINAL upsert of the method is the durable-carData write (an
+        // earlier one may exist in the fail-closed error path).
+        final secondUpsertIdx = body.lastIndexOf(
           'SellSubmissionStatePrefs.upsert(',
-          firstUpsertIdx + 1,
         );
         expect(
           secondUpsertIdx,

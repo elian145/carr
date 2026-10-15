@@ -8,6 +8,48 @@ import 'package:path_provider/path_provider.dart';
 import '../../shared/debug/app_log.dart';
 import '../listings/listing_image_media.dart';
 
+/// Why one picked media item could NOT be copied into durable draft storage
+/// by [SellDraftMediaPersistence.prepareCarDataForStorage].
+enum SellMediaDropReason {
+  /// `getApplicationDocumentsDirectory()` is not (yet) available -- cold or
+  /// timed-out path_provider probe. The file may well still exist; this is
+  /// a TRANSIENT condition that a later attempt can resolve.
+  documentsPathUnavailable,
+
+  /// The durable draft file / picker source no longer exists on disk.
+  sourceMissing,
+
+  /// The source exists but copying it into the draft folder failed.
+  copyFailed,
+
+  /// The draft folder was intentionally deleted earlier in this process
+  /// (empty-draft discard / optimistic cleanup) and is tombstoned.
+  folderTombstoned,
+}
+
+/// One media item that [SellDraftMediaPersistence.prepareCarDataForStorage]
+/// had to leave out of its result. Historically such items vanished with no
+/// signal at all, so a submission could be created with FEWER (or zero)
+/// photos than the user selected. Callers that must not lose media pass a
+/// `droppedOut` list and fail closed when it is non-empty.
+class SellMediaDrop {
+  const SellMediaDrop({
+    required this.key,
+    required this.source,
+    required this.reason,
+  });
+
+  /// `carData` list key the item came from (`images`, `videos`, ...).
+  final String key;
+  final String source;
+  final SellMediaDropReason reason;
+
+  bool get transient => reason == SellMediaDropReason.documentsPathUnavailable;
+
+  @override
+  String toString() => 'SellMediaDrop($key, ${reason.name}, $source)';
+}
+
 /// Copies picked listing media into app documents so sell drafts survive restarts.
 class SellDraftMediaPersistence {
   /// Test-only interception point: when set, awaited at the very start of
@@ -605,6 +647,7 @@ class SellDraftMediaPersistence {
     String source, {
     required String draftId,
     required String namePrefix,
+    void Function(SellMediaDropReason reason)? onDrop,
   }) async {
     final local = _localPath(source);
     if (local.isEmpty) return null;
@@ -615,6 +658,7 @@ class SellDraftMediaPersistence {
     // or probe deleted listing_orig paths (PathNotFound → Sentry spam).
     if (_folderTombstoned.contains(safeId) ||
         _folderDeleteRequested.contains(safeId)) {
+      onDrop?.call(SellMediaDropReason.folderTombstoned);
       return null;
     }
 
@@ -629,9 +673,18 @@ class SellDraftMediaPersistence {
         // cannot rewrite separators and drift `client_media_id`.
         return p.normalize(effective);
       }
-      // Genuinely missing durable draft file (corrupt/old draft, or a
-      // sibling deleted this path). Drop quietly — callers already skip
-      // null; re-probing via XFile.length only produces Sentry noise.
+      // Durable draft file not found at the recorded path. With a cold /
+      // timed-out documents path we CANNOT tell "genuinely gone" from "the
+      // iOS container UUID changed and we have not learned the new one
+      // yet" -- report that as transient so a submission retries instead
+      // of treating the photo as lost. Callers that must not lose media
+      // (submission) read [onDrop]; draft autosave still drops quietly.
+      final docs = _cachedDocsPath;
+      onDrop?.call(
+        (docs == null || docs.trim().isEmpty)
+            ? SellMediaDropReason.documentsPathUnavailable
+            : SellMediaDropReason.sourceMissing,
+      );
       return null;
     }
 
@@ -642,7 +695,9 @@ class SellDraftMediaPersistence {
       // Documents path unavailable (widget tests without a path_provider
       // fake). Keep the original local path so blur/upload can still read
       // the picker file; durable copy is deferred.
-      return File(effective).existsSync() ? effective : null;
+      if (File(effective).existsSync()) return effective;
+      onDrop?.call(SellMediaDropReason.documentsPathUnavailable);
+      return null;
     }
     final ext = p.extension(local);
     final safeExt = ext.isEmpty
@@ -655,6 +710,7 @@ class SellDraftMediaPersistence {
 
     if (normSrc == normDest) {
       if (await dest.exists()) return normDest;
+      onDrop?.call(SellMediaDropReason.sourceMissing);
       return null;
     }
 
@@ -663,6 +719,13 @@ class SellDraftMediaPersistence {
     }
 
     final ok = await _copyOrReadInto(dest, local);
+    if (!ok) {
+      onDrop?.call(
+        File(local).existsSync()
+            ? SellMediaDropReason.copyFailed
+            : SellMediaDropReason.sourceMissing,
+      );
+    }
     return ok ? normDest : null;
   }
 
@@ -670,6 +733,8 @@ class SellDraftMediaPersistence {
     List<dynamic> items, {
     required String draftId,
     required String namePrefix,
+    String? listKey,
+    List<SellMediaDrop>? droppedOut,
   }) async {
     final out = <dynamic>[];
     final seen = <String>{};
@@ -690,12 +755,28 @@ class SellDraftMediaPersistence {
         }
         continue;
       }
+      SellMediaDropReason? dropReason;
       final stored = await _persistLocalPath(
         raw,
         draftId: draftId,
         namePrefix: namePrefix,
+        onDrop: (reason) => dropReason = reason,
       );
-      if (stored == null || stored.isEmpty) continue;
+      if (stored == null || stored.isEmpty) {
+        // Never a silent omission for callers that asked to be told: a
+        // dropped item is reported with its reason so a submission can
+        // fail closed instead of creating a listing with fewer photos.
+        if (droppedOut != null) {
+          droppedOut.add(
+            SellMediaDrop(
+              key: listKey ?? namePrefix,
+              source: raw,
+              reason: dropReason ?? SellMediaDropReason.sourceMissing,
+            ),
+          );
+        }
+        continue;
+      }
       final id = canonicalMediaIdentity(stored);
       if (!seen.add(id)) continue;
       // Always persist as a metadata map so pending-prefs / drafts stay
@@ -736,59 +817,39 @@ class SellDraftMediaPersistence {
         .toList();
   }
 
+  /// Copies every local media list in [carData] into this draft's durable
+  /// folder.
+  ///
+  /// [droppedOut]: when provided, receives one [SellMediaDrop] for EVERY item
+  /// that could not be made durable and was therefore omitted from the
+  /// result (previously such items vanished silently -- the root cause of a
+  /// submission being created with fewer/zero photos than selected).
+  /// Submission paths MUST pass it and fail closed when it is non-empty.
+  /// Draft autosave deliberately omits it (best-effort, unchanged).
   static Future<Map<String, dynamic>> prepareCarDataForStorage(
     Map<String, dynamic> carData, {
     required String draftId,
+    List<SellMediaDrop>? droppedOut,
   }) {
     return _serializedForDraft(draftId, () async {
       final copy = Map<String, dynamic>.from(carData);
-      if (copy['images'] is List) {
-        copy['images'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['images'] as List),
+      for (final entry in const <MapEntry<String, String>>[
+        MapEntry('images', 'listing'),
+        MapEntry('original_images', 'listing_orig'),
+        MapEntry('blurred_images', 'listing_blur'),
+        MapEntry('damage_images', 'damage'),
+        MapEntry('original_damage_images', 'damage_orig'),
+        MapEntry('blurred_damage_images', 'damage_blur'),
+        MapEntry('videos', 'video'),
+      ]) {
+        final raw = copy[entry.key];
+        if (raw is! List) continue;
+        copy[entry.key] = await _persistDynamicMediaListImpl(
+          List<dynamic>.from(raw),
           draftId: draftId,
-          namePrefix: 'listing',
-        );
-      }
-      if (copy['original_images'] is List) {
-        copy['original_images'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['original_images'] as List),
-          draftId: draftId,
-          namePrefix: 'listing_orig',
-        );
-      }
-      if (copy['blurred_images'] is List) {
-        copy['blurred_images'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['blurred_images'] as List),
-          draftId: draftId,
-          namePrefix: 'listing_blur',
-        );
-      }
-      if (copy['damage_images'] is List) {
-        copy['damage_images'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['damage_images'] as List),
-          draftId: draftId,
-          namePrefix: 'damage',
-        );
-      }
-      if (copy['original_damage_images'] is List) {
-        copy['original_damage_images'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['original_damage_images'] as List),
-          draftId: draftId,
-          namePrefix: 'damage_orig',
-        );
-      }
-      if (copy['blurred_damage_images'] is List) {
-        copy['blurred_damage_images'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['blurred_damage_images'] as List),
-          draftId: draftId,
-          namePrefix: 'damage_blur',
-        );
-      }
-      if (copy['videos'] is List) {
-        copy['videos'] = await _persistDynamicMediaListImpl(
-          List<dynamic>.from(copy['videos'] as List),
-          draftId: draftId,
-          namePrefix: 'video',
+          namePrefix: entry.value,
+          listKey: entry.key,
+          droppedOut: droppedOut,
         );
       }
       if (copy['processed_image_paths'] is List) {
@@ -797,6 +858,8 @@ class SellDraftMediaPersistence {
                   List<dynamic>.from(copy['processed_image_paths'] as List),
                   draftId: draftId,
                   namePrefix: 'processed',
+                  listKey: 'processed_image_paths',
+                  droppedOut: droppedOut,
                 ))
                 .map(ListingImageMedia.source)
                 .where((s) => s.trim().isNotEmpty)
@@ -804,6 +867,26 @@ class SellDraftMediaPersistence {
       }
       return copy;
     });
+  }
+
+  /// An explicit Submit for [draftId] supersedes an earlier in-process
+  /// discard of that same id (empty-draft cleanup tombstones the id
+  /// permanently for the process; the wizard can keep using the id and the
+  /// user can re-add photos to it -- those photos could never be made
+  /// durable and were silently dropped at Submit).
+  ///
+  /// Releases the tombstone ONLY when no physical delete is still pending
+  /// for the draft (so we never race a live `Directory.delete`). Returns
+  /// true when the id is now usable.
+  static bool releaseDraftMediaTombstone(String draftId) {
+    final key = _safeDraftId(draftId.trim());
+    if (_pendingFolderDeletes.containsKey(key) ||
+        _folderDeleteArmed.contains(key)) {
+      return false;
+    }
+    _folderTombstoned.remove(key);
+    _folderDeleteRequested.remove(key);
+    return true;
   }
 
   static Future<Map<String, dynamic>> augmentDraftMap(

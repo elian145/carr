@@ -32,6 +32,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
+import 'package:car_listing_app/features/sell/sell_media_identity.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/config.dart';
 import 'package:car_listing_app/shared/auth/token_store.dart';
@@ -42,6 +43,8 @@ import 'package:http/testing.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_media_summary.dart';
 
 class _FakeDocsPathProvider extends PathProviderPlatform {
   _FakeDocsPathProvider(this._path);
@@ -142,12 +145,18 @@ void main() {
       var enqueueCalls = 0;
       var mediaSummaryCalls = 0;
       final enqueueGate = Completer<void>();
+      // Server-side manifest: registered at create, accepted on transfer.
+      final manifest = FakeMediaManifest();
 
       ApiService.testHttpClient = MockClient((request) async {
         final method = request.method.toUpperCase();
         final path = request.url.path;
         if (method == 'POST' && path == '/api/cars') {
           createCalls++;
+          manifest.registerCreate(
+            'car_ab_1',
+            json.decode(request.body) as Map<String, dynamic>,
+          );
           return jsonOk({
             'car': {'id': 'car_ab_1', 'images': [], 'videos': []},
           }, 201);
@@ -160,6 +169,7 @@ void main() {
           // Phase-A transfer call has not -- proves the ready signal
           // cannot have fired yet purely from the car existing.
           await enqueueGate.future;
+          manifest.noteUpload('car_ab_1', 'image');
           return jsonOk({'job_ids': <String>['job_ab_1']}, 202);
         }
         if (method == 'GET' && path == '/api/jobs/job_ab_1') {
@@ -181,11 +191,9 @@ void main() {
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
           mediaSummaryCalls++;
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          });
+          return jsonOk(
+            await manifest.summary('car_ab_1', mediaStatus: 'processing'),
+          );
         }
         return jsonOk({'cars': []});
       });
@@ -238,11 +246,16 @@ void main() {
       File(imagePath).writeAsBytesSync(List<int>.filled(16, 2));
 
       final neverReleasedPollGate = Completer<void>();
+      final manifest = FakeMediaManifest();
 
       ApiService.testHttpClient = MockClient((request) async {
         final method = request.method.toUpperCase();
         final path = request.url.path;
         if (method == 'POST' && path == '/api/cars') {
+          manifest.registerCreate(
+            'car_d_1',
+            json.decode(request.body) as Map<String, dynamic>,
+          );
           return jsonOk({
             'car': {'id': 'car_d_1', 'images': [], 'videos': []},
           }, 201);
@@ -250,6 +263,7 @@ void main() {
         final enqueueMatch =
             RegExp(r'^/api/cars/([^/]+)/images$').firstMatch(path);
         if (method == 'POST' && enqueueMatch != null) {
+          manifest.noteUpload('car_d_1', 'image');
           return jsonOk({'job_ids': <String>['job_d_1']}, 202);
         }
         if (method == 'GET' && path == '/api/jobs/job_d_1') {
@@ -260,11 +274,9 @@ void main() {
         }
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          });
+          return jsonOk(
+            await manifest.summary('car_d_1', mediaStatus: 'processing'),
+          );
         }
         return jsonOk({'cars': []});
       });
@@ -305,6 +317,11 @@ void main() {
       // `pendingAsyncImageJobs` seed below), img2 only becomes complete
       // once THIS test observes its enqueue call actually happen.
       var img2PhaseAComplete = false;
+      final manifest = FakeMediaManifest();
+      final seededIds = SellMediaIdentity.buildExpectedMedia(
+        _baseCarData(images: [img1.path, img2.path]),
+      ).map((e) => e['client_media_id']!).toList();
+      expect(seededIds, hasLength(2));
 
       ApiService.testHttpClient = MockClient((request) async {
         final method = request.method.toUpperCase();
@@ -353,11 +370,13 @@ void main() {
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
           mediaSummaryCalls++;
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': img2PhaseAComplete,
-          });
+          // Per-item acceptance (the real `phase_a_completed_at`): img1 was
+          // durably accepted before the kill, img2 only once enqueued.
+          manifest.setPhaseAComplete(seededIds[0], true);
+          manifest.setPhaseAComplete(seededIds[1], img2PhaseAComplete);
+          return jsonOk(
+            await manifest.summary(carId, mediaStatus: 'processing'),
+          );
         }
         return jsonOk({'cars': []});
       });

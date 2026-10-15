@@ -35,6 +35,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_media_summary.dart';
+
 class _FakeDocsPathProvider extends PathProviderPlatform {
   _FakeDocsPathProvider(this._path);
   final String _path;
@@ -123,6 +125,7 @@ void main() {
       var processCarImagesCalls = 0;
       var phaseAEnqueueCalls = 0;
       final processCarImagesGate = Completer<void>();
+      final manifest = FakeMediaManifest();
 
       ApiService.testHttpClient = MockClient((request) async {
         final method = request.method.toUpperCase();
@@ -130,6 +133,10 @@ void main() {
 
         if (method == 'POST' && path == '/api/cars') {
           createCarCalls++;
+          manifest.registerCreate(
+            'car_no_prestage_1',
+            json.decode(request.body) as Map<String, dynamic>,
+          );
           return jsonOk({
             'car': {'id': 'car_no_prestage_1', 'images': [], 'videos': []},
           }, 201);
@@ -147,15 +154,17 @@ void main() {
             RegExp(r'^/api/cars/([^/]+)/images$').firstMatch(path);
         if (method == 'POST' && enqueueMatch != null) {
           phaseAEnqueueCalls++;
+          manifest.noteUpload('car_no_prestage_1', 'image');
           return jsonOk({'job_ids': <String>['job_photo1']}, 202);
         }
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          });
+          return jsonOk(
+            await manifest.summary(
+              'car_no_prestage_1',
+              mediaStatus: 'processing',
+            ),
+          );
         }
         if (method == 'GET' && path.startsWith('/api/jobs/')) {
           // Phase B's own processing poll -- never resolves either, but
@@ -202,11 +211,16 @@ void main() {
       const draftId = 'no_prestage_preview';
       final imagePath = p.join(tempDir.path, 'preview.jpg');
       File(imagePath).writeAsBytesSync(List<int>.filled(16, 2));
+      final manifest = FakeMediaManifest();
 
       ApiService.testHttpClient = MockClient((request) async {
         final method = request.method.toUpperCase();
         final path = request.url.path;
         if (method == 'POST' && path == '/api/cars') {
+          manifest.registerCreate(
+            'car_preview_1',
+            json.decode(request.body) as Map<String, dynamic>,
+          );
           return jsonOk({
             'car': {'id': 'car_preview_1', 'images': [], 'videos': []},
           }, 201);
@@ -214,15 +228,14 @@ void main() {
         final enqueueMatch =
             RegExp(r'^/api/cars/([^/]+)/images$').firstMatch(path);
         if (method == 'POST' && enqueueMatch != null) {
+          manifest.noteUpload('car_preview_1', 'image');
           return jsonOk({'job_ids': <String>['job_preview']}, 202);
         }
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          });
+          return jsonOk(
+            await manifest.summary('car_preview_1', mediaStatus: 'processing'),
+          );
         }
         if (method == 'GET' && path.startsWith('/api/jobs/')) {
           // Processing never finishes within this test -- the local

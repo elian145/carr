@@ -43,6 +43,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_media_summary.dart';
+
 class _FakeDocsPathProvider extends PathProviderPlatform {
   _FakeDocsPathProvider(this._path);
   final String _path;
@@ -157,6 +159,7 @@ void main() {
       var attachCalls = 0;
       var mediaSummaryCalls = 0;
       final transcodeGate = Completer<void>();
+      final manifest = FakeMediaManifest();
 
       ApiService.testHttpClient = MockClient((request) async {
         final path = request.url.path;
@@ -164,6 +167,10 @@ void main() {
 
         if (method == 'POST' && path == '/api/cars') {
           createCalls++;
+          manifest.registerCreate(
+            'car_fast_1',
+            json.decode(request.body) as Map<String, dynamic>,
+          );
           return jsonOk({
             'car': {'id': 'car_fast_1', 'images': [], 'videos': []},
           }, 201);
@@ -182,6 +189,9 @@ void main() {
         }
         if (path == '/api/media/r2/finalize-video-source-upload') {
           finalizeCalls++;
+          // Real backend: finalize durably advances `phase_a_completed_at`
+          // for the declared video item before it responds.
+          manifest.noteUpload('car_fast_1', 'video');
           return jsonOk({
             'status': 'staged',
             'staging_key': 'staging/key1',
@@ -220,11 +230,9 @@ void main() {
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
           mediaSummaryCalls++;
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          });
+          return jsonOk(
+            await manifest.summary('car_fast_1', mediaStatus: 'processing'),
+          );
         }
         if (method == 'GET' && path == '/api/cars') {
           return jsonOk({'cars': []});
@@ -324,12 +332,17 @@ void main() {
       const draftId = 'draft_fast_images_only';
       var createCalls = 0;
       var attachCalls = 0;
+      final manifest = FakeMediaManifest();
 
       ApiService.testHttpClient = MockClient((request) async {
         final path = request.url.path;
         final method = request.method.toUpperCase();
         if (method == 'POST' && path == '/api/cars') {
           createCalls++;
+          manifest.registerCreate(
+            'car_imgs_1',
+            json.decode(request.body) as Map<String, dynamic>,
+          );
           return jsonOk({
             'car': {'id': 'car_imgs_1', 'images': [], 'videos': []},
           }, 201);
@@ -351,6 +364,7 @@ void main() {
           r'^/api/cars/([^/]+)/images$',
         ).firstMatch(path);
         if (method == 'POST' && enqueueMatch != null) {
+          manifest.noteUpload('car_imgs_1', 'image');
           return jsonOk({'job_ids': <String>['img_job_1']}, 202);
         }
         if (method == 'GET' && path == '/api/jobs/img_job_1') {
@@ -362,11 +376,9 @@ void main() {
         }
         if (method == 'GET' &&
             RegExp(r'^/api/cars/[^/]+/media-summary$').hasMatch(path)) {
-          return jsonOk({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          });
+          return jsonOk(
+            await manifest.summary('car_imgs_1', mediaStatus: 'processing'),
+          );
         }
         if (method == 'GET' && path == '/api/cars') {
           return jsonOk({'cars': []});
@@ -392,7 +404,16 @@ void main() {
       });
 
       expect(createCalls, 1);
-      expect(attachCalls, greaterThanOrEqualTo(1));
+      // New listing + faithful server manifest: the enqueue is accepted
+      // (Phase A), and the server worker self-attaches the processed image
+      // -- the client must NOT attach job results itself (see the
+      // "Architecture fix" note in `_runSubmission`). The submission is
+      // only complete because the server manifest confirms the image.
+      expect(attachCalls, 0);
+      expect(await manifest.summary('car_imgs_1'), containsPair(
+        'phase_a_complete',
+        true,
+      ));
     },
   );
 

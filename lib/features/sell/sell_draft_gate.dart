@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/auth_service.dart';
 import '../../services/feature_flags.dart';
+import '../../shared/prefs/sell_submission_state_prefs.dart';
+import 'sell_submission_visibility.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/prefs/legacy_sell_draft_prefs.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
@@ -70,6 +73,21 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
     }
   }
 
+  /// The durable submission record that supersedes the draft [draftId], or
+  /// null when the draft must stay visible. A record only supersedes its
+  /// draft while My Listings shows it as a pending entry (see
+  /// [sellSubmissionHidesDraft]) -- never hide a draft without a visible
+  /// replacement.
+  Future<SellSubmissionRecord?> _supersedingSubmission(String draftId) async {
+    final record = await PendingSellSubmissionService.instance.peek(draftId);
+    if (record == null) return null;
+    final owner =
+        (AuthService().currentUser?['id'] ?? '').toString().trim();
+    return sellSubmissionHidesDraft(record, currentOwnerId: owner)
+        ? record
+        : null;
+  }
+
   Future<void> _loadDrafts() async {
     try {
       // Resume-after-reopen fix (real-device evidence): a durably-recorded
@@ -106,8 +124,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
               Map<String, dynamic>.from(decoded.cast<String, dynamic>()),
             );
             final activeId = active['draftId'].toString();
-            final pending =
-                await PendingSellSubmissionService.instance.peek(activeId);
+            final pending = await _supersedingSubmission(activeId);
             if (pending != null) {
               appLog(
                 '[SELL RESUME] draft gate: hiding active draft '
@@ -141,7 +158,7 @@ class _SellDraftGatePageState extends State<SellDraftGatePage> {
         // lose the archived draft data just because it was hidden once.
         prunedArchive.add(draft);
         seenIds.add(id);
-        final pending = await PendingSellSubmissionService.instance.peek(id);
+        final pending = await _supersedingSubmission(id);
         if (pending != null) {
           appLog(
             '[SELL RESUME] draft gate: hiding archived draft id=$id -- '

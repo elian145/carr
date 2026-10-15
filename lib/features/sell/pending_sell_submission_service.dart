@@ -24,6 +24,7 @@ import 'sell_draft_helpers.dart';
 import 'sell_listing_media_upload.dart';
 import 'sell_listing_payload.dart';
 import 'sell_listing_submit_result.dart';
+import 'sell_media_identity.dart';
 import 'sell_server_transcode_video.dart';
 import 'sell_video_helpers.dart';
 
@@ -180,6 +181,7 @@ String _currentAccountId() =>
 /// permanent failure the user must act on.
 bool isRetryableSellSubmissionError(Object error) {
   if (error is _ServerTranscodeStillInProgressException) return true;
+  if (error is SellMediaIntegrityException) return error.transient;
   if (error is TimeoutException) return true;
   if (error is ApiException) {
     final code = error.statusCode;
@@ -191,6 +193,143 @@ bool isRetryableSellSubmissionError(Object error) {
         code == 504;
   }
   return isTransientNetworkError(error);
+}
+
+/// Data-integrity guard failure: the media a submission would create/finish
+/// with does not match what the user selected / what the server confirms.
+/// Previously every one of these situations resolved SILENTLY into a
+/// listing with fewer (or zero) images -- see
+/// `SellDraftMediaPersistence.prepareCarDataForStorage`'s `droppedOut`.
+///
+/// [transient] errors (storage not ready yet, server not yet accepted every
+/// item) are classified `retryable`; everything else is `needsAttention`.
+/// Both states keep the durable record and local photos; neither ever marks
+/// the submission completed.
+class SellMediaIntegrityException implements Exception {
+  const SellMediaIntegrityException(this.message, {this.transient = false});
+
+  final String message;
+  final bool transient;
+
+  @override
+  String toString() => message;
+}
+
+String _basenameOf(String path) {
+  final norm = path.replaceAll(r'\', '/');
+  final i = norm.lastIndexOf('/');
+  return i < 0 ? norm : norm.substring(i + 1);
+}
+
+/// `carData` list keys that carry the media that is actually uploaded for a
+/// new listing: the ORIGINAL lists when present (see
+/// [SellMediaIdentity.finalListingImages]), plus normal videos. Blurred
+/// preview lists are never uploaded and are intentionally excluded.
+Set<String> _requiredMediaKeys(Map<String, dynamic> carData) {
+  bool hasOriginals(String key) {
+    final v = carData[key];
+    return v is List && v.isNotEmpty;
+  }
+
+  return <String>{
+    hasOriginals('original_images') ? 'original_images' : 'images',
+    hasOriginals('original_damage_images')
+        ? 'original_damage_images'
+        : 'damage_images',
+    'videos',
+  };
+}
+
+/// How many LOCAL (not-yet-uploaded) media items [carData] asks to submit,
+/// counted from the raw form data -- before any durable-copy step can drop
+/// one. Already-server-owned items (URLs / `uploads/` / numeric `id`) are
+/// not counted: they never appear in `expected_media`.
+int _countRequiredLocalMedia(Map<String, dynamic> carData) {
+  var n = 0;
+  for (final key in _requiredMediaKeys(carData)) {
+    final raw = carData[key];
+    if (raw is! List) continue;
+    final seen = <String>{};
+    for (final item in raw) {
+      if (ListingImageMedia.id(item) != null) continue;
+      final source = ListingImageMedia.source(item).trim();
+      if (source.isEmpty) continue;
+      if (SellDraftMediaPersistence.isRetainedMediaReference(source)) continue;
+      if (seen.add(source)) n++;
+    }
+  }
+  n += ServerTranscodeVideoSpec.listFromJson(
+    carData['server_transcode_videos'],
+  ).length;
+  return n;
+}
+
+/// Runs the durable-copy step and FAILS CLOSED if any required media item
+/// could not be made durable, instead of returning a silently shortened
+/// list (see [SellMediaIntegrityException]).
+///
+/// An explicit Submit supersedes an earlier in-process draft discard
+/// (tombstone) of the same draft id, so that case is released once and
+/// retried; every other drop is reported to the caller.
+Future<Map<String, dynamic>> _hardenMediaOrThrow(
+  Map<String, dynamic> carData, {
+  required String draftId,
+}) async {
+  final requiredKeys = _requiredMediaKeys(carData);
+  for (var attempt = 0;; attempt++) {
+    final drops = <SellMediaDrop>[];
+    final hardened = await SellDraftMediaPersistence.prepareCarDataForStorage(
+      carData,
+      draftId: draftId,
+      droppedOut: drops,
+    );
+    final required = drops.where((d) => requiredKeys.contains(d.key)).toList();
+    if (required.isEmpty) return hardened;
+
+    final tombstoneOnly = required.every(
+      (d) => d.reason == SellMediaDropReason.folderTombstoned,
+    );
+    if (tombstoneOnly &&
+        attempt == 0 &&
+        SellDraftMediaPersistence.releaseDraftMediaTombstone(draftId)) {
+      appLog(
+        '[SELL RUN] released stale draft-media tombstone for submit '
+        'draft=$draftId',
+      );
+      continue;
+    }
+    final transient = required.every(
+      (d) => d.transient || d.reason == SellMediaDropReason.folderTombstoned,
+    );
+    final names = required.take(3).map((d) => _basenameOf(d.source)).join(', ');
+    throw SellMediaIntegrityException(
+      transient
+          ? '${required.length} photo/video file(s) could not be prepared '
+              'yet (device storage not ready: $names). Please try again.'
+          : '${required.length} selected photo/video file(s) are no longer '
+              'available ($names). Please re-add them and submit again.',
+      transient: transient,
+    );
+  }
+}
+
+bool _sameExpectedIds(
+  List<Map<String, String>> a,
+  List<Map<String, String>> b,
+) {
+  final left = a.map((e) => e['client_media_id']).toSet();
+  final right = b.map((e) => e['client_media_id']).toSet();
+  return left.length == right.length && left.containsAll(right);
+}
+
+SellMediaIntegrityException _integrityFromVerification(
+  SellMediaVerification v,
+) {
+  return SellMediaIntegrityException(
+    'The server has not confirmed all of your listing media '
+    '(${v.describe()}).',
+    transient: !v.permanent,
+  );
 }
 
 /// Phase 3B test-hardening fix: thrown by [PendingSellSubmissionService.
@@ -327,7 +466,42 @@ class PendingSellSubmissionService {
     String? editListingId,
   }) async {
     final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
+    // Race fix (background/foreground during photo preparation): the intent
+    // record written below is visible to [resumeAll] immediately, but its
+    // media is still being copied. A lifecycle-resume in that window used
+    // to start a SECOND worker for the same draft against the half-prepared
+    // record, and this method's final (stale-snapshot) write then clobbered
+    // whatever that worker had already advanced (carId/status). While a
+    // draft is preparing, no worker may start for it.
+    _preparingDrafts[id] = (_preparingDrafts[id] ?? 0) + 1;
+    try {
+      return await _prepareSubmissionRecordInner(
+        id,
+        carData: carData,
+        editListingId: editListingId,
+      );
+    } finally {
+      final left = (_preparingDrafts[id] ?? 1) - 1;
+      if (left <= 0) {
+        _preparingDrafts.remove(id);
+      } else {
+        _preparingDrafts[id] = left;
+      }
+    }
+  }
+
+  Future<SellSubmissionRecord> _prepareSubmissionRecordInner(
+    String id, {
+    required Map<String, dynamic> carData,
+    String? editListingId,
+  }) async {
     final existing = await SellSubmissionStatePrefs.load(id);
+    // A worker for this draft is already running: its record is the live
+    // source of truth. Re-preparing would overwrite its progress with a
+    // stale `pending` snapshot -- just join it.
+    if (existing != null && _activeRuns.containsKey(id)) {
+      return existing;
+    }
     final now = DateTime.now().millisecondsSinceEpoch;
     final trimmedEditId = editListingId?.trim();
     final resolvedEditId = (trimmedEditId?.isNotEmpty ?? false)
@@ -370,6 +544,16 @@ class PendingSellSubmissionService {
       ownerUserId: ownerUserId,
       completedMediaCount: existing?.completedMediaCount ?? 0,
       totalMediaCount: existing?.totalMediaCount ?? intentTotal,
+      // Counted from the raw selection NOW, before any durable copy can
+      // drop an item. Once a listing exists server-side its mapping is
+      // frozen and must survive a re-submit unchanged.
+      requiredMediaCount:
+          ((existing?.carId ?? '').trim().isNotEmpty && existing != null)
+              ? existing.requiredMediaCount
+              : ((resolvedEditId ?? '').trim().isNotEmpty
+                  ? 0
+                  : _countRequiredLocalMedia(carData)),
+      expectedMedia: existing?.expectedMedia,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     );
@@ -381,21 +565,81 @@ class PendingSellSubmissionService {
     // kill mid-create or mid-upload can never lose the source files. No-op
     // for media that is already durable (server URL, or already under the
     // draft's durable folder).
-    final durableCarData = await SellDraftMediaPersistence
-        .prepareCarDataForStorage(carData, draftId: id);
+    //
+    // Fail closed: an item that cannot be made durable used to be silently
+    // omitted here, and the shortened list then REPLACED the user's real
+    // selection in this record -- so the listing was created with fewer
+    // (or zero) photos and nothing ever flagged it. Now it becomes a
+    // recoverable `needsAttention` record that keeps the user's full
+    // selection (the ordinary draft stays visible -- see
+    // `sellSubmissionHidesDraft`), and the caller sees the error.
+    final Map<String, dynamic> durableCarData;
+    try {
+      durableCarData = await _hardenMediaOrThrow(carData, draftId: id);
+    } on SellMediaIntegrityException catch (e) {
+      await SellSubmissionStatePrefs.upsert(
+        record.copyWith(
+          carData: sellSubmissionJsonSafeCarData(carData),
+          status: SellSubmissionStatus.needsAttention,
+          lastErrorMessage: e.message,
+          lastErrorRetryable: e.transient,
+          updatedAt: DateTime.now().millisecondsSinceEpoch,
+        ),
+      );
+      appLog(
+        '[SELL RUN] prepare failed closed record=$id transient=${e.transient}: '
+        '${e.message}',
+      );
+      rethrow;
+    }
     final safeCarData = sellSubmissionJsonSafeCarData(durableCarData);
     final totalMedia = _mediaListLength(safeCarData['images']) +
         _mediaListLength(safeCarData['videos']) +
         _mediaListLength(safeCarData['damage_images']) +
         _mediaListLength(safeCarData['server_transcode_videos']);
 
-    record = record.copyWith(
+    // Re-read before writing: never regress a record someone else advanced
+    // while the (multi-second) copy above was running.
+    final fresh = await SellSubmissionStatePrefs.load(id);
+    record = (fresh ?? record).copyWith(
       carData: safeCarData,
       totalMediaCount: totalMedia,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
     await SellSubmissionStatePrefs.upsert(record);
     return record;
+  }
+
+  /// draftId -> number of in-flight [_prepareSubmissionRecord] calls. No
+  /// worker may start for a draft while it is still being prepared.
+  final Map<String, int> _preparingDrafts = <String, int>{};
+
+  bool isPreparing(String draftId) => _preparingDrafts.containsKey(draftId);
+
+  /// User-initiated retry of a `needsAttention`/`retryable` submission
+  /// (My Listings "Retry"). Keeps the record, its idempotency key, its
+  /// frozen media mapping and its local photos; only resets the status and
+  /// attempt counter so the worker will run again. Returns false when there
+  /// is nothing to retry.
+  Future<bool> retryNow(String draftId) async {
+    final r = await SellSubmissionStatePrefs.load(draftId);
+    if (r == null) return false;
+    if (r.status != SellSubmissionStatus.needsAttention &&
+        r.status != SellSubmissionStatus.retryable) {
+      return false;
+    }
+    await SellSubmissionStatePrefs.upsert(
+      r.copyWith(
+        status: SellSubmissionStatus.pending,
+        attempts: 0,
+        clearLastError: true,
+        updatedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    unawaited(
+      _ensureRunning(draftId).then<void>((_) {}, onError: (Object _) {}),
+    );
+    return true;
   }
 
   /// Called once when the user presses Submit. Durably records that this
@@ -534,11 +778,26 @@ class PendingSellSubmissionService {
       // "is it already done") -- any error/uncertainty falls through to
       // the same register-a-signal-and-wait path a fresh submission uses,
       // never the other way around.
+      // Success must reflect verified SERVER state: when this submission
+      // froze an `expected_media` manifest, every declared id must exist
+      // and be accepted on the server -- `phase_a_complete` alone is
+      // vacuously true over an empty manifest (e.g. an idempotent replay
+      // of a car created without media).
+      final frozenIds = <String>[
+        for (final e in record.expectedMedia ?? const <Map<String, String>>[])
+          if ((e['client_media_id'] ?? '').isNotEmpty) e['client_media_id']!,
+      ];
       final alreadyPhaseAReady = record.isEdit ||
-          await SellListingMediaUpload.waitForPhaseAComplete(
-            existingCarId,
-            maxAttempts: 1,
-          );
+          (frozenIds.isNotEmpty
+              ? (await SellListingMediaUpload.verifyExpectedMedia(
+                  carId: existingCarId,
+                  expectedIds: frozenIds,
+                  maxAttempts: 1,
+                )).ok
+              : await SellListingMediaUpload.waitForPhaseAComplete(
+                  existingCarId,
+                  maxAttempts: 1,
+                ));
       if (alreadyPhaseAReady) {
         // Kick off/join the background worker for any remaining Phase B
         // media and return immediately -- there is nothing left to wait
@@ -684,6 +943,14 @@ class PendingSellSubmissionService {
         );
         if (r.status == SellSubmissionStatus.completed) {
           appLog('[SELL RESUME] skipped reason=already-completed record=${r.draftId}');
+          continue;
+        }
+        // Still copying photos into durable storage (Submit pressed, then
+        // the app was backgrounded/foregrounded mid-copy): a second worker
+        // here would race the preparation. The preparing call starts the
+        // worker itself the moment it finishes.
+        if (_preparingDrafts.containsKey(r.draftId)) {
+          appLog('[SELL RESUME] skipped reason=preparing record=${r.draftId}');
           continue;
         }
         // Permanent failures need the user to reopen the draft — never
@@ -840,6 +1107,11 @@ class PendingSellSubmissionService {
     String draftId, {
     void Function(SellSubmissionPhase phase)? onPhase,
   }) async {
+    if (_preparingDrafts.containsKey(draftId)) {
+      // Defense in depth for any caller that bypasses [resumeAll]'s check.
+      appLog('[SELL RESUME] skipped reason=preparing record=$draftId');
+      return null;
+    }
     final loaded = await SellSubmissionStatePrefs.load(draftId);
     if (loaded == null) {
       appLog('[SELL RESUME] skipped reason=no-record record=$draftId');
@@ -895,6 +1167,16 @@ class PendingSellSubmissionService {
         );
         appLog('[SELL RESUME] skipped reason=owner-mismatch record=$draftId');
         return null;
+      }
+    } else {
+      // The profile had not loaded when Submit was pressed, so the record
+      // has no owner. Stamp it now that the account is known -- otherwise a
+      // different account signing in on this device could later resume
+      // (and publish) this submission.
+      final currentOwner = _currentAccountId();
+      if (currentOwner.isNotEmpty) {
+        record = record.copyWith(ownerUserId: currentOwner);
+        await SellSubmissionStatePrefs.upsert(record);
       }
     }
 
@@ -1013,11 +1295,12 @@ class PendingSellSubmissionService {
     if (!identityFrozen) {
       try {
         final beforeCarData = carData;
-        final hardened =
-            await SellDraftMediaPersistence.prepareCarDataForStorage(
-          carData,
-          draftId: draftId,
-        );
+        // Fail closed (never a silently shorter media list): a required
+        // item that cannot be made durable is recorded as
+        // retryable/needsAttention and surfaced, instead of the listing
+        // being created without it. Rethrown past the generic fallback
+        // below, which only covers unexpected I/O errors.
+        final hardened = await _hardenMediaOrThrow(carData, draftId: draftId);
         final safeHardened = sellSubmissionJsonSafeCarData(hardened);
         carData = Map<String, dynamic>.from(safeHardened);
         final remappedJobs = _remapPendingAsyncImageJobsAfterHarden(
@@ -1038,6 +1321,31 @@ class PendingSellSubmissionService {
           updatedAt: nowMs(),
         );
         await SellSubmissionStatePrefs.upsert(record);
+      } on SellMediaIntegrityException catch (e, st) {
+        // Persist as a recoverable state (NEVER proceed to create/complete
+        // with a shortened media list) and tell any waiting Submit caller
+        // the real reason.
+        _rejectCarReadySignals(draftId, e, st);
+        final failed = record.copyWith(
+          status: e.transient
+              ? SellSubmissionStatus.retryable
+              : SellSubmissionStatus.needsAttention,
+          lastErrorMessage: e.message,
+          lastErrorRetryable: e.transient,
+          updatedAt: nowMs(),
+        );
+        await SellSubmissionStatePrefs.upsert(failed);
+        _emit(SellSubmissionEvent(
+          draftId: draftId,
+          success: false,
+          needsAttention: !e.transient,
+          message: e.message,
+        ));
+        appLog(
+          '[SELL RESUME] ${e.transient ? 'retry' : 'needsAttention'} '
+          'record=$draftId reason=media-not-durable',
+        );
+        rethrow;
       } catch (e, st) {
         logNonFatal(e, st, 'PendingSellSubmissionService.rehardenMedia');
         carData = Map<String, dynamic>.from(record.carData);
@@ -1226,7 +1534,57 @@ class PendingSellSubmissionService {
           // `sell_step4_build.dart`/`sell_step5_logic.dart` (this service
           // never called it for the edit-mode `if` branch above either --
           // edit mode calls `ApiService.updateCar` directly).
+          // Freeze the media manifest BEFORE the network call and persist
+          // it, so a lost response / kill / replay always declares (and
+          // later uploads against) exactly the same client_media_ids.
+          var expectedManifest = SellMediaIdentity.buildExpectedMedia(carData);
+          // A create for this draft was already attempted with a frozen
+          // manifest (the response may have been lost AFTER the server
+          // committed it). The idempotency key is bound to that manifest:
+          // a replay returns the ORIGINAL car with exactly those ids.
+          // Never re-declare a different manifest under the same key --
+          // keep declaring the frozen one, and bind any REPLACED photo to
+          // the slot of the photo it replaces so its upload still lands on
+          // a manifest row the server really has. (A definitive 4xx answer
+          // to the create call un-freezes the manifest, see the catch
+          // below.)
+          final alreadyDeclared = record.expectedMedia;
+          if (alreadyDeclared != null && alreadyDeclared.isNotEmpty) {
+            final rebound = SellMediaIdentity.rebindToFrozenManifest(
+              carData,
+              alreadyDeclared,
+            );
+            if (rebound.problem != null) {
+              throw SellMediaIntegrityException(rebound.problem!);
+            }
+            carData = rebound.carData;
+            expectedManifest = alreadyDeclared;
+          }
+          if (expectedManifest.isEmpty && record.requiredMediaCount > 0) {
+            // The user selected media but none of it survived into the
+            // payload (e.g. every file was dropped while being prepared).
+            // The server cannot tell this from a deliberate media-less
+            // listing and would publish it with ZERO images -- never send it.
+            throw SellMediaIntegrityException(
+              'Your ${record.requiredMediaCount} selected photo/video '
+              'file(s) are missing from this listing, so it was not '
+              'submitted. Please re-add them and try again.',
+            );
+          }
+          record = record.copyWith(
+            expectedMedia: expectedManifest,
+            carData: carData,
+            updatedAt: nowMs(),
+          );
+          await SellSubmissionStatePrefs.upsert(record);
           final payload = buildSellCarCreatePayload(carData);
+          payload['expected_media'] = expectedManifest;
+          if (record.requiredMediaCount > 0) {
+            // Server-side backstop (see kk/routes/cars.py::create_car):
+            // refuses a create that declares no media although the client
+            // knows the user selected some.
+            payload['media_required_count'] = record.requiredMediaCount;
+          }
           Map<String, dynamic> created;
           try {
             created = await _createCarWithBoundedRetry(
@@ -1296,6 +1654,35 @@ class PendingSellSubmissionService {
           unawaited(discardSellDraftById(draftId));
         }
       }
+
+      // Mapping preservation: from here on the listing exists server-side
+      // with the manifest frozen above, so every later upload derives its
+      // `client_media_id` from the SAME carData paths. A legacy record
+      // (created before the manifest was persisted) is frozen now;
+      // otherwise the identities must still agree -- a mismatch would make
+      // every upload fail to reconcile with its manifest row and leave the
+      // server listing waiting forever, so surface it instead.
+      if (!record.isEdit) {
+        final currentManifest = SellMediaIdentity.buildExpectedMedia(carData);
+        final frozenManifest = record.expectedMedia;
+        if (frozenManifest == null) {
+          record = record.copyWith(
+            expectedMedia: currentManifest,
+            updatedAt: nowMs(),
+          );
+          await SellSubmissionStatePrefs.upsert(record);
+        } else if (!_sameExpectedIds(frozenManifest, currentManifest)) {
+          throw const SellMediaIntegrityException(
+            'The photos of this listing changed after it was created on '
+            'the server, so they can no longer be matched to it. Please '
+            'contact support or re-submit.',
+          );
+        }
+      }
+      final expectedMediaIds = <String>[
+        for (final e in record.expectedMedia ?? const <Map<String, String>>[])
+          if ((e['client_media_id'] ?? '').isNotEmpty) e['client_media_id']!,
+      ];
 
       // D-fix / Issue-2 fix (crash-window follow-up): on a resumed run
       // (listing already existed before this attempt -- true for EVERY
@@ -1396,12 +1783,24 @@ class PendingSellSubmissionService {
               await persistProgress(completedSoFar + delta);
             },
           );
-          final phaseAReady =
-              await SellListingMediaUpload.waitForPhaseAComplete(carId);
-          if (!phaseAReady) {
-            throw StateError(
-              'Media did not finish its initial transfer. Please try again.',
+          if (expectedMediaIds.isNotEmpty) {
+            // Server-authoritative: every declared id must exist in the
+            // manifest and be accepted. (`phase_a_complete` alone is
+            // vacuously true for a manifest that lacks our items.)
+            final verification =
+                await SellListingMediaUpload.verifyExpectedMedia(
+              carId: carId,
+              expectedIds: expectedMediaIds,
             );
+            if (!verification.ok) throw _integrityFromVerification(verification);
+          } else {
+            final phaseAReady =
+                await SellListingMediaUpload.waitForPhaseAComplete(carId);
+            if (!phaseAReady) {
+              throw StateError(
+                'Media did not finish its initial transfer. Please try again.',
+              );
+            }
           }
           // Fast-submission fix: the listing exists AND every expected
           // media item has now completed Phase A -- resolve any
@@ -1418,6 +1817,16 @@ class PendingSellSubmissionService {
         } catch (e, st) {
           logNonFatal(e, st, 'PendingSellSubmissionService.runPhaseAOnly');
           _rejectCarReadySignals(draftId, e, st);
+          // A PERMANENT manifest mismatch (an item the server does not know
+          // at all -- e.g. an idempotent create replay of a car created with
+          // a different/empty manifest -- or one it has rejected) is a
+          // definitive statement about SERVER state: uploading more bytes
+          // cannot make an unknown id acceptable, and carrying on would only
+          // end in a vaguer error. Surface it as needsAttention with the
+          // real reason. A TRANSIENT "not accepted yet" keeps the previous
+          // behaviour (the upload pass below runs), and the completion gate
+          // still refuses to finish until the server confirms every item.
+          if (e is SellMediaIntegrityException && !e.transient) rethrow;
         }
       } else {
         // Edit-mode: no create-time `expected_media` manifest exists at
@@ -1526,6 +1935,18 @@ class PendingSellSubmissionService {
         }
       }
 
+      // COMPLETED requires the SERVER to confirm every media item this
+      // submission declared -- not merely "no exception was thrown" and not
+      // merely that create_car returned 2xx. Until then the record and the
+      // durable local photos are kept (retryable / needsAttention).
+      if (!record.isEdit && expectedMediaIds.isNotEmpty) {
+        final verification = await SellListingMediaUpload.verifyExpectedMedia(
+          carId: carId,
+          expectedIds: expectedMediaIds,
+        );
+        if (!verification.ok) throw _integrityFromVerification(verification);
+      }
+
       completedSoFar =
           imagesCount + videosCount + damageCount + serverTranscodeCount;
       reportPhase(SellSubmissionPhase.done, completed: completedSoFar);
@@ -1628,6 +2049,18 @@ class PendingSellSubmissionService {
         updatedAt: nowMs(),
         pendingAsyncImageJobs: freshestForTerminalMerge?.pendingAsyncImageJobs,
         serverTranscodeVideos: freshestForTerminalMerge?.serverTranscodeVideos,
+        // The server DEFINITIVELY refused the create call (4xx other than a
+        // request timeout): no listing, no manifest and nothing bound to the
+        // idempotency key exists, so the seller may still change the media
+        // freely before the next attempt. Any other failure (transport
+        // error, 5xx/gateway timeout) is ambiguous -- the server may have
+        // committed -- so the manifest stays frozen.
+        clearExpectedMedia: !record.isEdit &&
+            carId.isEmpty &&
+            e is ApiException &&
+            e.statusCode >= 400 &&
+            e.statusCode < 500 &&
+            e.statusCode != 408,
       );
       await SellSubmissionStatePrefs.upsert(updated);
       appLog(
@@ -1690,10 +2123,25 @@ class PendingSellSubmissionService {
     Map<String, dynamic> carData, {
     String? draftId,
   }) async {
-    for (final key in const ['images', 'videos', 'damage_images']) {
+    for (final key in const [
+      'images',
+      'original_images',
+      'videos',
+      'damage_images',
+      'original_damage_images',
+    ]) {
       final raw = carData[key];
       if (raw is! List) continue;
       for (final item in raw) {
+        // A durable-copy step that could not find the file keeps the item
+        // flagged `local_missing` (so the UI can show a replace-photo
+        // tile). `localFile()` is null for such an item, which USED to make
+        // this preflight skip it -- yet it still received a
+        // `client_media_id` in `expected_media`, so the listing was created
+        // waiting for a photo that could never be uploaded.
+        if (ListingImageMedia.isLocalMissing(item)) {
+          return ListingImageMedia.source(item);
+        }
         final local = ListingImageMedia.localFile(item);
         if (local == null) continue;
         if (await _localMediaFileExists(local)) continue;

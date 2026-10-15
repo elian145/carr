@@ -39,6 +39,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/fake_media_summary.dart';
+
 class _FakeDocsPathProvider extends PathProviderPlatform {
   _FakeDocsPathProvider(this._path);
   final String _path;
@@ -103,6 +105,8 @@ void main() {
   // independent success.
   String? pollFailureForTaskId;
   late Map<String, int> pollAttemptCountByTaskId;
+  // Server-side `CarMediaItem` manifest model (see support/).
+  late FakeMediaManifest fakeManifest;
   // Scenario O2 only: overrides finalize's `job_state` from the default
   // `'queued'` to `'processing'` -- see that test's own comment for why.
   String? finalizeJobStateOverride;
@@ -144,6 +148,7 @@ void main() {
     pollFailureForTaskId = null;
     pollAttemptCountByTaskId = <String, int>{};
     finalizeJobStateOverride = null;
+    fakeManifest = FakeMediaManifest()..carLookup = (id) => carsById[id];
 
     ApiService.testHttpClient = MockClient((request) async {
       final method = request.method.toUpperCase();
@@ -154,6 +159,10 @@ void main() {
         carIdCounter++;
         final id = 'car_$carIdCounter';
         carsById[id] = {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]};
+        fakeManifest.registerCreate(
+          id,
+          json.decode(request.body) as Map<String, dynamic>,
+        );
         return http.Response(
           json.encode({'car': carsById[id]}),
           201,
@@ -170,6 +179,7 @@ void main() {
         final paths = List<String>.from(decoded['paths'] as List);
         final kind = (decoded['kind'] ?? 'listing').toString();
         imageAttachCallsLog.add(paths);
+        fakeManifest.noteUpload(id, 'image', viaClientAttach: true);
         final car = carsById.putIfAbsent(
           id,
           () => {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]},
@@ -202,6 +212,7 @@ void main() {
           () => {'id': id, 'images': <dynamic>[], 'videos': <dynamic>[]},
         );
         (car['videos'] as List).add({'id': videoRowIdCounter});
+        fakeManifest.noteUpload(id, 'video');
         return http.Response(
           json.encode({'videos': [{'id': videoRowIdCounter}]}),
           201,
@@ -244,6 +255,12 @@ void main() {
         // wall-clock timing.
         final gate = finalizeGate;
         if (gate != null) await gate.future;
+        // Real backend: finalize durably advances `phase_a_completed_at`
+        // of the declared video item (when the destination car is known).
+        final finalizeCarId = (decoded['car_id'] ?? '').toString();
+        if (finalizeCarId.isNotEmpty) {
+          fakeManifest.noteUpload(finalizeCarId, 'video');
+        }
         return http.Response(
           json.encode({
             'status': 'staged',
@@ -321,11 +338,12 @@ void main() {
           RegExp(r'^/api/cars/([^/]+)/media-summary$').firstMatch(path);
       if (method == 'GET' && mediaSummaryMatch != null) {
         return http.Response(
-          json.encode({
-            'media_status': 'processing',
-            'items': <dynamic>[],
-            'phase_a_complete': true,
-          }),
+          json.encode(
+            await fakeManifest.summary(
+              mediaSummaryMatch.group(1)!,
+              mediaStatus: 'processing',
+            ),
+          ),
           200,
           headers: {'content-type': 'application/json'},
         );

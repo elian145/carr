@@ -22,6 +22,7 @@ import '../shared/listings/owner_pending_media_merge.dart';
 import '../features/sell/pending_sell_submission_service.dart';
 import '../features/sell/sell_draft_helpers.dart';
 import '../features/sell/sell_pending_media_resume.dart';
+import '../features/sell/sell_submission_visibility.dart';
 import '../shared/ui/listing_feed_skeleton.dart';
 import '../shared/ui/empty_state_panel.dart';
 import '../features/listing/listing_mappers.dart';
@@ -64,6 +65,13 @@ class _MyListingsPageState extends State<MyListingsPage> {
   String? _error;
   bool _loadingDraft = true;
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
+
+  /// Durable submission records (Submit pressed, not yet verified complete
+  /// on the server) shown as pending entries. A listing that was submitted
+  /// must ALWAYS have a visible representation here until the server has
+  /// confirmed it -- see `sell_submission_visibility.dart`.
+  List<SellSubmissionRecord> _pendingSubmissions = <SellSubmissionRecord>[];
+  StreamSubscription<SellSubmissionEvent>? _submissionEvents;
   _MyListingsFilter _filter = _MyListingsFilter.all;
   bool _routeFilterApplied = false;
 
@@ -98,6 +106,15 @@ class _MyListingsPageState extends State<MyListingsPage> {
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetch(refresh: true));
     ListingEvents.deletedListingId.addListener(_onListingDeletedElsewhere);
+    // Keep the pending entries truthful as the background worker finishes,
+    // fails or schedules a retry (terminal events only; cheap prefs read).
+    _submissionEvents = PendingSellSubmissionService.instance.events.listen((
+      event,
+    ) {
+      if (!mounted) return;
+      unawaited(_loadDrafts());
+      if (event.success) unawaited(_fetch(refresh: true));
+    });
   }
 
   @override
@@ -124,6 +141,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
   @override
   void dispose() {
     ListingEvents.deletedListingId.removeListener(_onListingDeletedElsewhere);
+    unawaited(_submissionEvents?.cancel());
     _controller.dispose();
     super.dispose();
   }
@@ -339,9 +357,20 @@ class _MyListingsPageState extends State<MyListingsPage> {
       }
       for (final draft in await LegacySellDraftList.loadVisible()) {
         final id = (draft['draftId'] ?? '').toString();
+        // A draft is hidden only when its superseding submission is shown
+        // as a pending entry below (never hide without a replacement).
         final pending = id.isEmpty
             ? null
-            : await PendingSellSubmissionService.instance.peek(id);
+            : pendingRecords
+                .where(
+                  (r) =>
+                      r.draftId == id &&
+                      sellSubmissionHidesDraft(
+                        r,
+                        currentOwnerId: currentOwner,
+                      ),
+                )
+                .firstOrNull;
         if (pending != null) {
           appLog(
             '[SELL RESUME] my listings: hiding draft id=$id -- pending '
@@ -354,6 +383,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
       if (!mounted) return;
       setState(() {
         _drafts = drafts;
+        _pendingSubmissions = sellSubmissionPendingEntries(
+          pendingRecords,
+          currentOwnerId: currentOwner,
+        );
         _loadingDraft = false;
       });
       if (resumed) {
@@ -542,7 +575,25 @@ class _MyListingsPageState extends State<MyListingsPage> {
                             screenWidth,
                           );
                       final draftCount = visibleDrafts.length;
-                      final totalCards = _cars.length + draftCount;
+                      final showPending = showDrafts ||
+                          _filter == _MyListingsFilter.pending;
+                      final visiblePending = showPending
+                          ? sellSubmissionPendingEntries(
+                              _pendingSubmissions,
+                              currentOwnerId: (context
+                                          .read<AuthService>()
+                                          .currentUser?['id'] ??
+                                      '')
+                                  .toString()
+                                  .trim(),
+                              serverListingIds: {
+                                for (final c in _cars) listingPrimaryId(c),
+                              },
+                            )
+                          : const <SellSubmissionRecord>[];
+                      final pendingCount = visiblePending.length;
+                      final headCount = draftCount + pendingCount;
+                      final totalCards = _cars.length + headCount;
                       return totalCards == 0
                           ? ListView(
                               controller: _controller,
@@ -607,7 +658,14 @@ class _MyListingsPageState extends State<MyListingsPage> {
                                   );
                                 }
 
-                                final car = _cars[index - draftCount];
+                                if (index < headCount) {
+                                  return _buildPendingSubmissionCard(
+                                    visiblePending[index - draftCount],
+                                    listLayout: listingColumns == 1,
+                                  );
+                                }
+
+                                final car = _cars[index - headCount];
 
                                 final mapped = mapListingToGlobalCarCardData(
                                   context,

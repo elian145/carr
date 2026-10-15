@@ -67,6 +67,8 @@ abstract final class SellMediaIdentity {
     final source = ListingImageMedia.source(item);
     if (source.isEmpty) return null;
     if (_looksAlreadyRemote(source)) return null;
+    final bound = _boundIdOf(item);
+    if (bound != null) return bound;
     return stableIdFromSeed(
       '$kind:${identitySourceKey(source)}',
       prefix: 'img_',
@@ -86,11 +88,151 @@ abstract final class SellMediaIdentity {
       source = (item?.toString() ?? '').trim();
     }
     if (source.isEmpty || _looksAlreadyRemote(source)) return null;
+    final bound = _boundIdOf(item);
+    if (bound != null) return bound;
     return stableIdFromSeed(
       'video:${identitySourceKey(source)}',
       prefix: 'vid_',
     );
   }
+
+  /// Key under which [rebindToFrozenManifest] pins a frozen manifest id onto
+  /// a replacement item. Honored by [forImageItem]/[forNormalVideoItem], so
+  /// `expected_media`, every upload and the verification all derive the SAME
+  /// id for that item.
+  static const String boundIdKey = 'client_media_id';
+
+  static String? _boundIdOf(dynamic item) {
+    if (item is! Map) return null;
+    final raw = (item[boundIdKey] ?? '').toString().trim();
+    return RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(raw) ? raw : null;
+  }
+
+  /// Retry-after-replacing-photos support.
+  ///
+  /// Once `create_car` has been attempted, its `expected_media` ids are bound
+  /// to the idempotency key: a replay of that key returns the ORIGINAL car,
+  /// whose server-side manifest still holds exactly those ids (and the server
+  /// has no way to add or rename a manifest row). A replacement photo has a
+  /// new path, hence a new path-derived id the server would never accept an
+  /// upload for.
+  ///
+  /// So instead of changing the manifest, every local item whose id is NOT
+  /// in [frozen] is bound (in list order, per kind) to a frozen id that no
+  /// current item claims -- the replacement simply takes over the slot of
+  /// the photo it replaces. Items already matching [frozen] are untouched.
+  ///
+  /// Never invents or drops a slot: if the selection now holds more or fewer
+  /// items of a kind than the frozen manifest, [problem] describes it and the
+  /// caller must fail closed (the manifest, like the idempotency key, is not
+  /// negotiable).
+  static ({Map<String, dynamic> carData, String? problem})
+  rebindToFrozenManifest(
+    Map<String, dynamic> carData,
+    List<Map<String, String>> frozen,
+  ) {
+    final frozenIds = <String, String>{
+      for (final e in frozen)
+        if ((e['client_media_id'] ?? '').isNotEmpty)
+          e['client_media_id']!: e['kind'] ?? 'image',
+    };
+    final have = <String>{
+      for (final e in buildExpectedMedia(carData)) e['client_media_id']!,
+    };
+    final free = <String, List<String>>{
+      'image': <String>[],
+      'video': <String>[],
+    };
+    for (final entry in frozenIds.entries) {
+      if (!have.contains(entry.key)) {
+        (free[entry.value] ?? free['image']!).add(entry.key);
+      }
+    }
+    if (free['image']!.isEmpty && free['video']!.isEmpty) {
+      var extra = false;
+      for (final id in have) {
+        if (!frozenIds.containsKey(id)) extra = true;
+      }
+      return (
+        carData: carData,
+        problem: extra ? _manifestCountProblem : null,
+      );
+    }
+
+    final out = Map<String, dynamic>.from(carData);
+    var surplus = false;
+
+    List<dynamic> bind(
+      List<dynamic> items,
+      String kind,
+      String? Function(dynamic) idOf,
+    ) {
+      final next = <dynamic>[];
+      for (final item in items) {
+        final id = idOf(item);
+        if (id == null || frozenIds.containsKey(id)) {
+          next.add(item);
+          continue;
+        }
+        final slots = free[kind]!;
+        if (slots.isEmpty) {
+          surplus = true;
+          next.add(item);
+          continue;
+        }
+        final slot = slots.removeAt(0);
+        final bound = item is Map
+            ? Map<String, dynamic>.from(
+                item.map((k, v) => MapEntry(k.toString(), v)),
+              )
+            : <String, dynamic>{'source': ListingImageMedia.source(item)};
+        bound[boundIdKey] = slot;
+        next.add(bound);
+      }
+      return next;
+    }
+
+    final listingKey = (carData['original_images'] is List &&
+            (carData['original_images'] as List).isNotEmpty)
+        ? 'original_images'
+        : 'images';
+    final damageKey = (carData['original_damage_images'] is List &&
+            (carData['original_damage_images'] as List).isNotEmpty)
+        ? 'original_damage_images'
+        : 'damage_images';
+    if (carData[listingKey] is List) {
+      out[listingKey] = bind(
+        carData[listingKey] as List,
+        'image',
+        (item) => forImageItem(item, kind: 'listing'),
+      );
+    }
+    if (carData[damageKey] is List) {
+      out[damageKey] = bind(
+        carData[damageKey] as List,
+        'image',
+        (item) => forImageItem(item, kind: 'damage'),
+      );
+    }
+    if (carData['videos'] is List) {
+      out['videos'] = bind(
+        carData['videos'] as List,
+        'video',
+        forNormalVideoItem,
+      );
+    }
+
+    final leftover = free['image']!.isNotEmpty || free['video']!.isNotEmpty;
+    return (
+      carData: out,
+      problem: (surplus || leftover) ? _manifestCountProblem : null,
+    );
+  }
+
+  static const String _manifestCountProblem =
+      'This listing was already sent to the server with a fixed set of '
+      'photos/videos. You can replace them, but the number of photos/videos '
+      'must stay the same as when it was first submitted.';
 
   static bool _looksAlreadyRemote(String source) =>
       source.startsWith('http://') ||
