@@ -92,6 +92,42 @@ class SellSubmissionEvent {
 
 int _mediaListLength(dynamic v) => v is List ? v.length : 0;
 
+/// When prepare remaps picker/temp sources → durable paths, rewrite
+/// [pendingAsyncImageJobs] keys so resume still finds the recorded job ids.
+Map<String, String> _remapPendingAsyncImageJobsAfterHarden(
+  Map<String, dynamic> before,
+  Map<String, dynamic> after,
+  Map<String, String> jobs,
+) {
+  if (jobs.isEmpty) return jobs;
+  final oldToNew = <String, String>{};
+  void pairLists(String key) {
+    final a = before[key];
+    final b = after[key];
+    if (a is! List || b is! List) return;
+    final n = a.length < b.length ? a.length : b.length;
+    for (var i = 0; i < n; i++) {
+      final oldS = ListingImageMedia.source(a[i]).trim();
+      final newS = ListingImageMedia.source(b[i]).trim();
+      if (oldS.isEmpty || newS.isEmpty || oldS == newS) continue;
+      oldToNew[oldS] = newS;
+    }
+  }
+
+  pairLists('images');
+  pairLists('original_images');
+  pairLists('damage_images');
+  pairLists('original_damage_images');
+  pairLists('videos');
+  if (oldToNew.isEmpty) return jobs;
+
+  final out = <String, String>{};
+  for (final e in jobs.entries) {
+    out[oldToNew[e.key] ?? e.key] = e.value;
+  }
+  return out;
+}
+
 /// E-fix (real-device evidence): a `retryable` record used to be retried
 /// unconditionally on every single [PendingSellSubmissionService.resumeAll]
 /// trigger (app bootstrap, lifecycle resume, connectivity restore) forever
@@ -291,27 +327,12 @@ class PendingSellSubmissionService {
     String? editListingId,
   }) async {
     final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
-
-    // Media durability (req. #8): copy any still-local/cache picker files
-    // into durable app storage now, synchronously with the Submit press —
-    // before the first network call, not after — so a kill mid-create or
-    // mid-upload can never lose the source files. No-op for media that is
-    // already durable (server URL, or already under the draft's durable
-    // folder).
-    final durableCarData = await SellDraftMediaPersistence
-        .prepareCarDataForStorage(carData, draftId: id);
-    final safeCarData = sellSubmissionJsonSafeCarData(durableCarData);
-
     final existing = await SellSubmissionStatePrefs.load(id);
     final now = DateTime.now().millisecondsSinceEpoch;
     final trimmedEditId = editListingId?.trim();
     final resolvedEditId = (trimmedEditId?.isNotEmpty ?? false)
         ? trimmedEditId
         : existing?.editListingId;
-    final totalMedia = _mediaListLength(safeCarData['images']) +
-        _mediaListLength(safeCarData['videos']) +
-        _mediaListLength(safeCarData['damage_images']) +
-        _mediaListLength(safeCarData['server_transcode_videos']);
     // Account isolation: stamp the CURRENT account as this draft's owner
     // once, the first time Submit is pressed for it, and never overwrite
     // it on a later resubmit/resume of the SAME draft — otherwise a
@@ -321,7 +342,20 @@ class PendingSellSubmissionService {
     final ownerUserId = existing?.ownerUserId ??
         (_currentAccountId().isEmpty ? null : _currentAccountId());
 
-    final record = SellSubmissionRecord(
+    // iOS kill-during-prepare fix: persist submission INTENT before the
+    // (potentially multi-second) durable media copy. Force-quit mid-copy
+    // used to leave only an ordinary draft with no SellSubmissionRecord,
+    // so cold-start resumeAll() had nothing to resume. Intent carData may
+    // still reference picker paths; [_runSubmission] re-hardens via
+    // prepareCarDataForStorage before any network work.
+    final intentCarData = existing?.carData.isNotEmpty == true
+        ? existing!.carData
+        : sellSubmissionJsonSafeCarData(carData);
+    final intentTotal = _mediaListLength(intentCarData['images']) +
+        _mediaListLength(intentCarData['videos']) +
+        _mediaListLength(intentCarData['damage_images']) +
+        _mediaListLength(intentCarData['server_transcode_videos']);
+    var record = SellSubmissionRecord(
       draftId: id,
       status: SellSubmissionStatus.pending,
       isEdit: (resolvedEditId ?? '').trim().isNotEmpty,
@@ -329,15 +363,36 @@ class PendingSellSubmissionService {
       carId: existing?.carId ??
           ((resolvedEditId ?? '').trim().isNotEmpty ? resolvedEditId : null),
       pendingReview: existing?.pendingReview ?? false,
-      carData: safeCarData,
+      carData: intentCarData,
       idempotencyKey: existing?.idempotencyKey ??
           SellPendingMediaPrefs.createIdempotencyKey(id),
       currentPhase: existing?.currentPhase ?? 'creating',
       ownerUserId: ownerUserId,
       completedMediaCount: existing?.completedMediaCount ?? 0,
-      totalMediaCount: totalMedia,
+      totalMediaCount: existing?.totalMediaCount ?? intentTotal,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
+    );
+    await SellSubmissionStatePrefs.upsert(record);
+    appLog('[SELL RUN] persisted submit intent record=$id');
+
+    // Media durability (req. #8): copy any still-local/cache picker files
+    // into durable app storage now, before the first network call — so a
+    // kill mid-create or mid-upload can never lose the source files. No-op
+    // for media that is already durable (server URL, or already under the
+    // draft's durable folder).
+    final durableCarData = await SellDraftMediaPersistence
+        .prepareCarDataForStorage(carData, draftId: id);
+    final safeCarData = sellSubmissionJsonSafeCarData(durableCarData);
+    final totalMedia = _mediaListLength(safeCarData['images']) +
+        _mediaListLength(safeCarData['videos']) +
+        _mediaListLength(safeCarData['damage_images']) +
+        _mediaListLength(safeCarData['server_transcode_videos']);
+
+    record = record.copyWith(
+      carData: safeCarData,
+      totalMediaCount: totalMedia,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
     await SellSubmissionStatePrefs.upsert(record);
     return record;
@@ -649,6 +704,19 @@ class PendingSellSubmissionService {
           '[SELL RESUME] owner current=${currentOwner.isEmpty ? 'null' : currentOwner} '
           'record=${owner.isEmpty ? 'null' : owner}',
         );
+        // Defer when the record has an owner but the profile id is not
+        // loaded yet (token may already be present). Proceeding here would
+        // race an account-switch; skipping permanently used to leave
+        // submissions stuck until a lucky lifecycle event. The auth/
+        // profile-ready trigger re-invokes resumeAll once currentUser.id
+        // is known.
+        if (owner.isNotEmpty && currentOwner.isEmpty) {
+          appLog(
+            '[SELL RESUME] deferred reason=owner-unknown-pending-profile '
+            'record=${r.draftId}',
+          );
+          continue;
+        }
         if (owner.isNotEmpty && owner != currentOwner) {
           appLog('[SELL RESUME] skipped reason=owner-mismatch record=${r.draftId}');
           continue;
@@ -811,7 +879,16 @@ class PendingSellSubmissionService {
         '[SELL RESUME] owner current=${currentOwner.isEmpty ? 'null' : currentOwner} '
         'record=$recordOwner',
       );
-      if (currentOwner.isEmpty || currentOwner != recordOwner) {
+      if (currentOwner.isEmpty) {
+        // Profile not loaded yet — leave the record untouched; the
+        // profile-ready auth listener retries resumeAll.
+        appLog(
+          '[SELL RESUME] deferred reason=owner-unknown-pending-profile '
+          'record=$draftId',
+        );
+        return null;
+      }
+      if (currentOwner != recordOwner) {
         appLog(
           'PendingSellSubmissionService: skipping $draftId -- owned by a '
           'different account than the one currently signed in',
@@ -881,7 +958,92 @@ class PendingSellSubmissionService {
       }
     }
 
-    final carData = Map<String, dynamic>.from(record.carData);
+    var carData = Map<String, dynamic>.from(record.carData);
+
+    // E-fix: a required LOCAL media file that no longer exists (app
+    // storage cleared, durable copy deleted out from under a resumed
+    // draft, etc.) can never succeed no matter how many times it's
+    // retried -- fail closed to `needsAttention` immediately instead of
+    // silently dropping the file or retrying forever. Retained server
+    // references (already-uploaded URLs/paths) are untouched by this
+    // check; only genuinely local, not-yet-uploaded media is examined.
+    //
+    // MUST run before re-harden: prepareCarDataForStorage quietly omits
+    // unreachable locals, which would otherwise let a submission succeed
+    // with fewer photos than the user picked.
+    final missingLocalMedia = await _firstUnreachableLocalMediaPath(
+      carData,
+      draftId: draftId,
+    );
+    if (missingLocalMedia != null) {
+      final failed = record.copyWith(
+        status: SellSubmissionStatus.needsAttention,
+        lastErrorMessage:
+            'Local media file is no longer available: $missingLocalMedia',
+        lastErrorRetryable: false,
+        updatedAt: nowMs(),
+      );
+      await SellSubmissionStatePrefs.upsert(failed);
+      _emit(SellSubmissionEvent(
+        draftId: draftId,
+        success: false,
+        needsAttention: true,
+        message: failed.lastErrorMessage,
+        carId: (failed.carId?.trim().isNotEmpty ?? false)
+            ? failed.carId
+            : null,
+      ));
+      appLog('[SELL RESUME] needsAttention record=$draftId reason=missing-local-media');
+      appLog('[SELL RESUME] skipped reason=missing-local-media record=$draftId');
+      return null;
+    }
+
+    // Re-harden local media ONLY while path-derived client_media_ids are
+    // still mutable -- i.e. before create_car (new listing) / before Phase A
+    // starts (edit). After expected_media is registered on the server,
+    // remapping picker→durable paths would change SellMediaIdentity seeds
+    // and break resume matching. Cold-start after kill mid-prepare still
+    // needs this: intent record may still hold picker/temp sources.
+    final carIdTrimmed = (record.carId ?? '').trim();
+    final identityFrozen = record.isEdit
+        ? record.currentPhase != 'creating' ||
+            record.pendingAsyncImageJobs.isNotEmpty ||
+            record.completedMediaCount > 0
+        : carIdTrimmed.isNotEmpty;
+    if (!identityFrozen) {
+      try {
+        final beforeCarData = carData;
+        final hardened =
+            await SellDraftMediaPersistence.prepareCarDataForStorage(
+          carData,
+          draftId: draftId,
+        );
+        final safeHardened = sellSubmissionJsonSafeCarData(hardened);
+        carData = Map<String, dynamic>.from(safeHardened);
+        final remappedJobs = _remapPendingAsyncImageJobsAfterHarden(
+          beforeCarData,
+          carData,
+          record.pendingAsyncImageJobs,
+        );
+        final hardenedTotal = _mediaListLength(carData['images']) +
+            _mediaListLength(carData['videos']) +
+            _mediaListLength(carData['damage_images']) +
+            _mediaListLength(carData['server_transcode_videos']);
+        record = record.copyWith(
+          carData: carData,
+          pendingAsyncImageJobs: remappedJobs,
+          totalMediaCount: record.totalMediaCount > 0
+              ? record.totalMediaCount
+              : hardenedTotal,
+          updatedAt: nowMs(),
+        );
+        await SellSubmissionStatePrefs.upsert(record);
+      } catch (e, st) {
+        logNonFatal(e, st, 'PendingSellSubmissionService.rehardenMedia');
+        carData = Map<String, dynamic>.from(record.carData);
+      }
+    }
+
     final imagesCount = _mediaListLength(carData['images']);
     final videosCount = _mediaListLength(carData['videos']);
     final damageCount = _mediaListLength(carData['damage_images']);
@@ -909,40 +1071,6 @@ class PendingSellSubmissionService {
       '[SELL RUN] restored local sources existing='
       '${localSourceCounts.existing}/${localSourceCounts.total}',
     );
-
-    // E-fix: a required LOCAL media file that no longer exists (app
-    // storage cleared, durable copy deleted out from under a resumed
-    // draft, etc.) can never succeed no matter how many times it's
-    // retried -- fail closed to `needsAttention` immediately instead of
-    // silently dropping the file or retrying forever. Retained server
-    // references (already-uploaded URLs/paths) are untouched by this
-    // check; only genuinely local, not-yet-uploaded media is examined.
-    final missingLocalMedia = await _firstUnreachableLocalMediaPath(
-      carData,
-      draftId: draftId,
-    );
-    if (missingLocalMedia != null) {
-      final failed = record.copyWith(
-        status: SellSubmissionStatus.needsAttention,
-        lastErrorMessage:
-            'Local media file is no longer available: $missingLocalMedia',
-        lastErrorRetryable: false,
-        updatedAt: nowMs(),
-      );
-      await SellSubmissionStatePrefs.upsert(failed);
-      _emit(SellSubmissionEvent(
-        draftId: draftId,
-        success: false,
-        needsAttention: true,
-        message: failed.lastErrorMessage,
-        carId: (failed.carId?.trim().isNotEmpty ?? false)
-            ? failed.carId
-            : null,
-      ));
-      appLog('[SELL RESUME] needsAttention record=$draftId reason=missing-local-media');
-      appLog('[SELL RESUME] skipped reason=missing-local-media record=$draftId');
-      return null;
-    }
 
     appLog('[SELL RESUME] starting record=$draftId');
     record = record.copyWith(

@@ -9,15 +9,12 @@
 // the server" (Bug 3).
 //
 // Confirmed by reading `pending_sell_submission_service.dart`:
-// `_prepareSubmissionRecord()` calls
-// `SellDraftMediaPersistence.prepareCarDataForStorage()` (which durably
-// copies every local media reference) BEFORE creating or persisting the
-// `SellSubmissionRecord` -- both `submit()` (full-completion contract)
-// AND `submitFast()` (fast-optimistic-submission entry point, added for
-// the "submit without waiting on media/transcode" fix) delegate to this
-// SAME shared helper, so every local reference inside a persisted
-// record's `carData` is guaranteed durable no matter which entry point
-// the caller uses.
+// `_prepareSubmissionRecord()` first upserts a submit INTENT (so a kill
+// mid-copy still leaves a resumable SellSubmissionRecord), then calls
+// `SellDraftMediaPersistence.prepareCarDataForStorage()` and upserts the
+// durable carData before any network work. Both `submit()` and
+// `submitFast()` delegate to this SAME helper, so the durable copy is
+// always on disk before create/upload regardless of entry point.
 import 'dart:io';
 
 import 'package:car_listing_app/shared/listings/listing_image_media.dart';
@@ -38,12 +35,11 @@ class _FakeDocsPathProvider extends PathProviderPlatform {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('static wiring: submit() durably copies media before persisting '
-      'the pending record', () {
+  group('static wiring: submit() persists intent then durable media', () {
     test(
-      'PendingSellSubmissionService._prepareSubmissionRecord() calls '
-      'SellDraftMediaPersistence.prepareCarDataForStorage() BEFORE the '
-      'first SellSubmissionStatePrefs.upsert() call',
+      'PendingSellSubmissionService._prepareSubmissionRecord() upserts '
+      'submit intent first, then prepareCarDataForStorage(), then upserts '
+      'durable carData before returning',
       () {
         final content = File(
           p.join(
@@ -82,11 +78,25 @@ void main() {
         final firstUpsertIdx = body.indexOf('SellSubmissionStatePrefs.upsert(');
         expect(
           firstUpsertIdx,
+          greaterThanOrEqualTo(0),
+          reason: 'must persist a SellSubmissionRecord',
+        );
+        expect(
+          firstUpsertIdx,
+          lessThan(prepareIdxAlt),
+          reason: 'submit INTENT must be upserted BEFORE prepare so a kill '
+              'mid-copy still leaves a resumable pending record',
+        );
+        final secondUpsertIdx = body.indexOf(
+          'SellSubmissionStatePrefs.upsert(',
+          firstUpsertIdx + 1,
+        );
+        expect(
+          secondUpsertIdx,
           greaterThan(prepareIdxAlt),
-          reason: 'the durable copy must happen strictly BEFORE the first '
-              'persisted record write -- otherwise a kill between "record '
-              'persisted" and "media copied" could durably record a '
-              'cache/temp path that disappears later',
+          reason: 'durable carData must be upserted AFTER prepare and '
+              'BEFORE any network work -- intent-only picker paths must '
+              'not be the final pre-create snapshot',
         );
       },
     );

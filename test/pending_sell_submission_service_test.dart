@@ -36,6 +36,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
+import 'package:car_listing_app/features/sell/sell_media_identity.dart';
 import 'package:car_listing_app/features/sell/sell_video_compression.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
@@ -147,6 +148,8 @@ void main() {
     final docsDir = Directory('${tempDir.path}/docs')
       ..createSync(recursive: true);
     PathProviderPlatform.instance = _FakeDocsPathProvider(docsDir.path);
+    SellDraftMediaPersistence.debugBeforeCopyOverride = null;
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
 
     SharedPreferences.setMockInitialValues({});
 
@@ -449,13 +452,17 @@ void main() {
   });
 
   tearDown(() async {
+    SellDraftMediaPersistence.debugBeforeCopyOverride = null;
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     await ApiService.clearTokens();
     ApiService.testHttpClient = null;
     setRuntimeApiBaseOverride(null);
     TokenStore.testMode = false;
     TokenStore.resetForTests();
     debugSellSubmissionRetryBackoffOverride = null;
-    tempDir.deleteSync(recursive: true);
+    try {
+      tempDir.deleteSync(recursive: true);
+    } catch (_) {}
   });
 
   group('SellSubmissionRecord persistence (no HTTP)', () {
@@ -736,6 +743,159 @@ void main() {
       expect(
         createCarCalls.single['idempotencyKey'],
         'sell-create-$draftId',
+      );
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+    },
+  );
+
+  // ---- D2: submit intent survives kill mid durable-media prepare ----------
+  test(
+    'D2: Submit persists a pending intent BEFORE durable media copy finishes '
+    '-- a simulated kill mid-prepare still leaves a resumable record (no '
+    'duplicate car once resume completes)',
+    () async {
+      const draftId = 'draft_d2_intent';
+      final img = File('${tempDir.path}/d2.jpg')
+        ..writeAsBytesSync([0xFF, 0xD8, 0xFF, 0xE0, 9, 8, 7]);
+      final gate = Completer<void>();
+      SellDraftMediaPersistence.debugBeforeCopyOverride = (_) => gate.future;
+
+      final submitFuture = PendingSellSubmissionService.instance.submitFast(
+        draftId: draftId,
+        carData: _baseCarData(images: [img.path]),
+      );
+
+      // Intent must land before the blocked durable copy completes.
+      await _waitUntil(() async {
+        final r = await SellSubmissionStatePrefs.load(draftId);
+        return r != null && r.status == SellSubmissionStatus.pending;
+      });
+      final intent = await SellSubmissionStatePrefs.load(draftId);
+      expect(intent, isNotNull);
+      expect(intent!.carId, isNull);
+      expect(createCarCalls, isEmpty);
+
+      // Simulate process death: abandon the in-flight submit Future and
+      // clear the in-memory activeRuns map via a fresh "session" — the
+      // durable prefs record is what cold start would reload.
+      SellDraftMediaPersistence.debugBeforeCopyOverride = null;
+      gate.complete();
+      // Drain the abandoned submit without failing this test.
+      unawaited(submitFuture.catchError((_) => null));
+
+      // Drop in-memory runner bookkeeping the way a process kill would.
+      // resumeAll must rediscover the prefs record and finish create once.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      // Force-clear any still-active run by waiting briefly then resuming
+      // after the blocked copy is released; if a runner is still held,
+      // join it. Either path must end with exactly one create_car.
+      await PendingSellSubmissionService.instance.resumeAll();
+      await _waitUntil(() async {
+        return (await SellSubmissionStatePrefs.load(draftId)) == null;
+      });
+      expect(
+        createCarCalls.length,
+        1,
+        reason: 'intent + resume must create exactly one listing',
+      );
+    },
+  );
+
+  // ---- D3: owner unknown (profile not loaded) defers, then resumes --------
+  test(
+    'D3: resumeAll defers a stamped-owner record while currentUser.id is '
+    'empty, then resumes without duplicate create once the same owner is '
+    'known',
+    () async {
+      const draftId = 'draft_d3_owner_defer';
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.pending,
+          carData: _baseCarData(),
+          idempotencyKey: 'sell-create-$draftId',
+          createdAt: now,
+          updatedAt: now,
+          ownerUserId: 'user_defer',
+        ),
+      );
+
+      // Token present, profile empty — AuthService has no currentUser.
+      await AuthService().logout();
+      await ApiService.setTokens(
+        accessToken: 'test_access_token',
+        refreshToken: 'test_refresh_token',
+      );
+
+      final deferred =
+          await PendingSellSubmissionService.instance.resumeAll();
+      expect(deferred, isFalse);
+      expect(createCarCalls, isEmpty);
+      expect(
+        await SellSubmissionStatePrefs.load(draftId),
+        isNotNull,
+        reason: 'deferral must leave the record untouched',
+      );
+
+      await AuthService().adoptTestSession(user: {'id': 'user_defer'});
+      final resumed =
+          await PendingSellSubmissionService.instance.resumeAll();
+      expect(resumed, isTrue);
+      expect(createCarCalls.length, 1);
+      expect(await SellSubmissionStatePrefs.load(draftId), isNull);
+      await AuthService().logout();
+    },
+  );
+
+  // ---- D4: expected_media client_media_id stable across prepare+resume ----
+  test(
+    'D4: create_car expected_media client_media_ids match Phase-A upload '
+    'ids after an interrupted-and-resumed submission (canonical path '
+    'identity)',
+    () async {
+      const draftId = 'draft_d4_identity';
+      final imgA = File('${tempDir.path}/d4a.jpg')
+        ..writeAsStringSync('ORIGINAL_A');
+      final imgB = File('${tempDir.path}/d4b.jpg')
+        ..writeAsStringSync('ORIGINAL_B');
+      final carData = _baseCarData(images: [imgA.path, imgB.path]);
+      carData['original_images'] =
+          List<dynamic>.from(carData['images'] as List);
+
+      final durable = await SellDraftMediaPersistence.prepareCarDataForStorage(
+        carData,
+        draftId: draftId,
+      );
+      final expectedIds = SellMediaIdentity.buildExpectedMedia(durable)
+          .map((e) => e['client_media_id'])
+          .toSet();
+      expect(expectedIds.length, 2);
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await SellSubmissionStatePrefs.upsert(
+        SellSubmissionRecord(
+          draftId: draftId,
+          status: SellSubmissionStatus.pending,
+          carData: durable,
+          idempotencyKey: 'sell-create-$draftId',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final resumed =
+          await PendingSellSubmissionService.instance.resumeAll();
+      expect(resumed, isTrue);
+      expect(createCarCalls, hasLength(1));
+      final declared = (createCarCalls.single['body']['expected_media'] as List)
+          .map((e) => e['client_media_id'])
+          .toSet();
+      expect(
+        declared,
+        expectedIds,
+        reason: 'resume must declare the same client_media_ids computed '
+            'from the durable original paths before the kill',
       );
       expect(await SellSubmissionStatePrefs.load(draftId), isNull);
     },

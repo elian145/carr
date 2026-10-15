@@ -14,6 +14,7 @@ import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/prefs/sell_listing_draft_prefs.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
+import '../shared/prefs/sell_submission_state_prefs.dart';
 import '../shared/prefs/legacy_sell_draft_list.dart';
 import '../shared/prefs/listing_layout_prefs.dart';
 import '../shared/listings/owner_media_overlay.dart';
@@ -298,18 +299,43 @@ class _MyListingsPageState extends State<MyListingsPage> {
       // filter by an active pending-submission record below (see
       // `SellDraftGatePage._loadDrafts` for the full explanation) rather
       // than relying solely on resume timing to keep this list correct.
+      final auth = Provider.of<AuthService>(context, listen: false);
+      final currentOwner = (auth.currentUser?['id'] ?? '').toString().trim();
       await SellDraftMediaPersistence.ensureDocumentsPathCached();
       final resumed = await SellPendingMediaResume.tryResume();
       final drafts = <Map<String, dynamic>>[];
       final ownerKey = _buildDraftOwnerKey();
+      // Hide the modern (owner-keyed) draft while ANY active submission
+      // record exists for this account — same contract as the legacy
+      // draftId peek filter below. Without this, Submit→kill→reopen
+      // showed a freely editable "draft" even though a pending
+      // SellSubmissionRecord was already durably recorded.
+      final pendingRecords = await SellSubmissionStatePrefs.loadAll();
+      final hasActiveSubmission = pendingRecords.any((r) {
+        if (r.status == SellSubmissionStatus.completed ||
+            r.status == SellSubmissionStatus.needsAttention) {
+          return false;
+        }
+        final owner = (r.ownerUserId ?? '').trim();
+        if (owner.isEmpty) return true;
+        if (currentOwner.isEmpty) return true;
+        return owner == currentOwner;
+      });
       final modernDraft = await SellListingDraftPrefs.load(ownerKey);
-      if (modernDraft != null && _hasMeaningfulDraftData(modernDraft)) {
+      if (modernDraft != null &&
+          _hasMeaningfulDraftData(modernDraft) &&
+          !hasActiveSubmission) {
         drafts.add(<String, dynamic>{
           'draftId': 'modern_$ownerKey',
           'currentStep': modernDraft['complete'] == true ? 5 : 0,
           'carData': modernDraft,
           'isModern': true,
         });
+      } else if (modernDraft != null && hasActiveSubmission) {
+        appLog(
+          '[SELL RESUME] my listings: hiding modern draft -- pending '
+          'submission exists',
+        );
       }
       for (final draft in await LegacySellDraftList.loadVisible()) {
         final id = (draft['draftId'] ?? '').toString();

@@ -90,21 +90,36 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
     _authService?.removeListener(_onAuthChanged);
     _authService = auth;
     auth.addListener(_onAuthChanged);
+    // Catch auth/profile that finished before this listener was attached
+    // (bootstrap awaits AuthService.initialize before first frame).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onAuthChanged());
   }
 
   bool _wasAuthenticated = false;
+  String _lastResumeOwnerId = '';
 
   void _onAuthChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkApprovedDealerProfile();
     });
-    // Automatic-resume trigger (req. #5): a Sell submission recorded while
-    // signed out (should not normally happen — Submit requires auth — but
-    // also covers a token refresh completing) gets picked back up the
-    // moment auth becomes true, without the user reopening the draft.
+    // Automatic-resume triggers:
+    // 1) Auth becomes true (login / cold-start profile load).
+    // 2) Profile `id` first becomes known after a token-only session —
+    //    resumeAll previously deferred records owned by that id while
+    //    currentUser was still null; without this second trigger they
+    //    stayed stuck until a manual lifecycle event.
     final isAuthenticated = _authService?.isAuthenticated ?? false;
-    if (isAuthenticated && !_wasAuthenticated) {
+    final ownerId =
+        (_authService?.currentUser?['id'] ?? '').toString().trim();
+    final authBecameTrue = isAuthenticated && !_wasAuthenticated;
+    final profileBecameKnown = isAuthenticated &&
+        ownerId.isNotEmpty &&
+        ownerId != _lastResumeOwnerId;
+    if (authBecameTrue || profileBecameKnown) {
       unawaited(PendingSellSubmissionService.instance.resumeAll());
+    }
+    if (ownerId.isNotEmpty) {
+      _lastResumeOwnerId = ownerId;
     }
     _wasAuthenticated = isAuthenticated;
   }
