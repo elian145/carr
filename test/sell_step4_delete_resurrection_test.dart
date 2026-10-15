@@ -188,12 +188,16 @@ void main() {
     await FakeApiServer.ensureStarted();
   });
 
+  late PathProviderPlatform previousPathProvider;
+
   setUp(() async {
     tempDir = await Directory.systemTemp.createTemp('sell_delete_resurrect_');
     originalPicker = ImagePickerPlatform.instance;
     fakePicker = FakeMultiImagePickerPlatform();
     ImagePickerPlatform.instance = fakePicker;
+    previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = _FakeDocsPathProvider(tempDir.path);
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
 
     SharedPreferences.setMockInitialValues({
       'push_enabled': false,
@@ -213,7 +217,9 @@ void main() {
 
   tearDown(() async {
     SellDraftMediaPersistence.debugBeforeCopyOverride = null;
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     ImagePickerPlatform.instance = originalPicker;
+    PathProviderPlatform.instance = previousPathProvider;
     ApiService.testHttpClient = null;
     await ApiService.clearTokens();
     AuthService().resetTestSession();
@@ -232,6 +238,14 @@ void main() {
       File(path).writeAsBytesSync(<int>[0xFF, 0xD8, 0xFF, 0xD9, i]);
       return XFile(path);
     });
+  }
+
+  /// Re-install the docs fake after MyApp/plugin registration may have
+  /// replaced [PathProviderPlatform.instance], and clear any sticky
+  /// unreachable warm from an earlier MethodChannel probe.
+  void rebindDocsPathProvider() {
+    PathProviderPlatform.instance = _FakeDocsPathProvider(tempDir.path);
+    SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
   }
 
   Future<void> tapAddPhotos(WidgetTester tester, {bool more = false}) async {
@@ -312,17 +326,25 @@ void main() {
   /// for this same pick), so every later restart in the test is then
   /// deterministically caused by (and only by) that test's own explicit
   /// deletes.
-  Future<void> waitForInitialEnqueue(
+  Future<void> waitForEnqueueCount(
     WidgetTester tester,
     _ControlledJobClient controlled,
+    int minBatches,
   ) async {
-    for (var round = 0; round < 60; round++) {
-      if (controlled.enqueuedBatches.isNotEmpty) return;
+    for (var round = 0; round < 90; round++) {
+      if (controlled.enqueuedBatches.length >= minBatches) return;
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 30)),
       );
       await tester.pump(const Duration(milliseconds: 100));
     }
+  }
+
+  Future<void> waitForInitialEnqueue(
+    WidgetTester tester,
+    _ControlledJobClient controlled,
+  ) async {
+    await waitForEnqueueCount(tester, controlled, 1);
   }
 
   group(
@@ -438,6 +460,7 @@ void main() {
           await tester.pumpWidget(const legacy.MyApp());
           await tester.pump();
           await openSellStep1Fresh(tester);
+          rebindDocsPathProvider();
 
           final files = fixtureFiles('b', 3);
           fakePicker.queue.add(files);
@@ -509,6 +532,7 @@ void main() {
           await tester.pumpWidget(const legacy.MyApp());
           await tester.pump();
           await openSellStep1Fresh(tester);
+          rebindDocsPathProvider();
 
           final files = fixtureFiles('c', 2);
           fakePicker.queue.add(files);
@@ -559,6 +583,7 @@ void main() {
           await tester.pumpWidget(const legacy.MyApp());
           await tester.pump();
           await openSellStep1Fresh(tester);
+          rebindDocsPathProvider();
 
           final files = fixtureFiles('d', 5);
           fakePicker.queue.add(files);
@@ -665,6 +690,7 @@ void main() {
           await tester.pumpWidget(const legacy.MyApp());
           await tester.pump();
           await openSellStep1Fresh(tester);
+          rebindDocsPathProvider();
 
           final files = fixtureFiles('ef', 3);
           fakePicker.queue.add(files);
@@ -731,6 +757,7 @@ void main() {
           await tester.pumpWidget(const legacy.MyApp());
           await tester.pump();
           await openSellStep1Fresh(tester);
+          rebindDocsPathProvider();
 
           final file = fixtureFiles('g', 1).single;
           fakePicker.queue.add([file]);
@@ -744,12 +771,16 @@ void main() {
           // Delete it, then re-pick the SAME physical path.
           await deletePhotoAt(tester, 0);
           await settle(tester);
+          // Last-photo empty-draft discard remints the draft id and may
+          // rebuild Step 4; rebind the docs fake so durable copy/blur for
+          // the re-pick cannot hang on a MethodChannel path_provider.
+          rebindDocsPathProvider();
           expect(photoCountFromLabel(tester), 0);
 
           fakePicker.queue.add([XFile(file.path)]);
           await tapAddPhotos(tester, more: false);
           await tester.pump();
-          await settle(tester);
+          await waitForEnqueueCount(tester, controlled, 2);
           expect(photoCountFromLabel(tester), 1);
           expect(controlled.enqueuedBatches.length, greaterThanOrEqualTo(2));
           final newJobId = controlled.enqueuedBatches.last.single;

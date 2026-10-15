@@ -1,4 +1,5 @@
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 
 import '../../shared/listings/listing_image_media.dart';
 import 'sell_server_transcode_video.dart';
@@ -26,6 +27,20 @@ import 'sell_server_transcode_video.dart';
 abstract final class SellMediaIdentity {
   SellMediaIdentity._();
 
+  /// Canonical form of a local filesystem path for identity hashing.
+  ///
+  /// `prepareCarDataForStorage` may return the same durable file with
+  /// different separator spellings across passes (first write via
+  /// `p.join` vs a later `p.normalize` / iOS-container relocate). Without
+  /// this, `create_car`'s `expected_media` and the Phase-A upload's
+  /// `client_media_id` can disagree for the exact same file.
+  static String identitySourceKey(String source) {
+    final s = source.trim();
+    if (s.isEmpty || _looksAlreadyRemote(s)) return s;
+    if (s.startsWith('content://')) return s;
+    return p.normalize(s).replaceAll(r'\', '/');
+  }
+
   /// A short, filesystem/path-independent-looking but fully DETERMINISTIC
   /// FNV-1a-based hex id for [seed] (typically a local file path). Pure
   /// Dart, no dependency on `package:crypto` -- this file is on the hot
@@ -52,7 +67,10 @@ abstract final class SellMediaIdentity {
     final source = ListingImageMedia.source(item);
     if (source.isEmpty) return null;
     if (_looksAlreadyRemote(source)) return null;
-    return stableIdFromSeed('$kind:$source', prefix: 'img_');
+    return stableIdFromSeed(
+      '$kind:${identitySourceKey(source)}',
+      prefix: 'img_',
+    );
   }
 
   /// The stable id for one normal (non-server-transcode) `videos` entry
@@ -68,7 +86,10 @@ abstract final class SellMediaIdentity {
       source = (item?.toString() ?? '').trim();
     }
     if (source.isEmpty || _looksAlreadyRemote(source)) return null;
-    return stableIdFromSeed('video:$source', prefix: 'vid_');
+    return stableIdFromSeed(
+      'video:${identitySourceKey(source)}',
+      prefix: 'vid_',
+    );
   }
 
   static bool _looksAlreadyRemote(String source) =>

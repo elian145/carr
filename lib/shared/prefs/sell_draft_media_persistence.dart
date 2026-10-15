@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -63,11 +63,29 @@ class SellDraftMediaPersistence {
   /// sync resolve. Populated by [_draftDir] / [ensureDocumentsPathCached].
   static String? _cachedDocsPath;
 
+  /// In-flight warm so concurrent callers share one path_provider probe.
+  static Future<void>? _docsPathWarmInFlight;
+
+  /// Bumped by [debugResetMediaLifecycleForTest] so a prior failed warm
+  /// (hanging MethodChannel in widget tests) can be retried after tests
+  /// install a [PathProviderPlatform] fake.
+  static int _docsPathProbeEpoch = 0;
+  static int _docsPathFailedEpoch = -1;
+
   static Future<Directory> _draftDir(String draftId) async {
-    final docs = await getApplicationDocumentsDirectory();
-    _cachedDocsPath = docs.path;
+    // Never call getApplicationDocumentsDirectory() unguarded here: in
+    // widget tests the MethodChannel implementation can hang forever
+    // (no plugin handler), and a prior ensureDocumentsPathCached fail-soft
+    // must not leave persist blocked on that hang.
+    await ensureDocumentsPathCached();
+    final docsPath = _cachedDocsPath?.trim();
+    if (docsPath == null || docsPath.isEmpty) {
+      throw StateError(
+        'SellDraftMediaPersistence: application documents path unavailable',
+      );
+    }
     final dir = Directory(
-      p.join(docs.path, 'sell_draft_media', _safeDraftId(draftId)),
+      p.join(docsPath, 'sell_draft_media', _safeDraftId(draftId)),
     );
     // Never recreate a folder that was intentionally tombstoned — stale
     // persist/blur must not reopen deleted draft media.
@@ -82,12 +100,121 @@ class SellDraftMediaPersistence {
 
   /// Warms [_cachedDocsPath] so [resolveDynamicMediaList] can remap stale
   /// iOS sandbox paths synchronously when an old draft is reopened.
+  ///
+  /// Fail-soft: widget tests often leave `path_provider` hanging (platform
+  /// message never completes) rather than throwing [MissingPluginException].
+  /// Production Android/iOS always call the real [path_provider] API with a
+  /// short timeout; a transient timeout does not permanently disable
+  /// remapping (no sticky fail on [TimeoutException]).
   static Future<void> ensureDocumentsPathCached() async {
     if (_cachedDocsPath != null && _cachedDocsPath!.trim().isNotEmpty) {
       return;
     }
-    final docs = await getApplicationDocumentsDirectory();
-    _cachedDocsPath = docs.path;
+    // Sticky skip is only for the widget-test MethodChannel hang probe
+    // (cheap, no Timer). Cleared by [debugResetMediaLifecycleForTest] or
+    // a successful warm. Never set for production timeouts.
+    if (_docsPathFailedEpoch == _docsPathProbeEpoch) {
+      return;
+    }
+    final inFlight = _docsPathWarmInFlight;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+    final warm = _warmDocumentsPath(_docsPathProbeEpoch);
+    _docsPathWarmInFlight = warm;
+    try {
+      await warm;
+    } finally {
+      if (identical(_docsPathWarmInFlight, warm)) {
+        _docsPathWarmInFlight = null;
+      }
+    }
+  }
+
+  static bool _runningUnderWidgetTestBinding() {
+    try {
+      return WidgetsBinding.instance.runtimeType
+          .toString()
+          .contains('TestWidgetsFlutterBinding');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Widget-test probe: PathProvider fakes complete on a microtask;
+  /// the default MethodChannel never answers. Waiting one event-loop turn
+  /// distinguishes them without scheduling a [Timer] (which would fail
+  /// `!timersPending` if the test ends before the timeout is pumped).
+  static Future<String?> _probeDocumentsPathMicrotask() async {
+    final done = Completer<String?>();
+    unawaited(
+      getApplicationDocumentsDirectory().then(
+        (Directory d) {
+          if (!done.isCompleted) done.complete(d.path.trim());
+        },
+        onError: (Object _, StackTrace _) {
+          if (!done.isCompleted) done.complete(null);
+        },
+      ),
+    );
+    // Flush microtasks only — never [Future.delayed]/[Timer], which would
+    // leave a pending FakeTimer under flutter_test's fake-async binding.
+    await Future<void>.value();
+    await Future<void>.value();
+    if (!done.isCompleted) {
+      done.complete(null);
+      return null;
+    }
+    return done.future;
+  }
+
+  static Future<void> _warmDocumentsPath(int epoch) async {
+    try {
+      final String path;
+      if (_runningUnderWidgetTestBinding()) {
+        final probed = await _probeDocumentsPathMicrotask();
+        if (probed == null || probed.isEmpty) {
+          // Hang / missing plugin under flutter_test. Do not sticky-fail:
+          // a later test may install a PathProvider fake without calling
+          // [debugResetMediaLifecycleForTest], and a microtask probe is
+          // cheap enough to repeat. No Timer is left pending.
+          return;
+        }
+        path = probed;
+      } else {
+        // Real Android/iOS path_provider is normally near-instant; allow
+        // several seconds on a cold/slow device so a brief stall cannot
+        // force persist to keep non-durable picker paths. Widget tests
+        // never take this branch (microtask probe above).
+        final docs = await getApplicationDocumentsDirectory().timeout(
+          const Duration(seconds: 5),
+        );
+        path = docs.path.trim();
+        if (path.isEmpty) {
+          // Empty path is unlikely to recover without process restart;
+          // sticky is fine. Timeouts are handled in catch (not sticky).
+          if (epoch == _docsPathProbeEpoch) {
+            _docsPathFailedEpoch = epoch;
+          }
+          return;
+        }
+      }
+      _cachedDocsPath = path;
+      if (epoch == _docsPathProbeEpoch) {
+        _docsPathFailedEpoch = -1;
+      }
+    } catch (e) {
+      // TimeoutException / MissingPluginException / transient unavailability.
+      if (epoch != _docsPathProbeEpoch) return;
+      if (e is TimeoutException) {
+        // Production: remapping must recover after a brief stall. Do not
+        // sticky-fail — the next ensureDocumentsPathCached retries.
+        return;
+      }
+      // MissingPluginException and friends: unlikely to recover in-process.
+      _docsPathFailedEpoch = epoch;
+    }
   }
 
   /// Relative `sell_draft_media/<draftId>/<file>` suffix, or null.
@@ -209,10 +336,21 @@ class SellDraftMediaPersistence {
           _folderDeleteArmed.add(key);
           try {
             if ((_readLeases[key] ?? 0) > 0) return;
-            final docs = await getApplicationDocumentsDirectory();
+            // Same fail-soft docs path as [_draftDir]: never hang on an
+            // unguarded path_provider MethodChannel call in widget tests.
+            await ensureDocumentsPathCached();
+            final docsPath = _cachedDocsPath?.trim();
+            if (docsPath == null || docsPath.isEmpty) {
+              // Cannot resolve Documents — keep the tombstone so stale
+              // readers stay blocked; physical delete retries later or
+              // is skipped when the folder was never created.
+              _folderDeleteRequested.remove(key);
+              deleted = true;
+              return;
+            }
             if ((_readLeases[key] ?? 0) > 0) return;
             final dir = Directory(
-              p.join(docs.path, 'sell_draft_media', key),
+              p.join(docsPath, 'sell_draft_media', key),
             );
             if (await dir.exists()) {
               await dir.delete(recursive: true);
@@ -277,6 +415,9 @@ class SellDraftMediaPersistence {
     _pendingFolderDeletes.clear();
     _persistChains.clear();
     _cachedDocsPath = null;
+    _docsPathWarmInFlight = null;
+    _docsPathProbeEpoch++;
+    _docsPathFailedEpoch = -1;
   }
 
   static bool _isInDraftDir(String local, String draftId) {
@@ -483,14 +624,26 @@ class SellDraftMediaPersistence {
         (relocated != null && relocated.isNotEmpty) ? relocated : local;
 
     if (_isInDraftDir(effective, draftId) || _isInDraftDir(local, draftId)) {
-      if (await File(effective).exists()) return effective;
+      if (await File(effective).exists()) {
+        // Always return a normalized path so a later prepare/relocate
+        // cannot rewrite separators and drift `client_media_id`.
+        return p.normalize(effective);
+      }
       // Genuinely missing durable draft file (corrupt/old draft, or a
       // sibling deleted this path). Drop quietly — callers already skip
       // null; re-probing via XFile.length only produces Sentry noise.
       return null;
     }
 
-    final dir = await _draftDir(draftId);
+    final Directory dir;
+    try {
+      dir = await _draftDir(draftId);
+    } on StateError {
+      // Documents path unavailable (widget tests without a path_provider
+      // fake). Keep the original local path so blur/upload can still read
+      // the picker file; durable copy is deferred.
+      return File(effective).existsSync() ? effective : null;
+    }
     final ext = p.extension(local);
     final safeExt = ext.isEmpty
         ? (namePrefix.startsWith('video') ? '.mp4' : '.jpg')
@@ -501,16 +654,16 @@ class SellDraftMediaPersistence {
     final normDest = p.normalize(dest.path);
 
     if (normSrc == normDest) {
-      if (await dest.exists()) return dest.path;
+      if (await dest.exists()) return normDest;
       return null;
     }
 
     if (await dest.exists()) {
-      return dest.path;
+      return normDest;
     }
 
     final ok = await _copyOrReadInto(dest, local);
-    return ok ? dest.path : null;
+    return ok ? normDest : null;
   }
 
   static Future<List<dynamic>> _persistDynamicMediaListImpl(

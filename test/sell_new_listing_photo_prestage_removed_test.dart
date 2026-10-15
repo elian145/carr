@@ -312,10 +312,16 @@ void main() {
         // step always used for edit mode, unaffected by this fix (edit
         // mode never runs `runPhaseAOnly` at all -- see `!record.isEdit`
         // in `_runSubmission`).
+        //
+        // Count only THIS edit's car id: earlier tests in this file leave
+        // Phase-A/B runners polling forever (job gated PENDING), and under
+        // suite concurrency those retries can still hit this MockClient.
         final enqueueMatch =
             RegExp(r'^/api/cars/([^/]+)/images$').firstMatch(path);
         if (method == 'POST' && enqueueMatch != null) {
-          enqueueCalls++;
+          if (enqueueMatch.group(1) == editId) {
+            enqueueCalls++;
+          }
           return jsonOk({'job_ids': <String>['job_edit_photo']}, 202);
         }
         if (method == 'GET' && path == '/api/jobs/job_edit_photo') {
