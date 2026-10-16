@@ -14,7 +14,12 @@ from __future__ import annotations
 # Empty today (verified 2026-09-04, C-07 archaeology): every table
 # `flask db upgrade` creates has a corresponding model. Add here ONLY with a
 # comment explaining why the table is deliberately model-less.
-KNOWN_TABLE_EXCEPTIONS: frozenset[str] = frozenset()
+#
+# BRIDGE RELEASE ONLY: `car_revision` (migration u9v0w1x2y3z4) is created
+# ahead of the application code that uses it, so that a rollback target that
+# knows the new Alembic head exists before any code reads the table. The
+# release that adds the model removes this exception again.
+KNOWN_TABLE_EXCEPTIONS: frozenset[str] = frozenset({"car_revision"})
 
 # Nullable drift between kk/models.py and the migration that created the
 # column, tolerated only until it is actually fixed at the database level.
