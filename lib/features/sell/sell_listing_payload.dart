@@ -247,6 +247,8 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
     // Omitted/empty is fully backwards compatible: the backend treats an
     // absent field the same as "no expected media" (today's `ready`
     // behavior).
-    'expected_media': SellMediaIdentity.buildExpectedMedia(carData),
+    'expected_media': SellMediaIdentity.expectedMediaWirePayload(
+      SellMediaIdentity.buildExpectedMedia(carData),
+    ),
   }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
 }

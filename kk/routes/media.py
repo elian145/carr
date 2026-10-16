@@ -37,7 +37,7 @@ from ..media_processing import (
     video_source_staging_key,
 )
 from ..media_readiness import mark_item_phase_a_accepted, mark_normal_video_attached_locked
-from ..models import Car, CarImage, CarVideo, db
+from ..models import Car, CarImage, CarMediaItem, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
 from ..tasks.image_tasks import process_car_image_file
 from .. import video_transcoding as vt
@@ -2157,7 +2157,41 @@ def attach_processed_car_image(
         listing_n = _count_images_of_kind(car, "damage")
     else:
         listing_n = _count_listing_images(car)
-    is_primary = normalized_kind == "listing" and listing_n == 0
+
+    # The seller's cover/order were declared on the manifest at create time
+    # (see CarMediaItem.is_cover / sort_order). Honor them here so the result
+    # never depends on which concurrent worker happens to finish first.
+    manifest_item = CarMediaItem.query.filter_by(
+        car_id=car.id, client_media_id=source_media_id
+    ).first()
+    cover_declared = (
+        CarMediaItem.query.filter(
+            CarMediaItem.car_id == car.id,
+            CarMediaItem.is_cover.is_(True),
+            CarMediaItem.status != "failed",
+        ).first()
+        is not None
+    )
+    if normalized_kind != "listing":
+        is_primary = False
+    elif cover_declared:
+        # Only the declared cover takes the star -- and only while nobody
+        # else holds it. A primary the seller set explicitly (edit endpoints)
+        # while the cover was still processing must win; otherwise the late
+        # cover would create a SECOND primary.
+        is_primary = bool(
+            manifest_item is not None
+            and manifest_item.is_cover
+            and not any(
+                img.is_primary
+                and _normalize_car_image_kind(getattr(img, "kind", None)) == "listing"
+                for img in CarImage.query.filter_by(car_id=car.id).all()
+            )
+        )
+    else:
+        # Legacy / no cover declared (older clients, or the declared cover
+        # permanently failed): first listing image to attach is the cover.
+        is_primary = listing_n == 0
 
     image = CarImage(
         car_id=car.id,
@@ -2166,6 +2200,8 @@ def attach_processed_car_image(
         kind=normalized_kind,
         source_media_id=source_media_id,
     )
+    if manifest_item is not None and manifest_item.sort_order is not None:
+        image.order = int(manifest_item.sort_order)
     db.session.add(image)
     try:
         db.session.flush()

@@ -61,7 +61,7 @@ import re
 from datetime import timedelta
 from typing import Callable
 
-from .models import Car, CarMediaItem, db
+from .models import Car, CarImage, CarMediaItem, db
 from .time_utils import utcnow
 
 logger = logging.getLogger(__name__)
@@ -96,6 +96,34 @@ class ExpectedMediaValidationError(ValueError):
     """Raised by `validate_expected_media()`; callers map this to a 400."""
 
 
+_MAX_SORT_ORDER = 1000
+
+
+def _coerce_bool(value) -> bool:
+    """Tolerant boolean: real bools, or the strings/ints a client may send."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes")
+    return False
+
+
+def _coerce_sort_order(value) -> int | None:
+    """Optional display position; anything absent/garbled is 'not declared'
+    (never an error -- ordering is a nicety, it must not reject a listing)."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        n = int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    if n < 0 or n > _MAX_SORT_ORDER:
+        return None
+    return n
+
+
 def validate_expected_media(raw) -> list[dict]:
     """
     Validate the `expected_media` list from a `create_car` request body.
@@ -115,6 +143,7 @@ def validate_expected_media(raw) -> list[dict]:
     out: list[dict] = []
     image_count = 0
     video_count = 0
+    cover_count = 0
     for entry in raw:
         if not isinstance(entry, dict):
             raise ExpectedMediaValidationError(
@@ -139,7 +168,23 @@ def validate_expected_media(raw) -> list[dict]:
             image_count += 1
         else:
             video_count += 1
-        out.append({"client_media_id": client_media_id, "kind": kind})
+        normalized = {"client_media_id": client_media_id, "kind": kind}
+        is_cover = _coerce_bool(entry.get("is_cover"))
+        sort_order = _coerce_sort_order(entry.get("sort_order"))
+        if is_cover:
+            if kind != "image":
+                raise ExpectedMediaValidationError(
+                    "expected_media[].is_cover is only valid for images"
+                )
+            cover_count += 1
+            if cover_count > 1:
+                raise ExpectedMediaValidationError(
+                    "expected_media may declare at most one cover image"
+                )
+            normalized["is_cover"] = True
+        if sort_order is not None:
+            normalized["sort_order"] = sort_order
+        out.append(normalized)
 
     if image_count > MAX_EXPECTED_IMAGE_ITEMS:
         raise ExpectedMediaValidationError(
@@ -166,6 +211,8 @@ def build_expected_media_items(expected_media: list[dict]) -> list[CarMediaItem]
             kind=item["kind"],
             client_media_id=item["client_media_id"],
             status="awaiting_upload",
+            sort_order=item.get("sort_order"),
+            is_cover=bool(item.get("is_cover")),
         )
         for item in expected_media
     ]
@@ -253,6 +300,39 @@ def mark_normal_video_attached_locked(*, car: Car, client_media_id: str) -> None
     _recompute_media_status_locked(car)
 
 
+def ensure_one_listing_primary_locked(car: Car) -> None:
+    """
+    Guarantee EXACTLY one primary among the car's listing images (damage
+    photos never count), or none when it has no listing image yet.
+
+    Needed because a declared cover (``CarMediaItem.is_cover``) makes every
+    other photo attach as non-primary: if that cover then permanently fails
+    (or is rejected in Phase A) AFTER its siblings already attached, nobody
+    would be primary. Keeps an existing primary (lowest ``order``/``id`` if
+    several), else promotes the first image in display order.
+
+    Caller MUST already hold ``car``'s row lock; only ``flush()``es.
+    """
+    images = [
+        img
+        for img in CarImage.query.filter_by(car_id=car.id).all()
+        if str(getattr(img, "kind", None) or "").strip().lower() != "damage"
+    ]
+    if not images:
+        return
+    images.sort(
+        key=lambda img: (0 if img.is_primary else 1, img.order or 0, img.id or 0)
+    )
+    changed = False
+    for idx, img in enumerate(images):
+        want = idx == 0
+        if bool(img.is_primary) != want:
+            img.is_primary = want
+            changed = True
+    if changed:
+        db.session.flush()
+
+
 def transition_media_item_terminal(
     *,
     car_id: int,
@@ -337,6 +417,11 @@ def transition_media_item_terminal(
         item.updated_at = utcnow()
         db.session.flush()
 
+        if to_status == "failed" and item.is_cover:
+            # The declared cover will never exist: siblings that already
+            # attached did so as non-primary, so promote one now.
+            ensure_one_listing_primary_locked(car)
+
         _recompute_media_status_locked(car)
         db.session.commit()
     except Exception:
@@ -374,8 +459,11 @@ def remove_expected_media_item_locked(*, car: Car, client_media_id: str) -> dict
             "media_status": car.media_status,
         }
 
+    was_cover = bool(item.is_cover)
     db.session.delete(item)
     db.session.flush()
+    if was_cover:
+        ensure_one_listing_primary_locked(car)
     new_status = _recompute_media_status_locked(car)
     return {"removed": True, "media_status": new_status}
 

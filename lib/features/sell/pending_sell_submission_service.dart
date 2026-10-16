@@ -68,6 +68,41 @@ class SellSubmissionUiStatus {
 /// One-shot terminal outcome of a submission run, for a global
 /// success/needs-attention notification independent of whichever page (if
 /// any) happens to be visible when it fires.
+/// What [PendingSellSubmissionService.outcomeFor] reports about one draft's
+/// submission, once a listing may already exist on the server.
+enum SellSubmissionOutcomeKind {
+  /// No listing exists for this draft (or no record): a genuine, plain
+  /// failure to submit.
+  none,
+
+  /// Server media acceptance was verified; the submission is complete.
+  completed,
+
+  /// The listing exists and the service is still driving / will
+  /// automatically retry the upload (pending, in progress, retryable).
+  recovering,
+
+  /// The listing exists but the service gave up (permanent failure): the
+  /// seller must act in My Listings.
+  needsAttention,
+}
+
+class SellSubmissionOutcome {
+  const SellSubmissionOutcome._(this.kind, [this.result]);
+  const SellSubmissionOutcome.none() : this._(SellSubmissionOutcomeKind.none);
+  const SellSubmissionOutcome.recovering()
+      : this._(SellSubmissionOutcomeKind.recovering);
+  const SellSubmissionOutcome.needsAttention()
+      : this._(SellSubmissionOutcomeKind.needsAttention);
+  const SellSubmissionOutcome.completed(SellListingSubmitResult result)
+      : this._(SellSubmissionOutcomeKind.completed, result);
+
+  final SellSubmissionOutcomeKind kind;
+
+  /// Only set for [SellSubmissionOutcomeKind.completed].
+  final SellListingSubmitResult? result;
+}
+
 class SellSubmissionEvent {
   const SellSubmissionEvent({
     required this.draftId,
@@ -425,6 +460,11 @@ class PendingSellSubmissionService {
     if (!_controller.isClosed) _controller.add(e);
   }
 
+  /// Test seam: publish [e] exactly as the worker does, so UI listeners can
+  /// be driven without running a real upload.
+  @visibleForTesting
+  void debugEmit(SellSubmissionEvent e) => _emit(e);
+
   /// Begin listening for connectivity coming back online and resume any
   /// durable pending submissions when it does. Safe to call more than once
   /// (only hooks once). Mirrors
@@ -451,6 +491,43 @@ class PendingSellSubmissionService {
     return (r?.carId ?? '').trim().isNotEmpty;
   }
 
+  /// draftId -> result of a submission this process has already verified
+  /// complete (every frozen media id accepted server-side). In-memory only:
+  /// it exists to recognise a stale failure delivered to a waiting caller
+  /// after the run had in fact succeeded. Cleared when a new submission for
+  /// the same draft id is prepared.
+  final Map<String, SellListingSubmitResult> _recentlyCompleted = {};
+
+  /// The authoritative current state of [draftId]'s submission, for UI that
+  /// just caught an error from [submitFast] and must not contradict the
+  /// service's own record (never a failure for a confirmed success; never a
+  /// permanent failure for one that is still being retried).
+  Future<SellSubmissionOutcome> outcomeFor(String draftId) async {
+    final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
+    final done = _recentlyCompleted[id];
+    if (done != null) return SellSubmissionOutcome.completed(done);
+    final r = await SellSubmissionStatePrefs.load(id);
+    if (r == null) return const SellSubmissionOutcome.none();
+    if ((r.carId ?? '').trim().isEmpty) {
+      return const SellSubmissionOutcome.none();
+    }
+    switch (r.status) {
+      case SellSubmissionStatus.needsAttention:
+        return const SellSubmissionOutcome.needsAttention();
+      case SellSubmissionStatus.completed:
+        return SellSubmissionOutcome.completed(
+          SellListingSubmitResult(
+            id: r.carId!.trim(),
+            pendingReview: r.pendingReview,
+          ),
+        );
+      case SellSubmissionStatus.pending:
+      case SellSubmissionStatus.inProgress:
+      case SellSubmissionStatus.retryable:
+        return const SellSubmissionOutcome.recovering();
+    }
+  }
+
   Future<SellSubmissionRecord?> peek(String draftId) =>
       SellSubmissionStatePrefs.load(draftId);
 
@@ -466,6 +543,9 @@ class PendingSellSubmissionService {
     String? editListingId,
   }) async {
     final id = draftId.trim().isEmpty ? 'default' : draftId.trim();
+    // A fresh submission for this draft id supersedes any earlier verified
+    // completion remembered for it.
+    _recentlyCompleted.remove(id);
     // Race fix (background/foreground during photo preparation): the intent
     // record written below is visible to [resumeAll] immediately, but its
     // media is still being copied. A lifecycle-resume in that window used
@@ -1557,6 +1637,27 @@ class PendingSellSubmissionService {
             if (rebound.problem != null) {
               throw SellMediaIntegrityException(rebound.problem!);
             }
+            String? coverOf(List<Map<String, String>> m) {
+              for (final e in m) {
+                if (e['is_cover'] == 'true') return e['client_media_id'];
+              }
+              return null;
+            }
+
+            final wantedCover = coverOf(expectedManifest);
+            final frozenCover = coverOf(alreadyDeclared);
+            if (wantedCover != frozenCover) {
+              // Not silent: the cover declared by the first create attempt
+              // wins (the server manifest is bound to the idempotency key).
+              // Everything the seller sees afterwards -- the pending card
+              // and the published listing -- uses that same frozen cover;
+              // it can be changed from "Edit listing" once published.
+              appLog(
+                'PendingSellSubmissionService: cover changed after create '
+                'was attempted for $draftId; keeping the frozen cover '
+                '$frozenCover (requested $wantedCover)',
+              );
+            }
             carData = rebound.carData;
             expectedManifest = alreadyDeclared;
           }
@@ -1578,7 +1679,8 @@ class PendingSellSubmissionService {
           );
           await SellSubmissionStatePrefs.upsert(record);
           final payload = buildSellCarCreatePayload(carData);
-          payload['expected_media'] = expectedManifest;
+          payload['expected_media'] =
+              SellMediaIdentity.expectedMediaWirePayload(expectedManifest);
           if (record.requiredMediaCount > 0) {
             // Server-side backstop (see kk/routes/cars.py::create_car):
             // refuses a create that declares no media although the client
@@ -1816,7 +1918,31 @@ class PendingSellSubmissionService {
           );
         } catch (e, st) {
           logNonFatal(e, st, 'PendingSellSubmissionService.runPhaseAOnly');
-          _rejectCarReadySignals(draftId, e, st);
+          // Real-device bug (Galaxy A17, app backgrounded mid-submit): a
+          // TRANSIENT Phase-A hiccup (dead socket after backgrounding, a
+          // server that has not yet accepted every item) used to reject the
+          // waiting Submit caller here, even though this very run carries on
+          // with the full upload pass below and usually completes the
+          // listing. The Submit page then showed a red "couldn't finish
+          // uploading" error for a listing that went on to succeed. Only a
+          // PERMANENT failure is a final verdict for the waiting caller; a
+          // retryable one leaves the signal pending so it is settled by the
+          // real outcome of this run (resolved on verified completion,
+          // rejected by the outer catch if the run itself ends in failure).
+          if (!isRetryableSellSubmissionError(e)) {
+            _rejectCarReadySignals(draftId, e, st);
+          }
+          // A transport/5xx failure of Phase A itself (NOT "the server has
+          // not accepted every item yet") leaves nothing for the upload pass
+          // below to finish: for a new listing that pass only polls what
+          // Phase A enqueued, and used to end in a non-retryable StateError,
+          // i.e. a permanent "needs attention" for what was only a dropped
+          // connection. Surface the real, retryable cause instead: the outer
+          // catch records `retryable` (auto-retried) and settles any waiter.
+          if (e is! SellMediaIntegrityException &&
+              isRetryableSellSubmissionError(e)) {
+            rethrow;
+          }
           // A PERMANENT manifest mismatch (an item the server does not know
           // at all -- e.g. an idempotent create replay of a car created with
           // a different/empty manifest -- or one it has rejected) is a
@@ -1908,8 +2034,13 @@ class PendingSellSubmissionService {
           hasMedia = await SellListingMediaUpload.listingAlreadyHasMedia(carId);
         }
         if (!hasMedia) {
-          throw StateError(
+          // "Not confirmed (yet)" is a statement about timing, not a
+          // permanent verdict: the durable photos, the frozen manifest and
+          // the idempotent create make a re-run safe. Retryable (bounded by
+          // the normal attempt cap) instead of a permanent needs-attention.
+          throw const SellMediaIntegrityException(
             'Listing photos did not finish uploading. Please try again.',
+            transient: true,
           );
         }
       }
@@ -2005,6 +2136,16 @@ class PendingSellSubmissionService {
       }
       unawaited(AppHaptics.success());
       statusNotifier.value = null;
+      final completedResult =
+          SellListingSubmitResult(id: carId, pendingReview: pendingReview);
+      // Remember the verified completion BEFORE settling anything else, so
+      // a late/stale failure observed by a waiting caller can be recognised
+      // as such (see [outcomeFor]) instead of being shown as a failure.
+      _recentlyCompleted[draftId] = completedResult;
+      // Every id verified server-side above: any caller still waiting on the
+      // Phase-A signal (deferred after a transient Phase-A error) may now
+      // legitimately succeed. No-op when nothing is waiting.
+      _resolveCarReadySignals(draftId, completedResult);
       _emit(SellSubmissionEvent(
         draftId: draftId,
         success: true,

@@ -285,6 +285,44 @@ abstract final class SellMediaIdentity {
   static bool skipBlurForFinalSubmission(Map<String, dynamic> carData) =>
       carData['use_blurred_plates'] != true;
 
+  /// Grid index of the seller's starred cover photo in a list of [length]
+  /// listing images (`carData['primary_image_index']`, written by the star
+  /// button). Anything missing/garbled/out of range is the first photo --
+  /// the same fallback the Sell UI and preview use.
+  static int coverImageIndex(Map<String, dynamic> carData, {required int length}) {
+    if (length <= 0) return -1;
+    final raw = carData['primary_image_index'];
+    final parsed = raw is int ? raw : int.tryParse(raw?.toString() ?? '') ?? 0;
+    return (parsed < 0 || parsed >= length) ? 0 : parsed;
+  }
+
+  /// Position of grid item [index] once the cover ([coverIndex]) is moved to
+  /// the front and everyone else keeps their relative grid order.
+  static int coverFirstPosition(int index, {required int coverIndex}) {
+    if (coverIndex < 0) return index;
+    if (index == coverIndex) return 0;
+    return index < coverIndex ? index + 1 : index;
+  }
+
+  /// The wire form of a (possibly frozen) manifest: the client persists every
+  /// value as a string, the backend wants `is_cover` as a bool and
+  /// `sort_order` as an int. Entries without those keys are sent unchanged
+  /// (legacy frozen manifests).
+  static List<Map<String, dynamic>> expectedMediaWirePayload(
+    List<Map<String, String>> manifest,
+  ) {
+    return [
+      for (final e in manifest)
+        <String, dynamic>{
+          'client_media_id': e['client_media_id'],
+          'kind': e['kind'],
+          if (e['is_cover'] == 'true') 'is_cover': true,
+          if (int.tryParse(e['sort_order'] ?? '') != null)
+            'sort_order': int.parse(e['sort_order']!),
+        },
+    ];
+  }
+
   /// Builds the `expected_media` array for `POST /api/cars` from the SAME
   /// [finalListingImages]/[finalDamageImages]/`videos`/
   /// `server_transcode_videos` lists [buildSellCarCreatePayload]/
@@ -299,24 +337,49 @@ abstract final class SellMediaIdentity {
     Map<String, dynamic> carData,
   ) {
     final out = <Map<String, String>>[];
-    void addAll(dynamic rawList, String kind, String? Function(dynamic) idOf) {
+    void addAll(
+      dynamic rawList,
+      String kind,
+      String? Function(dynamic) idOf, {
+      // Display position for item `i` (grid index -> position). Null = the
+      // list carries no order information (videos).
+      int Function(int index)? sortOrderOf,
+      // Grid index of the seller's cover, or -1.
+      int coverIndex = -1,
+    }) {
       if (rawList is! List) return;
-      for (final item in rawList) {
-        final id = idOf(item);
+      for (var i = 0; i < rawList.length; i++) {
+        final id = idOf(rawList[i]);
         if (id == null) continue;
-        out.add({'client_media_id': id, 'kind': kind});
+        final entry = <String, String>{'client_media_id': id, 'kind': kind};
+        if (sortOrderOf != null) {
+          entry['sort_order'] = sortOrderOf(i).toString();
+        }
+        if (i == coverIndex) entry['is_cover'] = 'true';
+        out.add(entry);
       }
     }
 
+    // The seller's starred cover is declared HERE, together with the manifest,
+    // so the server owns it from the moment the listing exists. The backend's
+    // self-attach used to make the cover whichever photo finished processing
+    // first, because nothing told it which photo the seller chose.
+    // `sort_order` is the position in the cover-first display order; the array
+    // itself stays in grid order (identity/rebind logic depends on that).
+    final listingImages = finalListingImages(carData);
+    final coverIndex = coverImageIndex(carData, length: listingImages.length);
     addAll(
-      finalListingImages(carData),
+      listingImages,
       'image',
       (item) => forImageItem(item, kind: 'listing'),
+      sortOrderOf: (i) => coverFirstPosition(i, coverIndex: coverIndex),
+      coverIndex: coverIndex,
     );
     addAll(
       finalDamageImages(carData),
       'image',
       (item) => forImageItem(item, kind: 'damage'),
+      sortOrderOf: (i) => i,
     );
     addAll(carData['videos'], 'video', forNormalVideoItem);
 

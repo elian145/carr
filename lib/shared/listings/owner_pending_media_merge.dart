@@ -41,6 +41,7 @@
 /// path).
 library;
 
+import '../../features/sell/sell_media_identity.dart';
 import '../../features/sell/sell_server_transcode_video.dart';
 import '../prefs/sell_draft_media_persistence.dart';
 import '../prefs/sell_submission_state_prefs.dart';
@@ -154,6 +155,18 @@ abstract final class OwnerPendingMediaMerge {
     return toAdd.isEmpty ? base : [...base, ...toAdd];
   }
 
+  /// `client_media_id` of the cover frozen into [record]'s manifest, or null
+  /// (legacy record / edit / no cover declared).
+  static String? _declaredCoverId(SellSubmissionRecord record) {
+    for (final e in record.expectedMedia ?? const <Map<String, String>>[]) {
+      if (e['is_cover'] == 'true') {
+        final id = (e['client_media_id'] ?? '').trim();
+        if (id.isNotEmpty) return id;
+      }
+    }
+    return null;
+  }
+
   static Map<String, dynamic> _merge(
     Map<String, dynamic> car,
     SellSubmissionRecord record,
@@ -206,6 +219,34 @@ abstract final class OwnerPendingMediaMerge {
       // reaches `localPendingImages.length` (or the durable record is
       // removed entirely on submission success).
       merged['images'] = _dedupeAppend(remoteImages, localPendingImages);
+
+      // Cover: while the seller's starred photo is still local (the server has
+      // not attached it yet), the server's own `image_url` is only a stand-in
+      // (a sibling that finished earlier). Lead with the starred photo so My
+      // Listings / details never flash a different cover first. Once the
+      // cover is attached the server's `is_primary`/`image_url` is correct
+      // and this is a no-op.
+      final coverId = _declaredCoverId(record);
+      if (coverId != null) {
+        final coverIsRemote = remoteImages.any(
+          (it) =>
+              it is Map &&
+              (it['client_media_id'] ?? '').toString() == coverId,
+        );
+        if (!coverIsRemote) {
+          final list = List<dynamic>.from(merged['images'] as List);
+          final at = list.indexWhere(
+            (it) =>
+                SellMediaIdentity.forImageItem(it, kind: 'listing') == coverId,
+          );
+          if (at >= 0) {
+            final cover = list.removeAt(at);
+            list.insert(0, cover);
+            merged['images'] = list;
+            merged['image_url'] = '';
+          }
+        }
+      }
     }
 
     // ---- Videos: normal videos use the same count-based approximation;

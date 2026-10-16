@@ -420,16 +420,63 @@ mixin _SellStep5Build on _SellStep5Logic {
       final draftId = resolvedPageState?._currentDraftId.isNotEmpty == true
           ? resolvedPageState!._currentDraftId
           : 'default';
-      var hasListing = false;
+      // Real-device bug (Galaxy A17, app backgrounded mid-submit): this
+      // block used to show the red "listing created, couldn't finish
+      // uploading" error for ANY exception once a listing existed -- even
+      // when the failure was transient and the durable service was already
+      // retrying (and then completed) the very same submission. The
+      // service's own record is the truth, so ask it.
+      var outcome = const SellSubmissionOutcome.none();
       try {
-        hasListing = await PendingSellSubmissionService.instance
-            .hasCreatedListing(draftId);
+        outcome =
+            await PendingSellSubmissionService.instance.outcomeFor(draftId);
       } catch (_) {
         // Best-effort only; fall back to the generic message below.
       }
       if (!mounted) return;
+      final hasListing = outcome.kind != SellSubmissionOutcomeKind.none;
+      // Capture everything the (possibly much later) SnackBar action needs
+      // NOW. The action used to read `State.context`, which throws
+      // "Null check operator used on a null value" once this page has been
+      // disposed (observed on the device at sell_step5_build.dart:451).
+      final navigator = Navigator.of(context, rootNavigator: true);
+      final messenger = ScaffoldMessenger.of(context);
       final loc = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
+
+      if (outcome.kind == SellSubmissionOutcomeKind.completed) {
+        // Verified complete by the service: never a failure. The global
+        // banner already announces the success.
+        try {
+          navigator.pushNamedAndRemoveUntil(
+            '/my_listings',
+            ModalRoute.withName('/'),
+          );
+        } catch (e2, st2) {
+          logNonFatal(e2, st2);
+        }
+        return;
+      }
+
+      if (outcome.kind == SellSubmissionOutcomeKind.recovering) {
+        // The listing exists and the service is still driving / will
+        // automatically retry its upload. This is neither success nor a
+        // failure: say nothing contradictory here (the global
+        // `SellSubmissionStatusBanner` already shows the neutral
+        // "finishing your upload" notice) and take the seller to My
+        // Listings, where the pending entry stays visible.
+        try {
+          navigator.pushNamedAndRemoveUntil(
+            '/my_listings',
+            ModalRoute.withName('/'),
+            arguments: const <String, dynamic>{'filter': 'pending'},
+          );
+        } catch (e2, st2) {
+          logNonFatal(e2, st2);
+        }
+        return;
+      }
+
+      messenger.showSnackBar(
         SnackBar(
           content: Text(
             hasListing
@@ -447,10 +494,7 @@ mixin _SellStep5Build on _SellStep5Logic {
                   label: loc.sellSubmissionOpenMyListingsAction,
                   textColor: Colors.white,
                   onPressed: () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).pushNamed('/my_listings');
+                    navigator.pushNamed('/my_listings');
                   },
                 )
               : null,

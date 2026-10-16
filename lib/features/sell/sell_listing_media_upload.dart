@@ -1694,7 +1694,15 @@ class SellListingMediaUpload {
     if (imageIdsBySource.isNotEmpty && toUpload.isEmpty && toAttach.isEmpty) {
       listingMediaConfirmed = true;
     }
-    if (imgs.isNotEmpty) {
+    // A NEW listing's cover is declared on its create-time `expected_media`
+    // manifest (`is_cover`) and applied by the backend's own self-attach, so
+    // it never depends on which upload finishes first. This client-side
+    // "set primary after upload" call must not run for it: it can only name
+    // an image the client already has a URL for (e.g. the first row of
+    // whatever response this pass happened to get), which is exactly the
+    // completion-order guess the manifest replaced. Edit mode has no
+    // manifest and keeps this path unchanged.
+    if (imgs.isNotEmpty && !isNewListing) {
       await _applyPrimaryListingImage(
         carId,
         imgs,
