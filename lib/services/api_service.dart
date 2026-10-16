@@ -225,6 +225,17 @@ class ApiService {
   static Future<bool> _refreshAccessToken() =>
       _ApiServiceHttp._refreshAccessToken();
 
+  /// "401 and the refresh attempt failed": throws a retryable 503 without
+  /// touching stored tokens when the refresh failure was transient,
+  /// otherwise clears the session. See `_ApiServiceHttp._lastRefreshTransient`.
+  static Future<void> _handleUnrefreshable401() =>
+      _ApiServiceHttp._handleUnrefreshable401();
+
+  /// Test hook: whether the last token refresh attempt failed transiently.
+  @visibleForTesting
+  static bool get lastRefreshWasTransient =>
+      _ApiServiceHttp.lastRefreshWasTransient;
+
   static Future<Map<String, dynamic>> _makeAuthenticatedRequest(
     String method,
     String endpoint, {

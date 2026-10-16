@@ -544,12 +544,38 @@ def _serialize_videos(car: Car, *, include_private: bool = False) -> list[dict]:
     return out
 
 
+def _images_in_display_order(car: Car) -> list:
+    """Deterministic gallery order: the listing cover first, then by the
+    seller-chosen ``order``, then by ``id``.
+
+    ``Car.images`` has no ``order_by``, so the raw relationship order is
+    whatever the database returns (in practice insertion order = the order
+    workers finished processing). Clients show ``images`` positionally, so the
+    cover must be first no matter when its upload completed. Rows that were
+    never ordered all share ``order == 0`` and fall back to ``id`` -- i.e.
+    legacy listings keep their existing order, with only a stored primary
+    moved to the front (which is what every client already does).
+    """
+
+    def _key(img) -> tuple:
+        is_cover = bool(getattr(img, "is_primary", False)) and (
+            _normalize_car_image_kind(getattr(img, "kind", None)) == "listing"
+        )
+        return (
+            0 if is_cover else 1,
+            int(getattr(img, "order", 0) or 0),
+            int(getattr(img, "id", 0) or 0),
+        )
+
+    return sorted(car.images or [], key=_key)
+
+
 def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
     d = car.to_dict(include_private=include_private)
     # Keep per-image metadata (especially `kind`: listing vs damage). Plain string
     # lists made every photo look like a normal gallery image on the client.
     image_objs: list[dict] = []
-    for img in car.images or []:
+    for img in _images_in_display_order(car):
         rel = getattr(img, "image_url", "") or ""
         resolved = _resolve_rel(rel)
         if not resolved:

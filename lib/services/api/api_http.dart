@@ -398,8 +398,13 @@ abstract final class _ApiServiceHttp {
       // Recycle a dead socket, but do not retry timeouts here: the server may
       // have already stored the files and a second POST would duplicate them.
       var response = await _withStaleClientRetry(sendOnce);
-      if (response.statusCode == 401 && await _refreshAccessToken()) {
-        response = await _withStaleClientRetry(sendOnce);
+      var refreshFailedTransiently = false;
+      if (response.statusCode == 401) {
+        if (await _refreshAccessToken()) {
+          response = await _withStaleClientRetry(sendOnce);
+        } else {
+          refreshFailedTransiently = _lastRefreshTransient;
+        }
       }
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return _decodeMapBody(
@@ -409,6 +414,14 @@ abstract final class _ApiServiceHttp {
         );
       }
       if (response.statusCode == 401) {
+        if (refreshFailedTransiently) {
+          // Transient refresh failure: keep the session; the caller's
+          // retry classification treats 503 as recoverable.
+          throw ApiException(
+            statusCode: 503,
+            message: 'Session refresh temporarily unavailable',
+          );
+        }
         await clearTokens();
       }
       throw _uploadException(response.statusCode, response.body);
@@ -429,9 +442,48 @@ abstract final class _ApiServiceHttp {
       });
     }
 
+    /// True when the most recent [_refreshAccessToken] attempt failed for a
+    /// TRANSIENT reason (network error, timeout, 408/429/5xx) rather than
+    /// because the server definitively rejected the refresh token.
+    ///
+    /// Real-device bug (Galaxy A17, app backgrounded mid-submit): the first
+    /// request after returning to the foreground got a 401, the refresh call
+    /// then failed only because the radio/socket was not back yet, and every
+    /// caller treated "refresh returned false" as "session is dead": it wiped
+    /// the stored tokens and threw a non-retryable error. For a pending Sell
+    /// submission that classified a perfectly healthy upload as permanently
+    /// failed (red "couldn't finish uploading" banner), and it logged the
+    /// seller out of an otherwise valid session. A transient refresh failure
+    /// must never clear tokens and must surface as a retryable error.
+    static bool _lastRefreshTransient = false;
+
+    @visibleForTesting
+    static bool get lastRefreshWasTransient => _lastRefreshTransient;
+
+    /// Called by every call site that has just seen "401 and refresh failed".
+    /// Throws a retryable [ApiException] (503) -- WITHOUT touching the stored
+    /// tokens -- when the refresh failure was transient; otherwise clears the
+    /// session (definitive rejection) and returns so the caller can throw its
+    /// usual "authentication failed" error.
+    static Future<void> _handleUnrefreshable401() async {
+      if (_lastRefreshTransient) {
+        throw ApiException(
+          statusCode: 503,
+          message: 'Session refresh temporarily unavailable',
+        );
+      }
+      await clearTokens();
+    }
+
     static Future<bool> _refreshAccessTokenOnce() async {
       final rt = (ApiService._refreshToken ?? '').trim();
-      if (rt.isEmpty) return false;
+      if (rt.isEmpty) {
+        _lastRefreshTransient = false;
+        return false;
+      }
+      // Pessimistic default: anything that does not reach a definitive
+      // server verdict below (an exception, a timeout) is transient.
+      _lastRefreshTransient = true;
       try {
         final response = await ApiService._httpClient
             .post(
@@ -454,8 +506,18 @@ abstract final class _ApiServiceHttp {
             if (refresh != null && refresh.isNotEmpty) {
               await _saveRefreshToken(refresh);
             }
+            _lastRefreshTransient = false;
             return true;
           }
+          // 2xx without a usable token: definitive (malformed) answer.
+          _lastRefreshTransient = false;
+        } else {
+          final code = response.statusCode;
+          // Only a clear client-side rejection (401/403/422/...) is a
+          // definitive "this refresh token is no good". Timeouts, rate
+          // limits and server errors say nothing about the session.
+          _lastRefreshTransient =
+              code == 408 || code == 429 || code >= 500;
         }
       } catch (e, st) {
         logNonFatal(e, st, 'ApiService._tryRefreshToken');
@@ -569,7 +631,9 @@ abstract final class _ApiServiceHttp {
               break;
           }
         } else {
-          await clearTokens();
+          // Throws a retryable 503 (tokens untouched) when the refresh
+          // failure was only transient; otherwise clears the session.
+          await _handleUnrefreshable401();
           throw Exception('Authentication failed');
         }
       }
@@ -590,12 +654,17 @@ abstract final class _ApiServiceHttp {
         headers: requestHeaders,
       );
 
-      if (response.statusCode == 401 && await _refreshAccessToken()) {
-        requestHeaders = _getHeaders();
-        response = await _getWithAdaptiveTimeout(
-          url,
-          headers: requestHeaders,
-        );
+      var refreshFailedTransiently = false;
+      if (response.statusCode == 401) {
+        if (await _refreshAccessToken()) {
+          requestHeaders = _getHeaders();
+          response = await _getWithAdaptiveTimeout(
+            url,
+            headers: requestHeaders,
+          );
+        } else {
+          refreshFailedTransiently = _lastRefreshTransient;
+        }
       }
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -617,6 +686,12 @@ abstract final class _ApiServiceHttp {
       }
 
       if (response.statusCode == 401) {
+        if (refreshFailedTransiently) {
+          throw ApiException(
+            statusCode: 503,
+            message: 'Session refresh temporarily unavailable',
+          );
+        }
         await clearTokens();
       }
       _handleResponse(response);

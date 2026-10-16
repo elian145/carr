@@ -74,7 +74,7 @@ abstract final class _ApiServiceChat {
       if (response.statusCode == 401) {
         final refreshed = await ApiService._refreshAccessToken();
         if (!refreshed) {
-          await ApiService.clearTokens();
+          await ApiService._handleUnrefreshable401();
           throw Exception('Authentication failed');
         }
         headers = ApiService._getHeaders();
@@ -226,7 +226,7 @@ abstract final class _ApiServiceChat {
       if (response.statusCode == 401) {
         final refreshed = await ApiService._refreshAccessToken();
         if (!refreshed) {
-          await ApiService.clearTokens();
+          await ApiService._handleUnrefreshable401();
           throw Exception('Authentication failed');
         }
         response = await makeRequest();
@@ -275,7 +275,7 @@ abstract final class _ApiServiceChat {
       if (response.statusCode == 401) {
         final refreshed = await ApiService._refreshAccessToken();
         if (!refreshed) {
-          await ApiService.clearTokens();
+          await ApiService._handleUnrefreshable401();
           throw Exception('Authentication failed');
         }
         response = await makeRequest();
@@ -324,7 +324,7 @@ abstract final class _ApiServiceChat {
       if (response.statusCode == 401) {
         final refreshed = await ApiService._refreshAccessToken();
         if (!refreshed) {
-          await ApiService.clearTokens();
+          await ApiService._handleUnrefreshable401();
           throw Exception('Authentication failed');
         }
         headers = ApiService._getHeaders();

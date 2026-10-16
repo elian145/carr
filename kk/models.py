@@ -720,7 +720,22 @@ class Car(db.Model):
     ai_analysis_timestamp = db.Column(db.DateTime, nullable=True)
     
     # Relationships
-    images = db.relationship('CarImage', backref='car', lazy=True, cascade='all, delete-orphan')
+    # Deterministic display order: the cover (is_primary) first, then the
+    # seller-chosen `order`, then `id`. Without an order_by this was whatever
+    # the DB returned (= worker completion order), so `car.images[0]` -- used
+    # by chat/notification thumbnails and the serializer -- could be any photo.
+    # NULL is_primary (legacy rows) sorts as "not primary" on every dialect.
+    images = db.relationship(
+        'CarImage',
+        backref='car',
+        lazy=True,
+        cascade='all, delete-orphan',
+        order_by=lambda: (
+            db.case((CarImage.is_primary.is_(True), 0), else_=1),
+            db.func.coalesce(CarImage.order, 0),
+            CarImage.id,
+        ),
+    )
     videos = db.relationship('CarVideo', backref='car', lazy=True, cascade='all, delete-orphan')
     messages = db.relationship('Message', backref='car', lazy=True)
 
@@ -1007,6 +1022,17 @@ class CarMediaItem(db.Model):
     # written; submitFast's readiness check reads THIS field, not
     # `status`. See kk/media_readiness.py.
     phase_a_completed_at = db.Column(db.DateTime, nullable=True)
+    # Cover/order the seller chose, declared at create time together with the
+    # manifest itself so the choice is server-owned from the first moment and
+    # never depends on which worker finishes processing first (or on the app
+    # staying alive). Both are applied by `attach_processed_car_image`.
+    # `sort_order` NULL / `is_cover` False for every pre-existing row and for
+    # any client that declares neither -- legacy behavior (first image to
+    # attach is the cover) is then unchanged.
+    sort_order = db.Column(db.Integer, nullable=True)
+    is_cover = db.Column(
+        db.Boolean, nullable=False, default=False, server_default=db.false()
+    )
     created_at = db.Column(db.DateTime, default=utcnow)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
 

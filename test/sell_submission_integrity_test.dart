@@ -99,6 +99,13 @@ class _FakeServer {
   /// While non-null, `POST /api/cars/<id>/images` fails with this status.
   int? enqueueFailStatus;
 
+  /// The next N `POST /api/cars/<id>/images` calls fail with 503 (a socket
+  /// the OS killed while the app was backgrounded), then succeed.
+  int enqueueFailCountdown = 0;
+
+  /// The next N media-summary reads report every item as not accepted yet.
+  int summaryNotReadyCountdown = 0;
+
   /// When set, a create call returns this EXISTING car (idempotent replay of
   /// a car created earlier with NO declared media) instead of a new one.
   String? replayCarId;
@@ -187,6 +194,10 @@ class _FakeServer {
       enqueueCarIds.add(carId);
       final gate = enqueueGate;
       if (gate != null) await gate.future;
+      if (enqueueFailCountdown > 0) {
+        enqueueFailCountdown--;
+        return _json({'message': 'injected transient failure'}, 503);
+      }
       final fail = enqueueFailStatus;
       if (fail != null) return _json({'message': 'injected failure'}, fail);
       manifest.noteUpload(carId, 'image');
@@ -216,7 +227,18 @@ class _FakeServer {
       r'^/api/cars/([^/]+)/media-summary$',
     ).firstMatch(path);
     if (method == 'GET' && summary != null) {
-      return _json(await manifest.summary(summary.group(1)!), 200);
+      final s = await manifest.summary(summary.group(1)!);
+      if (summaryNotReadyCountdown > 0) {
+        // The server has not (yet) accepted any item: what Phase A sees
+        // right after the app comes back from the background.
+        summaryNotReadyCountdown--;
+        for (final item in (s['items'] as List)) {
+          (item as Map<String, dynamic>)['phase_a_complete'] = false;
+          item['status'] = 'awaiting_upload';
+        }
+        s['phase_a_complete'] = false;
+      }
+      return _json(s, 200);
     }
 
     final getCar = RegExp(r'^/api/cars/([^/]+)$').firstMatch(path);
@@ -1127,4 +1149,374 @@ void main() {
       expect(draftDir.listSync().whereType<File>(), hasLength(2));
     },
   );
+
+  // ---------------------------------------------------------------------------
+  // "False upload failure after backgrounding" (Galaxy A17).
+  // The listing exists and its images are uploaded, yet the Submit page showed
+  // the red "created, but we couldn't finish uploading it" banner.
+  // ---------------------------------------------------------------------------
+  group('false upload failure after backgrounding', () {
+    late List<SellSubmissionEvent> events;
+    late StreamSubscription<SellSubmissionEvent> eventSub;
+
+    setUp(() {
+      events = <SellSubmissionEvent>[];
+      eventSub = svc.events.listen(events.add);
+    });
+
+    tearDown(() async {
+      await eventSub.cancel();
+    });
+
+    test(
+      'BG1. a transient "not accepted yet" read while backgrounded is NOT '
+      'rejected to the Submit caller as a failure: the same run finishes, '
+      'success is '
+      'reported only after verification, one car, no failure event',
+      () async {
+        const draftId = 'bg_1';
+        // Phase A's verification reads see "not accepted yet" (transient),
+        // exactly what a freshly foregrounded app observes.
+        server.summaryNotReadyCountdown = 6;
+        final photos = makePhotos(2);
+
+        final result = await svc.submitFast(
+          draftId: draftId,
+          carData: _carData(photos),
+        );
+        expect(
+          result,
+          isNotNull,
+          reason: 'transient hiccup must not look like a failed submission',
+        );
+        expect(result!.id, 'car_1');
+
+        await _waitUntil(
+          () async => await svc.peek(draftId) == null,
+          what: 'verified completion + record cleanup',
+        );
+        expect(server.carCount, 1);
+        expect(server.createBodies, hasLength(1));
+        expect(
+          events.where((e) => !e.success && e.needsAttention),
+          isEmpty,
+          reason: 'no "needs attention" event for a submission that succeeded',
+        );
+        expect(events.any((e) => e.success && e.carId == 'car_1'), isTrue);
+        // Server really owns every frozen id (success is server-verified).
+        final ids = server.expectedIdsOf(server.createBodies.single);
+        expect(server.uploadedIds['car_1']?.toSet(), ids.toSet());
+      },
+    );
+
+    test(
+      'BG1b. Phase A itself fails on the transport (dropped connection after '
+      'backgrounding): recorded as RETRYABLE with the real cause (never a '
+      'permanent needs-attention), visible, no failure event, and the next '
+      'resume completes it with ONE car',
+      () async {
+        const draftId = 'bg_1b';
+        server.enqueueFailCountdown = 3;
+        final failure = await startSubmit(draftId, makePhotos(2));
+        expect(failure, isNotNull);
+        expect(isRetryableSellSubmissionError(failure!), isTrue);
+
+        final rec = await svc.peek(draftId);
+        expect(rec, isNotNull);
+        expect(rec!.status, SellSubmissionStatus.retryable);
+        expect(sellSubmissionShowsPendingEntry(rec), isTrue);
+        expect(events.where((e) => e.needsAttention), isEmpty);
+        expect(
+          (await svc.outcomeFor(draftId)).kind,
+          SellSubmissionOutcomeKind.recovering,
+        );
+
+        expect(await svc.resumeAll(), isTrue);
+        expect(await svc.peek(draftId), isNull);
+        expect(server.carCount, 1);
+        expect(server.createBodies, hasLength(1));
+        expect(events.where((e) => e.needsAttention), isEmpty);
+      },
+    );
+
+    test(
+      'BG2. every attempt fails transiently (still backgrounded): the Submit '
+      'caller sees a RETRYABLE failure, the service reports "recovering" '
+      '(not needs-attention, not completed), nothing is cleaned up, and the '
+      'later resume completes it with ONE car',
+      () async {
+        const draftId = 'bg_2';
+        server.enqueueFailStatus = 503;
+        final failure = await startSubmit(draftId, makePhotos(2));
+        expect(failure, isNotNull);
+        expect(isRetryableSellSubmissionError(failure!), isTrue);
+
+        final outcome = await svc.outcomeFor(draftId);
+        expect(
+          outcome.kind,
+          SellSubmissionOutcomeKind.recovering,
+          reason: 'the UI must not show a permanent failure while retrying',
+        );
+        final rec = await svc.peek(draftId);
+        expect(rec, isNotNull);
+        expect(rec!.status, SellSubmissionStatus.retryable);
+        expect(events.where((e) => e.success), isEmpty);
+        expect(
+          events.where((e) => e.needsAttention),
+          isEmpty,
+          reason: 'retryable is informational only',
+        );
+
+        server.enqueueFailStatus = null;
+        expect(await svc.resumeAll(), isTrue);
+        expect(await svc.peek(draftId), isNull);
+        expect(server.carCount, 1);
+        expect(server.createBodies, hasLength(1));
+
+        final done = await svc.outcomeFor(draftId);
+        expect(done.kind, SellSubmissionOutcomeKind.completed);
+        expect(done.result?.id, 'car_1');
+      },
+    );
+
+    test(
+      'BG3. a verified-complete submission is reported as completed, so a '
+      'late/stale failure delivered to a waiter can never be shown as a '
+      'failure',
+      () async {
+        const draftId = 'bg_3';
+        expect(await startSubmit(draftId, makePhotos(2)), isNull);
+        await _waitUntil(
+          () async => await svc.peek(draftId) == null,
+          what: 'completion',
+        );
+        final done = await svc.outcomeFor(draftId);
+        expect(done.kind, SellSubmissionOutcomeKind.completed);
+        expect(done.result?.id, 'car_1');
+      },
+    );
+
+    test(
+      'BG4. genuine failures are preserved: a permanent upload failure is '
+      'needs-attention (visible pending entry, record + photos kept, event '
+      'emitted) and is NOT silently auto-resumed; a refused create has no '
+      'listing at all',
+      () async {
+        const draftId = 'bg_4';
+        server.enqueueFailStatus = 403;
+        final failure = await startSubmit(draftId, makePhotos(2));
+        expect(failure, isNotNull);
+        expect(isRetryableSellSubmissionError(failure!), isFalse);
+
+        final outcome = await svc.outcomeFor(draftId);
+        expect(outcome.kind, SellSubmissionOutcomeKind.needsAttention);
+        final rec = await svc.peek(draftId);
+        expect(rec, isNotNull);
+        expect(rec!.status, SellSubmissionStatus.needsAttention);
+        expect(sellSubmissionShowsPendingEntry(rec), isTrue);
+        for (final path in durablePathsOf(rec)) {
+          expect(File(path).existsSync(), isTrue);
+        }
+        expect(
+          events.any((e) => e.needsAttention && e.carId == 'car_1'),
+          isTrue,
+          reason: 'a real failure must still be announced',
+        );
+
+        final before = server.enqueueCarIds.length;
+        await svc.resumeAll();
+        expect(
+          server.enqueueCarIds.length,
+          before,
+          reason: 'needsAttention is never auto-retried',
+        );
+
+        // No listing was created: plain failure, nothing to recover.
+        server.createFailStatus = 422;
+        final refused = await startSubmit('bg_4b', makePhotos(1, seed: 90));
+        expect(refused, isNotNull);
+        expect(
+          (await svc.outcomeFor('bg_4b')).kind,
+          SellSubmissionOutcomeKind.none,
+        );
+      },
+    );
+
+    test(
+      'BG5. duplicate resume triggers (lifecycle resumed + connectivity + '
+      'auth-changed firing together) never start two workers: one car, no '
+      'duplicate create, no media id uploaded twice',
+      () async {
+        const draftId = 'bg_5';
+        server.enqueueFailStatus = 503;
+        expect(await startSubmit(draftId, makePhotos(2)), isNotNull);
+        server.enqueueFailStatus = null;
+        server.enqueueGate = Completer<void>();
+        server.uploadedIds.clear();
+
+        final resumes = Future.wait([
+          svc.resumeAll(),
+          svc.resumeAll(),
+          svc.resumeAll(),
+          svc.retryNow(draftId),
+        ]);
+        await _waitUntil(
+          () => server.enqueueCarIds.isNotEmpty,
+          what: 'a worker reached the gated server',
+        );
+        // Give any (wrongly started) second worker time to show up.
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        server.enqueueGate!.complete();
+        await resumes;
+
+        expect(await svc.peek(draftId), isNull);
+        expect(server.carCount, 1);
+        expect(server.createBodies, hasLength(1));
+        final uploaded = server.uploadedIds['car_1'] ?? const <String>[];
+        expect(
+          uploaded.toSet().length,
+          uploaded.length,
+          reason: 'no media id may be uploaded twice: $uploaded',
+        );
+        expect(
+          uploaded.toSet(),
+          server.expectedIdsOf(server.createBodies.single).toSet(),
+        );
+        expect(
+          events.where((e) => e.success && e.carId == 'car_1'),
+          hasLength(1),
+          reason: 'exactly one success notification',
+        );
+        expect(events.where((e) => e.needsAttention), isEmpty);
+      },
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Cover photo selection (real-device bug: the starred photo was ignored and
+  // the cover was whichever photo the backend happened to finish first).
+  // The cover/order are declared on the create-time `expected_media`
+  // manifest, so they are server-owned from the moment the listing exists.
+  // ---------------------------------------------------------------------------
+  group('cover photo selection', () {
+    Map<String, dynamic> withCover(List<String> photos, int? primary) => {
+      ..._carData(photos),
+      if (primary != null) 'primary_image_index': primary,
+    };
+
+    List<Map<String, dynamic>> manifestOf(Map<String, dynamic> body) => [
+      for (final e in (body['expected_media'] as List)) Map<String, dynamic>.from(e as Map),
+    ];
+
+    List<int> coverIdx(List<Map<String, dynamic>> m) => [
+      for (var i = 0; i < m.length; i++)
+        if (m[i]['is_cover'] == true) i,
+    ];
+
+    test('4. submit: the starred photo 3 of 5 is declared as the cover '
+        '(exactly one), in cover-first order, and every photo is uploaded',
+        () async {
+      const draftId = 'cov_submit';
+      final photos = makePhotos(5);
+      final err = await svc
+          .submit(draftId: draftId, carData: withCover(photos, 2))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(err, isNull);
+      expect(server.createBodies, hasLength(1));
+      final m = manifestOf(server.createBodies.single);
+      expect(m, hasLength(5));
+      expect(coverIdx(m), [2], reason: 'only the starred photo is the cover');
+      expect([for (final e in m) e['sort_order']], [1, 2, 0, 3, 4]);
+      // Nothing duplicated or lost: every declared id was uploaded once.
+      final uploaded = server.uploadedIds['car_1'] ?? const <String>[];
+      expect(uploaded.toSet(), server.expectedIdsOf(server.createBodies.single).toSet());
+      expect(uploaded.toSet().length, uploaded.length);
+    });
+
+    test('4b. submit without ever starring: the first photo is the declared '
+        'cover (so completion order can never decide it)', () async {
+      const draftId = 'cov_default';
+      final photos = makePhotos(3);
+      await svc.submit(draftId: draftId, carData: withCover(photos, null));
+      final m = manifestOf(server.createBodies.single);
+      expect(coverIdx(m), [0]);
+      expect([for (final e in m) e['sort_order']], [0, 1, 2]);
+    });
+
+    test('5. uploads/processing finish in any order: the client never makes '
+        'a completion-order-dependent cover call for a new listing', () async {
+      const draftId = 'cov_no_client_primary';
+      final requests = <String>[];
+      ApiService.testHttpClient = MockClient((request) {
+        requests.add('${request.method} ${request.url.path}');
+        return server.handle(request);
+      });
+      final photos = makePhotos(5);
+      await svc.submit(draftId: draftId, carData: withCover(photos, 3));
+      expect(
+        requests.where(
+          (r) => r.startsWith('PUT') &&
+              (r.endsWith('/images/primary') || r.endsWith('/images/layout')),
+        ),
+        isEmpty,
+        reason: 'the server applies the declared cover itself: $requests',
+      );
+      expect(coverIdx(manifestOf(server.createBodies.single)), [3]);
+    });
+
+    test('6. background/restart: the frozen manifest keeps the cover, and a '
+        'replayed create declares the SAME cover even if the star changed '
+        'in the meantime', () async {
+      const draftId = 'cov_restart';
+      final photos = makePhotos(4);
+      server.dropNextCreateResponse = true;
+      server.lostReplayResponses = 1;
+      final first = await svc
+          .submit(draftId: draftId, carData: withCover(photos, 2))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(first, isNotNull, reason: 'the transport failure surfaces');
+
+      // peek() reads the durable record back through prefs JSON (restart).
+      final stranded = (await svc.peek(draftId))!;
+      expect(stranded.carId ?? '', isEmpty);
+      final frozen = stranded.expectedMedia!;
+      expect([
+        for (var i = 0; i < frozen.length; i++)
+          if (frozen[i]['is_cover'] == 'true') i
+      ], [2], reason: 'cover frozen with the manifest and persisted');
+
+      // The seller re-opens the draft and stars a DIFFERENT photo, then
+      // resubmits. The server-bound manifest is not negotiable.
+      final outcome = await svc
+          .submit(draftId: draftId, carData: withCover(photos, 0))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      expect(outcome, isNull);
+      expect(server.carCount, 1, reason: 'idempotent: one car');
+      final bodies = server.createBodies;
+      expect(bodies.length, greaterThanOrEqualTo(2));
+      expect(coverIdx(manifestOf(bodies.last)), [2],
+          reason: 'the replay re-declares the frozen cover, not the new star');
+      expect(manifestOf(bodies.last), manifestOf(bodies.first));
+    });
+
+    test('7. a cold restart resumes the submission with the frozen cover and '
+        'creates no second car', () async {
+      const draftId = 'cov_resume';
+      final photos = makePhotos(3);
+      server.enqueueFailStatus = 503;
+      await svc
+          .submit(draftId: draftId, carData: withCover(photos, 1))
+          .then<Object?>((_) => null, onError: (Object e) => e);
+      final rec = await svc.peek(draftId);
+      expect(rec, isNotNull);
+      expect([
+        for (final e in rec!.expectedMedia!) e['is_cover'] == 'true'
+      ], [false, true, false]);
+      server.enqueueFailStatus = null;
+      expect(await svc.resumeAll(), isTrue);
+      expect(server.carCount, 1);
+      expect(server.createBodies, hasLength(1), reason: 'never re-created');
+      expect(await svc.peek(draftId), isNull);
+    });
+  });
 }

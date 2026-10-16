@@ -773,6 +773,26 @@ class AuthService extends ChangeNotifier {
     await _loadUserProfile();
   }
 
+  /// True when a stored token exists but `/auth/me` has not (yet) confirmed
+  /// the profile: the "stranded" state `AuthGuard` eventually reports as
+  /// "Failed to load user data".
+  bool get isProfileStranded =>
+      ApiService.isAuthenticated && !_isAuthenticated && !_isLoading;
+
+  /// Called when the app returns to the foreground. After a long background
+  /// stay the bounded automatic retry budget (see [_scheduleProfileRetry])
+  /// is typically already spent, and nothing else would ever retry
+  /// `/auth/me` -- leaving every `AuthGuard`-protected page (My Listings)
+  /// stuck on "Failed to load user data" although the token is perfectly
+  /// valid. Grant a fresh budget and try again now. A definitive 401 still
+  /// clears the session through the normal path; a transient failure keeps
+  /// it and schedules the usual bounded retries.
+  Future<void> recoverStrandedProfile() async {
+    if (!isProfileStranded) return;
+    _profileRetryAttempts = 0;
+    await _loadUserProfile();
+  }
+
   /// Test-only: authenticated session without network login.
   @visibleForTesting
   Future<void> adoptTestSession({Map<String, dynamic>? user}) async {

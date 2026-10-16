@@ -362,7 +362,18 @@ List<Map<String, String>>? _expectedMediaFromJson(dynamic raw) {
     final id = (item['client_media_id'] ?? '').toString().trim();
     final kind = (item['kind'] ?? '').toString().trim();
     if (id.isEmpty || kind.isEmpty) continue;
-    out.add(<String, String>{'client_media_id': id, 'kind': kind});
+    final entry = <String, String>{'client_media_id': id, 'kind': kind};
+    // The seller's cover/order were frozen WITH the manifest (see
+    // `SellMediaIdentity.buildExpectedMedia`): dropping them here would make a
+    // replayed/resumed create after an app restart declare a cover-less
+    // manifest. Records written before they existed simply have neither key.
+    final isCover = (item['is_cover'] ?? '').toString().trim().toLowerCase();
+    if (isCover == 'true' || isCover == '1') entry['is_cover'] = 'true';
+    final sortOrder = int.tryParse((item['sort_order'] ?? '').toString().trim());
+    if (sortOrder != null && sortOrder >= 0) {
+      entry['sort_order'] = sortOrder.toString();
+    }
+    out.add(entry);
   }
   return out;
 }

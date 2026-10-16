@@ -140,14 +140,17 @@ class _AppWithDeepLinksState extends State<AppWithDeepLinks>
 
   Future<void> _refreshProfileAfterResume() async {
     final auth = _authService;
-    if (_refreshingProfile ||
-        auth == null ||
-        !auth.isAuthenticated ||
-        auth.isLoading) {
+    if (_refreshingProfile || auth == null || auth.isLoading) {
       return;
     }
     _refreshingProfile = true;
     try {
+      if (!auth.isAuthenticated) {
+        // Token present but profile never confirmed (retry budget spent
+        // while backgrounded): recover instead of staying stranded.
+        await auth.recoverStrandedProfile();
+        return;
+      }
       await auth.refreshProfile();
     } catch (e, st) {
       logNonFatal(e, st, 'AppWithDeepLinks.refreshDealerApproval');

@@ -8,7 +8,9 @@ import '../l10n/app_localizations.dart';
 import '../theme_provider.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../services/connectivity_service.dart';
 import '../shared/debug/app_log.dart';
+import '../shared/net/transient_get_retry.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_events.dart';
 import '../shared/listings/listing_identity.dart';
@@ -54,8 +56,48 @@ class MyListingsPage extends StatefulWidget {
   State<MyListingsPage> createState() => _MyListingsPageState();
 }
 
-class _MyListingsPageState extends State<MyListingsPage> {
+class _MyListingsPageState extends State<MyListingsPage>
+    with WidgetsBindingObserver {
   final ScrollController _controller = ScrollController();
+
+  /// Returning from the background: the pending-submission entries may have
+  /// changed while this page was frozen, and a list load that failed (dead
+  /// socket after backgrounding, refresh not yet possible) must not stay on
+  /// screen until the seller manually retries. Runs a microtask later so the
+  /// app-level resume hook (which recycles the HTTP client) has already run.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      unawaited(_loadDrafts());
+      // Two cases need a fresh request, and both are handled by superseding
+      // whatever is outstanding (the generation guard in `_fetch` then makes
+      // the old request's eventual result -- typically a dead-socket failure
+      // that only surfaces AFTER this resume -- harmless):
+      //  * an error is already on screen;
+      //  * a load is still in flight: it may be riding a socket the OS killed
+      //    while the app was backgrounded (real-device bug: it failed seconds
+      //    after the resume check had already run, leaving "Failed to load
+      //    your listings" until the seller pressed Retry).
+      // A healthy, idle page is left alone (no needless traffic).
+      if (_error != null || _loading) {
+        unawaited(_fetch(refresh: true));
+      }
+    });
+  }
+
+  bool _wasOnline = ConnectivityService.instance.isOnline.value;
+
+  /// Network came back: recover a failed load without a manual Retry.
+  void _onConnectivityChanged() {
+    final online = ConnectivityService.instance.isOnline.value;
+    final cameBack = online && !_wasOnline;
+    _wasOnline = online;
+    if (cameBack && mounted && _error != null && !_loading) {
+      unawaited(_fetch(refresh: true));
+    }
+  }
 
   bool _loading = true;
   bool _loadingMore = false;
@@ -94,6 +136,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    ConnectivityService.instance.isOnline.addListener(_onConnectivityChanged);
     // Keep consistent layout (grid vs list) with the rest of the app.
     ListingLayoutPrefs.load();
     _loadDrafts();
@@ -140,6 +184,9 @@ class _MyListingsPageState extends State<MyListingsPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ConnectivityService.instance.isOnline
+        .removeListener(_onConnectivityChanged);
     ListingEvents.deletedListingId.removeListener(_onListingDeletedElsewhere);
     unawaited(_submissionEvents?.cancel());
     _controller.dispose();
@@ -223,12 +270,16 @@ class _MyListingsPageState extends State<MyListingsPage> {
     }
 
     if (refresh) {
+      // NOTE: `_cars` is deliberately NOT cleared here. Listings that are
+      // already on screen stay visible while a refresh runs (and if it
+      // ultimately fails); they are replaced atomically only when the new
+      // page arrives. A filter change clears them explicitly in
+      // `_selectFilter` because they belong to a different filter.
       setState(() {
         _loading = true;
         _error = null;
         _page = 1;
         _hasNext = true;
-        _cars.clear();
       });
     } else {
       setState(() {
@@ -245,10 +296,27 @@ class _MyListingsPageState extends State<MyListingsPage> {
         _MyListingsFilter.sold => 'sold',
         _ => null,
       };
-      final data = await ApiService.getMyListings(
-        page: _page,
-        perPage: 20,
-        status: status,
+      final pageToLoad = _page;
+      // A listings GET is safe to repeat. A transient failure (dead socket
+      // after backgrounding, 5xx, timeout, a refresh blip surfaced as 503)
+      // gets a short, bounded automatic retry instead of an error screen --
+      // and stops as soon as a newer request supersedes this one.
+      final data = await retryTransientGet<Map<String, dynamic>>(
+        () => ApiService.getMyListings(
+          page: pageToLoad,
+          perPage: 20,
+          status: status,
+        ),
+        isSuperseded: () => !mounted || requestGeneration != _fetchGeneration,
+        onRetry: (error, attempt) {
+          appLog(
+            '[MY LISTINGS] transient load failure '
+            '(${error.runtimeType}), retry ${attempt + 1}',
+          );
+          // Drop a connection the OS may have killed; in-flight requests
+          // on the old client are left to finish (closeWhenIdle).
+          ApiService.recycleProductionHttpClient();
+        },
       );
       final items = listingMapsFromApiResponse(data);
 
@@ -260,8 +328,10 @@ class _MyListingsPageState extends State<MyListingsPage> {
         hasNext = items.length >= 20;
       }
 
+      // Stale-result guard: only the newest request may touch the screen.
       if (!mounted || requestGeneration != _fetchGeneration) return;
       setState(() {
+        if (refresh) _cars.clear();
         _cars.addAll(items);
         _hasNext = hasNext;
         _loading = false;
@@ -296,6 +366,8 @@ class _MyListingsPageState extends State<MyListingsPage> {
     setState(() {
       _filter = filter;
       _error = null;
+      // Different filter => the visible listings no longer apply.
+      _cars.clear();
     });
     unawaited(_fetch(refresh: true));
   }
@@ -526,17 +598,53 @@ class _MyListingsPageState extends State<MyListingsPage> {
     final showDrafts =
         _filter == _MyListingsFilter.all || _filter == _MyListingsFilter.draft;
     final visibleDrafts = showDrafts ? _drafts : const <Map<String, dynamic>>[];
+    // Local entries (drafts / pending submissions) are real content that
+    // must stay visible even when the server list failed to load.
+    final hasLocalEntries = (showDrafts && _drafts.isNotEmpty) ||
+        ((showDrafts || _filter == _MyListingsFilter.pending) &&
+            _pendingSubmissions.isNotEmpty);
+    // The blocking full-screen error is only for a failure with NOTHING to
+    // show. If listings (or local entries) are on screen they stay, and the
+    // failure becomes an inline banner with Retry.
+    final fullScreenError =
+        _error != null && _cars.isEmpty && !hasLocalEntries;
     final authenticatedBody = Column(
       children: [
         _buildListingFilters(),
         if (_filter == _MyListingsFilter.pending) _buildPendingExplainer(),
         if (_filter == _MyListingsFilter.hidden) _buildHiddenExplainer(),
+        if (_loading && (_cars.isNotEmpty || hasLocalEntries))
+          const LinearProgressIndicator(minHeight: 2),
+        if (_error != null && !fullScreenError)
+          Material(
+            key: const ValueKey<String>('my-listings-inline-error'),
+            color: Theme.of(context).colorScheme.errorContainer,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _fetch(refresh: true),
+                    child: Text(loc?.retryAction ?? 'Retry'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {
               await Future.wait([_fetch(refresh: true), _loadDrafts()]);
             },
-            child: _loading
+            child: (_loading && _cars.isEmpty && !hasLocalEntries)
                 ? Builder(
                     builder: (context) {
                       final w = MediaQuery.sizeOf(context).width;
@@ -551,7 +659,7 @@ class _MyListingsPageState extends State<MyListingsPage> {
                       );
                     },
                   )
-                : (_error != null)
+                : fullScreenError
                 ? ListView(
                     children: [
                       const SizedBox(height: 40),

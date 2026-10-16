@@ -421,18 +421,20 @@ class TestOwnerOnlyClientMediaIdExposure:
         owner_car = owner_resp.get_json()["car"]
         buyer_car = buyer_resp.get_json()["car"]
 
-        # Images are stored/iterated in relationship (insertion) order,
-        # NOT re-sorted by the `order` field at serialization time --
-        # confirm that positional order is IDENTICAL between the owner's
-        # (client_media_id-bearing) response and the non-owner's
-        # (client_media_id-free) response: the new field never causes a
-        # reorder.
+        # Images are serialized in deterministic display order (cover first,
+        # then the stored `order`, then id -- see
+        # `kk.routes.cars._images_in_display_order`; before the cover-selection
+        # fix the stored `order` was ignored and this was raw insertion
+        # order). The contract this test protects is unchanged: positional
+        # order is IDENTICAL between the owner's (client_media_id-bearing)
+        # response and the non-owner's (client_media_id-free) response -- the
+        # new field never causes a reorder.
         owner_image_urls = [img["image_url"] for img in owner_car["images"]]
         buyer_image_urls = [img["image_url"] for img in buyer_car["images"]]
         assert owner_image_urls == buyer_image_urls == [
-            "https://cdn.example.com/car_photos/order2.jpg",
             "https://cdn.example.com/car_photos/order0.jpg",
             "https://cdn.example.com/car_photos/order1.jpg",
+            "https://cdn.example.com/car_photos/order2.jpg",
         ]
 
         # Videos: `_serialize_videos` explicitly sorts by (order, id) --

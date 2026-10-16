@@ -202,6 +202,16 @@ mixin _SellStep5Logic on _SellStep5Fields {
       // normal draft editing on it would risk confusing UX (not
       // duplicate listings — the idempotency key still prevents that).
       if (!isEdit) {
+        // Stale-failure guard: if the service has ALREADY verified this
+        // submission complete (every frozen media id accepted server-side),
+        // an error delivered to this waiter is from a superseded moment of
+        // the same run -- it is not the truth. Report the verified success.
+        final outcome =
+            await PendingSellSubmissionService.instance.outcomeFor(draftId);
+        if (outcome.kind == SellSubmissionOutcomeKind.completed &&
+            outcome.result != null) {
+          return outcome.result;
+        }
         final hasListing =
             await PendingSellSubmissionService.instance.hasCreatedListing(
           draftId,
