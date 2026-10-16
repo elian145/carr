@@ -650,6 +650,27 @@
   "myListingsNoPendingTitle": "لا توجد إعلانات قيد المراجعة",
   "myListingsNoPendingHint": "الإعلانات بانتظار المراجعة ستظهر هنا.",
   "listingHiddenBadge": "مخفي",
+  "listingEditsSubmittedForReview": "تم إرسال تغييراتك للمراجعة.",
+  "listingBadgeEditsUnderReview": "نشط — التعديلات قيد المراجعة",
+  "listingBadgeEditsRejected": "نشط — التعديلات غير معتمدة",
+  "listingBadgeEditsUnsaved": "نشط — تعديلات غير مرسلة",
+  "listingEditsUnderReviewNote": "لا يزال المشترون يرون النسخة المعتمدة من إعلانك حتى تتم الموافقة على هذه التغييرات.",
+  "listingEditsRejectedMessage": "لم تتم الموافقة على تغييراتك: {reason}",
+  "@listingEditsRejectedMessage": {
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Photos are blurry"
+      }
+    }
+  },
+  "listingEditsRejectedNoReason": "لم تتم الموافقة على تغييراتك. إعلانك المعتمد لا يزال منشوراً. يمكنك التعديل وإعادة الإرسال.",
+  "listingEditsUnsavedNote": "لديك تعديلات لم تُرسل للمراجعة بعد. افتح تعديل لإكمالها وإرسالها.",
+  "listingDiscardPendingEdits": "تجاهل التعديلات المعلقة",
+  "listingDiscardPendingEditsBody": "سيتم حذف تغييراتك المعلقة. لن يتغير إعلانك المنشور.",
+  "listingPendingEditsDiscarded": "تم تجاهل التعديلات المعلقة",
+  "listingPreviewPendingChanges": "معاينة التغييرات المعلقة",
+  "deleteListingUnderReviewBody": "هذا الإعلان ما زال قيد المراجعة. سيؤدي حذفه إلى إزالته وصوره نهائياً.",
   "myListingsHiddenFilter": "مخفي",
   "myListingsHiddenExplainer": "تم إخفاء هذه الإعلانات من قبل فريق المراجعة لدينا وهي غير ظاهرة للمشترين. تواصل مع الدعم إذا كانت لديك أسئلة.",
   "myListingsNoHiddenTitle": "لا توجد إعلانات مخفية",

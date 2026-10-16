@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart';
+import '../shared/listings/listing_status.dart';
 
 class EditListingPage extends StatefulWidget {
   final Map<String, dynamic> car;
@@ -41,7 +42,9 @@ class _EditListingPageState extends State<EditListingPage> {
   @override
   void initState() {
     super.initState();
-    final car = widget.car;
+    // Start from the pending (unapproved) version when this listing already
+    // has one, so earlier unapproved edits are not silently dropped.
+    final car = listingForOwnerEditing(widget.car);
     _brand = TextEditingController(text: (car['brand'] ?? '').toString());
     _model = TextEditingController(text: (car['model'] ?? '').toString());
     _year = TextEditingController(text: (car['year'] ?? '').toString());
@@ -94,7 +97,7 @@ class _EditListingPageState extends State<EditListingPage> {
             : _description.text.trim(),
         'color': _color.text.trim().isEmpty ? null : _color.text.trim(),
         'condition': _condition,
-        if (_vin.text.trim().isNotEmpty) 'vin': _vin.text.trim(),
+        'vin': _vin.text.trim().isEmpty ? null : _vin.text.trim(),
       };
 
       final res = await ApiService.updateCar(carId, payload);
@@ -105,10 +108,13 @@ class _EditListingPageState extends State<EditListingPage> {
           : {...widget.car, ...payload};
 
       if (!mounted) return;
+      final submittedForReview = res['submitted_for_review'] == true;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _text(
+            submittedForReview
+                ? AppLocalizations.of(context)!.listingEditsSubmittedForReview
+                : _text(
               'Listing updated',
               ar: 'تم تحديث الإعلان',
               ku: 'ڕێکلام نوێکرایەوە',

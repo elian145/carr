@@ -223,10 +223,18 @@ abstract final class _ApiServiceHttp {
     // response even before/without an authenticated `User.locale`. This is
     // the single chokepoint for outgoing headers -- do not add the header
     // separately to individual call sites.
+    //
+    // `X-Carnet-Review-Aware: 1` tells the backend this build understands
+    // listing-edit moderation (an edit of an Active listing is a saved draft
+    // the seller submits explicitly). The backend therefore never submits
+    // such a draft on the seller's behalf; only builds WITHOUT this header
+    // (which never send a final submit call) get the legacy auto-finalize.
+    // Keep it on every request, including multipart uploads below.
     static Map<String, String> _getHeaders({bool includeAuth = true}) {
       Map<String, String> headers = {
         'Content-Type': 'application/json',
         'Accept-Language': LocaleController.resolveCode(),
+        'X-Carnet-Review-Aware': '1',
       };
 
       if (includeAuth && ApiService._accessToken != null && ApiService._accessToken!.isNotEmpty) {
@@ -376,6 +384,7 @@ abstract final class _ApiServiceHttp {
 
       Future<http.Response> sendOnce() async {
         final request = await buildRequest();
+        request.headers['X-Carnet-Review-Aware'] = '1'; // see _getHeaders
         if (ApiService._accessToken != null && ApiService._accessToken!.isNotEmpty) {
           request.headers['Authorization'] = 'Bearer ${ApiService._accessToken}';
         }

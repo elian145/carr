@@ -23,6 +23,7 @@ from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
+from .. import listing_revisions as _revisions
 from ..listing_search import (
     apply_listing_text_search,
     brand_match_clause,
@@ -41,11 +42,14 @@ from ..media_readiness import (
     ExpectedMediaValidationError,
     build_expected_media_items,
     media_summary,
+    recompute_media_status_locked,
     remove_expected_media_item_locked,
     validate_expected_media,
 )
 from ..models import (
     Car,
+    CarMediaItem,
+    CarRevision,
     ListingReport,
     User,
     db,
@@ -627,6 +631,84 @@ def _with_media_compat(car: Car, *, include_private: bool = False) -> dict:
     return d
 
 
+def _working_copy_payload(car: Car, shadow: Car) -> dict:
+    """The owner's pending (unapproved) version of a listing, in the exact
+    shape of a normal listing payload so clients can render / edit it with
+    the same code. ``id`` / status / counters are the APPROVED listing's --
+    the working copy is not a separate listing."""
+    d = _with_media_compat(shadow, include_private=True)
+    d["id"] = car.public_id if getattr(car, "public_id", None) else str(car.id)
+    d["numeric_id"] = car.id
+    d["status"] = getattr(car, "status", None)
+    d["is_active"] = car.is_active
+    d["is_featured"] = car.is_effectively_featured
+    d["featured_until"] = car.featured_until.isoformat() if car.featured_until else None
+    d["views_count"] = car.views_count
+    d["created_at"] = car.created_at.isoformat() if car.created_at else None
+    d["updated_at"] = car.updated_at.isoformat() if car.updated_at else None
+    d["media_status"] = shadow.media_status
+    if not d.get("city") and d.get("location"):
+        d["city"] = d["location"]
+    return d
+
+
+def serialize_pending_revision(
+    rev: CarRevision | None, *, approved_car: Car | None = None, include_car: bool = True
+) -> dict | None:
+    """Owner/admin view of a listing's pending edit (see
+    ``kk/listing_revisions.py``). ``car`` is the working copy (what would
+    be published); the approved data stays in the surrounding listing."""
+    if rev is None:
+        return None
+    shadow = _revisions.get_working_copy(rev)
+    if shadow is None:
+        return None
+    car = approved_car or db.session.get(Car, rev.car_id)
+    media = _revisions.working_copy_media_state(shadow)
+    out = {
+        "id": rev.public_id,
+        "status": _revisions.public_revision_status(rev.status),
+        "rejection_reason": rev.rejection_reason
+        if rev.status == _revisions.REVISION_REJECTED
+        else None,
+        "submitted_at": rev.submitted_at.isoformat() if rev.submitted_at else None,
+        "reviewed_at": rev.reviewed_at.isoformat() if rev.reviewed_at else None,
+        "created_at": rev.created_at.isoformat() if rev.created_at else None,
+        "updated_at": rev.updated_at.isoformat() if rev.updated_at else None,
+        "revision_token": _revisions.revision_content_token(rev, shadow),
+        "changed_fields": _revisions.revision_changed_fields(car, shadow)
+        if car is not None
+        else [],
+        "media": media,
+    }
+    if include_car and car is not None:
+        out["car"] = _working_copy_payload(car, shadow)
+    return out
+
+
+def _attach_pending_revisions(cars: list[Car], payloads: list[dict]) -> None:
+    """Add ``pending_revision`` to the listing payloads of an owner's list
+    (one batched lookup; only listings that actually have a revision pay for
+    the serialization)."""
+    if not cars:
+        return
+    by_car_id = {
+        r.car_id: r
+        for r in CarRevision.query.filter(
+            CarRevision.car_id.in_([c.id for c in cars])
+        ).all()
+    }
+    if not by_car_id:
+        return
+    for car, payload in zip(cars, payloads):
+        rev = by_car_id.get(car.id)
+        if rev is None:
+            continue
+        pending = serialize_pending_revision(rev, approved_car=car)
+        if pending is not None:
+            payload["pending_revision"] = pending
+
+
 def _safe_int(val, default=None):
     """Parse int from request arg; return default if missing or invalid."""
     if val is None or (isinstance(val, str) and val.strip() == ""):
@@ -1067,6 +1149,14 @@ def get_car(car_id: str):
         car_dict = _with_media_compat(car, include_private=include_private)
         if not car_dict.get("city") and car_dict.get("location"):
             car_dict["city"] = car_dict["location"]
+        if current_user and car.seller_id == current_user.id:
+            # The owner sees the approved (public) listing as `car`, plus
+            # their own pending edit -- never merged into the public data.
+            pending = serialize_pending_revision(
+                _revisions.get_revision(car), approved_car=car
+            )
+            if pending is not None:
+                car_dict["pending_revision"] = pending
         return jsonify({"car": car_dict}), 200
     except Exception as e:
         current_app.logger.exception("get_car failed: %s", e)
@@ -1423,9 +1513,25 @@ def remove_expected_media_item(car_id: str, client_media_id: str):
                 403,
             )
 
+        revision = None
+        if _revisions.owner_edit_needs_review(car, current_user):
+            # The declared item belongs to the pending edit's working copy.
+            revision = _revisions.get_revision(car)
+            shadow = _revisions.get_working_copy(revision)
+            if shadow is None:
+                db.session.rollback()
+                return jsonify(
+                    {"removed": False, "reason": "not_found", "media_status": car.media_status}
+                ), 200
+            car = (
+                Car.query.filter_by(id=shadow.id).with_for_update().one()
+            )
+
         result = remove_expected_media_item_locked(
             car=car, client_media_id=client_media_id
         )
+        if revision is not None and result.get("removed"):
+            _revisions.note_owner_media_edit(revision)
         db.session.commit()
         status_code = 200 if result.get("removed") or result.get("reason") == "not_found" else 409
         return jsonify(result), status_code
@@ -1460,6 +1566,13 @@ def get_car_media_summary(car_id: str):
         ):
             return jsonify({"message": "Not authorized to view this listing's media"}), 403
 
+        if _revisions.owner_edit_needs_review(car, current_user):
+            # The owner's media (new uploads) live on the pending edit's
+            # working copy; the approved listing's manifest is long settled.
+            shadow = _revisions.get_working_copy(_revisions.get_revision(car))
+            if shadow is not None:
+                return jsonify(media_summary(shadow)), 200
+
         return jsonify(media_summary(car)), 200
     except Exception:
         return jsonify({"message": "Failed to load media summary"}), 500
@@ -1473,7 +1586,10 @@ def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True, requ
             car = Car.query.filter_by(id=int(car_id)).first()
         except (TypeError, ValueError):
             car = None
-    if not car:
+    if not car or _revisions.is_working_copy(car):
+        # A pending-edit working copy is an internal row, not a listing: it
+        # can't be reported, edited, deleted or status-changed by id (by
+        # anyone, admins included) -- only through its listing.
         return None, (jsonify({"message": "Car not found"}), 404)
     if require_active and not car.is_active and not request_has_admin_privileges(user):
         return None, (jsonify({"message": "Car not found"}), 404)
@@ -1496,13 +1612,42 @@ def update_car(car_id: str):
         if not current_user:
             return jsonify({"message": "User not found"}), 404
 
-        car, err = _resolve_car_for_user(car_id, current_user)
+        listing, err = _resolve_car_for_user(car_id, current_user)
         if err:
             return err
 
-        old_price = float(car.price or 0)
-
         raw = request.get_json(silent=True) or {}
+
+        # Editing a listing that is publicly visible must NOT change what
+        # the public sees until an admin approves it: the owner's edit is
+        # applied to a hidden working copy of the listing (see
+        # kk/listing_revisions.py) and submitted for review. Everything below
+        # -- field parsing / validation -- is unchanged and simply runs
+        # against `car`, which is the working copy in that case and the
+        # listing itself otherwise (Under Review listings, admin edits).
+        # `listing` is always the real, approved row.
+        touches_content = bool(set(raw.keys()) - {"status", "expected_media"}) or bool(
+            raw.get("expected_media")
+        )
+        via_revision = touches_content and _revisions.owner_edit_needs_review(
+            listing, current_user
+        )
+        revision = None
+        expected_media: list[dict] = []
+        if via_revision:
+            try:
+                expected_media = validate_expected_media(raw.get("expected_media"))
+            except ExpectedMediaValidationError as e:
+                return jsonify({"message": str(e)}), 400
+            try:
+                revision = _revisions.ensure_revision(listing)
+            except _revisions.RevisionError as e:
+                return jsonify(e.to_dict()), e.status
+            car = _revisions.get_working_copy(revision)
+        else:
+            car = listing
+
+        old_price = float(car.price or 0)
 
         def _s(val, default=""):
             return (val if isinstance(val, str) else str(val or "")).strip() or default
@@ -1651,7 +1796,7 @@ def update_car(car_id: str):
             st = (str(data.get("status") or "").strip().lower())
             if st not in _ALLOWED_LISTING_STATUSES:
                 return jsonify({"message": "Invalid status"}), 400
-            current_status = (car.status or "active").strip().lower()
+            current_status = (listing.status or "active").strip().lower()
             # Sellers cannot self-approve moderated listings.
             if (
                 current_status in _MODERATION_LISTING_STATUSES
@@ -1666,7 +1811,10 @@ def update_car(car_id: str):
                     ),
                     403,
                 )
-            car.status = st
+            # Availability (active <-> sold) is not reviewable content: it
+            # always applies to the real listing, never to the working copy.
+            listing.status = st
+            listing.updated_at = utcnow()
 
         if (car.title_status or "").lower() == "clean":
             car.damaged_parts = None
@@ -1695,6 +1843,42 @@ def update_car(car_id: str):
 
         if car.vin:
             car.vin = _normalize_vin(car.vin)
+
+        if via_revision:
+            # New media this edit will upload is declared up front (same
+            # manifest as create), so the admin cannot approve the revision
+            # before every new photo/video has finished processing.
+            known = {
+                row.client_media_id
+                for row in CarMediaItem.query.filter_by(car_id=car.id).all()
+            }
+            new_items = build_expected_media_items(
+                [e for e in expected_media if e["client_media_id"] not in known]
+            )
+            for item in new_items:
+                item.car_id = car.id
+                db.session.add(item)
+            if new_items:
+                recompute_media_status_locked(car)
+            _revisions.submit_revision(revision)
+            car.updated_at = utcnow()
+            db.session.commit()
+            log_user_action(
+                current_user, "submit_listing_revision", "car", listing.public_id
+            )
+            car_payload = _with_media_compat(listing, include_private=True)
+            car_payload["numeric_id"] = listing.id
+            pending = serialize_pending_revision(revision, approved_car=listing)
+            if pending is not None:
+                car_payload["pending_revision"] = pending
+            return jsonify(
+                {
+                    "message": "Your changes have been submitted for review.",
+                    "submitted_for_review": True,
+                    "car": car_payload,
+                    "pending_revision": pending,
+                }
+            ), 200
 
         car.updated_at = utcnow()
         db.session.commit()
@@ -1743,16 +1927,81 @@ def delete_car(car_id: str):
         if err:
             return err
 
+        # A pending edit dies with its listing: drop the working copy (and its
+        # manifest, so a late media job finds nothing to attach to) in the
+        # same transaction; only files no other row references are removed
+        # from storage afterwards.
+        orphan_urls = _revisions.discard_revision(car)
         remove_listing_from_all_favorites(car.id)
         remove_listing_from_all_view_history(car.id)
         car.is_active = False
         car.updated_at = utcnow()
         db.session.commit()
+        _revisions.cleanup_unreferenced_media(orphan_urls)
         _bump_filter_facets_cache()
         log_user_action(current_user, "delete_listing", "car", car.public_id)
         return jsonify({"message": "Car listing deleted successfully"}), 200
     except Exception as e:
         return _listing_db_error_response(e, action="delete car listing")
+
+
+def _owner_listing_or_error(car_id: str, user):
+    """Resolve a listing for the pending-edit endpoints: the listing's
+    OWNER only (admins moderate edits through the admin API)."""
+    car, err = _resolve_car_for_user(car_id, user)
+    if err:
+        return None, err
+    if car.seller_id != user.id:
+        return None, (
+            jsonify({"message": "Not authorized to manage this listing's edits"}),
+            403,
+        )
+    return car, None
+
+
+@bp.route("/api/cars/<car_id>/pending-revision", methods=["GET"])
+@jwt_required()
+def get_pending_revision(car_id: str):
+    """The owner's pending (not yet approved) edit of their listing, as the
+    full proposed listing. 404 when there is none."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+        car, err = _owner_listing_or_error(car_id, current_user)
+        if err:
+            return err
+        pending = serialize_pending_revision(
+            _revisions.get_revision(car), approved_car=car
+        )
+        if pending is None:
+            return jsonify({"message": "No pending changes", "code": "no_pending_revision"}), 404
+        return jsonify({"pending_revision": pending}), 200
+    except Exception as e:
+        return _listing_db_error_response(e, action="load pending changes")
+
+
+@bp.route("/api/cars/<car_id>/pending-revision", methods=["DELETE"])
+@jwt_required()
+def discard_pending_revision(car_id: str):
+    """Discard the owner's pending edit (pending, rejected or unsaved). The
+    live listing is untouched and stays public. Idempotent."""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+        car, err = _owner_listing_or_error(car_id, current_user)
+        if err:
+            return err
+        orphan_urls = _revisions.discard_revision(car)
+        db.session.commit()
+        _revisions.cleanup_unreferenced_media(orphan_urls)
+        log_user_action(current_user, "discard_listing_revision", "car", car.public_id)
+        payload = _with_media_compat(car, include_private=True)
+        payload["numeric_id"] = car.id
+        return jsonify({"message": "Pending changes discarded", "car": payload}), 200
+    except Exception as e:
+        return _listing_db_error_response(e, action="discard pending changes")
 
 
 @bp.route("/api/cars/<car_id>/mark-sold", methods=["POST"])
@@ -1843,6 +2092,7 @@ def get_my_listings():
             per_page=per_page,
         )
         cars = [car.to_dict(include_private=True) for car in pagination.items]
+        _attach_pending_revisions(list(pagination.items), cars)
         return (
             jsonify(
                 {
@@ -1896,6 +2146,7 @@ def compat_my_listings():
             if not d.get("title"):
                 d["title"] = f"{(car.brand or '').title()} {(car.model or '').title()} {car.year or ''}".strip()
             result.append(d)
+        _attach_pending_revisions(cars, result)
         return jsonify(result), 200
     except Exception:
         return jsonify({"message": "Failed to get your listings"}), 500

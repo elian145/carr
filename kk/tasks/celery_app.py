@@ -225,6 +225,12 @@ def make_celery() -> Celery:
                 "task": "kk.sweep_stuck_media_readiness_items",
                 "schedule": 3600.0,  # hourly; see media_readiness.py for the 6h stale-age threshold
             },
+            # Idle drafts of OLDER app builds only (see
+            # kk/listing_revisions.py::sweep_idle_editing_revisions).
+            "sweep-idle-listing-revisions": {
+                "task": "kk.sweep_idle_listing_revisions",
+                "schedule": 900.0,
+            },
         },
     )
     return c

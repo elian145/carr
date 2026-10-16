@@ -316,7 +316,7 @@ def process_car_image_file(
             from ..media_readiness import transition_media_item_terminal
             from ..routes.media import attach_processed_car_image
 
-            transition_media_item_terminal(
+            outcome = transition_media_item_terminal(
                 car_id=int(car_id),
                 client_media_id=client_media_id,
                 to_status="attached",
@@ -331,6 +331,23 @@ def process_car_image_file(
                     _trace_processed_sha256=res.get("_trace_processed_sha256"),
                 ),
             )
+            if outcome in ("car_missing", "item_missing"):
+                # The listing (or the pending edit this photo was uploaded
+                # for) was deleted/discarded while this job ran. Nothing was
+                # attached and nothing is recreated; just don't leave the
+                # freshly written object orphaned in storage. The helper
+                # refuses to delete any object another row still references.
+                try:
+                    from ..routes.media import _delete_media_storage_object
+
+                    _delete_media_storage_object(res.get("rel_path") or "")
+                except Exception:
+                    logger.exception(
+                        "process_car_image_file: orphan cleanup failed "
+                        "(car_id=%s client_media_id=%s)",
+                        car_id,
+                        client_media_id,
+                    )
         return out
     except (
         DecompressionBombRejected,

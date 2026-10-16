@@ -7,13 +7,19 @@ import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../shared/errors/user_error_text.dart';
 import 'listing_events.dart' show ListingEvents, invalidateListingDiskCaches;
+import 'listing_status.dart';
 import 'listing_to_sell_draft.dart';
 
 /// Confirms deletion, calls API, shows errors. Returns true when deleted.
+///
+/// [underReview]: the listing was never published (still awaiting its first
+/// admin review), so the dialog says deleting removes it for good. Deleting
+/// an Active listing keeps its existing wording.
 Future<bool> confirmAndDeleteListing(
   BuildContext context,
-  String carId,
-) async {
+  String carId, {
+  bool underReview = false,
+}) async {
   if (carId.trim().isEmpty) return false;
   final loc = AppLocalizations.of(context);
   final ok = await showDialog<bool>(
@@ -21,7 +27,12 @@ Future<bool> confirmAndDeleteListing(
     builder: (context) => AlertDialog(
       title: Text(loc?.deleteListingTitle ?? 'Delete listing?'),
       content: Text(
-        loc?.deleteListingBody ?? 'This will remove it from public listings.',
+        underReview
+            ? (loc?.deleteListingUnderReviewBody ??
+                'This listing is still under review. Deleting it will '
+                    'permanently remove it and its photos.')
+            : (loc?.deleteListingBody ??
+                'This will remove it from public listings.'),
       ),
       actions: [
         TextButton(
@@ -63,6 +74,71 @@ Future<bool> confirmAndDeleteListing(
       ),
     );
     return false;
+  }
+}
+
+/// Confirms, then discards the owner's pending (unapproved) edits of a
+/// published listing WITHOUT touching the live listing. Returns the fresh
+/// listing payload on success, or null when cancelled / failed.
+Future<Map<String, dynamic>?> confirmAndDiscardPendingEdits(
+  BuildContext context,
+  String carId,
+) async {
+  if (carId.trim().isEmpty) return null;
+  final loc = AppLocalizations.of(context);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(loc?.listingDiscardPendingEdits ?? 'Discard pending edits'),
+      content: Text(
+        loc?.listingDiscardPendingEditsBody ??
+            'Your pending changes will be deleted. Your live listing will '
+                'not change.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(loc?.cancelAction ?? 'Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(
+            loc?.listingDiscardPendingEdits ?? 'Discard pending edits',
+            style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+          ),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return null;
+  try {
+    final res = await ApiService.discardPendingRevision(carId);
+    await invalidateListingDiskCaches(carId);
+    if (!context.mounted) return null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          loc?.listingPendingEditsDiscarded ?? 'Pending edits discarded',
+        ),
+      ),
+    );
+    final car = res['car'];
+    if (car is Map) {
+      final fresh = Map<String, dynamic>.from(car.cast<String, dynamic>());
+      fresh.remove('pending_revision');
+      return fresh;
+    }
+    return <String, dynamic>{};
+  } catch (e) {
+    if (!context.mounted) return null;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          userErrorText(context, e, fallback: loc?.errorTitle ?? 'Error'),
+        ),
+      ),
+    );
+    return null;
   }
 }
 
@@ -152,8 +228,11 @@ Future<Map<String, dynamic>?> openEditListingPage(
   Map<String, dynamic> car,
 ) async {
   final auth = Provider.of<AuthService>(context, listen: false);
+  // Editing a published listing that already has a pending edit continues
+  // from that pending version (never from the approved one, which would
+  // silently drop the owner's earlier unapproved changes).
   final snapshot = listingToSellDraftSnapshot(
-    car,
+    listingForOwnerEditing(car),
     contactPhoneFallback: auth.userPhone,
   );
 

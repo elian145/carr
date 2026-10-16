@@ -56,7 +56,26 @@ int sellMileageKmFromCarData(Map<String, dynamic> carData) {
   return raw;
 }
 
-Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
+/// Optional listing fields an owner may legitimately EMPTY while editing.
+/// The update payload normally omits blank values (so a partial edit never
+/// wipes data); with `clearEmptyOptionalFields` the blank value is sent as an
+/// explicit `null` instead, so removing e.g. the description, VIN or plate
+/// really takes effect on the pending edit.
+const Set<String> kSellUpdateClearableFields = {
+  'description',
+  'vin',
+  'fuel_economy',
+  'plate_type',
+  'plate_city',
+  'region_specs',
+  'cylinder_count',
+  'engine_size',
+};
+
+Map<String, dynamic> buildSellCarUpdatePayload(
+  Map<String, dynamic> carData, {
+  bool clearEmptyOptionalFields = false,
+}) {
   final brand = carData['brand']?.toString() ?? '';
   final model = carData['model']?.toString() ?? '';
   final trim = carData['trim']?.toString() ?? 'Base';
@@ -136,13 +155,18 @@ Map<String, dynamic> buildSellCarUpdatePayload(Map<String, dynamic> carData) {
     'location': location,
     'plate_type': plateType.isNotEmpty ? plateType : null,
     'plate_city': plateCity.isNotEmpty ? plateCity : null,
-    if (fuelEconomy.isNotEmpty) 'fuel_economy': fuelEconomy,
-    if (description.isNotEmpty) 'description': description,
+    'fuel_economy': fuelEconomy.isNotEmpty ? fuelEconomy : null,
+    'description': description.isNotEmpty ? description : null,
     if (currency.isNotEmpty) 'currency': currency,
     ..._sellContactPhonePayload(carData),
-    if ((carData['vin']?.toString() ?? '').trim().isNotEmpty)
-      'vin': carData['vin'].toString().trim(),
-  }..removeWhere((k, v) => v == null || (v is String && v.trim().isEmpty));
+    'vin': (carData['vin']?.toString() ?? '').trim().isNotEmpty
+        ? carData['vin'].toString().trim()
+        : null,
+  }..removeWhere(
+      (k, v) =>
+          (v == null || (v is String && v.trim().isEmpty)) &&
+          !(clearEmptyOptionalFields && kSellUpdateClearableFields.contains(k)),
+    );
 }
 
 Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {

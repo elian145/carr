@@ -37,9 +37,38 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   Future<void> _deleteOwnListing() async {
     final id = listingPrimaryId(car ?? {});
     if (id.isEmpty) return;
-    final deleted = await confirmAndDeleteListing(context, id);
+    // A listing that is still Under Review can be deleted too (the dialog
+    // says so); an Active listing keeps its existing wording.
+    final deleted = await confirmAndDeleteListing(
+      context,
+      id,
+      underReview: isListingPending(car),
+    );
     if (!deleted || !mounted) return;
     Navigator.pop(context, {'deleted': true, 'carId': id});
+  }
+
+  /// Owner-only: the listing has a pending revision (edits under review,
+  /// rejected, or saved but not submitted).
+  bool get _hasOwnerPendingEdits =>
+      _canManageOwnListing && listingHasPendingRevision(car);
+
+  Future<void> _previewPendingEdits() async {
+    final current = car;
+    if (current == null) return;
+    await showPendingChangesPreview(context, current);
+  }
+
+  Future<void> _discardPendingEdits() async {
+    final id = listingPrimaryId(car ?? {});
+    if (id.isEmpty) return;
+    final fresh = await confirmAndDiscardPendingEdits(context, id);
+    if (!mounted || fresh == null) return;
+    setState(() {
+      final merged = {...?car, ...fresh};
+      merged.remove('pending_revision');
+      car = merged;
+    });
   }
 
   bool get _isListingSold => isListingSold(car);

@@ -650,6 +650,27 @@
   "myListingsNoPendingTitle": "هیچ ڕێکلامێکی چاوەڕوان نییە",
   "myListingsNoPendingHint": "ڕێکلامە چاوەڕوانی پێداچوونەوە لێرە دەردەکەون.",
   "listingHiddenBadge": "شاردراوەتەوە",
+  "listingEditsSubmittedForReview": "گۆڕانکارییەکانت بۆ پێداچوونەوە نێردران.",
+  "listingBadgeEditsUnderReview": "چالاک — دەستکارییەکان لە ژێر پێداچوونەوەدان",
+  "listingBadgeEditsRejected": "چالاک — دەستکارییەکان پەسەند نەکراون",
+  "listingBadgeEditsUnsaved": "چالاک — دەستکارییەکان نەنێردراون",
+  "listingEditsUnderReviewNote": "کڕیاران هێشتا وەشانی پەسەندکراوی ڕێکلامەکەت دەبینن تا ئەم گۆڕانکارییانە پەسەند دەکرێن.",
+  "listingEditsRejectedMessage": "گۆڕانکارییەکانت پەسەند نەکران: {reason}",
+  "@listingEditsRejectedMessage": {
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Photos are blurry"
+      }
+    }
+  },
+  "listingEditsRejectedNoReason": "گۆڕانکارییەکانت پەسەند نەکران. ڕێکلامە پەسەندکراوەکەت هێشتا زیندووە. دەتوانیت دەستکاری بکەیت و دووبارە بینێریت.",
+  "listingEditsUnsavedNote": "دەستکارییەکانت هەیە کە هێشتا بۆ پێداچوونەوە نەنێردراون. دەستکاری بکە و تەواوی بکە.",
+  "listingDiscardPendingEdits": "هەڵوەشاندنەوەی دەستکارییە چاوەڕوانکراوەکان",
+  "listingDiscardPendingEditsBody": "گۆڕانکارییە چاوەڕوانکراوەکانت دەسڕدرێنەوە. ڕێکلامە زیندووەکەت ناگۆڕێت.",
+  "listingPendingEditsDiscarded": "دەستکارییە چاوەڕوانکراوەکان هەڵوەشێنرانەوە",
+  "listingPreviewPendingChanges": "پێشاندانی گۆڕانکارییە چاوەڕوانکراوەکان",
+  "deleteListingUnderReviewBody": "ئەم ڕێکلامە هێشتا لە ژێر پێداچوونەوەدایە. سڕینەوەی بە هەمیشەیی ڕێکلامەکە و وێنەکانی لادەبات.",
   "myListingsHiddenFilter": "شاردراوەتەوە",
   "myListingsHiddenExplainer": "ئەم ڕێکلامانە لەلایەن تیمی پێداچوونەوەمانەوە شاردراونەتەوە و بۆ کڕیاران دیار نین. ئەگەر پرسیارت هەیە پەیوەندی بە پشتگیری بکە.",
   "myListingsNoHiddenTitle": "هیچ ڕێکلامێکی شاردراوەتەوە نییە",

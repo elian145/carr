@@ -40,3 +40,19 @@ def sweep_stuck_media_readiness_items():
             "sweep_stuck_media_readiness_items: marked %d stuck item(s) failed", count
         )
     return {"ok": True, "marked_failed": count}
+
+
+@celery_app.task(name="kk.sweep_idle_listing_revisions")
+def sweep_idle_listing_revisions():
+    """Every 15 min: finalize idle drafts left by OLDER app builds only
+    ('editing_legacy': no review-aware header, no final submit call) -- submit
+    a complete one for admin review, or discard one that changes nothing.
+    Drafts from current builds ('editing') are never touched; incomplete or
+    failed-upload drafts are never submitted. Never publishes. See
+    ``kk/listing_revisions.py::sweep_idle_editing_revisions``."""
+    from ..listing_revisions import sweep_idle_editing_revisions
+
+    result = sweep_idle_editing_revisions()
+    if result["submitted"] or result["discarded"]:
+        logger.info("sweep_idle_listing_revisions: %s", result)
+    return {"ok": True, **result}

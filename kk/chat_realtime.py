@@ -37,12 +37,14 @@ def resolve_car_for_chat(car_id_raw: str) -> Car | None:
     raw = (car_id_raw or "").strip()
     if not raw:
         return None
+    from .listing_visibility import not_a_working_copy
+
     car = Car.query.filter_by(public_id=raw).first()
     if car:
-        return car
+        return not_a_working_copy(car)
     if raw.isdigit():
         try:
-            return Car.query.filter_by(id=int(raw)).first()
+            return not_a_working_copy(Car.query.filter_by(id=int(raw)).first())
         except Exception:
             return None
     return None

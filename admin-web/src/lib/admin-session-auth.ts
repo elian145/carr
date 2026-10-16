@@ -89,11 +89,47 @@ export function clearAdminSessionCookies(
   clearLegacyCookiesOn(res);
 }
 
+type RotatedPair = { access: string; refresh: string };
+
+// Refresh tokens are single-use (the API rotates them). When the access token
+// expires, a burst of parallel requests (page load + link prefetches + proxy
+// calls) all present the SAME refresh token; only the first rotation can win
+// and the rest would get 401 and redirect to /login. Coalesce them: callers
+// presenting the same refresh token share one upstream call, and a result is
+// reused for a few seconds by late siblings that still carry the old cookie.
+// (Per server process / runtime; every sibling then sets the same new pair.)
+const REFRESH_REUSE_MS = 15_000;
+const refreshInflight = new Map<string, Promise<RotatedPair | null>>();
+const refreshRecent = new Map<string, { at: number; pair: RotatedPair }>();
+
 export async function refreshAccessWithRefreshToken(
   refreshToken: string,
-): Promise<{ access: string; refresh: string } | null> {
+): Promise<RotatedPair | null> {
   const rt = (refreshToken || "").trim();
   if (!rt) return null;
+
+  const now = Date.now();
+  for (const [k, v] of refreshRecent) {
+    if (now - v.at >= REFRESH_REUSE_MS) refreshRecent.delete(k);
+  }
+  const recent = refreshRecent.get(rt);
+  if (recent) return recent.pair;
+  const pending = refreshInflight.get(rt);
+  if (pending) return pending;
+
+  const p = refreshUpstream(rt)
+    .then((pair) => {
+      if (pair) refreshRecent.set(rt, { at: Date.now(), pair });
+      return pair;
+    })
+    .finally(() => {
+      refreshInflight.delete(rt);
+    });
+  refreshInflight.set(rt, p);
+  return p;
+}
+
+async function refreshUpstream(rt: string): Promise<RotatedPair | null> {
   let res: Response;
   try {
     res = await fetch(`${apiUpstreamBase()}/api/auth/refresh`, {

@@ -18,6 +18,19 @@ def listing_status_key(car) -> str:
     return (getattr(car, "status", None) or "active").strip().lower()
 
 
+def not_a_working_copy(car):
+    """``car`` unless it is the hidden working copy of a pending listing edit
+    (``status='revision'``, see kk/listing_revisions.py), else ``None``.
+
+    A working copy is an internal row, never a listing: id-based lookups that
+    otherwise have no status filter (chat, metrics, view history, realtime)
+    pass their result through this so the row is "not found" there too.
+    Public queries already exclude it (inactive + non-public status)."""
+    if car is not None and listing_status_key(car) == "revision":
+        return None
+    return car
+
+
 def listing_is_public(car) -> bool:
     status = listing_status_key(car)
     if status not in PUBLIC_LISTING_STATUSES and status != "":

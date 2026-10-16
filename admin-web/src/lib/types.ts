@@ -201,10 +201,47 @@ export interface ListingAnalytics {
   price?: number;
 }
 
+/** A seller's pending edit of a published listing (see kk/listing_revisions.py). */
+export interface ListingRevision {
+  id: string;
+  status: "editing" | "pending" | "rejected";
+  rejection_reason?: string | null;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  updated_at?: string | null;
+  /** Must be sent back on approve/reject: proves the admin reviewed THIS content. */
+  revision_token: string;
+  changed_fields: string[];
+  media?: {
+    ready: boolean;
+    in_flight: number;
+    failed: number;
+    failed_cover?: boolean;
+    approvable?: boolean;
+    total: number;
+  };
+  /** The PROPOSED version (only on the detail view). */
+  car?: CarListing;
+  /** The approved listing, summarised (only on the list view). */
+  listing?: {
+    id: string;
+    title?: string;
+    brand?: string;
+    model?: string;
+    year?: number;
+    price?: number | null;
+    currency?: string;
+    status?: string;
+    image_url?: string | null;
+    seller?: { id: string; username?: string } | null;
+  };
+}
+
 export interface CarDetail {
   car: CarListing;
   analytics: ListingAnalytics | null;
   reports: AdminReport[];
+  pending_revision?: ListingRevision | null;
 }
 
 export interface Message {

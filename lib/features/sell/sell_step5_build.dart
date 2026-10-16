@@ -307,11 +307,18 @@ mixin _SellStep5Build on _SellStep5Logic {
           }
         }
         if (!mounted) return;
+        final editedForReview = submitResult?.editSubmittedForReview ?? false;
         try {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.saveChangesButton),
-              backgroundColor: Colors.green,
+              content: Text(
+                editedForReview
+                    ? AppLocalizations.of(context)!.listingEditsSubmittedForReview
+                    : AppLocalizations.of(context)!.saveChangesButton,
+              ),
+              backgroundColor:
+                  editedForReview ? const Color(0xFFF57C00) : Colors.green,
+              duration: const Duration(seconds: 4),
             ),
           );
         } catch (e, st) {

@@ -40,3 +40,71 @@ List<Map<String, dynamic>> publicListingsOnly(
 
 bool isListingActive(Map<String, dynamic>? listing) =>
     !isListingSold(listing) && !isListingPendingReview(listing);
+
+// ---------------------------------------------------------------------------
+// Pending edits of a published listing.
+//
+// Editing an Active listing never changes what buyers see: the owner's
+// changes live in a separate "pending revision" of the SAME listing that an
+// admin must approve (see `kk/listing_revisions.py`). Owner payloads
+// (`GET /api/cars/<id>`, `GET /api/cars/my-listings`) carry it as
+// `pending_revision`; the top-level listing fields stay the APPROVED ones.
+// ---------------------------------------------------------------------------
+
+/// The `pending_revision` object of an owner listing payload, or null.
+Map<String, dynamic>? listingPendingRevision(Map<String, dynamic>? listing) {
+  final raw = listing?['pending_revision'];
+  if (raw is Map) return Map<String, dynamic>.from(raw.cast<String, dynamic>());
+  return null;
+}
+
+String _pendingRevisionStatus(Map<String, dynamic>? listing) =>
+    (listingPendingRevision(listing)?['status'] ?? '')
+        .toString()
+        .trim()
+        .toLowerCase();
+
+/// A public listing whose owner-submitted edits are waiting for admin review.
+bool listingHasPendingEditsUnderReview(Map<String, dynamic>? listing) =>
+    !isListingPendingReview(listing) &&
+    _pendingRevisionStatus(listing) == 'pending';
+
+/// A public listing whose last submitted edits were rejected by an admin
+/// (the approved version stays live; the owner can fix and resubmit).
+bool listingHasRejectedEdits(Map<String, dynamic>? listing) =>
+    !isListingPendingReview(listing) &&
+    _pendingRevisionStatus(listing) == 'rejected';
+
+/// A public listing with saved-but-not-yet-submitted edits (e.g. media was
+/// changed but the owner never finished saving).
+bool listingHasUnsubmittedEdits(Map<String, dynamic>? listing) =>
+    !isListingPendingReview(listing) &&
+    _pendingRevisionStatus(listing) == 'editing';
+
+/// True when any pending revision exists (under review, rejected, unsaved).
+bool listingHasPendingRevision(Map<String, dynamic>? listing) =>
+    !isListingPendingReview(listing) && _pendingRevisionStatus(listing).isNotEmpty;
+
+/// The admin's rejection reason for the owner's last submitted edits.
+String listingRevisionRejectionReason(Map<String, dynamic>? listing) =>
+    (listingPendingRevision(listing)?['rejection_reason'] ?? '')
+        .toString()
+        .trim();
+
+/// The version of the listing the owner should see/edit: the pending
+/// revision's working copy when one exists, otherwise the listing itself.
+/// The result keeps the approved listing's identity (id/public_id/status) so
+/// it can be passed to the edit wizard unchanged -- an edit always targets
+/// the same listing.
+Map<String, dynamic> listingForOwnerEditing(Map<String, dynamic> listing) {
+  final pending = listingPendingRevision(listing);
+  final working = pending?['car'];
+  if (pending == null || working is! Map) return listing;
+  if (isListingPendingReview(listing)) return listing;
+  final merged = Map<String, dynamic>.from(working.cast<String, dynamic>());
+  for (final key in const ['id', 'public_id', 'numeric_id', 'status']) {
+    if (listing.containsKey(key)) merged[key] = listing[key];
+  }
+  merged['pending_revision'] = pending;
+  return merged;
+}

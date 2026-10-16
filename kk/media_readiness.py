@@ -339,7 +339,7 @@ def transition_media_item_terminal(
     client_media_id: str,
     to_status: str,
     attach_fn: Callable[[Car], None] | None = None,
-) -> None:
+) -> str:
     """
     The ONLY function allowed to move a `CarMediaItem` into a terminal
     state (``attached`` or ``failed``) for the async (image /
@@ -378,6 +378,19 @@ def transition_media_item_terminal(
     problem (no terminal transition happened, item stays exactly as it
     was); only a task's own classification of a PERMANENT failure should
     call this function with ``to_status="failed"`` in the first place.
+
+    Returns what happened, so a caller that has already produced a storage
+    object can tell whether that object ended up owned by anything:
+
+    * ``"applied"``          -- the transition happened (object is now attached);
+    * ``"already_terminal"`` -- duplicate/redelivered call, nothing changed
+      (the object IS the one already attached -- never delete it);
+    * ``"car_missing"``      -- the listing / pending-edit working copy was
+      deleted or discarded while the job ran; nothing was (re)created;
+    * ``"item_missing"``     -- the manifest row is gone (same situation).
+
+    For the last two the caller's freshly written object is an orphan and
+    may be deleted.
     """
     if to_status not in _TERMINAL_STATUSES:
         raise ValueError(
@@ -388,7 +401,7 @@ def transition_media_item_terminal(
         car = Car.query.filter_by(id=car_id).with_for_update().one_or_none()
         if car is None:
             db.session.rollback()
-            return  # car deleted concurrently -- nothing to attach to
+            return "car_missing"  # car deleted concurrently -- nothing to attach to
 
         item = CarMediaItem.query.filter_by(
             car_id=car_id, client_media_id=client_media_id
@@ -400,13 +413,13 @@ def transition_media_item_terminal(
                 car_id,
             )
             db.session.rollback()
-            return
+            return "item_missing"
 
         if item.status in _TERMINAL_STATUSES:
             # Already terminal -- duplicate/redelivered call. Safe no-op:
             # never re-run attach_fn, never touch media_status again.
             db.session.rollback()
-            return
+            return "already_terminal"
 
         if to_status == "attached" and attach_fn is not None:
             attach_fn(car)
@@ -424,9 +437,19 @@ def transition_media_item_terminal(
 
         _recompute_media_status_locked(car)
         db.session.commit()
+        return "applied"
     except Exception:
         db.session.rollback()
         raise
+
+
+def recompute_media_status_locked(car: Car) -> str:
+    """Public wrapper of the aggregate recompute, for callers outside this
+    module that have just added/removed ``CarMediaItem`` rows for ``car``
+    (e.g. registering the new media of a pending listing edit). Same
+    contract: caller holds ``car``'s row lock; only mutates ``car``."""
+    db.session.flush()
+    return _recompute_media_status_locked(car)
 
 
 def remove_expected_media_item_locked(*, car: Car, client_media_id: str) -> dict:

@@ -42,11 +42,14 @@ import '../shared/listings/listing_identity.dart';
 import '../shared/listings/listing_management.dart'
     show
         confirmAndDeleteListing,
+        confirmAndDiscardPendingEdits,
         confirmMarkListingSold,
         openEditListingPage,
         setListingSoldStatus;
 import '../shared/listings/listing_image_media.dart';
 import '../shared/listings/listing_owner.dart';
+import '../shared/listings/pending_edits_banner.dart';
+
 import '../shared/listings/owner_media_overlay.dart';
 import '../shared/listings/owner_optimistic_media_cleanup.dart';
 import '../shared/listings/owner_pending_media_merge.dart';

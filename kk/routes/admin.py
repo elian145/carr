@@ -19,6 +19,7 @@ from ..admin_roles import (
 from ..models import (
     Car,
     CarImage,
+    CarRevision,
     DealerApplication,
     DealerDecision,
     DealerProfile,
@@ -85,11 +86,11 @@ def _find_car(car_id: str) -> Car | None:
     if not cid:
         return None
     car = Car.query.filter_by(public_id=cid).first()
-    if car:
-        return car
-    if cid.isdigit():
-        return Car.query.filter_by(id=int(cid)).first()
-    return None
+    if car is None and cid.isdigit():
+        car = Car.query.filter_by(id=int(cid)).first()
+    if car is not None and (car.status or "") == "revision":
+        return None  # hidden working copy of a pending edit, not a listing
+    return car
 
 
 def _find_car_locked(car_id: str) -> Car | None:
@@ -103,11 +104,11 @@ def _find_car_locked(car_id: str) -> Car | None:
     if not cid:
         return None
     car = Car.query.filter_by(public_id=cid).with_for_update().first()
-    if car:
-        return car
-    if cid.isdigit():
-        return Car.query.filter_by(id=int(cid)).with_for_update().first()
-    return None
+    if car is None and cid.isdigit():
+        car = Car.query.filter_by(id=int(cid)).with_for_update().first()
+    if car is not None and (car.status or "") == "revision":
+        return None  # hidden working copy of a pending edit, not a listing
+    return car
 
 
 def _blocked_by_media_readiness(is_active: bool, status: str | None, media_status: str) -> bool:
@@ -318,7 +319,7 @@ def dashboard():
 
         total_users = User.query.count()
         active_users = User.query.filter_by(is_active=True).count()
-        total_cars = Car.query.count()
+        total_cars = Car.query.filter(Car.status != "revision").count()
         active_cars = Car.query.filter_by(is_active=True).count()
         total_messages = Message.query.count()
         total_notifications = Notification.query.count()
@@ -352,7 +353,8 @@ def dashboard():
             else []
         )
         recent_cars = (
-            Car.query.options(
+            Car.query.filter(Car.status != "revision")
+            .options(
                 selectinload(Car.images),
                 selectinload(Car.videos),
                 joinedload(Car.seller),
@@ -390,6 +392,9 @@ def dashboard():
                         "pending_listing_reports": pending_listing_reports,
                         "pending_dealers": pending_dealers,
                         "pending_listings": pending_listings,
+                        "pending_listing_revisions": CarRevision.query.filter_by(
+                            status="pending"
+                        ).count(),
                         "dealer_accounts": dealer_accounts,
                         "featured_cars": featured_cars,
                         "total_saved_searches": total_saved_searches,
@@ -433,8 +438,11 @@ def meta_badges():
                         Car.is_active.is_(True),
                         Car.status == "pending",
                     ).count(),
+                    "pending_listing_revisions": CarRevision.query.filter_by(
+                        status="pending"
+                    ).count(),
                     "users": User.query.count(),
-                    "listings": Car.query.count(),
+                    "listings": Car.query.filter(Car.status != "revision").count(),
                     "dealers": User.query.filter(User.account_type == "dealer").count(),
                     "messages": Message.query.count(),
                     "notifications": Notification.query.count(),
@@ -519,6 +527,7 @@ def user_detail(user_id: str):
                 joinedload(Car.seller),
             )
             .filter_by(seller_id=user.id)
+            .filter(Car.status != "revision")
             .all()
         )
         recent_actions = (
@@ -558,7 +567,7 @@ def cars():
         max_price = request.args.get("max_price", type=float)
         sort = (request.args.get("sort") or "created_desc").strip().lower()
 
-        q = Car.query
+        q = Car.query.filter(Car.status != "revision")
         if search:
             like = f"%{search}%"
             q = q.filter(
@@ -636,7 +645,9 @@ def images():
         search = (request.args.get("search") or "").strip()
         sort = (request.args.get("sort") or "created_desc").strip().lower()
 
-        q = CarImage.query.join(Car, CarImage.car_id == Car.id)
+        q = CarImage.query.join(Car, CarImage.car_id == Car.id).filter(
+            Car.status != "revision"
+        )
         if kind and kind != "all":
             q = q.filter(CarImage.kind == kind)
         if car_id:
@@ -1547,12 +1558,20 @@ def car_detail(car_id: str):
             .limit(20)
             .all()
         )
+        from ..listing_revisions import get_revision
+        from .cars import serialize_pending_revision
+
         return (
             jsonify(
                 {
                     "car": car.to_dict(include_private=True),
                     "analytics": analytics.to_dict() if analytics else None,
                     "reports": [r.to_admin_dict() for r in reports],
+                    # The seller's pending edit, if any (full review lives at
+                    # /api/admin/listing-revisions/<id>).
+                    "pending_revision": serialize_pending_revision(
+                        get_revision(car), approved_car=car, include_car=False
+                    ),
                 }
             ),
             200,
@@ -2330,7 +2349,7 @@ def insights():
         )
         listing_rows = (
             db.session.query(func.date(Car.created_at).label("day"), func.count(Car.id))
-            .filter(Car.created_at.isnot(None))
+            .filter(Car.created_at.isnot(None), Car.status != "revision")
             .group_by(func.date(Car.created_at))
             .order_by(func.date(Car.created_at).desc())
             .limit(days)
@@ -2346,6 +2365,7 @@ def insights():
         )
         brand_rows = (
             db.session.query(Car.brand, func.count(Car.id).label("count"))
+            .filter(Car.status != "revision")
             .group_by(Car.brand)
             .order_by(func.count(Car.id).desc())
             .limit(15)
@@ -2353,6 +2373,7 @@ def insights():
         )
         location_rows = (
             db.session.query(Car.location, func.count(Car.id).label("count"))
+            .filter(Car.status != "revision")
             .group_by(Car.location)
             .order_by(func.count(Car.id).desc())
             .limit(15)
@@ -2434,6 +2455,13 @@ def delete_car(car_id: str):
         if not car:
             return jsonify({"message": "Listing not found"}), 404
 
+        # A pending seller edit dies with its listing (working copy + its
+        # media manifest deleted in this transaction; files nothing else
+        # references are removed from storage after commit).
+        from ..listing_revisions import cleanup_unreferenced_media, discard_revision
+
+        orphan_urls = discard_revision(car)
+
         remove_listing_from_all_favorites(car.id)
         remove_listing_from_all_view_history(car.id)
 
@@ -2453,6 +2481,7 @@ def delete_car(car_id: str):
         moderation_seller = car.seller
 
         db.session.commit()
+        cleanup_unreferenced_media(orphan_urls)
         invalidate_filter_facets_cache()
         if moderation_notification is not None and moderation_seller is not None:
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
@@ -2541,6 +2570,11 @@ def purge_car(car_id: str):
         public_id = car.public_id or str(car.id)
         car_pk = car.id
 
+        # The listing's pending edit (hidden working copy) must not outlive
+        # it: it is a separate `car` row the ORM delete below would not reach.
+        from ..listing_revisions import discard_revision
+
+        discard_revision(car)
         remove_listing_from_all_favorites(car_pk)
         remove_listing_from_all_view_history(car_pk)
         # D-01: ListingReport rows survive a purged listing (car_id SET NULL).
@@ -2563,6 +2597,284 @@ def purge_car(car_id: str):
         db.session.rollback()
         logger.error("admin purge_car error: %s", e, exc_info=True)
         return jsonify({"message": "Failed to purge listing"}), 500
+
+
+# ---------------------------------------------------------------------------
+# Pending edits of published listings (see kk/listing_revisions.py)
+#
+# While a seller's edit of an ACTIVE listing is pending, the public keeps
+# seeing the previously approved listing. Admins review the *proposed*
+# version here; approving atomically publishes it, rejecting leaves the
+# approved listing untouched and tells the seller why.
+# ---------------------------------------------------------------------------
+
+
+def _find_revision(revision_id: str) -> CarRevision | None:
+    rid = (revision_id or "").strip()
+    if not rid:
+        return None
+    return CarRevision.query.filter_by(public_id=rid).first()
+
+
+def _queue_listing_revision_notification(
+    car: Car, outcome: str, *, reason: str | None = None
+) -> Notification | None:
+    """Build (not commit) the seller's notification for an approved /
+    rejected edit; same delivery path as the other listing notifications."""
+    seller = car.seller
+    if seller is None:
+        return None
+    locale = get_background_locale(getattr(seller, "locale", None))
+    if outcome == "approved":
+        title = translate("listing_revision_approved_title", locale)
+        message = translate("listing_revision_approved_body", locale)
+    else:
+        title = translate("listing_revision_rejected_title", locale)
+        # The admin's reason is their own words: verbatim, never translated.
+        message = reason or translate("listing_revision_rejected_default_body", locale)
+    notification = Notification(
+        user_id=seller.id,
+        title=title,
+        message=message,
+        notification_type="listing_status",
+        data={"status": f"revision_{outcome}", "car_id": car.public_id},
+    )
+    db.session.add(notification)
+    return notification
+
+
+@bp.route("/listing-revisions", methods=["GET"])
+@admin_required
+def listing_revisions():
+    """Seller edits awaiting review (oldest first). ``?status=pending``
+    (default) | ``rejected`` | ``all``."""
+    try:
+        denied = _deny("listings.read")
+        if denied:
+            return denied
+        from .cars import _with_media_compat, serialize_pending_revision
+
+        page = request.args.get("page", 1, type=int)
+        per_page = min(max(request.args.get("per_page", 20, type=int), 1), 100)
+        status = (request.args.get("status") or "pending").strip().lower()
+        if status not in ("pending", "rejected", "all"):
+            return jsonify({"message": "Invalid status"}), 400
+
+        q = (
+            CarRevision.query.join(Car, CarRevision.car_id == Car.id)
+            .filter(
+                Car.is_active.is_(True),
+                Car.status.in_(("active", "sold")),
+            )
+            .options(joinedload(CarRevision.car).joinedload(Car.seller))
+        )
+        if status == "all":
+            q = q.filter(CarRevision.status.in_(("pending", "rejected")))
+        else:
+            q = q.filter(CarRevision.status == status)
+        pagination = q.order_by(
+            CarRevision.submitted_at.asc(), CarRevision.id.asc()
+        ).paginate(page=page, per_page=per_page, error_out=False)
+
+        items = []
+        for rev in pagination.items:
+            car = rev.car
+            summary = serialize_pending_revision(
+                rev, approved_car=car, include_car=False
+            )
+            if summary is None:
+                continue
+            seller = car.seller
+            current = _with_media_compat(car)
+            summary["listing"] = {
+                "id": car.public_id,
+                "title": current.get("title"),
+                "brand": car.brand,
+                "model": car.model,
+                "year": car.year,
+                "price": current.get("price"),
+                "currency": car.currency,
+                "status": car.status,
+                "image_url": current.get("image_url"),
+                "seller": (
+                    {"id": seller.public_id, "username": seller.username}
+                    if seller
+                    else None
+                ),
+            }
+            items.append(summary)
+        return (
+            jsonify(
+                {
+                    "revisions": items,
+                    "pagination": _pagination_dict(pagination, page, per_page),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error("admin listing_revisions error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to get listing revisions"}), 500
+
+
+@bp.route("/listing-revisions/<revision_id>", methods=["GET"])
+@admin_required
+def listing_revision_detail(revision_id: str):
+    """The APPROVED listing (``current``) next to the seller's PROPOSED
+    version (``revision.car``) and which fields differ. ``revision_token``
+    must be sent back when approving / rejecting."""
+    try:
+        denied = _deny("listings.read")
+        if denied:
+            return denied
+        from .cars import _with_media_compat, serialize_pending_revision
+
+        rev = _find_revision(revision_id)
+        if rev is None or rev.status in ("editing", "editing_legacy"):
+            return jsonify({"message": "Revision not found"}), 404
+        car = rev.car
+        pending = serialize_pending_revision(rev, approved_car=car, include_car=True)
+        if pending is None:
+            return jsonify({"message": "Revision not found"}), 404
+        current = _with_media_compat(car, include_private=True)
+        current["numeric_id"] = car.id
+        return jsonify({"revision": pending, "current": current}), 200
+    except Exception as e:
+        logger.error("admin listing_revision_detail error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to get listing revision"}), 500
+
+
+@bp.route("/listing-revisions/<revision_id>/approve", methods=["POST"])
+@admin_required
+def approve_listing_revision(revision_id: str):
+    """Publish the reviewed edit onto the listing, atomically. Body:
+    ``{"revision_token": "<token from the detail view>"}``. 409
+    ``stale_revision`` when the seller changed the edit since."""
+    try:
+        denied = _deny("listings.write")
+        if denied:
+            return denied
+        from ..listing_revisions import (
+            RevisionError,
+            cleanup_unreferenced_media,
+            publish_revision,
+        )
+
+        admin_user = get_current_user()
+        rev = _find_revision(revision_id)
+        if rev is None:
+            return jsonify({"message": "Revision not found"}), 404
+        data = request.get_json(silent=True) or {}
+        token = str(data.get("revision_token") or "").strip()
+
+        try:
+            result = publish_revision(
+                rev.id,
+                expected_token=token,
+                reviewer=getattr(admin_user, "username", None),
+            )
+        except RevisionError as e:
+            db.session.rollback()
+            return jsonify(e.to_dict()), e.status
+
+        car = result["car"]
+        notification = _queue_listing_revision_notification(car, "approved")
+        seller = car.seller
+        car_public_id = car.public_id or str(car.id)
+        db.session.commit()
+        cleanup_unreferenced_media(result["removed_urls"])
+        invalidate_filter_facets_cache()
+        if notification is not None and seller is not None:
+            _deliver_listing_moderation_notification(notification, seller)
+        old_price, new_price = result["old_price"], result["new_price"]
+        if (
+            old_price is not None
+            and new_price is not None
+            and new_price < old_price
+            and car.is_active
+        ):
+            try:
+                from ..retention_dispatch import dispatch_price_drop_alerts
+
+                dispatch_price_drop_alerts(car.id, old_price, new_price)
+            except Exception:
+                logger.exception("price-drop dispatch after revision approval failed")
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_approve_listing_revision",
+                target_type="car",
+                target_id=car_public_id,
+                metadata={"changed_fields": result["changed_fields"]},
+            )
+        return (
+            jsonify(
+                {
+                    "message": "Changes approved and published",
+                    "changed_fields": result["changed_fields"],
+                    "car": car.to_dict(include_private=True),
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin approve_listing_revision error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to approve changes"}), 500
+
+
+@bp.route("/listing-revisions/<revision_id>/reject", methods=["POST"])
+@admin_required
+def reject_listing_revision(revision_id: str):
+    """Reject the edit; the approved listing stays live and unchanged. Body:
+    ``{"revision_token": "...", "reason": "<shown to the seller>"}``."""
+    try:
+        denied = _deny("listings.write")
+        if denied:
+            return denied
+        from ..listing_revisions import RevisionError, reject_revision
+
+        admin_user = get_current_user()
+        rev = _find_revision(revision_id)
+        if rev is None:
+            return jsonify({"message": "Revision not found"}), 404
+        data = request.get_json(silent=True) or {}
+        token = str(data.get("revision_token") or "").strip()
+        reason = str(data.get("reason") or "").strip()
+
+        try:
+            rev = reject_revision(
+                rev.id,
+                expected_token=token,
+                reviewer=getattr(admin_user, "username", None),
+                reason=reason,
+            )
+        except RevisionError as e:
+            db.session.rollback()
+            return jsonify(e.to_dict()), e.status
+
+        car = rev.car
+        notification = _queue_listing_revision_notification(
+            car, "rejected", reason=rev.rejection_reason
+        )
+        seller = car.seller
+        car_public_id = car.public_id or str(car.id)
+        db.session.commit()
+        if notification is not None and seller is not None:
+            _deliver_listing_moderation_notification(notification, seller)
+        if admin_user:
+            log_user_action(
+                admin_user,
+                "admin_reject_listing_revision",
+                target_type="car",
+                target_id=car_public_id,
+                metadata={"reason": reason},
+            )
+        return jsonify({"message": "Changes rejected", "status": "rejected"}), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error("admin reject_listing_revision error: %s", e, exc_info=True)
+        return jsonify({"message": "Failed to reject changes"}), 500
 
 
 @bp.route("/users/<user_id>/purge", methods=["DELETE"])
@@ -2708,7 +3020,7 @@ def system_health():
                     "counts": {
                         "users": User.query.count(),
                         "active_users": User.query.filter_by(is_active=True).count(),
-                        "listings": Car.query.count(),
+                        "listings": Car.query.filter(Car.status != "revision").count(),
                         "active_listings": Car.query.filter_by(is_active=True).count(),
                         "pending_reports": (
                             UserReport.query.filter_by(status="pending").count()
@@ -2782,7 +3094,11 @@ def meta_filters():
         if denied:
             return denied
         brands = [r[0] for r in db.session.query(Car.brand).distinct().order_by(Car.brand).limit(200).all() if r[0]]
-        statuses = [r[0] for r in db.session.query(Car.status).distinct().order_by(Car.status).all() if r[0]]
+        statuses = [
+            r[0]
+            for r in db.session.query(Car.status).distinct().order_by(Car.status).all()
+            if r[0] and r[0] != "revision"
+        ]
         action_types = [
             r[0]
             for r in db.session.query(UserAction.action_type)

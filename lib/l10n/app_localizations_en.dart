@@ -1871,6 +1871,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listingHiddenBadge => 'Hidden';
 
   @override
+  String get listingEditsSubmittedForReview =>
+      'Your changes have been submitted for review.';
+
+  @override
+  String get listingBadgeEditsUnderReview => 'Active — Edits Under Review';
+
+  @override
+  String get listingBadgeEditsRejected => 'Active — Edits Not Approved';
+
+  @override
+  String get listingBadgeEditsUnsaved => 'Active — Edits Not Submitted';
+
+  @override
+  String get listingEditsUnderReviewNote =>
+      'Buyers still see the approved version of your listing until these changes are approved.';
+
+  @override
+  String listingEditsRejectedMessage(String reason) {
+    return 'Your changes were not approved: $reason';
+  }
+
+  @override
+  String get listingEditsRejectedNoReason =>
+      'Your changes were not approved. Your approved listing is still live. You can edit and resubmit.';
+
+  @override
+  String get listingEditsUnsavedNote =>
+      'You have edits that were not submitted for review yet. Open Edit to finish and submit them.';
+
+  @override
+  String get listingDiscardPendingEdits => 'Discard pending edits';
+
+  @override
+  String get listingDiscardPendingEditsBody =>
+      'Your pending changes will be deleted. Your live listing will not change.';
+
+  @override
+  String get listingPendingEditsDiscarded => 'Pending edits discarded';
+
+  @override
+  String get listingPreviewPendingChanges => 'Preview pending changes';
+
+  @override
+  String get deleteListingUnderReviewBody =>
+      'This listing is still under review. Deleting it will permanently remove it and its photos.';
+
+  @override
   String get myListingsHiddenFilter => 'Hidden';
 
   @override

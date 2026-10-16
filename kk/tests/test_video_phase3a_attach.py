@@ -190,6 +190,7 @@ def _make_car(app_ctx, seller_id: int) -> tuple[int, str]:
             price=15000,
             location="Erbil",
             is_active=True,
+            status="pending",
         )
         db.session.add(car)
         db.session.commit()

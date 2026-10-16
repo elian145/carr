@@ -154,6 +154,7 @@ def _make_car(app_ctx, seller_id: int):
             price=15000,
             location="Erbil",
             is_active=True,
+            status="pending",
         )
         db.session.add(car)
         db.session.commit()

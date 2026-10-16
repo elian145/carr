@@ -1881,6 +1881,52 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listingHiddenBadge => 'مخفي';
 
   @override
+  String get listingEditsSubmittedForReview => 'تم إرسال تغييراتك للمراجعة.';
+
+  @override
+  String get listingBadgeEditsUnderReview => 'نشط — التعديلات قيد المراجعة';
+
+  @override
+  String get listingBadgeEditsRejected => 'نشط — التعديلات غير معتمدة';
+
+  @override
+  String get listingBadgeEditsUnsaved => 'نشط — تعديلات غير مرسلة';
+
+  @override
+  String get listingEditsUnderReviewNote =>
+      'لا يزال المشترون يرون النسخة المعتمدة من إعلانك حتى تتم الموافقة على هذه التغييرات.';
+
+  @override
+  String listingEditsRejectedMessage(String reason) {
+    return 'لم تتم الموافقة على تغييراتك: $reason';
+  }
+
+  @override
+  String get listingEditsRejectedNoReason =>
+      'لم تتم الموافقة على تغييراتك. إعلانك المعتمد لا يزال منشوراً. يمكنك التعديل وإعادة الإرسال.';
+
+  @override
+  String get listingEditsUnsavedNote =>
+      'لديك تعديلات لم تُرسل للمراجعة بعد. افتح تعديل لإكمالها وإرسالها.';
+
+  @override
+  String get listingDiscardPendingEdits => 'تجاهل التعديلات المعلقة';
+
+  @override
+  String get listingDiscardPendingEditsBody =>
+      'سيتم حذف تغييراتك المعلقة. لن يتغير إعلانك المنشور.';
+
+  @override
+  String get listingPendingEditsDiscarded => 'تم تجاهل التعديلات المعلقة';
+
+  @override
+  String get listingPreviewPendingChanges => 'معاينة التغييرات المعلقة';
+
+  @override
+  String get deleteListingUnderReviewBody =>
+      'هذا الإعلان ما زال قيد المراجعة. سيؤدي حذفه إلى إزالته وصوره نهائياً.';
+
+  @override
   String get myListingsHiddenFilter => 'مخفي';
 
   @override

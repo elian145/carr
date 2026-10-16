@@ -275,6 +275,19 @@ export default function ListingDetailPage() {
 
         return (
           <div className="space-y-8">
+            {detail.pending_revision &&
+            detail.pending_revision.status !== "editing" ? (
+              <div className="rounded-xl border border-amber-700/50 bg-amber-950/30 px-4 py-3 text-sm text-amber-100">
+                This listing has a seller edit ({detail.pending_revision.status}
+                ). The data below is the approved, public version.{" "}
+                <Link
+                  href={`/listing-edits/${detail.pending_revision.id}`}
+                  className="underline hover:text-white"
+                >
+                  Review proposed changes
+                </Link>
+              </div>
+            ) : null}
             <section className="rounded-xl border border-surface-border bg-surface-card p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>

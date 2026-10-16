@@ -147,6 +147,7 @@ def _make_car(app_ctx, seller_id: int) -> tuple[int, str]:
             price=15000,
             location="Erbil",
             is_active=True,
+            status="pending",
         )
         db.session.add(car)
         db.session.commit()
@@ -554,6 +555,7 @@ def test_delete_image_removes_local_disk_file(local_app_ctx):
             price=15000,
             location="Erbil",
             is_active=True,
+            status="pending",
         )
         db.session.add(car)
         db.session.commit()
@@ -629,6 +631,7 @@ def test_delete_image_missing_local_file_is_handled_safely(local_app_ctx):
             price=15000,
             location="Erbil",
             is_active=True,
+            status="pending",
         )
         db.session.add(car)
         db.session.commit()

@@ -656,6 +656,27 @@
   "myListingsNoPendingTitle": "No pending listings",
   "myListingsNoPendingHint": "Listings waiting for review will appear here.",
   "listingHiddenBadge": "Hidden",
+  "listingEditsSubmittedForReview": "Your changes have been submitted for review.",
+  "listingBadgeEditsUnderReview": "Active — Edits Under Review",
+  "listingBadgeEditsRejected": "Active — Edits Not Approved",
+  "listingBadgeEditsUnsaved": "Active — Edits Not Submitted",
+  "listingEditsUnderReviewNote": "Buyers still see the approved version of your listing until these changes are approved.",
+  "listingEditsRejectedMessage": "Your changes were not approved: {reason}",
+  "@listingEditsRejectedMessage": {
+    "placeholders": {
+      "reason": {
+        "type": "String",
+        "example": "Photos are blurry"
+      }
+    }
+  },
+  "listingEditsRejectedNoReason": "Your changes were not approved. Your approved listing is still live. You can edit and resubmit.",
+  "listingEditsUnsavedNote": "You have edits that were not submitted for review yet. Open Edit to finish and submit them.",
+  "listingDiscardPendingEdits": "Discard pending edits",
+  "listingDiscardPendingEditsBody": "Your pending changes will be deleted. Your live listing will not change.",
+  "listingPendingEditsDiscarded": "Pending edits discarded",
+  "listingPreviewPendingChanges": "Preview pending changes",
+  "deleteListingUnderReviewBody": "This listing is still under review. Deleting it will permanently remove it and its photos.",
   "myListingsHiddenFilter": "Hidden",
   "myListingsHiddenExplainer": "These listings were hidden by our moderation team and are not visible to buyers. Contact support if you have questions.",
   "myListingsNoHiddenTitle": "No hidden listings",

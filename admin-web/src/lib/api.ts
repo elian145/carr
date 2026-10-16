@@ -9,6 +9,7 @@ import type {
   DashboardData,
   FilterMeta,
   GlobalSearchResults,
+  ListingRevision,
   InsightsData,
   Message,
   Notification,
@@ -783,4 +784,49 @@ export async function purgeUser(
   return apiRequest(`/api/admin/users/${encodeURIComponent(userId)}/purge`, {
     method: "DELETE",
   });
+}
+
+export async function fetchListingRevisions(params: {
+  page?: number;
+  per_page?: number;
+  status?: "pending" | "rejected" | "all";
+}): Promise<{ revisions: ListingRevision[]; pagination: Pagination }> {
+  return apiRequest(
+    `/api/admin/listing-revisions${buildQuery(params as Record<string, string | number | boolean>)}`,
+  );
+}
+
+export async function fetchListingRevisionDetail(
+  revisionId: string,
+): Promise<{ revision: ListingRevision; current: CarListing }> {
+  return apiRequest(
+    `/api/admin/listing-revisions/${encodeURIComponent(revisionId)}`,
+  );
+}
+
+export async function approveListingRevision(
+  revisionId: string,
+  revisionToken: string,
+): Promise<{ message: string; changed_fields: string[] }> {
+  return apiRequest(
+    `/api/admin/listing-revisions/${encodeURIComponent(revisionId)}/approve`,
+    {
+      method: "POST",
+      body: JSON.stringify({ revision_token: revisionToken }),
+    },
+  );
+}
+
+export async function rejectListingRevision(
+  revisionId: string,
+  revisionToken: string,
+  reason: string,
+): Promise<{ message: string }> {
+  return apiRequest(
+    `/api/admin/listing-revisions/${encodeURIComponent(revisionId)}/reject`,
+    {
+      method: "POST",
+      body: JSON.stringify({ revision_token: revisionToken, reason }),
+    },
+  );
 }

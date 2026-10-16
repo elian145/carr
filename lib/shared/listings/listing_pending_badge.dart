@@ -95,7 +95,42 @@ Widget? buildListingStatusBadge(
   if (isListingPending(listing)) {
     return buildListingPendingBadge(context, large: large);
   }
+  return buildListingPendingEditsBadge(context, listing, large: large);
+}
+
+/// Label for a PUBLIC listing whose owner edits are pending / rejected /
+/// not yet submitted, or null when the listing has no pending revision.
+String? listingPendingEditsLabel(
+  BuildContext context,
+  Map<String, dynamic>? listing,
+) {
+  final loc = AppLocalizations.of(context);
+  if (loc == null) return null;
+  if (listingHasPendingEditsUnderReview(listing)) {
+    return loc.listingBadgeEditsUnderReview;
+  }
+  if (listingHasRejectedEdits(listing)) return loc.listingBadgeEditsRejected;
+  if (listingHasUnsubmittedEdits(listing)) return loc.listingBadgeEditsUnsaved;
   return null;
+}
+
+/// "Active — Edits Under Review" (amber) / "Edits Not Approved" (red) /
+/// "Edits Not Submitted" (grey) badge. The listing itself stays public with
+/// its approved content; this only tells the OWNER that a separate pending
+/// version exists. Null for a listing without a pending revision.
+Widget? buildListingPendingEditsBadge(
+  BuildContext context,
+  Map<String, dynamic>? listing, {
+  bool large = false,
+}) {
+  final label = listingPendingEditsLabel(context, listing);
+  if (label == null) return null;
+  final Color color = listingHasRejectedEdits(listing)
+      ? const Color(0xE6C62828)
+      : listingHasUnsubmittedEdits(listing)
+          ? const Color(0xE6546E7A)
+          : const Color(0xE6F57C00);
+  return _buildStatusBadge(context, label: label, color: color, large: large);
 }
 
 bool listingShowsPendingBadge(Map<String, dynamic>? listing) =>

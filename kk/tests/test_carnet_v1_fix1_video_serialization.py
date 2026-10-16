@@ -302,8 +302,14 @@ def test_real_listing_response_video_id_can_be_deleted(app_ctx, client, monkeypa
     )
     assert r_del.status_code == 200, r_del.data
 
-    r2 = client.get(f"/api/cars/{car_public_id}")
-    assert r2.status_code == 200, r2.data
-    remaining = r2.get_json()["car"]["videos"]
-    assert len(remaining) == 1
-    assert remaining[0]["id"] != target["id"]
+    # The listing is live: the delete applies to the owner's pending edit
+    # (working copy). The public listing keeps both approved videos until an
+    # admin approves; the owner's view carries the pending one-video version.
+    public = client.get(f"/api/cars/{car_public_id}")
+    assert public.status_code == 200, public.data
+    assert len(public.get_json()["car"]["videos"]) == 2
+
+    owner = client.get(f"/api/cars/{car_public_id}", headers=_auth(token))
+    assert owner.status_code == 200, owner.data
+    pending = owner.get_json()["car"]["pending_revision"]["car"]
+    assert len(pending["videos"]) == 1

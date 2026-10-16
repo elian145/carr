@@ -170,10 +170,16 @@ def test_update_car_persists_new_currency(client, seller_token):
         headers=_auth(seller_token),
     )
     assert r.status_code == 200, r.data
-    assert r.get_json()["car"]["currency"] == "IQD"
+    # The listing is already live, so the edit is a pending revision: the
+    # response's `car` is still the approved listing, the new currency is
+    # the proposed version an admin must approve.
+    body = r.get_json()
+    assert body["submitted_for_review"] is True
+    assert body["pending_revision"]["car"]["currency"] == "IQD"
+    assert body["car"]["currency"] == "USD"
 
     r2 = client.get(f"/api/cars/{car_id}")
-    assert r2.get_json()["car"]["currency"] == "IQD"
+    assert r2.get_json()["car"]["currency"] == "USD"
 
 
 def test_update_car_preserves_currency_when_field_omitted(client, seller_token):
@@ -208,8 +214,12 @@ def test_existing_usd_listing_update_keeps_working(client, seller_token):
         headers=_auth(seller_token),
     )
     assert r.status_code == 200, r.data
-    assert r.get_json()["car"]["currency"] == "USD"
-    assert r.get_json()["car"]["price"] == 16000
+    body = r.get_json()
+    assert body["submitted_for_review"] is True
+    pending = body["pending_revision"]["car"]
+    assert pending["currency"] == "USD"
+    assert pending["price"] == 16000
+    assert body["car"]["price"] == 15000  # approved price unchanged
 
 
 # ---------------------------------------------------------------------------
@@ -313,8 +323,9 @@ def test_update_car_accepts_switching_to_damaged_with_damaged_parts(
         headers=_auth(seller_token),
     )
     assert r.status_code == 200, r.data
-    assert r.get_json()["car"]["title_status"] == "damaged"
-    assert r.get_json()["car"]["damaged_parts"] == 5
+    pending = r.get_json()["pending_revision"]["car"]
+    assert pending["title_status"] == "damaged"
+    assert pending["damaged_parts"] == 5
 
 
 def test_update_car_unrelated_edit_on_legacy_damaged_listing_not_blocked(
@@ -358,4 +369,5 @@ def test_update_car_unrelated_edit_on_legacy_damaged_listing_not_blocked(
         headers=_auth(token),
     )
     assert r.status_code == 200, r.data
-    assert r.get_json()["car"]["mileage"] == 12345
+    assert r.get_json()["pending_revision"]["car"]["mileage"] == 12345
+    assert r.get_json()["car"]["mileage"] == 1000  # approved unchanged

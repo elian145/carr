@@ -562,6 +562,9 @@ class ApiService {
     int videoId,
   ) => _ApiServiceListings.deleteCarVideo(carId, videoId);
 
+  static Future<Map<String, dynamic>> discardPendingRevision(String carId) =>
+      _ApiServiceListings.discardPendingRevision(carId);
+
   static Future<Map<String, dynamic>> markListingSold(String carId) =>
       _ApiServiceListings.markListingSold(carId);
 

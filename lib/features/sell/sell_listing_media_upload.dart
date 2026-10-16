@@ -9,6 +9,7 @@ import '../../services/car_service.dart';
 import '../../shared/debug/app_log.dart';
 import '../../shared/debug/expected_client_noise.dart';
 import '../../shared/listings/listing_image_media.dart';
+import '../../shared/listings/listing_status.dart';
 import '../../shared/prefs/sell_draft_media_persistence.dart';
 import 'sell_image_job_polling.dart';
 import 'sell_media_identity.dart';
@@ -281,10 +282,14 @@ class SellListingMediaUpload {
       // [ApiService.getCar] already unwraps `{car: ...}`; keep a nested
       // fallback for callers that still return the envelope.
       final inner = fresh['car'];
+      // Owner editing a published listing: the media state that matters is
+      // the pending edit's working copy, never the approved public version.
       if (inner is Map) {
-        return Map<String, dynamic>.from(inner.cast<String, dynamic>());
+        return listingForOwnerEditing(
+          Map<String, dynamic>.from(inner.cast<String, dynamic>()),
+        );
       }
-      return fresh;
+      return listingForOwnerEditing(fresh);
     } catch (e, st) {
       logNonFatal(e, st);
       return null;

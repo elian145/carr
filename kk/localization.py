@@ -332,6 +332,30 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ar": "تمت إزالة إعلانك من قبل فريق المراجعة لدينا.",
         "ku": "ڕێکلامەکەت لەلایەن تیمی پێداچوونەوەمانەوە لابرا.",
     },
+    # kk/routes/admin.py -- seller-facing notifications for the admin's
+    # decision on a pending EDIT of a published listing (see
+    # kk/listing_revisions.py). A rejection's reason is the admin's own words
+    # and is passed through verbatim.
+    "listing_revision_approved_title": {
+        "en": "Changes approved",
+        "ar": "تمت الموافقة على التعديلات",
+        "ku": "گۆڕانکارییەکان پەسەند کران",
+    },
+    "listing_revision_approved_body": {
+        "en": "Your listing changes are now live.",
+        "ar": "تعديلات إعلانك أصبحت مباشرة الآن.",
+        "ku": "گۆڕانکارییەکانی ڕێکلامەکەت ئێستا چالاکن.",
+    },
+    "listing_revision_rejected_title": {
+        "en": "Changes not approved",
+        "ar": "لم تتم الموافقة على التعديلات",
+        "ku": "گۆڕانکارییەکان پەسەند نەکران",
+    },
+    "listing_revision_rejected_default_body": {
+        "en": "Your listing changes were not approved. Your original listing is still live.",
+        "ar": "لم تتم الموافقة على تعديلات إعلانك. إعلانك الأصلي لا يزال منشورًا.",
+        "ku": "گۆڕانکارییەکانی ڕێکلامەکەت پەسەند نەکران. ڕێکلامە ئەسڵییەکەت هێشتا چالاکە.",
+    },
     # kk/app_settings.py + kk/routes/misc.py -- force-update gate
     # (GET /api/config/app), built-in fallback text when no admin-configured
     # override exists for the resolved locale.

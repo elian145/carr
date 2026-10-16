@@ -8,6 +8,7 @@ from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import jwt_required
+from sqlalchemy import or_
 from werkzeug.utils import safe_join
 
 from ..auth import (
@@ -36,6 +37,7 @@ from ..media_processing import (
     transcoded_video_permanent_key,
     video_source_staging_key,
 )
+from .. import listing_revisions as _revisions
 from ..media_readiness import mark_item_phase_a_accepted, mark_normal_video_attached_locked
 from ..models import Car, CarImage, CarMediaItem, CarVideo, db
 from ..security import generate_secure_filename, validate_file_upload, rate_limit
@@ -330,6 +332,35 @@ def _get_car_by_any_id(car_id: str):
     return car
 
 
+def _get_media_target_car(car_id: str, current_user):
+    """The listing row a media request must act on.
+
+    Normally the listing itself. But when the caller is the OWNER of a
+    listing that is publicly visible, media edits (add / delete / reorder /
+    cover) are part of a pending edit and must never touch the live
+    gallery: they are applied to the listing's hidden working copy instead
+    (created on first use, see ``kk/listing_revisions.py``), which every
+    endpoint below handles exactly like a listing -- manifest, readiness,
+    background jobs and all. Admins and Under Review listings are unchanged.
+
+    The working copy is committed BEFORE the endpoint does any work (and in
+    particular before a background job is enqueued for it) so a fast worker
+    can never look for a row that is not yet visible.
+    """
+    car = _get_car_by_any_id(car_id)
+    if car is None or current_user is None:
+        return car
+    if not _revisions.owner_edit_needs_review(car, current_user):
+        return car
+    revision = _revisions.ensure_revision(car)
+    shadow = _revisions.get_working_copy(revision)
+    if shadow is None:
+        return car
+    _revisions.note_owner_media_edit(revision)
+    db.session.commit()
+    return shadow
+
+
 def _normalize_car_image_kind(raw) -> str:
     """Return 'damage' or 'listing' for stored CarImage.kind."""
     s = (str(raw or "")).strip().lower()
@@ -487,7 +518,7 @@ def set_car_primary_image(car_id: str):
         if verify_err:
             return verify_err
 
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
@@ -524,7 +555,7 @@ def update_car_image_layout(car_id: str):
     """Persist ordering and non-destructive vertical crop metadata."""
     try:
         current_user = get_current_user()
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
         if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
@@ -536,6 +567,7 @@ def update_car_image_layout(car_id: str):
             return jsonify({"message": "images must be a list"}), 400
 
         by_id = {img.id: img for img in car.images}
+        working_copy = _revisions.is_working_copy(car)
         updated = []
         requested_primary = None
         for index, raw in enumerate(rows):
@@ -546,6 +578,11 @@ def update_car_image_layout(car_id: str):
             except (TypeError, ValueError):
                 return jsonify({"message": "Each image layout requires a valid id"}), 400
             image = by_id.get(image_id)
+            if image is None and working_copy:
+                # An id from the approved gallery (the client opened the
+                # listing before its pending edit existed): same photo,
+                # found in the working copy by its shared storage URL.
+                image = _revisions.working_image_for_id(car, image_id)
             if image is None:
                 return jsonify({"message": f"Image {image_id} is not on this listing"}), 400
 
@@ -616,6 +653,40 @@ def _storage_key_from_url(url: str) -> str | None:
     return None
 
 
+def _media_url_still_referenced(url: str) -> bool:
+    """True when ANY listing photo/video row (approved listing or a pending
+    edit's working copy) still points at this storage object.
+
+    An approved listing and its pending edit share their unchanged files
+    (the working copy is cloned row-by-row, the bytes are never copied), so
+    deleting a photo from one side must never delete the object the other
+    side still shows. Fails safe: if the lookup itself errors we claim the
+    object is referenced and keep it (an orphaned file is harmless; a
+    missing public photo is not).
+    """
+    u = (url or "").strip()
+    if not u:
+        return False
+    try:
+        if CarImage.query.filter(CarImage.image_url == u).first() is not None:
+            return True
+        if (
+            CarVideo.query.filter(
+                or_(CarVideo.video_url == u, CarVideo.thumbnail_url == u)
+            ).first()
+            is not None
+        ):
+            return True
+    except Exception:
+        current_app.logger.exception("_media_url_still_referenced lookup failed")
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        return True
+    return False
+
+
 def _delete_media_storage_object(url: str) -> None:
     """Best-effort delete of the underlying storage object for ``url``.
 
@@ -624,9 +695,15 @@ def _delete_media_storage_object(url: str) -> None:
     already committed -- this mirrors the fail-safe posture every upload
     path in this file already takes toward storage errors (log and degrade,
     never leave the request half-done).
+
+    Never deletes an object that another row (e.g. the approved listing's
+    copy of a photo being removed from a pending edit) still references --
+    see ``_media_url_still_referenced``.
     """
     u = (url or "").strip()
     if not u:
+        return
+    if _media_url_still_referenced(u):
         return
     key = _storage_key_from_url(u)
     if key and _r2_configured():
@@ -701,13 +778,16 @@ def delete_car_image(car_id: str, image_id: int):
         if verify_err:
             return verify_err
 
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
         if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to modify images for this listing"}), 403
 
-        image = CarImage.query.filter_by(id=image_id, car_id=car.id).first()
+        if _revisions.is_working_copy(car):
+            image = _revisions.working_image_for_id(car, image_id)
+        else:
+            image = CarImage.query.filter_by(id=image_id, car_id=car.id).first()
         if not image:
             return jsonify({"message": "Image not found on this listing"}), 404
 
@@ -783,13 +863,16 @@ def delete_car_video(car_id: str, video_id: int):
         if verify_err:
             return verify_err
 
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
         if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
             return jsonify({"message": "Not authorized to modify videos for this listing"}), 403
 
-        video = CarVideo.query.filter_by(id=video_id, car_id=car.id).first()
+        if _revisions.is_working_copy(car):
+            video = _revisions.working_video_for_id(car, video_id)
+        else:
+            video = CarVideo.query.filter_by(id=video_id, car_id=car.id).first()
         if not video:
             return jsonify({"message": "Video not found on this listing"}), 404
 
@@ -1121,7 +1204,7 @@ def finalize_video_source_upload():
         car_id_raw = str(data.get("car_id") or "").strip()
         car = None
         if car_id_raw:
-            car = _get_car_by_any_id(car_id_raw)
+            car = _get_media_target_car(car_id_raw, current_user)
             if not car:
                 return jsonify({"message": "Car not found"}), 404
             if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
@@ -1510,7 +1593,7 @@ def attach_transcoded_video():
         if not is_valid_task_id(task_id):
             return jsonify({"message": "Invalid or missing task_id"}), 400
 
-        car = _get_car_by_any_id(car_id_raw)
+        car = _get_media_target_car(car_id_raw, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
         if car.seller_id != current_user.id and not request_has_admin_privileges(current_user):
@@ -1891,7 +1974,7 @@ def upload_car_images(car_id: str):
         if verify_err:
             return verify_err
 
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
@@ -2226,7 +2309,7 @@ def attach_car_images(car_id: str):
         if verify_err:
             return verify_err
 
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
 
@@ -2379,7 +2462,7 @@ def upload_car_videos(car_id: str):
         if verify_err:
             return verify_err
 
-        car = _get_car_by_any_id(car_id)
+        car = _get_media_target_car(car_id, current_user)
         if not car:
             return jsonify({"message": "Car not found"}), 404
 

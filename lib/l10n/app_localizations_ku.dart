@@ -1873,6 +1873,58 @@ class AppLocalizationsKu extends AppLocalizations {
   String get listingHiddenBadge => 'شاردراوەتەوە';
 
   @override
+  String get listingEditsSubmittedForReview =>
+      'گۆڕانکارییەکانت بۆ پێداچوونەوە نێردران.';
+
+  @override
+  String get listingBadgeEditsUnderReview =>
+      'چالاک — دەستکارییەکان لە ژێر پێداچوونەوەدان';
+
+  @override
+  String get listingBadgeEditsRejected =>
+      'چالاک — دەستکارییەکان پەسەند نەکراون';
+
+  @override
+  String get listingBadgeEditsUnsaved => 'چالاک — دەستکارییەکان نەنێردراون';
+
+  @override
+  String get listingEditsUnderReviewNote =>
+      'کڕیاران هێشتا وەشانی پەسەندکراوی ڕێکلامەکەت دەبینن تا ئەم گۆڕانکارییانە پەسەند دەکرێن.';
+
+  @override
+  String listingEditsRejectedMessage(String reason) {
+    return 'گۆڕانکارییەکانت پەسەند نەکران: $reason';
+  }
+
+  @override
+  String get listingEditsRejectedNoReason =>
+      'گۆڕانکارییەکانت پەسەند نەکران. ڕێکلامە پەسەندکراوەکەت هێشتا زیندووە. دەتوانیت دەستکاری بکەیت و دووبارە بینێریت.';
+
+  @override
+  String get listingEditsUnsavedNote =>
+      'دەستکارییەکانت هەیە کە هێشتا بۆ پێداچوونەوە نەنێردراون. دەستکاری بکە و تەواوی بکە.';
+
+  @override
+  String get listingDiscardPendingEdits =>
+      'هەڵوەشاندنەوەی دەستکارییە چاوەڕوانکراوەکان';
+
+  @override
+  String get listingDiscardPendingEditsBody =>
+      'گۆڕانکارییە چاوەڕوانکراوەکانت دەسڕدرێنەوە. ڕێکلامە زیندووەکەت ناگۆڕێت.';
+
+  @override
+  String get listingPendingEditsDiscarded =>
+      'دەستکارییە چاوەڕوانکراوەکان هەڵوەشێنرانەوە';
+
+  @override
+  String get listingPreviewPendingChanges =>
+      'پێشاندانی گۆڕانکارییە چاوەڕوانکراوەکان';
+
+  @override
+  String get deleteListingUnderReviewBody =>
+      'ئەم ڕێکلامە هێشتا لە ژێر پێداچوونەوەدایە. سڕینەوەی بە هەمیشەیی ڕێکلامەکە و وێنەکانی لادەبات.';
+
+  @override
   String get myListingsHiddenFilter => 'شاردراوەتەوە';
 
   @override

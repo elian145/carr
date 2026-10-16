@@ -1575,16 +1575,44 @@ class PendingSellSubmissionService {
     // "X of Y media uploaded" banner back at 0 on every resume.
     final carIdAlreadyExisted = carId.isNotEmpty;
     var pendingReview = record.pendingReview;
+    // An edit of a published listing was saved as a pending revision that
+    // an admin must approve (server flag submitted_for_review).
+    var editSubmittedForReview = false;
 
     try {
-      if (carId.isEmpty) {
+      // ROOT-CAUSE FIX (edits to an Active listing never took effect): for
+      // an edit, `record.carId` is pre-seeded with the edit target id by
+      // `_prepareSubmissionRecordInner`, so the old `if (carId.isEmpty)`
+      // guard was false from the very first attempt and the `PUT` below was
+      // silently skipped -- only the media upload ran. Whether the edit's
+      // field update was already sent is now tracked by `currentPhase`
+      // (`creating` until this block has run once and persisted `photos`),
+      // so a resumed run does not re-send it.
+      final editTargetId = record.editListingId?.trim() ?? '';
+      final isEditUpdate = record.isEdit && editTargetId.isNotEmpty;
+      final needsEditUpdate = isEditUpdate && record.currentPhase == 'creating';
+      if (carId.isEmpty || needsEditUpdate) {
         reportPhase(SellSubmissionPhase.creating, completed: 0);
-        final editId = record.editListingId?.trim() ?? '';
-        if (record.isEdit && editId.isNotEmpty) {
-          await ApiService.updateCar(
-            editId,
-            buildSellCarUpdatePayload(carData),
+        final editId = editTargetId;
+        if (isEditUpdate) {
+          final updatePayload = buildSellCarUpdatePayload(
+            carData,
+            clearEmptyOptionalFields: true,
           );
+          // New photos/videos of this edit are declared up front (same
+          // manifest the create flow uses) so an admin cannot approve the
+          // pending revision before every new file finished processing.
+          final newMedia = SellMediaIdentity.buildExpectedMedia(carData);
+          if (newMedia.isNotEmpty) {
+            updatePayload['expected_media'] =
+                SellMediaIdentity.expectedMediaWirePayload(newMedia);
+          }
+          final updateResponse = await ApiService.updateCar(
+            editId,
+            updatePayload,
+          );
+          editSubmittedForReview =
+              updateResponse['submitted_for_review'] == true;
           carId = editId;
           try {
             final fresh = await ApiService.getCar(carId);
@@ -2136,8 +2164,20 @@ class PendingSellSubmissionService {
       }
       unawaited(AppHaptics.success());
       statusNotifier.value = null;
-      final completedResult =
-          SellListingSubmitResult(id: carId, pendingReview: pendingReview);
+      if (record.isEdit && !editSubmittedForReview) {
+        // A resumed edit no longer holds the PUT response: ask the server.
+        try {
+          final fresh = await ApiService.getCar(carId);
+          editSubmittedForReview = listingHasPendingEditsUnderReview(fresh);
+        } catch (e, st) {
+          logNonFatal(e, st);
+        }
+      }
+      final completedResult = SellListingSubmitResult(
+        id: carId,
+        pendingReview: pendingReview,
+        editSubmittedForReview: editSubmittedForReview,
+      );
       // Remember the verified completion BEFORE settling anything else, so
       // a late/stale failure observed by a waiting caller can be recognised
       // as such (see [outcomeFor]) instead of being shown as a failure.
@@ -2154,7 +2194,7 @@ class PendingSellSubmissionService {
         pendingReview: pendingReview,
       ));
       appLog('[SELL RESUME] completed record=$draftId carId=$carId');
-      return SellListingSubmitResult(id: carId, pendingReview: pendingReview);
+      return completedResult;
     } catch (e, st) {
       statusNotifier.value = null;
       // Fast-submission fix: reject any [submitFast] caller still waiting

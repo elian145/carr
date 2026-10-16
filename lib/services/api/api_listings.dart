@@ -242,6 +242,18 @@ abstract final class _ApiServiceListings {
     return await ApiService._makeAuthenticatedRequest('DELETE', '/cars/$id');
   }
 
+  /// Discards the owner's pending (unapproved) edit of a published listing.
+  /// The live listing is untouched. Idempotent.
+  static Future<Map<String, dynamic>> discardPendingRevision(
+    String carId,
+  ) async {
+    final id = Uri.encodeComponent(carId.trim());
+    return await ApiService._makeAuthenticatedRequest(
+      'DELETE',
+      '/cars/$id/pending-revision',
+    );
+  }
+
   /// Deletes one photo from [carId] on the backend (DB row + best-effort
   /// storage object). Used while editing an existing listing so removing a
   /// photo in the wizard actually deletes it server-side instead of only

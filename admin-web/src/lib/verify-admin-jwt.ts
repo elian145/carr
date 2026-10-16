@@ -83,8 +83,20 @@ export async function verifyAdminAccessJwt(
     );
     const data = new TextEncoder().encode(`${headerB64}.${payloadB64}`);
     const signature = b64urlToBytes(sigB64);
-    const sigBuf = signature.slice().buffer;
-    const valid = await crypto.subtle.verify("HMAC", key, sigBuf, data);
+    // Pass the Uint8Array itself, NOT `signature.buffer`: in Next's Edge
+    // sandbox (on `next start`) the ArrayBuffer belongs to a different realm
+    // than the one Node's WebCrypto checks with `instanceof`, so
+    // `verify(..., signature.buffer, ...)` throws "3rd argument is not
+    // instance of ArrayBuffer". That made EVERY access-token check fail
+    // ("verify_error"), so every request fell through to a refresh-token
+    // rotation -- and parallel requests (prefetches, page loads) raced on the
+    // single-use refresh token and bounced the admin to /login.
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signature as unknown as BufferSource,
+      data,
+    );
     if (!valid) return { ok: false, reason: "signature" };
     return { ok: true, sub };
   } catch {

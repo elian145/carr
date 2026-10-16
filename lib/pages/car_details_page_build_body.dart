@@ -22,6 +22,13 @@ mixin _CarDetailsPageBuildBody on _CarDetailsPageBuildHero {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_hasOwnerPendingEdits)
+                PendingEditsBanner(
+                  listing: car!,
+                  onPreview: _previewPendingEdits,
+                  onEdit: _editOwnListing,
+                  onDiscard: _discardPendingEdits,
+                ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
                 child: Column(

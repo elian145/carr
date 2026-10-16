@@ -55,6 +55,7 @@ def get_listings_analytics():
         # (most recent) listings visible when the cap is exceeded.
         user_cars = (
             Car.query.filter_by(seller_id=current_user.id)
+            .filter(Car.status != "revision")  # pending-edit working copies
             .order_by(Car.created_at.desc())
             .limit(_ANALYTICS_LISTINGS_CAP)
             .all()

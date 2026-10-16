@@ -19,6 +19,7 @@ from ..chat_realtime import (
     resolve_allowed_chat_receiver,
 )
 from ..idempotency import remember_response, replay_response
+from ..listing_visibility import not_a_working_copy
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, sniff_bytes, validate_input_sanitization
@@ -261,10 +262,10 @@ def _get_car_by_any_id(car_id: str):
         return None
     car = Car.query.filter_by(public_id=raw).first()
     if car:
-        return car
+        return not_a_working_copy(car)
     if raw.isdigit():
         try:
-            return Car.query.filter_by(id=int(raw)).first()
+            return not_a_working_copy(Car.query.filter_by(id=int(raw)).first())
         except Exception:
             return None
     return None

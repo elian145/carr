@@ -1048,6 +1048,93 @@ class CarMediaItem(db.Model):
         return f'<CarMediaItem car_id={self.car_id} kind={self.kind} status={self.status}>'
 
 
+class CarRevision(db.Model):
+    """A seller's *pending* edit of an already-published listing.
+
+    The published ``Car`` row (and its ``CarImage`` / ``CarVideo`` rows) is
+    the only thing the public ever sees. When the owner edits a listing that
+    is publicly visible, the proposed values are written to a hidden
+    **working copy** -- a second ``Car`` row (``shadow_car_id``;
+    ``status='revision'``, ``is_active=False``) that is cloned from the
+    approved listing the first time the owner starts editing. Every
+    existing listing/media code path (field validation, the media-readiness
+    manifest, image/video upload + attach + layout + cover, background
+    workers, cleanup sweeps) therefore works on the working copy unchanged,
+    and none of it can touch what the public sees.
+
+    On admin approval ``kk/listing_revisions.py::publish_revision``
+    atomically copies the working copy's fields onto the approved ``Car``
+    row (the listing keeps its id, chats, favourites and its single listing
+    fee), swaps in the working copy's gallery, deletes the working copy and
+    this row. Rejection leaves the approved listing untouched.
+
+    At most one revision exists per listing (``uq_car_revision_car_id``).
+    ``status``:
+
+    * ``editing``  -- the owner has changed the working copy but not (yet)
+      submitted it. Invisible to the admin queue.
+    * ``pending``  -- submitted for admin review.
+    * ``rejected`` -- an admin refused it; ``rejection_reason`` is shown to the
+      owner, who may edit and resubmit (back to ``pending``) or discard it.
+
+    There is deliberately no stored version counter: the admin quotes a
+    *content token* (a hash of everything the admin is being asked to
+    approve) computed from the working copy at the moment of review, so a
+    revision the owner changed afterwards can never be approved by accident.
+    """
+
+    __tablename__ = 'car_revision'
+    __table_args__ = (
+        db.UniqueConstraint('car_id', name='uq_car_revision_car_id'),
+        db.UniqueConstraint('shadow_car_id', name='uq_car_revision_shadow_car_id'),
+        db.Index('ix_car_revision_status_submitted', 'status', 'submitted_at'),
+    )
+
+    STATUSES = ('editing', 'pending', 'rejected')
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    # The approved, publicly visible listing this revision proposes to change.
+    car_id = db.Column(
+        db.Integer,
+        db.ForeignKey('car.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+    # The hidden working copy holding the proposed fields + media.
+    shadow_car_id = db.Column(
+        db.Integer,
+        db.ForeignKey('car.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+    status = db.Column(
+        db.String(20), nullable=False, default='editing', server_default='editing'
+    )
+    rejection_reason = db.Column(db.Text, nullable=True)
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    reviewed_by = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    car = db.relationship(
+        'Car',
+        foreign_keys=[car_id],
+        backref=db.backref(
+            'pending_revision',
+            uselist=False,
+            cascade='all, delete-orphan',
+            foreign_keys=[car_id],
+        ),
+    )
+    shadow_car = db.relationship('Car', foreign_keys=[shadow_car_id])
+
+    def __repr__(self):
+        return f'<CarRevision car_id={self.car_id} status={self.status}>'
+
+
 class ListingAnalytics(db.Model):
     __tablename__ = 'listing_analytics'
     

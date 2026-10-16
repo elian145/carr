@@ -1220,7 +1220,11 @@ def _delete_and_scrub_user_listings(user_id: int, table_names: set[str]) -> list
                 media_urls.append(vid.video_url)
             db.session.delete(vid)
         car.is_active = False
-        car.status = "hidden"
+        # A pending-edit working copy (status='revision') is not a listing:
+        # keep it out of the "hidden listings" views by leaving its marker
+        # status alone; it is scrubbed like the listing it belongs to.
+        if car.status != "revision":
+            car.status = "hidden"
         car.description = None
         car.vin = None
         car.contact_phone = None

@@ -10,12 +10,14 @@ def _get_car_by_listing_id(listing_id: str) -> Car | None:
     lid = (listing_id or "").strip()
     if not lid:
         return None
+    from .listing_visibility import not_a_working_copy
+
     car = Car.query.filter_by(public_id=lid).first()
     if car:
-        return car
+        return not_a_working_copy(car)
     if lid.isdigit():
         try:
-            return Car.query.filter_by(id=int(lid)).first()
+            return not_a_working_copy(Car.query.filter_by(id=int(lid)).first())
         except Exception:
             return None
     return None

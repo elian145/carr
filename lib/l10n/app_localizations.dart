@@ -3538,6 +3538,84 @@ abstract class AppLocalizations {
   /// **'Hidden'**
   String get listingHiddenBadge;
 
+  /// No description provided for @listingEditsSubmittedForReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes have been submitted for review.'**
+  String get listingEditsSubmittedForReview;
+
+  /// No description provided for @listingBadgeEditsUnderReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Active — Edits Under Review'**
+  String get listingBadgeEditsUnderReview;
+
+  /// No description provided for @listingBadgeEditsRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Active — Edits Not Approved'**
+  String get listingBadgeEditsRejected;
+
+  /// No description provided for @listingBadgeEditsUnsaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Active — Edits Not Submitted'**
+  String get listingBadgeEditsUnsaved;
+
+  /// No description provided for @listingEditsUnderReviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Buyers still see the approved version of your listing until these changes are approved.'**
+  String get listingEditsUnderReviewNote;
+
+  /// No description provided for @listingEditsRejectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes were not approved: {reason}'**
+  String listingEditsRejectedMessage(String reason);
+
+  /// No description provided for @listingEditsRejectedNoReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes were not approved. Your approved listing is still live. You can edit and resubmit.'**
+  String get listingEditsRejectedNoReason;
+
+  /// No description provided for @listingEditsUnsavedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'You have edits that were not submitted for review yet. Open Edit to finish and submit them.'**
+  String get listingEditsUnsavedNote;
+
+  /// No description provided for @listingDiscardPendingEdits.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard pending edits'**
+  String get listingDiscardPendingEdits;
+
+  /// No description provided for @listingDiscardPendingEditsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your pending changes will be deleted. Your live listing will not change.'**
+  String get listingDiscardPendingEditsBody;
+
+  /// No description provided for @listingPendingEditsDiscarded.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending edits discarded'**
+  String get listingPendingEditsDiscarded;
+
+  /// No description provided for @listingPreviewPendingChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview pending changes'**
+  String get listingPreviewPendingChanges;
+
+  /// No description provided for @deleteListingUnderReviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This listing is still under review. Deleting it will permanently remove it and its photos.'**
+  String get deleteListingUnderReviewBody;
+
   /// No description provided for @myListingsHiddenFilter.
   ///
   /// In en, this message translates to:

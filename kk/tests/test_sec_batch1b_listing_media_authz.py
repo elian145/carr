@@ -177,7 +177,12 @@ def test_b1b_owner_can_update_own_listing(app_ctx, client):
         json={"price": 16000, "location": "Sulaymaniyah"},
     )
     assert resp.status_code == 200, resp.data
-    assert float(resp.get_json()["car"]["price"]) == 16000
+    body = resp.get_json()
+    # Live listing: the owner's edit is a pending revision (public price
+    # unchanged until an admin approves it).
+    assert body["submitted_for_review"] is True
+    assert float(body["pending_revision"]["car"]["price"]) == 16000
+    assert float(body["car"]["price"]) == 15000
 
 
 def test_b1b_seller_cannot_update_other_sellers_listing(app_ctx, client):
