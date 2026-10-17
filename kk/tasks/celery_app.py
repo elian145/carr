@@ -62,6 +62,7 @@ def make_celery() -> Celery:
             "kk.tasks.listing_tasks",
             "kk.tasks.video_tasks",
             "kk.tasks.media_readiness_tasks",
+            "kk.tasks.moderation_tasks",
         ],
     )
     c.Task = FlaskContextTask
@@ -230,6 +231,14 @@ def make_celery() -> Celery:
             "sweep-idle-listing-revisions": {
                 "task": "kk.sweep_idle_listing_revisions",
                 "schedule": 900.0,
+            },
+            # Automated moderation backstop (see kk/auto_moderation/sweep.py):
+            # only ENQUEUES idempotent evaluation jobs for pending listings /
+            # submitted edits that lack a current decision. Never decides or
+            # publishes by itself. Registered name == Beat 'task' string.
+            "sweep-listing-moderation": {
+                "task": "kk.sweep_listing_moderation",
+                "schedule": 120.0,
             },
         },
     )

@@ -9,6 +9,7 @@ export const NAV_PERMISSION: Record<string, string> = {
   "/users": "users.read",
   "/listings": "listings.read",
   "/listing-edits": "listings.read",
+  "/auto-moderation": "auto_moderation.read",
   "/images": "listings.read",
   "/reports": "reports",
   "/dealers": "dealers",

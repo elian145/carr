@@ -23,6 +23,7 @@ from ..favorites_cleanup import remove_listing_from_all_favorites
 from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
+from ..auto_moderation.triggers import request_moderation_for_car
 from .. import listing_revisions as _revisions
 from ..listing_search import (
     apply_listing_text_search,
@@ -1445,6 +1446,11 @@ def create_car():
         db.session.commit()
         _bump_filter_facets_cache()
         log_user_action(current_user, "create_listing", "car", car.public_id)
+        if not has_expected_media:
+            # Automated moderation (kk/auto_moderation): a listing with media
+            # is evaluated when its media finishes (see kk/media_readiness.py);
+            # one without any is ready now. Fire-and-forget; never raises.
+            request_moderation_for_car(car.id)
         if car.is_active and (car.status or "active") == "active":
             try:
                 dispatch_saved_search_alerts(car.id)
@@ -1533,6 +1539,10 @@ def remove_expected_media_item(car_id: str, client_media_id: str):
         if revision is not None and result.get("removed"):
             _revisions.note_owner_media_edit(revision)
         db.session.commit()
+        if result.get("removed"):
+            # Removing an item can complete the manifest (media_status ->
+            # ready): the listing / edit may now be ready for evaluation.
+            request_moderation_for_car(car.id)
         status_code = 200 if result.get("removed") or result.get("reason") == "not_found" else 409
         return jsonify(result), status_code
     except Exception:
@@ -1866,6 +1876,7 @@ def update_car(car_id: str):
             log_user_action(
                 current_user, "submit_listing_revision", "car", listing.public_id
             )
+            request_moderation_for_car(car.id)  # `car` is the working copy
             car_payload = _with_media_compat(listing, include_private=True)
             car_payload["numeric_id"] = listing.id
             pending = serialize_pending_revision(revision, approved_car=listing)
@@ -1884,6 +1895,10 @@ def update_car(car_id: str):
         db.session.commit()
         _bump_filter_facets_cache()
         log_user_action(current_user, "update_listing", "car", car.public_id)
+        # A listing still awaiting approval was edited: its content token
+        # changed, so any in-flight automated verdict is now stale and the new
+        # content must be judged. No-op for anything not pending.
+        request_moderation_for_car(car.id)
         if "price" in data:
             new_price = float(car.price or 0)
             if new_price < old_price and car.is_active:

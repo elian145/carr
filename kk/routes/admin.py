@@ -258,6 +258,39 @@ def _deliver_listing_moderation_notification(notification: Notification, seller:
         )
 
 
+def _record_auto_moderation_outcome(
+    subject_type: str,
+    subject_id,
+    outcome: str | None,
+    admin_user,
+) -> None:
+    """Tell automated moderation what a human just did (shadow-mode
+    comparison / post-approval reversal tracking). Called AFTER the admin
+    action's own commit; never raises and never changes the admin action."""
+    if not outcome:
+        return
+    try:
+        from ..auto_moderation.outcomes import record_admin_outcome
+
+        record_admin_outcome(
+            subject_type=subject_type,
+            subject_id=subject_id,
+            outcome=outcome,
+            admin=getattr(admin_user, "username", None),
+        )
+    except Exception:
+        logger.warning("auto-moderation outcome hook failed", exc_info=True)
+
+
+def _listing_status_outcome(was_pending: bool, old_bucket, new_bucket) -> str | None:
+    try:
+        from ..auto_moderation.outcomes import outcome_for_status_change
+
+        return outcome_for_status_change("pending" if was_pending else old_bucket, new_bucket)
+    except Exception:
+        return None
+
+
 def _find_user(public_id: str) -> User | None:
     pid = (public_id or "").strip()
     if not pid:
@@ -1599,6 +1632,7 @@ def update_car_status(car_id: str):
         # listing's public-visibility state (no notification otherwise --
         # e.g. an is_featured-only update must never notify the seller).
         old_moderation_state = _car_moderation_state(car.is_active, car.status)
+        was_pending = (car.status or "").strip().lower() == "pending"
         if "is_active" in data:
             car.is_active = bool(data["is_active"])
         if "status" in data and str(data["status"]).strip():
@@ -1664,6 +1698,12 @@ def update_car_status(car_id: str):
 
         db.session.commit()
         invalidate_filter_facets_cache()
+        _record_auto_moderation_outcome(
+            "listing",
+            car.id,
+            _listing_status_outcome(was_pending, old_moderation_state, new_moderation_state),
+            admin_user,
+        )
         if moderation_notification is not None and moderation_seller is not None:
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
         if admin_user:
@@ -1734,6 +1774,7 @@ def bulk_update_car_status():
         updated = []
         missing = []
         blocked = []
+        bulk_outcomes: list[tuple[int, str | None]] = []
         for raw_id in ids:
             car = _find_car_locked(str(raw_id))
             if not car:
@@ -1754,6 +1795,7 @@ def bulk_update_car_status():
                 continue
 
             old_moderation_state = _car_moderation_state(car.is_active, car.status)
+            bulk_was_pending = (car.status or "").strip().lower() == "pending"
             if "is_active" in patch:
                 car.is_active = patch["is_active"]
             if "status" in patch:
@@ -1777,6 +1819,14 @@ def bulk_update_car_status():
             car.updated_at = utcnow()
 
             new_moderation_state = _car_moderation_state(car.is_active, car.status)
+            bulk_outcomes.append(
+                (
+                    car.id,
+                    _listing_status_outcome(
+                        bulk_was_pending, old_moderation_state, new_moderation_state
+                    ),
+                )
+            )
             if (
                 new_moderation_state in ("active", "hidden")
                 and new_moderation_state != old_moderation_state
@@ -1803,6 +1853,8 @@ def bulk_update_car_status():
 
         db.session.commit()
         invalidate_filter_facets_cache()
+        for outcome_car_id, outcome in bulk_outcomes:
+            _record_auto_moderation_outcome("listing", outcome_car_id, outcome, admin_user)
         for notif, seller in pending_moderation_notifications:
             _deliver_listing_moderation_notification(notif, seller)
         if admin_user:
@@ -2469,6 +2521,7 @@ def delete_car(car_id: str):
         # action that actually took the listing out of public view --
         # never a duplicate if it was already hidden/inactive.
         old_moderation_state = _car_moderation_state(car.is_active, car.status)
+        delete_was_pending = (car.status or "").strip().lower() == "pending"
 
         car.is_active = False
         if not (car.status or "").strip() or car.status == "active":
@@ -2483,6 +2536,9 @@ def delete_car(car_id: str):
         db.session.commit()
         cleanup_unreferenced_media(orphan_urls)
         invalidate_filter_facets_cache()
+        _record_auto_moderation_outcome(
+            "listing", car.id, "rejected" if delete_was_pending else "deleted", admin_user
+        )
         if moderation_notification is not None and moderation_seller is not None:
             _deliver_listing_moderation_notification(moderation_notification, moderation_seller)
 
@@ -2766,6 +2822,7 @@ def approve_listing_revision(revision_id: str):
             return jsonify({"message": "Revision not found"}), 404
         data = request.get_json(silent=True) or {}
         token = str(data.get("revision_token") or "").strip()
+        approved_revision_id = rev.id
 
         try:
             result = publish_revision(
@@ -2784,6 +2841,9 @@ def approve_listing_revision(revision_id: str):
         db.session.commit()
         cleanup_unreferenced_media(result["removed_urls"])
         invalidate_filter_facets_cache()
+        _record_auto_moderation_outcome(
+            "revision", approved_revision_id, "approved", admin_user
+        )
         if notification is not None and seller is not None:
             _deliver_listing_moderation_notification(notification, seller)
         old_price, new_price = result["old_price"], result["new_price"]
@@ -2859,7 +2919,11 @@ def reject_listing_revision(revision_id: str):
         )
         seller = car.seller
         car_public_id = car.public_id or str(car.id)
+        rejected_revision_id = rev.id
         db.session.commit()
+        _record_auto_moderation_outcome(
+            "revision", rejected_revision_id, "rejected", admin_user
+        )
         if notification is not None and seller is not None:
             _deliver_listing_moderation_notification(notification, seller)
         if admin_user:

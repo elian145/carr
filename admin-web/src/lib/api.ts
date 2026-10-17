@@ -3,6 +3,11 @@ import { buildQuery } from "./query";
 import type {
   AdminImage,
   AdminReport,
+  AutoModerationOverrideAction,
+  AutoModerationRun,
+  AutoModerationSettingsResponse,
+  AutoModerationStats,
+  AutoModerationView,
   AnalyticsOverview,
   CarDetail,
   CarListing,
@@ -829,4 +834,81 @@ export async function rejectListingRevision(
       body: JSON.stringify({ revision_token: revisionToken, reason }),
     },
   );
+}
+
+// ---------------------------------------------------------------------------
+// Auto moderation
+// ---------------------------------------------------------------------------
+
+const AUTO_MOD = "/api/admin/auto-moderation";
+
+export async function fetchAutoModerationSettings(): Promise<AutoModerationSettingsResponse> {
+  return apiRequest(`${AUTO_MOD}/settings`);
+}
+
+export async function updateAutoModerationSettings(
+  patch: Record<string, unknown>,
+): Promise<AutoModerationSettingsResponse> {
+  return apiRequest(`${AUTO_MOD}/settings`, {
+    method: "PUT",
+    body: JSON.stringify(patch),
+  });
+}
+
+export async function setAutoModerationKillSwitch(
+  enabled: boolean,
+  reason?: string,
+): Promise<AutoModerationSettingsResponse> {
+  return apiRequest(`${AUTO_MOD}/kill-switch`, {
+    method: "POST",
+    body: JSON.stringify({ enabled, reason }),
+  });
+}
+
+export async function fetchAutoModerationStats(days = 30): Promise<AutoModerationStats> {
+  return apiRequest(`${AUTO_MOD}/stats${buildQuery({ days })}`);
+}
+
+export async function fetchAutoModerationRuns(params: {
+  view?: AutoModerationView;
+  page?: number;
+  per_page?: number;
+  subject_type?: "listing" | "revision";
+  mode?: "shadow" | "live";
+  awaiting_human?: boolean;
+}): Promise<{ runs: AutoModerationRun[]; pagination: Pagination }> {
+  return apiRequest(
+    `${AUTO_MOD}/runs${buildQuery(params as Record<string, string | number | boolean>)}`,
+  );
+}
+
+export async function fetchAutoModerationRun(
+  runId: string,
+): Promise<{ run: AutoModerationRun }> {
+  return apiRequest(`${AUTO_MOD}/runs/${encodeURIComponent(runId)}`);
+}
+
+export async function fetchAutoModerationHistory(
+  listingId: string,
+): Promise<{ runs: AutoModerationRun[] }> {
+  return apiRequest(`${AUTO_MOD}/listings/${encodeURIComponent(listingId)}/history`);
+}
+
+export async function overrideAutoModerationRun(
+  runId: string,
+  action: AutoModerationOverrideAction,
+  note?: string,
+): Promise<{ message?: string }> {
+  return apiRequest(`${AUTO_MOD}/runs/${encodeURIComponent(runId)}/override`, {
+    method: "POST",
+    body: JSON.stringify({ action, note }),
+  });
+}
+
+export async function reevaluateAutoModerationRun(
+  runId: string,
+): Promise<{ queued: boolean }> {
+  return apiRequest(`${AUTO_MOD}/runs/${encodeURIComponent(runId)}/reevaluate`, {
+    method: "POST",
+  });
 }

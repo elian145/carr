@@ -435,12 +435,19 @@ def transition_media_item_terminal(
             # attached did so as non-primary, so promote one now.
             ensure_one_listing_primary_locked(car)
 
-        _recompute_media_status_locked(car)
+        new_media_status = _recompute_media_status_locked(car)
         db.session.commit()
-        return "applied"
     except Exception:
         db.session.rollback()
         raise
+    if new_media_status != "processing":
+        # All declared media is terminal (ready or failed): the listing / pending
+        # edit can now be evaluated by automated moderation. Fire-and-forget,
+        # never raises, never part of the media transaction above.
+        from .auto_moderation.triggers import request_moderation_for_car
+
+        request_moderation_for_car(car_id)
+    return "applied"
 
 
 def recompute_media_status_locked(car: Car) -> str:

@@ -46,6 +46,13 @@ _PERMISSIONS: dict[str, frozenset[str]] = {
     "catalog.read": frozenset(VALID_ROLES),
     "catalog.write": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
     "purge": frozenset({ROLE_SUPER_ADMIN}),
+    # Automated moderation: moderators can inspect it and ENGAGE the kill
+    # switch (the safe direction); changing mode/thresholds/alerts and
+    # releasing the kill switch is super_admin only. Overriding a decision
+    # reuses "listings.write".
+    "auto_moderation.read": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
+    "auto_moderation.killswitch": frozenset({ROLE_SUPER_ADMIN, ROLE_MODERATOR}),
+    "auto_moderation.write": frozenset({ROLE_SUPER_ADMIN}),
 }
 
 

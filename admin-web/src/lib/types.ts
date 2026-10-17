@@ -343,3 +343,189 @@ export interface FilterMeta {
   notification_types: string[];
   admin_roles?: string[];
 }
+
+// ---------------------------------------------------------------------------
+// Auto moderation (mirrors kk/routes/admin_auto_moderation.py)
+// ---------------------------------------------------------------------------
+
+export type AutoModerationMode = "off" | "shadow" | "live";
+
+export interface AutoModerationSettings {
+  mode: AutoModerationMode;
+  kill_switch: boolean;
+  kill_switch_reason: string | null;
+  kill_switch_by: string | null;
+  kill_switch_at: string | null;
+  auto_approve_new_listings: boolean;
+  auto_approve_revisions: boolean;
+  require_ai_for_auto_approve: boolean;
+  min_photos: number;
+  min_image_side_px: number;
+  min_year: number;
+  max_mileage: number;
+  max_listings_per_24h: number;
+  price_change_review_pct: number;
+  flag_contact_in_description: boolean;
+  min_seller_prior_approved: number;
+  dealers_count_as_trusted: boolean;
+  listing_payment_required: boolean;
+  ai: {
+    send_images: boolean;
+    max_images: number;
+    timeout_seconds: number;
+    min_confidence: number;
+    only_if_candidate: boolean;
+  };
+  retry: {
+    max_attempts: number;
+    backoff_seconds: number[];
+    apply_max_age_seconds: number;
+  };
+  alerts: {
+    enabled: boolean;
+    channels: string[];
+    email_recipients: string[];
+    include_shadow: boolean;
+    alert_on_routine: boolean;
+    notify_on_hold: boolean;
+    max_per_hour: number;
+  };
+  gate: {
+    window_days: number;
+    min_samples: number;
+    max_unsafe_approve_rate: number;
+  };
+}
+
+export interface ShadowReport {
+  window_days: number;
+  compared: number;
+  awaiting_human_outcome: number;
+  matrix: Record<string, Record<string, number>>;
+  would_auto_approve: number;
+  unsafe_approvals: number;
+  unsafe_approve_rate: number | null;
+  over_flagged: number;
+  over_flag_rate: number | null;
+  agreement_rate: number | null;
+  automation_coverage: number | null;
+  gate: {
+    min_samples: number;
+    max_unsafe_approve_rate: number;
+    passed: boolean;
+    problems: string[];
+  };
+}
+
+export interface AutoModerationSettingsResponse {
+  settings: AutoModerationSettings;
+  effective_mode: AutoModerationMode;
+  kill_switch_active: boolean;
+  environment: {
+    disabled: boolean;
+    kill_switch_forced: boolean;
+    live_allowed: boolean;
+    ai_provider: string;
+    ai_model: string | null;
+    ai_configured: boolean;
+    telegram_configured: boolean;
+    admin_web_base_url_configured: boolean;
+  };
+  shadow_report?: ShadowReport;
+  warning?: string;
+}
+
+export interface AutoModerationStats {
+  days: number;
+  evaluated: number;
+  by_mode_decision: Record<string, number>;
+  by_outcome: Record<string, number>;
+  by_subject_type: Record<string, number>;
+  auto_approved: number;
+  post_approval_reversals: number;
+  post_approval_reversal_rate: number | null;
+  failed_evaluations: number;
+  error_rate: number | null;
+  apply_refusals: number;
+  stale_discards: number;
+  alerts_sent: number;
+  ai: {
+    calls: number;
+    unavailable: number;
+    unavailable_rate: number | null;
+    avg_latency_ms: number | null;
+  };
+  daily: Array<Record<string, number | string>>;
+  truncated: boolean;
+}
+
+export interface AutoModerationReason {
+  code: string;
+  level: "hold" | "review" | "info";
+  check?: string;
+  suspicious?: boolean;
+  detail?: string | null;
+}
+
+export interface AutoModerationEvent {
+  id: number;
+  type: string;
+  actor: string | null;
+  data: Record<string, unknown> | null;
+  created_at: string | null;
+}
+
+export interface AutoModerationRun {
+  id: string;
+  subject_type: "listing" | "revision";
+  mode: "shadow" | "live";
+  status: string;
+  decision: "AUTO_APPROVE" | "NEEDS_REVIEW" | "HOLD" | null;
+  outcome: string | null;
+  applied: boolean;
+  applied_at: string | null;
+  attempts: number;
+  reason_codes: string[];
+  suspicious: boolean;
+  admin_outcome: string | null;
+  admin_outcome_by: string | null;
+  admin_outcome_at: string | null;
+  override_action: string | null;
+  override_by: string | null;
+  override_at: string | null;
+  override_note: string | null;
+  created_at: string | null;
+  decided_at: string | null;
+  listing: {
+    id: string | null;
+    title: string | null;
+    status: string | null;
+    is_active: boolean | null;
+    price: number | null;
+    currency: string | null;
+  };
+  seller: { id: string; username: string } | null;
+  revision_id: string | null;
+  // detail only
+  reasons?: AutoModerationReason[];
+  checks?: Record<string, string> | null;
+  ai?: Record<string, unknown> | null;
+  content_token?: string;
+  engine_version?: string;
+  error?: string | null;
+  events?: AutoModerationEvent[];
+}
+
+export type AutoModerationView =
+  | "all"
+  | "auto_approved"
+  | "would_approve"
+  | "flagged"
+  | "held"
+  | "errors";
+
+export type AutoModerationOverrideAction =
+  | "approve"
+  | "revoke"
+  | "require_review"
+  | "clear_review_pin";

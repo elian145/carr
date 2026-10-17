@@ -31,6 +31,7 @@ const NAV: NavItem[] = [
     alertKey: "pendingListings",
   },
   { href: "/listing-edits", label: "Listing edits" },
+  { href: "/auto-moderation", label: "Auto moderation" },
   { href: "/images", label: "Images" },
   { href: "/reports", label: "Reports", alertKey: "pendingReports" },
   {

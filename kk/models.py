@@ -1135,6 +1135,123 @@ class CarRevision(db.Model):
         return f'<CarRevision car_id={self.car_id} status={self.status}>'
 
 
+class ListingModerationRun(db.Model):
+    """One automated-moderation evaluation of one *version* of a listing or
+    of a pending listing edit (see ``kk/auto_moderation``).
+
+    ``(subject_key, content_token, mode)`` is unique, which is what makes the
+    Celery job idempotent: re-delivering or duplicating the job for the same
+    content in the same mode finds the existing row instead of deciding (or
+    approving) twice. The ``content_token`` is the hash of everything that
+    would be published; when the seller changes the content the token changes
+    and the old row can never be applied to the new content.
+
+    ``decision`` is advisory output of the engine: ``AUTO_APPROVE`` /
+    ``NEEDS_REVIEW`` / ``HOLD``. There is deliberately no reject decision --
+    automation never rejects a listing. ``mode`` records whether the engine
+    was in ``shadow`` (decision recorded, nothing changed) or ``live`` (an
+    ``AUTO_APPROVE`` may have been applied) when the row was produced.
+
+    Rows are kept (``ON DELETE SET NULL`` towards the listing / revision / user)
+    so the decision history survives a purge; ``car_public_id`` keeps a stable
+    reference. Reasons never contain listing text or contact data.
+    """
+
+    __tablename__ = 'listing_moderation_run'
+    __table_args__ = (
+        db.UniqueConstraint(
+            'subject_key', 'content_token', 'mode', name='uq_lmr_subject_token_mode'
+        ),
+        db.Index('ix_lmr_car_id', 'car_id'),
+        db.Index('ix_lmr_decision_created', 'decision', 'created_at'),
+        db.Index('ix_lmr_status_retry', 'status', 'next_retry_at'),
+        db.Index('ix_lmr_subject_key', 'subject_key'),
+    )
+
+    DECISIONS = ('AUTO_APPROVE', 'NEEDS_REVIEW', 'HOLD')
+
+    id = db.Column(db.Integer, primary_key=True)
+    public_id = db.Column(
+        db.String(50), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
+    subject_key = db.Column(db.String(64), nullable=False)
+    subject_type = db.Column(db.String(12), nullable=False)  # listing | revision
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='SET NULL'), nullable=True)
+    car_public_id = db.Column(db.String(50), nullable=True)
+    revision_id = db.Column(
+        db.Integer, db.ForeignKey('car_revision.id', ondelete='SET NULL'), nullable=True
+    )
+    revision_public_id = db.Column(db.String(50), nullable=True)
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='SET NULL'), nullable=True)
+    content_token = db.Column(db.String(64), nullable=False)
+    mode = db.Column(db.String(10), nullable=False)  # shadow | live
+    # evaluating | completed | error | stale
+    status = db.Column(db.String(16), nullable=False, default='evaluating')
+    decision = db.Column(db.String(16), nullable=True)
+    reasons = db.Column(db.JSON, nullable=True)
+    checks = db.Column(db.JSON, nullable=True)
+    ai = db.Column(db.JSON, nullable=True)
+    engine_version = db.Column(db.String(20), nullable=True)
+    attempts = db.Column(db.Integer, nullable=False, default=1)
+    claimed_at = db.Column(db.DateTime, nullable=True)
+    decided_at = db.Column(db.DateTime, nullable=True)
+    next_retry_at = db.Column(db.DateTime, nullable=True)
+    # pending_apply | published | queued_for_review | held | shadow_would_approve
+    # | stale | superseded | blocked_killswitch | downgraded | error
+    outcome = db.Column(db.String(32), nullable=True)
+    applied_at = db.Column(db.DateTime, nullable=True)
+    # What a human did with the same subject afterwards (shadow comparison /
+    # post-approval reversals): approved | rejected | hidden | deleted.
+    admin_outcome = db.Column(db.String(20), nullable=True)
+    admin_outcome_at = db.Column(db.DateTime, nullable=True)
+    admin_outcome_by = db.Column(db.String(100), nullable=True)
+    override_action = db.Column(db.String(20), nullable=True)
+    override_by = db.Column(db.String(100), nullable=True)
+    override_at = db.Column(db.DateTime, nullable=True)
+    override_note = db.Column(db.Text, nullable=True)
+    alerted_at = db.Column(db.DateTime, nullable=True)
+    error = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow)
+
+    car = db.relationship('Car', foreign_keys=[car_id])
+    events = db.relationship(
+        'ListingModerationEvent',
+        backref='run',
+        order_by='ListingModerationEvent.id',
+        cascade='all, delete-orphan',
+        passive_deletes=True,
+    )
+
+    def __repr__(self):
+        return f'<ListingModerationRun {self.subject_key} {self.mode} {self.decision}>'
+
+
+class ListingModerationEvent(db.Model):
+    """Append-only log line of the auto-moderation pipeline (evaluated,
+    decided, published, stale-discarded, overridden, alert sent ...)."""
+
+    __tablename__ = 'listing_moderation_event'
+    __table_args__ = (
+        db.Index('ix_lme_run_id', 'run_id'),
+        db.Index('ix_lme_car_created', 'car_id', 'created_at'),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    run_id = db.Column(
+        db.Integer, db.ForeignKey('listing_moderation_run.id', ondelete='CASCADE'), nullable=True
+    )
+    car_id = db.Column(db.Integer, db.ForeignKey('car.id', ondelete='SET NULL'), nullable=True)
+    car_public_id = db.Column(db.String(50), nullable=True)
+    event_type = db.Column(db.String(40), nullable=False)
+    actor = db.Column(db.String(100), nullable=False, default='system')
+    data = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=utcnow)
+
+    def __repr__(self):
+        return f'<ListingModerationEvent {self.event_type} run={self.run_id}>'
+
+
 class ListingAnalytics(db.Model):
     __tablename__ = 'listing_analytics'
     
