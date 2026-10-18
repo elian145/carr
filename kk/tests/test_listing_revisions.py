@@ -1440,7 +1440,10 @@ def test_migration_is_single_head_additive_and_reversible(tmp_path):
     cfg.set_main_option("script_location", str(_REPO_ROOT / "migrations"))
     script = ScriptDirectory.from_config(cfg)
     heads = script.get_heads()
-    assert heads == ["u9v0w1x2y3z4"]
+    # Single head. The car_revision migration is no longer the tip: the
+    # automated-moderation tables (v0w1x2y3z4a5) were stacked directly on it.
+    assert heads == ["v0w1x2y3z4a5"]
+    assert script.get_revision("v0w1x2y3z4a5").down_revision == "u9v0w1x2y3z4"
     rev = script.get_revision("u9v0w1x2y3z4")
     assert rev.down_revision == "t8u9v0w1x2y3"
 
