@@ -41,6 +41,16 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Creating a table with a foreign key briefly needs SHARE ROW EXCLUSIVE on
+    # the referenced tables (car, car_revision, user). If a long write
+    # transaction already holds one of them, an un-bounded wait would queue
+    # every later write to that table behind this DDL and stall the site.
+    # Bound it: the migration then fails fast (the deploy stops, the running
+    # release keeps serving) and is simply re-run. Transaction-local, so it
+    # never leaks into the session.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("SET LOCAL lock_timeout = '5s'")
+
     op.create_table(
         "listing_moderation_run",
         sa.Column("id", sa.Integer(), nullable=False),

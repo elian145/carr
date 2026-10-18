@@ -62,7 +62,9 @@ logger = logging.getLogger(__name__)
 
 AUTO_REVIEWER = "auto-moderation"
 CLAIM_TTL_SECONDS = 600
-RETRYABLE_HOLD_CODES = frozenset({"ai_unavailable", "engine_error", "decision_expired"})
+RETRYABLE_HOLD_CODES = frozenset(
+    {"ai_unavailable", "engine_error", "decision_expired", "payment_check_unavailable"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -253,13 +255,15 @@ def _claim(subject: Subject, mode: str, settings: dict, trigger: str):
 def evaluate(subject: Subject, settings: dict) -> tuple[list[Signal], dict, dict]:
     facts = build_facts(subject, settings)
     signals = run_rules(facts, settings, utcnow().year)
-    title, description, urls, needed = ai_inputs(subject, facts)
+    title, description, urls, needed, cover_needed = ai_inputs(subject, facts)
     candidate = not any(s.level in (HOLD, REVIEW) for s in signals)
     ai_cfg = settings.get("ai") or {}
     if not needed:
         ai = {"status": "not_needed"}
     elif candidate or not ai_cfg.get("only_if_candidate", True):
-        ai = ai_mod.moderate(title=title, description=description, image_urls=urls, settings=settings)
+        ai = ai_mod.moderate(
+            title=title, description=description, image_urls=urls, settings=settings, cover_needed=cover_needed
+        )
     else:
         ai = {"status": "skipped", "reason": "rules_already_flag"}
     if ai["status"] != "skipped":
@@ -455,6 +459,29 @@ def post_publish(pr: PublishResult) -> None:
             logger.exception("auto-moderation: price-drop dispatch failed")
 
 
+def _ai_gate(stored_ai: dict | None, settings: dict, subject: Subject, facts) -> list[Signal]:
+    """Apply-time proof that the advisory check the decision relied on really
+    covered what would be published. The stored AI result is re-judged under
+    the CURRENT settings (a raised confidence bar, a newly required check) and
+    compared with the content as it is NOW: nothing is approved on a missing,
+    partial or mismatched inspection, however the run got to pending_apply."""
+    out = [s for s in ai_signals(stored_ai, settings) if s.level in (HOLD, REVIEW)]
+    if out:
+        return out
+    _t, _d, urls, needed, cover_needed = ai_inputs(subject, facts)
+    status = (stored_ai or {}).get("status")
+    if needed and status == "not_needed":
+        return [Signal("ai_not_run", REVIEW, "ai", False, "content needs a check")]
+    if status == "ok" and (
+        int(stored_ai.get("images_expected") or 0) != len(urls)
+        or bool(stored_ai.get("cover_expected")) != cover_needed
+    ):
+        return [Signal("ai_image_coverage_incomplete", REVIEW, "ai", False, "gallery differs from inspected set")]
+    if status == "disabled" and settings.get("ai_required_effective", True):
+        return [Signal("ai_not_configured", REVIEW, "ai", False)]
+    return []
+
+
 def _downgrade(run: ListingModerationRun, blockers: list[Signal], *, stage: str) -> None:
     hold = any(b.level == HOLD for b in blockers)
     run.decision = "HOLD" if hold else "NEEDS_REVIEW"
@@ -487,7 +514,10 @@ def _apply(run_id: int, subject_type: str, subject_id: int) -> dict:
         db.session.rollback()
         return {"outcome": run.outcome, "idempotent": True}
 
-    settings = load_settings()
+    # Share-lock the settings row until this transaction ends: a kill switch
+    # (or mode change) committed before this point is seen here, and one
+    # being committed now waits for this publication to finish first.
+    settings = load_settings(lock_shared=True)
     mode = effective_mode(settings)
     if mode != "live":
         run.outcome = "blocked_killswitch" if kill_switch_active(settings) else "blocked_mode"
@@ -525,6 +555,7 @@ def _apply(run_id: int, subject_type: str, subject_id: int) -> dict:
     blockers = [
         s for s in run_rules(facts, settings, utcnow().year) if s.level in (HOLD, REVIEW)
     ]
+    blockers += _ai_gate(run.ai, settings, fresh, facts)
     if blockers:
         _downgrade(run, blockers, stage="apply")
         db.session.commit()

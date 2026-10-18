@@ -35,6 +35,7 @@ from ..models import (
     db,
 )
 from ..time_utils import utcnow
+from . import payment as payment_mod
 from .rules import Facts, normalize_text
 
 
@@ -166,10 +167,20 @@ def _fields(car: Car) -> dict[str, Any]:
     }
 
 
-def _media(target: Car) -> dict[str, Any]:
+def _media(target: Car, approved: Car | None = None) -> dict[str, Any]:
+    """``approved`` is the already-published listing when ``target`` is the
+    working copy of a pending edit: only content the public has NOT yet seen
+    needs inspecting."""
     items = CarMediaItem.query.filter_by(car_id=target.id).all()
     images = lr._image_rows(target.id)
+    videos = lr._video_rows(target.id)
+    if approved is not None:
+        seen_videos = {v.video_url for v in lr._video_rows(approved.id)}
+        unapproved_videos = sum(1 for v in videos if v.video_url not in seen_videos)
+    else:
+        unapproved_videos = len(videos)
     return {
+        "unapproved_video_count": unapproved_videos,
         "media_status": target.media_status,
         "in_flight": sum(1 for i in items if i.status in ("awaiting_upload", "processing")),
         "failed": sum(1 for i in items if i.status == "failed"),
@@ -329,23 +340,26 @@ def build_facts(subject: Subject, settings: dict) -> Facts:
     return Facts(
         subject_type=subject.type,
         fields=_fields(subject.target),
-        media=_media(subject.target),
+        media=_media(subject.target, subject.car if subject.type == "revision" else None),
         seller=_seller(subject, settings),
         duplicates=_duplicates(subject),
         revision=_revision_facts(subject) if subject.type == "revision" else None,
+        payment=payment_mod.assess(subject.type, subject.car.id, subject.car.seller_id, settings),
     )
 
 
-def ai_inputs(subject: Subject, facts: Facts) -> tuple[str, str, list[str], bool]:
-    """(title, description, image urls, needed). For a revision only new
-    content needs the provider: unchanged text and photos were already
-    approved. New photos are sent first."""
+def ai_inputs(subject: Subject, facts: Facts) -> tuple[str, str, list[str], bool, bool]:
+    """(title, description, image urls, needed, cover_needed).
+
+    EVERY public photo of the subject is listed (all kinds, cover first) --
+    nothing is dropped here; how many can be inspected is decided (and any
+    shortfall turned into a review) by ``ai.moderate`` / ``rules.ai_signals``.
+    For a pending edit only content the public has not seen needs the
+    provider: unchanged text and already-approved photos were approved before.
+    ``cover_needed`` is true when the final cover is among the photos to inspect.
+    """
     target = subject.target
-    urls = [
-        i["url"]
-        for i in facts.media["images"]
-        if i.get("url") and (i.get("kind") or "listing") != "damage"
-    ]
+    urls = [i["url"] for i in facts.media["images"] if i.get("url")]
     cover = [i["url"] for i in facts.media["images"] if i.get("is_primary") and i.get("url")]
     ordered = list(dict.fromkeys(cover + urls))
     needed = True
@@ -353,11 +367,12 @@ def ai_inputs(subject: Subject, facts: Facts) -> tuple[str, str, list[str], bool
         approved_urls = {
             i.image_url for i in CarImage.query.filter_by(car_id=subject.car.id).all()
         }
-        new_urls = [u for u in ordered if u not in approved_urls]
-        rest = [u for u in ordered if u in approved_urls]
-        ordered = new_urls + rest
-        text_changed = (subject.car.description or "") != (target.description or "")
-        needed = bool(new_urls) or text_changed
-        if not new_urls:
+        ordered = [u for u in ordered if u not in approved_urls]
+        text_changed = (subject.car.description or "") != (target.description or "") or (
+            subject.car.title or ""
+        ) != (target.title or "")
+        needed = bool(ordered) or text_changed
+        if not needed:
             ordered = []
-    return target.title or "", target.description or "", ordered, needed
+    cover_needed = bool(cover) and bool(ordered) and ordered[0] == cover[0]
+    return target.title or "", target.description or "", ordered, needed, cover_needed

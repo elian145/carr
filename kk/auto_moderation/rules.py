@@ -56,6 +56,7 @@ class Facts:
     seller: dict[str, Any]
     duplicates: dict[str, Any] = field(default_factory=dict)
     revision: dict[str, Any] | None = None
+    payment: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -182,14 +183,17 @@ def check_values(f: Facts, s: dict, current_year: int) -> list[Signal]:
 def check_text(f: Facts, s: dict) -> list[Signal]:
     out: list[Signal] = []
     text = _clean(f.fields.get("description"))
+    # The title is public text too (and is not necessarily derived from the
+    # vehicle fields), so the pattern checks cover it as well.
+    scan = f"{_clean(f.fields.get('title'))}\n{text}"
+    if _SCAM.search(scan):
+        out.append(Signal("scam_language", REVIEW, "text", True))
+    if _PROHIBITED.search(scan):
+        out.append(Signal("prohibited_content", REVIEW, "text", True))
+    if _NON_CAR.search(scan):
+        out.append(Signal("non_car_content", REVIEW, "text", True))
     if not text:
         return out
-    if _SCAM.search(text):
-        out.append(Signal("scam_language", REVIEW, "text", True))
-    if _PROHIBITED.search(text):
-        out.append(Signal("prohibited_content", REVIEW, "text", True))
-    if _NON_CAR.search(text):
-        out.append(Signal("non_car_content", REVIEW, "text", True))
     if _REPEAT_CHAR.search(text):
         out.append(Signal("repeated_characters", REVIEW, "text", True))
     letters = [c for c in text if c.isalpha()]
@@ -232,6 +236,10 @@ def check_media(f: Facts, s: dict) -> list[Signal]:
         out.append(Signal("too_few_photos", REVIEW, "media", False, f"{len(images)}<{min_photos}"))
     if any(not i.get("url") for i in all_images):
         out.append(Signal("media_missing", REVIEW, "media", True, "empty url"))
+    if int(m.get("unapproved_video_count") or 0) > 0:
+        # No provider inspects video content, so unreviewed video is never
+        # auto-approved (it would be public, unverified media).
+        out.append(Signal("videos_not_inspected", REVIEW, "media", False, str(m["unapproved_video_count"])))
     if images:
         primaries = [i for i in images if i.get("is_primary")]
         if len(primaries) != 1:
@@ -306,11 +314,18 @@ def check_seller(f: Facts, s: dict) -> list[Signal]:
 
 
 def check_payment(f: Facts, s: dict) -> list[Signal]:
+    """Payment is never assumed. ``f.payment`` comes from ``payment.assess``
+    (server-side verifier only). Missing facts are treated as unverified when
+    the deployment requires payment."""
     if f.subject_type != "listing" or not s.get("listing_payment_required"):
         return []
-    # There is no payment ledger in this codebase: payment can't be verified,
-    # so it can never be assumed (fail safe -> a human decides).
-    return [Signal("payment_unverifiable", REVIEW, "payment", False)]
+    p = f.payment or {}
+    if p.get("status") == "verified":
+        # Audit trail only (INFO never blocks): what proved payment / allowance.
+        return [Signal("payment_verified", INFO, "payment", False, f"{p.get('kind')}:{p.get('reference')}")]
+    if p.get("status") == "error":
+        return [Signal("payment_check_unavailable", HOLD, "payment", False, p.get("reason"))]
+    return [Signal("payment_unverifiable", REVIEW, "payment", False, p.get("reason"))]
 
 
 def check_revision(f: Facts, s: dict) -> list[Signal]:
@@ -334,25 +349,55 @@ def check_revision(f: Facts, s: dict) -> list[Signal]:
 
 def ai_signals(ai: dict | None, s: dict) -> list[Signal]:
     """Translate an advisory AI result into signals. AI is never proof of
-    anything: a clean result only *fails to add a reason* to look closer, and
-    an unavailable service is HOLD (never an approval)."""
-    status = (ai or {}).get("status", "disabled")
-    if status == "disabled":
-        if s.get("require_ai_for_auto_approve", True):
-            return [Signal("ai_not_configured", REVIEW, "ai", False)]
-        return []
-    if status == "unavailable":
-        return [Signal("ai_unavailable", HOLD, "ai", False, (ai or {}).get("error"))]
-    if status == "flagged":
-        flags = sorted(set((ai or {}).get("text_flags", []) + (ai or {}).get("image_flags", [])))
-        return [Signal("ai_flagged", REVIEW, "ai", True, ",".join(flags)[:120] or None)]
-    if status == "uncertain":
-        return [Signal("ai_uncertain", REVIEW, "ai", False, (ai or {}).get("error"))]
-    conf = (ai or {}).get("confidence")
-    if conf is not None and conf < float((s.get("ai") or {}).get("min_confidence", 0.7)):
-        return [Signal("ai_low_confidence", REVIEW, "ai", False, f"{conf:.2f}")]
-    return []
+    anything: a clean result only *fails to add a reason* to look closer, an
+    unavailable service is HOLD (never an approval), and a clean result that
+    did not cover EVERY image that needed checking (cover included) is not
+    clean at all.
 
+    Only these statuses can leave the list empty (= no objection):
+    ``ok`` with full coverage, ``not_needed`` (nothing new to judge) and -- when
+    the operator explicitly allows rules-only approval -- ``disabled``."""
+    ai = ai or {}
+    status = ai.get("status", "disabled")
+    required = s.get("ai_required_effective", s.get("require_ai_for_auto_approve", True))
+    if status == "disabled":
+        return [Signal("ai_not_configured", REVIEW, "ai", False)] if required else []
+    if status == "unavailable":
+        return [Signal("ai_unavailable", HOLD, "ai", False, ai.get("error"))]
+    if status == "flagged":
+        flags = sorted(set(ai.get("text_flags", []) + ai.get("image_flags", [])))
+        return [Signal("ai_flagged", REVIEW, "ai", True, ",".join(flags)[:120] or None)]
+    if status == "skipped":
+        return [Signal("ai_not_run", REVIEW, "ai", False, ai.get("reason"))]
+    if status == "not_needed":
+        return []
+    if status == "uncertain":
+        if ai.get("error") == "too_many_images":
+            return [
+                Signal(
+                    "ai_image_coverage_incomplete",
+                    REVIEW,
+                    "ai",
+                    False,
+                    f"{ai.get('images_expected', '?')} photos exceed the automatic limit",
+                )
+            ]
+        return [Signal("ai_uncertain", REVIEW, "ai", False, ai.get("error"))]
+    if status != "ok":
+        return [Signal("ai_uncertain", REVIEW, "ai", False, "unknown_status")]
+    out: list[Signal] = []
+    expected = int(ai.get("images_expected") or 0)
+    checked = int(ai.get("images_checked") or 0)
+    if checked < expected:
+        out.append(
+            Signal("ai_image_coverage_incomplete", REVIEW, "ai", False, f"{checked}/{expected} photos inspected")
+        )
+    if ai.get("cover_expected") and not ai.get("cover_checked"):
+        out.append(Signal("ai_cover_not_checked", REVIEW, "ai", False))
+    conf = ai.get("confidence")
+    if conf is not None and conf < float((s.get("ai") or {}).get("min_confidence", 0.7)):
+        out.append(Signal("ai_low_confidence", REVIEW, "ai", False, f"{conf:.2f}"))
+    return out
 
 # ---------------------------------------------------------------------------
 # Orchestration of the deterministic part

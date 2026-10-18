@@ -65,7 +65,7 @@ DEFAULTS: dict[str, Any] = {
     # Image relevance / text prohibition cannot be verified by rules alone. With
     # this on (default) nothing is auto-approved unless an AI provider actually
     # returned a clean advisory result.
-    "require_ai_for_auto_approve": True,
+    "require_ai_for_auto_approve": True,  # cannot be turned off without AUTO_MODERATION_ALLOW_RULES_ONLY=1
     # Rule thresholds.
     "min_photos": 1,
     "min_image_side_px": 320,
@@ -87,7 +87,13 @@ DEFAULTS: dict[str, Any] = {
     "listing_payment_required": False,
     "ai": {
         "send_images": True,
+        # Photos per provider request. EVERY photo that needs checking is
+        # inspected, in batches of this size ...
         "max_images": 4,
+        # ... up to this many photos per evaluation. A listing with more is
+        # never auto-approved (it goes to review): the cap bounds spend, it
+        # never lets uninspected photos through.
+        "max_total_images": 12,
         "timeout_seconds": 20,
         "min_confidence": 0.7,
         # Cost control: only call the provider for subjects that rules alone
@@ -139,6 +145,19 @@ def env_allow_live() -> bool:
     return _env_bool("AUTO_MODERATION_ALLOW_LIVE")
 
 
+def env_allow_rules_only() -> bool:
+    """Operator-level escape hatch for rules-only approval. Off in production
+    unless deliberately set; never settable from the dashboard."""
+    return _env_bool("AUTO_MODERATION_ALLOW_RULES_ONLY")
+
+
+def ai_required(settings: dict[str, Any] | None = None) -> bool:
+    """Is a clean AI check mandatory for AUTO_APPROVE? Yes unless BOTH the
+    stored setting is off AND the server operator allowed rules-only mode."""
+    s = settings if settings is not None else load_settings()
+    return bool(s.get("require_ai_for_auto_approve", True)) or not env_allow_rules_only()
+
+
 def ai_provider_name() -> str:
     return (os.environ.get("AUTO_MODERATION_AI_PROVIDER") or "none").strip().lower()
 
@@ -164,13 +183,20 @@ def _deep_merge(base: dict, patch: dict) -> dict:
     return out
 
 
-def _stored() -> dict:
+def _stored(lock_shared: bool = False) -> dict:
     from ..app_settings import _ensure_table
     from ..models import AppSetting
 
     _ensure_table()
     try:
-        row = AppSetting.query.filter_by(key=SETTINGS_KEY).first()
+        q = AppSetting.query.filter_by(key=SETTINGS_KEY)
+        if lock_shared:
+            # FOR SHARE, held to the end of the caller's transaction: a
+            # concurrent settings / kill-switch write (FOR UPDATE) waits for
+            # it, and a reader that starts after such a write sees its
+            # committed value.
+            q = q.with_for_update(read=True).populate_existing()
+        row = q.first()
         if row and isinstance(row.value, dict):
             return dict(row.value)
     except Exception:
@@ -178,12 +204,18 @@ def _stored() -> dict:
     return {}
 
 
-def load_settings() -> dict[str, Any]:
+def load_settings(*, lock_shared: bool = False) -> dict[str, Any]:
     """Effective settings: defaults overlaid with the stored document.
-    Anything malformed falls back to the safe default for that key."""
-    merged = _deep_merge(DEFAULTS, _stored())
+    Anything malformed falls back to the safe default for that key.
+    ``lock_shared`` also share-locks the stored row (see ``_stored``); the
+    publish step uses it so the kill switch is strictly ordered against
+    in-flight publications."""
+    merged = _deep_merge(DEFAULTS, _stored(lock_shared))
     if merged.get("mode") not in MODES:
         merged["mode"] = DEFAULTS["mode"]
+    # Computed, never stored: the AI check is mandatory unless the SERVER
+    # operator explicitly allowed rules-only approval (see `ai_required`).
+    merged["ai_required_effective"] = ai_required(merged)
     return merged
 
 
@@ -263,6 +295,12 @@ def validate_patch(patch: dict) -> dict:
             "flag_contact_in_description",
         ):
             out[key] = _bool(val, key)
+            if key == "require_ai_for_auto_approve" and out[key] is False and not env_allow_rules_only():
+                raise ValueError(
+                    "require_ai_for_auto_approve cannot be disabled: photos cannot be "
+                    "verified by rules alone (server operator override: "
+                    "AUTO_MODERATION_ALLOW_RULES_ONLY=1)"
+                )
         elif key == "min_photos":
             out[key] = _int(val, 0, 30, key)
         elif key == "min_image_side_px":
@@ -301,7 +339,9 @@ def validate_patch(patch: dict) -> dict:
                 if k in ("send_images", "only_if_candidate"):
                     ai[k] = _bool(v, f"ai.{k}")
                 elif k == "max_images":
-                    ai[k] = _int(v, 0, 10, "ai.max_images")
+                    ai[k] = _int(v, 1, 10, "ai.max_images")
+                elif k == "max_total_images":
+                    ai[k] = _int(v, 1, 40, "ai.max_total_images")
                 elif k == "timeout_seconds":
                     ai[k] = _int(v, 3, 60, "ai.timeout_seconds")
                 elif k == "min_confidence":
@@ -405,6 +445,7 @@ def public_settings(settings: dict[str, Any] | None = None) -> dict[str, Any]:
         "settings": s,
         "effective_mode": effective_mode(s),
         "kill_switch_active": kill_switch_active(s),
+        "readiness": readiness(s),
         "environment": {
             "disabled": env_disabled(),
             "kill_switch_forced": env_kill_switch(),
@@ -436,3 +477,42 @@ def ai_provider_configured() -> bool:
             and ai_model_name()
         )
     return False
+
+
+def readiness(settings: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Plain-language answer to "could anything be auto-approved right now,
+    and if not, why not?" -- shown on the dashboard so shadow mode is never
+    misleading. Pure status: it grants nothing."""
+    from .payment import verifier_registered
+
+    s = settings if settings is not None else load_settings()
+    mode = effective_mode(s)
+    blockers: list[str] = []
+    if mode == "off":
+        blockers.append("mode_off")
+    if kill_switch_active(s):
+        blockers.append("kill_switch_active")
+    if s.get("mode") == "live" and not env_allow_live():
+        blockers.append("live_not_allowed_by_environment")
+    ai_needed = ai_required(s)
+    if ai_needed and not ai_provider_configured():
+        blockers.append("ai_provider_not_configured")
+    if s.get("listing_payment_required") and not verifier_registered():
+        blockers.append("payment_verifier_not_registered")
+    notes: list[str] = []
+    if mode == "shadow" and "ai_provider_not_configured" in blockers:
+        notes.append(
+            "No AI provider is configured and an AI check is required for auto-approval, so "
+            "every evaluated listing is recorded as NEEDS_REVIEW (ai_not_configured). Shadow "
+            "mode cannot measure how many listings automation would approve until a provider "
+            "is configured (see docs/AUTO_MODERATION.md). Nothing is published automatically."
+        )
+    elif mode == "shadow":
+        notes.append("Shadow mode: decisions are recorded for comparison; nothing is published.")
+    return {
+        "ai_required": ai_needed,
+        "ai_configured": ai_provider_configured(),
+        "auto_approval_possible": mode == "live" and not blockers,
+        "blockers": blockers,
+        "notes": notes,
+    }

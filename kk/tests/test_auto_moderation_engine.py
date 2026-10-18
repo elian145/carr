@@ -665,12 +665,28 @@ def test_ai_required_by_default_and_not_configured_means_review(app, monkeypatch
     assert "ai_not_configured" in _runs(app, c["car_id"])[0]["codes"]
 
 
-def test_rules_only_approval_is_possible_only_when_explicitly_configured(app, monkeypatch):
-    _live(monkeypatch, app, require_ai_for_auto_approve=False)
+def test_rules_only_approval_needs_server_operator_opt_in(app, client, monkeypatch):
+    """Disabling the AI requirement is not a dashboard decision: the stored
+    setting alone changes nothing, and the API refuses to store it."""
+    from kk.auto_moderation import config
+
+    sup = _admin_token(app, client, "super_admin")
+    r = client.put(f"{BASE}/settings", json={"require_ai_for_auto_approve": False}, headers=_auth(sup))
+    assert r.status_code == 400 and "cannot be disabled" in r.get_json()["message"]
+    _live(monkeypatch, app, require_ai_for_auto_approve=False)  # forced into the store
     monkeypatch.setenv("AUTO_MODERATION_AI_PROVIDER", "none")
     uid, _ = _trusted_seller(app)
     c = _car(app, uid)
-    assert _moderate(app, "listing", c["car_id"])["outcome"] == "published"
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert "ai_not_configured" in _runs(app, c["car_id"])[0]["codes"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+    # only with the operator opt-in is rules-only possible
+    monkeypatch.setenv("AUTO_MODERATION_ALLOW_RULES_ONLY", "1")
+    assert config.validate_patch({"require_ai_for_auto_approve": False})
+    c2 = _car(app, uid, price=15999, brand="kia", model="rio", title="Kia Rio 2021",
+              description="Another vehicle with its own words, nothing in common.")
+    assert _moderate(app, "listing", c2["car_id"])["outcome"] == "published"
 
 
 def test_ai_is_skipped_when_rules_already_flag(app, monkeypatch):
@@ -1934,6 +1950,10 @@ def test_migration_is_additive_single_head_and_reversible():
     path = _REPO_ROOT / "migrations" / "versions" / "v0w1x2y3z4a5_add_listing_moderation_tables.py"
     src = path.read_text(encoding="utf-8")
     up = src.split("def upgrade()")[1].split("def downgrade()")[0]
+    # the only statement besides create_table / create_index is the bounded
+    # lock wait (PostgreSQL only, transaction-local)
+    assert up.count("op.execute(") == 1 and "SET LOCAL lock_timeout" in up
+    up = up.replace('op.execute("SET LOCAL lock_timeout = \'5s\'")', "")
     for forbidden in ("drop_", "alter_column", "add_column", "batch_alter_table", "execute("):
         assert forbidden not in up
     assert src.count("op.create_table(") == 2
@@ -1972,4 +1992,487 @@ def test_stub_ai_provider_is_unusable_outside_testing(app, monkeypatch):
     r = _moderate(app, "listing", c["car_id"])
     assert r["decision"] == "NEEDS_REVIEW"
     assert "ai_not_configured" in _runs(app, c["car_id"])[0]["codes"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+# ===========================================================================
+# Release-blocker hardening: payment integrity, complete image coverage,
+# mandatory AI check, shadow-mode clarity
+# ===========================================================================
+
+
+@pytest.fixture
+def payment_hook():
+    from kk.auto_moderation import payment
+
+    payment.register_payment_verifier(None)
+    yield payment
+    payment.register_payment_verifier(None)
+
+
+def _ai_ok_for(urls):
+    return {
+        "text": {"ok": True, "flags": []},
+        "images": [{"index": i, "is_car_photo": True, "flags": []} for i in range(len(urls))],
+        "confidence": 0.95,
+    }
+
+
+def _set_ai(calls=None, overrides=None):
+    """Install a recording stub provider. `overrides` may map call number ->
+    a raw response / exception / callable(urls)."""
+    from kk.auto_moderation import ai
+
+    overrides = overrides or {}
+
+    def stub(title, desc, urls):
+        n = len(calls) if calls is not None else 0
+        if calls is not None:
+            calls.append({"desc": desc, "urls": list(urls)})
+        spec = overrides.get(n)
+        if isinstance(spec, Exception):
+            raise spec
+        if callable(spec):
+            return spec(urls)
+        return spec if spec is not None else _ai_ok_for(urls)
+
+    ai.STUB_RESPONSE = stub
+
+
+# ---- payment --------------------------------------------------------------
+
+
+def test_free_deployment_has_no_payment_gate_and_approves(app, monkeypatch):
+    """Today CarNet charges nothing: default settings never invent a payment
+    requirement, and never record a payment either."""
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    assert _moderate(app, "listing", c["car_id"])["outcome"] == "published"
+    assert "payment_verified" not in _runs(app, c["car_id"])[0]["codes"]
+
+
+def test_required_payment_without_ledger_is_never_approved(app, monkeypatch, payment_hook):
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    assert _moderate(app, "listing", c["car_id"])["decision"] == "NEEDS_REVIEW"
+    assert "payment_unverifiable" in _runs(app, c["car_id"])[0]["codes"]
+    from kk.auto_moderation import config
+
+    with app.app_context():
+        assert "payment_verifier_not_registered" in config.readiness()["blockers"]
+
+
+@pytest.mark.parametrize("kind", ["paid", "free_allowance"])
+def test_verified_payment_or_free_allowance_can_be_auto_approved(app, monkeypatch, payment_hook, kind):
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    seen = []
+
+    def verifier(car_id, seller_id):
+        seen.append((car_id, seller_id))
+        return {"status": kind, "car_id": car_id, "reference": "ledger-42"}
+
+    payment_hook.register_payment_verifier(verifier)
+    assert _moderate(app, "listing", c["car_id"])["outcome"] == "published"
+    assert (c["car_id"], uid) in seen
+    run = _runs(app, c["car_id"])[0]
+    assert run["decision"] == "AUTO_APPROVE"
+    from kk.models import ListingModerationRun
+
+    with app.app_context():
+        reasons = ListingModerationRun.query.first().reasons
+    assert any(r["code"] == "payment_verified" and r["detail"] == f"{kind}:ledger-42" for r in reasons)
+
+
+@pytest.mark.parametrize(
+    "proof",
+    [
+        None,
+        {},
+        True,
+        "paid",
+        {"status": "paid"},  # no car binding / reference
+        {"status": "pending", "car_id": "SELF", "reference": "x"},
+        {"status": "paid", "car_id": 999999, "reference": "x"},  # proof for another listing
+        {"status": "paid", "car_id": "SELF", "reference": "  "},
+        {"status": "refunded", "car_id": "SELF", "reference": "x"},
+    ],
+)
+def test_malformed_or_foreign_payment_proof_never_approves(app, monkeypatch, payment_hook, proof):
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+
+    def verifier(car_id, seller_id):
+        if isinstance(proof, dict):
+            return {k: (car_id if v == "SELF" else v) for k, v in proof.items()}
+        return proof
+
+    payment_hook.register_payment_verifier(verifier)
+    assert _moderate(app, "listing", c["car_id"])["decision"] == "NEEDS_REVIEW"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_payment_verifier_outage_holds_and_never_approves(app, monkeypatch, payment_hook):
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+
+    def boom(car_id, seller_id):
+        raise ConnectionError("ledger down")
+
+    payment_hook.register_payment_verifier(boom)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "HOLD" and r["retry_in"]
+    assert "payment_check_unavailable" in _runs(app, c["car_id"])[0]["codes"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_refund_between_decision_and_publication_blocks_the_approval(app, monkeypatch, payment_hook):
+    from kk.auto_moderation import engine
+
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    state = {"paid": True}
+    payment_hook.register_payment_verifier(
+        lambda car_id, seller_id: {"status": "paid", "car_id": car_id, "reference": "r1"} if state["paid"] else None
+    )
+    real_apply = engine._apply
+    monkeypatch.setattr(engine, "_apply", lambda *a, **k: {"outcome": "deferred"})
+    _moderate(app, "listing", c["car_id"])
+    monkeypatch.setattr(engine, "_apply", real_apply)
+    state["paid"] = False  # refunded / allowance revoked
+    with app.app_context():
+        out = real_apply(_runs(app, c["car_id"])[0]["id"], "listing", c["car_id"])
+    assert out["outcome"] == "downgraded"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_payment_requirement_does_not_apply_to_edits_of_published_listings(app, monkeypatch, payment_hook):
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, _ = _trusted_seller(app)
+    c = _published_car(app, uid)
+    rid, _s, _p = _revision(app, c["car_id"], description="Updated: new tyres fitted, service done.")
+    assert _moderate(app, "revision", rid)["outcome"] == "published"
+
+
+def test_client_cannot_assert_payment(app, client, monkeypatch, payment_hook, clean):
+    """There is no client-writable payment field on create: extra JSON keys are
+    ignored, and with payment required the listing still needs a human."""
+    monkeypatch.setenv("LISTING_REQUIRE_APPROVAL", "1")
+    _live(monkeypatch, app, listing_payment_required=True)
+    uid, uname = _trusted_seller(app)
+    token = _login(client, uname)
+    body = {"brand": "toyota", "model": "camry", "year": 2022, "mileage": 5, "price": 20000,
+            "location": "Erbil", "payment_status": "paid", "is_paid": True, "paid": True,
+            "payment": {"status": "paid", "reference": "forged"}}
+    r = client.post("/api/cars", json=body, headers=_auth(token))
+    assert r.status_code == 201
+    from kk.models import Car
+
+    pid = r.get_json()["car"]["id"]
+    with app.app_context():
+        car_id = Car.query.filter_by(public_id=pid).one().id
+    _moderate(app, "listing", car_id)
+    assert "payment_unverifiable" in _runs(app, car_id)[0]["codes"]
+    assert _car_state(app, car_id)["status"] == "pending"
+
+
+# ---- complete image coverage ----------------------------------------------
+
+
+def test_every_image_is_inspected_in_batches_cover_first(app, monkeypatch):
+    from kk.models import CarImage, db
+
+    _live(monkeypatch, app)
+    _settings(app, ai={"max_images": 2})
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, photos=5)
+    with app.app_context():  # make the LAST photo the stored (and declared) cover
+        imgs = CarImage.query.filter_by(car_id=c["car_id"]).order_by(CarImage.order).all()
+        from kk.models import CarMediaItem
+
+        for i in imgs:
+            i.is_primary = False
+        imgs[-1].is_primary = True
+        for it in CarMediaItem.query.filter_by(car_id=c["car_id"]).all():
+            it.is_cover = (it.client_media_id == imgs[-1].source_media_id)
+        db.session.commit()
+        cover_url = imgs[-1].image_url
+        all_urls = {i.image_url for i in imgs}
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["outcome"] == "published", _runs(app, c["car_id"])[0]["codes"]
+    sent = [u for call in calls for u in call["urls"]]
+    assert len(calls) == 3 and set(sent) == all_urls and len(sent) == 5  # 2 + 2 + 1, none twice
+    assert calls[0]["urls"][0] == cover_url  # the final cover is judged first
+    assert calls[0]["desc"] is not None and all(c_["desc"] is None for c_ in calls[1:])  # text judged once
+    from kk.models import ListingModerationRun
+
+    with app.app_context():
+        ai = ListingModerationRun.query.first().ai
+    assert ai["images_expected"] == 5 and ai["images_checked"] == 5 and ai["cover_checked"] is True
+
+
+def test_more_photos_than_the_limit_go_to_review_without_calling_the_provider(app, monkeypatch):
+    _live(monkeypatch, app)
+    _settings(app, ai={"max_total_images": 3})
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, photos=4)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert "ai_image_coverage_incomplete" in _runs(app, c["car_id"])[0]["codes"]
+    assert calls == []  # bounded spend: nothing is sent for a gallery we will not fully inspect
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_exactly_at_the_limit_is_fully_inspected(app, monkeypatch):
+    _live(monkeypatch, app)
+    _settings(app, ai={"max_total_images": 4, "max_images": 4})
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, photos=4)
+    assert _moderate(app, "listing", c["car_id"])["outcome"] == "published"
+    assert len(calls) == 1 and len(calls[0]["urls"]) == 4
+
+
+def test_non_https_photo_cannot_be_inspected_so_it_is_never_auto_approved(app, monkeypatch):
+    from kk.models import CarImage, db
+
+    _live(monkeypatch, app)
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, photos=3)
+    with app.app_context():
+        img = CarImage.query.filter_by(id=c["image_ids"][2]).one()
+        img.image_url = img.image_url.replace("https://", "http://")
+        db.session.commit()
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert "ai_image_coverage_incomplete" in _runs(app, c["car_id"])[0]["codes"]
+    assert len([u for call in calls for u in call["urls"]]) == 2  # the https ones were still checked
+
+
+def test_damage_and_other_photo_kinds_are_inspected_too(app, monkeypatch):
+    from kk.models import CarImage, db
+
+    _live(monkeypatch, app)
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, photos=3)
+    with app.app_context():
+        img = CarImage.query.filter_by(id=c["image_ids"][2]).one()
+        img.kind = "damage"
+        db.session.commit()
+        damage_url = img.image_url
+    _moderate(app, "listing", c["car_id"])
+    assert damage_url in [u for call in calls for u in call["urls"]]
+
+
+def test_text_only_provider_configuration_cannot_approve_a_listing_with_photos(app, monkeypatch):
+    _live(monkeypatch, app)
+    _settings(app, ai={"send_images": False})
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert "ai_image_coverage_incomplete" in _runs(app, c["car_id"])[0]["codes"]
+    assert all(call["urls"] == [] for call in calls)
+
+
+def test_provider_failure_or_flag_in_a_later_batch_is_never_ignored(app, monkeypatch):
+    _live(monkeypatch, app)
+    _settings(app, ai={"max_images": 1})
+    uid, _ = _trusted_seller(app)
+    # 3 photos -> 3 requests; the third fails
+    calls = []
+    _set_ai(calls=calls, overrides={2: ConnectionError("down")})
+    c = _car(app, uid, photos=3)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "HOLD" and "ai_unavailable" in _runs(app, c["car_id"])[0]["codes"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+    # the third request flags its photo
+    calls2 = []
+    flagged_batch = lambda urls: {  # noqa: E731
+        "text": {"ok": True, "flags": []},
+        "images": [{"index": 0, "is_car_photo": False, "flags": ["explicit"]}],
+        "confidence": 0.9,
+    }
+    _set_ai(calls=calls2, overrides={2: flagged_batch})
+    c2 = _car(app, uid, photos=3, price=16111, brand="kia", model="rio", title="Kia Rio 2021",
+              description="Different words about a different car for this one.")
+    r = _moderate(app, "listing", c2["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and "ai_flagged" in _runs(app, c2["car_id"])[0]["codes"]
+    assert _car_state(app, c2["car_id"])["status"] == "pending"
+
+
+def test_partial_verdicts_from_the_provider_are_uncertain_not_ok(app, monkeypatch):
+    _live(monkeypatch, app)
+    _settings(app, ai={"max_images": 4})
+    partial = lambda urls: {  # noqa: E731
+        "text": {"ok": True, "flags": []},
+        "images": [{"index": 0, "is_car_photo": True, "flags": []}],  # 3 photos, 1 verdict
+        "confidence": 0.9,
+    }
+    _set_ai(overrides={0: partial})
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, photos=3)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and "ai_uncertain" in _runs(app, c["car_id"])[0]["codes"]
+
+
+def test_videos_are_never_auto_approved_unreviewed(app, monkeypatch):
+    from kk.models import CarVideo, db
+
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    with app.app_context():
+        db.session.add(CarVideo(car_id=c["car_id"], video_url=f"{_CDN}/v.mp4", thumbnail_url=f"{_CDN}/v.jpg"))
+        db.session.commit()
+    assert _moderate(app, "listing", c["car_id"])["decision"] == "NEEDS_REVIEW"
+    assert "videos_not_inspected" in _runs(app, c["car_id"])[0]["codes"]
+
+
+def test_title_is_moderated_like_the_description(app, monkeypatch):
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, title="Camry - western union only, guaranteed profit")
+    assert _moderate(app, "listing", c["car_id"])["decision"] == "NEEDS_REVIEW"
+    assert "scam_language" in _runs(app, c["car_id"])[0]["codes"]
+
+
+def test_revision_inspects_only_new_photos_and_title_only_edits_are_judged(app, monkeypatch):
+    from kk.models import Car, CarImage, CarMediaItem, db
+
+    _live(monkeypatch, app)
+    calls = []
+    _set_ai(calls=calls)
+    uid, _ = _trusted_seller(app)
+    c = _published_car(app, uid)
+    rid, shadow_id, _p = _revision(app, c["car_id"], title="Toyota Camry 2021 - one owner")
+    r = _moderate(app, "revision", rid)
+    assert r["outcome"] == "published"
+    assert len(calls) == 1 and calls[0]["urls"] == []  # a title change is judged; no new photos to send
+    # an edit that adds one photo (and makes it the cover) sends exactly that photo, first
+    calls.clear()
+    c2 = _published_car(app, uid, price=15321, brand="kia", model="rio", title="Kia Rio 2021",
+                        description="Yet another listing with entirely different content here.")
+    rid2, shadow2, _p2 = _revision(app, c2["car_id"], description="Updated: refreshed text for the ad.")
+    with app.app_context():
+        for im in CarImage.query.filter_by(car_id=shadow2).all():
+            im.is_primary = False
+        db.session.add(CarImage(car_id=shadow2, image_url=f"{_CDN}/new-cover.jpg", is_primary=True, order=0,
+                                kind="listing", source_media_id="newc", image_width=1600, image_height=1200))
+        db.session.add(CarMediaItem(car_id=shadow2, kind="image", client_media_id="newc", status="attached",
+                                    is_cover=True, sort_order=0))
+        db.session.commit()
+    r = _moderate(app, "revision", rid2)
+    assert len(calls) == 1 and calls[0]["urls"] == [f"{_CDN}/new-cover.jpg"]
+    assert r["outcome"] in ("published", "queued_for_review")
+
+
+# ---- no approval without the required AI check -----------------------------
+
+
+def test_no_ai_provider_means_shadow_records_review_and_nothing_publishes(app, client, monkeypatch):
+    monkeypatch.setenv("AUTO_MODERATION_AI_PROVIDER", "none")
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    assert "ai_not_configured" in _runs(app, c["car_id"])[0]["codes"]
+    sup = _admin_token(app, client, "super_admin")
+    j = client.get(f"{BASE}/settings", headers=_auth(sup)).get_json()
+    rd = j["readiness"]
+    assert rd["auto_approval_possible"] is False and "ai_provider_not_configured" in rd["blockers"]
+    assert any("No AI provider is configured" in n for n in rd["notes"])
+    assert j["effective_mode"] == "shadow"
+
+
+@pytest.mark.parametrize("provider_state", ["none", "outage", "uncertain", "disabled_by_missing_key"])
+def test_no_approval_path_exists_without_a_clean_ai_check(app, monkeypatch, provider_state):
+    from kk.auto_moderation import ai
+
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    if provider_state == "none":
+        monkeypatch.setenv("AUTO_MODERATION_AI_PROVIDER", "none")
+    elif provider_state == "outage":
+        ai.STUB_RESPONSE = ConnectionError("x")
+    elif provider_state == "uncertain":
+        ai.STUB_RESPONSE = {"_status": "uncertain", "error": "invalid_response"}
+    else:
+        monkeypatch.setenv("AUTO_MODERATION_AI_PROVIDER", "openai")
+        monkeypatch.delenv("AUTO_MODERATION_OPENAI_API_KEY", raising=False)
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] in ("NEEDS_REVIEW", "HOLD")
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+    assert _notifications(app, uid) == 0
+
+
+def test_apply_refuses_when_the_stored_ai_evidence_is_missing_or_partial(app, monkeypatch):
+    """Even a run that somehow reached pending_apply cannot publish without a
+    complete, clean advisory check for the content as it is now."""
+    from kk.auto_moderation import engine
+    from kk.models import ListingModerationRun, db
+
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    real_apply = engine._apply
+    words = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"]
+    tampers = (
+        {"status": "disabled"},
+        None,
+        {"status": "ok", "images_expected": 2, "images_checked": 2},  # gallery has 3
+        {"status": "ok", "images_expected": 3, "images_checked": 1},
+        {"status": "skipped"},
+        {"status": "not_needed"},
+    )
+    for n, tamper in enumerate(tampers):
+        uid, _ = _trusted_seller(app)
+        c = _car(app, uid, price=15500 + n, brand=words[n], model="roadster",
+                 title=f"{words[n].title()} Roadster 2021",
+                 description=f"A distinctive {words[n]} listing text, written specially for case {words[n]} here.")
+        monkeypatch.setattr(engine, "_apply", lambda *a, **k: {"outcome": "deferred"})
+        _moderate(app, "listing", c["car_id"])
+        monkeypatch.setattr(engine, "_apply", real_apply)
+        with app.app_context():
+            run = ListingModerationRun.query.filter_by(car_id=c["car_id"]).one()
+            assert run.outcome == "pending_apply"
+            run.ai = tamper
+            db.session.commit()
+            out = real_apply(run.id, "listing", c["car_id"])
+        assert out["outcome"] in ("downgraded", "held"), tamper
+        assert _car_state(app, c["car_id"])["status"] == "pending", tamper
+
+
+def test_raised_confidence_bar_applies_to_an_already_decided_run(app, monkeypatch):
+    from kk.auto_moderation import engine
+
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    real_apply = engine._apply
+    monkeypatch.setattr(engine, "_apply", lambda *a, **k: {"outcome": "deferred"})
+    _moderate(app, "listing", c["car_id"])
+    monkeypatch.setattr(engine, "_apply", real_apply)
+    _settings(app, ai={"min_confidence": 0.99})  # stub answered 0.95
+    with app.app_context():
+        out = real_apply(_runs(app, c["car_id"])[0]["id"], "listing", c["car_id"])
+    assert out["outcome"] == "downgraded"
     assert _car_state(app, c["car_id"])["status"] == "pending"
