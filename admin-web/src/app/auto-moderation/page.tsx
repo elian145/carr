@@ -57,6 +57,47 @@ function decisionClass(d: string | null): string {
   return "text-surface-muted";
 }
 
+const BLOCKER_LABEL: Record<string, string> = {
+  mode_off: "Mode is off",
+  kill_switch_active: "Kill switch is active",
+  live_not_allowed_by_environment:
+    "Live mode is not permitted by the server environment (AUTO_MODERATION_ALLOW_LIVE)",
+  ai_provider_not_configured:
+    "No AI provider is configured, and an AI check is required for every auto-approval",
+  payment_verifier_not_registered:
+    "Listing payment is required but this server has no payment verifier, so nothing can be confirmed as paid",
+};
+
+function Readiness({ data }: { data: AutoModerationSettingsResponse }) {
+  const r = data.readiness;
+  if (!r) return null;
+  return (
+    <div
+      data-testid="am-readiness"
+      className="mb-6 rounded-xl border border-surface-border bg-surface-card/60 p-4 text-sm"
+    >
+      <p className="font-medium">
+        Can anything be auto-approved right now?{" "}
+        <span className={r.auto_approval_possible ? "text-emerald-300" : "text-amber-300"}>
+          {r.auto_approval_possible ? "Yes" : "No"}
+        </span>
+      </p>
+      {r.blockers.length > 0 ? (
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-surface-muted">
+          {r.blockers.map((b) => (
+            <li key={b}>{BLOCKER_LABEL[b] || b}</li>
+          ))}
+        </ul>
+      ) : null}
+      {r.notes.map((n) => (
+        <p key={n} className="mt-2 text-xs text-surface-muted">
+          {n}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function ModeBanner({ data }: { data: AutoModerationSettingsResponse }) {
   const live = data.effective_mode === "live";
   return (
@@ -151,6 +192,7 @@ function Overview({
   return (
     <div className="space-y-6">
       <ModeBanner data={settings} />
+      <Readiness data={settings} />
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -633,7 +675,11 @@ function SettingsForm({
       mode: s.mode,
       auto_approve_new_listings: s.auto_approve_new_listings,
       auto_approve_revisions: s.auto_approve_revisions,
-      require_ai_for_auto_approve: s.require_ai_for_auto_approve,
+      // The AI check is mandatory; only a server operator can lift it
+      // (AUTO_MODERATION_ALLOW_RULES_ONLY), so never send `false` otherwise.
+      require_ai_for_auto_approve: environment.rules_only_allowed
+        ? s.require_ai_for_auto_approve
+        : true,
       min_photos: s.min_photos,
       min_seller_prior_approved: s.min_seller_prior_approved,
       dealers_count_as_trusted: s.dealers_count_as_trusted,
@@ -641,7 +687,13 @@ function SettingsForm({
       price_change_review_pct: s.price_change_review_pct,
       flag_contact_in_description: s.flag_contact_in_description,
       listing_payment_required: s.listing_payment_required,
-      ai: { only_if_candidate: s.ai.only_if_candidate, send_images: s.ai.send_images, min_confidence: s.ai.min_confidence },
+      ai: {
+        only_if_candidate: s.ai.only_if_candidate,
+        send_images: s.ai.send_images,
+        min_confidence: s.ai.min_confidence,
+        max_images: s.ai.max_images,
+        max_total_images: s.ai.max_total_images,
+      },
       alerts: {
         enabled: s.alerts.enabled,
         channels: s.alerts.channels,
@@ -712,13 +764,21 @@ function SettingsForm({
             checked={s.auto_approve_revisions}
             onChange={(v) => patch("auto_approve_revisions", v)}
           />
+          {environment.rules_only_allowed ? (
+            <Toggle
+              label="Require an AI check for auto-approval (the server operator allows turning this off)"
+              checked={s.require_ai_for_auto_approve}
+              onChange={(v) => patch("require_ai_for_auto_approve", v)}
+            />
+          ) : (
+            <label className="flex items-center gap-2 text-sm" data-testid="am-ai-required">
+              <input type="checkbox" checked disabled readOnly />
+              AI check is required for every auto-approval (locked by the server; every photo is
+              checked or the listing goes to review)
+            </label>
+          )}
           <Toggle
-            label="Require an AI check for auto-approval"
-            checked={s.require_ai_for_auto_approve}
-            onChange={(v) => patch("require_ai_for_auto_approve", v)}
-          />
-          <Toggle
-            label="Listing payment required (cannot be verified yet → always sent to review)"
+            label="Listing payment required (a listing is auto-approved only when a server-side payment verifier confirms payment or a free allowance)"
             checked={s.listing_payment_required}
             onChange={(v) => patch("listing_payment_required", v)}
           />
@@ -741,6 +801,16 @@ function SettingsForm({
             label="Price change that needs review (%)"
             value={s.price_change_review_pct}
             onChange={(v) => patch("price_change_review_pct", v)}
+          />
+          <NumberField
+            label="Photos per AI request (1–10)"
+            value={s.ai.max_images}
+            onChange={(v) => setS((p) => ({ ...p, ai: { ...p.ai, max_images: v } }))}
+          />
+          <NumberField
+            label="Most photos the AI checks per listing (more → manual review)"
+            value={s.ai.max_total_images}
+            onChange={(v) => setS((p) => ({ ...p, ai: { ...p.ai, max_total_images: v } }))}
           />
           <NumberField
             label="Minimum AI confidence"

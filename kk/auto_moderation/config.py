@@ -453,6 +453,7 @@ def public_settings(settings: dict[str, Any] | None = None) -> dict[str, Any]:
             "ai_provider": ai_provider_name(),
             "ai_model": ai_model_name(),
             "ai_configured": ai_provider_configured(),
+            "rules_only_allowed": env_allow_rules_only(),
             "telegram_configured": telegram_configured(),
             "admin_web_base_url_configured": bool(
                 (os.environ.get("ADMIN_WEB_BASE_URL") or "").strip()

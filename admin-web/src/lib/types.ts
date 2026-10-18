@@ -359,6 +359,8 @@ export interface AutoModerationSettings {
   auto_approve_new_listings: boolean;
   auto_approve_revisions: boolean;
   require_ai_for_auto_approve: boolean;
+  /** Computed by the server: the AI check is mandatory unless the server operator opted out. */
+  ai_required_effective?: boolean;
   min_photos: number;
   min_image_side_px: number;
   min_year: number;
@@ -372,6 +374,7 @@ export interface AutoModerationSettings {
   ai: {
     send_images: boolean;
     max_images: number;
+    max_total_images: number;
     timeout_seconds: number;
     min_confidence: number;
     only_if_candidate: boolean;
@@ -417,10 +420,20 @@ export interface ShadowReport {
   };
 }
 
+export interface AutoModerationReadiness {
+  ai_required: boolean;
+  ai_configured: boolean;
+  /** True only when live mode is active and nothing blocks an automatic approval. */
+  auto_approval_possible: boolean;
+  blockers: string[];
+  notes: string[];
+}
+
 export interface AutoModerationSettingsResponse {
   settings: AutoModerationSettings;
   effective_mode: AutoModerationMode;
   kill_switch_active: boolean;
+  readiness?: AutoModerationReadiness;
   environment: {
     disabled: boolean;
     kill_switch_forced: boolean;
@@ -428,6 +441,7 @@ export interface AutoModerationSettingsResponse {
     ai_provider: string;
     ai_model: string | null;
     ai_configured: boolean;
+    rules_only_allowed?: boolean;
     telegram_configured: boolean;
     admin_web_base_url_configured: boolean;
   };
