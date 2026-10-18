@@ -18,6 +18,13 @@ contact numbers and the exact location are never sent.
 
 Providers (selected by ``AUTO_MODERATION_AI_PROVIDER``): ``none`` (default),
 ``openai``, ``anthropic``, ``stub`` (tests / local development).
+
+OpenAI reasoning models (e.g. ``gpt-6-luna``, which defaults to ``medium``
+effort) count reasoning tokens against ``max_completion_tokens``; left at the
+default they can exhaust the 500-token budget before any JSON is written. Set
+``AUTO_MODERATION_AI_REASONING_EFFORT`` (e.g. ``none``) to send
+``reasoning_effort``. When unset the parameter is NOT sent, so models that do
+not accept it keep working unchanged.
 """
 
 from __future__ import annotations
@@ -158,29 +165,55 @@ def _user_content_text(title: str, description, n_images: int) -> str:
     )
 
 
+#: Values OpenAI documents for ``reasoning_effort``. Which of them a given model
+#: accepts is the model's business (an unsupported one is an HTTP 400 -> HOLD).
+REASONING_EFFORTS = frozenset({"none", "minimal", "low", "medium", "high", "xhigh", "max"})
+
+
+def ai_reasoning_effort() -> str | None:
+    """``AUTO_MODERATION_AI_REASONING_EFFORT`` (lower-cased), or ``None`` when
+    unset/blank. The value is NOT validated here; see ``_call_openai``."""
+    return (os.environ.get("AUTO_MODERATION_AI_REASONING_EFFORT") or "").strip().lower() or None
+
+
 def _call_openai(title, description, image_urls, timeout) -> dict:
     key = (os.environ.get("AUTO_MODERATION_OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY") or "").strip()
     model = ai_model_name() or "gpt-4o-mini"
+    effort = ai_reasoning_effort()
+    if effort is not None and effort not in REASONING_EFFORTS:
+        # A typo must neither be silently dropped (a reasoning model would then
+        # run at its costly default) nor be sent blindly: make no request.
+        return _result("unavailable", error="invalid_reasoning_effort")
     content: list[dict] = [{"type": "text", "text": _user_content_text(title, description, len(image_urls))}]
     for u in image_urls:
         content.append({"type": "image_url", "image_url": {"url": u}})
+    body = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": content},
+        ],
+        "response_format": {"type": "json_object"},
+        "max_completion_tokens": 500,
+    }
+    if effort is not None:  # unset -> parameter absent, behaviour unchanged
+        body["reasoning_effort"] = effort
     resp = requests.post(
         "https://api.openai.com/v1/chat/completions",
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-        json={
-            "model": model,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": content},
-            ],
-            "response_format": {"type": "json_object"},
-            "max_completion_tokens": 500,
-        },
+        json=body,
         timeout=timeout,
     )
     if resp.status_code != 200:
         return _result("unavailable", error=f"http_{resp.status_code}")
-    text = resp.json()["choices"][0]["message"]["content"]
+    choice = resp.json()["choices"][0]
+    if not isinstance(choice, dict):
+        return _result("uncertain", error="invalid_response")
+    if choice.get("finish_reason") == "length":
+        # The token budget ran out (visible or reasoning tokens): whatever text
+        # there is, it is not a complete verdict.
+        return _result("uncertain", error="truncated_response")
+    text = choice["message"]["content"]
     return normalize_response(json.loads(_strip_fence(text)), images_sent=len(image_urls))
 
 

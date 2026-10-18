@@ -365,6 +365,104 @@ def test_shadow_decisions_are_recorded_for_flagged_listings_too(app):
     assert _car_state(app, c["car_id"])["status"] == "pending"
 
 
+def _openai_luna(monkeypatch, responder):
+    """Real OpenAI adapter configured for gpt-6-luna / effort none, with the
+    network replaced by ``responder(request_body)`` (value or exception)."""
+    from kk.auto_moderation import ai
+
+    monkeypatch.setenv("AUTO_MODERATION_AI_PROVIDER", "openai")
+    monkeypatch.setenv("AUTO_MODERATION_OPENAI_API_KEY", "sk-DUMMY-not-a-real-key")
+    monkeypatch.setenv("AUTO_MODERATION_AI_MODEL", "gpt-6-luna")
+    monkeypatch.setenv("AUTO_MODERATION_AI_REASONING_EFFORT", "none")
+    sent: list[dict] = []
+
+    class _Resp:
+        def __init__(self, status, body):
+            self.status_code, self._body = status, body
+
+        def json(self):
+            return self._body
+
+    def fake_post(url, headers=None, json=None, timeout=None, **kw):
+        sent.append(json)
+        out = responder(json)
+        if isinstance(out, BaseException):
+            raise out
+        return _Resp(*out)
+
+    monkeypatch.setattr(ai.requests, "post", fake_post)
+    return sent
+
+
+def _luna_ok(body):
+    import json as _json
+
+    n = sum(1 for p in body["messages"][1]["content"] if p["type"] == "image_url")
+    verdict = {
+        "text": {"ok": True, "flags": []},
+        "images": [{"index": i, "is_car_photo": True, "flags": []} for i in range(n)],
+        "confidence": 0.95,
+    }
+    return 200, {"choices": [{"finish_reason": "stop", "message": {"content": _json.dumps(verdict)}}]}
+
+
+def test_shadow_mode_with_gpt_6_luna_records_would_approve_but_publishes_nothing(app, monkeypatch):
+    sent = _openai_luna(monkeypatch, _luna_ok)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "AUTO_APPROVE" and r["outcome"] == "shadow_would_approve"
+    assert sent and all(b["model"] == "gpt-6-luna" and b["reasoning_effort"] == "none" for b in sent)
+    assert _car_state(app, c["car_id"])["status"] == "pending"  # NOT published
+    assert _notifications(app, uid) == 0
+    runs = _runs(app, c["car_id"])
+    assert len(runs) == 1 and runs[0]["mode"] == "shadow" and not runs[0]["applied"]
+
+
+def test_db_live_without_environment_allowance_stays_shadow_with_openai(app, monkeypatch):
+    from kk.auto_moderation import config
+
+    _openai_luna(monkeypatch, _luna_ok)
+    with app.app_context():
+        config.save_settings({"mode": "live"})  # the environment does NOT allow live
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["outcome"] == "shadow_would_approve"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+    assert _runs(app, c["car_id"])[0]["mode"] == "shadow"
+
+
+@pytest.mark.parametrize(
+    "responder",
+    [
+        lambda b: (200, {"choices": [{"finish_reason": "length", "message": {"content": ""}}]}),  # reasoning ate the cap
+        lambda b: (200, {"choices": [{"finish_reason": "length", "message": {"content": '{"text": {"ok": tr'}}]}),
+        lambda b: (200, {"choices": [{"finish_reason": "stop", "message": {"content": "not json"}}]}),
+        lambda b: (200, {"choices": [{"finish_reason": "stop", "message": {"content": None}}]}),
+        lambda b: (400, {}),
+        lambda b: (429, {}),
+        lambda b: (500, {}),
+        lambda b: __import__("requests").Timeout(),
+        lambda b: __import__("requests").ConnectionError("down"),
+    ],
+    ids=["empty-length", "truncated-json", "prose", "null-content", "http400", "http429", "http500", "timeout",
+         "connection"],
+)
+def test_shadow_mode_with_gpt_6_luna_failures_never_approve_or_publish(app, monkeypatch, responder):
+    _openai_luna(monkeypatch, responder)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] in ("HOLD", "NEEDS_REVIEW")
+    assert r["outcome"] != "shadow_would_approve"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+    assert _notifications(app, uid) == 0
+    runs = _runs(app, c["car_id"])
+    assert len(runs) == 1 and runs[0]["mode"] == "shadow" and not runs[0]["applied"]
+    assert runs[0]["decision"] in ("HOLD", "NEEDS_REVIEW")
+
+
 def test_mode_off_does_nothing(app):
     uid, _ = _trusted_seller(app)
     c = _car(app, uid)

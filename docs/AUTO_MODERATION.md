@@ -55,7 +55,8 @@ before live mode is even considered.
 | Variable | Meaning |
 |---|---|
 | `AUTO_MODERATION_AI_PROVIDER` | `openai` or `anthropic` (`none` = disabled; `stub` only works when `APP_ENV` is `testing`) |
-| `AUTO_MODERATION_AI_MODEL` | model name for that provider (required for `anthropic`; recommended for `openai`) |
+| `AUTO_MODERATION_AI_MODEL` | model name for that provider (required for `anthropic`; **always set it for `openai`**: if unset the adapter falls back to `gpt-4o-mini`, a model OpenAI has scheduled for shutdown) |
+| `AUTO_MODERATION_AI_REASONING_EFFORT` | optional, OpenAI only: sent as `reasoning_effort` (see below). Unset = the parameter is not sent |
 | `AUTO_MODERATION_OPENAI_API_KEY` | key (falls back to `OPENAI_API_KEY`) |
 | `AUTO_MODERATION_ANTHROPIC_API_KEY` | key for Anthropic |
 
@@ -63,6 +64,100 @@ Check the Overview tab afterwards: "AI provider: <name> (<model>)" without
 "not configured". Keys are never returned by any endpoint. Choose the model and
 set a **billing limit in the provider's console**; this code has no
 currency-based budget.
+
+### OpenAI request, models and `AUTO_MODERATION_AI_REASONING_EFFORT`
+
+The OpenAI adapter calls **Chat Completions** (`POST
+https://api.openai.com/v1/chat/completions`), not the Moderation endpoint. Each
+request carries `model`, a system prompt, the listing text and `image_url`
+parts, `response_format: {"type": "json_object"}` and
+`max_completion_tokens: 500`.
+
+* **`AUTO_MODERATION_AI_REASONING_EFFORT` unset or blank (default):**
+  `reasoning_effort` is **not** in the request. Nothing changes for models
+  that do not accept the parameter.
+* **Set:** the value (lower-cased) is sent as `reasoning_effort`. Accepted
+  values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. Any other
+  value makes the adapter send **no request** and record `ai_unavailable`
+  (`invalid_reasoning_effort`, a HOLD), so a typo cannot silently run a
+  reasoning model at its costly default. Whether a given model accepts a given
+  value is the model's business: an unsupported one is an HTTP 400, which is
+  also a HOLD.
+* **`gpt-6-luna` must use `none`.** According to OpenAI's documentation its
+  default effort is `medium`, and reasoning tokens count against
+  `max_completion_tokens`. At the default, the 500-token budget can be used up
+  before any JSON is written. The answer is then empty or cut off
+  (`finish_reason: length`), recorded as `uncertain` (`truncated_response`), the
+  listing goes to review and the tokens are billed anyway. Configure
+  `AUTO_MODERATION_AI_MODEL=gpt-6-luna` together with
+  `AUTO_MODERATION_AI_REASONING_EFFORT=none`.
+* **A reply cut off by the token limit is never trusted**, even if the text
+  that arrived happens to be valid JSON. Empty, truncated, non-JSON, wrongly
+  shaped or incomplete answers are `uncertain` (review); HTTP errors and
+  timeouts are `unavailable` (HOLD). None of them can approve a listing.
+* **`json_object` compatibility with `gpt-6-luna` is NOT yet proven.** OpenAI
+  documents `json_object` as a general Chat Completions option, but the model's
+  own page lists only `structured_outputs`, and the adapter has never been run
+  against the real API (the tests replace the network). Until a **real API
+  test** has succeeded, treat compatibility with `json_object`,
+  `reasoning_effort: none` and image input as unverified. If the API rejects
+  the request the result is HTTP 400, a HOLD, never an approval.
+  Make that test with a single photo and a hard spend limit in place, before
+  the key is exposed to the pending backlog (below).
+
+### Before adding an API key while Shadow mode is running
+
+Shadow mode evaluates every pending listing continuously. The moment the
+service has a key and a model, the next evaluations call the provider and
+**spend money**. Setting the variables on the worker is enough: no dashboard
+action is needed.
+
+* **Decisions already recorded are not re-run.** A listing that already has a
+  completed decision (for example `NEEDS_REVIEW` with `ai_not_configured`) for
+  its exact content and mode keeps it; adding a key does not re-evaluate it, and
+  the dashboard's "Re-run checks" does nothing for such a run (the job reports
+  `done`). It is re-evaluated only if the seller changes the content.
+* **Everything without a current decision is evaluated, and may now call the
+  AI.** That includes: pending listings or edits never evaluated (for example
+  because their media was still processing, or the mode was Off); retryable
+  HOLDs that have come due; listings whose content changed after their last
+  decision. Switching mode (Off -> Shadow, Live -> Shadow) matters too: decisions
+  are stored per mode, so subjects with no decision **in the new mode** all look
+  new.
+* **Speed:** the sweep runs every 120 s and enqueues at most 100 subjects per run
+  (it looks at up to 500 pending listings and 500 pending edits), so a large
+  backlog drains at roughly 3,000 evaluations an hour, each costing up to
+  `ceil(photos / ai.max_images)` requests.
+* **Only listings the rules already pass reach the AI** while
+  `ai.only_if_candidate` is on (default), which bounds, but does not remove,
+  the cost.
+
+**Required: check the pending backlog before enabling AI evaluation.** Run these
+read-only queries against the production database (upper bounds: they ignore
+staleness and the `only_if_candidate` filter) and multiply the counts by the
+per-listing cost for your model and photo counts:
+
+```sql
+-- pending listings with no completed, non-HOLD decision in Shadow mode
+select count(*) from car c
+where c.status = 'pending' and c.is_active and c.media_status in ('ready', 'failed')
+  and not exists (
+    select 1 from listing_moderation_run r
+    where r.car_id = c.id and r.subject_type = 'listing' and r.mode = 'shadow'
+      and r.status = 'completed' and r.decision <> 'HOLD');
+
+-- pending edits of published listings
+select count(*) from car_revision where status = 'pending';
+
+-- retryable holds that would be retried
+select count(*) from listing_moderation_run
+where status = 'completed' and decision = 'HOLD' and next_retry_at is not null;
+```
+
+If the numbers are larger than you are prepared to pay for, lower
+`ai.max_total_images`, clear or process the backlog first, or keep the mode Off
+until the provider-side spend limit is in place. Do not add the key first and
+look afterwards.
 
 ### Image coverage
 
@@ -86,11 +181,41 @@ currency-based budget.
 | `ai.timeout_seconds` | 20 | per request; one evaluation stops after 3x this |
 | `retry.max_attempts` | 5 | each *retry* of a failed evaluation calls the provider again: worst case is attempts x requests per listing |
 | Content token | | an unchanged listing is evaluated once; duplicates and re-deliveries reuse the recorded decision |
-| Mode off / kill switch | | no AI calls at all |
+| Mode **Off** (dashboard, `super_admin`) | shadow | stops all automated evaluation, so no AI calls and no spend |
+| `AUTO_MODERATION_DISABLED=1` (server environment) | unset | same, and cannot be changed from the dashboard |
+| Provider-side spend limit | none | the only currency-based cap; set it in the provider's console |
 
 A rough ceiling per listing is `max_attempts x ceil(max_total_images / max_images)`
 requests, each carrying at most `max_images` photos. Estimate cost with your
 provider's current price list; none is assumed here.
+
+### What does and does NOT stop AI calls and spending
+
+**The kill switch does NOT stop AI calls or spending.** It only prevents
+*publishing*: it caps `live` mode down to `shadow` (as does a missing
+`AUTO_MODERATION_ALLOW_LIVE`). In shadow mode the engine still evaluates every
+pending listing, still calls the AI provider and still records decisions, with
+the kill switch on or off. (Earlier versions of this document said otherwise;
+that was wrong.) In the default shadow mode nothing is published anyway, so the
+kill switch changes nothing about cost.
+
+To stop automated AI evaluation and the spending:
+
+* **Mode Off** (Settings, `super_admin`; takes effect on the next evaluation,
+  no deploy): `engine.moderate` returns `skipped_off` before it claims anything
+  or contacts the provider, and the sweep enqueues nothing. Nothing is recorded
+  while it is off.
+* **`AUTO_MODERATION_DISABLED=1`** on the backend and the Celery worker (needs
+  a restart of those services): the same hard off, regardless of the saved
+  mode.
+* Evaluations already running, and tasks already queued, finish or return
+  `skipped_off`; at most the requests in flight are billed.
+* Removing the API key (or the provider variable) also stops spend, but
+  evaluations continue and are recorded as `ai_not_configured`. It does not
+  stop the engine.
+* The provider-side hard spend limit is the last line of defence: when it is
+  reached the provider answers HTTP 429, recorded as `ai_unavailable` (a HOLD
+  with retries), never as an approval.
 
 ## Payments
 
@@ -138,8 +263,9 @@ no paid-listing state and no free-allowance counter. Therefore:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `AUTO_MODERATION_DISABLED=1` | unset | hard off |
-| `AUTO_MODERATION_KILL_SWITCH=1` | unset | forced kill switch (cannot be released from the UI) |
+| `AUTO_MODERATION_DISABLED=1` | unset | hard off: stops all evaluation, **including AI calls and spend** |
+| `AUTO_MODERATION_KILL_SWITCH=1` | unset | forced kill switch: blocks publishing only (cannot be released from the UI); it does **not** stop evaluation, AI calls or spending |
+| `AUTO_MODERATION_AI_REASONING_EFFORT` | unset | OpenAI `reasoning_effort`; `none` for `gpt-6-luna`; unset = not sent |
 | `AUTO_MODERATION_ALLOW_LIVE=1` | unset | **required for live mode; leave unset** |
 | `AUTO_MODERATION_ALLOW_RULES_ONLY=1` | unset | lets a server operator lift the AI requirement; never from the dashboard; not recommended |
 | `AUTO_MODERATION_ALERT_EMAILS`, `AUTO_MODERATION_TELEGRAM_BOT_TOKEN`, `AUTO_MODERATION_TELEGRAM_CHAT_ID`, `ADMIN_WEB_BASE_URL` | unset | alerts (no PII in them) |
@@ -206,7 +332,10 @@ every other write behind its DDL.
 2. Verify: Overview tab shows **Effective mode: Shadow**, "Can anything be
    auto-approved right now? No", kill switch released; the Decisions tab starts
    filling as sellers post. Nothing is published by automation.
-3. If the new code misbehaves, press the **kill switch** (instant, no deploy).
+3. If the new code misbehaves, press the **kill switch** (instant, no deploy) to
+   guarantee nothing is published. To stop evaluation, AI calls and spending
+   as well, set **Mode Off** or `AUTO_MODERATION_DISABLED=1` (see "What does and
+   does NOT stop AI calls and spending").
 
 ### Rollback
 
@@ -232,6 +361,12 @@ every other write behind its DDL.
   odometer or VIN, so those stay human decisions.
 * Without an AI provider, shadow mode cannot show what automation would approve.
 * No currency-based spend cap exists; use the controls above plus the provider's own limit.
+* The kill switch does not stop AI calls or spend; only Mode Off or `AUTO_MODERATION_DISABLED=1` do.
+* The OpenAI adapter has not been exercised against the real API. `json_object`,
+  `reasoning_effort: none` and image input for `gpt-6-luna` need a real test
+  (one photo, spend limit in place) before the key meets the pending backlog.
+* Adding an API key does not re-run decisions that already exist for the same
+  content; "Re-run checks" is a no-op for them.
 * The settings-row kill-switch ordering relies on the settings row existing,
   which is always true once live mode has been saved.
 * Automatic approval of edits to published listings re-uses the same checks;
@@ -240,6 +375,11 @@ every other write behind its DDL.
 ## Tests
 
 * `kk/tests/test_auto_moderation_rules.py`, `kk/tests/test_auto_moderation_engine.py`: SQLite, run in CI.
+* `kk/tests/test_auto_moderation_openai_adapter.py`: the OpenAI request (with and
+  without `reasoning_effort`, `gpt-6-luna` + `none`) and fail-closed handling of
+  empty, truncated, invalid, HTTP-error and timeout responses. The network is
+  always replaced and the key is a dummy; these tests do not prove the real API
+  accepts the request.
 * `kk/tests/test_auto_moderation_postgres.py`: real concurrency on PostgreSQL;
   skipped unless `CARNET_PG_TEST_URL` is set (local server only; the database is
   dropped and re-created; also needs `CARNET_PG_TEST_CONFIRM_DISPOSABLE=1`).
