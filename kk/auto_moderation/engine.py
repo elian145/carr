@@ -49,6 +49,7 @@ from .config import effective_mode, kill_switch_active, load_settings
 from .rules import (
     CHECK_NAMES,
     HOLD,
+    INFO,
     REVIEW,
     Signal,
     ai_signals,
@@ -252,6 +253,53 @@ def _claim(subject: Subject, mode: str, settings: dict, trigger: str):
 # ---------------------------------------------------------------------------
 
 
+def _reusable_ai(
+    subject: Subject, fingerprint: str | None, urls: list[str], cover_needed: bool
+) -> dict | None:
+    """A definitive (``ok`` / ``flagged``) provider answer already recorded for
+    THIS subject about exactly the same question (same text, same ordered photo
+    set, same provider / model / prompt / batching: see ``ai.input_fingerprint``).
+
+    Content tokens also change for things the provider never sees (a cover
+    crop, a video, a media item changing state),
+    and a re-check after a late media change must not pay for the same answer
+    twice. ``uncertain`` / ``unavailable`` / ``disabled`` are never reused, so a
+    retry still asks the provider. The reused result is judged by the CURRENT
+    settings and re-verified against the content at apply time exactly like a
+    fresh one."""
+    if not fingerprint:
+        return None
+    prior = (
+        ListingModerationRun.query.filter(
+            ListingModerationRun.subject_key == subject.key,
+            ListingModerationRun.content_token != subject.token,
+            ListingModerationRun.status == "completed",
+        )
+        .order_by(ListingModerationRun.id.desc())
+        .limit(10)
+        .all()
+    )
+    expected = len(dict.fromkeys(u for u in urls if isinstance(u, str) and u))
+    for r in prior:
+        stored = r.ai if isinstance(r.ai, dict) else {}
+        if stored.get("input_hash") == fingerprint and stored.get("status") in ("ok", "flagged"):
+            # Belt and braces: the fingerprint already pins the photo set, but a
+            # stored answer is only ever reused if it covered EVERY photo (and the
+            # cover when it was due) -- never a partial inspection.
+            if (
+                stored.get("images_expected") != expected
+                or stored.get("images_checked") != expected
+                or (bool(stored.get("cover_expected")) and not stored.get("cover_checked"))
+                or bool(stored.get("cover_expected")) != bool(cover_needed and expected)
+            ):
+                continue
+            reused = dict(stored)
+            reused["reused_from_run"] = r.public_id
+            reused["calls"] = 0
+            return reused
+    return None
+
+
 def evaluate(subject: Subject, settings: dict) -> tuple[list[Signal], dict, dict]:
     facts = build_facts(subject, settings)
     signals = run_rules(facts, settings, utcnow().year)
@@ -261,13 +309,42 @@ def evaluate(subject: Subject, settings: dict) -> tuple[list[Signal], dict, dict
     if not needed:
         ai = {"status": "not_needed"}
     elif candidate or not ai_cfg.get("only_if_candidate", True):
-        ai = ai_mod.moderate(
+        fingerprint = ai_mod.input_fingerprint(
             title=title, description=description, image_urls=urls, settings=settings, cover_needed=cover_needed
         )
+        ai = _reusable_ai(subject, fingerprint, urls, cover_needed)
+        if ai is None:
+            ai = ai_mod.moderate(
+                title=title, description=description, image_urls=urls, settings=settings, cover_needed=cover_needed
+            )
+            if fingerprint and ai.get("status") in ("ok", "flagged"):
+                ai["input_hash"] = fingerprint
     else:
-        ai = {"status": "skipped", "reason": "rules_already_flag"}
+        # Intentional (``ai.only_if_candidate``): a listing the rules already
+        # send to a human costs no AI call. Say so plainly in the record, so
+        # nobody reads "no AI flag" as "the photos were looked at and are fine".
+        ai = {
+            "status": "skipped",
+            "reason": "rules_already_flag",
+            "images_inspected": False,
+            "images_expected": len(urls),
+            "images_checked": 0,
+            "calls": 0,
+        }
     if ai["status"] != "skipped":
         signals += ai_signals(ai, settings)
+    else:
+        # INFO never blocks and never approves: it is recorded for the reviewer
+        # (the decision is already NEEDS_REVIEW/HOLD because of the rule above).
+        signals.append(
+            Signal(
+                "ai_images_not_inspected",
+                INFO,
+                "ai",
+                False,
+                f"AI skipped, rules already flag: 0/{len(urls)} photos inspected",
+            )
+        )
     ran = tuple(
         n
         for n in CHECK_NAMES

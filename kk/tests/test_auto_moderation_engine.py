@@ -787,6 +787,189 @@ def test_rules_only_approval_needs_server_operator_opt_in(app, client, monkeypat
     assert _moderate(app, "listing", c2["car_id"])["outcome"] == "published"
 
 
+def _add_damage_photos(app, car_id, n=2, start=3):
+    """Attach `n` photos of kind "damage" (the Damaged Parts section) to a listing
+    that already has `start` gallery photos. Returns their URLs."""
+    from kk.models import CarImage, CarMediaItem, db
+    from kk.time_utils import utcnow
+
+    with app.app_context():
+        for i in range(n):
+            cid = f"dmg{i}-{uuid.uuid4().hex[:6]}"
+            db.session.add(
+                CarMediaItem(
+                    car_id=car_id, kind="image", client_media_id=cid, status="attached",
+                    is_cover=False, sort_order=start + i, phase_a_completed_at=utcnow(),
+                )
+            )
+            db.session.add(
+                CarImage(
+                    car_id=car_id, image_url=f"{_CDN}/{car_id}_d{i}.jpg", is_primary=False,
+                    order=start + i, kind="damage", source_media_id=cid, image_width=1600, image_height=1200,
+                )
+            )
+        db.session.commit()
+    return [f"{_CDN}/{car_id}_d{i}.jpg" for i in range(n)]
+
+
+def _photo_verdicts(urls, *, not_car=(), mutate=None, flags=None):
+    """An AI reply for `urls`: every photo is a car except those whose URL ends
+    with one of `not_car`; `mutate(item)` / `flags` damage chosen verdicts."""
+    items = []
+    for i, u in enumerate(urls):
+        item = {"index": i, "is_car_photo": not any(u.endswith(s) for s in not_car), "flags": []}
+        if mutate is not None and any(u.endswith(s) for s in not_car):
+            mutate(item)
+        if flags is not None and i == len(urls) - 1:
+            item["flags"] = flags
+        items.append(item)
+    return {"text": {"ok": True, "flags": []}, "images": items, "confidence": 0.95, "notes": "x"}
+
+
+def _run_row(app, car_id):
+    from kk.models import ListingModerationRun
+
+    with app.app_context():
+        r = ListingModerationRun.query.filter_by(car_id=car_id).order_by(ListingModerationRun.id.desc()).first()
+        return dict(decision=r.decision, outcome=r.outcome, reasons=list(r.reasons or []), ai=dict(r.ai or {}))
+
+
+def test_valid_gallery_and_damage_photos_all_reach_the_ai_and_pass(app):
+    from kk.auto_moderation import ai
+
+    seen = []
+    ai.STUB_RESPONSE = lambda t, d, urls: seen.append(list(urls)) or _photo_verdicts(urls)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    damage = _add_damage_photos(app, c["car_id"], 2)
+    r = _moderate(app, "listing", c["car_id"])
+    sent = [u for batch in seen for u in batch]  # 5 photos go out in batches of 4 + 1
+    assert [len(b) for b in seen] == [4, 1]
+    assert sent[0].endswith("_0.jpg") and sent[-2:] == damage and len(sent) == 5  # cover first, damage included
+    assert r["decision"] == "AUTO_APPROVE" and r["outcome"] == "shadow_would_approve"
+    row = _run_row(app, c["car_id"])
+    assert row["ai"]["status"] == "ok" and row["ai"]["images_expected"] == 5 and row["ai"]["images_checked"] == 5
+    assert _car_state(app, c["car_id"])["status"] == "pending"  # shadow: nothing published
+
+
+@pytest.mark.parametrize("live", [False, True], ids=["shadow", "live"])
+def test_unrelated_photo_in_damaged_parts_goes_to_manual_review(app, monkeypatch, live):
+    from kk.auto_moderation import ai
+
+    if live:
+        _live(monkeypatch, app)
+    ai.STUB_RESPONSE = lambda t, d, urls: _photo_verdicts(urls, not_car=("_d1.jpg",))
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    _add_damage_photos(app, c["car_id"], 2)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    row = _run_row(app, c["car_id"])
+    assert "ai_flagged" in [x["code"] for x in row["reasons"]]
+    assert row["ai"]["status"] == "flagged" and "not_a_car" in row["ai"]["image_flags"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"  # never approved, never rejected
+    assert _notifications(app, uid) == 0
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [lambda i: i.pop("is_car_photo"), lambda i: i.__setitem__("is_car_photo", None),
+     lambda i: i.__setitem__("is_car_photo", "false"), lambda i: i.__setitem__("is_car_photo", 0)],
+    ids=["missing", "null", "string", "number"],
+)
+def test_malformed_verdict_for_a_damage_photo_is_never_auto_approved_in_live(app, monkeypatch, mutate):
+    from kk.auto_moderation import ai
+
+    _live(monkeypatch, app)
+    ai.STUB_RESPONSE = lambda t, d, urls: _photo_verdicts(urls, not_car=("_d1.jpg",), mutate=mutate)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    _add_damage_photos(app, c["car_id"], 2)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    row = _run_row(app, c["car_id"])
+    assert [x["code"] for x in row["reasons"]] == ["ai_uncertain"]
+    assert row["ai"]["status"] == "uncertain" and row["ai"]["error"] == "invalid_image_verdict"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_unknown_ai_flag_goes_to_manual_review_in_live(app, monkeypatch):
+    from kk.auto_moderation import ai
+
+    _live(monkeypatch, app)
+    ai.STUB_RESPONSE = lambda t, d, urls: _photo_verdicts(urls, flags=["something_new"])
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    row = _run_row(app, c["car_id"])
+    assert "unrecognized_flag" in next(x for x in row["reasons"] if x["code"] == "ai_flagged")["detail"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+@pytest.mark.parametrize(
+    "seller, kwargs",
+    [("unproven", {}), ("trusted", {"description": "western union only, guaranteed profit"})],
+    ids=["seller_unproven", "scam_wording"],
+)
+def test_ai_skip_is_explicit_in_the_moderation_record(app, seller, kwargs):
+    """ai.only_if_candidate stays ON by default: a listing the rules already
+    flag makes no AI call, and the record says plainly that its photos were
+    NOT inspected (so "no AI flag" is never read as "photos looked fine")."""
+    from kk.auto_moderation import ai, config
+
+    assert config.DEFAULTS["ai"]["only_if_candidate"] is True
+    calls = []
+    ai.STUB_RESPONSE = lambda *a: calls.append(1) or {"text": {"ok": True}, "images": [], "confidence": 1}
+    uid, _ = _user(app) if seller == "unproven" else _trusted_seller(app)
+    c = _car(app, uid, **kwargs)
+    _add_damage_photos(app, c["car_id"], 2)
+    r = _moderate(app, "listing", c["car_id"])
+    assert calls == []  # no AI call, no extra spend
+    assert r["decision"] == "NEEDS_REVIEW"
+    row = _run_row(app, c["car_id"])
+    ai_rec = row["ai"]
+    assert ai_rec["status"] == "skipped" and ai_rec["reason"] == "rules_already_flag"
+    assert ai_rec["images_inspected"] is False and ai_rec["images_checked"] == 0 and ai_rec["calls"] == 0
+    assert ai_rec["images_expected"] == 5  # gallery + damage photos that were NOT looked at
+    note = next(x for x in row["reasons"] if x["code"] == "ai_images_not_inspected")
+    assert note["level"] == "info" and note["check"] == "ai" and "0/5 photos inspected" in note["detail"]
+    # the rule that caused the skip is still the (blocking) reason
+    assert any(x["level"] in ("review", "hold") for x in row["reasons"])
+    assert ai_rec["images_expected"] == 5 and _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_info_note_never_approves_a_skipped_listing_even_in_live(app, monkeypatch):
+    from kk.auto_moderation import ai
+
+    _live(monkeypatch, app)
+    ai.STUB_RESPONSE = lambda *a: (_ for _ in ()).throw(AssertionError("AI must not be called"))
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, description="western union only, guaranteed profit")
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_ai_still_runs_when_rules_pass_and_when_only_if_candidate_is_turned_off(app):
+    """The skip is the only behaviour change: opting out still calls the AI."""
+    from kk.auto_moderation import ai
+
+    calls = []
+    ai.STUB_RESPONSE = lambda t, d, urls: calls.append(len(urls)) or _photo_verdicts(urls)
+    uid, _ = _user(app)  # unproven -> rules flag
+    c = _car(app, uid)
+    _moderate(app, "listing", c["car_id"])
+    assert calls == []
+    _settings(app, ai={"only_if_candidate": False})
+    c2 = _car(app, uid)
+    _moderate(app, "listing", c2["car_id"])
+    assert calls == [3]
+    row = _run_row(app, c2["car_id"])
+    assert row["ai"]["status"] == "ok"
+    assert "ai_images_not_inspected" not in [x["code"] for x in row["reasons"]]
+
+
 def test_ai_is_skipped_when_rules_already_flag(app, monkeypatch):
     from kk.auto_moderation import ai
 

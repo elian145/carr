@@ -355,7 +355,8 @@ def test_normalize_response_ok_and_flagged():
     bad = _good()
     bad["text"] = {"ok": False, "flags": ["scam", "made_up_flag"]}
     r = ai.normalize_response(bad, images_sent=2)
-    assert r["status"] == "flagged" and r["text_flags"] == ["scam"]
+    # an unknown flag is no longer dropped silently: it is an objection
+    assert r["status"] == "flagged" and r["text_flags"] == ["scam", "unrecognized_flag"]
 
 
 @pytest.mark.parametrize(

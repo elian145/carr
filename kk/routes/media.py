@@ -361,6 +361,28 @@ def _get_media_target_car(car_id: str, current_user):
     return shadow
 
 
+def _recheck_moderation(car) -> None:
+    """Ask automated moderation to look at ``car`` again after a COMMITTED
+    change to its photos / videos (see
+    ``auto_moderation.triggers.request_moderation_after_media_change``).
+
+    Fire-and-forget and never raises: the seller's media request has already
+    succeeded, and a lost request is recovered by the moderation sweep. Does
+    nothing while declared uploads are still processing, for a listing that
+    has no moderation subject (e.g. a published listing -- its edits go
+    through the revision workflow), or when moderation is off."""
+    try:
+        from ..auto_moderation.triggers import request_moderation_after_media_change
+
+        request_moderation_after_media_change(car.id)
+    except Exception:
+        try:
+            db.session.rollback()
+        except Exception:
+            pass
+        current_app.logger.warning("moderation recheck after media change failed", exc_info=True)
+
+
 def _normalize_car_image_kind(raw) -> str:
     """Return 'damage' or 'listing' for stored CarImage.kind."""
     s = (str(raw or "")).strip().lower()
@@ -541,6 +563,7 @@ def set_car_primary_image(car_id: str):
             return jsonify({"message": "Image not found on this listing"}), 404
 
         db.session.commit()
+        _recheck_moderation(car)
         log_user_action(current_user, "set_primary_image", "car", car.public_id)
 
         return jsonify({"message": "Primary image updated", "image_url": primary_url}), 200
@@ -620,6 +643,7 @@ def update_car_image_layout(car_id: str):
                     image.is_primary = image.id == requested_primary
 
         db.session.commit()
+        _recheck_moderation(car)
         return jsonify({"images": [image.to_dict() for image in updated]}), 200
     except Exception:
         db.session.rollback()
@@ -832,6 +856,7 @@ def delete_car_image(car_id: str, image_id: int):
                 next_image.is_primary = True
 
         db.session.commit()
+        _recheck_moderation(car)
 
         _delete_media_storage_object(image_url)
 
@@ -879,6 +904,7 @@ def delete_car_video(car_id: str, video_id: int):
         video_url = video.video_url
         db.session.delete(video)
         db.session.commit()
+        _recheck_moderation(car)
 
         _delete_media_storage_object(video_url)
 
@@ -1803,6 +1829,7 @@ def attach_transcoded_video():
             current_app.logger.exception("attach_transcoded_video: DB commit failed")
             return jsonify({"message": "Failed to attach video"}), 500
 
+        _recheck_moderation(car)
         log_user_action(current_user, "attach_transcoded_video", "car", car.public_id)
 
         # Best-effort cleanup -- never rolls back the successful attach
@@ -2113,6 +2140,8 @@ def upload_car_images(car_id: str):
         if not uploaded_images:
             detail = skip_reasons[0] if skip_reasons else "file type/size"
             return jsonify({"message": f"No valid images were uploaded ({detail})."}), 400
+
+        _recheck_moderation(car)
 
         log_user_action(current_user, "upload_images", "car", car.public_id)
 
@@ -2428,6 +2457,8 @@ def attach_car_images(car_id: str):
                 continue
 
         db.session.commit()
+        if attached:
+            _recheck_moderation(car)
 
         try:
             primary = _pick_primary_listing_url(car)
@@ -2667,6 +2698,7 @@ def upload_car_videos(car_id: str):
             return jsonify({"message": detail, "videos": [], "rejected": rejected}), 400
 
         db.session.commit()
+        _recheck_moderation(car)
         log_user_action(current_user, "upload_videos", "car", car.public_id)
 
         return jsonify(

@@ -120,8 +120,8 @@ action is needed.
 * **Everything without a current decision is evaluated, and may now call the
   AI.** That includes: pending listings or edits never evaluated (for example
   because their media was still processing, or the mode was Off); retryable
-  HOLDs that have come due; listings whose content changed after their last
-  decision. Switching mode (Off -> Shadow, Live -> Shadow) matters too: decisions
+  HOLDs that have come due; listings whose content (including photos) changed
+  after their last decision. Switching mode (Off -> Shadow, Live -> Shadow) matters too: decisions
   are stored per mode, so subjects with no decision **in the new mode** all look
   new.
 * **Speed:** the sweep runs every 120 s and enqueues at most 100 subjects per run
@@ -172,6 +172,89 @@ look afterwards.
 * Only `https://` photo URLs are sent; with `ai.send_images` off nothing is
   uploaded and no listing can be approved (coverage is incomplete).
 
+### Strict photo validation and unknown flags
+
+The gallery and the "Damaged parts" photos are both sent (cover first); the
+request does not say which is which. The prompt tells the model that damaged,
+dented or crashed cars and close-ups of damaged parts are **expected** car photos,
+but that anything that is not a vehicle or a vehicle part (selfies, food,
+screenshots, documents, blank images, memes ...) is **not a car photo wherever it
+was uploaded, including in Damaged parts**, and must get `is_car_photo=false` and
+the flag `not_a_car`.
+
+The reply is checked, not trusted:
+
+* **Every photo needs a verdict, and `is_car_photo` must be a real JSON boolean.**
+  A missing, `null`, string (`"true"`) or numeric (`1`) value, a non-integer or
+  boolean `index`, or a missing verdict: the whole reply is
+  `uncertain` (`invalid_image_verdict` / `invalid_response`) and the listing goes
+  to **manual review**. `false` adds `not_a_car` and also goes to review.
+* **Unknown flags are never dropped.** A flag outside the allowed list, a
+  non-string flag, or a `flags` value that is not a list (text or per photo) counts
+  as an objection: it adds `unrecognized_flag` (the model's own string is not
+  stored) and the listing goes to review. A non-list `flags` makes the reply
+  `uncertain`.
+
+### When the AI did not look at the photos: `ai_images_not_inspected`
+
+With `ai.only_if_candidate` on (default) the AI is **intentionally not called**
+for a listing the deterministic rules already send to a person (an unproven
+seller, a high posting rate, contact details in the text ...). That is by design
+and costs nothing, but "no AI flag" must never be read as "the photos were
+checked and are fine". Such a run therefore records:
+
+* `ai.status = "skipped"`, `ai.reason = "rules_already_flag"`,
+  `ai.images_inspected = false`, `ai.images_expected = N`, `ai.images_checked = 0`,
+  `ai.calls = 0`;
+* an **info-level** reason `ai_images_not_inspected` ("AI skipped, rules already
+  flag: 0/N photos inspected"), shown in the dashboard's "Why" list. Info reasons
+  never block and never approve; the decision is already NEEDS_REVIEW / HOLD
+  because of the rule that caused the skip. A moderator should look at the photos
+  themselves for these listings.
+
+### Photos changed after the listing was evaluated
+
+A decision is about one **content token** (fields, photos with kind / cover /
+crop, videos, media state). The media endpoints (`kk/routes/media.py`: attach,
+upload, delete, cover, layout, video upload / delete, transcoded-video attach)
+change that content without touching the listing row, so after every
+**committed** change they now ask moderation to look again
+(`triggers.request_moderation_after_media_change`):
+
+* Only a subject that exists is checked: a new listing under review, or a
+  **submitted** edit of a published listing. A published listing's own media edits
+  go to its hidden working copy (the revision workflow) and are never judged
+  until the edit is submitted; the live gallery never changes before approval.
+* **Nothing is judged while declared uploads are still processing**
+  (`media_status = processing`); the upload finishing triggers the evaluation as
+  before.
+* The job is **delayed 30 s** and idempotent. A burst of changes (five photos in a
+  row) produces five jobs but one evaluation: the first judges the final gallery,
+  the rest find that exact content already decided. Unchanged content (same cover
+  re-selected, a photo that is already attached) creates no run and no AI call.
+* **The AI answer is reused when the question is identical.** A new token the
+  provider cannot see (a crop, a video, a media item changing state) re-records the decision but reuses the earlier `ok` / `flagged` answer
+  for the same text, ordered photo set, provider, model, prompt and batching
+  (`ai.input_hash`; the run shows `ai.reused_from_run` and `ai.calls = 0`, and the
+  stats count no provider call). `uncertain` / `unavailable` answers are never
+  reused, and different photos are never covered by an old answer.
+* An approval decided for older content can never be applied to newer content:
+  apply compares the token again and drops the decision as `stale`; a photo that
+  lands while the AI is still looking discards that verdict and re-queues the
+  listing.
+* Deleting a photo the listing **declared when it was created** leaves its media
+  item without a photo; the existing rule (`media_missing`) sends that listing to
+  review. Photos attached later are not part of that declaration.
+
+**Sweep backstop.** Besides listings with no current decision, every 120 s the
+sweep recomputes the content token of a **rotating window of at most 50**
+subjects that already have a decision and enqueues those whose token no run has
+seen (`token_checked` / `token_stale` in its result). It costs a few indexed reads
+per subject and never an AI call itself; a subject that is being evaluated, has
+processing media or no longer exists is skipped, and nothing is enqueued for
+unchanged content. With 50 or fewer pending subjects each is checked every run;
+a queue of N is covered in `ceil(N / 50)` runs.
+
 ### Spend controls
 
 | Control | Default | Effect |
@@ -181,6 +264,8 @@ look afterwards.
 | `ai.timeout_seconds` | 20 | per request; one evaluation stops after 3x this |
 | `retry.max_attempts` | 5 | each *retry* of a failed evaluation calls the provider again: worst case is attempts x requests per listing |
 | Content token | | an unchanged listing is evaluated once; duplicates and re-deliveries reuse the recorded decision |
+| AI answer reuse | | changed content that gives the provider the identical question (same text, photo set, model, prompt) reuses the earlier `ok` / `flagged` answer: no request |
+| Media-change debounce | 30 s | a burst of photo changes costs one evaluation, not one per change |
 | Mode **Off** (dashboard, `super_admin`) | shadow | stops all automated evaluation, so no AI calls and no spend |
 | `AUTO_MODERATION_DISABLED=1` (server environment) | unset | same, and cannot be changed from the dashboard |
 | Provider-side spend limit | none | the only currency-based cap; set it in the provider's console |
@@ -357,6 +442,11 @@ every other write behind its DDL.
 * No payment system exists, so payment can only ever be "not required" or
   "needs a verifier" (above).
 * Videos are never inspected; a listing with an unapproved video goes to review.
+* Media changes made **outside** `kk/routes/media.py` (an admin editing a listing's
+  media directly, scripts) do not request a re-check by
+  themselves; the sweep's token backstop finds them within a few runs.
+* The dashboard list's reason chips show only review/hold reasons; the info-level
+  `ai_images_not_inspected` appears in the detail "Why" list only.
 * The AI sees photos and text only; it cannot verify identity, ownership,
   odometer or VIN, so those stay human decisions.
 * Without an AI provider, shadow mode cannot show what automation would approve.
@@ -375,6 +465,13 @@ every other write behind its DDL.
 ## Tests
 
 * `kk/tests/test_auto_moderation_rules.py`, `kk/tests/test_auto_moderation_engine.py`: SQLite, run in CI.
+* `kk/tests/test_auto_moderation_photo_validation.py`: strict `is_car_photo` / index
+  validation, unknown flags, prompt content, and the end-to-end gallery plus
+  damage-photo flow with a fake provider.
+* `kk/tests/test_auto_moderation_late_media.py`: photos attached, deleted, replaced,
+  re-ordered or cropped after evaluation (real media endpoints), debounce and
+  idempotence, AI-answer reuse, upload races, stale approvals, revisions, shadow
+  mode, rules-first skipping and the sweep's bounded token backstop.
 * `kk/tests/test_auto_moderation_openai_adapter.py`: the OpenAI request (with and
   without `reasoning_effort`, `gpt-6-luna` + `none`) and fail-closed handling of
   empty, truncated, invalid, HTTP-error and timeout responses. The network is

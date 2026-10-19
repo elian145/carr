@@ -68,7 +68,9 @@ def summary(days: int = 30) -> dict[str, Any]:
         if r.status == "error" or codes & set(_SERVICE_FAILURE_CODES):
             failed += 1
         ai = r.ai or {}
-        if ai.get("status") in ("ok", "flagged", "uncertain", "unavailable"):
+        # A result carried over from an earlier run for identical input
+        # (``engine._reusable_ai``) made no provider request.
+        if ai.get("status") in ("ok", "flagged", "uncertain", "unavailable") and not ai.get("reused_from_run"):
             ai_calls += 1
             if ai["status"] == "unavailable":
                 ai_unavailable += 1
