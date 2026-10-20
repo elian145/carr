@@ -100,8 +100,10 @@ test.describe("auto moderation - authenticated", () => {
 
     const scamRow = page.getByRole("row").filter({ hasText: s.listings.scam.title });
     await expect(scamRow).toContainText("Needs review");
-    await expect(scamRow).toContainText("scam_language");
+    // the queue shows the readable reason; the stable code is kept in the detail view
+    await expect(scamRow).toContainText("Possible scam wording");
     await scamRow.getByRole("button", { name: "Inspect" }).click();
+    await expect(page.getByTestId("am-reason-scam_language")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Why" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "History" })).toBeVisible();
     await expect(page.getByText("AI output is advisory only")).toBeVisible();

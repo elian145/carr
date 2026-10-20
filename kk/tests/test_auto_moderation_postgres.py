@@ -243,7 +243,11 @@ def _ok_ai(urls):
 def _lcar(app, uid, **kw):
     """A listing with its own description: identical text on several of one seller's
     listings is itself a review signal, which would hide the race under test."""
-    kw.setdefault("description", f"Well kept, one owner, full service book, ref {uuid.uuid4().hex[:10]}.")
+    # Letters only: a random hex token can hold 9+ consecutive digits, which the
+    # (correct) phone-number rule reads as contact details and sends to review,
+    # randomly hiding the race under test.
+    ref = "".join(chr(ord("a") + int(ch, 16) % 26) for ch in uuid.uuid4().hex[:10])
+    kw.setdefault("description", f"Well kept, one owner, full service book, ref {ref}.")
     return _car(app, uid, **kw)
 
 

@@ -110,6 +110,257 @@ def _clean(v) -> str:
     return str(v if v is not None else "").strip()
 
 
+# ---------------------------------------------------------------------------
+# Value normalisation (pure; tolerant of None, defaults, strings and units)
+# ---------------------------------------------------------------------------
+
+_KM_PER_MILE = 1.609344
+_NUMBER_WITH_UNIT = re.compile(r"^\s*([+-]?\d+(?:[.,]\d+)?)\s*([^\d\s][^\d]*)?\s*$")
+
+
+def _num_unit(v) -> tuple[float | None, str]:
+    """``(number, lowercase unit)`` from a number or a string such as
+    ``"1.6 L"`` / ``"72,000 km"``. ``(None, "")`` when there is no usable
+    number (bools, NaN, text). Thousands separators ("72,000") are accepted
+    only when unambiguous (a comma followed by exactly three digits)."""
+    if v is None or isinstance(v, bool):
+        return None, ""
+    if isinstance(v, (int, float)):
+        x = float(v)
+        return (x, "") if x == x and x not in (float("inf"), float("-inf")) else (None, "")
+    text = str(v).strip()
+    if not text:
+        return None, ""
+    text = re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", text)
+    m = _NUMBER_WITH_UNIT.match(text.replace("\u00a0", " "))
+    if not m:
+        return None, ""
+    try:
+        x = float(m.group(1).replace(",", "."))
+    except ValueError:
+        return None, ""
+    return x, (m.group(2) or "").strip().lower().rstrip(".")
+
+
+def _to_int(v) -> int | None:
+    x, unit = _num_unit(v)
+    if x is None or unit or x != int(x):
+        return None
+    return int(x)
+
+
+def _mileage_km(v) -> int | None:
+    """Odometer reading in kilometres. The database stores kilometres (the app
+    converts miles before sending); a string with an explicit ``mi`` / ``miles``
+    unit is converted too. Anything else that is not a plain number is
+    unknown (``None``), never guessed."""
+    x, unit = _num_unit(v)
+    if x is None:
+        return None
+    if unit in ("", "km", "kms", "kilometer", "kilometers", "kilometre", "kilometres"):
+        return int(round(x))
+    if unit in ("mi", "mile", "miles"):
+        return int(round(x * _KM_PER_MILE))
+    return None
+
+
+_CONDITION_ALIASES = {
+    "new": "new",
+    "brand new": "new",
+    "جديد": "new",
+    "جديدة": "new",
+    "used": "used",
+    "pre owned": "used",
+    "preowned": "used",
+    "second hand": "used",
+    "secondhand": "used",
+    "مستعمل": "used",
+    "مستعملة": "used",
+    "certified": "certified",
+    "certified pre owned": "certified",
+    "cpo": "certified",
+}
+
+
+def _token(v) -> str:
+    """Lowercase, separators (``-`` ``_`` ``/`` ``+``) collapsed to one space."""
+    return re.sub(r"[\s_\-/+]+", " ", _clean(v).lower()).strip()
+
+
+def normalize_condition(v) -> str | None:
+    """Canonical listing condition: ``new`` | ``used`` | ``certified`` |
+    ``other`` (non-empty, not recognised) | ``None`` (blank / placeholder).
+
+    ``new`` is returned only for an explicit New value, so a vehicle is never
+    treated as brand new because it is recent or low-mileage."""
+    t = _token(v)
+    if t in _PLACEHOLDERS:
+        return None
+    return _CONDITION_ALIASES.get(t, "other")
+
+
+# Powertrain classification ---------------------------------------------------
+
+#: Values that mean a pure battery-electric vehicle, and nothing else.
+_BEV_VALUES = frozenset(
+    {
+        "electric",
+        "ev",
+        "bev",
+        "battery electric",
+        "battery electric vehicle",
+        "pure electric",
+        "full electric",
+        "all electric",
+        "electric vehicle",
+        "كهربائية",
+        "كهربائي",
+        "كهرباء",
+    }
+)
+#: Plain combustion fuels (no electric component).
+_COMBUSTION_VALUES = frozenset(
+    {"gasoline", "gas", "petrol", "benzin", "diesel", "lpg", "cng", "gasoline lpg", "petrol lpg"}
+)
+#: Anything that suggests an electrified-but-combustion-assisted powertrain:
+#: hybrid / plug-in / range extender / e-power ... Such a vehicle legitimately
+#: has an engine, so it is never "a pure EV".
+_HYBRID_TERMS_LATIN = (
+    r"(?:hybrid|phev|mhev|hev|erev|reev|rex|range\s*-?\s*extender|e[\s-]?power|plug[\s-]*in|fuel\s*cell)"
+)
+_HYBRID_TERMS_AR = r"(?:هجين|هايبرد|هايبريد)"
+_HYBRID_HINT = re.compile(rf"(\b{_HYBRID_TERMS_LATIN}\b|{_HYBRID_TERMS_AR})", re.IGNORECASE)
+#: "not a hybrid", "non-hybrid", "no range extender", "without REx", "not a
+#: plug-in hybrid", "ليس هجين" ... A negated mention is not wording that
+#: suggests a hybrid. (Negation makes the listing MORE suspicious, never less:
+#: it is then judged as the pure EV its structured fields say it is.)
+_NEGATED_HYBRID = re.compile(
+    r"(?:\b(?:not|no|non|never|without|isn'?t|neither|nor)\b[\s-]*(?:(?:an?|any|the)\s+)?"
+    r"|غير\s*|ليس\w*\s*|بدون\s*)"
+    rf"(?:(?:plug[\s-]*in|mild|full|self[\s-]*charging)[\s-]+)?(?:\b{_HYBRID_TERMS_LATIN}\b|{_HYBRID_TERMS_AR})",
+    re.IGNORECASE,
+)
+
+BEV = "bev"
+#: Structured fields say pure electric, but seller-written text claims a hybrid /
+#: range-extender system. Free text is NOT proof of the powertrain, so this is
+#: neither "confirmed pure EV" nor silently fine: it goes to a person.
+BEV_TEXT_CONFLICT = "bev_text_conflict"
+COMBUSTION = "combustion"
+HYBRID = "hybrid"
+UNKNOWN = "unknown"
+
+
+def find_hybrid_wording(*texts) -> str | None:
+    """The first (non-negated) hybrid / plug-in / range-extender term found in
+    seller-written text, lower-cased; ``None`` when there is none."""
+    for t in texts:
+        if not t:
+            continue
+        m = _HYBRID_HINT.search(_NEGATED_HYBRID.sub(" ", str(t)))
+        if m:
+            return re.sub(r"\s+", " ", m.group(0)).strip().lower()
+    return None
+
+
+def classify_powertrain(engine_type, fuel_type, *texts) -> str:
+    """The powertrain implied by the STRUCTURED fields (``engine_type`` /
+    ``fuel_type``); seller text can never change that verdict.
+
+    ``bev``              every filled-in field says pure battery-electric.
+    ``bev_text_conflict``  same, but title / trim / model / description
+                         mention a hybrid or range-extender system: the text
+                         is uncertainty to be resolved by a person, not proof.
+    ``hybrid``           a structured field says hybrid / PHEV / range extender.
+    ``combustion``       plain gasoline / diesel / LPG / CNG.
+    ``unknown``          missing, contradicting or unrecognised values (never a
+                         basis for a contradiction)."""
+    values = [t for t in (_token(engine_type), _token(fuel_type)) if t and t not in _PLACEHOLDERS]
+    if not values:
+        return UNKNOWN
+    if any(_HYBRID_HINT.search(v) for v in values):
+        return HYBRID
+    electric = [v in _BEV_VALUES for v in values]
+    if all(electric):
+        return BEV_TEXT_CONFLICT if find_hybrid_wording(*texts) else BEV
+    if any(electric):
+        return UNKNOWN  # e.g. engine_type "electric" but fuel_type "gasoline"
+    if all(v in _COMBUSTION_VALUES for v in values):
+        return COMBUSTION
+    return UNKNOWN
+
+
+# Engine displacement / cylinders ----------------------------------------------
+
+#: Units that identify a number as something other than a displacement.
+_NOT_DISPLACEMENT_UNITS = frozenset({"kw", "hp", "ps", "bhp", "kwh", "wh", "nm", "kg", "v", "ah", "a"})
+_CC_UNITS = frozenset({"cc", "cm3", "cm³", "cm^3", "ml"})
+_LITER_UNITS = frozenset({"l", "lt", "ltr", "liter", "liters", "litre", "litres"})
+
+MIN_DISPLACEMENT_L = 0.05
+MAX_DISPLACEMENT_L = 16.0
+MAX_CYLINDERS = 16
+#: Bodies whose engines are legitimately tiny / single-cylinder; the
+#: displacement-per-cylinder plausibility check does not apply to them.
+_SMALL_ENGINE_BODIES = frozenset(
+    {"motorcycle", "scooter", "super bike", "superbike", "atv", "utv", "micro", "moped"}
+)
+
+
+def parse_displacement_liters(v) -> tuple[float | None, str]:
+    """``(liters, status)``. status: ``none`` (missing / zero), ``ok``,
+    ``invalid`` (negative), ``ignored`` (not a displacement figure: kW, text
+    ...). The app stores litres; a unitless value of 50 or more is read as
+    cubic centimetres (``1600`` -> 1.6 L), an explicit unit always wins."""
+    if v is None or (isinstance(v, str) and _token(v) in _PLACEHOLDERS):
+        return None, "none"
+    x, unit = _num_unit(v)
+    if x is None:
+        return None, "ignored"
+    if unit in _NOT_DISPLACEMENT_UNITS:
+        return None, "ignored"
+    if unit in _CC_UNITS:
+        x = x / 1000.0
+    elif unit in _LITER_UNITS or unit == "":
+        if unit == "" and x >= 50:
+            x = x / 1000.0
+    else:
+        return None, "ignored"
+    if x == 0:
+        return None, "none"
+    if x < 0:
+        return x, "invalid"
+    return x, "ok"
+
+
+def parse_cylinders(v) -> tuple[int | None, str]:
+    """``(count, status)`` with status ``none`` | ``ok`` | ``invalid`` |
+    ``ignored``. Accepts ``3``, ``"3"``, ``"3 cylinders"`` and ``"V6"`` style
+    strings; anything else is ignored (unknown), not an error."""
+    if v is None:
+        return None, "none"
+    if isinstance(v, bool):
+        return None, "ignored"
+    if isinstance(v, str) and _clean(v).lower() in _PLACEHOLDERS:
+        return None, "none"
+    x, unit = _num_unit(v)
+    if x is not None and (unit == "" or re.fullmatch(r"cyl\w*|cylinders?", unit)):
+        if x != int(x):
+            return None, "ignored"
+        n = int(x)
+    else:
+        # "V6" / "I4" / "W12" style engine layouts.
+        m = re.fullmatch(r"[vwil]\s?-?(\d{1,2})", _clean(v).lower()) if isinstance(v, str) else None
+        if not m:
+            return None, "ignored"
+        n = int(m.group(1))
+    if n == 0:
+        return None, "none"
+    if n < 0:
+        return n, "invalid"
+    return n, "ok"
+
+
 def normalize_text(text: str | None) -> str:
     """Lowercased, whitespace/punctuation collapsed -- used for duplicate
     description comparison."""
@@ -143,23 +394,28 @@ def check_required_fields(f: Facts, s: dict) -> list[Signal]:
 
 def check_values(f: Facts, s: dict, current_year: int) -> list[Signal]:
     out: list[Signal] = []
-    year = f.fields.get("year")
-    mileage = f.fields.get("mileage")
+    year = _to_int(f.fields.get("year"))
+    mileage = _mileage_km(f.fields.get("mileage"))
     price = f.fields.get("price")
     currency = _clean(f.fields.get("currency")).upper() or "USD"
-    condition = _clean(f.fields.get("condition")).lower()
+    # The listing's condition is a free-form string column (the app sends
+    # "new" / "used"; the create endpoint stores it as received, the update
+    # endpoint lower-cases it). The "new car" rules below apply ONLY when it
+    # unambiguously means New -- never because of a vehicle's age or mileage.
+    condition = normalize_condition(f.fields.get("condition"))
+    is_new = condition == "new"
 
-    if isinstance(year, int):
+    if year is not None:
         if year < int(s.get("min_year", 1950)) or year > current_year + 1:
             out.append(Signal("year_out_of_range", REVIEW, "values", True, str(year)))
-        if condition == "new" and year < current_year - 1:
-            out.append(Signal("new_but_old_year", REVIEW, "values", True, str(year)))
-    if isinstance(mileage, int):
+        if is_new and year < current_year - 1:
+            out.append(Signal("new_but_old_year", REVIEW, "values", True, f"{year} model year, listed as New"))
+    if mileage is not None:
         if mileage < 0 or mileage > int(s.get("max_mileage", 1_000_000)):
             out.append(Signal("mileage_out_of_range", REVIEW, "values", True, str(mileage)))
-        elif condition == "new" and mileage > 500:
-            out.append(Signal("new_with_mileage", REVIEW, "values", True, str(mileage)))
-        elif mileage == 0 and condition not in ("new", "") and isinstance(year, int) and year < current_year:
+        elif is_new and mileage > int(s.get("new_max_mileage_km", 500)):
+            out.append(Signal("new_with_mileage", REVIEW, "values", True, f"{mileage:,} km, listed as New"))
+        elif mileage == 0 and condition not in ("new", None) and year is not None and year < current_year:
             # The create endpoint defaults a missing mileage to 0.
             out.append(Signal("used_zero_mileage", REVIEW, "values", False, None))
     if price is not None:
@@ -177,6 +433,144 @@ def check_values(f: Facts, s: dict, current_year: int) -> list[Signal]:
     vin = _clean(f.fields.get("vin")).upper()
     if vin and not _VIN.match(vin):
         out.append(Signal("vin_invalid", REVIEW, "values", True, None))
+    return out
+
+
+def _fmt_liters(x: float) -> str:
+    return f"{x:.1f}".rstrip("0").rstrip(".") if x >= 1 else f"{x:.2f}".rstrip("0").rstrip(".")
+
+
+def check_consistency(f: Facts, s: dict, current_year: int) -> list[Signal]:
+    """Relationships BETWEEN the listing's own specifications.
+
+    Every rule needs positive evidence on both sides and stays silent on
+    missing, default, zero, unit-less-and-ambiguous or unrecognised values --
+    a missing attribute is never a contradiction. Nothing here compares a
+    vehicle against brand / model factory specifications (the server has no
+    reliable spec data for that); only physical / logical impossibilities and
+    soft statistical outliers are raised. All of them route to a human; none
+    rejects."""
+    out: list[Signal] = []
+    fx = f.fields
+    powertrain = classify_powertrain(
+        fx.get("engine_type"), fx.get("fuel_type"), fx.get("title"), fx.get("trim"), fx.get("model"),
+        fx.get("description"),
+    )
+    disp, dstatus = parse_displacement_liters(fx.get("engine_size"))
+    cyl, cstatus = parse_cylinders(fx.get("cylinder_count"))
+    has_disp = dstatus == "ok"
+    has_cyl = cstatus == "ok"
+
+    # 1. A pure battery-electric vehicle has no combustion engine. The verdict
+    #    comes from the structured fields only; seller wording about a hybrid /
+    #    range extender can change WHICH reason a person sees, never whether one
+    #    is raised.
+    parts = []
+    if has_disp:
+        parts.append(f"a {_fmt_liters(disp)} L engine")
+    if has_cyl:
+        parts.append(f"{cyl} cylinder{'s' if cyl != 1 else ''}")
+    if powertrain == BEV and parts:
+        out.append(
+            Signal(
+                "ev_with_combustion_engine",
+                REVIEW,
+                "consistency",
+                True,
+                "Electric powertrain, but the listing also states " + " and ".join(parts),
+            )
+        )
+    elif powertrain == BEV_TEXT_CONFLICT and parts:
+        wording = find_hybrid_wording(
+            fx.get("title"), fx.get("trim"), fx.get("model"), fx.get("description")
+        )
+        out.append(
+            Signal(
+                "ev_powertrain_unconfirmed",
+                REVIEW,
+                "consistency",
+                False,
+                f"Fuel / engine type says Electric and the listing states {' and '.join(parts)}; the "
+                f"seller's text mentions \"{wording}\". Confirm the real powertrain",
+            )
+        )
+    if powertrain != BEV:
+        # 2. Engine figures that cannot be real for any road vehicle.
+        if dstatus == "invalid" or (has_disp and not MIN_DISPLACEMENT_L <= disp <= MAX_DISPLACEMENT_L):
+            out.append(
+                Signal(
+                    "engine_displacement_out_of_range",
+                    REVIEW,
+                    "consistency",
+                    False,
+                    f"Engine size {disp:g} L is outside {MIN_DISPLACEMENT_L:g}-{MAX_DISPLACEMENT_L:g} L",
+                )
+            )
+        if cstatus == "invalid" or (has_cyl and cyl > MAX_CYLINDERS):
+            out.append(
+                Signal(
+                    "cylinder_count_out_of_range",
+                    REVIEW,
+                    "consistency",
+                    False,
+                    f"{cyl} cylinders is outside 1-{MAX_CYLINDERS}",
+                )
+            )
+        # 3. Displacement per cylinder outside what any engine has. Wide, generic
+        #    bounds (not a per-model spec) and not applied to two-wheelers / ATVs.
+        body = _token(fx.get("body_type"))
+        if (
+            has_disp
+            and has_cyl
+            and MIN_DISPLACEMENT_L <= disp <= MAX_DISPLACEMENT_L
+            and 1 <= cyl <= MAX_CYLINDERS
+            and body not in _SMALL_ENGINE_BODIES
+        ):
+            per_cyl = disp / cyl
+            lo = float(s.get("min_liters_per_cylinder", 0.15))
+            hi = float(s.get("max_liters_per_cylinder", 3.0))
+            if per_cyl < lo or per_cyl > hi:
+                out.append(
+                    Signal(
+                        "engine_displacement_cylinders_mismatch",
+                        REVIEW,
+                        "consistency",
+                        False,
+                        f"{_fmt_liters(disp)} L with {cyl} cylinders is {per_cyl:.2f} L per cylinder "
+                        f"(expected {lo:g}-{hi:g})",
+                    )
+                )
+
+    # 4. Soft signal: far more kilometres than a vehicle of this model year can
+    #    plausibly have covered. Never applied to a vehicle listed as New (the
+    #    New-car rules cover that) and never to old / low-mileage vehicles.
+    year = _to_int(fx.get("year"))
+    km = _mileage_km(fx.get("mileage"))
+    per_year = float(s.get("max_annual_mileage_km", 40_000))
+    if (
+        per_year > 0
+        and km is not None
+        and km > 0
+        and year is not None
+        and int(s.get("min_year", 1950)) <= year <= current_year + 1
+        and normalize_condition(fx.get("condition")) != "new"
+    ):
+        # A model year starts before its calendar year: a 2026 model can
+        # already have been driven for about a year.
+        years = max(current_year - year + 1, 1)
+        ceiling = per_year * years
+        if km > ceiling:
+            out.append(
+                Signal(
+                    "high_mileage_for_year",
+                    REVIEW,
+                    "consistency",
+                    False,
+                    f"{km:,} km on a {year} model; a vehicle of this age normally has at most "
+                    f"about {int(ceiling):,} km ({int(per_year):,} km/year over {years} "
+                    f"year{'s' if years != 1 else ''})",
+                )
+            )
     return out
 
 
@@ -406,6 +800,7 @@ def ai_signals(ai: dict | None, s: dict) -> list[Signal]:
 CHECK_NAMES = (
     "required_fields",
     "values",
+    "consistency",
     "text",
     "media",
     "duplicates",
@@ -420,6 +815,7 @@ def run_rules(f: Facts, s: dict, current_year: int) -> list[Signal]:
     signals: list[Signal] = []
     signals += check_required_fields(f, s)
     signals += check_values(f, s, current_year)
+    signals += check_consistency(f, s, current_year)
     signals += check_text(f, s)
     signals += check_media(f, s)
     signals += check_duplicates(f, s)

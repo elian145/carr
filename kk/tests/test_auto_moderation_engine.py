@@ -2757,3 +2757,440 @@ def test_raised_confidence_bar_applies_to_an_already_decided_run(app, monkeypatc
         out = real_apply(_runs(app, c["car_id"])[0]["id"], "listing", c["car_id"])
     assert out["outcome"] == "downgraded"
     assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+# ---------------------------------------------------------------------------
+# Cross-field consistency (rules.check_consistency) through the real pipeline
+# ---------------------------------------------------------------------------
+
+_EV = dict(engine_type="electric", fuel_type="electric")
+
+
+def _codes_of(app, car_id):
+    return set(_runs(app, car_id)[-1]["codes"])
+
+
+def test_2026_pure_ev_with_combustion_figures_is_flagged_in_shadow_and_never_published(app):
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=72000, condition="used", engine_size=0.7, cylinder_count=3,
+             title="Byd Dolphin 2026", brand="byd", model="dolphin", **_EV)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    codes = _codes_of(app, c["car_id"])
+    assert "ev_with_combustion_engine" in codes
+    assert "high_mileage_for_year" in codes  # soft, alongside it
+    assert "new_but_old_year" not in codes and "new_with_mileage" not in codes
+    st = _car_state(app, c["car_id"])
+    assert st["status"] == "pending" and _notifications(app, uid) == 0  # nothing published / rejected
+    assert _runs(app, c["car_id"])[0]["mode"] == "shadow"
+
+
+def test_contradictory_ev_is_never_auto_approved_in_live_mode(app, monkeypatch):
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=500, engine_size=0.7, cylinder_count=3, **_EV)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_apply_time_revalidation_blocks_a_run_decided_before_the_specs_were_changed(app, monkeypatch):
+    """A run that was AUTO_APPROVE (pending_apply) is re-checked against the
+    CURRENT listing at apply time: contradictory specs downgrade it."""
+    from kk.auto_moderation import engine
+    from kk.models import Car, ListingModerationRun, db
+
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=500, **_EV)
+    real_apply = engine._apply
+    monkeypatch.setattr(engine, "_apply", lambda *a, **k: {"outcome": "deferred"})
+    assert _moderate(app, "listing", c["car_id"])["decision"] == "AUTO_APPROVE"
+    monkeypatch.setattr(engine, "_apply", real_apply)
+    with app.app_context():
+        # same content token is impossible to keep after an edit; emulate the engine's own
+        # defence-in-depth by editing the row WITHOUT touching the recorded token.
+        car = db.session.get(Car, c["car_id"])
+        car.engine_size, car.cylinder_count = 0.7, 3
+        db.session.commit()
+        run = ListingModerationRun.query.filter_by(car_id=c["car_id"]).one()
+        out = real_apply(run.id, "listing", c["car_id"])
+    assert out["outcome"] in ("stale", "downgraded", "superseded")
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+
+
+def test_legitimate_hybrid_and_plain_ev_still_auto_approve_in_live_mode(app, monkeypatch):
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    phev = _car(app, uid, price=15101, year=2025, mileage=15000, engine_type="plug-in hybrid",
+                fuel_type="plug-in hybrid", engine_size=1.5, cylinder_count=3,
+                description="Plug-in hybrid, single owner, full dealer service history, garage kept.")
+    ev = _car(app, uid, price=15102, year=2025, mileage=15000, location="Basra",
+              description="Battery electric hatchback with fast charging, new tyres and a clean interior.",
+              **_EV)
+    old_used = _car(app, uid, price=15103, year=2019, mileage=20000, condition="used", location="Duhok",
+                    description="Seven seater family car, regular oil changes, recently inspected and washed.")
+    for c in (phev, ev, old_used):
+        r = _moderate(app, "listing", c["car_id"])
+        assert r["outcome"] == "published", (r, _runs(app, c["car_id"])[-1]["codes"])
+
+
+def test_used_2019_with_20000_km_gets_no_new_car_warnings(app):
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2019, mileage=20000, condition="used")
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "AUTO_APPROVE", _runs(app, c["car_id"])[0]["codes"]
+
+
+def test_genuinely_new_2019_with_20000_km_is_suspicious(app):
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2019, mileage=20000, condition="new")
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert {"new_but_old_year", "new_with_mileage"} <= _codes_of(app, c["car_id"])
+
+
+def _create_via_api(app, client, monkeypatch, **body):
+    """Create a listing through the real endpoint (request -> database
+    conversion), return (seller_id, token, car row dict, stored column values)."""
+    from kk.models import Car
+
+    monkeypatch.setenv("LISTING_REQUIRE_APPROVAL", "1")
+    uid, uname = _user(app)
+    token = _login(client, uname)
+    payload = {"brand": "toyota", "model": "camry", "year": 2021, "mileage": 45000, "price": 15000,
+               "location": "Erbil", "description": "Clean car, regularly serviced."}
+    payload.update(body)
+    r = client.post("/api/cars", json=payload, headers=_auth(token))
+    assert r.status_code == 201, r.data
+    public = r.get_json()["car"]["id"]
+    with app.app_context():
+        car = Car.query.filter_by(public_id=public).one()
+        stored = dict(condition=car.condition, engine_type=car.engine_type, fuel_type=car.fuel_type,
+                      engine_size=car.engine_size, cylinder_count=car.cylinder_count, mileage=car.mileage,
+                      year=car.year)
+        return uid, token, {"car_id": car.id, "public_id": public}, stored
+
+
+@pytest.mark.parametrize("condition", ["Used", "used", "USED", None])
+def test_request_conversion_used_or_defaulted_condition_never_becomes_new(app, client, monkeypatch, condition):
+    body = {"year": 2019, "mileage": 20000}
+    if condition is not None:
+        body["condition"] = condition
+    _uid, _tok, c, stored = _create_via_api(app, client, monkeypatch, **body)
+    assert (stored["condition"] or "").lower() == "used"  # missing -> server default "used"
+    _moderate(app, "listing", c["car_id"])
+    assert not _codes_of(app, c["car_id"]) & {"new_but_old_year", "new_with_mileage", "high_mileage_for_year"}
+
+
+@pytest.mark.parametrize("condition", ["New", "new", "NEW"])
+def test_request_conversion_new_condition_enables_new_car_rules(app, client, monkeypatch, condition):
+    _uid, _tok, c, stored = _create_via_api(app, client, monkeypatch, year=2019, mileage=20000, condition=condition)
+    assert stored["condition"].lower() == "new"
+    _moderate(app, "listing", c["car_id"])
+    assert {"new_but_old_year", "new_with_mileage"} <= _codes_of(app, c["car_id"])
+
+
+def test_request_conversion_ev_with_string_engine_figures_is_flagged(app, client, monkeypatch):
+    # The endpoint parses "0.7 L" -> 0.7 and "3" -> 3 (cylinder 0 / size <= 0 become NULL).
+    _uid, _tok, c, stored = _create_via_api(
+        app, client, monkeypatch, year=2026, mileage=72000, condition="used", fuel_type="Electric",
+        engine_type="Electric", engine_size="0.7 L", cylinder_count="3")
+    assert stored["engine_size"] == 0.7 and stored["cylinder_count"] == 3 and stored["fuel_type"] == "Electric"
+    _moderate(app, "listing", c["car_id"])
+    assert "ev_with_combustion_engine" in _codes_of(app, c["car_id"])
+
+
+def test_request_conversion_ev_with_zero_engine_figures_is_valid(app, client, monkeypatch):
+    _uid, _tok, c, stored = _create_via_api(
+        app, client, monkeypatch, year=2025, mileage=10000, condition="used", fuel_type="electric",
+        engine_size=0, cylinder_count=0)
+    assert stored["engine_size"] is None and stored["cylinder_count"] is None  # zero -> NULL
+    _moderate(app, "listing", c["car_id"])
+    assert not _codes_of(app, c["car_id"]) & {"ev_with_combustion_engine", "engine_displacement_out_of_range",
+                                              "cylinder_count_out_of_range"}
+
+
+def test_request_conversion_electric_engine_type_alone_defaults_fuel_type_to_it(app, client, monkeypatch):
+    # fuel_type omitted -> endpoint copies engine_type; both say electric
+    _uid, _tok, c, stored = _create_via_api(app, client, monkeypatch, engine_type="electric",
+                                            engine_size=1.0, cylinder_count=3)
+    assert stored["fuel_type"] == "electric"
+    _moderate(app, "listing", c["car_id"])
+    assert "ev_with_combustion_engine" in _codes_of(app, c["car_id"])
+
+
+def test_request_conversion_omitted_powertrain_is_not_an_ev(app, client, monkeypatch):
+    # nothing says electric: the server default ("gasoline") must never look like an EV
+    _uid, _tok, c, stored = _create_via_api(app, client, monkeypatch, engine_size=0.7, cylinder_count=3)
+    assert stored["fuel_type"] == "gasoline"
+    _moderate(app, "listing", c["car_id"])
+    assert "ev_with_combustion_engine" not in _codes_of(app, c["car_id"])
+
+
+def test_pending_edit_that_makes_a_listing_contradictory_is_flagged_and_stays_unpublished(app, monkeypatch):
+    uid, _ = _trusted_seller(app)
+    c = _published_car(app, uid, price=15201)
+    rid, shadow_id, _pub = _revision(app, c["car_id"], engine_type="electric", fuel_type="electric",
+                                     engine_size=0.7, cylinder_count=3)
+    r = _moderate(app, "revision", rid)
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert "ev_with_combustion_engine" in set(_runs(app, c["car_id"])[-1]["codes"])
+    assert _car_state(app, c["car_id"])["brand"] == "toyota"
+    from kk.models import Car
+
+    with app.app_context():
+        assert Car.query.get(c["car_id"]).fuel_type == "gasoline"  # the published version is untouched
+
+
+def test_media_hold_still_dominates_and_consistency_is_evaluated_once_media_is_ready(app, monkeypatch):
+    """Late media: a listing with contradictory specs and an unfinished upload is
+    HELD (not judged); when the last photo attaches it is re-evaluated and flagged."""
+    from kk.media_readiness import transition_media_item_terminal
+    from kk.models import CarImage, CarMediaItem, db
+
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, media="processing", year=2026, mileage=100, engine_size=0.7, cylinder_count=3, **_EV)
+    assert _moderate(app, "listing", c["car_id"])["decision"] == "HOLD"
+    with app.app_context():
+        cid = CarMediaItem.query.filter_by(car_id=c["car_id"], status="processing").one().client_media_id
+
+        def attach(car):
+            db.session.add(CarImage(car_id=car.id, image_url=f"{_CDN}/late2.jpg", is_primary=False, order=9,
+                                    kind="listing", source_media_id=cid, image_width=1600, image_height=1200))
+
+        assert transition_media_item_terminal(car_id=c["car_id"], client_media_id=cid, to_status="attached",
+                                              attach_fn=attach) == "applied"
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW"
+    assert "ev_with_combustion_engine" in _codes_of(app, c["car_id"])
+    assert len(_runs(app, c["car_id"])) == 2
+
+
+def test_changing_the_specs_changes_the_content_token_so_it_is_re_evaluated(app):
+    from kk.models import Car, db
+
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2025, mileage=15000, **_EV, engine_size=0.7, cylinder_count=3)
+    _moderate(app, "listing", c["car_id"])
+    assert "ev_with_combustion_engine" in _codes_of(app, c["car_id"])
+    with app.app_context():
+        car = db.session.get(Car, c["car_id"])
+        car.engine_size, car.cylinder_count = None, None
+        db.session.commit()
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "AUTO_APPROVE"
+    assert len(_runs(app, c["car_id"])) == 2
+
+
+def test_admin_dashboard_api_returns_specific_readable_reasons(app, client):
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=72000, engine_size=0.7, cylinder_count=3, **_EV)
+    _moderate(app, "listing", c["car_id"])
+    tok = _admin_token(app, client, "moderator")
+    listed = client.get(f"{BASE}/runs?view=flagged", headers=_auth(tok)).get_json()["runs"][0]
+    assert "ev_with_combustion_engine" in listed["reason_codes"]
+    assert "Electric car with a combustion engine" in listed["reason_labels"]
+    assert listed["suspicious"] is True
+    d = client.get(f"{BASE}/runs/{listed['id']}", headers=_auth(tok)).get_json()["run"]
+    ev = next(r for r in d["reasons"] if r["code"] == "ev_with_combustion_engine")
+    assert ev["label"] and ev["message"]
+    assert "0.7 L engine" in ev["detail"] and "3 cylinders" in ev["detail"]
+    mile = next(r for r in d["reasons"] if r["code"] == "high_mileage_for_year")
+    assert mile["suspicious"] is False and "72,000 km" in mile["detail"]
+    assert d["checks"]["consistency"] == "fail"
+    assert d["engine_version"] == "2"
+    # the stored record is unchanged by presentation (no label / message persisted)
+    from kk.models import ListingModerationRun
+
+    with app.app_context():
+        stored = ListingModerationRun.query.filter_by(car_id=c["car_id"]).one().reasons
+        assert all("label" not in r and "message" not in r for r in stored)
+
+
+def test_sellers_never_see_moderation_reasons(app, client, monkeypatch):
+    uid, token, c, _stored = _create_via_api(app, client, monkeypatch, year=2026, mileage=72000,
+                                             fuel_type="electric", engine_type="electric",
+                                             engine_size=0.7, cylinder_count=3)
+    _moderate(app, "listing", c["car_id"])
+    assert "ev_with_combustion_engine" in _codes_of(app, c["car_id"])
+    bodies = [
+        client.get(f"/api/cars/{c['public_id']}", headers=_auth(token)).get_data(as_text=True),
+        client.get("/api/user/my-listings", headers=_auth(token)).get_data(as_text=True),
+    ]
+    for body in bodies:
+        low = body.lower()
+        for needle in ("ev_with_combustion_engine", "high_mileage_for_year", "consistency", "reason_codes",
+                       "moderation_run", "openai", "prompt"):
+            assert needle not in low, needle
+
+
+def test_consistency_alert_is_private_and_readable(app, monkeypatch):
+    from kk.auto_moderation import alerts
+    from kk.models import ListingModerationRun
+
+    monkeypatch.setenv("ADMIN_WEB_BASE_URL", "https://admin.example.com")
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=100, engine_size=0.7, cylinder_count=3,
+             description="Phone 07501234567 seller John", **_EV)
+    _moderate(app, "listing", c["car_id"])
+    with app.app_context():
+        run = ListingModerationRun.query.filter_by(car_id=c["car_id"]).one()
+        labels = alerts._labels(run.reasons, routine_too=False)
+        _subject, text = alerts.build_message(run, labels)
+    assert "electric car with a combustion engine" in text
+    for private in ("07501234567", "John", "0.7", "Toyota"):
+        assert private not in text
+
+
+def _legacy_pass(monkeypatch):
+    """Make the engine behave like the previous release (engine version 1, no
+    consistency check) for one evaluation."""
+    from kk.auto_moderation import engine, rules
+
+    monkeypatch.setattr(engine, "ENGINE_VERSION", "1")
+    monkeypatch.setattr(rules, "check_consistency", lambda *a, **k: [])
+
+
+def test_manual_rerun_rejudges_a_decision_made_by_an_older_rule_set(app, monkeypatch):
+    """The listing that the old rules passed is flagged by an administrator's
+    "Re-run checks" once the new rules exist -- without waiting for an edit."""
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=500, engine_size=0.7, cylinder_count=3, **_EV)
+    with monkeypatch.context() as old:
+        _legacy_pass(old)
+        assert _moderate(app, "listing", c["car_id"])["decision"] == "AUTO_APPROVE"
+    first = _runs(app, c["car_id"])
+    assert len(first) == 1 and first[0]["outcome"] == "shadow_would_approve"
+
+    # Automatic triggers stay idempotent for the same content.
+    assert _moderate(app, "listing", c["car_id"], trigger="event")["outcome"] == "done"
+    assert _moderate(app, "listing", c["car_id"], trigger="sweep")["outcome"] == "done"
+    assert _runs(app, c["car_id"])[0]["outcome"] == "shadow_would_approve"
+
+    r = _moderate(app, "listing", c["car_id"], trigger="manual")
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    runs = _runs(app, c["car_id"])
+    assert len(runs) == 1 and "ev_with_combustion_engine" in runs[0]["codes"]
+    assert _car_state(app, c["car_id"])["status"] == "pending"  # shadow: nothing published
+    # the run now carries the current version, so another manual re-run is a no-op
+    assert _moderate(app, "listing", c["car_id"], trigger="manual")["outcome"] == "done"
+    assert _events(app, c["car_id"]) == ["claimed", "decision", "claimed", "decision"]
+
+
+def test_manual_rerun_never_touches_a_decision_that_was_already_applied(app, monkeypatch):
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2025, mileage=15000)
+    with monkeypatch.context() as old:
+        _legacy_pass(old)
+        assert _moderate(app, "listing", c["car_id"])["outcome"] == "published"
+    # a published listing is no longer pending: not even eligible, let alone re-judged
+    assert _moderate(app, "listing", c["car_id"], trigger="manual")["outcome"] == "ineligible"
+    runs = _runs(app, c["car_id"])
+    assert len(runs) == 1 and runs[0]["outcome"] == "published" and runs[0]["applied"]
+
+
+# ---------------------------------------------------------------------------
+# Seller text cannot bypass the structured checks; soft signals stay visible
+# ---------------------------------------------------------------------------
+
+
+def _flagged_run_via_api(client, token, public_id):
+    runs = client.get(f"{BASE}/runs?view=flagged", headers=_auth(token)).get_json()["runs"]
+    run = next(r for r in runs if r["listing"]["id"] == public_id)
+    detail = client.get(f"{BASE}/runs/{run['id']}", headers=_auth(token)).get_json()["run"]
+    return run, detail
+
+
+def test_high_mileage_soft_signal_is_visible_to_admins_but_does_not_page_or_mark_suspicious(app, client, monkeypatch):
+    import kk.email_service as es
+    from kk.auto_moderation.alerts import send_alert_for_run
+
+    sent = []
+    monkeypatch.setattr(es, "send_email", lambda to, subject, text_body, html_body=None: sent.append(text_body) or True)
+    _alert_setup(app, monkeypatch)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=72000, condition="used")
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    assert _car_state(app, c["car_id"])["status"] == "pending"  # not published, not rejected
+    tok = _admin_token(app, client, "moderator")
+    run, detail = _flagged_run_via_api(client, tok, c["public_id"])
+    assert run["reason_codes"] == ["high_mileage_for_year"]
+    assert run["reason_labels"] == ["Unusually high mileage for the model year"]
+    assert run["suspicious"] is False
+    sig = next(x for x in detail["reasons"] if x["code"] == "high_mileage_for_year")
+    assert sig["level"] == "review" and sig["suspicious"] is False
+    assert "72,000 km" in sig["detail"] and "2026" in sig["detail"] and sig["message"]
+    assert detail["checks"]["consistency"] == "fail"
+    # visible, but it does not page anyone (only suspicious reasons do by default) ...
+    with app.app_context():
+        assert send_alert_for_run(_runs(app, c["car_id"])[0]["id"]) == {"sent": False, "reason": "routine_only"}
+    assert sent == []
+
+
+def test_high_mileage_soft_signal_alerts_only_when_routine_alerts_are_enabled(app, monkeypatch):
+    import kk.email_service as es
+    from kk.auto_moderation.alerts import send_alert_for_run
+
+    sent = []
+    monkeypatch.setattr(es, "send_email", lambda to, subject, text_body, html_body=None: sent.append(text_body) or True)
+    _alert_setup(app, monkeypatch, alert_on_routine=True)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2026, mileage=72000)
+    _moderate(app, "listing", c["car_id"])
+    with app.app_context():
+        assert send_alert_for_run(_runs(app, c["car_id"])[0]["id"])["sent"] is True
+    assert "unusually high mileage for the model year" in sent[0]
+    assert "72,000" not in sent[0]  # no figures / listing data in alerts
+
+
+@pytest.mark.parametrize(
+    "description,expected_code,suspicious",
+    [
+        ("Genuine BMW i3 REx with the range extender, clean.", "ev_powertrain_unconfirmed", False),
+        ("Plug-in hybrid, not pure electric.", "ev_powertrain_unconfirmed", False),
+        ("This is not a hybrid, pure electric.", "ev_with_combustion_engine", True),
+        ("Hybrid hybrid hybrid REx e-Power", "ev_powertrain_unconfirmed", False),
+        ("Clean car, regularly serviced, no accidents.", "ev_with_combustion_engine", True),
+    ],
+)
+def test_seller_text_changes_the_reason_shown_never_whether_an_ev_with_an_engine_is_reviewed(
+    app, client, monkeypatch, description, expected_code, suspicious
+):
+    _live(monkeypatch, app)  # even in live mode it can never be auto-approved
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2025, mileage=15000, engine_size=0.65, cylinder_count=2,
+             description=description, **_EV)
+    r = _moderate(app, "listing", c["car_id"])
+    assert r["decision"] == "NEEDS_REVIEW" and r["outcome"] == "queued_for_review"
+    assert _car_state(app, c["car_id"])["status"] == "pending"
+    tok = _admin_token(app, client, "moderator")
+    run, detail = _flagged_run_via_api(client, tok, c["public_id"])
+    assert expected_code in run["reason_codes"]
+    assert ({"ev_powertrain_unconfirmed", "ev_with_combustion_engine"} - {expected_code}).isdisjoint(run["reason_codes"])
+    sig = next(x for x in detail["reasons"] if x["code"] == expected_code)
+    assert sig["suspicious"] is suspicious and sig["label"] and sig["message"]
+    assert "0.65 L engine" in sig["detail"] and "2 cylinders" in sig["detail"]
+
+
+def test_unconfirmed_ev_reason_through_the_real_create_endpoint(app, client, monkeypatch):
+    # The app has no "range extender" fuel option: a real REx owner can only pick Electric.
+    _uid, _tok, c, stored = _create_via_api(
+        app, client, monkeypatch, year=2022, mileage=30000, fuel_type="Electric", engine_type="Electric",
+        engine_size=0.65, cylinder_count=2, description="BMW i3 REx range extender, one owner.")
+    assert stored["fuel_type"] == "Electric" and stored["engine_size"] == 0.65
+    _moderate(app, "listing", c["car_id"])
+    assert "ev_powertrain_unconfirmed" in _codes_of(app, c["car_id"])
+    assert "ev_with_combustion_engine" not in _codes_of(app, c["car_id"])
+
+
+def test_hybrid_listing_with_engine_figures_still_auto_approves_when_fields_say_hybrid(app, monkeypatch):
+    # A properly identified range-extender / PHEV (structured fields) stays supported.
+    _live(monkeypatch, app)
+    uid, _ = _trusted_seller(app)
+    c = _car(app, uid, year=2024, mileage=20000, engine_type="range extender", fuel_type="range extender",
+             engine_size=0.65, cylinder_count=2,
+             description="BMW i3 REx, range extender, one owner, full service history.")
+    assert _moderate(app, "listing", c["car_id"])["outcome"] == "published"

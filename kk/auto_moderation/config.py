@@ -71,6 +71,17 @@ DEFAULTS: dict[str, Any] = {
     "min_image_side_px": 320,
     "min_year": 1950,
     "max_mileage": 1_000_000,
+    # Cross-field consistency (see rules.check_consistency). Policy knobs, not
+    # facts about any vehicle: a vehicle listed as New above `new_max_mileage_km`
+    # is suspicious; a vehicle (not listed as New) whose odometer exceeds
+    # `max_annual_mileage_km` x (years since its model year, counting the model
+    # year itself) goes to review as a SOFT signal (taxis / fleets / long
+    # commutes legitimately do this). Displacement per cylinder outside
+    # [min, max] litres is physically implausible for any road engine.
+    "new_max_mileage_km": 500,
+    "max_annual_mileage_km": 40_000,
+    "min_liters_per_cylinder": 0.15,
+    "max_liters_per_cylinder": 3.0,
     "currency_price_bounds": {
         "USD": [500, 1_000_000],
         "IQD": [500_000, 1_400_000_000],
@@ -309,6 +320,12 @@ def validate_patch(patch: dict) -> dict:
             out[key] = _int(val, 1886, 2100, key)
         elif key == "max_mileage":
             out[key] = _int(val, 1000, 10_000_000, key)
+        elif key == "new_max_mileage_km":
+            out[key] = _int(val, 0, 100_000, key)
+        elif key == "max_annual_mileage_km":
+            out[key] = _int(val, 5_000, 500_000, key)
+        elif key in ("min_liters_per_cylinder", "max_liters_per_cylinder"):
+            out[key] = _float(val, 0.01, 20, key)
         elif key == "max_listings_per_24h":
             out[key] = _int(val, 1, 500, key)
         elif key == "price_change_review_pct":
@@ -404,6 +421,10 @@ def validate_patch(patch: dict) -> dict:
             out[key] = g
         else:
             raise ValueError(f"unknown setting: {key}")
+    lo_l = out.get("min_liters_per_cylinder", DEFAULTS["min_liters_per_cylinder"])
+    hi_l = out.get("max_liters_per_cylinder", DEFAULTS["max_liters_per_cylinder"])
+    if ("min_liters_per_cylinder" in out or "max_liters_per_cylinder" in out) and lo_l >= hi_l:
+        raise ValueError("min_liters_per_cylinder must be below max_liters_per_cylinder")
     return out
 
 

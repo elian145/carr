@@ -6,4 +6,7 @@ decisions, nothing is published. See ``config.py`` for the modes, the kill
 switch and the environment variables, and ``engine.py`` for the pipeline.
 """
 
-ENGINE_VERSION = "1"
+# "2": adds the cross-field consistency checks (rules.check_consistency). Only
+# recorded on each run so decisions made before / after can be told apart; it
+# never changes how an existing run is claimed or applied.
+ENGINE_VERSION = "2"

@@ -63,6 +63,9 @@ logger = logging.getLogger(__name__)
 
 AUTO_REVIEWER = "auto-moderation"
 CLAIM_TTL_SECONDS = 600
+#: Recorded outcomes an administrator's "re-run" may re-judge after the rules
+#: changed. Published / pending-apply / superseded decisions are never touched.
+_REEVALUATE_OUTCOMES = frozenset({"queued_for_review", "shadow_would_approve", "downgraded"})
 RETRYABLE_HOLD_CODES = frozenset(
     {"ai_unavailable", "engine_error", "decision_expired", "payment_check_unavailable"}
 )
@@ -206,9 +209,20 @@ def _claim(subject: Subject, mode: str, settings: dict, trigger: str):
             and existing.applied_at is None
         ):
             return existing, "resume_apply"
-        existing.updated_at = now  # lets the sweep see it is current
-        db.session.commit()
-        return existing, "done"
+        if not (
+            # An administrator explicitly asked for a fresh look at content whose
+            # recorded decision was made by an OLDER rule set (e.g. before the
+            # consistency checks existed): judge it again. Never for automatic
+            # triggers (events, sweep, retries stay idempotent), never once the
+            # decision was applied, and only until it carries the current version.
+            trigger == "manual"
+            and existing.applied_at is None
+            and existing.outcome in _REEVALUATE_OUTCOMES
+            and (existing.engine_version or "") != ENGINE_VERSION
+        ):
+            existing.updated_at = now  # lets the sweep see it is current
+            db.session.commit()
+            return existing, "done"
 
     if existing.status == "evaluating" and existing.claimed_at and (
         now - existing.claimed_at
@@ -236,6 +250,7 @@ def _claim(subject: Subject, mode: str, settings: dict, trigger: str):
             next_retry_at=None,
             updated_at=now,
             error=None,
+            engine_version=ENGINE_VERSION,
         )
     )
     if res.rowcount != 1:

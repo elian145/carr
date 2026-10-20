@@ -13,6 +13,7 @@ from flask import Blueprint, jsonify, request
 from ..admin_roles import assert_permission
 from ..auth import admin_required, get_current_user, log_user_action
 from ..auto_moderation import admin_actions, config, stats
+from ..auto_moderation import reasons as reason_mod
 from ..auto_moderation.triggers import request_moderation
 from ..models import (
     Car,
@@ -60,6 +61,9 @@ def _run_dict(run: ListingModerationRun, *, detail: bool = False) -> dict:
         "applied_at": run.applied_at.isoformat() if run.applied_at else None,
         "attempts": run.attempts,
         "reason_codes": [r.get("code") for r in reasons if r.get("level") in ("review", "hold")],
+        "reason_labels": [
+            reason_mod.label_for(r.get("code")) for r in reasons if r.get("level") in ("review", "hold")
+        ],
         "suspicious": any(r.get("suspicious") for r in reasons),
         "admin_outcome": run.admin_outcome,
         "admin_outcome_by": run.admin_outcome_by,
@@ -84,7 +88,7 @@ def _run_dict(run: ListingModerationRun, *, detail: bool = False) -> dict:
     if detail:
         out.update(
             {
-                "reasons": reasons,
+                "reasons": [reason_mod.enrich(r) for r in reasons if isinstance(r, dict)],
                 "checks": run.checks,
                 "ai": run.ai,
                 "content_token": run.content_token,

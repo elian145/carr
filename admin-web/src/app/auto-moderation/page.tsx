@@ -374,9 +374,9 @@ function RunDetail({
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <h4 className="mb-2 font-medium">Why</h4>
-          <ul className="space-y-1">
+          <ul className="space-y-2">
             {(run.reasons || []).map((r) => (
-              <li key={`${r.code}-${r.detail}`}>
+              <li key={`${r.code}-${r.detail}`} data-testid={`am-reason-${r.code}`}>
                 <span
                   className={
                     r.level === "hold"
@@ -385,11 +385,14 @@ function RunDetail({
                         ? "text-amber-300"
                         : "text-surface-muted"
                   }
+                  title={r.code}
                 >
-                  {r.code}
+                  {r.label || r.code}
                 </span>
                 {r.suspicious ? <span className="ml-1 text-xs text-red-400">suspicious</span> : null}
-                {r.detail ? <span className="ml-2 text-xs text-surface-muted">{r.detail}</span> : null}
+                {r.detail ? <p className="text-xs text-white/80">{r.detail}</p> : null}
+                {r.message ? <p className="text-xs text-surface-muted">{r.message}</p> : null}
+                <p className="font-mono text-[10px] text-surface-muted/70">{r.code}</p>
               </li>
             ))}
             {(run.reasons || []).length === 0 ? (
@@ -572,7 +575,10 @@ function Queue() {
                       <p className="text-xs text-surface-muted">{r.outcome}</p>
                     </Td>
                     <Td className="max-w-xs text-xs text-surface-muted">
-                      {r.reason_codes.join(", ") || "—"}
+                      {(r.reason_labels && r.reason_labels.length > 0
+                        ? r.reason_labels
+                        : r.reason_codes
+                      ).join(", ") || "—"}
                     </Td>
                     <Td>{r.admin_outcome || "—"}</Td>
                     <Td className="text-surface-muted">{formatDate(r.created_at)}</Td>
@@ -681,6 +687,9 @@ function SettingsForm({
         ? s.require_ai_for_auto_approve
         : true,
       min_photos: s.min_photos,
+      ...(s.max_annual_mileage_km !== undefined
+        ? { max_annual_mileage_km: s.max_annual_mileage_km }
+        : {}),
       min_seller_prior_approved: s.min_seller_prior_approved,
       dealers_count_as_trusted: s.dealers_count_as_trusted,
       max_listings_per_24h: s.max_listings_per_24h,
@@ -787,6 +796,13 @@ function SettingsForm({
         <section className="grid gap-4 rounded-xl border border-surface-border bg-surface-card p-5 sm:grid-cols-3">
           <h3 className="font-medium sm:col-span-3">Rules</h3>
           <NumberField label="Minimum photos" value={s.min_photos} onChange={(v) => patch("min_photos", v)} />
+          {s.max_annual_mileage_km !== undefined ? (
+            <NumberField
+              label="Review mileage above (km per year of model age)"
+              value={s.max_annual_mileage_km}
+              onChange={(v) => patch("max_annual_mileage_km", v)}
+            />
+          ) : null}
           <NumberField
             label="Prior human-approved listings (non-dealer sellers)"
             value={s.min_seller_prior_approved}

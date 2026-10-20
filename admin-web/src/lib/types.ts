@@ -365,6 +365,10 @@ export interface AutoModerationSettings {
   min_image_side_px: number;
   min_year: number;
   max_mileage: number;
+  /** Listed as New above this odometer reading (km) is suspicious. */
+  new_max_mileage_km?: number;
+  /** Soft review signal: km per year of model age above which mileage is looked at. */
+  max_annual_mileage_km?: number;
   max_listings_per_24h: number;
   price_change_review_pct: number;
   flag_contact_in_description: boolean;
@@ -478,7 +482,12 @@ export interface AutoModerationReason {
   level: "hold" | "review" | "info";
   check?: string;
   suspicious?: boolean;
+  /** Specific facts behind the reason (e.g. "Electric powertrain, but the listing also states a 0.7 L engine and 3 cylinders"). */
   detail?: string | null;
+  /** Short plain-language title, added by the server (not stored on the run). */
+  label?: string;
+  /** One-sentence explanation for the reviewing admin, added by the server. */
+  message?: string;
 }
 
 export interface AutoModerationEvent {
@@ -500,6 +509,8 @@ export interface AutoModerationRun {
   applied_at: string | null;
   attempts: number;
   reason_codes: string[];
+  /** Plain-language titles parallel to `reason_codes` (older servers omit it). */
+  reason_labels?: string[];
   suspicious: boolean;
   admin_outcome: string | null;
   admin_outcome_by: string | null;
