@@ -43,6 +43,81 @@ def _run_expect_failure(cmd: list[str]) -> subprocess.CompletedProcess:
     return result
 
 
+def _insert_row_at_current_revision(table_name: str, values: dict) -> int:
+    """INSERT one row into ``table_name`` using the schema the database has
+    RIGHT NOW, and return its ``id``.
+
+    The downgrade/reseed smokes (C-11, D-10) seed data while the database is
+    deliberately sitting at an OLD Alembic revision. The current ORM models
+    describe the NEWEST schema, so ``db.session.add(User(...))`` /
+    ``Car(...)`` there emits columns that do not exist yet (``user.locale``,
+    ``car.media_status``, ``car.featured_until``, ... -- every column added by a
+    later migration) and fails before the migration under test is ever
+    exercised. This helper therefore:
+
+    * reflects the real table from the live database (the historical schema),
+      never the model's column list;
+    * fills every column that EXISTS at this revision and has a model-level
+      Python default (``account_type='user'``, ``title=''``, ``status='active'``,
+      ``created_at=utcnow()`` ...) exactly as the ORM would have, so the seeded
+      row is the row the application would have written -- minus columns that
+      did not exist back then;
+    * fails loudly (``AssertionError``) if the caller names a column that does
+      not exist at this revision, or if a NOT NULL column without any default
+      is left unset -- so a future schema change forces a conscious update of
+      the seed instead of being silently papered over.
+    """
+    from sqlalchemy import MetaData, Table
+
+    from kk.extensions import db
+
+    reflected = Table(table_name, MetaData(), autoload_with=db.engine)
+    model_table = db.metadata.tables[table_name]
+
+    unknown = sorted(set(values) - set(reflected.c.keys()))
+    if unknown:
+        raise AssertionError(
+            f"seed for {table_name!r} names column(s) {unknown} that do not exist "
+            "at the database's current (historical) revision"
+        )
+
+    row = dict(values)
+    for col in model_table.columns:
+        if col.name in row or col.name not in reflected.c:
+            continue  # explicit value wins; columns from future migrations are skipped
+        default = col.default
+        if default is None:
+            continue
+        if default.is_scalar:
+            row[col.name] = default.arg
+        elif default.is_callable:
+            row[col.name] = default.arg(None)  # SQLAlchemy wraps zero-arg callables as f(ctx)
+
+    unset_required = sorted(
+        c.name
+        for c in reflected.c
+        if not c.nullable and c.server_default is None and not c.primary_key and c.name not in row
+    )
+    if unset_required:
+        raise AssertionError(
+            f"seed for {table_name!r} leaves NOT NULL column(s) {unset_required} without a value "
+            "or default at this revision"
+        )
+
+    return db.session.execute(
+        reflected.insert().values(**row).returning(reflected.c.id)
+    ).scalar_one()
+
+
+def _password_hash_for(password: str) -> str:
+    """Hash with the application's own routine, without needing a User row."""
+    from kk.models import User
+
+    probe = User()
+    probe.set_password(password)
+    return probe.password_hash
+
+
 # C-11: revision immediately before "price Float -> Numeric(12, 2)".
 _C11_PRE_REVISION = "d2e3f4a5b6c7"
 _C11_EXPECTED_INDEXES = ("ix_car_price", "ix_car_active_brand_price", "ix_car_active_year_price")
@@ -71,56 +146,68 @@ def _c11_price_numeric_round_trip(app) -> int:
     _run([sys.executable, "-m", "flask", "db", "downgrade", _C11_PRE_REVISION])
 
     from kk.extensions import db
-    from kk.models import Car, User, user_favorites
+    from kk.models import Car, user_favorites
     from kk.time_utils import utcnow
 
     with app.app_context():
-        seller = User(
-            username="c11_smoke_seller",
-            phone_number="07001110000",
-            first_name="C11",
-            last_name="Smoke",
-            is_active=True,
-            is_verified=True,
-            phone_verified=True,
-            public_id="c11smokeseller",
+        # The database is now at the HISTORICAL revision ``_C11_PRE_REVISION``.
+        # Seed with that revision's own schema (see
+        # ``_insert_row_at_current_revision``): the current ORM ``User`` /
+        # ``Car`` models would also write columns added by later migrations
+        # (``user.locale``, ``car.media_status``, ``car.featured_until``) that
+        # do not exist here yet.
+        password_hash = _password_hash_for("Aa123456")
+        seller_id = _insert_row_at_current_revision(
+            "user",
+            {
+                "username": "c11_smoke_seller",
+                "phone_number": "07001110000",
+                "first_name": "C11",
+                "last_name": "Smoke",
+                "is_active": True,
+                "is_verified": True,
+                "phone_verified": True,
+                "public_id": "c11smokeseller",
+                "password_hash": password_hash,
+            },
         )
-        seller.set_password("Aa123456")
-        viewer = User(
-            username="c11_smoke_viewer",
-            phone_number="07001110001",
-            first_name="C11",
-            last_name="Viewer",
-            is_active=True,
-            is_verified=True,
-            phone_verified=True,
-            public_id="c11smokeviewer",
+        viewer_id = _insert_row_at_current_revision(
+            "user",
+            {
+                "username": "c11_smoke_viewer",
+                "phone_number": "07001110001",
+                "first_name": "C11",
+                "last_name": "Viewer",
+                "is_active": True,
+                "is_verified": True,
+                "phone_verified": True,
+                "public_id": "c11smokeviewer",
+                "password_hash": password_hash,
+            },
         )
-        viewer.set_password("Aa123456")
-        db.session.add_all([seller, viewer])
-        db.session.flush()
 
         # At this point (pre-C-11 revision) the column is still Float; this
         # is a plain float insert, matching how pre-migration production
         # data could have accumulated noise.
-        car = Car(
-            seller_id=seller.id,
-            brand="c11smoke",
-            model="floatnoise",
-            year=2020,
-            mileage=1,
-            engine_type="gas",
-            transmission="auto",
-            drive_type="fwd",
-            condition="used",
-            body_type="sedan",
-            price=noisy_price,
-            location="Erbil",
-            is_active=True,
+        car_id = _insert_row_at_current_revision(
+            "car",
+            {
+                "seller_id": seller_id,
+                "brand": "c11smoke",
+                "model": "floatnoise",
+                "year": 2020,
+                "mileage": 1,
+                "engine_type": "gas",
+                "transmission": "auto",
+                "drive_type": "fwd",
+                "condition": "used",
+                "body_type": "sedan",
+                "price": noisy_price,
+                "location": "Erbil",
+                "is_active": True,
+            },
         )
-        db.session.add(car)
         db.session.commit()
-        car_id = car.id
 
         raw_price = db.session.execute(
             text("SELECT price FROM car WHERE id = :id"), {"id": car_id}
@@ -129,7 +216,7 @@ def _c11_price_numeric_round_trip(app) -> int:
 
         db.session.execute(
             user_favorites.insert().values(
-                user_id=viewer.id,
+                user_id=viewer_id,
                 car_id=car_id,
                 created_at=utcnow(),
                 price_at_favorite=noisy_price,
@@ -1196,29 +1283,32 @@ def _d07_view_history_upsert_smoke(app) -> int:
             db.session.commit()
 
 
-# D-06: FK/report-status indexes -- exact index names this migration must
-# create. Deliberately excludes token_blacklist.expires_at (investigated,
-# zero query usage anywhere in the codebase -- see PRODUCTION_AUDIT.md D-06
-# remediation detail).
+# D-06: FK/report-status indexes -- exact index names the D-06 migrations must
+# create. The original D-06 migration (n5o6p7q8r9s0) deliberately left out
+# token_blacklist.expires_at; the follow-up migration d5e6f7a8b9c0 (2026-09-20,
+# "D-06: add missing index on token_blacklist.expires_at") added exactly that
+# index afterwards, so it is expected at head (kk/tests/test_d06_fk_report_status_indexes.py
+# already asserts the same).
 _D06_EXPECTED_INDEXES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("notification", "ix_notification_user_id", ("user_id",)),
     ("user_action", "ix_user_action_user_id", ("user_id",)),
     ("password_reset", "ix_password_reset_user_id", ("user_id",)),
     ("email_verification", "ix_email_verification_user_id", ("user_id",)),
     ("user_report", "ix_user_report_status", ("status",)),
+    ("token_blacklist", "ix_token_blacklist_expires_at", ("expires_at",)),
 )
 
 
 def _d06_fk_report_status_index_smoke(app) -> int:
-    """D-06: verify the five new indexes exist on real PostgreSQL.
+    """D-06: verify the D-06 indexes exist on real PostgreSQL.
 
-    Simpler than the C-11/D-01/D-05 smokes above: this migration is pure
+    Simpler than the C-11/D-01/D-05 smokes above: these migrations are pure
     index-only DDL with no data/column changes, so there is nothing to
     seed/round-trip -- the chain is already at head (``main()`` runs
     ``flask db upgrade`` before calling any smoke function), so this just
     inspects the real Postgres catalog and asserts each expected index
-    exists with the correct column(s), and that the deliberately-excluded
-    ``token_blacklist.expires_at`` was NOT given an index.
+    exists with the correct column(s), and that the pre-existing
+    ``ix_token_blacklist_jti`` is untouched.
     """
     from sqlalchemy import inspect
 
@@ -1242,17 +1332,10 @@ def _d06_fk_report_status_index_smoke(app) -> int:
             print(f"D-06: {name} on {table}{list(cols)} OK", flush=True)
 
         token_blacklist_indexes = {ix["name"] for ix in insp.get_indexes("token_blacklist")}
-        if "ix_token_blacklist_expires_at" in token_blacklist_indexes:
-            print(
-                "D-06: token_blacklist.expires_at was indexed but should NOT be "
-                "(zero query usage -- see PRODUCTION_AUDIT.md D-06 remediation detail)",
-                file=sys.stderr,
-            )
-            return 1
         if "ix_token_blacklist_jti" not in token_blacklist_indexes:
             print("D-06: pre-existing ix_token_blacklist_jti is missing (unrelated regression)", file=sys.stderr)
             return 1
-        print("D-06: token_blacklist.expires_at correctly left unindexed; jti index untouched", flush=True)
+        print("D-06: pre-existing ix_token_blacklist_jti untouched", flush=True)
 
     print("D-06: FK/report-status indexes OK", flush=True)
     return 0
@@ -1469,41 +1552,54 @@ def _d10_listing_report_dedup_smoke(app) -> int:
     from sqlalchemy.exc import IntegrityError
 
     from kk.extensions import db
-    from kk.models import Car, User
 
     suffix = uuid.uuid4().hex[:8]
     print(f"D-10: seeding listing_report dedupe smoke (suffix={suffix})...", flush=True)
 
-    def _user(tag: str, phone_prefix: str) -> User:
-        u = User(
-            username=f"d10_{tag}_{suffix}",
-            phone_number=f"{phone_prefix}{suffix[:6]}",
-            first_name="D10",
-            last_name="Smoke",
-            is_active=True,
-            is_verified=True,
-            phone_verified=True,
-            public_id=f"d10{tag}{suffix}",
-        )
-        u.set_password("Aa123456")
-        return u
+    # Both phases seed while the database sits at the HISTORICAL revision
+    # ``_D10_PRE_REVISION``, so users/cars are written with that revision's own
+    # schema (see ``_insert_row_at_current_revision``), not the current ORM
+    # models (which also carry ``user.locale``, ``car.media_status``, ...).
+    password_hash = _password_hash_for("Aa123456")
 
-    def _car(seller_id: int, tag: str) -> Car:
-        return Car(
-            seller_id=seller_id,
-            public_id=f"d10car{tag}{suffix}",
-            brand="d10smoke",
-            model="dedupe",
-            year=2020,
-            mileage=1,
-            engine_type="gas",
-            transmission="auto",
-            drive_type="fwd",
-            condition="used",
-            body_type="sedan",
-            price=1000,
-            location="Erbil",
-            is_active=True,
+    def _user(tag: str, phone_prefix: str) -> int:
+        return _insert_row_at_current_revision(
+            "user",
+            {
+                "username": f"d10_{tag}_{suffix}",
+                "phone_number": f"{phone_prefix}{suffix[:6]}",
+                "first_name": "D10",
+                "last_name": "Smoke",
+                "is_active": True,
+                "is_verified": True,
+                "phone_verified": True,
+                "public_id": f"d10{tag}{suffix}",
+                "password_hash": password_hash,
+            },
+        )
+
+    def _car_public_id(tag: str) -> str:
+        return f"d10car{tag}{suffix}"
+
+    def _car(seller_id: int, tag: str) -> int:
+        return _insert_row_at_current_revision(
+            "car",
+            {
+                "seller_id": seller_id,
+                "public_id": _car_public_id(tag),
+                "brand": "d10smoke",
+                "model": "dedupe",
+                "year": 2020,
+                "mileage": 1,
+                "engine_type": "gas",
+                "transmission": "auto",
+                "drive_type": "fwd",
+                "condition": "used",
+                "body_type": "sedan",
+                "price": 1000,
+                "location": "Erbil",
+                "is_active": True,
+            },
         )
 
     def _insert_listing_report(reporter_id: int, car_id: int, reason: str) -> int:
@@ -1521,18 +1617,13 @@ def _d10_listing_report_dedup_smoke(app) -> int:
         _run([sys.executable, "-m", "flask", "db", "downgrade", _D10_PRE_REVISION])
 
         with app.app_context():
-            reporter1 = _user("p1reporter", "07571")
-            seller1 = _user("p1seller", "07572")
-            db.session.add_all([reporter1, seller1])
-            db.session.flush()
-            car1a = _car(seller1.id, "p1a")
-            car1b = _car(seller1.id, "p1b")
-            db.session.add_all([car1a, car1b])
+            reporter1_id = _user("p1reporter", "07571")
+            seller1_id = _user("p1seller", "07572")
+            car1a_id = _car(seller1_id, "p1a")
+            _car(seller1_id, "p1b")
             db.session.commit()
-            reporter1_id = reporter1.id
-            car1a_id = car1a.id
-            car1a_public = car1a.public_id
-            car1b_public = car1b.public_id
+            car1a_public = _car_public_id("p1a")
+            car1b_public = _car_public_id("p1b")
 
             target1 = _d10_force_listing_report_ids_above(db.session, 100_000)
             seeded_id = _insert_listing_report(reporter1_id, car1a_id, "phase1 seed")
@@ -1614,15 +1705,10 @@ def _d10_listing_report_dedup_smoke(app) -> int:
         _run([sys.executable, "-m", "flask", "db", "downgrade", _D10_PRE_REVISION])
 
         with app.app_context():
-            reporter2 = _user("p2reporter", "07573")
-            seller2 = _user("p2seller", "07574")
-            db.session.add_all([reporter2, seller2])
-            db.session.flush()
-            car2 = _car(seller2.id, "p2")
-            db.session.add(car2)
+            reporter2_id = _user("p2reporter", "07573")
+            seller2_id = _user("p2seller", "07574")
+            car2_id = _car(seller2_id, "p2")
             db.session.commit()
-            reporter2_id = reporter2.id
-            car2_id = car2.id
 
             target2 = _d10_force_listing_report_ids_above(db.session, 200_000)
             dup_id_1 = _insert_listing_report(reporter2_id, car2_id, "phase2 seed a")

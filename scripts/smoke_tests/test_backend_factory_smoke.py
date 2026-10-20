@@ -573,9 +573,40 @@ class BackendFactorySmokeTest(unittest.TestCase):
         anon = self.client.get("/api/chats")
         self.assertEqual(anon.status_code, 401, anon.data)
 
+    @staticmethod
+    def _decodable_jpeg_bytes() -> bytes:
+        """A genuine, fully decodable JPEG (the upload pipeline decodes and
+        re-encodes every image, so header-only fakes are rejected)."""
+        from PIL import Image
+
+        buf = io.BytesIO()
+        Image.new("RGB", (64, 48), color=(180, 40, 40)).save(buf, format="JPEG")
+        return buf.getvalue()
+
     def test_upload_and_process_images(self):
-        # minimal jpeg bytes (not necessarily decodable); pipeline must not crash
-        jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
+        jpeg = self._decodable_jpeg_bytes()
+        # Passes the JPEG magic-byte/extension check but cannot be decoded.
+        # Production validation must keep rejecting this.
+        corrupt = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
+
+        from kk.models import CarImage, CarRevision
+
+        # The seller owns a published listing, so their photo uploads are part
+        # of a pending edit and land on the listing's hidden working copy,
+        # never on the live gallery.
+        def _public_image_count():
+            with self.app.app_context():
+                return CarImage.query.filter_by(car_id=self.car_id).count()
+
+        def _pending_image_count():
+            with self.app.app_context():
+                rev = CarRevision.query.filter_by(car_id=self.car_id).first()
+                if rev is None or rev.shadow_car_id is None:
+                    return 0
+                return CarImage.query.filter_by(car_id=rev.shadow_car_id).count()
+
+        public_before = _public_image_count()
+        self.assertEqual(_pending_image_count(), 0)
 
         up = self.client.post(
             f"/api/cars/{self.car_public}/images?skip_blur=1",
@@ -584,6 +615,9 @@ class BackendFactorySmokeTest(unittest.TestCase):
             content_type="multipart/form-data",
         )
         self.assertEqual(up.status_code, 201, up.data)
+        self.assertEqual(len((up.get_json() or {}).get("images") or []), 1)
+        self.assertEqual(_pending_image_count(), 1)
+        self.assertEqual(_public_image_count(), public_before)
 
         proc = self.client.post(
             "/api/process-car-images",
@@ -592,6 +626,34 @@ class BackendFactorySmokeTest(unittest.TestCase):
             content_type="multipart/form-data",
         )
         self.assertEqual(proc.status_code, 200, proc.data)
+
+        # Corrupt / undecodable image data is rejected, never stored.
+        bad_up = self.client.post(
+            f"/api/cars/{self.car_public}/images?skip_blur=1",
+            headers=self._auth(self.seller_token),
+            data={"images": (io.BytesIO(corrupt), "bad.jpg")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(bad_up.status_code, 400, bad_up.data)
+        self.assertIn("No valid images were uploaded", (bad_up.get_json() or {}).get("message", ""))
+        self.assertEqual(_pending_image_count(), 1)
+        self.assertEqual(_public_image_count(), public_before)
+
+        bad_proc = self.client.post(
+            "/api/process-car-images",
+            headers=self._auth(self.seller_token),
+            data={"images": (io.BytesIO(corrupt), "bad.jpg")},
+            content_type="multipart/form-data",
+        )
+        # The staging route must also refuse undecodable data (never report
+        # success or hand back a stored path). Its current error status for a
+        # file that passes the pre-checks but fails decoding is a generic
+        # failure (5xx) rather than the 400 the listing upload route returns,
+        # so only "rejected, nothing processed" is pinned here.
+        self.assertGreaterEqual(bad_proc.status_code, 400, bad_proc.data)
+        bad_proc_json = bad_proc.get_json() or {}
+        self.assertFalse(bad_proc_json.get("success"), bad_proc.data)
+        self.assertFalse(bad_proc_json.get("processed_images"), bad_proc.data)
 
     def test_phone_otp_start_and_verify(self):
         phone = "07000001000"
@@ -2125,14 +2187,109 @@ class BackendFactorySmokeTest(unittest.TestCase):
         car_public = car.get("public_id") or car.get("id")
         self.assertTrue(car_public)
 
+        def _public_price():
+            r = self.client.get(f"/api/cars/{car_public}")
+            self.assertEqual(r.status_code, 200, r.data)
+            return float(((r.get_json() or {}).get("car") or {}).get("price", 0))
+
+        self.assertEqual(_public_price(), 18000.0)
+
+        # A non-owner cannot edit someone else's listing.
+        forbidden = self.client.put(
+            f"/api/cars/{car_public}",
+            headers=self._auth(self.viewer_token),
+            json={"price": 1},
+        )
+        self.assertEqual(forbidden.status_code, 403, forbidden.data)
+        self.assertEqual(_public_price(), 18000.0)
+
+        # Editing an active (published) listing does NOT change the public
+        # listing: it creates a hidden pending revision for admin review.
         update = self.client.put(
             f"/api/cars/{car_public}",
             headers=self._auth(self.seller_token),
             json={"price": 17500},
         )
         self.assertEqual(update.status_code, 200, update.data)
-        updated = (update.get_json() or {}).get("car") or {}
-        self.assertEqual(float(updated.get("price", 0)), 17500.0)
+        update_json = update.get_json() or {}
+        self.assertTrue(update_json.get("submitted_for_review"), update.data)
+        updated = update_json.get("car") or {}
+        # The listing payload still carries the originally approved price...
+        self.assertEqual(float(updated.get("price", 0)), 18000.0)
+        # ...and the owner sees their edit as a pending revision.
+        pending = update_json.get("pending_revision") or {}
+        self.assertTrue(pending.get("id"), update.data)
+        self.assertEqual(float((pending.get("car") or {}).get("price", 0)), 17500.0)
+        revision_id = pending["id"]
+
+        # Public price is unchanged and the hidden working copy is not listed.
+        self.assertEqual(_public_price(), 18000.0)
+        listing = self.client.get("/api/cars?brand=mazda&model=cx5")
+        self.assertEqual(listing.status_code, 200, listing.data)
+        matches = [
+            c
+            for c in ((listing.get_json() or {}).get("cars") or [])
+            if (c.get("public_id") or c.get("id")) == car_public
+        ]
+        self.assertEqual(len(matches), 1, listing.data)
+        self.assertEqual(float(matches[0].get("price", 0)), 18000.0)
+        all_mazda = (listing.get_json() or {}).get("cars") or []
+        self.assertEqual(len(all_mazda), 1, listing.data)
+
+        # Only an administrator can decide a revision.
+        detail = self.client.get(
+            f"/api/admin/listing-revisions/{revision_id}",
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(detail.status_code, 200, detail.data)
+        token = (detail.get_json() or {}).get("revision", {}).get("revision_token")
+        self.assertTrue(token, detail.data)
+
+        for non_admin in (self.seller_token, self.viewer_token):
+            denied = self.client.post(
+                f"/api/admin/listing-revisions/{revision_id}/approve",
+                json={"revision_token": token},
+                headers=self._auth(non_admin),
+            )
+            self.assertIn(denied.status_code, (401, 403), denied.data)
+        anon_denied = self.client.post(
+            f"/api/admin/listing-revisions/{revision_id}/approve",
+            json={"revision_token": token},
+        )
+        self.assertIn(anon_denied.status_code, (401, 403), anon_denied.data)
+        self.assertEqual(_public_price(), 18000.0)
+
+        # Approval requires the token of the content the admin reviewed.
+        wrong_token = self.client.post(
+            f"/api/admin/listing-revisions/{revision_id}/approve",
+            json={"revision_token": "not-the-reviewed-token"},
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(wrong_token.status_code, 409, wrong_token.data)
+        self.assertEqual(_public_price(), 18000.0)
+
+        # Admin approval publishes the edit onto the same listing.
+        approve = self.client.post(
+            f"/api/admin/listing-revisions/{revision_id}/approve",
+            json={"revision_token": token},
+            headers=self._auth(self.admin_token),
+        )
+        self.assertEqual(approve.status_code, 200, approve.data)
+        self.assertEqual(_public_price(), 17500.0)
+        public_after = (self.client.get(f"/api/cars/{car_public}").get_json() or {}).get("car") or {}
+        self.assertEqual(public_after.get("public_id") or public_after.get("id"), car_public)
+        owner_after = self.client.get(
+            f"/api/cars/{car_public}", headers=self._auth(self.seller_token)
+        )
+        self.assertEqual(owner_after.status_code, 200, owner_after.data)
+        self.assertNotIn("pending_revision", (owner_after.get_json() or {}).get("car") or {})
+
+        # Deletion stays owner-only.
+        forbidden_delete = self.client.delete(
+            f"/api/cars/{car_public}",
+            headers=self._auth(self.viewer_token),
+        )
+        self.assertEqual(forbidden_delete.status_code, 403, forbidden_delete.data)
 
         delete = self.client.delete(
             f"/api/cars/{car_public}",
@@ -2754,16 +2911,74 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIsInstance(snapshot, Decimal)
         self.assertEqual(snapshot, Decimal("12345.67"))
 
-        # Price drop: seller lowers the price via the real update endpoint
-        # (exercises old_price/new_price comparison + dispatch wiring).
-        update = self.client.put(
-            f"/api/cars/{car_public}",
-            headers=self._auth(self.seller_token),
-            json={"price": 11000.00},
-        )
-        self.assertEqual(update.status_code, 200, update.data)
-        updated_price = ((update.get_json() or {}).get("car") or {}).get("price")
-        self.assertEqual(updated_price, 11000.0)
+        # Price drop: the seller lowers the price via the real update
+        # endpoint. Editing a published listing only creates a hidden pending
+        # revision, so nothing public changes and no price-drop alert is
+        # dispatched until an admin approves it.
+        from unittest.mock import patch
+
+        with patch("kk.retention_dispatch.dispatch_price_drop_alerts") as dispatch:
+            update = self.client.put(
+                f"/api/cars/{car_public}",
+                headers=self._auth(self.seller_token),
+                json={"price": 11000.00},
+            )
+            self.assertEqual(update.status_code, 200, update.data)
+            update_json = update.get_json() or {}
+            self.assertTrue(update_json.get("submitted_for_review"), update.data)
+            # Public price and favorite snapshot are untouched by the edit.
+            updated_price = ((update_json.get("car") or {}).get("price"))
+            self.assertEqual(updated_price, 12345.67)
+            pending = update_json.get("pending_revision") or {}
+            self.assertEqual((pending.get("car") or {}).get("price"), 11000.0)
+            public_before = self.client.get(f"/api/cars/{car_public}")
+            self.assertEqual(public_before.status_code, 200, public_before.data)
+            self.assertEqual(
+                ((public_before.get_json() or {}).get("car") or {}).get("price"),
+                12345.67,
+            )
+            self.assertEqual(_snapshot(), Decimal("12345.67"))
+            dispatch.assert_not_called()
+
+            # Admin review + approval publishes the new price.
+            revision_id = pending["id"]
+            detail = self.client.get(
+                f"/api/admin/listing-revisions/{revision_id}",
+                headers=self._auth(self.admin_token),
+            )
+            self.assertEqual(detail.status_code, 200, detail.data)
+            token = (detail.get_json() or {}).get("revision", {}).get("revision_token")
+            self.assertTrue(token, detail.data)
+
+            non_admin = self.client.post(
+                f"/api/admin/listing-revisions/{revision_id}/approve",
+                json={"revision_token": token},
+                headers=self._auth(self.seller_token),
+            )
+            self.assertIn(non_admin.status_code, (401, 403), non_admin.data)
+            dispatch.assert_not_called()
+
+            approve = self.client.post(
+                f"/api/admin/listing-revisions/{revision_id}/approve",
+                json={"revision_token": token},
+                headers=self._auth(self.admin_token),
+            )
+            self.assertEqual(approve.status_code, 200, approve.data)
+
+            public_after = self.client.get(f"/api/cars/{car_public}")
+            self.assertEqual(public_after.status_code, 200, public_after.data)
+            self.assertEqual(
+                ((public_after.get_json() or {}).get("car") or {}).get("price"),
+                11000.0,
+            )
+
+            # Approval of a real price drop dispatches exactly one alert with
+            # the previously public price as the baseline.
+            dispatch.assert_called_once()
+            call_args = dispatch.call_args.args
+            self.assertEqual(call_args[0], car_id)
+            self.assertEqual(call_args[1], 12345.67)
+            self.assertEqual(call_args[2], 11000.0)
 
         # The test broker is an in-process "memory://" transport with no
         # worker consuming it, so `.delay()` enqueues but never runs the
@@ -2780,11 +2995,39 @@ class BackendFactorySmokeTest(unittest.TestCase):
         from kk.tasks.alert_tasks import notify_price_drop_for_car
 
         with self.app.app_context():
-            notify_price_drop_for_car.run(car_id, 12345.67, 11000.0)
+            result = notify_price_drop_for_car.run(car_id, 12345.67, 11000.0)
+        # Run with the exact arguments the approval dispatched above: the
+        # now-public listing notifies the one favoriting buyer (not the seller).
+        self.assertEqual(result, {"notified": 1})
 
         dropped_snapshot = _snapshot()
         self.assertIsInstance(dropped_snapshot, Decimal)
         self.assertEqual(dropped_snapshot, Decimal("11000.00"))
+
+        from kk.models import Notification
+
+        with self.app.app_context():
+            viewer = self._User.query.filter_by(public_id=self.viewer_public).first()
+            seller = self._User.query.filter_by(public_id=self.seller_public).first()
+            self.assertEqual(
+                Notification.query.filter_by(
+                    user_id=viewer.id, notification_type="price_drop"
+                ).count(),
+                1,
+            )
+            self.assertEqual(
+                Notification.query.filter_by(
+                    user_id=seller.id, notification_type="price_drop"
+                ).count(),
+                0,
+            )
+
+        # A second run at the same price is not a further drop for the
+        # (now rewritten) snapshot: nobody is notified again.
+        with self.app.app_context():
+            again = notify_price_drop_for_car.run(car_id, 11000.0, 11000.0)
+        self.assertEqual(again.get("notified"), 0)
+        self.assertEqual(_snapshot(), Decimal("11000.00"))
 
     def test_price_sorting_and_filtering_still_work(self):
         """C-11 (G): price_asc/price_desc sort and min/max price filters are unaffected by the type change."""
