@@ -37,7 +37,16 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
 
   List<String> getAvailableFuelTypes() {
     final online = _onlineMultiFromCarData('_online_opts_fuel');
-    if (online != null) return online;
+    if (online != null) {
+      // A saved Sell draft carries the fuel list computed when its specs were
+      // applied, which can predate a catalog fix (e.g. no Hybrid for a Corolla).
+      // The live model-level answer is added to it; nothing is ever removed.
+      final fresh = _catalogSellOpts?.fuelTypes;
+      if (fresh == null || fresh.isEmpty) return online;
+      final extra = fresh.where((f) => !online.contains(f)).toList();
+      if (extra.isEmpty) return online;
+      return <String>[...online, ...extra]..sort();
+    }
     return narrowOptionsToCatalog(fuelTypes, _catalogSellOpts?.fuelTypes);
   }
 

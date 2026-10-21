@@ -9,14 +9,19 @@ String sellFlowTransmissionLabel(String api) {
   }
 }
 
+/// Sell / Search display label of a fuel (any spelling [canonicalFuelKey]
+/// knows: `hybrid`, `plug-in hybrid`, `plug_in_hybrid`, `Hybrid`, ...). Anything
+/// unrecognised keeps the legacy `Gasoline` label.
 String sellFlowFuelLabel(String api) {
-  switch (api.toLowerCase()) {
-    case 'diesel':
+  switch (canonicalFuelKey(api)) {
+    case kFuelDiesel:
       return 'Diesel';
-    case 'electric':
+    case kFuelElectric:
       return 'Electric';
-    case 'hybrid':
+    case kFuelHybrid:
       return 'Hybrid';
+    case kFuelPlugInHybrid:
+      return 'Plug-in Hybrid';
     default:
       return 'Gasoline';
   }

@@ -7,7 +7,10 @@ import 'package:flutter/services.dart';
 import '../data/car_catalog.dart';
 import '../models/online_spec_variant.dart';
 import '../shared/debug/app_log.dart';
+import 'car_spec_powertrain.dart';
 import 'iqcars_overlay.dart';
+
+export 'car_spec_powertrain.dart';
 
 part 'car_spec_index_parse.dart';
 part 'car_spec_index_base.dart';

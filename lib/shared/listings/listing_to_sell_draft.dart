@@ -1,3 +1,4 @@
+import '../../services/car_spec_powertrain.dart';
 import 'listing_identity.dart';
 import 'listing_image_media.dart';
 
@@ -97,10 +98,10 @@ Map<String, dynamic> listingToSellDraftSnapshot(
     'transmission': _capitalizeFirst(
       (listing['transmission'] ?? 'automatic').toString(),
     ),
-    'fuel_type': _capitalizeFirst(
+    'fuel_type': _fuelDraftLabel(
       (listing['fuel_type'] ?? listing['engine_type'] ?? 'gasoline').toString(),
     ),
-    'engine_type': _capitalizeFirst(
+    'engine_type': _fuelDraftLabel(
       (listing['engine_type'] ?? listing['fuel_type'] ?? 'gasoline').toString(),
     ),
     'body_type': _capitalizeFirst((listing['body_type'] ?? 'sedan').toString()),
@@ -152,6 +153,26 @@ Map<String, dynamic> listingToSellDraftSnapshot(
     'isEditMode': true,
     'updatedAt': DateTime.now().millisecondsSinceEpoch,
   };
+}
+
+/// Sell picker label of a stored fuel. A recognised fuel (`hybrid`,
+/// `plug-in hybrid`, `plug_in_hybrid`, `Petrol`, ...) becomes the exact option
+/// label (`Hybrid`, `Plug-in Hybrid`, ...) so an edited listing's fuel is
+/// selected in the picker; anything else keeps the legacy capitalisation.
+String _fuelDraftLabel(String raw) {
+  switch (canonicalFuelKey(raw)) {
+    case kFuelGasoline:
+      return 'Gasoline';
+    case kFuelDiesel:
+      return 'Diesel';
+    case kFuelElectric:
+      return 'Electric';
+    case kFuelHybrid:
+      return 'Hybrid';
+    case kFuelPlugInHybrid:
+      return 'Plug-in Hybrid';
+  }
+  return _capitalizeFirst(raw);
 }
 
 String _capitalizeFirst(String raw) {

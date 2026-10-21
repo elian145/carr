@@ -1,11 +1,17 @@
 import 'package:flutter/widgets.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../services/car_spec_powertrain.dart';
 
 String? translateListingValue(BuildContext context, String? raw) {
   if (raw == null) return null;
   final l = raw.trim().toLowerCase();
   final loc = AppLocalizations.of(context)!;
+  // Every spelling of a plug-in hybrid stored by the app / API / legacy rows
+  // (`plug-in hybrid`, `plug_in_hybrid`, `phev`, ...) shares one translation.
+  if (canonicalFuelKey(l) == kFuelPlugInHybrid) {
+    return loc.value_fuel_plugin_hybrid;
+  }
   switch (l) {
     case 'any':
       return loc.anyOption;

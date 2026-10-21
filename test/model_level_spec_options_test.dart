@@ -211,7 +211,10 @@ void main() {
           .where((r) => OnlineSpecVariant.engineLabelOf(r) == '2.0')
           .toList();
       expect(two, isNotEmpty);
-      expect(two.every((r) => r.fuelType == 'electric'), isTrue);
+      // The source labels the 40e "Electric" but states a 1997 cc engine: the
+      // catalog classifies it as a plug-in hybrid (never a pure electric).
+      expect(two.every((r) => r.fuelType == 'plug-in hybrid'), isTrue);
+      expect(two.any((r) => r.fuelType == 'electric'), isFalse);
     });
 
     test('Sell: the listing year only picks the default row, not the options',
@@ -547,11 +550,12 @@ void main() {
       expect(fuels(), {'Gasoline'});
       same('after 4.4 T');
 
-      // C. 2.0: exact label, no Electric auto-selection.
+      // C. 2.0: exact label; its only exact row is the 40e plug-in hybrid, so
+      // that (and never Electric) is the trusted fuel.
       await setRaw();
       await pick(loc.engineSizeL, '2.0');
       expect(s.selectedEngineSize, '2.0');
-      expect(fuels(), isEmpty);
+      expect(fuels(), {'Plug-in Hybrid'});
       expect(fuels(), isNot(contains('Electric')));
       same('after 2.0');
 

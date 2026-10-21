@@ -472,8 +472,8 @@ void main() {
     await _unmount(tester);
   });
 
-  testWidgets('X5 2.0: the only exact 2.0 row is a plug-in hybrid labelled '
-      'Electric -> engine stays 2.0, fuel is NOT auto-selected as Electric',
+  testWidgets('X5 2.0: the only exact 2.0 row is a plug-in hybrid (source '
+      'fuel "Electric") -> engine stays 2.0, fuel is never Electric',
       (tester) async {
     // Spec options are model-level (brand + model), so the X5 2.0 plug-in hybrid
     // (40e) is part of the X5 model whatever the listing year is.
@@ -482,8 +482,8 @@ void main() {
         .where((r) => OnlineSpecVariant.engineLabelOf(r) == '2.0')
         .toList();
     expect(exact, isNotEmpty);
-    expect(exact.every((r) => r.fuelType == 'electric'), isTrue,
-        reason: 'source fuel value is "Electric" with a 1997 cc engine');
+    expect(exact.every((r) => r.fuelType == 'plug-in hybrid'), isTrue,
+        reason: 'source fuel value is "Electric" with a 1997 cc engine -> plug-in hybrid');
     final s = await openStep2(tester, data);
     for (final start in <String?>[null, 'Diesel', 'Gasoline']) {
       s.setState(() => s.selectedFuelType = start);
@@ -491,7 +491,9 @@ void main() {
       await pickEngine(tester, '2.0');
       expect(eng(s), '2.0');
       expect(cyl(s), '4');
-      expect(fuelOf(s), start, reason: 'fuel left as it was (start=$start)');
+      expect(fuelOf(s), isNot('Electric'));
+      expect(fuelOf(s), isIn(<String?>[start, 'Plug-in Hybrid']),
+          reason: 'start=$start');
     }
     await _unmount(tester);
   });
@@ -1002,7 +1004,8 @@ void main() {
     expect([eng(s), cyl(s), fuelOf(s)], ['4.4 T', '8', 'Gasoline']);
     same('after 4.4 T');
 
-    // C. 2.0: exact label, no Electric auto-selection.
+    // C. 2.0: exact label; the only 2.0 row is a plug-in hybrid, so that is the
+    // fuel it implies (never Electric).
     s.setState(() {
       s.selectedFuelType = null;
       s.selectedCylinderCount = null;
@@ -1012,7 +1015,7 @@ void main() {
     await pickEngine(tester, '2.0');
     expect(eng(s), '2.0');
     expect(fuelOf(s), isNot('Electric'));
-    expect(fuelOf(s), isNull);
+    expect(fuelOf(s), 'Plug-in Hybrid');
     same('after 2.0');
 
     // D. fuel / cylinder changes reconcile selections, never the lists.

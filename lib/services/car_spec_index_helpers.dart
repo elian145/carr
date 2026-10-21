@@ -302,11 +302,11 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
 
   /// `" D"`, `" T"`, `" TD"`, or `""` for sell-flow engine size labels.
   static String _displacementBadgeSuffix({
-    required String fuelTypeField,
+    required bool isDiesel,
     required _Spec s,
     required String catalogLabelHint,
   }) {
-    final diesel = fuelTypeField == 'diesel';
+    final diesel = isDiesel;
     final blob = _catalogDisplacementBadgeContext(s, catalogLabelHint);
     final turbo = _catalogTextImpliesTurbo(blob);
     if (diesel && turbo) return ' TD';
@@ -326,19 +326,22 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
   }) {
     final raw = s.rawPairs;
 
-    final ft = (s.fuelType ?? '').toLowerCase();
-    String engineType = 'gasoline';
-    String fuelTypeField = 'gasoline';
-    if (ft.contains('diesel')) {
-      engineType = 'diesel';
-      fuelTypeField = 'diesel';
-    } else if (ft.contains('electric') && !ft.contains('hybrid')) {
-      engineType = 'electric';
-      fuelTypeField = 'electric';
-    } else if (ft.contains('hybrid')) {
-      engineType = 'hybrid';
-      fuelTypeField = 'hybrid';
-    }
+    // The dataset's own fuel value is only Petrol / Diesel / Electric; hybrid
+    // evidence lives in the variant name and in "Electric" rows that also state
+    // a combustion displacement (see [classifyCatalogFuelKey]). Fuel and engine
+    // type are the same canonical key (`gasoline`, `diesel`, `electric`,
+    // `hybrid`, `plug-in hybrid`).
+    final hasCombustionEngine = (s.displacementCc ?? 0) > 0 ||
+        _parseDisplacementLiters(raw['Displacement:']?.toString()) != null;
+    final fuelTypeField = classifyCatalogFuelKey(
+      datasetFuel: s.fuelType,
+      label: catalogLabelHint,
+      hasCombustionEngine: hasCombustionEngine,
+    );
+    final engineType = fuelTypeField;
+    // The D / T badge describes the combustion engine, so it follows the
+    // source fuel (a diesel hybrid keeps its "2.0 D" label), not the powertrain.
+    final isDieselEngine = (s.fuelType ?? '').toLowerCase().contains('diesel');
 
     String transmission = 'automatic';
     final ts = (s.transmission ?? '').toLowerCase();
@@ -360,7 +363,7 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
 
     final displacementSuffix = engineLiters != null && engineLiters > 0.001
         ? _displacementBadgeSuffix(
-            fuelTypeField: fuelTypeField,
+            isDiesel: isDieselEngine,
             s: s,
             catalogLabelHint: catalogLabelHint ?? '',
           )

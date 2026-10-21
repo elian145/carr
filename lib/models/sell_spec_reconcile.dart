@@ -71,12 +71,13 @@ class SellSpecReconciler {
 
   /// Every normalised fuel key the [rows] establish.
   ///
-  /// CarNet labels plug-in hybrids "Electric" (BMW X5 40e: 1997 cc, 4 cyl; the
-  /// dataset's only fuel values are Petrol / Diesel / Electric). A row that
-  /// reports "electric" together with a combustion displacement is not a pure
-  /// electric: it contributes electric AND gasoline AND hybrid, so it can never
-  /// prove a single fuel (no unanimous "Electric"). The fuel taxonomy itself is
-  /// untouched. Shared by the resolver and Sell's row-fill so both agree.
+  /// The catalog mapper already classifies a source-"Electric" row with a
+  /// combustion displacement as `plug-in hybrid` (see `classifyCatalogFuelKey`).
+  /// This is the safety net for rows that still arrive as "electric" with a
+  /// displacement (older saved Sell drafts, other producers): such a row is not
+  /// a pure electric, so it contributes electric AND gasoline AND hybrid AND
+  /// plug-in hybrid and can never prove a single fuel (no unanimous
+  /// "Electric"). Shared by the resolver and Sell's row-fill so both agree.
   static Set<String> fuelKeysOfRows(
     Iterable<OnlineSpecVariant> rows,
     String? Function(OnlineSpecVariant row) fuelKeyOf,
@@ -87,7 +88,7 @@ class SellSpecReconciler {
       if (k.isEmpty) continue;
       out.add(k);
       if (k == 'electric' && (r.engineSizeLiters ?? 0) > 0.001) {
-        out.addAll(const ['gasoline', 'hybrid']);
+        out.addAll(const ['gasoline', 'hybrid', 'plug-in hybrid']);
       }
     }
     return out;

@@ -1,4 +1,5 @@
 import '../../models/online_spec_variant.dart';
+import '../../services/car_spec_powertrain.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 import 'sell_media_identity.dart';
 
@@ -86,8 +87,10 @@ Map<String, dynamic> buildSellCarUpdatePayload(
       (carData['condition']?.toString() ?? 'used').toLowerCase();
   final transmission =
       (carData['transmission']?.toString() ?? 'automatic').toLowerCase();
+  // Canonical fuel key (`gasoline`, `diesel`, `electric`, `hybrid`,
+  // `plug-in hybrid`): the exact value Search filters on.
   final fuelType =
-      (carData['fuel_type']?.toString() ?? 'gasoline').toLowerCase();
+      fuelStorageValue(carData['fuel_type']?.toString() ?? 'gasoline');
   final color = (carData['color']?.toString() ?? 'black').toLowerCase();
   final bodyType = (carData['body_type']?.toString() ?? 'sedan').toLowerCase();
   final seating = int.tryParse(carData['seating']?.toString() ?? '5') ?? 5;
@@ -180,8 +183,8 @@ Map<String, dynamic> buildSellCarCreatePayload(Map<String, dynamic> carData) {
       .toLowerCase();
   final transmission = (carData['transmission']?.toString() ?? 'Automatic')
       .toLowerCase();
-  final fuelType = (carData['fuel_type']?.toString() ?? 'Gasoline')
-      .toLowerCase();
+  final fuelType =
+      fuelStorageValue(carData['fuel_type']?.toString() ?? 'Gasoline');
   final color = (carData['color']?.toString() ?? 'Black').toLowerCase();
   final bodyType = (carData['body_type']?.toString() ?? 'Sedan')
       .toLowerCase();

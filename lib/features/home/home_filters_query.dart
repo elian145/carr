@@ -1,4 +1,5 @@
 import 'home_multi_select_filter.dart';
+import '../../services/car_spec_powertrain.dart';
 import '../../shared/i18n/region_spec_labels.dart';
 
 /// Immutable home filter selection used for API queries and saved searches.
@@ -222,7 +223,7 @@ Map<String, String> homeFiltersToApiQuery(
   }
   if (!HomeFiltersSnapshot._isAny(filters.fuelType)) {
     final fuelTypes = homeFilterDecodeList(filters.fuelType)
-        .map((f) => f.toLowerCase())
+        .map(fuelStorageValue)
         .toList();
     if (fuelTypes.isNotEmpty) {
       put('fuel_type', fuelTypes.join(homeFilterListSeparator));
@@ -344,7 +345,7 @@ Map<String, dynamic> homeFiltersToSavedSearchJson(
   }
   if (!HomeFiltersSnapshot._isAny(filters.fuelType)) {
     final fuelTypes = homeFilterDecodeList(filters.fuelType)
-        .map((f) => f.toLowerCase())
+        .map(fuelStorageValue)
         .toList();
     if (fuelTypes.isNotEmpty) {
       put('fuel_type', fuelTypes.join(homeFilterListSeparator));
@@ -469,12 +470,15 @@ String? homeResolveRandomSortSeed({
   return existing;
 }
 
-bool _matchesSelectedList(String? listingValue, String? encodedFilter) {
-  final selected = homeFilterDecodeList(encodedFilter)
-      .map((v) => v.toLowerCase())
-      .toList();
+bool _matchesSelectedList(
+  String? listingValue,
+  String? encodedFilter, {
+  String Function(String)? normalize,
+}) {
+  String norm(String v) => normalize != null ? normalize(v) : v.toLowerCase();
+  final selected = homeFilterDecodeList(encodedFilter).map(norm).toList();
   if (selected.isEmpty) return true;
-  final value = listingValue?.trim().toLowerCase() ?? '';
+  final value = norm(listingValue?.trim() ?? '');
   if (value.isEmpty) return false;
   return selected.contains(value);
 }
@@ -565,6 +569,7 @@ bool listingMatchesHomeFilters(
       !_matchesSelectedList(
         _listingStringField(listing, const ['fuel_type', 'fuelType']),
         filters.fuelType,
+        normalize: fuelStorageValue,
       )) {
     return false;
   }

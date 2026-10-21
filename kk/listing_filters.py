@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .fuel_types import fuel_filter_matches
 from .listing_search import normalize_search_query
 from .models import Car
 
@@ -185,8 +186,10 @@ def car_matches_filters(car: Car, filters: dict[str, Any] | None) -> bool:
     # AND-ed `query.filter(...)` calls).
     fuel_types = _multi_values(filters.get("fuel_type"))
     if fuel_types:
-        car_fuel_type = _norm_str(getattr(car, "fuel_type", None))
-        if car_fuel_type not in fuel_types:
+        # Hybrid / Plug-in Hybrid entries match every stored spelling of exactly
+        # that fuel (kk/fuel_types.py); other entries stay an exact comparison.
+        car_fuel_value = getattr(car, "fuel_type", None)
+        if not any(fuel_filter_matches(car_fuel_value, ft) for ft in fuel_types):
             return False
 
     engine_type = filters.get("engine_type")

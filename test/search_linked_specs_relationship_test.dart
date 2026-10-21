@@ -380,7 +380,7 @@ void main() {
       expect(real(s.getAvailableEngineSizes()),
           containsAll(<String>['3.0', '3.0 T', '4.4', '4.4 T']));
 
-      // ---- A0. Engine = 2.0: only exact row is a PHEV labelled Electric. ----
+      // ---- A0. Engine = 2.0: only exact row is the 40e plug-in hybrid. ----
       expect(
         idx
             .homeFilterSpecVariantsUnion(
@@ -391,17 +391,18 @@ void main() {
               rangeMaxYear: 2020,
             )
             .where((r) => OnlineSpecVariant.engineLabelOf(r) == '2.0')
-            .every((r) => r.fuelType == 'electric'),
+            .every((r) => r.fuelType == 'plug-in hybrid'),
         isTrue,
       );
       await pick(loc.engineSizeL, '2.0');
       expect(engine(), '2.0', reason: 'exact label kept');
       expect(cyl(), '4');
-      expect(fuels(), isEmpty, reason: 'no overconfident Electric');
-      // An explicit user fuel is never rewritten by the engine pick.
+      expect(fuels(), {'Plug-in Hybrid'}, reason: 'unique trusted fuel, never Electric');
+      // A contradicting explicit fuel is replaced only by that UNIQUE evidence
+      // (same rule as every other engine).
       await setRaw(fuel: 'Diesel');
       await pick(loc.engineSizeL, '2.0');
-      expect(fuels(), {'Diesel'});
+      expect(fuels(), {'Plug-in Hybrid'});
       await setRaw();
 
       // ---- B. Engine = 3.0 T stays 3.0 T; cylinders 6. ----

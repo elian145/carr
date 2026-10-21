@@ -296,7 +296,25 @@ void main() {
         for (final f in ['engines', 'cylinders', 'fuel', 'transmission', 'seating']) {
           final exp = (before[f] as List).cast<String>().toSet()
             ..removeAll(((lost[f] as List?) ?? const []).cast<String>());
-          expect(now[f]!.toSet(), exp, reason: '$brand $model $f');
+          var actual = now[f]!.toSet();
+          if (f == 'fuel') {
+            // The audit predates hybrid classification (the source fuel field
+            // has no Hybrid value): Hybrid / Plug-in Hybrid are new, evidence-
+            // based options. Everything else must be exactly the audited set,
+            // except that a plug-in hybrid the source mislabelled "Electric"
+            // (Electric + a combustion engine) is no longer offered as Electric.
+            if (actual.contains('Plug-in Hybrid') && !actual.contains('Electric')) {
+              exp.remove('Electric');
+            }
+            // Likewise a model whose only combustion rows are hybrids (Ioniq)
+            // is no longer offered as plain Gasoline.
+            if ((actual.contains('Hybrid') || actual.contains('Plug-in Hybrid')) &&
+                !actual.contains('Gasoline')) {
+              exp.remove('Gasoline');
+            }
+            actual = actual.difference({'Hybrid', 'Plug-in Hybrid'});
+          }
+          expect(actual, exp, reason: '$brand $model $f');
         }
         checked++;
       }

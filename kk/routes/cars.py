@@ -20,6 +20,12 @@ from ..auth import (
     request_has_admin_privileges,
 )
 from ..favorites_cleanup import remove_listing_from_all_favorites
+from ..fuel_types import (
+    HYBRID_FAMILY,
+    canonical_fuel_type,
+    storage_fuel_value,
+    stored_spellings,
+)
 from ..idempotency import remember_response, replay_response
 from ..view_history import remove_listing_from_all_view_history
 from ..listing_moderation import initial_listing_status
@@ -412,6 +418,19 @@ def _split_multi_filter(val: str | None) -> list[str]:
         for part in val.split(",")
         if part.strip() and part.strip().lower() not in ("any", "")
     ]
+
+
+def _fuel_type_condition(token: str):
+    """SQL condition for ONE ``fuel_type`` filter entry.
+
+    Hybrid / Plug-in Hybrid match every stored spelling of exactly that fuel
+    (``plug_in_hybrid``, ``PHEV`` ... included) and nothing else; any other
+    entry keeps the exact case-insensitive ``ILIKE`` it always had."""
+    canon = canonical_fuel_type(token)
+    if canon in HYBRID_FAMILY:
+        spellings = set(stored_spellings(canon)) | {token.strip().lower()}
+        return func.lower(func.trim(Car.fuel_type)).in_(sorted(spellings))
+    return Car.fuel_type.ilike(token)
 
 
 def _client_ip() -> str:
@@ -914,7 +933,7 @@ def get_cars():
             fuel_types = _split_multi_filter(fuel_type)
             if fuel_types:
                 query = query.filter(
-                    or_(*[Car.fuel_type.ilike(ft) for ft in fuel_types])
+                    or_(*[_fuel_type_condition(ft) for ft in fuel_types])
                 )
         if seating is not None:
             query = query.filter(Car.seating == seating)
@@ -1284,8 +1303,13 @@ def create_car():
         model = _s(raw.get("model"), "")
         year = _i(raw.get("year"), 0)
         mileage = _i(raw.get("mileage"), 0)
-        engine_type = _s(raw.get("engine_type"), "gasoline")
-        fuel_type = _s(raw.get("fuel_type"), engine_type or "gasoline")
+        # Hybrid-family spellings (plug_in_hybrid, PHEV, HEV ...) are stored as the
+        # canonical `hybrid` / `plug-in hybrid` the Search filters match exactly;
+        # every other value is stored exactly as before.
+        engine_type = storage_fuel_value(_s(raw.get("engine_type"), "gasoline"))
+        fuel_type = storage_fuel_value(
+            _s(raw.get("fuel_type"), engine_type or "gasoline")
+        )
         transmission = _s(raw.get("transmission"), "automatic")
         drive_type = _s(raw.get("drive_type"), "fwd")
         condition = _s(raw.get("condition"), "used")
@@ -1704,11 +1728,13 @@ def update_car(car_id: str):
         if "body_type" in data:
             data["body_type"] = _s(data.get("body_type"), car.body_type or "sedan").lower()
         if "engine_type" in data:
-            data["engine_type"] = _s(
-                data.get("engine_type"), car.engine_type or "gasoline"
-            ).lower()
+            data["engine_type"] = storage_fuel_value(
+                _s(data.get("engine_type"), car.engine_type or "gasoline").lower()
+            )
         if "fuel_type" in data:
-            data["fuel_type"] = _s(data.get("fuel_type"), car.fuel_type or "gasoline").lower()
+            data["fuel_type"] = storage_fuel_value(
+                _s(data.get("fuel_type"), car.fuel_type or "gasoline").lower()
+            )
         if "color" in data:
             data["color"] = _s(data.get("color"), car.color or "white").lower()
         if "location" in data:

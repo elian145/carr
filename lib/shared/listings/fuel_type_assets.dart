@@ -1,3 +1,5 @@
+import '../../services/car_spec_powertrain.dart';
+
 /// Fuel-type artwork for filter tiles.
 const Map<String, String> kFuelTypeImageAssets = {
   'gasoline': 'assets/fuel_types/gasoline.png',
@@ -13,5 +15,6 @@ String? fuelTypeImageAsset(String? fuelType) {
   if (fuelType == null || fuelType.isEmpty || fuelType == 'Any') {
     return null;
   }
-  return kFuelTypeImageAssets[fuelType.trim().toLowerCase()];
+  return kFuelTypeImageAssets[fuelType.trim().toLowerCase()] ??
+      kFuelTypeImageAssets[canonicalFuelKey(fuelType)];
 }
