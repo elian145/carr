@@ -157,6 +157,211 @@ void main() {
     });
   });
 
+  // ---------------------------------------------------------------------------
+  // Accuracy audit regressions (final pre-merge review of a3b793f).
+  // ---------------------------------------------------------------------------
+  group('audit: classification accuracy', () {
+    String c(
+      String label, {
+      String fuel = 'Petrol (Gasoline)',
+      bool ice = true,
+    }) =>
+        classifyCatalogFuelKey(
+          datasetFuel: fuel,
+          label: label,
+          hasCombustionEngine: ice,
+        );
+
+    test('Nissan e-POWER (gasoline generator) is a hybrid, never Electric', () {
+      expect(c('Note e-POWER 1 2 (109 Hp) Hybrid Automatic'), kFuelHybrid);
+      expect(c('X-Trail 1 5 VC-T (204 Hp) e-POWER Automatic'), kFuelHybrid);
+      expect(c('Kicks e-Power 1 2 (129 Hp) Hybrid'), kFuelHybrid);
+      // even if a source row mislabelled the fuel Electric, e-POWER is not BEV
+      expect(c('Note e-POWER 1 2 (109 Hp)', fuel: 'Electric', ice: false),
+          kFuelHybrid);
+      expect(c('Note e-POWER 1 2 (109 Hp)', fuel: 'Electric'),
+          kFuelPlugInHybrid);
+    });
+
+    test('a battery "Extended Range" (bigger pack) stays a pure BEV', () {
+      for (final l in [
+        'Micra 52 kWh (150 Hp) Electric Extended Range',
+        'Mustang Mach-E Extended Range 98 7 kWh (294 Hp)',
+        'EX30 69 kWh (272 Hp) Single Motor Extended Range',
+        'Atto 3 Extended Range 60 48 kWh (204 Hp) BEV',
+        'EV6 Long Range 77 4 kWh (229 Hp)',
+      ]) {
+        expect(c(l, fuel: 'Electric', ice: false), kFuelElectric, reason: l);
+      }
+    });
+
+    test('a range extender whose engine has no displacement field is a '
+        'plug-in hybrid (engine size is in the name)', () {
+      for (final l in [
+        'S07 1 5L 31 73 kWh (238 Hp) Extended Range',
+        'G318 1 5T 35 07 kWh (430 Hp) 4WD Extended Range',
+        'EZ-6 1 5L 28 4 kWh (218 Hp) Extended Range',
+        'B10 1 5L 18 8 kWh (218 Hp) Hybrid EV',
+      ]) {
+        expect(c(l, fuel: 'Electric', ice: false), kFuelPlugInHybrid,
+            reason: l);
+      }
+    });
+
+    test('a hybrid-only nameplate without hybrid wording is a hybrid', () {
+      expect(c('Prius 1 5 16V (58 Hp) Prius 1 5 16V (58 Hp)'), kFuelHybrid);
+      expect(c('Insight 1 0 (68 Hp) Insight 1 0 (68 Hp)'), kFuelHybrid);
+      // a Prius / Insight with explicit wording keeps its own classification
+      expect(
+          c('Prius Prime 1 8 (122 Hp) Plug-in Hybrid e-CVT',
+              fuel: 'Electric'),
+          kFuelPlugInHybrid);
+      // other nameplates are never inferred from the name
+      expect(c('Corolla 1 6 (110 Hp) Corolla 1 6 (110 Hp)'), kFuelGasoline);
+      expect(c('Camry 2 5 (181 Hp)'), kFuelGasoline);
+    });
+
+    test('"M Hybrid" (Mazda) is a mild hybrid and keeps Gasoline', () {
+      expect(c('3 2 0 SkyActiv-G M Hybrid (122 Hp)'), kFuelGasoline);
+      expect(c('CX-5 2 5 e-SKYACTIV G 2 5 (141 Hp) M Hybrid'), kFuelGasoline);
+      expect(c('2 1 5 (116 Hp) Hybrid CVT'), kFuelHybrid); // Mazda2 Hybrid
+    });
+
+    test('"e-Hybrid" is plug-in only through source evidence, never by name',
+        () {
+      // Jeep (48 V) / Ford Edge (self-charging): no plug-in evidence.
+      expect(c('Avenger 1 2 (100 Hp) e-Hybrid e-DCS'), kFuelHybrid);
+      expect(c('Edge 2 0T EcoBoost (275 Hp) E-Hybrid eCVT'), kFuelHybrid);
+      // VW / Audi / Porsche: the source row is Electric + a combustion engine.
+      expect(c('Golf 1 4 TSI (204 Hp) eHybrid DSG', fuel: 'Electric'),
+          kFuelPlugInHybrid);
+      expect(c('Cayenne 3 0 V6 (462 Hp) E-Hybrid Tiptronic S', fuel: 'Electric'),
+          kFuelPlugInHybrid);
+    });
+
+    test('explicit FHEV / HEV wins over the Electric + engine rule', () {
+      expect(c('C-X16 3 0 V6 (467 Hp) FHEV Automatic', fuel: 'Electric'),
+          kFuelHybrid);
+      expect(c('Kona 1 6 GDI (141 Hp) HEV DCT', fuel: 'Electric'),
+          kFuelHybrid);
+    });
+  });
+
+  group('audit: dataset-wide invariants (real bundled dataset)', () {
+    late List<({String brand, String name, int? y0, int? y1, String fuel, bool ice, String result})> all;
+
+    setUpAll(() {
+      final d = jsonDecode(
+              File('assets/car_spec_dataset.json').readAsStringSync())
+          as Map<String, dynamic>;
+      final brands = {
+        for (final b in d['brands'] as List) (b as Map)['id']: b['name']
+      };
+      final models = {
+        for (final m in d['models'] as List) (m as Map)['id']: m
+      };
+      final trims = {for (final t in d['trims'] as List) (t as Map)['id']: t};
+      all = [
+        for (final s in d['specs'] as List)
+          () {
+            final sp = s as Map<String, dynamic>;
+            final t = trims[sp['trim_id']]!;
+            final m = models[t['model_id']]!;
+            final cc = (sp['displacement_cc'] as num?)?.toInt();
+            final raw =
+                (sp['raw_spec_pairs'] as Map)['Displacement:']?.toString();
+            final ice = (cc ?? 0) > 0 ||
+                (raw != null && RegExp(r'[1-9]').hasMatch(raw));
+            final fuel = sp['fuel_type'].toString();
+            return (
+              brand: brands[m['brand_id']].toString(),
+              name: '${m['name']} ${t['name']}',
+              y0: t['year'] as int?,
+              y1: t['year_end'] as int?,
+              fuel: fuel,
+              ice: ice,
+              result: classifyCatalogFuelKey(
+                datasetFuel: fuel,
+                label: '${m['name']} ${t['name']}',
+                hasCombustionEngine: ice,
+              ),
+            );
+          }(),
+      ];
+    });
+
+    bool has(String name, RegExp re) =>
+        re.hasMatch(name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' '));
+
+    test('no e-POWER row is ever classified Electric or Gasoline', () {
+      final rows = all.where((r) => has(r.name, RegExp(r'e power'))).toList();
+      expect(rows.length, greaterThan(10));
+      for (final r in rows) {
+        expect(r.result, kFuelHybrid, reason: r.name);
+      }
+    });
+
+    test('no source-Electric row that names a combustion engine is a BEV', () {
+      final engine = RegExp(r' \d \d{1,2}(l|t|ti|td|tci) ');
+      final rows = all.where((r) =>
+          r.fuel == 'Electric' &&
+          engine.hasMatch(
+              ' ${r.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ')} '));
+      expect(rows, isNotEmpty);
+      for (final r in rows) {
+        expect(r.result, isNot(kFuelElectric), reason: r.name);
+      }
+    });
+
+    test('no source-Electric row with a combustion displacement is a BEV', () {
+      for (final r in all.where((r) => r.fuel == 'Electric' && r.ice)) {
+        expect(r.result, isNot(kFuelElectric), reason: r.name);
+      }
+    });
+
+    test('every Prius / Insight row is a hybrid or plug-in, never Gasoline', () {
+      final rows = all
+          .where((r) => has(r.name, RegExp(r'^(prius|insight) ')))
+          .toList();
+      expect(rows.length, greaterThan(15));
+      for (final r in rows) {
+        expect([kFuelHybrid, kFuelPlugInHybrid], contains(r.result),
+            reason: r.name);
+      }
+    });
+
+    test('the only Electric RAV4 rows are the real historical RAV4 EVs', () {
+      final ev = all
+          .where((r) =>
+              r.brand == 'Toyota' &&
+              has(r.name, RegExp(r'^rav ?4 ')) &&
+              r.result == kFuelElectric)
+          .toList();
+      // Toyota RAV4 EV: 1997-2003 (NiMH) and 2012-2014 (Tesla powertrain).
+      expect(ev, isNotEmpty);
+      for (final r in ev) {
+        final ok = (r.y0! >= 1997 && r.y1! <= 2003) ||
+            (r.y0! >= 2012 && r.y1! <= 2014);
+        expect(ok, isTrue, reason: '${r.name} ${r.y0}-${r.y1}');
+        expect(r.ice, isFalse, reason: r.name);
+        expect(has(r.name, RegExp(r'kwh')), isTrue, reason: r.name);
+      }
+      // every other RAV4 generation is never Electric
+      for (final r in all.where((r) =>
+          r.brand == 'Toyota' &&
+          has(r.name, RegExp(r'^rav ?4 ')) &&
+          r.y0! >= 2015)) {
+        expect(r.result, isNot(kFuelElectric), reason: r.name);
+      }
+    });
+
+    test('mild hybrids (wording or Mazda M Hybrid) never become Hybrid', () {
+      final mild = RegExp(r'mild hybrid|mhev| 48v |hybrid assist| m hybrid ');
+      for (final r in all.where((r) => has(r.name, mild))) {
+        expect([kFuelHybrid], isNot(contains(r.result)), reason: r.name);
+      }
+    });
+  });
   group('Sell and Search offer Hybrid where the model has hybrid variants', () {
     const hybridModels = <(String, String)>[
       ('Toyota', 'Corolla'),
@@ -193,6 +398,20 @@ void main() {
         expect(sellFuels('Toyota', m), isNot(contains('Electric')));
         expect(sellFuels('Toyota', m), isNot(contains('Plug-in Hybrid')));
       }
+    });
+
+    test('hybrid-only nameplates never offer plain Gasoline / Diesel', () {
+      expect(sellFuels('Toyota', 'Prius'), {'Hybrid', 'Plug-in Hybrid'});
+      expect(sellFuels('Honda', 'Insight'), {'Hybrid'});
+    });
+
+    test('range extenders are Plug-in Hybrid, e-POWER is Hybrid', () {
+      // S07 is sold both as a BEV and as a range-extender (EREV).
+      expect(sellFuels('Deepal', 'S07'), {'Plug-in Hybrid', 'Electric'});
+      for (final m in ['X-Trail', 'Qashqai', 'Kicks']) {
+        expect(sellFuels('Nissan', m), contains('Hybrid'), reason: m);
+      }
+      expect(sellFuels('Nissan', 'Leaf'), {'Electric'});
     });
 
     test('plug-in hybrids are offered as Plug-in Hybrid, never as Electric', () {

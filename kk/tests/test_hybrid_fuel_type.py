@@ -207,6 +207,54 @@ def test_pure_electric_with_an_engine_is_still_flagged_unchanged():
     assert "ev_with_combustion_engine" in _review_codes(sigs)
 
 
+@pytest.mark.parametrize(
+    "brand, model, fuel, engine_size, cylinders",
+    [
+        # Nissan e-POWER: a gasoline engine generates the electricity -> hybrid
+        ("nissan", "note", "hybrid", 1.2, 3),
+        ("nissan", "kicks", "hybrid", 1.2, 3),
+        ("nissan", "qashqai", "hybrid", 1.5, 3),
+        ("nissan", "x-trail", "hybrid", 1.5, 3),
+        # range extenders the catalog now stores as plug-in hybrid
+        ("deepal", "s07", "plug-in hybrid", 1.5, 4),
+        ("mazda", "ez-6", "plug-in hybrid", 1.5, 4),
+        ("leapmotor", "b10", "plug-in hybrid", 1.5, 4),
+        # first-generation hybrids the source lists without hybrid wording
+        ("toyota", "prius", "hybrid", 1.5, 4),
+        ("honda", "insight", "hybrid", 1.0, 3),
+    ],
+)
+def test_audit_epower_range_extender_and_nameplate_hybrids_are_not_flagged(
+    brand, model, fuel, engine_size, cylinders
+):
+    sigs = _mod_run(
+        brand=brand, model=model, title=f"{brand} {model}", engine_type=fuel,
+        fuel_type=fuel, engine_size=engine_size, cylinder_count=cylinders,
+    )
+    assert _review_codes(sigs) == set()
+    assert rules.decide(sigs) == "AUTO_APPROVE"
+    assert rules.classify_powertrain(fuel, fuel) == rules.HYBRID
+
+
+def test_audit_battery_extended_range_ev_stays_a_clean_bev():
+    # "Electric Extended Range" (Nissan Micra EV, 52 kWh) is a big battery, not
+    # a generator: it stays Electric and carries no engine fields.
+    sigs = _mod_run(
+        brand="nissan", model="micra", title="Nissan Micra Electric Extended Range",
+        engine_type="electric", fuel_type="electric", engine_size=None, cylinder_count=None,
+        description="52 kWh extended range battery, 150 hp.",
+    )
+    assert rules.classify_powertrain("electric", "electric") == rules.BEV
+    assert _review_codes(sigs) == set()
+
+
+def test_audit_a_mild_hybrid_stored_as_gasoline_keeps_its_engine_unflagged():
+    sigs = _mod_run(
+        brand="mazda", model="3", title="Mazda 3 SkyActiv-G M Hybrid", engine_type="gasoline",
+        fuel_type="gasoline", engine_size=2.0, cylinder_count=4,
+    )
+    assert _review_codes(sigs) == set()
+
 def test_hybrid_wording_in_the_description_does_not_change_a_structured_hybrid():
     sigs = _mod_run(description="Toyota Corolla hybrid, full service history.")
     assert _review_codes(sigs) == set()
