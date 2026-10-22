@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/car_catalog.dart';
 import '../../data/car_name_translations.dart';
 import '../../shared/ui/brand_logo_image.dart';
 import 'filter_card_sections.dart';
@@ -14,11 +15,17 @@ List<String> makeModelKeywordMatchedBrands(
   return brands.where((b) => b.toLowerCase().contains(q)).toList();
 }
 
+/// Model hits for a keyword. IQ Cars models come first, CarNet-only models
+/// after; inside each group the order is model name, then brand (the existing
+/// alphabetical order). [isIqModel] defaults to the catalog's own provenance
+/// ([CarCatalog.isIqModel]), so Sell and Search rank hits identically.
 List<Map<String, String>> makeModelKeywordMatchedModels(
   List<String> brands,
   Map<String, List<String>> models,
-  String raw,
-) {
+  String raw, {
+  bool Function(String brand, String model)? isIqModel,
+}) {
+  final iq = isIqModel ?? CarCatalog.isIqModel;
   final q = raw.toLowerCase().trim();
   if (q.isEmpty) return const [];
   final seen = <String>{};
@@ -43,6 +50,9 @@ List<Map<String, String>> makeModelKeywordMatchedModels(
     }
   }
   results.sort((a, b) {
+    final aIq = iq(a['brand']!, a['model']!);
+    final bIq = iq(b['brand']!, b['model']!);
+    if (aIq != bIq) return aIq ? -1 : 1;
     final modelCmp =
         a['model']!.toLowerCase().compareTo(b['model']!.toLowerCase());
     if (modelCmp != 0) return modelCmp;

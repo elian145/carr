@@ -51,6 +51,7 @@ void main() {
     // string futures from the previous test must not leak into the next one.
     rootBundle.evict(CarSpecIndex.assetPath);
     rootBundle.evict(IqCarsOverlay.assetPath);
+    rootBundle.evict(IqCarsOverlay.provenanceAssetPath);
     rootBundle.evict('assets/car_catalog.json');
   });
 
@@ -132,9 +133,12 @@ void main() {
       expect(engines.first, 'Any');
       expect(
         engines,
-        // 2.0 D / 3.2 D are the catalog's own 2020 Everest sizes (kept); the
-        // plain 2.2 / 2.3 / 2.5 / 2.7 are the approved IQ displacements.
-        ['Any', '2.0 D', '2.0 TD', '2.2 TD', '2.3 T', '2.5', '2.7 T', '3.0 TD', '3.2 D', '3.2 TD'],
+        // Source priority: every approved IQ engine first (ascending), then
+        // the CarNet-only sizes. 2.0 D / 3.2 D are the catalog's own 2020
+        // Everest sizes: IQ does not list them (diesel without a turbo
+        // qualifier is a different engine from 2.0 TD / 3.2 TD), so they are
+        // kept, after the IQ group.
+        ['Any', '2.0 TD', '2.2 TD', '2.3 T', '2.5', '2.7 T', '3.0 TD', '3.2 TD', '2.0 D', '3.2 D'],
       );
       // Cylinders: CarNet's 2020 Everest [4, 5] UNION the full approved IQ set [4, 5, 6].
       expect(
@@ -246,8 +250,10 @@ void main() {
       expect(
         (s.availableTrims as List).cast<String>(),
         [
-          'Limited', 'XLT', 'Mid Range', 'XLS', //
-          'Titanium', 'Trend', 'Ambiente', 'Other',
+          // IQ group (shared trims in their CarNet order, then the approved
+          // IQ additions), then CarNet-only 'Mid Range', 'Other' last.
+          'Limited', 'XLT', 'XLS', 'Titanium', 'Trend', 'Ambiente', //
+          'Mid Range', 'Other',
         ],
       );
       await _unmount(tester);

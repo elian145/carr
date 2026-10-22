@@ -148,16 +148,17 @@ class CarCatalogLoader {
         final remote = modelsByBrand[name];
         modelsMap[name] = (remote != null && remote.isNotEmpty)
             ? remote
-            : (CarCatalog.models[name] ?? const <String>[]);
+            : (CarCatalog.baselineModels[name] ?? const <String>[]);
       }
 
       if (brandNames.isEmpty) return;
 
       // Preserve asset/runtime trims; only replace brands + models from API.
       final existingTrims = <String, Map<String, List<String>>>{};
-      for (final b in CarCatalog.brands) {
+      // Baseline lists only: source priority is re-applied by CarCatalog on read.
+      for (final b in CarCatalog.baselineBrands) {
         final byModel = <String, List<String>>{};
-        for (final m in (CarCatalog.models[b] ?? const <String>[])) {
+        for (final m in (CarCatalog.baselineModels[b] ?? const <String>[])) {
           // Baseline only: IQ Cars additions are re-applied by CarCatalog on read,
           // so they must not be baked into the preserved trims.
           final trims = CarCatalog.baselineTrimsFor(b, m);

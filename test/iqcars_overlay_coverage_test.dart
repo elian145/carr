@@ -315,7 +315,9 @@ void main() {
           narrowCylinderOptionsToCatalog(sellCylinderDefaults, known, iq);
       expect(n({'16'}, {'16'}), ['16']);
       expect(n({'2'}, {'2'}), ['2']);
-      expect(n({'4', '16'}, {'16'}), ['4', '16']);
+      // source priority: the approved IQ count (16) is listed before the
+      // CarNet-only count (4); both stay available
+      expect(n({'4', '16'}, {'16'}), ['16', '4']);
       expect(n({'2', '4'}, {'2', '4'}), ['2', '4']);
       expect(n({'1', '2'}, {'1', '2'}), ['1', '2']);
       // no IQ extras -> exactly the legacy contract
@@ -330,10 +332,10 @@ void main() {
       expect(n({'4'}, {'16'}), ['4']);
       // defaults are never expanded
       expect(sellCylinderDefaults, ['3', '4', '5', '6', '8', '10', '12']);
-      // Search-style list keeps 'Any' first
+      // Search-style list keeps 'Any' first, then the IQ count, then CarNet's
       expect(
         narrowCylinderOptionsToCatalog(['Any', '3', '4'], {'4', '16'}, {'16'}),
-        ['Any', '4', '16'],
+        ['Any', '16', '4'],
       );
     });
 

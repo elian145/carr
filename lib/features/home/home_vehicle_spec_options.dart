@@ -159,14 +159,20 @@ class HomeVehicleFieldOptions {
 
     // `narrowOptionsToCatalog` returns the very same [defaults] instance when it
     // falls back, so identity tells us whether the catalog narrowed the field.
+    // [iq] is the IQ Cars provenance subset of [known] (cylinders only: IQ
+    // publishes no provenance for body / transmission / fuel / drive / seating).
+    // It only reorders (IQ Cars first, CarNet-only after); membership is still
+    // decided by [narrowOptionsToCatalog] alone.
     List<String> pick(
       HomeVehicleField field,
       List<String> base,
-      Set<String>? known,
-    ) {
+      Set<String>? known, {
+      Set<String>? iq,
+    }) {
       final out = narrowOptionsToCatalog(base, known);
       if (!identical(out, base)) {
         narrowed.add(field);
+        return iqFirstOptions(out, iq);
       } else if (vehicleResolved && evidenceOnlyFields.contains(field)) {
         narrowed.add(field);
         return anyOnly;
@@ -182,7 +188,14 @@ class HomeVehicleFieldOptions {
         return anyOnly;
       }
       narrowed.add(HomeVehicleField.engineSize);
-      return <String>['Any', ...sortCatalogEngineSizeLabels(known)];
+      // Same shared order as Sell: IQ Cars sizes first, CarNet-only after.
+      return <String>[
+        'Any',
+        ...sortCatalogEngineSizeLabels(
+          known,
+          iqLabels: engineSource?.iqEngineSizes,
+        ),
+      ];
     }
 
     return HomeVehicleFieldOptions._(
@@ -210,6 +223,7 @@ class HomeVehicleFieldOptions {
         HomeVehicleField.cylinderCount,
         defaults.cylinderCounts,
         catalog?.cylinderCounts,
+        iq: catalog?.iqCylinderCounts,
       ),
       seatings: pick(
         HomeVehicleField.seating,

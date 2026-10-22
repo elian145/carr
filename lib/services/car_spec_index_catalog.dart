@@ -353,6 +353,11 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
     _iqOverlay.addEngineSizes(engineSizes, appBrand, appModel);
     _iqOverlay.addCylinderCounts(cylinderCounts, appBrand, appModel);
     final iqCylinders = _iqOverlay.approvedCylinderLabels(appBrand, appModel);
+    // Source provenance of the merged (deduplicated) engine labels: a size both
+    // sources have is ONE entry and is marked IQ, so pickers list it with the
+    // IQ Cars group.
+    final iqEngines =
+        _iqOverlay.approvedEngineLabels(appBrand, appModel, engineSizes);
     return CatalogSellFieldOptions(
       transmissions: transmissions,
       fuelTypes: fuelTypes,
@@ -362,6 +367,7 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
       engineSizes: engineSizes,
       seatings: seatings,
       iqCylinderCounts: iqCylinders,
+      iqEngineSizes: iqEngines,
     );
   }
 
@@ -399,6 +405,8 @@ mixin CarSpecIndexCatalog on CarSpecIndexHelpers {
       engineSizes: engineSizes,
       seatings: <String>{},
       iqCylinderCounts: Set<String>.of(cylinderCounts),
+      // No CarNet engine rows exist here: every engine label IS an IQ one.
+      iqEngineSizes: Set<String>.of(engineSizes),
     );
   }
 

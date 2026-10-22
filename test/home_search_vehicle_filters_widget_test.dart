@@ -235,11 +235,12 @@ void main() {
       }
 
       // CarNet [3,4,6] + IQ [4,6]; the app now resolves "4 Series" for "4-Series".
-      expect(await cylindersFor('BMW', '4-Series'), ['Any', '3', '4', '6']);
+      // Source priority: the IQ counts first, then the CarNet-only 3.
+      expect(await cylindersFor('BMW', '4-Series'), ['Any', '4', '6', '3']);
       // CarNet [4,6,8] + FULL IQ [4,6,8,10] (was just "Any,10").
       expect(await cylindersFor('BMW', '5-Series'), ['Any', '4', '6', '8', '10']);
-      // CarNet [4,6,8] + IQ [6,8,10].
-      expect(await cylindersFor('BMW', '6-Series'), ['Any', '4', '6', '8', '10']);
+      // CarNet [4,6,8] + IQ [6,8,10]: IQ counts first, the CarNet-only 4 after.
+      expect(await cylindersFor('BMW', '6-Series'), ['Any', '6', '8', '10', '4']);
       // No trusted data from either source: only Any, never the generic ladder.
       expect(await cylindersFor('Toyota', 'bZ4X'), ['Any']);
       expect((s.getAvailableEngineSizes() as List).cast<String>(), ['Any']);

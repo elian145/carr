@@ -74,12 +74,24 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
       } else if (online.length == 1) {
         return online;
       } else {
-        return <String>['Any', ...online];
+        // A saved draft carries the list from when its specs were applied; the
+        // live IQ provenance only reorders it (IQ Cars first), never trims it.
+        return <String>[
+          'Any',
+          ...iqFirstOptions(
+            online,
+            _catalogSellOpts?.iqEngineSizes,
+            passthrough: null,
+          ),
+        ];
       }
     }
     final o = _catalogSellOpts;
     if (o != null && o.engineSizes.isNotEmpty) {
-      final catalog = sortCatalogEngineSizeLabels(o.engineSizes);
+      final catalog = sortCatalogEngineSizeLabels(
+        o.engineSizes,
+        iqLabels: o.iqEngineSizes,
+      );
       if (catalog.length == 1) return catalog;
       return <String>['Any', ...catalog];
     }
@@ -88,7 +100,11 @@ mixin _SellStep2CatalogOptions on _SellStep2Fields {
 
   List<String> getAvailableCylinderCounts() {
     final online = _onlineMultiFromCarData('_online_opts_cylinder');
-    if (online != null) return online;
+    // A saved draft's list is only reordered by the live IQ provenance
+    // (IQ Cars counts first); no count is added or removed.
+    if (online != null) {
+      return iqFirstOptions(online, _catalogSellOpts?.iqCylinderCounts);
+    }
     // The generic ladder stays 3-12; counts the approved IQ overlay explicitly
     // supplied for this model (e.g. 2 or 16) are offered even outside it.
     return narrowCylinderOptionsToCatalog(
