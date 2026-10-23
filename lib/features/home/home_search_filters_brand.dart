@@ -2,20 +2,13 @@ part of 'home_flow.dart';
 
 mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
   Widget _searchBrandLogoCircle(String brand, {double size = 52}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-      ),
-      padding: const EdgeInsets.all(8),
-      child: BrandLogoImage(
-        brand: brand,
-        placeholderSize: 20,
-        errorIconSize: 22,
-        errorIconColor: _searchAccent,
-      ),
+    return BrandLogoCircle(
+      brand: brand,
+      size: size,
+      padding: 8,
+      placeholderSize: 20,
+      errorIconSize: 22,
+      errorIconColor: _searchAccent,
     );
   }
 
