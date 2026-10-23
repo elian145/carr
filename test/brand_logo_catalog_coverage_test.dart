@@ -33,27 +33,27 @@ bool _bytesEqual(List<int> a, List<int> b) {
 ///   - a brand IN this set actually has a valid logo now (stale allowlist
 ///     entry that should be removed).
 ///
-/// Both current entries are deliberately rejected supplied assets
+/// The one remaining entry is a deliberately rejected supplied asset
 /// (2026-09-19), from `D:\car logos scraper\logos\requested`
-/// (manifest.json listed both, but visual + manifest inspection ruled out
-/// using the supplied files as the brand logo):
+/// (manifest.json listed it, but visual + manifest inspection ruled out
+/// using the supplied file as the brand logo):
 ///   - CEVO Mobility: supplied file `cevo-mobility.jpg` is a CEVO-C vehicle
 ///     interior/dashboard PHOTOGRAPH, not a brand mark. No clean logo was
 ///     supplied. Rejected per explicit instruction -- do not fabricate one.
-///   - Huanghai: supplied file `huanghai.png` renders as the
-///     "LIAONING SG AUTOMOTIVE GROUP CO.,LTD." parent-group corporate mark,
-///     not a Huanghai-branded logo. Rejected per explicit instruction --
-///     do not substitute a parent-company logo for a distinct consumer
-///     brand.
+///
+/// Huanghai used to be listed too, because the scraper's `huanghai.png` is the
+/// "LIAONING SG AUTOMOTIVE GROUP CO.,LTD." parent-group mark (still rejected:
+/// a parent-company logo must not stand in for a distinct consumer brand).
+/// It now ships the brand's OWN chrome-oval emblem instead; see
+/// `tools/brand_logos/PROVENANCE.md`.
 ///
 /// The other 46 brands that were previously missing (Austin, Avatr,
 /// Borgward, ... Zotye, plus Ineos/Neta/OMODA/XEV/Renault Samsung Motors)
 /// have been restored from `D:\car logos scraper\logos` and
 /// `D:\car logos scraper\logos\carbrandlogos` and are no longer in this
-/// allowlist. Current coverage is 144/146.
+/// allowlist. Current coverage is 145/146.
 const Set<String> knownMissingBrandLogos = {
   'CEVO Mobility',
-  'Huanghai',
 };
 
 void main() {

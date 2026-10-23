@@ -336,30 +336,39 @@ void main() {
     }
 
     test(
-      'wide-wordmark fill table keeps >= 5 dp clearance on a 52 dp coin',
+      'fill table keeps the artwork >= 5 dp from the rim of a 52 dp coin',
       () async {
         for (final entry in kBrandLogoCircleFill.entries) {
-          final bytes = File(brandLogoAssetPath(entry.key)).readAsBytesSync();
+          final bytes = File(
+            'kk/static/images/brands/${entry.key}.png',
+          ).readAsBytesSync();
           final art = await _decode(bytes);
           final b = _alphaBounds(art, floor: 40)!;
           final aspect = (b.x1 - b.x0) / (b.y1 - b.y0);
+          const d = 52.0;
+          final box = entry.value * d; // square box, BoxFit.contain
+          final s = box / math.max(art.w, art.h);
+          // Farthest corner of the ink bounding box from the coin centre.
+          var corner = 0.0;
+          for (final x in [b.x0, b.x1]) {
+            for (final y in [b.y0, b.y1]) {
+              final dx = (x - art.w / 2) * s, dy = (y - art.h / 2) * s;
+              corner = math.max(corner, math.sqrt(dx * dx + dy * dy));
+            }
+          }
+          expect(
+            corner,
+            lessThanOrEqualTo(d / 2 - 5),
+            reason:
+                '${entry.key}: ink corner ${corner.toStringAsFixed(1)} dp from centre',
+          );
+          // Wide wordmarks are allowed to grow, never shrink, versus the
+          // standard 36 dp box.
           expect(
             aspect,
             greaterThan(1.6),
             reason: '${entry.key} is not a wordmark',
           );
-          const d = 52.0;
-          final box = entry.value * d;
-          final w = box;
-          final h = box / aspect;
-          final corner = math.sqrt(math.pow(w / 2, 2) + math.pow(h / 2, 2));
-          expect(
-            corner,
-            lessThanOrEqualTo(d / 2 - 5),
-            reason:
-                '${entry.key}: bbox corner ${corner.toStringAsFixed(1)} dp from centre',
-          );
-          // Allowed to grow, never shrink, versus the standard 36 dp box.
           expect(box, greaterThan(36));
         }
       },

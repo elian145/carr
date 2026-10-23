@@ -1,11 +1,16 @@
 part of 'home_flow.dart';
 
 mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
-  Widget _searchBrandLogoCircle(String brand, {double size = 52}) {
+  Widget _searchBrandLogoCircle(
+    String brand, {
+    double size = 52,
+    double? logoBoxWidth,
+  }) {
     return BrandLogoCircle(
       brand: brand,
       size: size,
       padding: 8,
+      logoBoxWidth: logoBoxWidth,
       placeholderSize: 20,
       errorIconSize: 22,
       errorIconColor: _searchAccent,
@@ -125,16 +130,17 @@ mixin _HomePageSearchFiltersBrand on _HomePageSearchFiltersCards {
                   width: selected ? 2 : 1,
                 ),
               ),
-              child: _searchBrandLogoCircle(brand),
+              // Keep the logo box this picker has always used (so correct
+              // logos don't move) but pin the coin to a true 52 dp circle.
+              child: _searchBrandLogoCircle(
+                brand,
+                logoBoxWidth: kSearchLogoBoxWidth,
+              ),
             ),
             const SizedBox(height: 8),
-            AppResponsive.fittedLabel(
+            BrandTileLabel(
               display,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: selected ? _searchAccent : labelColor,
-              ),
+              color: selected ? _searchAccent : labelColor,
             ),
           ],
         ),

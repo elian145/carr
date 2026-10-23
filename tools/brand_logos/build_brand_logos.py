@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Rebuild the 11 CarNet brand logos that used to render badly in circles.
+"""Rebuild the CarNet brand logos that used to render badly in circles.
 
-Brands: BAW, Forthing, Hyptec, Ineos, JAECOO, Jonway, Karry, Kawasaki, POER,
+Round 1: BAW, Forthing, Hyptec, Ineos, JAECOO, Jonway, Karry, Kawasaki, POER,
 Polaris, Vanderhall.
+Round 2 (physical-phone review): Huanghai, KAWEI, Polarsun, XEV, Zimmer.
 
 Inputs are the ORIGINAL supplied artwork kept (unmodified) in ``source/``
 (copied from ``D:\\car logos scraper\\logos``). Nothing is redrawn: every
@@ -78,6 +79,23 @@ RECIPES: dict[str, dict] = {
     # backgrounds) that vanishes on the white tile. The shield emblem from the
     # same official file is dark/grey and legible on both themes.
     "vanderhall": {"src": "vanderhall.webp", "crop": (0, 0, 142, 162)},
+    # --- second round (found on the physical phone, Search Cars picker) ------
+    # Huanghai had NO file at all (generic orange car icon). This is the
+    # brand's own chrome oval emblem, already transparent (see PROVENANCE.md);
+    # the scraper's earlier huanghai.png was the SG Automotive PARENT mark and
+    # is deliberately not used.
+    "huanghai": {"src": "huanghai.png", "kind": "emblem"},
+    # JPEG / GIF originals on an opaque white rectangle: remove only the outer
+    # white (flood fill from the border), keep inner whites and colours.
+    "kawei": {"src": "kawei.jpg", "matte": "flood_white"},
+    "polarsun": {"src": "polarsun.gif", "matte": "flood_white"},
+    "zimmer": {"src": "zimmer.jpg", "matte": "flood_white"},
+    # XEV's official light-background lock-up (blue X + grey EV), published by
+    # XEV itself at https://www.xevcars.it/images/logos/logo-xev.svg. The
+    # scraper's earlier file was the dark-background variant (white "EV"),
+    # which is invisible on the always-white coin, so the full official
+    # lock-up replaces the X-only crop used before.
+    "xev": {"src": "xev.svg"},
 }
 
 
