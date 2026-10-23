@@ -15,7 +15,7 @@ pillow-heif>=0.13.0
 python-multipart==0.0.31
 redis==5.0.1
 celery==5.3.4
-gunicorn==22.0.0
+gunicorn==26.0.0
 # Postgres driver (Python 3.13 compatible)
 psycopg[binary]
 marshmallow==3.26.2
