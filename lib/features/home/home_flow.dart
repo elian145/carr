@@ -35,6 +35,7 @@ import '../../app/widgets/featured_listings_auto_scroll.dart';
 import '../../app/widgets/global_listing_card.dart';
 import '../../app/widgets/main_shell_navigation.dart' as main_shell_navigation;
 import '../../shared/ui/brand_logo_image.dart';
+import '../../shared/ui/brand_tile_label.dart';
 import '../../data/car_catalog.dart';
 import '../../data/car_catalog_loader.dart';
 import '../../data/car_name_translations.dart';

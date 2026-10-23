@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/car_name_translations.dart';
 import '../../l10n/app_localizations.dart';
 import 'brand_logo_image.dart';
+import 'brand_tile_label.dart';
 import 'filter_card_sections.dart';
 
 const double _brandRowHeight = 92;
@@ -453,33 +454,19 @@ class _BrandTile extends StatelessWidget {
                   width: selected ? 2 : 1,
                 ),
               ),
-              child: Container(
-                width: 52,
-                height: 52,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                padding: const EdgeInsets.all(8),
-                child: BrandLogoImage(
-                  brand: brand,
-                  placeholderSize: 20,
-                  errorIconSize: 22,
-                  errorIconColor: kFilterAccentColor,
-                ),
+              child: BrandLogoCircle(
+                brand: brand,
+                size: 52,
+                padding: 8,
+                placeholderSize: 20,
+                errorIconSize: 22,
+                errorIconColor: kFilterAccentColor,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            BrandTileLabel(
               display,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: selected ? kFilterAccentColor : labelColor,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
+              color: selected ? kFilterAccentColor : labelColor,
             ),
           ],
         ),

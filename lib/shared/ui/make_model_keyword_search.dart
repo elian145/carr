@@ -129,20 +129,13 @@ class _MakeModelKeywordSearchState extends State<MakeModelKeywordSearch> {
   }
 
   Widget _brandLogoCircle(String brand, {double size = 40}) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-      ),
-      padding: const EdgeInsets.all(6),
-      child: BrandLogoImage(
-        brand: brand,
-        placeholderSize: 16,
-        errorIconSize: size * 0.5,
-        errorIconColor: kFilterAccentColor,
-      ),
+    return BrandLogoCircle(
+      brand: brand,
+      size: size,
+      padding: 6,
+      placeholderSize: 16,
+      errorIconSize: size * 0.5,
+      errorIconColor: kFilterAccentColor,
     );
   }
 
