@@ -33,6 +33,11 @@ const _focus = <String>[
   'Hyptec',
   'POER',
   'Toyota',
+  'Ineos',
+  'Kawasaki',
+  'Forthing',
+  'Jonway',
+  'Bentley',
 ];
 
 void main() {

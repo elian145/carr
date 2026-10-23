@@ -12,8 +12,11 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:car_listing_app/data/car_catalog.dart';
+import 'package:car_listing_app/data/car_catalog_loader.dart';
 import 'package:car_listing_app/features/home/home_flow.dart' show HomePage;
 import 'package:car_listing_app/l10n/app_localizations.dart';
+import 'package:car_listing_app/services/iqcars_overlay.dart';
 import 'package:car_listing_app/shared/ui/brand_logo_image.dart';
 import 'package:car_listing_app/theme_provider.dart' show AppThemes;
 import 'package:flutter/material.dart';
@@ -113,6 +116,16 @@ Future<void> pumpSearchBrandPicker(
   addTearDown(tester.view.reset);
   installLogoOverride();
   addTearDown(removeLogoOverride);
+
+  // Load the bundled catalog and IQ Cars overlay first, exactly like the real
+  // app does, so the grid has the production brand order (IQ Cars brands
+  // first, CarNet-only brands after) instead of the bare embedded list.
+  await tester.runAsync(() => CarCatalogLoader.ensureLoaded());
+  addTearDown(() {
+    CarCatalog.resetCatalogOverrideForTest();
+    CarCatalogLoader.debugResetForTest();
+    IqCarsOverlay.debugResetForTest();
+  });
 
   await tester.pumpWidget(
     MaterialApp(
