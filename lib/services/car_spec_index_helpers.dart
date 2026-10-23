@@ -101,7 +101,9 @@ mixin CarSpecIndexHelpers on CarSpecIndexBase {
     final fam = appModel.trim();
     if (fam.isEmpty) return const [];
     final famLower = fam.toLowerCase();
-    final catalogModels = CarCatalog.models;
+    // Membership only (never order): the baseline map keeps this cache key
+    // stable when IQ source priority is (re)applied to the picker lists.
+    final catalogModels = CarCatalog.baselineModels;
     return _familyModelsCache.putIfAbsent(
       '$brandId\x1e$famLower\x1e${identityHashCode(catalogModels)}',
       () {

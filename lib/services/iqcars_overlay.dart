@@ -195,6 +195,65 @@ Map<String, Map<String, Map<String, List<Object>>>> parseIqCarsOverlayText(
   return out;
 }
 
+/// Identity key for a BRAND or MODEL name: lower-case, the purely cosmetic
+/// separators `-` and `_` folded to a space, whitespace collapsed
+/// (`"5-Series"` == `"5 Series"`, `"Rolls-Royce"` == `"Rolls Royce"`).
+///
+/// Mirrors `carSpecSpacedNameKey` (the spec index's reviewed formatting
+/// equivalence). It bridges formatting only: `Land Cruiser`, `Land Cruiser 70`
+/// and `Land Cruiser Prado` stay three different identities.
+String iqIdentityKey(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp(r'[-_]'), ' ')
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .trim();
+
+/// Identity key for a TRIM name: lower-case + collapsed whitespace ONLY. No
+/// punctuation is folded, so `EX.R` / `EXR` and `Twin-Turbo` / `Twin Turbo`
+/// remain different trims (never merged because they merely look alike).
+String iqTrimKey(String s) => s.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+/// Parses the runtime provenance asset (`assets/car_iqcars_provenance.json`,
+/// built by `tools/catalog_enrichment/iqcars/export_runtime_provenance.py`)
+/// into `brand -> model -> shared IQ trims`. Top-level for [compute].
+///
+/// A model key means "this CarNet model has an exact IQ Cars identity"; its
+/// trim list holds the IQ trims CarNet already has. Tolerant by design: a
+/// document that is not a provenance document (missing / wrong
+/// `_meta.kind`) or is malformed yields an empty result. It never throws.
+Map<String, Map<String, List<String>>> parseIqProvenanceText(String raw) {
+  final out = <String, Map<String, List<String>>>{};
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is! Map) return out;
+    final meta = decoded['_meta'];
+    if (meta is! Map || meta['kind'] != 'iqcars_provenance') return out;
+    for (final brandEntry in decoded.entries) {
+      final brand = brandEntry.key.toString();
+      if (brand.startsWith('_')) continue;
+      final models = brandEntry.value;
+      if (models is! Map) continue;
+      final parsedModels = <String, List<String>>{};
+      for (final modelEntry in models.entries) {
+        final v = modelEntry.value;
+        if (v is! Map) continue;
+        final trims = <String>[];
+        final rawTrims = v['trims'];
+        if (rawTrims is List) {
+          for (final t in rawTrims) {
+            if (t is String && t.trim().isNotEmpty) trims.add(t.trim());
+          }
+        }
+        parsedModels[modelEntry.key.toString()] = trims;
+      }
+      if (parsedModels.isNotEmpty) out[brand] = parsedModels;
+    }
+  } catch (_) {
+    return <String, Map<String, List<String>>>{};
+  }
+  return out;
+}
+
 /// Compact runtime overlay of approved IQ Cars additions
 /// (`assets/car_iqcars_overlay.json`, built by
 /// `tools/catalog_enrichment/iqcars/export_runtime_overlay.py`).
@@ -204,7 +263,12 @@ Map<String, Map<String, Map<String, List<Object>>>> parseIqCarsOverlayText(
 ///   (same order) plus genuinely new values.
 /// * Fails safe: a missing / malformed asset behaves exactly like [empty].
 class IqCarsOverlay {
-  IqCarsOverlay._(this._byBrand, this._lowerBrand, this.modelCount);
+  IqCarsOverlay._(
+    this._byBrand,
+    this._lowerBrand,
+    this.modelCount, [
+    this._identity = const <String, Map<String, Set<String>>>{},
+  ]);
 
   /// No additions: the app behaves exactly as it did before the overlay.
   static final IqCarsOverlay empty = IqCarsOverlay._(
@@ -215,11 +279,20 @@ class IqCarsOverlay {
 
   static const String assetPath = 'assets/car_iqcars_overlay.json';
 
-  /// Builds an overlay from the plain maps produced by [parseIqCarsOverlayText].
+  /// Exact IQ Cars identities of CarNet brands / models / trims
+  /// (see `export_runtime_provenance.py`). Optional: without it no list is
+  /// reordered (the approved additions are still merged, appended as before).
+  static const String provenanceAssetPath = 'assets/car_iqcars_provenance.json';
+
+  /// Builds an overlay from the plain maps produced by [parseIqCarsOverlayText]
+  /// and, optionally, [parseIqProvenanceText] ([provenance]).
   ///
   /// [parsed] is deliberately an untyped [Map]: values that crossed an isolate
   /// boundary may have lost their generic type arguments.
-  factory IqCarsOverlay.fromParsed(Map<dynamic, dynamic> parsed) {
+  factory IqCarsOverlay.fromParsed(
+    Map<dynamic, dynamic> parsed, {
+    Map<dynamic, dynamic>? provenance,
+  }) {
     final byBrand = <String, Map<String, IqCarsModelAdditions>>{};
     final lowerBrand = <String, String>{};
     var count = 0;
@@ -255,22 +328,185 @@ class IqCarsOverlay {
         lowerBrand[_key(brandName)] = brandName;
       }
     }
-    return IqCarsOverlay._(byBrand, lowerBrand, count);
+    return IqCarsOverlay._(
+      byBrand,
+      lowerBrand,
+      count,
+      _buildIdentity(byBrand, provenance),
+    );
+  }
+
+  /// brand key -> model key -> trim keys that are IQ Cars trims.
+  ///
+  /// Built ONLY from the provenance asset. The overlay's own entries are
+  /// deliberately not used as an identity source: they cover just the models
+  /// that received approved additions (about 1,560 of the ~1,635 exactly
+  /// matched IQ models), so treating them as "all of IQ" would wrongly demote
+  /// the remaining IQ models to the CarNet-only group. Without the provenance
+  /// asset this map is empty and every list keeps its pre-existing order.
+  static Map<String, Map<String, Set<String>>> _buildIdentity(
+    Map<String, Map<String, IqCarsModelAdditions>> byBrand,
+    Map<dynamic, dynamic>? provenance,
+  ) {
+    final out = <String, Map<String, Set<String>>>{};
+    if (provenance == null) return out;
+    for (final b in provenance.entries) {
+      final models = b.value;
+      if (models is! Map) continue;
+      for (final m in models.entries) {
+        final trims = (out[iqIdentityKey(b.key.toString())] ??=
+                <String, Set<String>>{})
+            .putIfAbsent(iqIdentityKey(m.key.toString()), () => <String>{});
+        final shared = m.value;
+        if (shared is List) {
+          for (final t in shared) {
+            if (t is String) trims.add(iqTrimKey(t));
+          }
+        }
+        // Approved additions of this same model are IQ trims by definition.
+        final added = byBrand[b.key.toString()]?[m.key.toString()];
+        if (added != null) {
+          for (final t in added.trims) {
+            trims.add(iqTrimKey(t));
+          }
+        }
+      }
+    }
+    return out;
   }
 
   /// Parses runtime-asset text. Never throws; garbage yields [empty].
-  factory IqCarsOverlay.parse(String raw) {
-    final overlay = IqCarsOverlay.fromParsed(parseIqCarsOverlayText(raw));
-    return overlay.modelCount == 0 ? empty : overlay;
+  /// [provenanceRaw] is the optional provenance asset text (see
+  /// [parseIqProvenanceText]).
+  factory IqCarsOverlay.parse(String raw, {String? provenanceRaw}) {
+    final overlay = IqCarsOverlay.fromParsed(
+      parseIqCarsOverlayText(raw),
+      provenance:
+          provenanceRaw == null ? null : parseIqProvenanceText(provenanceRaw),
+    );
+    return overlay.isEmpty ? empty : overlay;
   }
 
   final Map<String, Map<String, IqCarsModelAdditions>> _byBrand;
   final Map<String, String> _lowerBrand;
+  final Map<String, Map<String, Set<String>>> _identity;
 
-  /// Number of brand + model entries.
+  /// Number of brand + model entries WITH approved additions.
   final int modelCount;
 
-  bool get isEmpty => modelCount == 0;
+  /// True when there is neither an approved addition nor any IQ identity.
+  bool get isEmpty => modelCount == 0 && _identity.isEmpty;
+
+  // ------------------------------------------------------------- provenance
+
+  /// True when IQ Cars identities are known, i.e. the provenance asset loaded.
+  /// Brand / model / trim source priority is only applied then.
+  bool get hasProvenance => _identity.isNotEmpty;
+
+  /// Does IQ Cars have this brand? (>= 1 exactly matched IQ model.) Name
+  /// formatting differences (case, `-`/`_`, spacing) are bridged.
+  bool isIqBrand(String? brand) =>
+      brand != null && _identity.containsKey(iqIdentityKey(brand));
+
+  /// Does IQ Cars have exactly this brand + model? No fuzzy matching:
+  /// `Corolla` is not `Corolla Cross`, `Land Cruiser` is not `Land Cruiser Prado`.
+  bool isIqModel(String? brand, String? model) =>
+      brand != null &&
+      model != null &&
+      (_identity[iqIdentityKey(brand)]?.containsKey(iqIdentityKey(model)) ??
+          false);
+
+  /// Does IQ Cars have this trim for this model? Only an exact (case and
+  /// whitespace insensitive) trim name counts, never a lookalike.
+  bool isIqTrim(String? brand, String? model, String? trim) {
+    if (brand == null || model == null || trim == null) return false;
+    return _identity[iqIdentityKey(brand)]?[iqIdentityKey(model)]
+            ?.contains(iqTrimKey(trim)) ??
+        false;
+  }
+
+  // ----------------------------------------------------------- prioritising
+
+  /// Stable partition: IQ items first, the rest after, each group keeping its
+  /// existing relative order (the catalog's own order is meaningful: alphabetical
+  /// brands/models, curated trims, admin `sort_order` from the API).
+  ///
+  /// Returns [items] itself (same instance) when there is nothing to reorder:
+  /// no IQ item, no CarNet-only item, or already in priority order. So a
+  /// brand/model without IQ data keeps its existing ordering untouched, and no
+  /// item is ever added, dropped or renamed.
+  static List<String> partitionIqFirst(
+    List<String> items,
+    bool Function(String) isIq,
+  ) {
+    if (items.length < 2) return items;
+    final iq = <String>[];
+    final rest = <String>[];
+    for (final s in items) {
+      (isIq(s) ? iq : rest).add(s);
+    }
+    if (iq.isEmpty || rest.isEmpty) return items;
+    var sameOrder = true;
+    for (var i = 0; i < iq.length; i++) {
+      if (items[i] != iq[i]) {
+        sameOrder = false;
+        break;
+      }
+    }
+    if (sameOrder) return items;
+    return List<String>.unmodifiable(<String>[...iq, ...rest]);
+  }
+
+  /// Brands with IQ Cars brands first.
+  List<String> prioritizeBrands(List<String> brands) =>
+      hasProvenance ? partitionIqFirst(brands, isIqBrand) : brands;
+
+  /// Models of [brand] with IQ Cars models first. A brand IQ does not have is
+  /// returned untouched.
+  List<String> prioritizeModels(String? brand, List<String> models) {
+    if (!isIqBrand(brand)) return models;
+    return partitionIqFirst(models, (m) => isIqModel(brand, m));
+  }
+
+  /// Trims of [brand] + [model] with IQ Cars trims first. A trailing `Other`
+  /// placeholder always stays last (CarNet convention); a model IQ does not
+  /// have (or has no matching trim for) is returned untouched.
+  List<String> prioritizeTrims(
+    String? brand,
+    String? model,
+    List<String> trims,
+  ) {
+    if (!isIqModel(brand, model)) return trims;
+    final hasOther = trims.length > 1 && iqTrimKey(trims.last) == 'other';
+    final body = hasOther ? trims.sublist(0, trims.length - 1) : trims;
+    final ordered = partitionIqFirst(body, (t) => isIqTrim(brand, model, t));
+    if (identical(ordered, body)) return trims;
+    return List<String>.unmodifiable(
+      hasOther ? <String>[...ordered, trims.last] : ordered,
+    );
+  }
+
+  /// The subset of engine [labels] (catalog labels such as `2.0`, `3.5 T`) that
+  /// IQ Cars approved for Brand + Model, matched by displacement + qualifier
+  /// (`2.4T` == `2.4 T`; `2.4 D` is NOT `2.4`). Empty when IQ has no engine
+  /// data for the model (then the CarNet order is kept as it was).
+  Set<String> approvedEngineLabels(
+    String? brand,
+    String? model,
+    Iterable<String> labels,
+  ) {
+    final adds = additionsFor(brand, model)?.engineVariants;
+    if (adds == null || adds.isEmpty) return const <String>{};
+    final ids = <String>{for (final v in adds) v.identity};
+    final out = <String>{};
+    for (final l in labels) {
+      final id = parseEngineIdentity(l);
+      if (id != null && ids.contains('${id.tenths}|${id.qualifier}')) {
+        out.add(l);
+      }
+    }
+    return out;
+  }
 
   // Lookup memo: model answers (including "none") are remembered per raw key so
   // repeated Search/Sell rebuilds never re-normalise strings.
@@ -419,9 +655,24 @@ class IqCarsOverlay {
           ? await loader(assetPath)
           : await rootBundle.loadString(assetPath);
       final parsed = await compute(parseIqCarsOverlayText, raw);
-      _current = IqCarsOverlay.fromParsed(parsed);
+      // Provenance (which CarNet brands/models/trims IQ also has) is optional
+      // and independent: if it is missing or malformed the additions still
+      // load and no list is reordered (existing order, nothing lost).
+      Map<String, Map<String, List<String>>>? provenance;
+      try {
+        final rawProvenance = loader != null
+            ? await loader(provenanceAssetPath)
+            : await rootBundle.loadString(provenanceAssetPath);
+        provenance = await compute(parseIqProvenanceText, rawProvenance);
+      } catch (e) {
+        appLog('IqCarsOverlay: provenance unavailable ($e)');
+      }
+      _current = IqCarsOverlay.fromParsed(parsed, provenance: provenance);
       if (_current.isEmpty) _current = empty;
-      appLog('IqCarsOverlay: loaded ${_current.modelCount} models');
+      appLog(
+        'IqCarsOverlay: loaded ${_current.modelCount} models'
+        '${_current.hasProvenance ? ' (+provenance)' : ''}',
+      );
     } catch (e) {
       _current = empty;
       appLog('IqCarsOverlay: unavailable ($e); using catalog only');

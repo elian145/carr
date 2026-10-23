@@ -343,7 +343,14 @@ void main() {
   group('loading', () {
     test('loads once, parses once, then serves the same instance', () async {
       var reads = 0;
+      var provenanceReads = 0;
       IqCarsOverlay.debugAssetLoader = (path) async {
+        if (path == IqCarsOverlay.provenanceAssetPath) {
+          // The provenance asset is optional and loaded alongside the overlay
+          // (once). This fixture has none, so it is simply unavailable.
+          provenanceReads++;
+          throw StateError('no provenance in this fixture');
+        }
         reads++;
         expect(path, IqCarsOverlay.assetPath);
         return _doc;
@@ -355,6 +362,7 @@ void main() {
         IqCarsOverlay.ensureLoaded(),
       ]);
       expect(reads, 1);
+      expect(provenanceReads, 1);
       expect(IqCarsOverlay.loadCount, 1);
       expect(identical(a, b), isTrue);
       expect(futures.every((f) => identical(f, a)), isTrue);

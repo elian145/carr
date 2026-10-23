@@ -542,14 +542,15 @@ void main() {
       );
     }
 
-    test('Everest: the engine picker lists the new sizes, ascending, after Any', () {
+    test('Everest: the engine picker lists IQ sizes first (ascending), then CarNet-only sizes, after Any', () {
       final o = resolve(withIq(), 'Ford', 'Everest');
       expect(o.engineSizes.first, 'Any');
-      expect(o.engineSizes, ['Any', '2.0 D', '2.0 TD', '2.2 TD', '2.3 T', '2.5', '2.7 T', '3.0 TD', '3.2 D', '3.2 TD']);
+      // IQ Cars sizes first (ascending), then CarNet's own 2.0 D / 3.2 D.
+      expect(o.engineSizes, ['Any', '2.0 TD', '2.2 TD', '2.3 T', '2.5', '2.7 T', '3.0 TD', '3.2 TD', '2.0 D', '3.2 D']);
       expect(o.narrowedFields, contains(HomeVehicleField.engineSize));
     });
 
-    test('cylinders: added counts join the narrowed list in default-list order', () {
+    test('cylinders: added counts join the narrowed list; IQ counts first, each group in default-list order', () {
       final base = plain();
       final iq = withIq();
       String? found;
@@ -562,12 +563,24 @@ void main() {
           if (gained.isEmpty || !gained.every(searchCylinderDefaults.contains)) continue;
           final before = resolve(base, b.key, m.key).cylinderCounts;
           final after = resolve(iq, b.key, m.key).cylinderCounts;
-          expect(after.where(before.contains).toList(), before, reason: 'existing options keep their order');
           expect(after.toSet().difference(before.toSet()), gained);
-          // order follows the default list, 'Any' retained
-          final order = after.map(searchCylinderDefaults.indexOf).toList();
-          expect(order, [...order]..sort());
+          expect(before.toSet().difference(after.toSet()), isEmpty, reason: 'nothing is removed');
+          // 'Any' retained first, then IQ counts, then CarNet-only counts; inside
+          // each group the order follows the default list
           expect(after.first, 'Any');
+          final iqCounts = y.iqCylinderCounts;
+          final rest = after.skip(1).toList();
+          expect(rest, [
+            ...rest.where(iqCounts.contains),
+            ...rest.where((c) => !iqCounts.contains(c)),
+          ]);
+          for (final group in [
+            rest.where(iqCounts.contains),
+            rest.where((c) => !iqCounts.contains(c)),
+          ]) {
+            final order = group.map(searchCylinderDefaults.indexOf).toList();
+            expect(order, [...order]..sort());
+          }
           found = '${b.key} ${m.key}';
           break;
         }

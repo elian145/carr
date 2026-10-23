@@ -184,11 +184,16 @@ void _applyCatalogSellFieldUnionToCarData(
         if (c != 0) return c;
         return a.compareTo(b);
       });
-    d['_online_opts_engine_size'] = eng;
+    // Source priority: IQ Cars sizes first, CarNet-only after (litres order
+    // inside each group). Only the order changes; no size is dropped.
+    d['_online_opts_engine_size'] =
+        iqFirstOptions(eng, o.iqEngineSizes, passthrough: null);
   }
   if (o.cylinderCounts.isNotEmpty) {
-    d['_online_opts_cylinder'] = o.cylinderCounts.toList()
+    final cyl = o.cylinderCounts.toList()
       ..sort((a, b) => (int.tryParse(a) ?? 0).compareTo(int.tryParse(b) ?? 0));
+    d['_online_opts_cylinder'] =
+        iqFirstOptions(cyl, o.iqCylinderCounts, passthrough: null);
   }
   if (o.seatings.isNotEmpty) {
     d['_online_opts_seating'] = o.seatings.toList()..sort();

@@ -16,7 +16,24 @@ class CarCatalog {
   /// Baseline + overlay trims, built once per (baseline, overlay) pair.
   static Map<String, Map<String, List<String>>>? _mergedTrims;
 
-  static List<String> get brands => _runtimeBrands ?? _embeddedBrands;
+  /// Source-priority views (IQ Cars entries first), built once per
+  /// (baseline, overlay) pair so every read returns the SAME instance (callers
+  /// such as the spec index key their caches on its identity).
+  static List<String>? _priorityBrands;
+  static Map<String, List<String>>? _priorityModels;
+
+  /// Brands for every picker (Sell, Edit, Search, Filters): IQ Cars brands
+  /// first, then CarNet-only brands; each group keeps the catalog's own order.
+  /// Nothing is added, removed or renamed. Without IQ provenance this is the
+  /// baseline list itself.
+  static List<String> get brands {
+    final base = baselineBrands;
+    if (!_iqOverlay.hasProvenance) return base;
+    return _priorityBrands ??= _iqOverlay.prioritizeBrands(base);
+  }
+
+  /// The catalog's own brand list, exactly as loaded (no source priority).
+  static List<String> get baselineBrands => _runtimeBrands ?? _embeddedBrands;
 
   static final List<String> _embeddedBrands = [
     'Acura',
@@ -177,19 +194,51 @@ class CarCatalog {
     _runtimeModels = null;
     _runtimeTrims = null;
     _iqOverlay = IqCarsOverlay.empty;
+    _invalidateDerived();
+  }
+
+  static void _invalidateDerived() {
     _mergedTrims = null;
+    _priorityBrands = null;
+    _priorityModels = null;
   }
 
   static void resetBrandsOverrideForTest() => resetCatalogOverrideForTest();
 
-  static Map<String, List<String>> get models =>
+  /// Models per brand for every picker: IQ Cars models first, then CarNet-only
+  /// models (each group keeps the catalog's own order). Nothing is added,
+  /// removed or renamed. A brand IQ Cars does not have keeps its list as-is.
+  static Map<String, List<String>> get models {
+    final base = baselineModels;
+    if (!_iqOverlay.hasProvenance) return base;
+    return _priorityModels ??= <String, List<String>>{
+      for (final e in base.entries)
+        e.key: _iqOverlay.prioritizeModels(e.key, e.value),
+    };
+  }
+
+  /// The catalog's own models, exactly as loaded (no source priority).
+  static Map<String, List<String>> get baselineModels =>
       _runtimeModels ?? _embeddedModels;
+
+  /// Does IQ Cars have this brand? (Same identity rules as the ordering.)
+  static bool isIqBrand(String? brand) => _iqOverlay.isIqBrand(brand);
+
+  /// Does IQ Cars have this brand + model? (Same identity rules as the ordering.)
+  static bool isIqModel(String? brand, String? model) =>
+      _iqOverlay.isIqModel(brand, model);
+
+  /// Does IQ Cars have this trim for this model? (Exact trim name only.)
+  static bool isIqTrim(String? brand, String? model, String? trim) =>
+      _iqOverlay.isIqTrim(brand, model, trim);
 
   /// The catalog's own trims, exactly as loaded (no IQ Cars additions).
   static Map<String, Map<String, List<String>>> get baselineTrimsByBrandModel =>
       _runtimeTrims ?? _embeddedTrimsByBrandModel;
 
-  /// Catalog trims **plus** the approved IQ Cars additions (additive only).
+  /// Catalog trims **plus** the approved IQ Cars additions (additive only),
+  /// ordered IQ Cars trims first, then CarNet-only trims (each group keeps its
+  /// existing order; a trailing `Other` stays last).
   ///
   /// Built once per (catalog, overlay) pair and then returned as-is, so Search /
   /// Sell rebuilds stay O(1). Models that have no catalog trims get just the
@@ -219,15 +268,29 @@ class CarCatalog {
         (merged[brand] ??= <String, List<String>>{})[model] = next;
       }
     }
+    if (overlay.hasProvenance) {
+      for (final brandEntry in merged.entries) {
+        for (final modelEntry in brandEntry.value.entries.toList()) {
+          final next = overlay.prioritizeTrims(
+            brandEntry.key,
+            modelEntry.key,
+            modelEntry.value,
+          );
+          if (!identical(next, modelEntry.value)) {
+            brandEntry.value[modelEntry.key] = next;
+          }
+        }
+      }
+    }
     return merged;
   }
 
-  /// Applies the approved IQ Cars additions (idempotent; pass
+  /// Applies the approved IQ Cars additions and provenance (idempotent; pass
   /// [IqCarsOverlay.empty] to go back to the plain catalog).
   static void applyIqCarsOverlay(IqCarsOverlay overlay) {
     if (identical(overlay, _iqOverlay)) return;
     _iqOverlay = overlay;
-    _mergedTrims = null;
+    _invalidateDerived();
   }
 
   /// Applies catalog sections from decoded asset JSON.
@@ -274,9 +337,10 @@ class CarCatalog {
       }
       if (parsed.isNotEmpty) {
         _runtimeTrims = parsed;
-        _mergedTrims = null;
       }
     }
+    // Brands / models / trims may all have changed: drop every derived view.
+    _invalidateDerived();
   }
 
   /// The catalog's own trims for a model (no IQ Cars additions); returns
@@ -287,14 +351,18 @@ class CarCatalog {
   }
 
   /// Trims for a given brand and model; returns ['Base'] only when no trim data
-  /// exists. Approved IQ Cars trims are appended (catalog order is preserved and
-  /// nothing is removed); a model without catalog trims keeps its `Base` entry.
+  /// exists. Approved IQ Cars trims are merged in (nothing is removed) and the
+  /// list is ordered IQ Cars trims first, then CarNet-only trims (existing order
+  /// kept inside each group; `Other` last). A model without catalog trims keeps
+  /// its `Base` entry, which is a CarNet placeholder and so sorts after IQ trims.
   static List<String> trimsFor(String? brand, String? model) {
     if (brand == null || model == null) return ['Base'];
     final base = baselineTrimsByBrandModel[brand]?[model];
     final merged = trimsByBrandModel[brand]?[model];
     if (merged == null) return base ?? ['Base'];
-    if (base == null) return <String>['Base', ...merged];
+    if (base == null) {
+      return _iqOverlay.prioritizeTrims(brand, model, <String>['Base', ...merged]);
+    }
     return merged;
   }
 }

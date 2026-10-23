@@ -65,7 +65,16 @@ class CatalogSellFieldOptions {
     required this.engineSizes,
     required this.seatings,
     this.iqCylinderCounts = const <String>{},
+    this.iqEngineSizes = const <String>{},
   });
+
+  /// The subset of [engineSizes] (as spelled in [engineSizes]) that IQ Cars has
+  /// for this Brand + Model, matched by displacement + qualifier. A size present
+  /// in both CarNet and IQ Cars appears once, here. Empty when IQ has no engine
+  /// data for the model (CarNet order is then kept). Drives the source-priority
+  /// order of every engine picker. [iqCylinderCounts] plays the same role for
+  /// cylinder counts.
+  final Set<String> iqEngineSizes;
 
   /// The subset of [cylinderCounts] that came from the approved IQ Cars overlay
   /// (explicitly supplied model-level counts). Only these may be offered by a
@@ -117,6 +126,23 @@ List<String> narrowCylinderOptionsToCatalog(
   Set<String>? iqApproved, {
   String passthrough = 'Any',
 }) {
+  final narrowed = _narrowCylinderOptionsToCatalog(
+    defaults,
+    known,
+    iqApproved,
+    passthrough: passthrough,
+  );
+  // The untouched defaults (catalog said nothing usable) keep their order.
+  if (identical(narrowed, defaults)) return narrowed;
+  return iqFirstOptions(narrowed, iqApproved, passthrough: passthrough);
+}
+
+List<String> _narrowCylinderOptionsToCatalog(
+  List<String> defaults,
+  Set<String>? known,
+  Set<String>? iqApproved, {
+  String passthrough = 'Any',
+}) {
   if (known == null ||
       known.isEmpty ||
       iqApproved == null ||
@@ -144,9 +170,53 @@ List<String> narrowCylinderOptionsToCatalog(
   ];
 }
 
+/// Source priority for an option list shown in a picker (Sell, Edit, Search,
+/// Filters): entries in [iq] (the IQ Cars provenance set) come first, entries
+/// only CarNet has come after. Each group keeps the order [options] already had
+/// (ascending litres / cylinders), the [passthrough] entry (`Any`) stays first,
+/// and nothing is added, removed or renamed.
+///
+/// Returns [options] itself when there is nothing to reorder (no provenance for
+/// the model, no CarNet-only entry, or already in priority order), so a model
+/// without IQ data keeps its existing ordering exactly.
+List<String> iqFirstOptions(
+  List<String> options,
+  Set<String>? iq, {
+  String? passthrough = 'Any',
+}) {
+  if (iq == null || iq.isEmpty || options.length < 2) return options;
+  final lead = <String>[];
+  final first = <String>[];
+  final rest = <String>[];
+  for (final o in options) {
+    if (passthrough != null && o == passthrough) {
+      lead.add(o);
+    } else if (iq.contains(o)) {
+      first.add(o);
+    } else {
+      rest.add(o);
+    }
+  }
+  if (first.isEmpty || rest.isEmpty) return options;
+  final out = <String>[...lead, ...first, ...rest];
+  for (var i = 0; i < out.length; i++) {
+    if (out[i] != options[i]) return out;
+  }
+  return options;
+}
+
 /// Engine-size labels (`2.0`, `3.5 T`, ...) ordered by litres, then label.
 /// Shared by Sell step 2 and Search so both list catalog engines identically.
-List<String> sortCatalogEngineSizeLabels(Iterable<String> labels) {
+///
+/// With [iqLabels] (the subset IQ Cars approved for the model, see
+/// [CatalogSellFieldOptions.iqEngineSizes]) the list is source-prioritised: IQ
+/// Cars sizes first, CarNet-only sizes after, each group ordered by litres then
+/// label. Without it (or without a CarNet-only size) the order is the plain
+/// litres order, exactly as before.
+List<String> sortCatalogEngineSizeLabels(
+  Iterable<String> labels, {
+  Set<String>? iqLabels,
+}) {
   final sorted = labels.toList()
     ..sort((a, b) {
       final ae = OnlineSpecVariant.parseLeadingEngineLiters(a) ?? 0;
@@ -155,7 +225,7 @@ List<String> sortCatalogEngineSizeLabels(Iterable<String> labels) {
       if (c != 0) return c;
       return a.toLowerCase().compareTo(b.toLowerCase());
     });
-  return sorted;
+  return iqFirstOptions(sorted, iqLabels, passthrough: null);
 }
 
 /// Sell step 2 picker label for transmission (internal API value from [CatalogSpecFields]).

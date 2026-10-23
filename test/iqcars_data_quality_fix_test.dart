@@ -242,9 +242,10 @@ void main() {
       expect(base, {'3', '4', '6'});
       expect(overlay.additionsFor('BMW', '4-Series')!.cylinders, [4, 6]);
       expect(cyls(iqIdx.homeFilterFieldOptions('BMW', '4-Series', '')), {'3', '4', '6'});
-      expect(search(iqIdx, 'BMW', '4-Series').cylinderCounts, ['Any', '3', '4', '6']);
+      // Source priority: IQ's [4, 6] first, then the CarNet-only 3.
+      expect(search(iqIdx, 'BMW', '4-Series').cylinderCounts, ['Any', '4', '6', '3']);
       // Model-level: the year (2020) does not narrow the cylinder options.
-      expect(sell(iqIdx, 'BMW', '4-Series', 2020).cylinders, ['3', '4', '6']);
+      expect(sell(iqIdx, 'BMW', '4-Series', 2020).cylinders, ['4', '6', '3']);
     });
 
     test('BMW 5-Series: CarNet [4,6,8] + FULL IQ [4,6,8,10] -> 4,6,8,10', () {
@@ -260,8 +261,13 @@ void main() {
       final iq = overlay.additionsFor('BMW', '6-Series')!.cylinders.map((c) => '$c');
       expect(overlay.additionsFor('BMW', '6-Series')!.cylinders, [6, 8, 10]);
       expect(cyls(iqIdx.homeFilterFieldOptions('BMW', '6-Series', '')), {...base, ...iq});
-      expect(search(iqIdx, 'BMW', '6-Series').cylinderCounts,
-          ['Any', ...({...base, ...iq}.toList()..sort((a, b) => int.parse(a).compareTo(int.parse(b))))]);
+      int byNum(String a, String b) => int.parse(a).compareTo(int.parse(b));
+      // Source priority: the IQ counts first, then the CarNet-only ones.
+      expect(search(iqIdx, 'BMW', '6-Series').cylinderCounts, [
+        'Any',
+        ...(iq.toList()..sort(byNum)),
+        ...(base.difference(iq.toSet()).toList()..sort(byNum)),
+      ]);
     });
 
     test('Cadillac ATS-V / CTS-V, Rolls Royce and Ram 2500 get CarNet baselines', () {
