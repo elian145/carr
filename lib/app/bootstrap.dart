@@ -192,6 +192,10 @@ void _runZonedApp(Widget app) {
         // automatically once connectivity returns (see
         // PendingSellSubmissionService).
         PendingSellSubmissionService.instance.hookConnectivityRecovery();
+        // Re-attempt a stranded `/auth/me` automatically once connectivity
+        // returns, so no screen needs a manual Retry for a temporary
+        // network failure (see AuthService.hookConnectivityRecovery).
+        AuthService().hookConnectivityRecovery();
         try {
           await LocaleController.loadSavedLocale();
         } catch (e, st) { logNonFatal(e, st); }

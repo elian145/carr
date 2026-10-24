@@ -1,18 +1,19 @@
-// Regression tests: intermittent missing Edit / Delete / Analytics buttons on
-// Listing Details opened from My Listings.
+// Regression tests: Edit / Delete / Analytics on Listing Details opened from
+// My Listings must be there on the FIRST render of a cold start.
 //
-// Root cause pinned here: `AuthGuard` mounts My Listings as soon as a stored
-// token exists -- BEFORE `/auth/me` has returned -- so My Listings -> My Car ->
-// Listing Details can be fully built while `AuthService.userId` is still null.
-// `CarDetailsPage` decided ownership once per build by reading
-// `Provider.of<AuthService>(listen: false)` and never subscribed to
-// AuthService, so when `/auth/me` finished a moment later nothing rebuilt the
-// page: the owner stayed "not the owner" (controls missing) until the app was
-// restarted. The same one-shot read also kept the controls visible after the
-// session ended or switched to another account.
+// Root cause pinned here: the signed-in account's id used to come only from
+// `/auth/me`, but `AuthGuard` mounts My Listings as soon as a stored token
+// exists -- BEFORE `/auth/me` returns -- so My Listings -> My Car -> Listing
+// Details could be fully built while `AuthService.userId` was still null, and
+// `CarDetailsPage` (which read it once with `listen: false`) stayed "not the
+// owner" until the app was restarted.
 //
-// Every test drives the real pages with a scripted MockClient + Completers;
-// no real network and no real timing.
+// The fix restores the account id from the persisted session's own tokens
+// (`SessionIdentity`) so ownership is known immediately, keeps verifying the
+// profile in the background, and follows the account reactively. These tests
+// drive the real pages with a scripted MockClient + Completers (no real
+// network or timing) and assert -- on EVERY frame -- that no ownership
+// spinner or Retry button ever stands in for the buttons.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -23,6 +24,7 @@ import 'package:car_listing_app/pages/car_details_page.dart';
 import 'package:car_listing_app/pages/my_listings_page.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
+import 'package:car_listing_app/services/connectivity_service.dart';
 import 'package:car_listing_app/shared/auth/token_store.dart';
 import 'package:car_listing_app/shared/net/transient_get_retry.dart';
 import 'package:car_listing_app/theme_provider.dart';
@@ -34,8 +36,11 @@ import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _ownerId = 'user_owner';
-const _otherId = 'user_other';
+import 'support/fake_session_jwt.dart';
+
+// Backend public ids are UUIDs; the JWT `sub` carries exactly this value.
+const _ownerId = 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+const _otherId = 'bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb';
 
 http.Response _json(int status, Object body) => http.Response(
   json.encode(body),
@@ -66,6 +71,13 @@ Map<String, dynamic> _listing(
   'seller': {'id': sellerId, 'username': 'seller_$sellerId'},
 };
 
+/// Persists a session the way a cold start finds it: both tokens issued for
+/// [accountId] (the backend's `identity=public_id`).
+Future<void> _storeSessionFor(String accountId) => ApiService.setTokens(
+  accessToken: fakeSessionJwt(accountId),
+  refreshToken: fakeSessionJwt(accountId, type: 'refresh'),
+);
+
 /// Scripted backend. Every gate is optional; ungated endpoints answer
 /// immediately.
 class _Backend {
@@ -77,6 +89,9 @@ class _Backend {
   /// When true `/auth/me` fails with a transient network error.
   bool meDown = false;
   String meUserId = _ownerId;
+
+  /// When set, `POST /auth/logout` waits for it (slow server revocation).
+  Completer<void>? logoutGate;
 
   /// Per-listing gate for `GET /api/cars/<id>`.
   final Map<String, Completer<void>> carGates = {};
@@ -103,6 +118,11 @@ class _Backend {
           'account_type': 'individual',
         },
       });
+    }
+    if (path.endsWith('/auth/logout')) {
+      final gate = logoutGate;
+      if (gate != null) await gate.future;
+      return _json(200, {});
     }
     if (path.endsWith('/user/my-listings')) {
       return _json(200, {
@@ -140,8 +160,9 @@ void main() {
     AuthService().resetTestSession();
     backend = _Backend();
     ApiService.testHttpClient = backend.client();
-    // A stored token (what a cold start restores) but NO profile yet.
-    await ApiService.setTokens(accessToken: 'access', refreshToken: 'refresh');
+    // What a cold start restores: a stored session for the owner, and NO
+    // profile yet (AuthService has not loaded /auth/me).
+    await _storeSessionFor(_ownerId);
   });
 
   tearDown(() async {
@@ -149,13 +170,59 @@ void main() {
     debugTransientGetRetryDelays = null;
     AuthService().resetTestSession();
     await ApiService.clearTokens();
+    ConnectivityService.instance.isOnline.value = true;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
   });
 
-  Future<void> settle(WidgetTester tester, [int frames = 20]) async {
+  // The three controls from the bug report.
+  final edit = find.byTooltip('Edit');
+  final delete = find.byTooltip('Delete');
+  final analytics = find.byTooltip('Analytics');
+  final report = find.byType(PopupMenuButton<String>);
+
+  void expectOwnerControls({required bool visible, String? reason}) {
+    final matcher = visible ? findsOneWidget : findsNothing;
+    expect(edit, matcher, reason: reason ?? 'Edit');
+    expect(delete, matcher, reason: reason ?? 'Delete');
+    expect(analytics, matcher, reason: reason ?? 'Analytics');
+  }
+
+  /// UX contract: no ownership spinner, no Retry (tooltip or refresh icon)
+  /// may ever stand in for / sit beside the owner buttons in the app bar.
+  void expectNoOwnerPlaceholders() {
+    final bar = find.byType(SliverAppBar);
+    for (final f in [
+      find.descendant(of: bar, matching: find.byType(CircularProgressIndicator)),
+      find.descendant(of: bar, matching: find.byTooltip('Retry')),
+      find.descendant(of: bar, matching: find.byIcon(Icons.refresh)),
+      find.byKey(const ValueKey<String>('owner-controls-resolving')),
+      find.byKey(const ValueKey<String>('owner-controls-retry')),
+    ]) {
+      expect(f, findsNothing, reason: 'ownership placeholder in app bar');
+    }
+  }
+
+  /// Pumps frames, asserting EVERY frame: no placeholders, and -- from the
+  /// frame the listing first appears -- the owner controls are exactly
+  /// [ownerVisible] (so a flicker, or a late appearance, fails the test).
+  Future<void> settle(
+    WidgetTester tester, {
+    int frames = 20,
+    bool? ownerVisible,
+    String model = 'Camry',
+  }) async {
     for (var i = 0; i < frames; i++) {
       await tester.pump(const Duration(milliseconds: 50));
+      expectNoOwnerPlaceholders();
+      if (ownerVisible != null &&
+          find.byType(CarDetailsPage).evaluate().isNotEmpty &&
+          find.textContaining(model).evaluate().isNotEmpty) {
+        expectOwnerControls(
+          visible: ownerVisible,
+          reason: 'frame $i (listing rendered)',
+        );
+      }
     }
   }
 
@@ -187,6 +254,7 @@ void main() {
     WidgetTester tester,
     String carId, {
     bool allowOwnerManagement = true,
+    bool? ownerVisible,
   }) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -200,72 +268,66 @@ void main() {
         ),
       ),
     );
-    await settle(tester);
-  }
-
-  // The three controls from the bug report.
-  final edit = find.byTooltip('Edit');
-  final delete = find.byTooltip('Delete');
-  final analytics = find.byTooltip('Analytics');
-  final resolving = find.byKey(const ValueKey<String>('owner-controls-resolving'));
-  final retry = find.byKey(const ValueKey<String>('owner-controls-retry'));
-  final report = find.byType(PopupMenuButton<String>);
-
-  void expectOwnerControls({required bool visible, String? reason}) {
-    final matcher = visible ? findsOneWidget : findsNothing;
-    expect(edit, matcher, reason: reason ?? 'Edit');
-    expect(delete, matcher, reason: reason ?? 'Delete');
-    expect(analytics, matcher, reason: reason ?? 'Analytics');
+    await settle(tester, ownerVisible: ownerVisible);
   }
 
   /// Starts the (gated) `/auth/me` that a cold start kicks off.
-  Future<void> startProfileLoad() async {
-    unawaited(AuthService().refreshProfile());
-  }
+  void startProfileLoad() => unawaited(AuthService().refreshProfile());
 
   testWidgets(
-    'A. cold start: details page builds BEFORE /auth/me returns; once the '
-    'profile arrives the owner gets Edit/Delete/Analytics WITHOUT a restart',
+    'A. cold start, /auth/me still pending: the owner sees Edit/Delete/'
+    'Analytics on the first render of the listing -- no profile round trip, '
+    'no spinner, no Retry -- and they do not flicker when the profile lands',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
-      backend.meGate = Completer<void>();
-      await startProfileLoad();
+      backend.meGate = Completer<void>(); // /auth/me never answers (yet)
+      startProfileLoad();
 
-      await pumpDetail(tester, 'car_1');
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
       expect(find.textContaining('Camry'), findsWidgets);
-      expect(AuthService().userId, isNull, reason: 'profile still loading');
-      expectOwnerControls(visible: false, reason: 'unknown owner: no controls');
-
-      backend.meGate!.complete(); // /auth/me finally answers
-      await settle(tester);
-
-      expect(AuthService().userId, _ownerId);
-      expectOwnerControls(visible: true, reason: 'owner after profile load');
-      expect(resolving, findsNothing);
+      expect(AuthService().currentUser, isNull, reason: 'profile NOT loaded');
+      expectOwnerControls(visible: true, reason: 'with /auth/me pending');
       expect(report, findsNothing, reason: 'owner never sees Report');
+
+      backend.meGate!.complete(); // verification finishes in the background
+      await settle(tester, ownerVisible: true);
+      expect(AuthService().currentUser, isNotNull);
+      expect(AuthService().userId, _ownerId);
+      expectOwnerControls(visible: true);
+      expect(report, findsNothing);
     },
   );
 
   testWidgets(
-    'A2. while ownership is unknown the app bar shows a "resolving" '
-    'indicator (actions are not silently hidden) and no Report menu',
+    'A2. normal authenticated flow: no ownership spinner and no Retry button '
+    'anywhere in the app bar, before, during and after profile verification',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.meGate = Completer<void>();
-      await startProfileLoad();
+      startProfileLoad();
 
-      await pumpDetail(tester, 'car_1');
-      expectOwnerControls(visible: false);
-      expect(resolving, findsOneWidget);
-      expect(report, findsNothing, reason: 'owner must not be offered Report');
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
+      expectNoOwnerPlaceholders();
+      expect(find.byTooltip('Retry'), findsNothing);
+      expect(find.byIcon(Icons.refresh), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(SliverAppBar),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsNothing,
+      );
+
       backend.meGate!.complete();
-      await settle(tester);
+      await settle(tester, ownerVisible: true);
+      expectNoOwnerPlaceholders();
+      expect(find.byTooltip('Retry'), findsNothing);
     },
   );
 
   testWidgets(
-    'B. profile already loaded before the listing: controls show once the '
-    'listing arrives (delayed listing API, loading state in between)',
+    'B. profile already loaded, listing slow: controls show the moment the '
+    'listing arrives',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.carGates['car_1'] = Completer<void>();
@@ -274,175 +336,256 @@ void main() {
 
       await pumpDetail(tester, 'car_1');
       expect(find.byType(CircularProgressIndicator), findsWidgets);
-      expectOwnerControls(visible: false, reason: 'still loading the listing');
+      expectOwnerControls(visible: false, reason: 'listing not loaded yet');
 
       backend.carGates['car_1']!.complete();
-      await settle(tester);
+      await settle(tester, ownerVisible: true);
       expectOwnerControls(visible: true);
     },
   );
 
   testWidgets(
-    'C. profile resolves while the listing request is still in flight: '
-    'ownership is evaluated against the NEW user when the listing lands',
+    'C. everything slow (profile AND listing): the controls appear with the '
+    'listing, whichever finishes first, and the listing is fetched ONCE',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.meGate = Completer<void>();
       backend.carGates['car_1'] = Completer<void>();
-      await startProfileLoad();
+      startProfileLoad();
 
       await pumpDetail(tester, 'car_1');
       backend.meGate!.complete();
       await settle(tester);
-      expect(AuthService().userId, _ownerId);
+      expectOwnerControls(visible: false, reason: 'listing still loading');
 
       backend.carGates['car_1']!.complete();
-      await settle(tester);
+      await settle(tester, ownerVisible: true);
       expectOwnerControls(visible: true);
+      expect(backend.carCalls['car_1'], 1, reason: 'no duplicate request');
     },
   );
 
   testWidgets(
-    'D. listing lands first, profile arrives after BOTH similar-cars and '
-    'favorites finished (no incidental rebuild left to mask the bug)',
-    (tester) async {
-      backend.listings['car_1'] = _listing('car_1');
-      backend.meGate = Completer<void>();
-      await startProfileLoad();
-      await pumpDetail(tester, 'car_1');
-      await tester.pump(const Duration(seconds: 5));
-      expectOwnerControls(visible: false);
-
-      backend.meGate!.complete();
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expectOwnerControls(visible: true);
-    },
-  );
-
-  testWidgets(
-    "E. another user's listing: controls are never exposed, not even while "
-    'the profile is still loading (spinner only) and not after it resolves',
+    "D. another user's listing: owner controls are NEVER exposed -- not "
+    'before the profile lands, not after -- and the Report menu stays',
     (tester) async {
       backend.listings['car_x'] = _listing('car_x', sellerId: _otherId);
       backend.meGate = Completer<void>();
-      await startProfileLoad();
+      startProfileLoad();
 
-      await pumpDetail(tester, 'car_x');
+      await pumpDetail(tester, 'car_x', ownerVisible: false);
       expectOwnerControls(visible: false);
 
       backend.meGate!.complete();
-      await settle(tester);
+      await settle(tester, ownerVisible: false);
       expect(AuthService().userId, _ownerId);
       expectOwnerControls(visible: false, reason: 'not the owner');
-      expect(resolving, findsNothing, reason: 'resolution finished');
-      expect(retry, findsNothing);
       expect(report, findsOneWidget, reason: 'non-owner may report');
+      expect(backend.carCalls['car_x'], 1);
     },
   );
 
   testWidgets(
-    'F. other entry points (allowOwnerManagement=false, e.g. Home feed) never '
-    'show owner controls, even for the real owner',
+    'E. Search / Home entry points (allowOwnerManagement=false) never show '
+    'owner controls, even to the real owner with a fully restored session',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       await AuthService().refreshProfile();
 
       await pumpDetail(tester, 'car_1', allowOwnerManagement: false);
-      expectOwnerControls(visible: false);
-      expect(resolving, findsNothing);
+      expect(AuthService().userId, _ownerId);
+      expectOwnerControls(visible: false, reason: 'navigation origin');
+      await settle(tester, ownerVisible: false);
     },
   );
 
   testWidgets(
-    'G. profile load fails -> controls are not hidden forever: a retry '
-    'affordance appears and tapping it brings the controls back',
+    'F. forged / foreign session: tokens that name ANOTHER account never '
+    "unlock someone else's listing controls",
+    (tester) async {
+      await _storeSessionFor(_otherId); // device is signed in as "other"
+      backend.meUserId = _otherId;
+      backend.listings['car_1'] = _listing('car_1'); // owned by _ownerId
+      startProfileLoad();
+
+      await pumpDetail(tester, 'car_1', ownerVisible: false);
+      await settle(tester, ownerVisible: false);
+      expect(AuthService().userId, _otherId);
+      expectOwnerControls(visible: false);
+    },
+  );
+
+  testWidgets(
+    'G. temporary /auth/me network failure: controls stay, no Retry button, '
+    'and the profile recovers automatically (bounded backoff)',
+    (tester) async {
+      backend.listings['car_1'] = _listing('car_1');
+      backend.meDown = true;
+      AuthService.debugProfileRetryDelaysOverride = const [
+        Duration(seconds: 1),
+        Duration(seconds: 1),
+      ];
+      startProfileLoad();
+
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
+      expect(AuthService().currentUser, isNull, reason: '/auth/me is down');
+      expectOwnerControls(visible: true, reason: 'despite the failure');
+      expect(find.byTooltip('Retry'), findsNothing);
+
+      backend.meDown = false; // network back; the automatic retry succeeds
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(seconds: 1));
+        expectNoOwnerPlaceholders();
+        expectOwnerControls(visible: true, reason: 'retry tick $i');
+      }
+      await settle(tester, ownerVisible: true);
+      expect(AuthService().currentUser, isNotNull, reason: 'auto recovered');
+      expect(AuthService().userId, _ownerId);
+    },
+  );
+
+  testWidgets(
+    'G2. /auth/me failure with the retry budget spent: connectivity coming '
+    'back (offline -> online) recovers the profile by itself; controls never '
+    'depend on it',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.meDown = true;
       AuthService.debugProfileRetryDelaysOverride = const [
         Duration(minutes: 30),
       ];
-      await AuthService().refreshProfile(); // fails; retry far in the future
-      expect(AuthService().userId, isNull);
+      AuthService().hookConnectivityRecovery();
+      ConnectivityService.instance.isOnline.value = false;
+      await AuthService().refreshProfile();
+      expect(AuthService().isProfileStranded, isTrue);
 
-      await pumpDetail(tester, 'car_1');
-      expectOwnerControls(visible: false);
-      expect(retry, findsOneWidget, reason: 'recoverable failure state');
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
+      expectOwnerControls(visible: true, reason: 'offline');
 
-      backend.meDown = false; // network is back
-      await tester.tap(retry);
-      await settle(tester);
-
-      expect(AuthService().userId, _ownerId);
+      backend.meDown = false;
+      ConnectivityService.instance.isOnline.value = true;
+      await settle(tester, ownerVisible: true);
+      expect(AuthService().currentUser, isNotNull);
       expectOwnerControls(visible: true);
-      expect(retry, findsNothing);
-      // Drain the (now moot) scheduled auto-retry timer.
-      await tester.pump(const Duration(minutes: 31));
+      await tester.pump(const Duration(minutes: 31)); // drain stale timer
     },
   );
 
   testWidgets(
-    'H. app backgrounded while /auth/me is outstanding, profile lands while '
-    'paused: controls are present on resume (and stay across more cycles)',
+    'H. app backgrounded while /auth/me is outstanding and resumed (several '
+    'cycles): the controls are present throughout',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.meGate = Completer<void>();
-      await startProfileLoad();
-      await pumpDetail(tester, 'car_1');
-      expectOwnerControls(visible: false);
+      startProfileLoad();
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
       backend.meGate!.complete();
-      await settle(tester);
+      await settle(tester, ownerVisible: true);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-      await settle(tester);
-      expectOwnerControls(visible: true);
+      await settle(tester, ownerVisible: true);
 
       for (var i = 0; i < 3; i++) {
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
         tester.binding.handleAppLifecycleStateChanged(
           AppLifecycleState.resumed,
         );
-        await settle(tester);
+        await settle(tester, ownerVisible: true);
         expectOwnerControls(visible: true, reason: 'cycle $i');
       }
     },
   );
 
   testWidgets(
-    'I. logout removes the controls immediately; logging back in as the same '
-    'owner restores them; a DIFFERENT account never gets them',
+    'H2. access-token refresh / rotation (new tokens, same account) while '
+    'the page is shown and while /auth/me is outstanding: the controls never '
+    'flicker, and nothing is re-fetched',
+    (tester) async {
+      backend.listings['car_1'] = _listing('car_1');
+      backend.meGate = Completer<void>();
+      startProfileLoad();
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
+
+      for (var i = 0; i < 3; i++) {
+        await _storeSessionFor(_ownerId); // rotated tokens, same account
+        await settle(tester, frames: 3, ownerVisible: true);
+        expectOwnerControls(visible: true, reason: 'rotation $i');
+      }
+      backend.meGate!.complete();
+      await settle(tester, ownerVisible: true);
+      expect(AuthService().currentUser, isNotNull, reason: 'profile kept');
+      await _storeSessionFor(_ownerId);
+      await settle(tester, ownerVisible: true);
+      expect(backend.carCalls['car_1'], 1);
+      expect(backend.meCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'I. session ends: the previous owner\'s controls disappear IMMEDIATELY '
+    '(token loss with no profile ever loaded, and logout before the server '
+    'call returns)',
+    (tester) async {
+      backend.listings['car_1'] = _listing('car_1');
+      backend.meGate = Completer<void>();
+      startProfileLoad(); // profile never loads in this scenario
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
+
+      // Session rejected / cleared out of band.
+      await ApiService.clearTokens();
+      await tester.pump();
+      expectOwnerControls(visible: false, reason: 'session lost');
+      expectNoOwnerPlaceholders();
+      backend.meGate!.complete();
+      await settle(tester);
+
+      // Fresh app: owner signs in again, then logs out with a SLOW server.
+      await tester.pumpWidget(const SizedBox.shrink());
+      AuthService().resetTestSession();
+      await _storeSessionFor(_ownerId);
+      backend.meGate = null;
+      await AuthService().refreshProfile();
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
+
+      backend.logoutGate = Completer<void>();
+      final loggingOut = AuthService().logout();
+      await tester.pump(); // server has NOT answered
+      expectOwnerControls(visible: false, reason: 'logout in progress');
+      expectNoOwnerPlaceholders();
+      backend.logoutGate!.complete();
+      await loggingOut;
+      await settle(tester);
+      expectOwnerControls(visible: false, reason: 'logged out');
+    },
+  );
+
+  testWidgets(
+    'I2. account switch: a DIFFERENT account on the same device never gets '
+    "the previous owner's controls; the owner gets them back on return",
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       await AuthService().refreshProfile();
-      await pumpDetail(tester, 'car_1');
-      expectOwnerControls(visible: true);
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
 
-      // Session ends (token cleared + auth state reset).
-      await ApiService.clearTokens();
-      AuthService().resetTestSession();
-      await settle(tester);
-      expectOwnerControls(visible: false, reason: 'logged out');
-      expect(resolving, findsNothing, reason: 'no session -> nothing pending');
-
-      // Same owner logs back in.
-      await AuthService().adoptTestSession(
-        user: {'id': _ownerId, 'username': 'owner'},
-      );
-      await settle(tester);
-      expectOwnerControls(visible: true, reason: 'owner logged back in');
-
-      // A different account on the same device.
-      await AuthService().adoptTestSession(
-        user: {'id': _otherId, 'username': 'other'},
-      );
-      await settle(tester);
+      // Another account logs in: its tokens replace the owner's.
+      await _storeSessionFor(_otherId);
+      backend.meUserId = _otherId;
+      await AuthService().refreshProfile();
+      await settle(tester, ownerVisible: false);
       expectOwnerControls(visible: false, reason: 'different account');
+      expect(AuthService().userId, _otherId);
+
+      // The owner logs back in.
+      await _storeSessionFor(_ownerId);
+      backend.meUserId = _ownerId;
+      await AuthService().refreshProfile();
+      await settle(tester, ownerVisible: true);
+      expectOwnerControls(visible: true, reason: 'owner back');
     },
   );
 
@@ -457,7 +600,6 @@ void main() {
         model: 'Charlie',
         sellerId: _otherId,
       );
-      await AuthService().refreshProfile();
 
       Widget details(String id) =>
           CarDetailsPage(carId: id, allowOwnerManagement: true);
@@ -486,8 +628,8 @@ void main() {
   );
 
   testWidgets(
-    'K. listing load failure then Retry: the controls appear after the '
-    'successful retry',
+    'K. listing load failure then Retry (the LISTING\'s own retry): the '
+    'controls appear after the successful retry',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.carFailuresLeft = 1;
@@ -498,7 +640,7 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
 
       await tester.tap(find.text('Retry'));
-      await settle(tester);
+      await settle(tester, ownerVisible: true);
       expectOwnerControls(visible: true);
     },
   );
@@ -508,7 +650,6 @@ void main() {
     'result carries no (or a blank) seller',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
-      await AuthService().refreshProfile();
 
       for (final editResult in <Map<String, dynamic>>[
         {'id': 'car_1', 'price': 13000}, // form payload: no seller at all
@@ -532,14 +673,14 @@ void main() {
             },
           ),
         );
-        await settle(tester);
+        await settle(tester, ownerVisible: true);
         expectOwnerControls(visible: true);
 
         await tester.tap(edit);
         await settle(tester);
         expect(find.text('FINISH EDIT'), findsOneWidget);
         await tester.tap(find.text('FINISH EDIT'));
-        await settle(tester);
+        await settle(tester, ownerVisible: true);
 
         expect(find.text('FINISH EDIT'), findsNothing);
         expectOwnerControls(visible: true, reason: 'after edit $editResult');
@@ -548,13 +689,13 @@ void main() {
   );
 
   testWidgets(
-    'M. cold launch -> My Listings -> My Car -> details, repeatedly, with a '
-    'slow /auth/me: controls appear once the profile lands and on every '
+    'M. cold launch -> My Listings -> My Car -> details, repeatedly, while '
+    '/auth/me is slow: the controls are there on the FIRST open and on every '
     'later visit',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.meGate = Completer<void>();
-      await startProfileLoad(); // cold start: /auth/me in flight
+      startProfileLoad(); // cold start: /auth/me in flight
 
       await tester.pumpWidget(
         app(
@@ -570,28 +711,31 @@ void main() {
           },
         ),
       );
-      await settle(tester);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 50));
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
       expect(find.textContaining('Camry'), findsWidgets);
 
-      Future<void> openAndClose({required bool profileKnown}) async {
+      Future<void> openAndClose() async {
         await tester.tap(find.textContaining('Camry').first);
-        await settle(tester);
+        await settle(tester, ownerVisible: true);
         expect(find.byType(CarDetailsPage), findsOneWidget);
-        if (!profileKnown) {
-          expectOwnerControls(visible: false, reason: 'profile pending');
-          backend.meGate!.complete();
-          await settle(tester);
-        }
         expectOwnerControls(visible: true, reason: 'owner on details');
         Navigator.of(tester.element(find.byType(CarDetailsPage))).pop();
         await settle(tester);
         expect(find.byType(CarDetailsPage), findsNothing);
       }
 
-      await openAndClose(profileKnown: false);
-      for (var i = 0; i < 4; i++) {
-        await openAndClose(profileKnown: true);
+      await openAndClose(); // profile STILL not loaded
+      expect(AuthService().currentUser, isNull);
+      backend.meGate!.complete();
+      await settle(tester);
+      for (var i = 0; i < 3; i++) {
+        await openAndClose();
       }
+      expect(backend.meCalls, 1, reason: 'one background verification only');
     },
   );
 
@@ -605,7 +749,6 @@ void main() {
       await pumpDetail(tester, 'car_1', allowOwnerManagement: true);
       expectOwnerControls(visible: true);
 
-      await pumpDetail(tester, 'car_1', allowOwnerManagement: false);
       await tester.pumpWidget(const SizedBox.shrink());
       await pumpDetail(tester, 'car_1', allowOwnerManagement: false);
       expectOwnerControls(visible: false);
@@ -613,21 +756,21 @@ void main() {
   );
 
   testWidgets(
-    'P. no request storm: the owner listing is re-fetched exactly once when '
-    'the profile lands, a foreign listing never, and lifecycle cycles / '
-    'repeated profile refreshes add nothing',
+    'P. no request storm: the owner listing and /auth/me are each requested '
+    'exactly once on a cold start, a foreign listing once, and lifecycle '
+    'cycles / same-user refreshes add no listing requests',
     (tester) async {
       backend.listings['car_1'] = _listing('car_1');
       backend.listings['car_x'] = _listing('car_x', sellerId: _otherId);
       backend.meGate = Completer<void>();
-      await startProfileLoad();
+      startProfileLoad();
 
-      await pumpDetail(tester, 'car_1');
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
       expect(backend.carCalls['car_1'], 1);
       backend.meGate!.complete();
-      await settle(tester);
-      expectOwnerControls(visible: true);
-      expect(backend.carCalls['car_1'], 2, reason: 'one quiet owner refresh');
+      await settle(tester, ownerVisible: true);
+      expect(backend.carCalls['car_1'], 1, reason: 'profile landing: no reload');
+      expect(backend.meCalls, 1, reason: 'page adds no /auth/me request');
 
       for (var i = 0; i < 3; i++) {
         tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
@@ -635,18 +778,18 @@ void main() {
           AppLifecycleState.resumed,
         );
         await AuthService().refreshProfile(); // same user again
-        await settle(tester);
+        await settle(tester, ownerVisible: true);
       }
-      expect(backend.carCalls['car_1'], 2, reason: 'same user: no reload');
+      expect(backend.carCalls['car_1'], 1, reason: 'same user: no reload');
 
       await tester.pumpWidget(const SizedBox.shrink());
       AuthService().resetTestSession();
-      await ApiService.setTokens(accessToken: 'a2', refreshToken: 'r2');
+      await _storeSessionFor(_ownerId);
       backend.meGate = Completer<void>();
-      await startProfileLoad();
-      await pumpDetail(tester, 'car_x');
+      startProfileLoad();
+      await pumpDetail(tester, 'car_x', ownerVisible: false);
       backend.meGate!.complete();
-      await settle(tester);
+      await settle(tester, ownerVisible: false);
       expectOwnerControls(visible: false);
       expect(backend.carCalls['car_x'], 1, reason: 'foreign: never reloaded');
     },
@@ -663,15 +806,113 @@ void main() {
         status: 'sold',
         sellerId: _otherId,
       );
-      await AuthService().refreshProfile();
 
-      await pumpDetail(tester, 'car_1');
+      await pumpDetail(tester, 'car_1', ownerVisible: true);
       expectOwnerControls(visible: true);
       expect(find.byTooltip('Mark as available'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
-      await pumpDetail(tester, 'car_2');
+      await pumpDetail(tester, 'car_2', ownerVisible: false);
       expectOwnerControls(visible: false);
     },
   );
+
+  group('existing installs / sessions whose account id cannot be read '
+      'from the tokens', () {
+    testWidgets(
+      'Q. opaque (legacy) tokens: nothing is granted from the unknown '
+      'session, the page itself triggers profile recovery automatically, and '
+      'the owner then gets the controls -- never a spinner or Retry',
+      (tester) async {
+        await ApiService.setTokens(
+          accessToken: 'opaque-legacy-access',
+          refreshToken: 'opaque-legacy-refresh',
+        );
+        backend.listings['car_1'] = _listing('car_1');
+        backend.meGate = Completer<void>();
+
+        await pumpDetail(tester, 'car_1', ownerVisible: null);
+        expect(AuthService().userId, isNull, reason: 'cannot be known yet');
+        expectOwnerControls(visible: false, reason: 'unverified: no controls');
+        expectNoOwnerPlaceholders();
+        expect(backend.meCalls, 1, reason: 'recovery started automatically');
+
+        backend.meGate!.complete();
+        await settle(tester, ownerVisible: true);
+        expect(AuthService().userId, _ownerId);
+        expectOwnerControls(visible: true);
+        expect(backend.meCalls, 1, reason: 'single-flight, no duplicates');
+      },
+    );
+
+    testWidgets(
+      'Q2. legacy numeric-subject token (not a public id): treated as '
+      'unknown, never matched against listings; recovers via the profile',
+      (tester) async {
+        await ApiService.setTokens(
+          accessToken: fakeSessionJwt('42'),
+          refreshToken: fakeSessionJwt('42', type: 'refresh'),
+        );
+        backend.listings['car_1'] = _listing('car_1');
+
+        await pumpDetail(tester, 'car_1');
+        await settle(tester, ownerVisible: true);
+        expect(AuthService().userId, _ownerId);
+        expectOwnerControls(visible: true);
+      },
+    );
+
+    testWidgets(
+      'Q3. expired access token but valid refresh token (cold start after '
+      '>30 minutes): the identity still restores immediately',
+      (tester) async {
+        await ApiService.setTokens(
+          accessToken: fakeSessionJwt(
+            _ownerId,
+            expiresIn: const Duration(hours: -3),
+          ),
+          refreshToken: fakeSessionJwt(
+            _ownerId,
+            type: 'refresh',
+            expiresIn: const Duration(days: 20),
+          ),
+        );
+        backend.listings['car_1'] = _listing('car_1');
+        backend.meGate = Completer<void>();
+        startProfileLoad();
+
+        await pumpDetail(tester, 'car_1', ownerVisible: true);
+        expectOwnerControls(visible: true, reason: 'profile pending');
+        backend.meGate!.complete();
+        await settle(tester, ownerVisible: true);
+      },
+    );
+
+    testWidgets(
+      'Q4. a dead session (both tokens expired) restores NO identity, so '
+      'no controls are granted from it',
+      (tester) async {
+        await ApiService.setTokens(
+          accessToken: fakeSessionJwt(
+            _ownerId,
+            expiresIn: const Duration(hours: -3),
+          ),
+          refreshToken: fakeSessionJwt(
+            _ownerId,
+            type: 'refresh',
+            expiresIn: const Duration(days: -1),
+          ),
+        );
+        backend.listings['car_1'] = _listing('car_1');
+        backend.meGate = Completer<void>(); // never answers
+
+        await pumpDetail(tester, 'car_1');
+        expect(AuthService().userId, isNull);
+        expectOwnerControls(visible: false);
+        expectNoOwnerPlaceholders();
+        backend.meGate!.complete();
+        await settle(tester);
+      },
+    );
+  });
 }

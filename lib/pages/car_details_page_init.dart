@@ -18,14 +18,21 @@ mixin _CarDetailsPageInit on _CarDetailsPageLoad {
       AnalyticsService.trackView(widget.carId.toString()),
     );
     _loadCar();
+    // Only matters when the account id could not be read from the restored
+    // session (legacy token): nudges AuthService to confirm the profile
+    // automatically. A no-op in the normal case.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureOwnerIdentityResolves();
+    });
   }
 
-  /// Owner-controls fix: subscribe to [AuthService] so ownership (and with
-  /// it the Edit/Delete/Analytics buttons) is re-evaluated whenever the
-  /// signed-in user becomes known or changes -- see [_ownerAuth]. Done here
-  /// rather than via `context.watch` so the reaction can also refresh the
-  /// loaded listing (`_syncCarViewer`), and so it follows a replaced
-  /// provider instance the same way `AppWithDeepLinks` does.
+  /// Subscribe to [AuthService] so ownership (and with it the
+  /// Edit/Delete/Analytics buttons) is re-evaluated whenever the signed-in
+  /// account changes -- login, logout, account switch, session loss, or the
+  /// id being confirmed by the profile -- see [_ownerAuth]. Done here rather
+  /// than via `context.watch` so the reaction can also refresh the loaded
+  /// listing (`_syncCarViewer`), and so it follows a replaced provider
+  /// instance the same way `AppWithDeepLinks` does.
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -33,13 +40,22 @@ mixin _CarDetailsPageInit on _CarDetailsPageLoad {
     if (identical(auth, _ownerAuth)) return;
     _ownerAuth?.removeListener(_onOwnerAuthChanged);
     _ownerAuth = auth;
+    _ownerUiUserId = auth.userId;
     auth.addListener(_onOwnerAuthChanged);
   }
 
   void _onOwnerAuthChanged() {
     if (!mounted) return;
-    // Rebuild so `_ownerControlsAccess` is re-read from the live auth state
-    // (also covers loading -> failed transitions of the profile request).
+    final auth = _ownerAuth;
+    if (auth == null) return;
+    // Auth notifies for many unrelated reasons (loading flags, locale sync,
+    // ...). Only the account identity matters here, so rebuild -- and
+    // possibly reload the listing -- only when it actually changed. In the
+    // normal flow the id read from the restored session equals the profile's
+    // id, so the profile arriving causes no rebuild, flicker or request.
+    final uid = auth.userId;
+    if (uid == _ownerUiUserId) return;
+    _ownerUiUserId = uid;
     setState(() {});
     _syncCarViewer();
   }

@@ -783,6 +783,10 @@ class ApiService {
   // Get current access token
   static String? get accessToken => _accessToken;
 
+  // Current refresh token (read-only; used only to name the session's
+  // account via `SessionIdentity` when the access token has expired).
+  static String? get refreshToken => _refreshToken;
+
   // Chat HTTP + attachments (api/api_chat.dart)
   static Future<Map<String, dynamic>> sendChatMessageByConversation({
     required String conversationId,

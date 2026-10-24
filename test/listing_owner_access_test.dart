@@ -10,106 +10,68 @@ Map<String, dynamic> _car({String? sellerId, Object? seller}) => {
 };
 
 void main() {
-  group('resolveOwnerControlsAccess', () {
+  group('canManageListing', () {
     final owned = _car(seller: {'id': 'u1'});
 
-    test('owner of the listing, entry point allows management -> granted', () {
+    test('owner of the listing, entry point allows management -> true', () {
       expect(
-        resolveOwnerControlsAccess(
-          allowOwnerManagement: true,
-          car: owned,
-          userId: 'u1',
-          hasSession: true,
-        ),
-        OwnerControlsAccess.granted,
+        canManageListing(allowOwnerManagement: true, car: owned, userId: 'u1'),
+        isTrue,
       );
     });
 
-    test('entry point without management (Home feed etc.) -> hidden', () {
-      expect(
-        resolveOwnerControlsAccess(
-          allowOwnerManagement: false,
-          car: owned,
-          userId: 'u1',
-          hasSession: true,
-        ),
-        OwnerControlsAccess.hidden,
-      );
-      expect(
-        resolveOwnerControlsAccess(
-          allowOwnerManagement: false,
-          car: owned,
-          userId: null,
-          hasSession: true,
-        ),
-        OwnerControlsAccess.hidden,
-        reason: 'unknown user must not turn a non-management entry into one',
-      );
-    });
-
-    test('listing not loaded -> hidden', () {
-      expect(
-        resolveOwnerControlsAccess(
-          allowOwnerManagement: true,
-          car: null,
-          userId: 'u1',
-          hasSession: true,
-        ),
-        OwnerControlsAccess.hidden,
-      );
-    });
-
-    test('known different user -> hidden (never granted, never resolving)', () {
-      expect(
-        resolveOwnerControlsAccess(
-          allowOwnerManagement: true,
-          car: owned,
-          userId: 'someone_else',
-          hasSession: true,
-        ),
-        OwnerControlsAccess.hidden,
-      );
-    });
-
-    test('session exists but user id unknown -> resolving, not hidden', () {
-      for (final unknown in <String?>[null, '', '   ']) {
+    test('entry point without management (Home / Search) -> false, always', () {
+      for (final uid in <String?>['u1', null, '']) {
         expect(
-          resolveOwnerControlsAccess(
-            allowOwnerManagement: true,
+          canManageListing(
+            allowOwnerManagement: false,
             car: owned,
-            userId: unknown,
-            hasSession: true,
+            userId: uid,
           ),
-          OwnerControlsAccess.resolving,
+          isFalse,
+          reason: 'navigation origin alone / identity alone never suffice',
         );
       }
     });
 
-    test('no session at all (logged out) -> hidden, nothing to wait for', () {
+    test('listing not loaded -> false', () {
       expect(
-        resolveOwnerControlsAccess(
-          allowOwnerManagement: true,
-          car: owned,
-          userId: null,
-          hasSession: false,
-        ),
-        OwnerControlsAccess.hidden,
+        canManageListing(allowOwnerManagement: true, car: null, userId: 'u1'),
+        isFalse,
       );
     });
 
-    test('listing without any seller info -> hidden once the user is known', () {
+    test('a different account -> false', () {
       expect(
-        resolveOwnerControlsAccess(
+        canManageListing(
           allowOwnerManagement: true,
-          car: _car(),
-          userId: 'u1',
-          hasSession: true,
+          car: owned,
+          userId: 'someone_else',
         ),
-        OwnerControlsAccess.hidden,
+        isFalse,
+      );
+    });
+
+    test('identity unknown (null / blank) -> false (never granted)', () {
+      for (final unknown in <String?>[null, '', '   ']) {
+        expect(
+          canManageListing(
+            allowOwnerManagement: true,
+            car: owned,
+            userId: unknown,
+          ),
+          isFalse,
+        );
+      }
+    });
+
+    test('listing without any seller info -> false', () {
+      expect(
+        canManageListing(allowOwnerManagement: true, car: _car(), userId: 'u1'),
+        isFalse,
       );
     });
   });
-
   group('mergeListingKeepingOwner', () {
     test('a partial result without a seller keeps the owner', () {
       final current = _car(seller: {'id': 'u1'})..['price'] = 1;

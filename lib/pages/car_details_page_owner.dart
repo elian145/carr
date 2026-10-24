@@ -26,70 +26,30 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
   bool get _isListingOwner =>
       isListingOwner(car, _authForOwnership.userId);
 
-  /// What the app bar shows for the owner-only actions: granted, hidden, or
-  /// "resolving" while a stored session's profile is still being confirmed.
-  OwnerControlsAccess get _ownerControlsAccess => resolveOwnerControlsAccess(
+  /// Owner-only actions (Edit / Delete / Analytics / Sold) are shown only
+  /// when the entry point offers management AND the signed-in account is the
+  /// listing's seller. The account id comes from the restored session
+  /// ([AuthService.userId]) so it is known on the very first frame -- no
+  /// placeholder, spinner or Retry is ever shown in its place. Presentation
+  /// only: the backend authorizes every owner action itself.
+  bool get _canManageOwnListing => canManageListing(
     allowOwnerManagement: widget.allowOwnerManagement,
     car: car,
     userId: _authForOwnership.userId,
-    hasSession: ApiService.isAuthenticated,
   );
 
-  bool get _canManageOwnListing =>
-      _ownerControlsAccess == OwnerControlsAccess.granted;
-
-  /// Owner-controls placeholder shown while ownership cannot be decided yet
-  /// (cold start: the stored token is valid but `/auth/me` has not returned,
-  /// or it failed). A spinner while the profile is genuinely loading, a
-  /// Retry button once it is not -- never an indefinite silent absence.
-  Widget _buildOwnerControlsResolving(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+  /// Automatic (never user-driven) recovery when a stored session exists but
+  /// the account id cannot be established from it -- e.g. a legacy token
+  /// whose subject is not a public id -- so ownership has to wait for
+  /// `/auth/me`. Asks [AuthService] to (re)attempt the profile through its
+  /// single-flight path; the page re-evaluates when the user arrives.
+  void _ensureOwnerIdentityResolves() {
+    if (!widget.allowOwnerManagement) return;
     final auth = _authForOwnership;
-    final loading =
-        _ownerRetryInFlight || auth.isLoading || auth.isProfileRequestInFlight;
-    if (!loading) {
-      return Semantics(
-        button: true,
-        label: loc.retryAction,
-        child: IconButton(
-          key: const ValueKey<String>('owner-controls-retry'),
-          tooltip: loc.retryAction,
-          onPressed: _retryOwnerProfile,
-          icon: const Icon(Icons.refresh),
-        ),
-      );
-    }
-    return const SizedBox(
-      key: ValueKey<String>('owner-controls-resolving'),
-      width: 48,
-      height: 48,
-      child: Center(
-        child: SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
-  }
-
-  /// Retries confirming the signed-in user (single-flight with every other
-  /// profile request). On success AuthService notifies and the page
-  /// re-evaluates ownership by itself.
-  Future<void> _retryOwnerProfile() async {
-    if (_ownerRetryInFlight) return;
-    setState(() => _ownerRetryInFlight = true);
-    try {
-      final auth = _authForOwnership;
-      if (auth.isProfileStranded) {
-        await auth.recoverStrandedProfile();
-      } else {
-        await auth.refreshProfile();
-      }
-    } catch (e, st) {
-      logNonFatal(e, st, 'CarDetailsPage._retryOwnerProfile');
-    } finally {
-      if (mounted) setState(() => _ownerRetryInFlight = false);
+    if ((auth.userId ?? '').isNotEmpty) return;
+    if (!ApiService.isAuthenticated) return;
+    if (auth.isProfileStranded) {
+      unawaited(auth.recoverStrandedProfile());
     }
   }
 

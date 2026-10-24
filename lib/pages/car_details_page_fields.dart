@@ -86,13 +86,12 @@ abstract class _CarDetailsPageFields extends State<CarDetailsPage> {
   /// fires) -- see `_pollOwnerMediaOnce`.
   bool _ownerMediaPollInFlight = false;
 
-  /// Owner-controls fix: the [AuthService] this page is currently
-  /// subscribed to (see `_CarDetailsPageInit.didChangeDependencies`). The page
-  /// used to read `auth.userId` once per build with `listen: false`, so a
-  /// profile that finished loading AFTER the page first built (cold start:
-  /// `AuthGuard` mounts My Listings before `/auth/me` returns) never
-  /// triggered a rebuild and the Edit/Delete/Analytics buttons stayed
-  /// missing until the app was restarted.
+  /// The [AuthService] this page is currently subscribed to (see
+  /// `_CarDetailsPageInit.didChangeDependencies`). The page used to read
+  /// `auth.userId` once per build with `listen: false`, so an identity that
+  /// became known (or changed) AFTER the page first built was never picked
+  /// up and the Edit/Delete/Analytics buttons stayed missing/stale. It now
+  /// follows the signed-in account live.
   AuthService? _ownerAuth;
 
   /// The signed-in user id (empty = none/unknown) that the currently shown
@@ -104,8 +103,10 @@ abstract class _CarDetailsPageFields extends State<CarDetailsPage> {
   /// Guards against overlapping viewer-change reloads.
   bool _viewerReloadInFlight = false;
 
-  /// True while the user-triggered "retry loading my profile" is running.
-  bool _ownerRetryInFlight = false;
+  /// The account id the page last rendered for (see
+  /// `_CarDetailsPageInit._onOwnerAuthChanged`): rebuild/reload only when it
+  /// actually changes, not on every unrelated auth notification.
+  String? _ownerUiUserId;
 
   bool isFavorite = false;
   List<Map<String, dynamic>> similarCars = [];

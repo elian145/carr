@@ -17,47 +17,22 @@ bool isListingOwner(Map<String, dynamic>? car, String? userId) {
   return false;
 }
 
-/// What the Listing Details app bar should show for the owner-only actions
+/// Whether the Listing Details app bar should offer the owner-only actions
 /// (Edit / Delete / Analytics / Sold).
-enum OwnerControlsAccess {
-  /// Not an owner view: the entry point does not offer management, the
-  /// listing is not loaded, the viewer is not the seller, or there is no
-  /// session. Render nothing owner-specific.
-  hidden,
-
-  /// A session exists but the signed-in user's profile has not been
-  /// confirmed yet (`/auth/me` pending or failed), so ownership cannot be
-  /// decided. Never granted and never silently hidden: the UI shows a
-  /// progress / retry affordance and re-evaluates when the user arrives.
-  resolving,
-
-  /// The signed-in user is the seller of this listing and the entry point
-  /// offers management.
-  granted,
-}
-
-/// Pure ownership-to-UI decision for the Listing Details owner controls.
 ///
-/// [hasSession] is "a stored/active auth token exists" -- it distinguishes a
-/// still-loading profile (token present, [userId] not known yet; the state
-/// `AuthGuard` deliberately mounts My Listings in during a cold start) from a
-/// genuinely logged-out viewer.
+/// Requires ALL of: the entry point offers management ([allowOwnerManagement]
+/// -- My Listings only; Search and other entry points never do), the listing
+/// is loaded, and the signed-in account ([userId]) is its seller.
 ///
-/// This only drives presentation. The backend independently authorizes every
-/// owner action (edit / delete / sold / analytics), so [resolving] can never
-/// grant anything -- it only avoids a wrong "not the owner" verdict.
-OwnerControlsAccess resolveOwnerControlsAccess({
+/// This only drives presentation. The navigation origin alone never grants
+/// anything, [userId] is a hint derived from the session (see
+/// `SessionIdentity`), and the backend independently authorizes every owner
+/// action (edit / delete / sold / analytics) from the request's token.
+bool canManageListing({
   required bool allowOwnerManagement,
   required Map<String, dynamic>? car,
   required String? userId,
-  required bool hasSession,
-}) {
-  if (!allowOwnerManagement || car == null) return OwnerControlsAccess.hidden;
-  if (isListingOwner(car, userId)) return OwnerControlsAccess.granted;
-  final uid = userId?.trim() ?? '';
-  if (uid.isEmpty && hasSession) return OwnerControlsAccess.resolving;
-  return OwnerControlsAccess.hidden;
-}
+}) => allowOwnerManagement && car != null && isListingOwner(car, userId);
 
 /// Merges an edit/sold/etc. result [updated] over [current] without letting
 /// a partial result (e.g. the Sell form payload, which carries no `seller`)

@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'api_service.dart';
+import 'connectivity_service.dart';
 import 'push_notification_service.dart';
 import 'websocket_service.dart';
+import '../shared/auth/session_identity.dart';
 import '../shared/debug/app_log.dart';
 import '../state/locale_controller.dart';
 
@@ -134,6 +136,9 @@ class AuthService extends ChangeNotifier {
 
     try {
       await ApiService.initializeTokens();
+      // Seed the session-restored identity (see [userId]) so a token clear
+      // that happens before any widget has read it still notifies.
+      _lastSessionSubject = _sessionTokenSubject();
 
       if (ApiService.isAuthenticated) {
         shouldConnectRealtimeServices = true;
@@ -208,9 +213,15 @@ class AuthService extends ChangeNotifier {
 
   /// Called when [ApiService.clearTokens] drops the HTTP session out-of-band (401 refresh fail).
   void onApiTokensCleared() {
-    if (!_isAuthenticated && _currentUser == null) return;
+    // A session-restored identity (see [userId]) may be on screen even when
+    // no profile ever loaded; losing the tokens must be announced too, or
+    // pages would keep showing that account's owner controls.
+    final identityWasVisible =
+        _isAuthenticated || _currentUser != null || _lastSessionSubject != null;
+    if (!identityWasVisible) return;
     _isAuthenticated = false;
     _currentUser = null;
+    _lastSessionSubject = null;
     notifyListeners();
   }
 
@@ -242,7 +253,10 @@ class AuthService extends ChangeNotifier {
       final response = timeout == null
           ? await sharedFetch
           : await sharedFetch.timeout(timeout);
-      if (ApiService.accessToken != tokenAtStart) {
+      // A response that belongs to a session that has since ended (logout,
+      // rejection, switch to another account) must never be applied. Token
+      // rotation within the same account is NOT a different session.
+      if (!_isSameSessionAs(tokenAtStart)) {
         return;
       }
       _currentUser = profileFromResponse(response);
@@ -255,7 +269,7 @@ class AuthService extends ChangeNotifier {
       unawaited(_maybeSyncLocaleAfterProfileLoad());
     } catch (e, st) {
       logNonFatal(e, st, 'AuthService._loadUserProfile');
-      if (ApiService.accessToken != tokenAtStart) {
+      if (!_isSameSessionAs(tokenAtStart)) {
         return;
       }
       // 401s already clear tokens (and this session) via onApiTokensCleared,
@@ -269,12 +283,6 @@ class AuthService extends ChangeNotifier {
         await _clearAuthState();
       } else {
         _scheduleProfileRetry(tokenAtStart);
-        // The "profile request in flight" state just ended without a
-        // profile. Pages that are waiting on the user id (e.g. Listing
-        // Details deciding whether to show the owner controls) must be told
-        // so they can swap their loading indicator for a Retry affordance;
-        // nothing else notifies on this path.
-        notifyListeners();
       }
     }
   }
@@ -312,7 +320,7 @@ class AuthService extends ChangeNotifier {
       // switched accounts) by the time this fires — nothing to do.
       if (_isAuthenticated) return;
       if (!ApiService.isAuthenticated) return;
-      if (ApiService.accessToken != tokenAtFailureTime) return;
+      if (!_isSameSessionAs(tokenAtFailureTime)) return;
       // Bounded warm-path timeout, not the adaptive one: on a cold-start
       // backend every attempt would otherwise reuse ApiService's ~55s
       // cold-start budget, so 3 retries could cost minutes instead of
@@ -484,6 +492,9 @@ class AuthService extends ChangeNotifier {
 
   // Logout user
   Future<void> logout() async {
+    // Identity-dependent UI (owner controls etc.) must react immediately,
+    // not after the server round trip below.
+    _loggingOut = true;
     _setLoading(true);
 
     try {
@@ -493,6 +504,7 @@ class AuthService extends ChangeNotifier {
       logNonFatal(e, st, 'AuthService.logout');
     } finally {
       await _clearAuthState();
+      _loggingOut = false;
       _setLoading(false);
     }
   }
@@ -753,6 +765,7 @@ class AuthService extends ChangeNotifier {
   Future<void> _clearAuthState() async {
     _isAuthenticated = false;
     _currentUser = null;
+    _lastSessionSubject = null;
     _profileRetryAttempts = 0;
     // A pending retry timer from the just-cleared session (if any) will
     // still fire harmlessly later (guarded by its own isAuthenticated/token
@@ -785,12 +798,26 @@ class AuthService extends ChangeNotifier {
   bool get isProfileStranded =>
       ApiService.isAuthenticated && !_isAuthenticated && !_isLoading;
 
-  /// True while a real `/auth/me` request is outstanding (shared by the
-  /// initial load, bounded retries and manual refreshes -- see
-  /// [_fetchProfileSingleFlight]). Lets a waiting page tell "still loading"
-  /// apart from "failed, offer Retry" even though [isLoading] only covers
-  /// [initialize] / login-style operations.
-  bool get isProfileRequestInFlight => _inFlightProfileFetch != null;
+  bool _connectivityRecoveryHooked = false;
+
+  /// Automatically re-attempts a stranded `/auth/me` as soon as connectivity
+  /// returns (offline -> online). Together with the bounded backoff retries
+  /// ([_scheduleProfileRetry]) and the app-resume recovery
+  /// (`AppWithDeepLinks`), a temporary network failure heals by itself --
+  /// no screen needs a manual Retry. Safe to call more than once; intended
+  /// to be called once during bootstrap.
+  void hookConnectivityRecovery() {
+    if (_connectivityRecoveryHooked) return;
+    _connectivityRecoveryHooked = true;
+    var wasOnline = ConnectivityService.instance.isOnline.value;
+    ConnectivityService.instance.isOnline.addListener(() {
+      final isOnline = ConnectivityService.instance.isOnline.value;
+      if (isOnline && !wasOnline && isProfileStranded) {
+        unawaited(recoverStrandedProfile());
+      }
+      wasOnline = isOnline;
+    });
+  }
 
   /// Called when the app returns to the foreground. After a long background
   /// stay the bounded automatic retry budget (see [_scheduleProfileRetry])
@@ -832,6 +859,8 @@ class AuthService extends ChangeNotifier {
     _initFuture = null;
     _isAuthenticated = false;
     _currentUser = null;
+    _lastSessionSubject = null;
+    _loggingOut = false;
     _isLoading = false;
     _profileRetryAttempts = 0;
     _profileRetryScheduled = false;
@@ -841,12 +870,93 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Get user ID
+  /// Public id of the signed-in account, or null.
+  ///
+  /// Known as soon as the persisted session is restored -- it does NOT wait
+  /// for `/auth/me`. Until the profile arrives (cold start, slow or failing
+  /// backend) the id is read from the session's own tokens
+  /// ([SessionIdentity]): it is the account those tokens were issued for, so
+  /// it is bound to the session by construction and disappears with it
+  /// (logout, rejected session, account switch).
+  ///
+  /// This is a presentation hint, never authorization: the backend decides
+  /// what the token may do. Once the profile is loaded its id is used; if the
+  /// loaded profile belongs to a DIFFERENT account than the tokens now in
+  /// use (a stale profile from the previous session) the token's account
+  /// wins.
+  ///
+  /// A cached profile NEVER grants an identity by itself when the active
+  /// session says otherwise: with no stored tokens, with tokens issued for a
+  /// different account, with mutually inconsistent tokens, or with a dead
+  /// (fully expired) session whose account differs from the profile's, the
+  /// result is null (or the session's own account), not the cached profile.
   String? get userId {
-    final id = _currentUser?['id'];
-    if (id == null) return null;
-    return id.toString();
+    if (_loggingOut) return null;
+    final access = ApiService.accessToken;
+    final refresh = ApiService.refreshToken;
+    final hasSession =
+        (access ?? '').isNotEmpty || (refresh ?? '').isNotEmpty;
+    final live = _sessionTokenSubject();
+    _lastSessionSubject = live;
+    if (!hasSession) return null;
+    // A live (unexpired) session names the account; it outranks any profile.
+    if (live != null) return live;
+    if (SessionIdentity.tokensConflict(
+      accessToken: access,
+      refreshToken: refresh,
+    )) {
+      return null;
+    }
+    final profileId = _currentUser?['id']?.toString().trim() ?? '';
+    // Tokens that are readable but expired: only a profile that belongs to
+    // the same account may be used (e.g. device clock far ahead); another
+    // account's profile is stale.
+    final issuedFor = SessionIdentity.fromTokens(
+      accessToken: access,
+      refreshToken: refresh,
+      ignoreExpiry: true,
+    );
+    if (issuedFor != null) return issuedFor == profileId ? profileId : null;
+    // Opaque / legacy tokens carry no readable account: the profile fetched
+    // with them is the only source.
+    return profileId.isEmpty ? null : profileId;
   }
+
+  String? _sessionTokenSubject() => SessionIdentity.fromTokens(
+    accessToken: ApiService.accessToken,
+    refreshToken: ApiService.refreshToken,
+  );
+
+  /// Whether the session in use NOW is still the one a profile request
+  /// started under ([accessAtStart]). Token ROTATION (a refresh issuing a new
+  /// access token for the same account while `/auth/me` was in flight) keeps
+  /// the session; logout, a rejected session or switching to another account
+  /// does not -- a response from the old session must then be discarded.
+  bool _isSameSessionAs(String accessAtStart) {
+    final now = ApiService.accessToken;
+    if (now == null || now.isEmpty) return false;
+    if (now == accessAtStart) return true;
+    final before = SessionIdentity.fromTokens(
+      accessToken: accessAtStart,
+      ignoreExpiry: true,
+    );
+    final after = SessionIdentity.fromTokens(
+      accessToken: now,
+      refreshToken: ApiService.refreshToken,
+      ignoreExpiry: true,
+    );
+    return before != null && before == after;
+  }
+
+  /// The session-derived id last handed out by [userId] (or seeded by
+  /// [initialize]). Lets [onApiTokensCleared] know an identity WAS visible to
+  /// the UI even though no profile had loaded yet, so it must notify.
+  String? _lastSessionSubject;
+
+  /// True while [logout] is in flight: the account is no longer treated as
+  /// signed in the moment the user asks to leave, instead of lingering until
+  /// the (best-effort, possibly slow) server revocation call returns.
+  bool _loggingOut = false;
 
   // Get user name
   String get userName => _currentUser != null
