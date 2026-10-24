@@ -269,6 +269,12 @@ class AuthService extends ChangeNotifier {
         await _clearAuthState();
       } else {
         _scheduleProfileRetry(tokenAtStart);
+        // The "profile request in flight" state just ended without a
+        // profile. Pages that are waiting on the user id (e.g. Listing
+        // Details deciding whether to show the owner controls) must be told
+        // so they can swap their loading indicator for a Retry affordance;
+        // nothing else notifies on this path.
+        notifyListeners();
       }
     }
   }
@@ -778,6 +784,13 @@ class AuthService extends ChangeNotifier {
   /// "Failed to load user data".
   bool get isProfileStranded =>
       ApiService.isAuthenticated && !_isAuthenticated && !_isLoading;
+
+  /// True while a real `/auth/me` request is outstanding (shared by the
+  /// initial load, bounded retries and manual refreshes -- see
+  /// [_fetchProfileSingleFlight]). Lets a waiting page tell "still loading"
+  /// apart from "failed, offer Retry" even though [isLoading] only covers
+  /// [initialize] / login-style operations.
+  bool get isProfileRequestInFlight => _inFlightProfileFetch != null;
 
   /// Called when the app returns to the foreground. After a long background
   /// stay the bounded automatic retry budget (see [_scheduleProfileRetry])

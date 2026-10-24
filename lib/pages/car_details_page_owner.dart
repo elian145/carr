@@ -15,13 +15,83 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
     }
   }
 
-  bool get _isListingOwner {
-    final auth = Provider.of<AuthService>(context, listen: false);
-    return isListingOwner(car, auth.userId);
-  }
+  AuthService get _authForOwnership =>
+      _ownerAuth ?? Provider.of<AuthService>(context, listen: false);
+
+  /// Live (never cached) ownership of the CURRENTLY shown [car] by the
+  /// CURRENTLY signed-in user. Safe to read from `build` because the page
+  /// subscribes to [AuthService] (see `_CarDetailsPageInit
+  /// .didChangeDependencies`) and rebuilds whenever the signed-in user
+  /// changes.
+  bool get _isListingOwner =>
+      isListingOwner(car, _authForOwnership.userId);
+
+  /// What the app bar shows for the owner-only actions: granted, hidden, or
+  /// "resolving" while a stored session's profile is still being confirmed.
+  OwnerControlsAccess get _ownerControlsAccess => resolveOwnerControlsAccess(
+    allowOwnerManagement: widget.allowOwnerManagement,
+    car: car,
+    userId: _authForOwnership.userId,
+    hasSession: ApiService.isAuthenticated,
+  );
 
   bool get _canManageOwnListing =>
-      widget.allowOwnerManagement && _isListingOwner;
+      _ownerControlsAccess == OwnerControlsAccess.granted;
+
+  /// Owner-controls placeholder shown while ownership cannot be decided yet
+  /// (cold start: the stored token is valid but `/auth/me` has not returned,
+  /// or it failed). A spinner while the profile is genuinely loading, a
+  /// Retry button once it is not -- never an indefinite silent absence.
+  Widget _buildOwnerControlsResolving(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    final auth = _authForOwnership;
+    final loading =
+        _ownerRetryInFlight || auth.isLoading || auth.isProfileRequestInFlight;
+    if (!loading) {
+      return Semantics(
+        button: true,
+        label: loc.retryAction,
+        child: IconButton(
+          key: const ValueKey<String>('owner-controls-retry'),
+          tooltip: loc.retryAction,
+          onPressed: _retryOwnerProfile,
+          icon: const Icon(Icons.refresh),
+        ),
+      );
+    }
+    return const SizedBox(
+      key: ValueKey<String>('owner-controls-resolving'),
+      width: 48,
+      height: 48,
+      child: Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
+
+  /// Retries confirming the signed-in user (single-flight with every other
+  /// profile request). On success AuthService notifies and the page
+  /// re-evaluates ownership by itself.
+  Future<void> _retryOwnerProfile() async {
+    if (_ownerRetryInFlight) return;
+    setState(() => _ownerRetryInFlight = true);
+    try {
+      final auth = _authForOwnership;
+      if (auth.isProfileStranded) {
+        await auth.recoverStrandedProfile();
+      } else {
+        await auth.refreshProfile();
+      }
+    } catch (e, st) {
+      logNonFatal(e, st, 'CarDetailsPage._retryOwnerProfile');
+    } finally {
+      if (mounted) setState(() => _ownerRetryInFlight = false);
+    }
+  }
 
   Future<void> _editOwnListing() async {
     final current = car;
@@ -31,7 +101,13 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
       Map<String, dynamic>.from(current),
     );
     if (!mounted || updated == null) return;
-    setState(() => car = {...current, ...updated});
+    setState(
+      () => car = mergeListingKeepingOwner(
+        current,
+        updated,
+        _authForOwnership.userId,
+      ),
+    );
   }
 
   Future<void> _deleteOwnListing() async {
@@ -65,7 +141,11 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
     final fresh = await confirmAndDiscardPendingEdits(context, id);
     if (!mounted || fresh == null) return;
     setState(() {
-      final merged = {...?car, ...fresh};
+      final merged = mergeListingKeepingOwner(
+        car ?? const <String, dynamic>{},
+        fresh,
+        _authForOwnership.userId,
+      );
       merged.remove('pending_revision');
       car = merged;
     });
@@ -88,7 +168,11 @@ mixin _CarDetailsPageOwner on _CarDetailsPageTitles {
     if (!mounted || updated == null) return;
     final nowSold = isListingSold(updated);
     setState(() {
-      car = {...?car, ...updated};
+      car = mergeListingKeepingOwner(
+        car ?? const <String, dynamic>{},
+        updated,
+        _authForOwnership.userId,
+      );
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

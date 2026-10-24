@@ -86,7 +86,13 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle, WidgetsBindingObserver {
     Map<String, dynamic>? rawCarForOverlay,
   }) async {
     try {
-      final auth = Provider.of<AuthService>(context, listen: false);
+      final auth = _authForOwnership;
+      // Remember WHICH viewer this load/merge was decided for: the owner
+      // overlay below is built once per load, so if the signed-in user
+      // changes afterwards (profile finished loading, logout/login, account
+      // switch) `_syncCarViewer` re-fetches instead of keeping a stale
+      // ownership decision.
+      _carViewerId = auth.userId?.trim() ?? '';
       final owner = isListingOwner(loaded, auth.userId);
       final merged = await OwnerPendingMediaMerge.mergeIfOwner(
         loaded,
@@ -307,6 +313,11 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle, WidgetsBindingObserver {
           loadError ??= const _CarDetailLoadError(_CarDetailLoadErrorKind.network);
         });
       }
+    } finally {
+      // The signed-in user may have changed while this load was in flight
+      // (the auth listener skips changes that arrive while `car` is still
+      // null / `loading`); settle that now that the result is on screen.
+      if (mounted) _syncCarViewer();
     }
   }
 
@@ -382,6 +393,66 @@ mixin _CarDetailsPageLoad on _CarDetailsPageLifecycle, WidgetsBindingObserver {
       // Stop as soon as reconciliation is genuinely done, instead of
       // waiting for one more wasted tick to notice.
       if (mounted && !_showProcessingMedia) _cancelOwnerMediaPoll();
+    }
+  }
+
+  /// Owner-controls fix: re-evaluates whether the data on screen was loaded
+  /// for the viewer who is signed in NOW.
+  ///
+  /// The listing payload and the owner-only local pending-media overlay are
+  /// built once per load, for whichever user id was known at that moment.
+  /// On a cold start that is routinely "nobody yet" (`/auth/me` is still in
+  /// flight when My Listings -> Listing Details is opened). Once the user id
+  /// arrives (or changes: logout, login, account switch) a listing that is,
+  /// or just stopped being, the viewer's own is refreshed quietly so the
+  /// private fields / pending revision / local media overlay match the
+  /// viewer. Cheap no-op when nothing relevant changed.
+  void _syncCarViewer() {
+    if (!mounted || loading || car == null) return;
+    final shownFor = _carViewerId;
+    if (shownFor == null) return;
+    final current = _authForOwnership.userId?.trim() ?? '';
+    if (current == shownFor || _viewerReloadInFlight) return;
+    if (!isListingOwner(car, shownFor) && !isListingOwner(car, current)) {
+      // Foreign listing before and after: the public payload is identical
+      // for every viewer, nothing to refresh.
+      _carViewerId = current;
+      return;
+    }
+    unawaited(_reloadCarQuietly());
+  }
+
+  /// Silent re-fetch for [_syncCarViewer]: like [_pollOwnerMediaOnce] it
+  /// skips [_loadCar]'s once-per-visit side effects (view tracking, cache
+  /// write, similar listings) and never surfaces an error -- on failure the
+  /// page keeps what it has (ownership itself is always derived live from
+  /// the signed-in user + the shown listing, never from this reload).
+  Future<void> _reloadCarQuietly() async {
+    if (_viewerReloadInFlight) return;
+    _viewerReloadInFlight = true;
+    // Mark first so a failing reload can never loop.
+    _carViewerId = _authForOwnership.userId?.trim() ?? '';
+    try {
+      final loaded = await ApiService.getCarDetail(widget.carId);
+      if (!mounted) return;
+      final normalized = _normalizeCarDetailMap(loaded);
+      final merged = await _mergeOwnerPendingMedia(
+        normalized,
+        rawCarForOverlay: loaded,
+      );
+      if (!mounted) return;
+      setState(() {
+        car = merged;
+        loadError = null;
+      });
+      _clampHeroMediaIndex();
+      _maybeScheduleOwnerMediaPoll();
+      _backgroundProbeAllPendingSlots();
+    } catch (e, st) {
+      logNonFatal(e, st, 'CarDetailsPage._reloadCarQuietly');
+    } finally {
+      _viewerReloadInFlight = false;
+      if (mounted) _syncCarViewer();
     }
   }
 

@@ -394,6 +394,9 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         ? titleContentHeight - _sheetTopRadius
         : 0.0;
     final heroEntries = _heroImageEntries;
+    // Read live from the signed-in user on every build (this page rebuilds
+    // when AuthService changes) -- never cached across builds.
+    final ownerAccess = _ownerControlsAccess;
     return SliverAppBar(
       pinned: false,
       stretch: true,
@@ -415,7 +418,9 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
         ),
       ),
       actions: [
-        if (_canManageOwnListing) ...[
+        if (ownerAccess == OwnerControlsAccess.resolving)
+          _buildOwnerControlsResolving(context),
+        if (ownerAccess == OwnerControlsAccess.granted) ...[
           Semantics(
             button: true,
             label: AppLocalizations.of(context)!.analyticsTitle,
@@ -481,6 +486,7 @@ mixin _CarDetailsPageBuildHero on _CarDetailsPageContact {
           ),
         ),
         if (!_isListingOwner &&
+            ownerAccess != OwnerControlsAccess.resolving &&
             ApiService.accessToken != null &&
             ApiService.accessToken!.isNotEmpty)
           PopupMenuButton<String>(

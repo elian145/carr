@@ -86,6 +86,27 @@ abstract class _CarDetailsPageFields extends State<CarDetailsPage> {
   /// fires) -- see `_pollOwnerMediaOnce`.
   bool _ownerMediaPollInFlight = false;
 
+  /// Owner-controls fix: the [AuthService] this page is currently
+  /// subscribed to (see `_CarDetailsPageInit.didChangeDependencies`). The page
+  /// used to read `auth.userId` once per build with `listen: false`, so a
+  /// profile that finished loading AFTER the page first built (cold start:
+  /// `AuthGuard` mounts My Listings before `/auth/me` returns) never
+  /// triggered a rebuild and the Edit/Delete/Analytics buttons stayed
+  /// missing until the app was restarted.
+  AuthService? _ownerAuth;
+
+  /// The signed-in user id (empty = none/unknown) that the currently shown
+  /// [car] was last loaded/merged for. Owner-only data (private fields,
+  /// pending revision, local pending-media overlay) depends on the viewer,
+  /// so a different value here means [car] must be re-fetched quietly.
+  String? _carViewerId;
+
+  /// Guards against overlapping viewer-change reloads.
+  bool _viewerReloadInFlight = false;
+
+  /// True while the user-triggered "retry loading my profile" is running.
+  bool _ownerRetryInFlight = false;
+
   bool isFavorite = false;
   List<Map<String, dynamic>> similarCars = [];
   bool loadingSimilar = false;
