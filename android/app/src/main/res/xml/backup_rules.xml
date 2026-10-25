@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup rules for Android 11 and lower (android:fullBackupContent).
+  Android 12+ uses data_extraction_rules.xml instead; keep the two in sync.
+
+  Why these files must never be backed up:
+  flutter_secure_storage (EncryptedSharedPreferences) keeps its ciphertext in
+  shared_prefs/FlutterSecureStorage.xml, including the Tink keysets that are
+  wrapped by a master key held in the Android Keystore. Keystore keys are
+  hardware/TEE-bound and are NEVER backed up or restored. If the prefs file were
+  restored onto a fresh install, it would point at a Keystore key that no longer
+  exists, and every cold start would fail with AEADBadTagException.
+  FlutterSecureKeyStorage.xml holds the legacy RSA-wrapped AES key used by the
+  plugin's migration/fallback path and has exactly the same problem.
+  A restore therefore signs the user out (the safe outcome) instead of leaving
+  an unreadable secret store behind.
+
+  The Airbridge entries are copied verbatim from the SDK's own rules
+  (airbridge_auto_backup_rules.xml). That file is replaced via tools:replace in
+  the manifest, so they must be repeated here.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+
+    <exclude domain="sharedpref" path="airbridge-internal" />
+    <exclude domain="sharedpref" path="airbridge-install" />
+    <exclude domain="sharedpref" path="airbridge-user-info" />
+    <exclude domain="sharedpref" path="airbridge-user-alias" />
+    <exclude domain="sharedpref" path="airbridge-user-attributes" />
+    <exclude domain="sharedpref" path="airbridge-device-alias" />
+    <exclude domain="database" path="airbridge.db" />
+</full-backup-content>

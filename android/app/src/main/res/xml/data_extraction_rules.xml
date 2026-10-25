@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto Backup + device-to-device transfer rules for Android 12+
+  (android:dataExtractionRules). Keep in sync with backup_rules.xml, which
+  documents why the secure-storage files are excluded.   Keystore keys never
+  leave the device, so the files they protect must not be copied either:
+  neither to cloud backup nor to a new phone via device transfer.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+
+        <exclude domain="sharedpref" path="airbridge-internal" />
+        <exclude domain="sharedpref" path="airbridge-install" />
+        <exclude domain="sharedpref" path="airbridge-user-info" />
+        <exclude domain="sharedpref" path="airbridge-user-alias" />
+        <exclude domain="sharedpref" path="airbridge-user-attributes" />
+        <exclude domain="sharedpref" path="airbridge-device-alias" />
+        <exclude domain="database" path="airbridge.db" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+
+        <exclude domain="sharedpref" path="airbridge-internal" />
+        <exclude domain="sharedpref" path="airbridge-install" />
+        <exclude domain="sharedpref" path="airbridge-user-info" />
+        <exclude domain="sharedpref" path="airbridge-user-alias" />
+        <exclude domain="sharedpref" path="airbridge-user-attributes" />
+        <exclude domain="sharedpref" path="airbridge-device-alias" />
+        <exclude domain="database" path="airbridge.db" />
+    </device-transfer>
+</data-extraction-rules>

@@ -34,6 +34,10 @@ class MainApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Must run before any Flutter engine/plugin can open secure storage:
+        // heals a stale EncryptedSharedPreferences keyset (AEADBadTagException)
+        // without discarding anything that is still readable. Never throws.
+        SecureStorageRepair.run(this)
         val name = BuildConfig.AIRBRIDGE_APP_NAME.trim()
         val token = BuildConfig.AIRBRIDGE_APP_TOKEN.trim()
         if (name.isNotEmpty() && token.isNotEmpty()) {

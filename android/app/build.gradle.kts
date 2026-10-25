@@ -55,6 +55,11 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        // Lets pure-JVM unit tests call android.util.Log (no-op) instead of throwing.
+        unitTests.isReturnDefaultValues = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -207,4 +212,15 @@ dependencies {
     // root-cause trail). Pinned to the stable 2.2.1 release (no
     // 3.0.0-alpha).
     implementation("io.github.awxkee:avif-coder:2.2.1")
+    // SecureStorageRepair.kt probes EncryptedSharedPreferences the same way
+    // flutter_secure_storage does. Pinned to the exact version the plugin
+    // (9.2.x) already depends on, so Gradle resolves a single copy and the
+    // keyset format/behaviour is identical. Deliberately NOT the newer stable
+    // 1.1.0: Gradle would then resolve that for the plugin's own runtime code
+    // too, silently changing the production secure-storage path. 1.0.0 is not an
+    // option either (it predates the MasterKey API the plugin calls). Upgrade
+    // together with flutter_secure_storage, as its own change.
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    testImplementation("junit:junit:4.13.2")
 }
