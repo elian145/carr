@@ -170,6 +170,20 @@ class BackendFactorySmokeTest(unittest.TestCase):
         self.assertIn("access_token", data)
         return data["access_token"]
 
+    def _unverified_token(self, username: str) -> str:
+        """Access token for a phone-UNVERIFIED user.
+
+        Password login now refuses accounts whose phone was never verified
+        (audit F-01), so these tests mint the token directly. That is the
+        state of a token issued before the fix; the phone-verification gates
+        on the protected routes must still reject it.
+        """
+        from kk.routes.auth import _access_token_for_user
+
+        with self.app.app_context():
+            user = self._User.query.filter_by(username=username).one()
+            return _access_token_for_user(user, auth_method="password")
+
     def _auth(self, token: str) -> dict[str, str]:
         return {"Authorization": f"Bearer {token}"}
 
@@ -1333,7 +1347,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self._db.session.add(unverified)
             self._db.session.commit()
 
-        token = self._login("unverified", "Aa123456")
+        token = self._unverified_token("unverified")
         r = self.client.post(
             "/api/cars",
             headers=self._auth(token),
@@ -1366,7 +1380,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self._db.session.add(unverified)
             self._db.session.commit()
 
-        token = self._login("unverified_chat", "Aa123456")
+        token = self._unverified_token("unverified_chat")
         r = self.client.post(
             f"/api/chat/{self.car_id}/send",
             headers=self._auth(token),
@@ -1392,7 +1406,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self._db.session.add(unverified)
             self._db.session.commit()
 
-        token = self._login("unverified_socket", "Aa123456")
+        token = self._unverified_token("unverified_socket")
         client = self.socketio.test_client(
             self.app,
             flask_test_client=self.client,
@@ -1431,7 +1445,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self._db.session.add(unverified)
             self._db.session.commit()
 
-        token = self._login("unverified_upload", "Aa123456")
+        token = self._unverified_token("unverified_upload")
         jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
         r = self.client.post(
             f"/api/cars/{self.car_public}/images?skip_blur=1",
@@ -1459,7 +1473,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self._db.session.add(unverified)
             self._db.session.commit()
 
-        token = self._login("unverified_ai", "Aa123456")
+        token = self._unverified_token("unverified_ai")
         jpeg = b"\xff\xd8\xff\xdb" + b"0" * 100 + b"\xff\xd9"
         r = self.client.post(
             "/api/process-car-images",
@@ -1487,7 +1501,7 @@ class BackendFactorySmokeTest(unittest.TestCase):
             self._db.session.add(unverified)
             self._db.session.commit()
 
-        token = self._login("unverified_r2", "Aa123456")
+        token = self._unverified_token("unverified_r2")
         r = self.client.post(
             "/api/media/r2/sign-upload",
             headers=self._auth(token),

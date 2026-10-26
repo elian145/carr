@@ -1637,6 +1637,39 @@ def _resolve_car_for_user(car_id: str, user, *, require_owner: bool = True, requ
     return car, None
 
 
+def _availability_change_blocked(car):
+    """Error response when a seller may NOT flip ``car`` between active/sold.
+
+    ``active`` and ``sold`` are both PUBLIC statuses, so the seller-facing
+    availability toggle (mark-sold / mark-active / PUT ``status``) may only
+    ever act on a listing that is ALREADY public (``active``/``sold``; a
+    legacy NULL status counts as active, exactly as the public queries treat
+    it). ``pending`` / ``hidden`` / ``draft`` (awaiting review, or hidden by
+    an admin) -- and any unknown or malformed status (empty, odd casing) --
+    can only be changed by an admin through the moderation endpoints, never
+    by the seller (audit F-02). The stored value is compared exactly: a
+    value the public SQL filters would not show as public must never be
+    promoted to a public one by the seller. Returns ``None`` when allowed.
+    """
+    raw_status = getattr(car, "status", None)
+    if raw_status is None or raw_status in _ALLOWED_LISTING_STATUSES:
+        return None
+    current_status = str(raw_status).strip().lower()
+    if current_status in _MODERATION_LISTING_STATUSES:
+        return (
+            jsonify(
+                {
+                    "message": (
+                        "Listing is awaiting admin review and its status "
+                        "cannot be changed by the seller"
+                    ),
+                }
+            ),
+            403,
+        )
+    return jsonify({"message": "Listing status cannot be changed"}), 400
+
+
 @bp.route("/api/cars/<car_id>", methods=["PUT"])
 @jwt_required()
 def update_car(car_id: str):
@@ -1832,21 +1865,16 @@ def update_car(car_id: str):
             st = (str(data.get("status") or "").strip().lower())
             if st not in _ALLOWED_LISTING_STATUSES:
                 return jsonify({"message": "Invalid status"}), 400
-            current_status = (listing.status or "active").strip().lower()
-            # Sellers cannot self-approve moderated listings.
-            if (
-                current_status in _MODERATION_LISTING_STATUSES
-                and st == "active"
-                and not request_has_admin_privileges(current_user)
-            ):
-                return (
-                    jsonify(
-                        {
-                            "message": "Listing is awaiting admin review",
-                        }
-                    ),
-                    403,
-                )
+            # Sellers cannot publish a listing that has not been approved (or
+            # that an admin hid) by flipping its availability: BOTH targets
+            # are public statuses ("sold" is browseable too), so the guard
+            # must not depend on which one was requested (audit F-02).
+            if not request_has_admin_privileges(current_user):
+                blocked = _availability_change_blocked(listing)
+                if blocked is not None:
+                    # Discard any field edits already applied above.
+                    db.session.rollback()
+                    return blocked
             # Availability (active <-> sold) is not reviewable content: it
             # always applies to the real listing, never to the working copy.
             listing.status = st
@@ -2060,6 +2088,12 @@ def mark_car_sold(car_id: str):
         if err:
             return err
 
+        # "sold" is a PUBLIC status: only an approved (active/sold) listing
+        # may be marked sold, never pending/hidden/draft (audit F-02).
+        blocked = _availability_change_blocked(car)
+        if blocked is not None:
+            return blocked
+
         car.status = "sold"
         car.updated_at = utcnow()
         db.session.commit()
@@ -2086,18 +2120,9 @@ def mark_car_active(car_id: str):
         if err:
             return err
 
-        current_status = (car.status or "active").strip().lower()
-        if current_status in _MODERATION_LISTING_STATUSES:
-            return (
-                jsonify(
-                    {
-                        "message": "Listing is awaiting admin review and cannot be published by the seller",
-                    }
-                ),
-                403,
-            )
-        if current_status not in ("sold", "active"):
-            return jsonify({"message": "Listing cannot be marked active"}), 400
+        blocked = _availability_change_blocked(car)
+        if blocked is not None:
+            return blocked
 
         car.status = "active"
         car.updated_at = utcnow()

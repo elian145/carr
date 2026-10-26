@@ -26,6 +26,7 @@ from ..auth import (
     create_password_reset_token,
     get_current_user,
     log_user_action,
+    user_phone_verified,
     validate_password,
     verify_email_verification_token,
     verify_password_reset_token,
@@ -211,8 +212,18 @@ def _apply_dealer_profile(
     dealership_phone: str | None = None,
     dealership_location: str | None = None,
 ) -> None:
-    """Apply dealer profile request without auto-approving dealer role."""
+    """Apply dealer profile request without auto-approving dealer role.
+
+    Only ever *starts* a dealer application: a user who already has dealer
+    state (any application status, or a dealer account type) is left exactly
+    as is, so an approved dealer cannot be reset to ``pending`` -- or have
+    their dealership details overwritten -- by re-sending dealer fields
+    through an OTP/signup flow. Changes to an existing application go
+    through the authenticated dealer endpoints.
+    """
     if is_dealer_requested:
+        if _is_dealer_account(user):
+            return
         from ..time_utils import utcnow
 
         user.account_type = "user"
@@ -237,6 +248,11 @@ def _apply_dealer_profile(
                     application_snapshot=application.snapshot(),
                 )
             )
+            # SQLAlchemy 2.0 does not cascade a new child into the session via
+            # the backref when ``user`` is already persistent. Dealer data is
+            # now applied to an EXISTING row after OTP (audit F-03), so add it
+            # explicitly or the application would be silently dropped.
+            db.session.add(application)
     elif not getattr(user, "dealer_status", None):
         user.account_type = "user"
         user.dealer_status = "none"
@@ -339,6 +355,31 @@ def _consume_phone_otp(user: User, phone_digits: str, code: str) -> None:
     user.phone_verification_expires_at = None
     user.phone_verification_attempts = 0
     user.phone_verification_locked_until = None
+
+
+def _revoke_pre_verification_credentials(user: User) -> None:
+    """Call right after a phone OTP is successfully verified for ``user``.
+
+    If the account's phone was NOT verified until now, then everything that
+    exists on the row was created without proof of ownership of the number
+    (audit F-01): whoever called ``/phone/start`` first could have chosen the
+    password, and may already hold access/refresh tokens from it. The first
+    genuine OTP proof therefore (a) replaces the password with an unguessable
+    random one and (b) revokes every token issued before this moment, so the
+    real owner starts from a clean slate. Already-verified accounts are never
+    touched, so ordinary OTP logins keep the user's password and sessions.
+
+    Must be called BEFORE ``phone_verified`` is set to True and committed in
+    the same transaction as that change. The cutoff is floored to whole
+    seconds like the other ``tokens_invalid_before`` writers (JWT ``iat`` has
+    1s resolution), so tokens minted after this call remain valid.
+    """
+    if bool(getattr(user, "phone_verified", False)):
+        return
+    from ..time_utils import utcnow
+
+    user.set_password(secrets.token_urlsafe(24))
+    user.tokens_invalid_before = utcnow().replace(microsecond=0)
 
 
 def _redis_client():
@@ -499,62 +540,35 @@ def _resolve_user_for_phone_otp(
     phone_digits: str,
     *,
     create_if_missing: bool,
-    username: str | None = None,
-    first_name: str | None = None,
-    last_name: str | None = None,
-    password: str | None = None,
-    is_dealer_requested: bool = False,
-    dealership_name: str | None = None,
-    dealership_phone: str | None = None,
-    dealership_location: str | None = None,
 ) -> User:
     if create_if_missing:
-        return _get_or_create_user_for_phone(
-            phone_digits,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
-            password=password,
-            is_dealer_requested=is_dealer_requested,
-            dealership_name=dealership_name,
-            dealership_phone=dealership_phone,
-            dealership_location=dealership_location,
-        )
+        return _get_or_create_user_for_phone(phone_digits)
     user = _get_active_user_by_phone(phone_digits)
     if not user:
         raise ValueError("account_not_found")
     return user
 
 
-def _get_or_create_user_for_phone(
-    phone_digits: str,
-    *,
-    username: str | None = None,
-    first_name: str | None = None,
-    last_name: str | None = None,
-    password: str | None = None,
-    is_dealer_requested: bool = False,
-    dealership_name: str | None = None,
-    dealership_phone: str | None = None,
-    dealership_location: str | None = None,
-) -> User:
+def _get_or_create_user_for_phone(phone_digits: str) -> User:
+    """Return the account for ``phone_digits``, creating a bare one if new.
+
+    SECURITY (audit F-01 / F-03): this runs on UNAUTHENTICATED requests,
+    before the caller has proven they own the phone number. It therefore
+    must not let the caller set any credential or authorization state:
+
+      * an EXISTING account is returned exactly as it is -- never modified
+        (no dealer application / status change);
+      * a NEW account is created unverified, as a plain personal user, with
+        a generated username, the placeholder name "User" and an
+        unguessable random password. A caller-supplied password, username,
+        display name or dealer data is never accepted here, so nobody can
+        pre-assign an identity to a number they do not own. Real values are
+        supplied after OTP (``/auth/signup``, profile edit, dealer
+        onboarding; ``/phone/verify`` for dealer fields).
+    """
     user = User.query.filter_by(phone_number=phone_digits).first()
     if user:
-        if is_dealer_requested and (getattr(user, "dealer_status", "none") in ("none", "", None)):
-            _apply_dealer_profile(
-                user,
-                is_dealer_requested=True,
-                dealership_name=dealership_name,
-                dealership_phone=dealership_phone,
-                dealership_location=dealership_location,
-            )
-            db.session.commit()
         return user
-    u = (username or "").strip()
-    if is_dealer_requested:
-        u = ""
-    fn = (first_name or "").strip()
-    ln = (last_name or "").strip()
     # Signup is phone-only; never accept a client-provided email here.
     e = ""
 
@@ -573,19 +587,12 @@ def _get_or_create_user_for_phone(
     except Exception:
         db.session.rollback()
 
-    if u:
-        if User.query.filter_by(username=u).first():
-            raise ValueError("Username already exists")
-    else:
-        prefix = "dealer" if is_dealer_requested else "user"
-        u = _generate_unique_username(prefix)
-
     # Create a minimal user; phone OTP verify will mark is_verified true.
     user = User(
-        username=u,
+        username=_generate_unique_username("user"),
         phone_number=phone_digits,
-        first_name=fn or "User",
-        last_name=ln,
+        first_name="User",
+        last_name="",
         email=e or None,
         is_active=True,
         is_verified=False,
@@ -593,22 +600,9 @@ def _get_or_create_user_for_phone(
         account_type="user",
         dealer_status="none",
     )
-    _apply_dealer_profile(
-        user,
-        is_dealer_requested=is_dealer_requested,
-        dealership_name=dealership_name,
-        dealership_phone=dealership_phone,
-        dealership_location=dealership_location,
-    )
-    # Passwordless phone auth still needs a password hash in the current schema.
-    pw = (password or "").strip()
-    if pw:
-        is_valid, message = validate_password(pw)
-        if not is_valid:
-            raise ValueError(message)
-        user.set_password(pw)
-    else:
-        user.set_password(secrets.token_urlsafe(18))
+    # Passwordless phone auth still needs a password hash in the current
+    # schema: always an unguessable random value (see docstring).
+    user.set_password(secrets.token_urlsafe(18))
     db.session.add(user)
     db.session.commit()
     return user
@@ -896,6 +890,12 @@ def login():
             )
         else:
             password_ok = bool(user) and user.check_password(data["password"])
+            # F-01: an account whose phone was never verified has no proven
+            # owner, so no password (necessarily chosen without proof of
+            # the number) may authenticate it. Same generic 401 as a wrong
+            # password -- nothing reveals that the row exists or why.
+            if password_ok and not user_phone_verified(user):
+                password_ok = False
 
         if not password_ok:
             # Only a genuinely-failed password check against a resolved
@@ -1951,6 +1951,9 @@ def verify_phone():
             db.session.commit()
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
+        # First proof of ownership for this row (audit F-01). No-op if the
+        # phone was already verified.
+        _revoke_pre_verification_credentials(user)
         user.is_verified = True
         user.phone_verified = True
         user.phone_verification_code_hash = None
@@ -2004,13 +2007,9 @@ def send_phone_verification():
         user = User.query.filter_by(phone_number=phone_digits).first()
         if not user:
             try:
-                user = _get_or_create_user_for_phone(
-                    phone_digits,
-                    is_dealer_requested=is_dealer_requested,
-                    dealership_name=dealership_name or None,
-                    dealership_phone=dealership_phone or None,
-                    dealership_location=dealership_location or None,
-                )
+                # Bare unverified account only: dealer fields are validated
+                # above but applied after OTP (see /api/auth/signup).
+                user = _get_or_create_user_for_phone(phone_digits)
             except ValueError as e:
                 # Only surface the known validation cases; never echo str(e) blindly.
                 current_app.logger.info("send-verification validation error: %s", str(e))
@@ -2156,14 +2155,6 @@ def phone_start():
             user = _resolve_user_for_phone_otp(
                 phone_digits,
                 create_if_missing=create_if_missing,
-                username=(data.get("username") or None),
-                first_name=(data.get("first_name") or data.get("firstName") or None),
-                last_name=(data.get("last_name") or data.get("lastName") or None),
-                password=(data.get("password") or None),
-                is_dealer_requested=is_dealer_requested,
-                dealership_name=dealership_name or None,
-                dealership_phone=dealership_phone or None,
-                dealership_location=dealership_location or None,
             )
         except ValueError as e:
             if str(e) == "account_not_found":
@@ -2366,6 +2357,10 @@ def phone_verify():
             db.session.commit()
             return jsonify({"message": "Invalid or expired verification code"}), 400
 
+        # First proof of ownership for this row: drop anything set before it
+        # (audit F-01). No-op for already phone-verified accounts.
+        _revoke_pre_verification_credentials(user)
+
         if is_dealer_requested:
             _apply_dealer_profile(
                 user,
@@ -2464,6 +2459,9 @@ def compat_signup():
         # Enforces lockout, expiry and constant-time comparison, and clears the
         # code on success. Raises OtpError, handled below.
         _consume_phone_otp(user, phone_digits, otp_code)
+        # First proof of ownership: revoke tokens issued before it (the
+        # password is replaced just below). Audit F-01.
+        _revoke_pre_verification_credentials(user)
 
         if is_dealer_requested:
             new_u = _generate_unique_username("dealer")
