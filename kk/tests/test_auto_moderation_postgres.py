@@ -89,19 +89,25 @@ def pg_app():
         c.execute(f'CREATE DATABASE "{name}"' + (f' TEMPLATE "{template}"' if template else ""))
 
     tmp = tempfile.TemporaryDirectory(prefix="carlist_automod_pg_", ignore_cleanup_errors=True)
-    os.environ["APP_ENV"] = "testing"
-    os.environ["SMS_PROVIDER"] = "console"
-    os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
-    os.environ.pop("DB_PATH", None)
-    os.environ["DATABASE_URL"] = url.render_as_string(hide_password=False)
-    os.environ["UPLOAD_FOLDER"] = os.path.join(tmp.name, "uploads")
-    os.environ["R2_PUBLIC_URL"] = "https://cdn.example.com"
-    os.environ["R2_ACCOUNT_ID"] = "test-account"
-    os.environ["R2_BUCKET_NAME"] = "test-bucket"
-    os.environ["R2_ACCESS_KEY_ID"] = "test-key"
-    os.environ["R2_SECRET_ACCESS_KEY"] = "test-secret"
+    # Test isolation: every variable below is restored when this module's
+    # fixture ends. Previously they leaked (DATABASE_URL above all), so every
+    # test module collected after this one -- and the `flask db ...`
+    # subprocesses some of them spawn -- silently ran against this PostgreSQL
+    # server instead of their own SQLite file.
+    env = pytest.MonkeyPatch()
+    env.setenv("APP_ENV", "testing")
+    env.setenv("SMS_PROVIDER", "console")
+    env.delenv("LISTING_REQUIRE_APPROVAL", raising=False)
+    env.delenv("DB_PATH", raising=False)
+    env.setenv("DATABASE_URL", url.render_as_string(hide_password=False))
+    env.setenv("UPLOAD_FOLDER", os.path.join(tmp.name, "uploads"))
+    env.setenv("R2_PUBLIC_URL", "https://cdn.example.com")
+    env.setenv("R2_ACCOUNT_ID", "test-account")
+    env.setenv("R2_BUCKET_NAME", "test-bucket")
+    env.setenv("R2_ACCESS_KEY_ID", "test-key")
+    env.setenv("R2_SECRET_ACCESS_KEY", "test-secret")
     if not template:
-        os.environ["AUTO_MIGRATE"] = "0"  # empty database: create_all fallback, no migration chain
+        env.setenv("AUTO_MIGRATE", "0")  # empty database: create_all fallback, no migration chain
 
     from kk.app_factory import create_app
 
@@ -121,6 +127,7 @@ def pg_app():
         db.session.remove()
         db.engine.dispose()
     tmp.cleanup()
+    env.undo()
 
 
 @pytest.fixture
