@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../debug/app_log.dart';
@@ -23,6 +24,7 @@ class ChatPendingSendRecord {
   ChatPendingSendRecord({
     required this.id,
     required this.conversationId,
+    required this.ownerUserId,
     required this.kind,
     required this.idempotencyKey,
     required this.createdAt,
@@ -40,6 +42,12 @@ class ChatPendingSendRecord {
   /// Stable id for this logical send (the temp/pending message id).
   final String id;
   final String conversationId;
+
+  /// F-34/F-35: verified account (JWT subject confirmed against /auth/me) that
+  /// created this send. A pending record is only ever displayed, retried or
+  /// uploaded while that same account is signed in; records without an owner
+  /// are discarded, never adopted by whoever happens to be signed in.
+  final String ownerUserId;
 
   /// One of 'text' | 'mediaGroup' | 'audio' — mirrors [OutgoingChatSendKind]
   /// without importing it here, to keep this a plain persistence file.
@@ -64,6 +72,7 @@ class ChatPendingSendRecord {
     return ChatPendingSendRecord(
       id: id,
       conversationId: conversationId,
+      ownerUserId: ownerUserId,
       kind: kind,
       idempotencyKey: idempotencyKey,
       createdAt: createdAt,
@@ -82,6 +91,7 @@ class ChatPendingSendRecord {
   Map<String, dynamic> toJson() => {
         'id': id,
         'conversationId': conversationId,
+        'ownerUserId': ownerUserId,
         'kind': kind,
         'idempotencyKey': idempotencyKey,
         if (content != null) 'content': content,
@@ -103,10 +113,12 @@ class ChatPendingSendRecord {
       final map = Map<String, dynamic>.from(raw.cast<String, dynamic>());
       final id = (map['id'] ?? '').toString().trim();
       final conversationId = (map['conversationId'] ?? '').toString().trim();
+      final ownerUserId = (map['ownerUserId'] ?? '').toString().trim();
       final kind = (map['kind'] ?? '').toString().trim();
       final idempotencyKey = (map['idempotencyKey'] ?? '').toString().trim();
       if (id.isEmpty ||
           conversationId.isEmpty ||
+          ownerUserId.isEmpty ||
           kind.isEmpty ||
           idempotencyKey.isEmpty) {
         return null;
@@ -123,6 +135,7 @@ class ChatPendingSendRecord {
       return ChatPendingSendRecord(
         id: id,
         conversationId: conversationId,
+        ownerUserId: ownerUserId,
         kind: kind,
         idempotencyKey: idempotencyKey,
         content: map['content']?.toString(),
@@ -156,10 +169,37 @@ class ChatPendingSendRecord {
 class ChatPendingSendPrefs {
   ChatPendingSendPrefs._();
 
-  static const String prefsKey = 'chat_pending_sends_v1';
+  static const String prefsKey = 'chat_pending_sends_v2';
 
+  /// Pre-isolation key: records had no owner. Discarded on upgrade, never read.
+  static const String legacyPrefsKey = 'chat_pending_sends_v1';
+
+  static bool _legacyPurged = false;
+
+  /// Deletes unowned legacy records (decision: discard, never assign them to
+  /// whichever account happens to be signed in). Safe to call repeatedly.
+  static Future<void> purgeLegacyUnowned() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      if (sp.containsKey(legacyPrefsKey)) await sp.remove(legacyPrefsKey);
+      _legacyPurged = true;
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
+  }
+
+  static Future<void> _ensureLegacyPurged() async {
+    if (!_legacyPurged) await purgeLegacyUnowned();
+  }
+
+  @visibleForTesting
+  static void debugResetLegacyPurgeFlag() => _legacyPurged = false;
+
+  /// Every owner's records. Maintenance/internal use only -- UI and send code
+  /// must use [loadForOwner] / [loadForConversation].
   static Future<List<ChatPendingSendRecord>> loadAll() async {
     try {
+      await _ensureLegacyPurged();
       final sp = await SharedPreferences.getInstance();
       final raw = sp.getString(prefsKey);
       if (raw == null || raw.trim().isEmpty) {
@@ -179,11 +219,43 @@ class ChatPendingSendPrefs {
     }
   }
 
-  static Future<List<ChatPendingSendRecord>> loadForConversation(
-    String conversationId,
+  static Future<List<ChatPendingSendRecord>> loadForOwner(
+    String? ownerUserId,
   ) async {
+    if (ownerUserId == null || ownerUserId.isEmpty) {
+      return const <ChatPendingSendRecord>[];
+    }
     final all = await loadAll();
-    return all.where((r) => r.conversationId == conversationId).toList();
+    return all.where((r) => r.ownerUserId == ownerUserId).toList();
+  }
+
+  static Future<List<ChatPendingSendRecord>> loadForConversation(
+    String conversationId, {
+    required String? ownerUserId,
+  }) async {
+    if (ownerUserId == null || ownerUserId.isEmpty) {
+      return const <ChatPendingSendRecord>[];
+    }
+    final all = await loadAll();
+    return all
+        .where(
+          (r) =>
+              r.conversationId == conversationId &&
+              r.ownerUserId == ownerUserId,
+        )
+        .toList();
+  }
+
+  /// Removes every record owned by [ownerUserId] (account deletion).
+  static Future<void> removeAllForOwner(String ownerUserId) async {
+    try {
+      final all = await loadAll();
+      final next = all.where((r) => r.ownerUserId != ownerUserId).toList();
+      if (next.length == all.length) return;
+      await _saveAll(next);
+    } catch (e, st) {
+      logNonFatal(e, st);
+    }
   }
 
   static Future<void> _saveAll(List<ChatPendingSendRecord> records) async {

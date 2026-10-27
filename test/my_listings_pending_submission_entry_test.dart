@@ -47,6 +47,7 @@ SellSubmissionRecord _record(
     status: status,
     isEdit: isEdit,
     carData: carData ?? const {'brand': 'kia', 'model': 'Sportage'},
+    ownerUserId: '1',
     idempotencyKey: 'sell-create-$draftId',
     lastErrorMessage: lastError,
     createdAt: now,

@@ -4,6 +4,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
   @override
   void initState() {
     super.initState();
+    _ownerUserId = ApiService.currentAccountId;
     _carDisplayTitle = widget.carTitle?.trim();
     _carImageUrl = resolveListingImageUrl(widget.carImageUrl);
     _listingPreview = widget.initialListingPreview == null

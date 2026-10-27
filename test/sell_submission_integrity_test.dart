@@ -276,12 +276,14 @@ void main() {
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
+    await AuthService().adoptTestSession(user: {'id': 'sell_test_owner'});
   });
 
   tearDown(() async {
     SellDraftMediaPersistence.debugBeforeCopyOverride = null;
     SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     await ApiService.clearTokens();
+    AuthService().resetTestSession();
     ApiService.testHttpClient = null;
     setRuntimeApiBaseOverride(null);
     TokenStore.testMode = false;
@@ -454,6 +456,7 @@ void main() {
         draftId: draftId,
         status: SellSubmissionStatus.pending,
         carData: _carData(const []), // selection lost
+        ownerUserId: 'sell_test_owner',
         idempotencyKey: 'sell-create-$draftId',
         requiredMediaCount: 3, // ...but the user did pick 3
         createdAt: now,
@@ -562,6 +565,7 @@ void main() {
         status: SellSubmissionStatus.inProgress,
         carId: 'car_k',
         carData: carData,
+        ownerUserId: 'sell_test_owner',
         idempotencyKey: 'sell-create-$draftId',
         requiredMediaCount: 2,
         expectedMedia: expected,
@@ -594,7 +598,7 @@ void main() {
       status: status,
       isEdit: isEdit,
       carId: carId,
-      ownerUserId: owner,
+      ownerUserId: owner ?? 'me',
       carData: _carData(const []),
       idempotencyKey: 'sell-create-$id',
       createdAt: now,
@@ -719,11 +723,9 @@ void main() {
     await AuthService().logout();
   });
 
-  test('10b. a record created before the profile loaded (no owner) is stamped '
-      'with the account once it is known, so another account can never '
-      'resume it', () async {
+  test('10b. an OWNERLESS legacy record is quarantined: never stamped with, '
+      'shown to or run under whichever account signs in', () async {
     const draftId = 'int_10b';
-    server.enqueueFailStatus = 503;
     await AuthService().adoptTestSession(user: {'id': 'user_10b'});
     final now = DateTime.now().millisecondsSinceEpoch;
     await SellSubmissionStatePrefs.upsert(
@@ -740,9 +742,12 @@ void main() {
 
     await svc.resumeAll();
 
+    expect(server.createBodies, isEmpty, reason: 'must never run');
     final rec = await svc.peek(draftId);
-    expect(rec, isNotNull);
-    expect(rec!.ownerUserId, 'user_10b');
+    expect(rec, isNotNull, reason: 'quarantine never deletes');
+    expect(rec!.ownerUserId, isNull, reason: 'must never be adopted');
+    expect(sellSubmissionShowsPendingEntry(rec, currentOwnerId: 'user_10b'),
+        isFalse);
     await AuthService().logout();
   });
 
@@ -759,6 +764,7 @@ void main() {
       draftId: 'draft_submitted',
       status: SellSubmissionStatus.needsAttention,
       carData: _carData(const []),
+      ownerUserId: 'sell_test_owner',
       idempotencyKey: 'sell-create-draft_submitted',
       createdAt: now,
       updatedAt: now,

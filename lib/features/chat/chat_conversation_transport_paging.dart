@@ -99,7 +99,7 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
         widget.carId,
         perPage: _ChatConversationFields._perPage,
       );
-      if (!mounted) return;
+      if (!mounted || !_pageOwnerIsCurrent) return;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
       final loaded = rows.map(ChatMessage.fromJson).toList();
       loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -110,7 +110,7 @@ mixin _ChatConversationTransportPaging on _ChatConversationTransportMedia {
         }
         _mergeInFlightMediaPending();
         if (OutgoingChatSendService.instance
-            .inFlightMediaForConversation(widget.carId)
+            .inFlightMediaForConversation(widget.carId, ownerUserId: _ownerUserId)
             .isNotEmpty) {
           _isSending = true;
         }

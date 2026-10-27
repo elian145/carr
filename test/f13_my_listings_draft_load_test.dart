@@ -281,6 +281,7 @@ void main() {
           draftId: 'f13_pending_submission_draft',
           status: SellSubmissionStatus.pending,
           carData: const {'brand': 'kia', 'images': <dynamic>[]},
+          ownerUserId: '1',
           idempotencyKey: 'sell-create-f13_pending_submission_draft',
           createdAt: now,
           updatedAt: now,

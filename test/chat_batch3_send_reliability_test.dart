@@ -15,6 +15,7 @@ import 'package:car_listing_app/services/outgoing_chat_send_service.dart';
 import 'package:car_listing_app/shared/prefs/chat_pending_send_prefs.dart';
 
 import 'fake_api_server.dart';
+import 'support/test_jwt.dart';
 
 /// CHAT-2: text send must use reliable REST, never silent WebSocket drop.
 void main() {
@@ -36,7 +37,7 @@ void main() {
       },
     );
     await ApiService.setTokens(
-      accessToken: 'test_access_token',
+      accessToken: testJwt('owner_test'),
       refreshToken: 'test_refresh_token',
     );
     FakeApiServer.chatSendOverride = null;
@@ -245,7 +246,7 @@ void main() {
     expect(find.text(outgoing), findsWidgets);
     expect(find.byIcon(Icons.schedule), findsWidgets);
 
-    final pending = await ChatPendingSendPrefs.loadForConversation(carId);
+    final pending = await ChatPendingSendPrefs.loadForConversation(carId, ownerUserId: 'owner_test');
     expect(pending, hasLength(1));
     final rec = pending.single;
     // Bypass minAutoRetryInterval without sleeping (same pattern as F-11 tests).

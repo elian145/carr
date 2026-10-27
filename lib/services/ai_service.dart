@@ -8,10 +8,19 @@ import 'api_service.dart';
 import '../shared/debug/app_log.dart';
 import '../shared/prefs/sell_draft_media_persistence.dart';
 
+/// F-35: every method here uploads the signed-in user's private photos with
+/// that user's bearer token and can run for minutes (batches, retries, 240 s
+/// timeouts). Each call is therefore bound to the session it STARTED in
+/// ([ApiService.captureSession]): once that session ends (logout, rejection,
+/// switch to another account, log in again) no further request is sent, and a
+/// response that arrives afterwards is discarded instead of being handed to
+/// whatever session is active now. Ordinary token rotation inside the same
+/// session does not end it, so legitimate uploads are unaffected.
 class AiService {
   /// Analyze a single car image and extract vehicle information
   static Future<Map<String, dynamic>?> analyzeCarImage(XFile imageFile) async {
     try {
+      final session = ApiService.captureSession();
       final url = Uri.parse('${apiBaseApi()}/analyze-car-image');
       final request = http.MultipartRequest('POST', url);
 
@@ -32,6 +41,10 @@ class AiService {
             throw TimeoutException('AI image analysis timed out'),
       );
       final responseBody = await http.Response.fromStream(response);
+      if (!ApiService.isSessionCurrent(session)) {
+        appLog('AI Service: analysis discarded (session changed)');
+        return null;
+      }
 
       if (response.statusCode == 200) {
         return json.decode(responseBody.body);
@@ -52,6 +65,7 @@ class AiService {
   static Future<List<XFile>?> processCarImages(List<XFile> imageFiles) async {
     if (imageFiles.isEmpty) return imageFiles;
     try {
+      final session = ApiService.captureSession();
       final token = await _getAuthToken();
       if (token == null || token.isEmpty) {
         appLog('AI Service: Blur requires authentication');
@@ -66,6 +80,7 @@ class AiService {
       const durationBetweenRequests = Duration(milliseconds: 400);
       for (int i = 0; i < imageFiles.length; i++) {
         if (i > 0) await Future.delayed(durationBetweenRequests);
+        if (!ApiService.isSessionCurrent(session)) return null;
         final file = imageFiles[i];
         appLog(
           'AI Service: Blurring image ${i + 1}/${imageFiles.length}',
@@ -79,6 +94,7 @@ class AiService {
             await Future.delayed(const Duration(seconds: 2));
           }
           try {
+            if (!ApiService.isSessionCurrent(session)) return null;
             final request = http.MultipartRequest('POST', uri);
             request.headers['Authorization'] = 'Bearer $token';
             request.files.add(
@@ -91,6 +107,7 @@ class AiService {
               ),
             );
             final response = await http.Response.fromStream(streamed);
+            if (!ApiService.isSessionCurrent(session)) return null;
             if (response.statusCode != 200) {
               appLog(
                 'AI Service: Blur failed for image ${i + 1}: ${response.statusCode} ${response.body}',
@@ -141,6 +158,7 @@ class AiService {
   ) async {
     if (imageFiles.isEmpty) return const [];
     try {
+      final session = ApiService.captureSession();
       final token = await _getAuthToken();
       if (token == null || token.isEmpty) {
         appLog('AI Service: Processing requires authentication');
@@ -157,6 +175,7 @@ class AiService {
         onTimeout: () => throw TimeoutException('Process images timed out'),
       );
       final response = await http.Response.fromStream(streamed);
+      if (!ApiService.isSessionCurrent(session)) return null;
       if (response.statusCode != 200) {
         appLog(
           'AI Service: Process images failed: ${response.statusCode} ${response.body}',
@@ -205,6 +224,7 @@ class AiService {
     bool skipBlur = false,
   }) async {
     if (imageFiles.isEmpty) return const [];
+    final session = ApiService.captureSession();
     final token = await _getAuthToken();
     if (token == null || token.isEmpty) {
       appLog('AI Service: Enqueue-images requires authentication');
@@ -243,6 +263,7 @@ class AiService {
                     throw TimeoutException('Enqueue images timed out'),
               );
           final response = await http.Response.fromStream(streamed);
+          if (!ApiService.isSessionCurrent(session)) return null;
           if (response.statusCode != 202 && response.statusCode != 200) {
             appLog(
               'AI Service: Enqueue images failed: '
@@ -285,6 +306,7 @@ class AiService {
     if (imageFiles.isEmpty) {
       return {'paths': const <String>[], 'base64': const <String>[]};
     }
+    final session = ApiService.captureSession();
     final token = await _getAuthToken();
     if (token == null || token.isEmpty) {
       appLog('AI Service: Processing requires authentication');
@@ -294,6 +316,8 @@ class AiService {
     // Batch requests to avoid huge multipart uploads and huge JSON/base64 responses
     // which can cause "connection closed while receiving data" on mobile/dev servers.
     Future<Map<String, List<String>>?> sendBatch(List<XFile> batch) async {
+      // Never start (or retry) a batch under a session that already ended.
+      ApiService.assertSessionCurrent(session);
       final url = Uri.parse(
         '${apiBaseApi()}/process-car-images'
         '?inline_base64=${inlineBase64 ? 1 : 0}'
@@ -309,6 +333,7 @@ class AiService {
         onTimeout: () => throw TimeoutException('Process images timed out'),
       );
       final response = await http.Response.fromStream(streamed);
+      ApiService.assertSessionCurrent(session);
       if (response.statusCode != 200) {
         appLog(
           'AI Service: Process images failed: ${response.statusCode} ${response.body}',
@@ -340,6 +365,7 @@ class AiService {
     int batchSize = 3;
 
     for (int i = 0; i < imageFiles.length; i += batchSize) {
+      if (!ApiService.isSessionCurrent(session)) return null;
       final batch = imageFiles.sublist(
         i,
         (i + batchSize) > imageFiles.length
@@ -375,11 +401,13 @@ class AiService {
         continue;
       }
 
+      if (!ApiService.isSessionCurrent(session)) return null;
       if (res == null) return null;
       outPaths.addAll(res['paths'] ?? const []);
       outB64.addAll(res['base64'] ?? const []);
     }
 
+    if (!ApiService.isSessionCurrent(session)) return null;
     return {'paths': outPaths, 'base64': outB64};
   }
 

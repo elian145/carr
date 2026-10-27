@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'config.dart';
+import '../shared/auth/account_scope.dart';
+import '../shared/auth/auth_session.dart';
 import '../shared/auth/token_store.dart';
+import '../shared/prefs/account_local_data.dart';
 import '../shared/listings/listing_identity.dart';
 import '../shared/phone/phone_normalizer.dart';
 import 'api_exception.dart';
@@ -17,6 +20,7 @@ import '../state/locale_controller.dart';
 
 export 'api_exception.dart';
 export 'api_cancel_token.dart';
+export '../shared/auth/auth_session.dart' show AuthSessionSnapshot;
 
 part 'api/api_http.dart';
 part 'api/api_auth.dart';
@@ -179,11 +183,15 @@ class ApiService {
   // HTTP + token core (api/api_http.dart)
   static Future<void> initializeTokens() => _ApiServiceHttp.initializeTokens();
 
-  static Future<void> _saveAccessToken(String accessToken) =>
-      _ApiServiceHttp._saveAccessToken(accessToken);
-
   static Future<void> _saveRefreshToken(String? refreshToken) =>
       _ApiServiceHttp._saveRefreshToken(refreshToken);
+
+  static Future<void> _installSession(String access, String? refresh) =>
+      _ApiServiceHttp.installSession(access, refresh);
+
+  /// Abandons every login / OTP verification that is still in flight.
+  static void cancelPendingAuthAttempts() =>
+      _ApiServiceHttp.cancelPendingAuthAttempts();
 
   static Future<void> setAccessToken(String? token) =>
       _ApiServiceHttp.setAccessToken(token);
@@ -199,8 +207,8 @@ class ApiService {
 
   static Future<void> clearTokens() => _ApiServiceHttp.clearTokens();
 
-  static Future<void> _ensureTokenLoaded() =>
-      _ApiServiceHttp._ensureTokenLoaded();
+  static Future<AuthSessionSnapshot> _beginAuthenticatedRequest() =>
+      _ApiServiceHttp._beginAuthenticatedRequest();
 
   static Map<String, String> _getHeaders({bool includeAuth = true}) =>
       _ApiServiceHttp._getHeaders(includeAuth: includeAuth);
@@ -222,14 +230,14 @@ class ApiService {
     Future<http.MultipartRequest> Function() buildRequest,
   ) => _ApiServiceHttp._sendAuthenticatedMultipart(buildRequest);
 
-  static Future<bool> _refreshAccessToken() =>
-      _ApiServiceHttp._refreshAccessToken();
+  static Future<bool> _refreshAccessToken([AuthSessionSnapshot? session]) =>
+      _ApiServiceHttp._refreshAccessToken(session);
 
   /// "401 and the refresh attempt failed": throws a retryable 503 without
   /// touching stored tokens when the refresh failure was transient,
   /// otherwise clears the session. See `_ApiServiceHttp._lastRefreshTransient`.
-  static Future<void> _handleUnrefreshable401() =>
-      _ApiServiceHttp._handleUnrefreshable401();
+  static Future<void> _handleUnrefreshable401([AuthSessionSnapshot? session]) =>
+      _ApiServiceHttp._handleUnrefreshable401(session);
 
   /// Test hook: whether the last token refresh attempt failed transiently.
   @visibleForTesting
@@ -783,9 +791,116 @@ class ApiService {
   // Get current access token
   static String? get accessToken => _accessToken;
 
+  /// Restores the persisted session into memory when none is loaded yet.
+  /// Never resurrects a session that is being cleared (logout in flight).
+  static Future<void> ensureSessionLoaded() =>
+      _ApiServiceHttp._ensureTokenLoaded();
+
+  /// Starts an operation that talks to the server as the signed-in account:
+  /// captures the session it began in BEFORE the first await, restores the
+  /// persisted session on a cold start, and returns the session the operation
+  /// belongs to. An operation that began without credentials is abandoned
+  /// ([ApiSessionChangedException]) if an unrelated account signs in while it
+  /// waits -- it never silently adopts that account. Re-check the result with
+  /// [isSessionCurrent] before delivering or syncing anything.
+  static Future<AuthSessionSnapshot> beginSession() =>
+      _ApiServiceHttp._beginAuthenticatedRequest();
+
   // Current refresh token (read-only; used only to name the session's
   // account via `SessionIdentity` when the access token has expired).
   static String? get refreshToken => _refreshToken;
+
+  // ---------------------------------------------------------------------
+  // Authentication-session isolation (F-34 / F-35 / F-39).
+  //
+  // * [sessionEpoch] changes on EVERY authentication transition: login
+  //   (including logging in again as the same account), logout, token clear,
+  //   account switch, stored-session restore. Rotating a refresh token inside
+  //   the same session does not change it.
+  // * [captureSession] / [isSessionCurrent] / [assertSessionCurrent] let a
+  //   request or background operation prove it still belongs to the session it
+  //   started in. A request started under account A is never retried with B's
+  //   credentials, never clears B's tokens, never writes to B's caches and
+  //   never hands its result to B.
+  // * [currentAccountId] is the JWT `sub` of the current credentials, used
+  //   ONLY to scope private on-device data. It fails closed (null) when the
+  //   token is missing/malformed, when the access and refresh tokens disagree,
+  //   or when `/auth/me` reported a different id ([confirmAccountIdentity]).
+  // ---------------------------------------------------------------------
+  static int _sessionEpoch = 0;
+  static bool _identityRejected = false;
+
+  /// Changes on every authentication transition.
+  static int get sessionEpoch => _sessionEpoch;
+
+  /// Validated owner id for private local data, or `null` (fail closed).
+  static String? get currentAccountId {
+    if (_identityRejected) return null;
+    final a = accountIdFromJwt(_accessToken);
+    final r = accountIdFromJwt(_refreshToken);
+    if (a != null && r != null && a != r) return null;
+    return a ?? r;
+  }
+
+  /// Snapshot of the session an operation starts in. [authenticated] defaults
+  /// to "credentials are currently present"; pass `false` for requests that
+  /// carry no credentials (they are not invalidated by a later login).
+  static AuthSessionSnapshot captureSession({bool? authenticated}) {
+    return AuthSessionSnapshot(
+      epoch: _sessionEpoch,
+      accountId: currentAccountId,
+      authenticated: authenticated ?? isAuthenticated,
+    );
+  }
+
+  /// True while NO authentication transition has happened since [s] was
+  /// captured. Deliberately strict: a snapshot taken WITHOUT credentials is
+  /// invalidated by a later login exactly like an authenticated one, because
+  /// every caller of this check is account-sensitive (refresh, retry, logout,
+  /// delivering a result to whoever is signed in now). A guest-started
+  /// request must never refresh with, retry under, deliver to or sign out the
+  /// account that signed in after it began.
+  ///
+  /// Genuinely public guest requests (no Authorization header, public data)
+  /// do not call this; see `_getWithAdaptiveTimeout`.
+  static bool isSessionCurrent(AuthSessionSnapshot s) =>
+      s.epoch == _sessionEpoch;
+
+  static void assertSessionCurrent(AuthSessionSnapshot s) {
+    if (!isSessionCurrent(s)) throw ApiSessionChangedException();
+  }
+
+  /// Cross-checks the JWT `sub` against the id `/auth/me` returned for the
+  /// session [s]. Returns `false` (and fails closed: [currentAccountId] becomes
+  /// `null` for the rest of this session) when they disagree or the profile
+  /// carries no id. A stale session is ignored (returns `true`). When the
+  /// token carries no usable `sub` there is nothing to compare; private data
+  /// is already unavailable ([currentAccountId] is `null`).
+  static bool confirmAccountIdentity(
+    Object? profileId,
+    AuthSessionSnapshot s,
+  ) {
+    if (s.epoch != _sessionEpoch) return true;
+    final sub = currentAccountId;
+    if (sub == null) return true;
+    final id = (profileId ?? '').toString().trim();
+    if (id.isEmpty || id != sub) {
+      _identityRejected = true;
+      return false;
+    }
+    return true;
+  }
+
+  @visibleForTesting
+  static void debugResetSessionForTests() {
+    _sessionEpoch++;
+    _identityRejected = false;
+    _getResponseCache.clear();
+    // ignore: invalid_use_of_visible_for_testing_member
+    AccountLocalData.debugReset();
+    // ignore: invalid_use_of_visible_for_testing_member
+    _ApiServiceHttp.debugResetTokenIo();
+  }
 
   // Chat HTTP + attachments (api/api_chat.dart)
   static Future<Map<String, dynamic>> sendChatMessageByConversation({

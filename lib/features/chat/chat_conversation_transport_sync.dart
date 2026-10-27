@@ -50,6 +50,10 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
 
   void _onOutgoingChatSendEvent(OutgoingChatSendEvent e) {
     if (e.conversationId != widget.carId || !mounted) return;
+    // F-35: send events are broadcast globally and conversation ids are not
+    // an ownership boundary -- ignore anything that is not this screen's
+    // account's, or that arrives after the signed-in account changed.
+    if (e.ownerUserId != _ownerUserId || !_pageOwnerIsCurrent) return;
 
     void finishSending() {
       setState(() => _isSending = false);

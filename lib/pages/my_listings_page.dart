@@ -407,7 +407,7 @@ class _MyListingsPageState extends State<MyListingsPage>
           return false;
         }
         final owner = (r.ownerUserId ?? '').trim();
-        if (owner.isEmpty) return true;
+        if (owner.isEmpty) return false; // quarantined: owner unknown (F-34)
         if (currentOwner.isEmpty) return true;
         return owner == currentOwner;
       });

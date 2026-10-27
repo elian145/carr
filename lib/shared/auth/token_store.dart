@@ -74,14 +74,38 @@ class TokenStore {
   static String? get token => _token;
   static String? get refreshToken => _refreshToken;
 
+  /// Test-only barrier awaited at the START of every credential I/O
+  /// (`'load'`, `'save'`, `'saveRefresh'`, `'clear'`), so a test can hold one
+  /// persistence operation half-way and run another authentication transition
+  /// meanwhile, deterministically (no sleeps). Production never sets it.
+  @visibleForTesting
+  static Future<void> Function(String op)? debugIoGate;
+
+  static Future<void> _gate(String op) async {
+    final gate = debugIoGate;
+    if (gate != null) await gate(op);
+  }
+
   static Future<void> load() async {
-    if (testMode) return;
+    if (testMode) {
+      // Mirror the real read: the value is sampled when the read starts and
+      // lands in the cache when it completes (so a slow read can deliver a
+      // stale value, exactly like secure storage).
+      final access = _token;
+      final refresh = _refreshToken;
+      if (debugIoGate != null) await _gate('load');
+      _token = access;
+      _refreshToken = refresh;
+      return;
+    }
+    if (debugIoGate != null) await _gate('load');
     _token = await _readDurable(_kAccess, _kPrefsAccess);
     _refreshToken = await _readDurable(_kRefresh, _kPrefsRefresh);
   }
 
   static Future<void> save(String? token) async {
     final t = (token ?? '').trim();
+    if (debugIoGate != null) await _gate('save');
     if (testMode) {
       _token = t.isEmpty ? null : t;
       return;
@@ -92,6 +116,7 @@ class TokenStore {
 
   static Future<void> saveRefresh(String? token) async {
     final t = (token ?? '').trim();
+    if (debugIoGate != null) await _gate('saveRefresh');
     if (testMode) {
       _refreshToken = t.isEmpty ? null : t;
       return;
@@ -101,6 +126,7 @@ class TokenStore {
   }
 
   static Future<void> clear() async {
+    if (debugIoGate != null) await _gate('clear');
     if (testMode) {
       resetForTests();
       return;

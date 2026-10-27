@@ -46,4 +46,33 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
   Timer? _voiceRecordTimer;
   String? _voiceRecordPath;
 
+  /// Verified account this conversation screen was opened for (F-34/F-35).
+  /// Captured once; every send, pending-record lookup and send event is checked
+  /// against it so a screen can never act for -- or show data of -- a
+  /// different account than the one it belongs to.
+  String? _ownerUserId;
+
+  bool get _pageOwnerIsCurrent => ApiService.currentAccountId == _ownerUserId;
+
+  /// Immediately-before-send ownership check. Returns false (and tells the
+  /// user) when the signed-in account is no longer the one this screen was
+  /// opened for; the composer content is left untouched.
+  bool _ensurePageOwnerStillSignedIn() {
+    if (_ownerUserId != null && _pageOwnerIsCurrent) return true;
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userErrorText(
+              context,
+              ApiSessionChangedException(),
+              fallback: AppLocalizations.of(context)?.errorTitle ?? 'Error',
+            ),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+    return false;
+  }
 }

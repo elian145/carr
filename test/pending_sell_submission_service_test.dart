@@ -37,6 +37,7 @@ import 'dart:io';
 
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
 import 'package:car_listing_app/features/sell/sell_media_identity.dart';
+import 'package:car_listing_app/features/sell/sell_submission_visibility.dart';
 import 'package:car_listing_app/features/sell/sell_video_compression.dart';
 import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/auth_service.dart';
@@ -46,6 +47,8 @@ import 'package:car_listing_app/shared/listings/owner_optimistic_media_cleanup.d
 import 'package:car_listing_app/shared/prefs/owner_optimistic_media_prefs.dart';
 import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
 import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
+
+import 'support/test_jwt.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart' show XFile;
@@ -148,6 +151,9 @@ void main() {
   late FakeMediaManifest fakeManifest;
 
   setUp(() async {
+    // Resume-mechanics tests seed ownerless records to model a killed app;
+    // the quarantine itself is covered by its own group below.
+    PendingSellSubmissionService.instance.debugAllowOwnerlessResume = true;
     fakeManifest = FakeMediaManifest()
       ..carLookup = (id) => carsById[id];
     tempDir = Directory.systemTemp.createTempSync('pending_sell_sub_');
@@ -465,6 +471,7 @@ void main() {
   });
 
   tearDown(() async {
+    PendingSellSubmissionService.instance.debugAllowOwnerlessResume = false;
     SellDraftMediaPersistence.debugBeforeCopyOverride = null;
     SellDraftMediaPersistence.debugResetMediaLifecycleForTest();
     await ApiService.clearTokens();
@@ -478,6 +485,148 @@ void main() {
     } catch (_) {}
   });
 
+  group('legacy_sell_pending_media_v1 ownership (F-34)', () {
+    const legacyKey = 'legacy_sell_pending_media_v1';
+    const legacyJson =
+        '{"carId":"legacy_car_1","draftId":"legacy_draft_1","pendingReview":false,'
+        '"carData":{"images":["/definitely/missing/legacy.jpg"],"damage_images":[],"videos":[]}}';
+
+    test('an unowned legacy record is NOT turned into a submission while the '
+        'signed-in account is unknown', () async {
+      SharedPreferences.setMockInitialValues({legacyKey: legacyJson});
+      await PendingSellSubmissionService.instance.resumeAll();
+      expect(await SellSubmissionStatePrefs.loadAll(), isEmpty);
+      final sp = await SharedPreferences.getInstance();
+      expect(sp.containsKey(legacyKey), isTrue,
+          reason: 'left untouched until an owner is known (never claimed '
+              'by whichever account signs in next)');
+    });
+
+    test('once the account is known the migrated record is stamped with it',
+        () async {
+      SharedPreferences.setMockInitialValues({legacyKey: legacyJson});
+      await AuthService().adoptTestSession(user: {'id': 'user_legacy_owner'});
+      await PendingSellSubmissionService.instance.resumeAll();
+      final rec = await SellSubmissionStatePrefs.load('legacy_draft_1');
+      expect(rec, isNotNull);
+      expect(rec!.ownerUserId, 'user_legacy_owner');
+      final sp = await SharedPreferences.getInstance();
+      expect(sp.containsKey(legacyKey), isFalse);
+    });
+  });
+  group('ownerless sell submissions are quarantined (F-34)', () {
+    SellSubmissionRecord ownerless(String id, {String? carId}) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      return SellSubmissionRecord(
+        draftId: id,
+        status: SellSubmissionStatus.retryable,
+        carId: carId,
+        carData: <String, dynamic>{'images': <dynamic>[]},
+        idempotencyKey: 'sell-create-$id',
+        currentPhase: 'creating',
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    setUp(() {
+      PendingSellSubmissionService.instance.debugAllowOwnerlessResume = false;
+      PendingSellSubmissionService.instance.debugResetOwnerlessTracking();
+    });
+    tearDown(() {
+      AuthService().resetTestSession();
+    });
+
+    test('a persisted ownerless record is never resumed, stamped or run by '
+        'the first account to sign in', () async {
+      await SellSubmissionStatePrefs.upsert(ownerless('old_unowned'));
+      await AuthService().adoptTestSession(user: {'id': 'user_first'});
+
+      final resumed = await PendingSellSubmissionService.instance.resumeAll();
+
+      expect(resumed, isFalse);
+      expect(createCarCalls, isEmpty,
+          reason: "an unowned submission must not be created as user_first");
+      final rec = await SellSubmissionStatePrefs.load('old_unowned');
+      expect(rec, isNotNull, reason: 'quarantined, not deleted');
+      expect(rec!.ownerUserId, isNull, reason: 'never stamped');
+      expect(rec.status, SellSubmissionStatus.retryable);
+    });
+
+    test('a quarantined record is not shown as a pending entry to anyone',
+        () {
+      final r = ownerless('old_unowned');
+      expect(sellSubmissionShowsPendingEntry(r, currentOwnerId: 'user_first'),
+          isFalse);
+      expect(sellSubmissionShowsPendingEntry(r), isFalse);
+      expect(sellSubmissionHidesDraft(r, currentOwnerId: 'user_first'),
+          isFalse);
+      expect(
+        sellSubmissionPendingEntries([r], currentOwnerId: 'user_first'),
+        isEmpty,
+      );
+      // An OWNED record is unaffected.
+      final owned = r.copyWith(ownerUserId: 'user_first');
+      expect(sellSubmissionShowsPendingEntry(owned,
+          currentOwnerId: 'user_first'), isTrue);
+    });
+
+    test('submitting over a quarantined record does not inherit its listing '
+        'id or progress', () async {
+      await SellSubmissionStatePrefs.upsert(
+        ownerless('shared_draft_id', carId: 'foreign_car_9'),
+      );
+      await AuthService().adoptTestSession(user: {'id': 'user_second'});
+
+      await PendingSellSubmissionService.instance.submit(
+        draftId: 'shared_draft_id',
+        carData: _baseCarData(),
+      );
+
+      expect(createCarCalls, hasLength(1),
+          reason: "the foreign listing id must not make submit skip create "
+              'or finish another person\'s listing');
+    });
+
+    test('a record created in THIS session while the owner was unknown is '
+        'stamped by that same session once the account is known', () async {
+      // No profile yet, but the session's own token names the account.
+      await ApiService.setTokens(
+        accessToken: testJwt('user_token_named'),
+        refreshToken: testJwt('user_token_named', type: 'refresh'),
+      );
+      createCarOverride = (_) => http.Response(
+            json.encode({'message': 'Service Unavailable'}),
+            503,
+            headers: {'content-type': 'application/json'},
+          );
+      try {
+        await PendingSellSubmissionService.instance.submit(
+          draftId: 'fresh_unknown_owner',
+          carData: _baseCarData(),
+        );
+      } catch (_) {}
+      final rec = await SellSubmissionStatePrefs.load('fresh_unknown_owner');
+      expect(rec, isNotNull);
+      expect(rec!.ownerUserId, 'user_token_named',
+          reason: 'owner taken from the session token, not left empty');
+    });
+
+    test('an ownerless record from a previous session is quarantined even '
+        'after the same epoch no longer matches', () async {
+      await AuthService().adoptTestSession(user: {'id': 'user_a'});
+      // Simulate "created in this process" for a draft, then a session change.
+      createCarOverride = (_) => http.Response('{}', 503);
+      await SellSubmissionStatePrefs.upsert(ownerless('stale_after_switch'));
+      await ApiService.setTokens(
+        accessToken: testJwt('user_b_account'),
+        refreshToken: testJwt('user_b_account', type: 'refresh'),
+      );
+      await AuthService().adoptTestSession(user: {'id': 'user_b_account'});
+      expect(await PendingSellSubmissionService.instance.resumeAll(), isFalse);
+      expect(createCarCalls, isEmpty);
+    });
+  });
   group('SellSubmissionRecord persistence (no HTTP)', () {
     test(
       'J-12: an old-schema record (persisted by a version of the app that '
