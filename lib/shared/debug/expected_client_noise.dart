@@ -1,9 +1,13 @@
+import '../../services/api_exception.dart' show ApiSessionChangedException;
+
 /// Operational failures that already have UI/fallback handling.
 ///
 /// These should not be reported as Sentry errors: missing listing photos,
 /// Flutter's removed AssetManifest.json, and iOS sockets reclaimed in
-/// the background.
+/// the background, and requests deliberately abandoned because the signed-in
+/// session changed while they were in flight (logout / account switch).
 bool isExpectedClientNoise(Object error) {
+  if (error is ApiSessionChangedException) return true;
   final text = error.toString();
   final lower = text.toLowerCase();
 

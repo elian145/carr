@@ -118,7 +118,7 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
         widget.carId,
         perPage: _ChatConversationFields._perPage,
       );
-      if (!mounted) return;
+      if (!mounted || !_pageOwnerIsCurrent) return;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
       final loaded = rows.map(ChatMessage.fromJson).toList();
       loaded.sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -128,7 +128,7 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
           ..addAll(loaded);
         _mergeInFlightMediaPending();
         final stillSending = OutgoingChatSendService.instance
-            .inFlightMediaForConversation(widget.carId)
+            .inFlightMediaForConversation(widget.carId, ownerUserId: _ownerUserId)
             .isNotEmpty;
         if (stillSending) {
           _isSending = true;
@@ -141,8 +141,11 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       // was reopened — possibly after an app restart) and kick off a
       // bounded recovery attempt for them.
       final persistedPending =
-          await ChatPendingSendPrefs.loadForConversation(widget.carId);
-      if (!mounted) return;
+          await ChatPendingSendPrefs.loadForConversation(
+        widget.carId,
+        ownerUserId: _ownerUserId,
+      );
+      if (!mounted || !_pageOwnerIsCurrent) return;
       if (persistedPending.isNotEmpty) {
         setState(() {
           _mergePersistedPendingSends(persistedPending);

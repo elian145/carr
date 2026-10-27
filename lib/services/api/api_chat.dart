@@ -66,21 +66,23 @@ abstract final class _ApiServiceChat {
       final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/messages')
           .replace(queryParameters: query);
       Map<String, String> headers = ApiService._getHeaders();
+      final session = ApiService.captureSession();
 
       http.Response response = await ApiService._httpClient
           .get(url, headers: headers)
           .timeout(ApiService._defaultTimeout);
 
       if (response.statusCode == 401) {
-        final refreshed = await ApiService._refreshAccessToken();
+        final refreshed = await ApiService._refreshAccessToken(session);
         if (!refreshed) {
-          await ApiService._handleUnrefreshable401();
+          await ApiService._handleUnrefreshable401(session);
           throw Exception('Authentication failed');
         }
         headers = ApiService._getHeaders();
         response = await ApiService._httpClient.get(url, headers: headers).timeout(ApiService._defaultTimeout);
       }
 
+      ApiService.assertSessionCurrent(session);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         ApiService._handleResponse(response);
       }
@@ -195,7 +197,11 @@ abstract final class _ApiServiceChat {
       final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/send_media_group');
       final idemKey = idempotencyKey?.trim();
 
+      final session = ApiService.captureSession();
+
       Future<http.Response> makeRequest() async {
+        // Never dispatch (or re-dispatch) under a later session's credentials.
+        ApiService.assertSessionCurrent(session);
         final req = http.MultipartRequest('POST', url);
         req.headers.addAll(ApiService._getHeaders());
         if (idemKey != null && idemKey.isNotEmpty) {
@@ -218,20 +224,25 @@ abstract final class _ApiServiceChat {
         if (listingPreview != null && listingPreview.isNotEmpty) {
           req.fields['listing_preview'] = json.encode(listingPreview);
         }
-        final streamedResponse = await req.send().timeout(ApiService._uploadTimeout);
+        ApiService.assertSessionCurrent(session);
+        final streamedResponse = await ApiService._httpClient.send(req).timeout(ApiService._uploadTimeout);
         return http.Response.fromStream(streamedResponse);
       }
 
-      var response = await makeRequest();
+      // Shared pooled client: a dead keep-alive socket (app was backgrounded)
+      // is recycled and the request rebuilt once; timeouts are not retried here
+      // (the caller's idempotency key + retry policy own that).
+      var response = await _ApiServiceHttp._withStaleClientRetry(makeRequest);
       if (response.statusCode == 401) {
-        final refreshed = await ApiService._refreshAccessToken();
+        final refreshed = await ApiService._refreshAccessToken(session);
         if (!refreshed) {
-          await ApiService._handleUnrefreshable401();
+          await ApiService._handleUnrefreshable401(session);
           throw Exception('Authentication failed');
         }
-        response = await makeRequest();
+        response = await _ApiServiceHttp._withStaleClientRetry(makeRequest);
       }
 
+      ApiService.assertSessionCurrent(session);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         ApiService._handleResponse(response);
       }
@@ -251,7 +262,11 @@ abstract final class _ApiServiceChat {
       final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/$endpointSuffix');
       final idemKey = idempotencyKey?.trim();
 
+      final session = ApiService.captureSession();
+
       Future<http.Response> makeRequest() async {
+        // Never dispatch (or re-dispatch) under a later session's credentials.
+        ApiService.assertSessionCurrent(session);
         final req = http.MultipartRequest('POST', url);
         req.headers.addAll(ApiService._getHeaders());
         if (idemKey != null && idemKey.isNotEmpty) {
@@ -267,20 +282,25 @@ abstract final class _ApiServiceChat {
         if (replyToMessageId != null && replyToMessageId.trim().isNotEmpty) {
           req.fields['reply_to_message_id'] = replyToMessageId.trim();
         }
-        final streamedResponse = await req.send().timeout(ApiService._uploadTimeout);
+        ApiService.assertSessionCurrent(session);
+        final streamedResponse = await ApiService._httpClient.send(req).timeout(ApiService._uploadTimeout);
         return http.Response.fromStream(streamedResponse);
       }
 
-      var response = await makeRequest();
+      // Shared pooled client: a dead keep-alive socket (app was backgrounded)
+      // is recycled and the request rebuilt once; timeouts are not retried here
+      // (the caller's idempotency key + retry policy own that).
+      var response = await _ApiServiceHttp._withStaleClientRetry(makeRequest);
       if (response.statusCode == 401) {
-        final refreshed = await ApiService._refreshAccessToken();
+        final refreshed = await ApiService._refreshAccessToken(session);
         if (!refreshed) {
-          await ApiService._handleUnrefreshable401();
+          await ApiService._handleUnrefreshable401(session);
           throw Exception('Authentication failed');
         }
-        response = await makeRequest();
+        response = await _ApiServiceHttp._withStaleClientRetry(makeRequest);
       }
 
+      ApiService.assertSessionCurrent(session);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         ApiService._handleResponse(response);
       }
@@ -316,21 +336,23 @@ abstract final class _ApiServiceChat {
       final endpoint = '/chats';
       final url = Uri.parse('${ApiService.baseUrl}$endpoint');
       Map<String, String> headers = ApiService._getHeaders();
+      final session = ApiService.captureSession();
 
       http.Response response = await ApiService._httpClient
           .get(url, headers: headers)
           .timeout(ApiService._defaultTimeout);
 
       if (response.statusCode == 401) {
-        final refreshed = await ApiService._refreshAccessToken();
+        final refreshed = await ApiService._refreshAccessToken(session);
         if (!refreshed) {
-          await ApiService._handleUnrefreshable401();
+          await ApiService._handleUnrefreshable401(session);
           throw Exception('Authentication failed');
         }
         headers = ApiService._getHeaders();
         response = await ApiService._httpClient.get(url, headers: headers).timeout(ApiService._defaultTimeout);
       }
 
+      ApiService.assertSessionCurrent(session);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         ApiService._handleResponse(response); // Throws ApiException.
       }

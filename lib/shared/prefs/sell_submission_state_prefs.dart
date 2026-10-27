@@ -153,10 +153,12 @@ class SellSubmissionRecord {
   /// currently signed-in account, so a submission started by one user on
   /// a shared device can never be silently created/finished under a
   /// different user who later signs in on the same device. `null` only
-  /// when the profile genuinely hadn't loaded yet at Submit time (a rare
-  /// race — see `AuthGuard`'s optimistic render) — resumable by whichever
-  /// account is current, same as before this field existed, since there
-  /// is no known owner to protect.
+  /// when neither the profile nor the session token named the account at
+  /// Submit time (a rare race). Such a record may be stamped once, by the
+  /// same process in the same authentication session; a persisted record
+  /// that still has no owner (written by an earlier build or run) is
+  /// QUARANTINED: never resumed, shown or inherited by any account, because
+  /// its original owner cannot be established.
   final String? ownerUserId;
 
   /// Backend listing id once created. Presence of this (non-empty) is what

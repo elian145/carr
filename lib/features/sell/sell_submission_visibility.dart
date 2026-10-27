@@ -15,7 +15,10 @@ import '../../shared/prefs/sell_submission_state_prefs.dart';
 ///  * `completed` -- the listing exists server-side and is rendered by the
 ///    normal listings feed;
 ///  * edit submissions -- the listing already exists, nothing new to show;
-///  * records owned by a DIFFERENT signed-in account on a shared device.
+///  * records owned by a DIFFERENT signed-in account on a shared device;
+///  * records with NO recorded owner (F-34): their owner cannot be
+///    established, so they are quarantined -- never shown to, resumed by or
+///    inherited by whichever account is signed in.
 bool sellSubmissionShowsPendingEntry(
   SellSubmissionRecord record, {
   String currentOwnerId = '',
@@ -23,7 +26,8 @@ bool sellSubmissionShowsPendingEntry(
   if (record.status == SellSubmissionStatus.completed) return false;
   if (record.isEdit) return false;
   final owner = (record.ownerUserId ?? '').trim();
-  if (owner.isEmpty || currentOwnerId.isEmpty) return true;
+  if (owner.isEmpty) return false;
+  if (currentOwnerId.isEmpty) return true;
   return owner == currentOwnerId;
 }
 

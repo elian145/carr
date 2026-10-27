@@ -3,7 +3,7 @@ part of 'chat_pages.dart';
 mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
   void _mergeInFlightMediaPending() {
     final inFlight = OutgoingChatSendService.instance
-        .inFlightMediaForConversation(widget.carId);
+        .inFlightMediaForConversation(widget.carId, ownerUserId: _ownerUserId);
     if (inFlight.isEmpty) return;
     var added = false;
     for (final r in inFlight) {
@@ -27,6 +27,7 @@ mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
     if (records.isEmpty) return;
     var added = false;
     for (final record in records) {
+      if (record.ownerUserId != _ownerUserId || !_pageOwnerIsCurrent) continue;
       if (_discardedOutgoingIds.contains(record.id)) continue;
       if (_messages.any((m) => m.id == record.id)) continue;
       _messages.add(_pendingMessageFromPersistedRecord(record));

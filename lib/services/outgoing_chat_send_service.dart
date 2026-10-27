@@ -93,6 +93,7 @@ OutgoingChatSendKind? _kindFromStorageString(String s) {
 /// Snapshot of a media upload still in progress (survives leaving the chat screen).
 class InFlightMediaSend {
   InFlightMediaSend({
+    required this.ownerUserId,
     required this.conversationId,
     required this.tempMessageId,
     required this.files,
@@ -104,6 +105,9 @@ class InFlightMediaSend {
     this.listingPreview,
   });
 
+  /// Verified account that started this upload (F-34/F-35). Never shown to,
+  /// or retried by, any other account.
+  final String? ownerUserId;
   final String conversationId;
   final String tempMessageId;
   final List<XFile> files;
@@ -118,6 +122,7 @@ class InFlightMediaSend {
 class OutgoingChatSendEvent {
   OutgoingChatSendEvent({
     required this.kind,
+    required this.ownerUserId,
     required this.conversationId,
     required this.success,
     this.tempMessageId,
@@ -131,6 +136,12 @@ class OutgoingChatSendEvent {
   });
 
   final OutgoingChatSendKind kind;
+
+  /// Account that owns the send this event reports on. Events are broadcast
+  /// globally, so every consumer MUST ignore events whose owner is not the
+  /// currently signed-in account (F-35): conversation ids alone are not an
+  /// ownership boundary.
+  final String? ownerUserId;
   final String conversationId;
   final bool success;
   final String? tempMessageId;
@@ -191,10 +202,48 @@ class OutgoingChatSendService {
   bool _connectivityHooked = false;
 
   /// Active media uploads keyed by temp message id.
-  List<InFlightMediaSend> inFlightMediaForConversation(String conversationId) {
+  ///
+  /// Only the signed-in account's uploads are visible: another account's
+  /// in-flight upload for the same conversation id is never returned.
+  List<InFlightMediaSend> inFlightMediaForConversation(
+    String conversationId, {
+    required String? ownerUserId,
+  }) {
+    if (ownerUserId == null || ownerUserId.isEmpty) {
+      return const <InFlightMediaSend>[];
+    }
     return _inFlightMediaByTempId.values
-        .where((e) => e.conversationId == conversationId)
+        .where(
+          (e) =>
+              e.conversationId == conversationId &&
+              e.ownerUserId == ownerUserId,
+        )
         .toList(growable: false);
+  }
+
+  /// Throws [ApiSessionChangedException] unless [session] is still the live
+  /// session of the same verified account. Called immediately before a send
+  /// is dispatched so a send begun under A can never go out under B (or under
+  /// a later login of A that has not been re-validated).
+  void _assertSessionStillOwner(AuthSessionSnapshot session) {
+    if (session.accountId == null ||
+        !ApiService.isSessionCurrent(session) ||
+        ApiService.currentAccountId != session.accountId) {
+      throw ApiSessionChangedException();
+    }
+  }
+
+  /// Snapshot for a new send, or null when sending is not allowed: signed out,
+  /// identity unverified, or [expectedOwnerUserId] (the account the UI was
+  /// opened for) is no longer the signed-in account.
+  AuthSessionSnapshot? _sessionForNewSend(String? expectedOwnerUserId) {
+    final session = ApiService.captureSession();
+    final owner = session.accountId;
+    if (!session.authenticated || owner == null) return null;
+    if (expectedOwnerUserId != null && expectedOwnerUserId != owner) {
+      return null;
+    }
+    return session;
   }
 
   /// Stop tracking an upload (user discarded / recalled); the HTTP call may still finish.
@@ -254,8 +303,24 @@ class OutgoingChatSendService {
     Map<String, dynamic>? listingPreview,
     required List<XFile> restoreFiles,
     String? restoreCaption,
+    String? expectedOwnerUserId,
   }) {
+    final session = _sessionForNewSend(expectedOwnerUserId);
+    if (session == null) {
+      _emit(OutgoingChatSendEvent(
+        kind: OutgoingChatSendKind.mediaGroup,
+        ownerUserId: expectedOwnerUserId ?? ApiService.currentAccountId,
+        conversationId: conversationId,
+        success: false,
+        tempMessageId: tempMessageId,
+        errorCause: ApiSessionChangedException(),
+        restoreFiles: restoreFiles,
+        restoreCaption: restoreCaption,
+      ));
+      return;
+    }
     _inFlightMediaByTempId[tempMessageId] = InFlightMediaSend(
+      ownerUserId: session.accountId,
       conversationId: conversationId,
       tempMessageId: tempMessageId,
       files: List<XFile>.from(files),
@@ -281,6 +346,7 @@ class OutgoingChatSendService {
       restoreCaption: restoreCaption,
       createdAt: startedAt,
       attemptNumber: 1,
+      session: session,
     ));
   }
 
@@ -298,8 +364,11 @@ class OutgoingChatSendService {
     String? restoreCaption,
     required DateTime createdAt,
     required int attemptNumber,
+    required AuthSessionSnapshot session,
   }) async {
+    final ownerUserId = session.accountId;
     try {
+      _assertSessionStillOwner(session);
       final response = await ApiService.sendChatMediaGroup(
         conversationId: conversationId,
         files: files,
@@ -314,6 +383,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.mediaGroup,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: true,
           tempMessageId: tempMessageId,
@@ -323,6 +393,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.mediaGroup,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -332,10 +403,15 @@ class OutgoingChatSendService {
         ));
       }
     } catch (e) {
-      if (isRetryableChatSendError(e)) {
-        await ChatPendingSendPrefs.upsert(ChatPendingSendRecord(
+      // An interrupted session (account switch / logout mid-flight) is not a
+      // transport failure, but the logical send is still the previous owner's:
+      // keep it, owner-stamped, so only that account can resume it.
+      if (e is ApiSessionChangedException || isRetryableChatSendError(e)) {
+        if (ownerUserId != null) {
+          await ChatPendingSendPrefs.upsert(ChatPendingSendRecord(
           id: tempMessageId,
           conversationId: conversationId,
+          ownerUserId: ownerUserId,
           kind: _kindToStorageString(OutgoingChatSendKind.mediaGroup),
           idempotencyKey: idempotencyKey,
           content: caption,
@@ -345,12 +421,16 @@ class OutgoingChatSendService {
           listingPreview: listingPreview,
           filePaths: files.map((f) => f.path).toList(),
           createdAt: createdAt.millisecondsSinceEpoch,
-          attempts: attemptNumber,
+          attempts: e is ApiSessionChangedException
+              ? max(0, attemptNumber - 1)
+              : attemptNumber,
           lastAttemptAt: DateTime.now().millisecondsSinceEpoch,
           lastError: e.toString(),
         ));
+        }
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.mediaGroup,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -361,6 +441,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.mediaGroup,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -382,9 +463,24 @@ class OutgoingChatSendService {
     String? receiverId,
     String? replyToMessageId,
     required XFile restoreFile,
+    String? expectedOwnerUserId,
   }) {
+    final session = _sessionForNewSend(expectedOwnerUserId);
+    if (session == null) {
+      _emit(OutgoingChatSendEvent(
+        kind: OutgoingChatSendKind.audio,
+        ownerUserId: expectedOwnerUserId ?? ApiService.currentAccountId,
+        conversationId: conversationId,
+        success: false,
+        tempMessageId: tempMessageId,
+        errorCause: ApiSessionChangedException(),
+        restoreFiles: [restoreFile],
+      ));
+      return;
+    }
     final idempotencyKey = _newChatIdempotencyKey();
     unawaited(_runAudioSend(
+      session: session,
       conversationId: conversationId,
       audioFile: audioFile,
       tempMessageId: tempMessageId,
@@ -407,12 +503,15 @@ class OutgoingChatSendService {
     required XFile restoreFile,
     required DateTime createdAt,
     required int attemptNumber,
+    required AuthSessionSnapshot session,
   }) async {
     // BE-18: one key for this whole logical send attempt. The 404 fallback
     // below (older backend without /send_audio) is still the same logical
     // send, just a different endpoint, so it intentionally reuses the same
     // key rather than generating a new one.
+    final ownerUserId = session.accountId;
     try {
+      _assertSessionStillOwner(session);
       Map<String, dynamic> response;
       try {
         response = await ApiService.sendChatAudio(
@@ -438,6 +537,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.audio,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: true,
           tempMessageId: tempMessageId,
@@ -447,6 +547,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.audio,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -455,22 +556,31 @@ class OutgoingChatSendService {
         ));
       }
     } catch (e) {
-      if (isRetryableChatSendError(e)) {
-        await ChatPendingSendPrefs.upsert(ChatPendingSendRecord(
+      // An interrupted session (account switch / logout mid-flight) is not a
+      // transport failure, but the logical send is still the previous owner's:
+      // keep it, owner-stamped, so only that account can resume it.
+      if (e is ApiSessionChangedException || isRetryableChatSendError(e)) {
+        if (ownerUserId != null) {
+          await ChatPendingSendPrefs.upsert(ChatPendingSendRecord(
           id: tempMessageId,
           conversationId: conversationId,
+          ownerUserId: ownerUserId,
           kind: _kindToStorageString(OutgoingChatSendKind.audio),
           idempotencyKey: idempotencyKey,
           receiverId: receiverId,
           replyToMessageId: replyToMessageId,
           filePaths: [audioFile.path],
           createdAt: createdAt.millisecondsSinceEpoch,
-          attempts: attemptNumber,
+          attempts: e is ApiSessionChangedException
+              ? max(0, attemptNumber - 1)
+              : attemptNumber,
           lastAttemptAt: DateTime.now().millisecondsSinceEpoch,
           lastError: e.toString(),
         ));
+        }
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.audio,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -481,6 +591,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.audio,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -498,9 +609,25 @@ class OutgoingChatSendService {
     Map<String, dynamic>? listingPreview,
     String? replyToMessageId,
     String? tempMessageId,
+    String? expectedOwnerUserId,
   }) {
+    final session = _sessionForNewSend(expectedOwnerUserId);
+    final resolvedTempId = tempMessageId ?? _newTempMessageId();
+    if (session == null) {
+      _emit(OutgoingChatSendEvent(
+        kind: OutgoingChatSendKind.textMessage,
+        ownerUserId: expectedOwnerUserId ?? ApiService.currentAccountId,
+        conversationId: conversationId,
+        success: false,
+        tempMessageId: resolvedTempId,
+        restoredPlainText: content,
+        errorCause: ApiSessionChangedException(),
+      ));
+      return;
+    }
     final idempotencyKey = _newChatIdempotencyKey();
     unawaited(_runTextSend(
+      session: session,
       conversationId: conversationId,
       content: content,
       receiverId: receiverId,
@@ -509,7 +636,7 @@ class OutgoingChatSendService {
       idempotencyKey: idempotencyKey,
       // Defensive fallback so persistence still has a stable key even if a
       // caller does not pass one (keeps this parameter backward compatible).
-      tempMessageId: tempMessageId ?? _newTempMessageId(),
+      tempMessageId: resolvedTempId,
       createdAt: DateTime.now(),
       attemptNumber: 1,
     ));
@@ -522,6 +649,7 @@ class OutgoingChatSendService {
     required String tempMessageId,
     required DateTime createdAt,
     required int attemptNumber,
+    required AuthSessionSnapshot session,
     String? receiverId,
     Map<String, dynamic>? listingPreview,
     String? replyToMessageId,
@@ -531,7 +659,9 @@ class OutgoingChatSendService {
     // exercised by the automatic timeout retry in `_sendWithAdaptiveTimeout`
     // — the same key rides along on that retry because it is baked into the
     // headers for this single `sendChatMessageByConversation` call below).
+    final ownerUserId = session.accountId;
     try {
+      _assertSessionStillOwner(session);
       final response = await ApiService.sendChatMessageByConversation(
         conversationId: conversationId,
         content: content,
@@ -545,6 +675,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.textMessage,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: true,
           tempMessageId: tempMessageId,
@@ -554,6 +685,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.textMessage,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -562,10 +694,15 @@ class OutgoingChatSendService {
         ));
       }
     } catch (e) {
-      if (isRetryableChatSendError(e)) {
-        await ChatPendingSendPrefs.upsert(ChatPendingSendRecord(
+      // An interrupted session (account switch / logout mid-flight) is not a
+      // transport failure, but the logical send is still the previous owner's:
+      // keep it, owner-stamped, so only that account can resume it.
+      if (e is ApiSessionChangedException || isRetryableChatSendError(e)) {
+        if (ownerUserId != null) {
+          await ChatPendingSendPrefs.upsert(ChatPendingSendRecord(
           id: tempMessageId,
           conversationId: conversationId,
+          ownerUserId: ownerUserId,
           kind: _kindToStorageString(OutgoingChatSendKind.textMessage),
           idempotencyKey: idempotencyKey,
           content: content,
@@ -574,12 +711,16 @@ class OutgoingChatSendService {
           replyToPreviewJson: replyToPreviewJson,
           listingPreview: listingPreview,
           createdAt: createdAt.millisecondsSinceEpoch,
-          attempts: attemptNumber,
+          attempts: e is ApiSessionChangedException
+              ? max(0, attemptNumber - 1)
+              : attemptNumber,
           lastAttemptAt: DateTime.now().millisecondsSinceEpoch,
           lastError: e.toString(),
         ));
+        }
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.textMessage,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -590,6 +731,7 @@ class OutgoingChatSendService {
         await ChatPendingSendPrefs.remove(tempMessageId);
         _emit(OutgoingChatSendEvent(
           kind: OutgoingChatSendKind.textMessage,
+          ownerUserId: ownerUserId,
           conversationId: conversationId,
           success: false,
           tempMessageId: tempMessageId,
@@ -613,7 +755,13 @@ class OutgoingChatSendService {
     return out;
   }
 
-  Future<void> _retryPersistedRecord(ChatPendingSendRecord record) async {
+  Future<void> _retryPersistedRecord(
+    ChatPendingSendRecord record,
+    AuthSessionSnapshot session,
+  ) async {
+    final ownerUserId = record.ownerUserId;
+    // Defense in depth: a record is only ever resumed by its own owner.
+    if (session.accountId != ownerUserId) return;
     final kind = _kindFromStorageString(record.kind);
     if (kind == null) {
       // Unknown/corrupt kind — cannot safely retry; drop it rather than
@@ -638,6 +786,7 @@ class OutgoingChatSendService {
             tempMessageId: record.id,
             createdAt: createdAt,
             attemptNumber: nextAttempt,
+            session: session,
           );
           break;
         case OutgoingChatSendKind.mediaGroup:
@@ -646,6 +795,7 @@ class OutgoingChatSendService {
             await ChatPendingSendPrefs.remove(record.id);
             _emit(OutgoingChatSendEvent(
               kind: OutgoingChatSendKind.mediaGroup,
+              ownerUserId: ownerUserId,
               conversationId: record.conversationId,
               success: false,
               tempMessageId: record.id,
@@ -654,6 +804,7 @@ class OutgoingChatSendService {
             break;
           }
           _inFlightMediaByTempId[record.id] = InFlightMediaSend(
+            ownerUserId: ownerUserId,
             conversationId: record.conversationId,
             tempMessageId: record.id,
             files: files,
@@ -677,6 +828,7 @@ class OutgoingChatSendService {
             restoreCaption: record.content,
             createdAt: createdAt,
             attemptNumber: nextAttempt,
+            session: session,
           );
           break;
         case OutgoingChatSendKind.audio:
@@ -685,6 +837,7 @@ class OutgoingChatSendService {
             await ChatPendingSendPrefs.remove(record.id);
             _emit(OutgoingChatSendEvent(
               kind: OutgoingChatSendKind.audio,
+              ownerUserId: ownerUserId,
               conversationId: record.conversationId,
               success: false,
               tempMessageId: record.id,
@@ -702,6 +855,7 @@ class OutgoingChatSendService {
             restoreFile: files.first,
             createdAt: createdAt,
             attemptNumber: nextAttempt,
+            session: session,
           );
           break;
       }
@@ -722,9 +876,18 @@ class OutgoingChatSendService {
     if (_recoveryScanRunning) return;
     _recoveryScanRunning = true;
     try {
+      // F-34/F-35: only the signed-in, verified account's records are ever
+      // considered; everyone else's stay on disk untouched until that account
+      // signs in again.
+      final session = ApiService.captureSession();
+      final owner = session.accountId;
+      if (!session.authenticated || owner == null) return;
       final records = conversationId == null
-          ? await ChatPendingSendPrefs.loadAll()
-          : await ChatPendingSendPrefs.loadForConversation(conversationId);
+          ? await ChatPendingSendPrefs.loadForOwner(owner)
+          : await ChatPendingSendPrefs.loadForConversation(
+              conversationId,
+              ownerUserId: owner,
+            );
       if (records.isEmpty) return;
       final now = DateTime.now().millisecondsSinceEpoch;
       for (final record in records) {
@@ -736,7 +899,8 @@ class OutgoingChatSendService {
             (now - last) < minAutoRetryInterval.inMilliseconds) {
           continue;
         }
-        unawaited(_retryPersistedRecord(record));
+        if (!ApiService.isSessionCurrent(session)) break;
+        unawaited(_retryPersistedRecord(record, session));
       }
     } catch (e, st) {
       logNonFatal(e, st);

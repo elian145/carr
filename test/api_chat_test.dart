@@ -4,6 +4,7 @@ import 'package:car_listing_app/services/api_service.dart';
 import 'package:car_listing_app/services/outgoing_chat_send_service.dart';
 
 import 'fake_api_server.dart';
+import 'support/test_jwt.dart';
 
 void main() {
   setUpAll(() async {
@@ -12,7 +13,7 @@ void main() {
 
   setUp(() async {
     await ApiService.setTokens(
-      accessToken: 'test_access_token',
+      accessToken: testJwt('owner_test'),
       refreshToken: 'test_refresh_token',
     );
   });

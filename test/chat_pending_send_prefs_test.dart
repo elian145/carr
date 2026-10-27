@@ -21,6 +21,7 @@ void main() {
     List<String> filePaths = const <String>[],
   }) {
     return ChatPendingSendRecord(
+      ownerUserId: 'owner_test',
       id: id,
       conversationId: conversationId,
       kind: kind,
@@ -56,7 +57,7 @@ void main() {
     await ChatPendingSendPrefs.upsert(buildRecord(id: 't1', conversationId: 'car_1'));
     await ChatPendingSendPrefs.upsert(buildRecord(id: 't2', conversationId: 'car_2'));
 
-    final forCar1 = await ChatPendingSendPrefs.loadForConversation('car_1');
+    final forCar1 = await ChatPendingSendPrefs.loadForConversation('car_1', ownerUserId: 'owner_test');
     expect(forCar1.map((r) => r.id), ['t1']);
   });
 

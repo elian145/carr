@@ -40,6 +40,27 @@ class WebSocketService {
   static final List<Map<String, dynamic>> _pendingEmits =
       <Map<String, dynamic>>[];
 
+  // F-35: the socket is authenticated as ONE account (the bearer token it was
+  // created with) and delivers that account's private chat/notification
+  // events. It is therefore bound to the session it was created in and torn
+  // down on every authentication transition; a socket from an ended session
+  // can never be reused by the next one, and its late events are dropped.
+  static AuthSessionSnapshot? _socketSession;
+  static bool _accountScopeHooked = false;
+
+  static void _hookAccountScope() {
+    if (_accountScopeHooked) return;
+    _accountScopeHooked = true;
+    AccountScope.addSessionChangedListener(disconnect);
+  }
+
+  /// True when [session] is still the session the app is signed in under.
+  static bool _isLive(AuthSessionSnapshot session, io.Socket? socket) =>
+      identical(_socket, socket) && ApiService.isSessionCurrent(session);
+
+  @visibleForTesting
+  static int get debugPendingEmitCount => _pendingEmits.length;
+
   // Callbacks
   static Function(Map<String, dynamic>)? onMessage;
   static Function(Map<String, dynamic>)? onNotification;
@@ -90,13 +111,23 @@ class WebSocketService {
   // Connect to Socket.IO (with polling fallback)
   static Future<void> connect() async {
     // Widget/integration tests stub HTTP via [ApiService.testHttpClient]; skip real sockets.
+    _hookAccountScope();
     if (ApiService.isTestHttpClientBound) return;
 
     try {
+      // A socket (connected or still connecting) that belongs to an ended
+      // session must never be kept: tear it down and build a fresh one for
+      // the current credentials.
+      final existing = _socketSession;
+      if ((_socket != null || _isConnected || _isConnecting) &&
+          (existing == null || !ApiService.isSessionCurrent(existing))) {
+        disconnect();
+      }
       if (_isConnected) return;
       if (_isConnecting) return;
       _isConnecting = true;
 
+      final session = ApiService.captureSession();
       final accessToken = ApiService.accessToken;
 
       if (accessToken == null) {
@@ -136,9 +167,12 @@ class WebSocketService {
         'extraHeaders': {HttpHeaders.authorizationHeader: 'Bearer $accessToken'},
       };
 
-      _socket = io.io(base, opts);
+      final socket = io.io(base, opts);
+      _socket = socket;
+      _socketSession = session;
 
-      _socket!.on('connect', (_) {
+      socket.on('connect', (_) {
+        if (!_isLive(session, socket)) return;
         _isConnected = true;
         _isConnecting = false;
         _emitConnected(true);
@@ -150,25 +184,29 @@ class WebSocketService {
         }
       });
 
-      _socket!.on('disconnect', (_) {
+      socket.on('disconnect', (_) {
+        if (!_isLive(session, socket)) return;
         _isConnected = false;
         _isConnecting = false;
         _emitConnected(false);
       });
 
-      _socket!.on('connect_error', (err) {
+      socket.on('connect_error', (err) {
+        if (!_isLive(session, socket)) return;
         _isConnected = false;
         _isConnecting = false;
         _emitConnected(false);
         _emitError('Socket connect error: $err');
       });
 
-      _socket!.on('error', (err) {
+      socket.on('error', (err) {
+        if (!_isLive(session, socket)) return;
         final msg = (err is Map && err['message'] != null) ? err['message'].toString() : err.toString();
         _emitError(msg);
       });
 
-      _socket!.on('new_message', (payload) {
+      socket.on('new_message', (payload) {
+        if (!_isLive(session, socket)) return;
         if (payload is Map) {
           final m = Map<String, dynamic>.from(payload);
           _messagesController.add(m);
@@ -176,25 +214,29 @@ class WebSocketService {
         }
       });
 
-      _socket!.on('message_updated', (payload) {
+      socket.on('message_updated', (payload) {
+        if (!_isLive(session, socket)) return;
         if (payload is Map) {
           _messageUpdatesController.add(Map<String, dynamic>.from(payload));
         }
       });
 
-      _socket!.on('message_deleted', (payload) {
+      socket.on('message_deleted', (payload) {
+        if (!_isLive(session, socket)) return;
         if (payload is Map) {
           _messageDeletesController.add(Map<String, dynamic>.from(payload));
         }
       });
 
-      _socket!.on('messages_read', (payload) {
+      socket.on('messages_read', (payload) {
+        if (!_isLive(session, socket)) return;
         if (payload is Map) {
           _messageReadsController.add(Map<String, dynamic>.from(payload));
         }
       });
 
-      _socket!.on('new_notification', (payload) {
+      socket.on('new_notification', (payload) {
+        if (!_isLive(session, socket)) return;
         if (payload is Map) {
           final n = Map<String, dynamic>.from(payload);
           _notificationsController.add(n);
@@ -202,14 +244,16 @@ class WebSocketService {
         }
       });
 
-      _socket!.on('typing', (payload) {
+      socket.on('typing', (payload) {
+        if (!_isLive(session, socket)) return;
         if (payload is Map) {
           final t = Map<String, dynamic>.from(payload);
           _typingController.add(t);
         }
       });
 
-      _socket!.on('joined_chat', (payload) {
+      socket.on('joined_chat', (payload) {
+        if (!_isLive(session, socket)) return;
         try {
           if (payload is Map) {
             final map = Map<String, dynamic>.from(payload);
@@ -224,7 +268,7 @@ class WebSocketService {
         } catch (e, st) { logNonFatal(e, st); }
       });
 
-      _socket!.connect();
+      socket.connect();
     } catch (e) {
       _isConnected = false;
       _isConnecting = false;
@@ -240,6 +284,7 @@ class WebSocketService {
       _socket?.disconnect();
     } catch (e, st) { logNonFatal(e, st); }
     _cleanupSocket();
+    _socketSession = null;
     _isConnected = false;
     _isConnecting = false;
     _currentRoom = null;
@@ -248,6 +293,7 @@ class WebSocketService {
   }
 
   static void sendMessage(String event, Map<String, dynamic> data) {
+    _hookAccountScope();
     try {
       if (_socket == null || !_isConnected) {
         _pendingEmits.add(<String, dynamic>{
