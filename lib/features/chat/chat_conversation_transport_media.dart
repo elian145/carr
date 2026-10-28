@@ -3,7 +3,11 @@ part of 'chat_pages.dart';
 mixin _ChatConversationTransportMedia on _ChatConversationTransportListing {
   void _mergeInFlightMediaPending() {
     final inFlight = OutgoingChatSendService.instance
-        .inFlightMediaForConversation(widget.carId, ownerUserId: _ownerUserId);
+        .inFlightMediaForConversation(
+          widget.carId,
+          ownerUserId: _ownerUserId,
+          peerId: _historyPeerRef,
+        );
     if (inFlight.isEmpty) return;
     var added = false;
     for (final r in inFlight) {

@@ -53,15 +53,26 @@ abstract final class _ApiServiceChat {
     ///
     /// `messages` in the result is always in ascending chronological order.
     /// Returns a map with keys: `messages` (list), `per_page`, `total`, `has_more`.
+    ///
+    /// [peerId] (F-05) names the OTHER participant: a conversation is
+    /// (listing, me, one counterpart). A listing seller with several buyers
+    /// MUST pass it (the server refuses an ambiguous request instead of merging
+    /// every buyer's thread); it is the public id of the counterpart or a
+    /// `deleted-user:<n>` key from the chat list.
     static Future<Map<String, dynamic>> getChatMessagesByConversation(
       String conversationId, {
       int perPage = 50,
       String? before,
+      String? peerId,
     }) async {
       final query = <String, String>{'per_page': '$perPage'};
       final beforeCursor = before?.trim();
       if (beforeCursor != null && beforeCursor.isNotEmpty) {
         query['before'] = beforeCursor;
+      }
+      final peer = peerId?.trim();
+      if (peer != null && peer.isNotEmpty) {
+        query['peer_id'] = peer;
       }
       final url = Uri.parse('${ApiService.baseUrl}/chat/$conversationId/messages')
           .replace(queryParameters: query);

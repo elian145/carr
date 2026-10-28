@@ -658,6 +658,51 @@ void main() {
     });
 
     test(
+        'F-05: an in-flight upload is only visible under its exact recipient; '
+        'an unknown-recipient upload is never attributed to a named buyer',
+        () async {
+      final gate = Completer<void>();
+      be.sendHook = (r, acct) async {
+        await gate.future;
+        return http.Response('', 503);
+      };
+      await login('A');
+      for (final (temp, receiver) in [
+        ('temp_b1', 'buyer_1'),
+        ('temp_b2', 'buyer_2'),
+        ('temp_unknown', null),
+      ]) {
+        OutgoingChatSendService.instance.startMediaGroupSend(
+          conversationId: 'car_X',
+          files: [photo],
+          tempMessageId: temp,
+          startedAt: DateTime.now(),
+          receiverId: receiver,
+          carId: 'car_X',
+          restoreFiles: [photo],
+          expectedOwnerUserId: 'A',
+        );
+      }
+      await pumpEventQueue();
+      List<String> idsFor(String? peer) => OutgoingChatSendService.instance
+          .inFlightMediaForConversation('car_X',
+              ownerUserId: 'A', peerId: peer)
+          .map((e) => e.tempMessageId)
+          .toList()
+        ..sort();
+
+      expect(idsFor('buyer_1'), ['temp_b1']);
+      expect(idsFor('buyer_2'), ['temp_b2']);
+      expect(idsFor('buyer_3'), isEmpty,
+          reason: 'unknown-recipient upload must not appear under buyer_3');
+      expect(idsFor('deleted-user:4'), isEmpty);
+      expect(idsFor(null), ['temp_b1', 'temp_b2', 'temp_unknown'],
+          reason: 'no buyer named: nothing is hidden or guessed');
+      gate.complete();
+      await pumpEventQueue();
+    });
+
+    test(
         "media: A's in-flight upload is invisible to B, never re-sent as B, "
         'and resumes for A', () async {
       final gate = Completer<void>();

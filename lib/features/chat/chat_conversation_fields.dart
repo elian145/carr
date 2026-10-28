@@ -54,6 +54,29 @@ abstract class _ChatConversationFields extends State<ChatConversationPage> {
 
   bool get _pageOwnerIsCurrent => ApiService.currentAccountId == _ownerUserId;
 
+  /// The live counterpart (public id), or `null` when there is none (a buyer
+  /// opening a listing: the counterpart is the seller; or a deleted account).
+  String? get _livePeerId {
+    final r = widget.receiverId?.trim();
+    return (r == null || r.isEmpty) ? null : r;
+  }
+
+  /// What history requests send as `peer_id` (F-05): the live counterpart, or
+  /// the `deleted-user:<n>` key of a deleted one.
+  String? get _historyPeerRef {
+    final live = _livePeerId;
+    if (live != null) return live;
+    final k = widget.peerKey?.trim();
+    return (k == null || k.isEmpty) ? null : k;
+  }
+
+  /// Which realtime events belong to THIS conversation (listing + counterpart).
+  ChatConversationScope get _conversationScope => ChatConversationScope(
+        carId: widget.carId,
+        myId: _ownerUserId ?? ApiService.currentAccountId,
+        peerId: _livePeerId,
+      );
+
   /// Immediately-before-send ownership check. Returns false (and tells the
   /// user) when the signed-in account is no longer the one this screen was
   /// opened for; the composer content is left untouched.

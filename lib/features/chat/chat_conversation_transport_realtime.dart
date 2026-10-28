@@ -8,13 +8,10 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
     _messageReadSub?.cancel();
     _errorSub?.cancel();
     _messageSub = WebSocketService.messages.listen((message) {
-      // Optional: filter by carId when payload includes it
-      final payloadCarId = message['car_id']?.toString();
-      if (payloadCarId != null &&
-          payloadCarId.isNotEmpty &&
-          payloadCarId != widget.carId) {
-        return;
-      }
+      // Only THIS conversation's messages (same listing AND same
+      // counterpart): a seller's other buyers' messages are not shown here.
+      if (!_conversationScope.matchesMessage(message)) return;
+
       if (!mounted) return;
       setState(() {
         _addMessageIfMissing(ChatMessage.fromJson(message));
@@ -23,12 +20,8 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       _scrollToBottom();
     });
     _messageUpdateSub = WebSocketService.messageUpdates.listen((message) {
-      final payloadCarId = message['car_id']?.toString();
-      if (payloadCarId != null &&
-          payloadCarId.isNotEmpty &&
-          payloadCarId != widget.carId) {
-        return;
-      }
+      if (!_conversationScope.matchesMessage(message)) return;
+
       if (!mounted) return;
       final updated = ChatMessage.fromJson(message);
       setState(() {
@@ -39,12 +32,8 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       });
     });
     _messageDeleteSub = WebSocketService.messageDeletes.listen((message) {
-      final payloadCarId = message['car_id']?.toString();
-      if (payloadCarId != null &&
-          payloadCarId.isNotEmpty &&
-          payloadCarId != widget.carId) {
-        return;
-      }
+      if (!_conversationScope.matchesMessage(message)) return;
+
       if (!mounted) return;
       final updated = ChatMessage.fromJson(message);
       setState(() {
@@ -55,12 +44,8 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       });
     });
     _messageReadSub = WebSocketService.messageReads.listen((event) {
-      final payloadCarId = event['car_id']?.toString();
-      if (payloadCarId != null &&
-          payloadCarId.isNotEmpty &&
-          payloadCarId != widget.carId) {
-        return;
-      }
+      if (!_conversationScope.matchesRead(event)) return;
+
       if (!mounted) return;
       final rawIds = event['message_ids'];
       final idSet = <String>{};
@@ -102,7 +87,9 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
   }
 
   void _joinChat() {
-    WebSocketService.joinChat(widget.carId);
+    // A deleted counterpart has no live socket room to join.
+    if (_livePeerId == null && widget.peerKey != null) return;
+    WebSocketService.joinChat(widget.carId, peerId: _livePeerId);
   }
 
   Future<void> _loadHistory() async {
@@ -117,6 +104,7 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
       final result = await ApiService.getChatMessagesByConversation(
         widget.carId,
         perPage: _ChatConversationFields._perPage,
+        peerId: _historyPeerRef,
       );
       if (!mounted || !_pageOwnerIsCurrent) return;
       final rows = (result['messages'] as List<Map<String, dynamic>>?) ?? [];
@@ -128,7 +116,11 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
           ..addAll(loaded);
         _mergeInFlightMediaPending();
         final stillSending = OutgoingChatSendService.instance
-            .inFlightMediaForConversation(widget.carId, ownerUserId: _ownerUserId)
+            .inFlightMediaForConversation(
+                  widget.carId,
+                  ownerUserId: _ownerUserId,
+                  peerId: _historyPeerRef,
+                )
             .isNotEmpty;
         if (stillSending) {
           _isSending = true;
@@ -144,6 +136,7 @@ mixin _ChatConversationTransportRealtime on _ChatConversationTransportPaging {
           await ChatPendingSendPrefs.loadForConversation(
         widget.carId,
         ownerUserId: _ownerUserId,
+        peerId: _historyPeerRef,
       );
       if (!mounted || !_pageOwnerIsCurrent) return;
       if (persistedPending.isNotEmpty) {

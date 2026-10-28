@@ -64,6 +64,14 @@ class ChatPendingSendRecord {
   final int? lastAttemptAt;
   final String? lastError;
 
+  /// F-05: does this record say WHO the message is for? A record without a
+  /// recipient (legacy / unassigned) cannot be attributed to any buyer: the
+  /// listing id is shared by every buyer a seller talks to, and the server's
+  /// "single counterpart" inference does not prove who an old message was
+  /// meant for. Such a record is quarantined -- kept on disk, never
+  /// auto-sent, never deleted.
+  bool get hasKnownRecipient => (receiverId ?? '').trim().isNotEmpty;
+
   ChatPendingSendRecord copyWith({
     int? attempts,
     int? lastAttemptAt,
@@ -229,21 +237,28 @@ class ChatPendingSendPrefs {
     return all.where((r) => r.ownerUserId == ownerUserId).toList();
   }
 
+  /// [peerId] (F-05) restricts the result to records addressed to EXACTLY that
+  /// counterpart: [conversationId] is the LISTING, shared by every buyer the
+  /// seller talks to. A record whose recipient is unknown (legacy / unassigned)
+  /// is never attributed to a named counterpart -- it stays stored, untouched,
+  /// and is only returned when no counterpart is named.
   static Future<List<ChatPendingSendRecord>> loadForConversation(
     String conversationId, {
     required String? ownerUserId,
+    String? peerId,
   }) async {
     if (ownerUserId == null || ownerUserId.isEmpty) {
       return const <ChatPendingSendRecord>[];
     }
+    final peer = (peerId ?? '').trim();
     final all = await loadAll();
-    return all
-        .where(
-          (r) =>
-              r.conversationId == conversationId &&
-              r.ownerUserId == ownerUserId,
-        )
-        .toList();
+    return all.where((r) {
+      if (r.conversationId != conversationId || r.ownerUserId != ownerUserId) {
+        return false;
+      }
+      if (peer.isEmpty) return true;
+      return (r.receiverId ?? '').trim() == peer;
+    }).toList();
   }
 
   /// Removes every record owned by [ownerUserId] (account deletion).

@@ -5,6 +5,9 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
     _typingSub?.cancel();
     _typingSub = WebSocketService.typingEvents.listen((data) {
       if (!mounted) return;
+      // F-25: only the counterpart of THIS conversation (same listing, same
+      // person, addressed to me) may drive the typing indicator.
+      if (!_conversationScope.matchesTyping(data)) return;
       final isTyping = data['typing'] == true;
       final userName = (data['user_name'] ?? '').toString().trim();
       setState(() => _otherUserTypingName = isTyping ? userName : null);
@@ -14,12 +17,12 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
   void _onTextChanged(String _) {
     if (!_isTyping) {
       _isTyping = true;
-      WebSocketService.sendTypingStart(widget.carId);
+      WebSocketService.sendTypingStart(widget.carId, peerId: _livePeerId);
     }
     _typingDebounce?.cancel();
     _typingDebounce = Timer(const Duration(seconds: 2), () {
       _isTyping = false;
-      WebSocketService.sendTypingStop(widget.carId);
+      WebSocketService.sendTypingStop(widget.carId, peerId: _livePeerId);
     });
   }
 
@@ -50,6 +53,19 @@ mixin _ChatConversationTransportSync on _ChatConversationTransportStore {
 
   void _onOutgoingChatSendEvent(OutgoingChatSendEvent e) {
     if (e.conversationId != widget.carId || !mounted) return;
+    // F-05: the listing id is shared by every buyer's conversation with the
+    // seller. A send addressed to ANOTHER counterpart (still finishing in the
+    // background after the user switched threads) must not appear in, restore
+    // its draft into, or report errors on this thread.
+    // An event whose recipient is unknown is never attributed to a named (or
+    // deleted) counterpart's thread.
+    final eventPeer = (e.receiverId ?? '').trim();
+    final myPeer = _livePeerId;
+    if (myPeer != null) {
+      if (eventPeer != myPeer) return;
+    } else if (widget.peerKey != null) {
+      return; // a deleted counterpart's thread has no sends
+    }
     // F-35: send events are broadcast globally and conversation ids are not
     // an ownership boundary -- ignore anything that is not this screen's
     // account's, or that arrives after the signed-in account changed.

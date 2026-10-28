@@ -79,7 +79,7 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
     }
     unawaited(_voiceRecorder.dispose());
     if (_isTyping) {
-      WebSocketService.sendTypingStop(widget.carId);
+      WebSocketService.sendTypingStop(widget.carId, peerId: _livePeerId);
     }
     _messageSub?.cancel();
     _messageUpdateSub?.cancel();

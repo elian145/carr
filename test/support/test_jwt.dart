@@ -6,7 +6,12 @@ import 'dart:convert';
 /// `accountIdFromJwt`); the signature is verified by the backend, never by the
 /// client. [nonce] makes otherwise-identical tokens distinct (every real login
 /// issues a new token).
-String testJwt(String subject, {Object? nonce, String type = 'access'}) {
+String testJwt(
+  String subject, {
+  Object? nonce,
+  String type = 'access',
+  Duration expiresIn = const Duration(hours: 1),
+}) {
   String enc(Map<String, Object?> m) =>
       base64Url.encode(utf8.encode(json.encode(m))).replaceAll('=', '');
   final header = enc({'alg': 'none', 'typ': 'JWT'});
@@ -14,8 +19,7 @@ String testJwt(String subject, {Object? nonce, String type = 'access'}) {
     'sub': subject,
     'type': type,
     if (nonce != null) 'n': nonce.toString(),
-    'exp': DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
-        1000,
+    'exp': DateTime.now().add(expiresIn).millisecondsSinceEpoch ~/ 1000,
   });
   return '$header.$payload.test-signature';
 }

@@ -4,6 +4,12 @@ part of 'chat_pages.dart';
 class ChatConversationPage extends StatefulWidget {
   final String carId;
   final String? receiverId;
+
+  /// Counterpart reference for a conversation whose account was deleted
+  /// (`deleted-user:<n>` from the chat list). There is no live user to message,
+  /// block or type to, but the history of THAT counterpart must still be opened
+  /// without merging it with the listing's other conversations.
+  final String? peerKey;
   final String? receiverName;
   final String? carTitle;
   final String? carImageUrl;
@@ -22,6 +28,7 @@ class ChatConversationPage extends StatefulWidget {
     super.key,
     required this.carId,
     this.receiverId,
+    this.peerKey,
     this.receiverName,
     this.carTitle,
     this.carImageUrl,

@@ -5,10 +5,16 @@ Listing chat historically used a shared Socket.IO room per car (`chat:{public_id
 That allowed any authenticated client that joined the room to observe other parties'
 messages. Authorization and delivery now follow these rules:
 
-1. Only the listing seller or an existing message participant may join the car room
-   (used for typing indicators).
+1. Only the listing seller or an existing message participant may join a
+   conversation room, and a conversation is the (listing, seller, buyer) triple:
+   the room name carries BOTH participants (see `room_for_conversation`), so a
+   seller talking to several buyers about one listing has one isolated room per
+   buyer. Typing indicators are emitted only into that room (F-25).
 2. Message payloads are emitted only to the sender and receiver personal rooms
    (`user:{public_id}`), which authenticated sockets join on connect.
+3. A listing seller must always say WHICH buyer a send / history request /
+   read receipt is for. Nothing falls back to "the most recent buyer", and
+   history / read receipts never span two buyers (F-05).
 """
 
 from __future__ import annotations
@@ -31,6 +37,18 @@ def room_for_car_public_id(car_public_id: str) -> str:
 
 def room_for_user_public_id(user_public_id: str) -> str:
     return f"user:{user_public_id}"
+
+
+def room_for_conversation(
+    car_public_id: str, user_a_public_id: str, user_b_public_id: str
+) -> str:
+    """Room shared by exactly ONE (listing, participant, participant) conversation.
+
+    The pair is sorted so both participants derive the same name. Two buyers of
+    the same listing therefore never share a room with each other.
+    """
+    lo, hi = sorted([str(user_a_public_id), str(user_b_public_id)])
+    return f"chat:{car_public_id}:{lo}:{hi}"
 
 
 def resolve_car_for_chat(car_id_raw: str) -> Car | None:
@@ -113,17 +131,11 @@ def resolve_allowed_chat_receiver(
         elif car.seller_id is None:
             receiver = None
         else:
-            last = (
-                Message.query.filter(
-                    Message.car_id == car.id,
-                    or_(Message.sender_id == me.id, Message.receiver_id == me.id),
-                )
-                .order_by(Message.created_at.desc())
-                .first()
-            )
-            if last:
-                other_id = last.receiver_id if last.sender_id == me.id else last.sender_id
-                receiver = db.session.get(User, other_id)
+            # F-05: the seller did not say which buyer this is for. The old
+            # behaviour ("whoever wrote last") silently routed a reply meant
+            # for buyer A to buyer B. Only an UNAMBIGUOUS thread (exactly one
+            # counterpart on this listing) may be inferred.
+            receiver = resolve_unique_counterpart(car, me)
     if receiver is None or receiver.id == me.id:
         return None
     if not chat_receiver_allowed(me, car, receiver):
@@ -131,6 +143,109 @@ def resolve_allowed_chat_receiver(
     if chat_users_blocked(me.id, receiver.id):
         return None
     return receiver
+
+
+def conversation_peer_keys(car: Car, user: User) -> set:
+    """Distinct counterparts ``user`` has on ``car``.
+
+    Live counterparts are keyed by their user id (int); a counterpart whose
+    account was deleted is keyed ``"deleted-user:<marker>"`` (see
+    ``Message.deleted_counterpart_marker``) or ``"deleted-legacy"`` for rows
+    written before the marker existed.
+    """
+    rows = (
+        db.session.query(
+            Message.sender_id,
+            Message.receiver_id,
+            Message.deleted_counterpart_marker,
+        )
+        .filter(
+            Message.car_id == car.id,
+            or_(Message.sender_id == user.id, Message.receiver_id == user.id),
+        )
+        .distinct()
+        .all()
+    )
+    keys: set = set()
+    for sender_id, receiver_id, marker in rows:
+        other = receiver_id if sender_id == user.id else sender_id
+        if other is not None:
+            if other != user.id:
+                keys.add(int(other))
+        elif marker is not None:
+            keys.add(f"deleted-user:{int(marker)}")
+        else:
+            keys.add("deleted-legacy")
+    return keys
+
+
+def resolve_unique_counterpart(car: Car, user: User) -> User | None:
+    """The single live counterpart of ``user`` on ``car``, else ``None``."""
+    keys = conversation_peer_keys(car, user)
+    if len(keys) != 1:
+        return None
+    (only,) = tuple(keys)
+    if not isinstance(only, int):
+        return None
+    return db.session.get(User, only)
+
+
+def conversation_clause(car: Car, me: User, peer_ref: str | None):
+    """SQLAlchemy clause selecting ONE conversation of ``me`` on ``car``.
+
+    ``peer_ref`` is the counterpart's public id, ``"deleted-user:<n>"`` or
+    ``"deleted-legacy"``. Returns ``None`` when the reference does not name a
+    counterpart (the caller treats that as an empty conversation, never as
+    "all conversations").
+    """
+    ref = (peer_ref or "").strip()
+    if not ref:
+        return None
+    base = Message.car_id == car.id
+    if ref.startswith("deleted-user:"):
+        try:
+            marker = int(ref.split(":", 1)[1])
+        except ValueError:
+            return None
+        gone = or_(
+            and_(Message.sender_id == me.id, Message.receiver_id.is_(None)),
+            and_(Message.receiver_id == me.id, Message.sender_id.is_(None)),
+        )
+        return and_(base, gone, Message.deleted_counterpart_marker == marker)
+    if ref == "deleted-legacy":
+        gone = or_(
+            and_(Message.sender_id == me.id, Message.receiver_id.is_(None)),
+            and_(Message.receiver_id == me.id, Message.sender_id.is_(None)),
+        )
+        return and_(base, gone, Message.deleted_counterpart_marker.is_(None))
+    peer = User.query.filter_by(public_id=ref).first()
+    if peer is None or peer.id == me.id:
+        return None
+    return and_(
+        base,
+        or_(
+            and_(Message.sender_id == me.id, Message.receiver_id == peer.id),
+            and_(Message.sender_id == peer.id, Message.receiver_id == me.id),
+        ),
+    )
+
+
+def resolve_conversation_peer(
+    me: User, car: Car, peer_public: str | None
+) -> tuple[User | None, str | None]:
+    """Resolve WHO the other participant of a realtime conversation is.
+
+    Returns ``(peer, None)`` or ``(None, code)`` with ``code`` one of
+    ``peer_required`` (a seller with several buyers did not say which one) and
+    ``peer_not_allowed``.
+    """
+    raw = (peer_public or "").strip()
+    if not raw and car.seller_id == me.id and resolve_unique_counterpart(car, me) is None:
+        return None, "peer_required"
+    peer = resolve_allowed_chat_receiver(me, car, raw)
+    if peer is None:
+        return None, "peer_not_allowed"
+    return peer, None
 
 
 def user_can_access_chat_room(user: User, car: Car) -> bool:
@@ -314,22 +429,39 @@ def deliver_message(msg: Message, *, sender: User, receiver: User) -> dict:
     return payload
 
 
-def mark_messages_read_for_viewer(car: Car, viewer: User) -> dict:
+def mark_messages_read_for_viewer(
+    car: Car, viewer: User, peer: User | None = None
+) -> dict:
     """
     Mark unread inbound messages as read and notify counterparties (M-14).
+
+    F-05: read state is per CONVERSATION. When ``peer`` is given only that
+    peer's messages are marked (and only that peer is notified). A listing
+    seller who did not say which buyer is meant gets a no-op unless exactly one
+    buyer exists, so opening one buyer's thread can never mark (or announce a
+    read of) another buyer's messages.
 
     Returns a small summary dict for logging / responses.
     """
     if car is None or viewer is None:
         return {"marked": 0, "message_ids": []}
 
+    conditions = [
+        Message.car_id == car.id,
+        Message.receiver_id == viewer.id,
+        Message.is_read.is_(False),
+        Message.is_deleted.is_(False),
+    ]
+    if peer is not None:
+        conditions.append(Message.sender_id == peer.id)
+    elif getattr(car, "seller_id", None) == viewer.id:
+        only = resolve_unique_counterpart(car, viewer)
+        if only is None:
+            return {"marked": 0, "message_ids": []}
+        conditions.append(Message.sender_id == only.id)
+
     unread = (
-        Message.query.filter(
-            Message.car_id == car.id,
-            Message.receiver_id == viewer.id,
-            Message.is_read.is_(False),
-            Message.is_deleted.is_(False),
-        )
+        Message.query.filter(*conditions)
         .order_by(Message.created_at.asc())
         .all()
     )

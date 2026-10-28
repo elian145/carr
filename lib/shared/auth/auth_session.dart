@@ -42,6 +42,33 @@ String? accountIdFromJwt(String? token) {
   }
 }
 
+/// Expiry (`exp`) of a JWT, or `null` when it is not a well-formed JWT / has no
+/// numeric `exp`. Like [accountIdFromJwt] this does NOT verify the signature:
+/// it is only used to decide WHEN to refresh a token on the client, never to
+/// accept one.
+DateTime? jwtExpiry(String? token) {
+  final t = (token ?? '').trim();
+  if (t.isEmpty) return null;
+  final parts = t.split('.');
+  if (parts.length != 3) return null;
+  try {
+    var payload = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    while (payload.length % 4 != 0) {
+      payload += '=';
+    }
+    final decoded = json.decode(utf8.decode(base64.decode(payload)));
+    if (decoded is! Map) return null;
+    final exp = decoded['exp'];
+    if (exp is! num) return null;
+    return DateTime.fromMillisecondsSinceEpoch(
+      exp.toInt() * 1000,
+      isUtc: true,
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Identity of the authentication session a request / operation started in.
 ///
 /// [epoch] changes on every authentication transition (login, logout, token
