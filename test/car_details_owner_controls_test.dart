@@ -99,11 +99,30 @@ class _Backend {
   /// Number of upcoming `GET /api/cars/<id>` calls that answer HTTP 500.
   int carFailuresLeft = 0;
 
+  /// When true, `POST /auth/refresh` answers like the real backend: a NEW
+  /// access + refresh pair for [_ownerId] (every token string is unique).
+  bool rotateOnRefresh = false;
+  int refreshCalls = 0;
+
   int meCalls = 0;
   final Map<String, int> carCalls = {};
 
   http.Client client() => MockClient((request) async {
     final path = request.url.path;
+    if (path.endsWith('/auth/refresh') && rotateOnRefresh) {
+      refreshCalls++;
+      return _json(200, {
+        'access_token': fakeSessionJwt(
+          _ownerId,
+          extraClaims: {'jti': 'access-$refreshCalls'},
+        ),
+        'refresh_token': fakeSessionJwt(
+          _ownerId,
+          type: 'refresh',
+          extraClaims: {'jti': 'refresh-$refreshCalls'},
+        ),
+      });
+    }
     if (path.endsWith('/auth/me')) {
       meCalls++;
       final gate = meGate;
@@ -269,6 +288,28 @@ void main() {
       ),
     );
     await settle(tester, ownerVisible: ownerVisible);
+  }
+
+  /// A REAL access-token refresh (`/auth/refresh`, the path the app uses when
+  /// a token nears expiry): same account, same session, brand-new token
+  /// strings. Do NOT simulate rotation with `ApiService.setTokens`: that is the
+  /// login API, and whenever the token strings differ it deliberately starts a
+  /// new session (in-flight responses of the old one are discarded). With the
+  /// second-resolution `exp` of [fakeSessionJwt] two calls only produced
+  /// identical strings -- a silent no-op -- when they landed in the same
+  /// wall-clock second, which made this scenario pass or fail on machine speed.
+  Future<void> rotateTokens() async {
+    final accessBefore = ApiService.accessToken;
+    final epochBefore = ApiService.sessionEpoch;
+    backend.rotateOnRefresh = true;
+    final ok = await ApiService.refreshAccessTokenForSession(
+      ApiService.captureSession(),
+    );
+    expect(ok, isTrue, reason: 'refresh must succeed');
+    expect(ApiService.accessToken, isNot(accessBefore),
+        reason: 'rotation must really change the access token');
+    expect(ApiService.sessionEpoch, epochBefore,
+        reason: 'rotation is not a new session');
   }
 
   /// Starts the (gated) `/auth/me` that a cold start kicks off.
@@ -512,14 +553,14 @@ void main() {
       await pumpDetail(tester, 'car_1', ownerVisible: true);
 
       for (var i = 0; i < 3; i++) {
-        await _storeSessionFor(_ownerId); // rotated tokens, same account
+        await rotateTokens(); // rotated tokens, same account, same session
         await settle(tester, frames: 3, ownerVisible: true);
         expectOwnerControls(visible: true, reason: 'rotation $i');
       }
       backend.meGate!.complete();
       await settle(tester, ownerVisible: true);
       expect(AuthService().currentUser, isNotNull, reason: 'profile kept');
-      await _storeSessionFor(_ownerId);
+      await rotateTokens();
       await settle(tester, ownerVisible: true);
       expect(backend.carCalls['car_1'], 1);
       expect(backend.meCalls, 1);

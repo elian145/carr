@@ -658,6 +658,51 @@ void main() {
     });
 
     test(
+        'F-05: an in-flight upload is only visible under its exact recipient; '
+        'an unknown-recipient upload is never attributed to a named buyer',
+        () async {
+      final gate = Completer<void>();
+      be.sendHook = (r, acct) async {
+        await gate.future;
+        return http.Response('', 503);
+      };
+      await login('A');
+      for (final (temp, receiver) in [
+        ('temp_b1', 'buyer_1'),
+        ('temp_b2', 'buyer_2'),
+        ('temp_unknown', null),
+      ]) {
+        OutgoingChatSendService.instance.startMediaGroupSend(
+          conversationId: 'car_X',
+          files: [photo],
+          tempMessageId: temp,
+          startedAt: DateTime.now(),
+          receiverId: receiver,
+          carId: 'car_X',
+          restoreFiles: [photo],
+          expectedOwnerUserId: 'A',
+        );
+      }
+      await pumpEventQueue();
+      List<String> idsFor(String? peer) => OutgoingChatSendService.instance
+          .inFlightMediaForConversation('car_X',
+              ownerUserId: 'A', peerId: peer)
+          .map((e) => e.tempMessageId)
+          .toList()
+        ..sort();
+
+      expect(idsFor('buyer_1'), ['temp_b1']);
+      expect(idsFor('buyer_2'), ['temp_b2']);
+      expect(idsFor('buyer_3'), isEmpty,
+          reason: 'unknown-recipient upload must not appear under buyer_3');
+      expect(idsFor('deleted-user:4'), isEmpty);
+      expect(idsFor(null), ['temp_b1', 'temp_b2', 'temp_unknown'],
+          reason: 'no buyer named: nothing is hidden or guessed');
+      gate.complete();
+      await pumpEventQueue();
+    });
+
+    test(
         "media: A's in-flight upload is invisible to B, never re-sent as B, "
         'and resumes for A', () async {
       final gate = Completer<void>();
@@ -721,8 +766,83 @@ void main() {
     });
 
     test('audio: pending voice note only resumes under its owner', () async {
+      // The voice file is read from disk (real IO) before the request is
+      // dispatched, and the owner-stamped pending record is only written once
+      // the send has failed. Neither completes within a fixed number of
+      // event-loop turns on a loaded runner, so synchronise on the service's
+      // own outcome events instead of pumping and hoping.
+      Future<OutgoingChatSendEvent> outcome(
+              bool Function(OutgoingChatSendEvent) test) =>
+          OutgoingChatSendService.instance.events
+              .firstWhere((e) => e.tempMessageId == 'temp_voice' && test(e))
+              .timeout(const Duration(seconds: 20));
+
       be.sendHook = (r, acct) async =>
           acct == 'A' && be.sends.isEmpty ? http.Response('', 503) : null;
+      await login('A');
+      final aPending = outcome((e) => e.pendingRetry);
+      OutgoingChatSendService.instance.startAudioSend(
+        conversationId: 'car_X',
+        audioFile: voice,
+        tempMessageId: 'temp_voice',
+        startedAt: DateTime.now(),
+        receiverId: 'seller_S',
+        restoreFile: voice,
+        expectedOwnerUserId: 'A',
+      );
+      final pendingEvent = await aPending;
+      expect(pendingEvent.ownerUserId, 'A');
+      expect((await ChatPendingSendPrefs.loadForOwner('A')), hasLength(1));
+      be.sendHook = null;
+      await logout();
+      await login('B');
+
+      // Anything B's recovery pass emits or dispatches for A's voice note is a
+      // leak; record it so the absence is asserted, not just assumed.
+      final seenAsB = <OutgoingChatSendEvent>[];
+      final subB = OutgoingChatSendService.instance.events
+          .where((e) => e.tempMessageId == 'temp_voice')
+          .listen(seenAsB.add);
+      await ageRecords();
+      await OutgoingChatSendService.instance.recoverPendingSends();
+      await pumpEventQueue();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      await subB.cancel();
+      expect(be.sends, isEmpty, reason: "A's voice note was sent as B");
+      expect(seenAsB, isEmpty, reason: "B's recovery touched A's voice note");
+      expect((await ChatPendingSendPrefs.loadForOwner('B')), isEmpty);
+      expect((await ChatPendingSendPrefs.loadForOwner('A')), hasLength(1),
+          reason: "A's voice note must still be pending for A");
+
+      // The owner coming back is what resumes it: wait for that real outcome.
+      await logout();
+      await login('A');
+      await ageRecords();
+      final aResumed = outcome((e) => e.success);
+      await OutgoingChatSendService.instance.recoverPendingSends();
+      final resumed = await aResumed;
+      expect(resumed.ownerUserId, 'A');
+      expect(sentBy('A'), hasLength(1));
+      expect(sentBy('B'), isEmpty);
+      expect((await ChatPendingSendPrefs.loadAll()), isEmpty,
+          reason: 'the resumed record is cleared once delivered');
+    });
+
+    test(
+        'audio: a slow voice upload held in flight across an account switch '
+        'never leaks to B and stays pending for A', () async {
+      // Deterministic version of the slow-runner timing: A's request is held
+      // in flight while the account switches.
+      final gate = Completer<void>();
+      final arrived = Completer<void>();
+      be.sendHook = (r, acct) async {
+        if (acct == 'A' && be.sends.isEmpty && !gate.isCompleted) {
+          if (!arrived.isCompleted) arrived.complete();
+          await gate.future;
+          return http.Response('', 503);
+        }
+        return null;
+      };
       await login('A');
       OutgoingChatSendService.instance.startAudioSend(
         conversationId: 'car_X',
@@ -733,23 +853,19 @@ void main() {
         restoreFile: voice,
         expectedOwnerUserId: 'A',
       );
-      await pumpEventQueue();
-      expect((await ChatPendingSendPrefs.loadForOwner('A')), hasLength(1));
-      be.sendHook = null;
+      await arrived.future.timeout(const Duration(seconds: 20));
       await logout();
       await login('B');
-      await ageRecords();
-      await OutgoingChatSendService.instance.recoverPendingSends();
-      await pumpEventQueue();
+      final settled = OutgoingChatSendService.instance.events
+          .firstWhere((e) => e.tempMessageId == 'temp_voice')
+          .timeout(const Duration(seconds: 20));
+      gate.complete();
+      final e = await settled;
+      expect(e.ownerUserId, 'A');
+      expect(e.pendingRetry, isTrue);
       expect(be.sends, isEmpty);
-      await logout();
-      await login('A');
-      await ageRecords();
-      await OutgoingChatSendService.instance.recoverPendingSends();
-      await pumpEventQueue();
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(sentBy('A'), hasLength(1));
-      expect(sentBy('B'), isEmpty);
+      expect((await ChatPendingSendPrefs.loadForOwner('B')), isEmpty);
+      expect((await ChatPendingSendPrefs.loadForOwner('A')), hasLength(1));
     });
   });
 

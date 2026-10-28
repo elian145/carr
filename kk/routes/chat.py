@@ -13,6 +13,8 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 from ..auth import get_current_user, phone_verification_required_response
 from ..chat_realtime import (
+    conversation_clause,
+    conversation_peer_keys,
     deliver_message,
     emit_message_to_participants,
     mark_messages_read_for_viewer,
@@ -338,7 +340,19 @@ def _max_upload_mb() -> int:
     return max(1, raw // (1024 * 1024))
 
 
-def _resolve_reply_target(me: User, car: Car, reply_public_id: str | None) -> Message | None:
+def _resolve_reply_target(
+    me: User,
+    car: Car,
+    reply_public_id: str | None,
+    receiver: User | None = None,
+) -> Message | None:
+    """Resolve the message being replied to.
+
+    F-05: when ``receiver`` is given the target must belong to THIS
+    conversation (me <-> receiver on this listing). Otherwise a seller could
+    attach buyer A's message to a reply addressed to buyer B, and the reply
+    preview would disclose A's text to B.
+    """
     raw = (reply_public_id or "").strip()
     if not raw:
         return None
@@ -346,6 +360,8 @@ def _resolve_reply_target(me: User, car: Car, reply_public_id: str | None) -> Me
     if not msg:
         return None
     if me.id not in (msg.sender_id, msg.receiver_id):
+        return None
+    if receiver is not None and {msg.sender_id, msg.receiver_id} != {me.id, receiver.id}:
         return None
     return msg
 
@@ -482,8 +498,17 @@ def list_chats():
                     car_title = f"{car.brand} {car.model} {car.year}".strip()
                 car_image_url = _first_car_image_rel_path(car)
 
+            peer_key = None
             if other is None and other_id is None:
                 other_user = {"id": None, "name": "Deleted User"}
+                # F-05: lets the client open THIS deleted counterpart's thread
+                # (history requests accept it as `peer_id`). Kept OUTSIDE
+                # `other_user` so that object's shape is unchanged.
+                peer_key = (
+                    f"deleted-user:{m.deleted_counterpart_marker}"
+                    if m.deleted_counterpart_marker is not None
+                    else "deleted-legacy"
+                )
             else:
                 other_user = {
                     "id": other.public_id if other else None,
@@ -511,6 +536,7 @@ def list_chats():
                         "sender_id": m.sender.public_id if m.sender else None,
                     },
                     "unread_count": int(unread or 0),
+                    **({"peer_key": peer_key} if peer_key else {}),
                 }
             )
 
@@ -563,10 +589,52 @@ def get_messages(conversation_id: str):
             for b in BlockedUser.query.filter_by(blocker_id=me.id).all()
         ]
 
+        # F-05: a conversation is (listing, me, ONE counterpart). Without a
+        # counterpart a listing seller with several buyers would get every
+        # buyer's thread merged into one history.
+        peer_ref = (
+            request.args.get("peer_id") or request.args.get("receiver_id") or ""
+        ).strip()
+        conversation = None
+        if peer_ref:
+            conversation = conversation_clause(car, me, peer_ref)
+            if conversation is None:
+                # Unknown counterpart: an empty conversation, never "everything".
+                return jsonify({
+                    "messages": [],
+                    "per_page": per_page,
+                    "total": 0,
+                    "has_more": False,
+                }), 200
+        elif car.seller_id == me.id:
+            keys = conversation_peer_keys(car, me)
+            if len(keys) > 1:
+                return jsonify({
+                    "message": "peer_id required: this listing has several conversations",
+                    "code": "peer_required",
+                }), 400
+            if not keys:
+                return jsonify({
+                    "messages": [],
+                    "per_page": per_page,
+                    "total": 0,
+                    "has_more": False,
+                }), 200
+            (only,) = tuple(keys)
+            if isinstance(only, int):
+                only_user = db.session.get(User, only)
+                only_ref = only_user.public_id if only_user else None
+            else:
+                only_ref = only
+            conversation = conversation_clause(car, me, only_ref)
+            peer_ref = only_ref or ""
+
         base_q = Message.query.filter(
             Message.car_id == car.id,
             or_(Message.sender_id == me.id, Message.receiver_id == me.id),
         )
+        if conversation is not None:
+            base_q = base_q.filter(conversation)
         if blocked_ids:
             base_q = base_q.filter(~Message.sender_id.in_(blocked_ids))
 
@@ -609,8 +677,22 @@ def get_messages(conversation_id: str):
             )
 
         # Mark messages to me as read and notify senders (read receipts).
+        # Only THIS conversation's counterpart is touched (F-05).
         try:
-            mark_messages_read_for_viewer(car, me)
+            read_peer = (
+                User.query.filter_by(public_id=peer_ref).first() if peer_ref else None
+            )
+            if peer_ref and read_peer is None:
+                # Deleted-counterpart thread: nobody to notify, but its
+                # messages must still stop counting as unread.
+                Message.query.filter(
+                    conversation,
+                    Message.receiver_id == me.id,
+                    Message.is_read.is_(False),
+                ).update({"is_read": True}, synchronize_session=False)
+                db.session.commit()
+            else:
+                mark_messages_read_for_viewer(car, me, peer=read_peer)
         except Exception:
             db.session.rollback()
 
@@ -668,7 +750,7 @@ def send_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
@@ -766,7 +848,7 @@ def send_image_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
@@ -889,7 +971,7 @@ def send_video_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
@@ -1012,7 +1094,7 @@ def send_audio_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 
@@ -1147,7 +1229,7 @@ def send_media_group_message(conversation_id: str):
         if receiver is None:
             return jsonify({"message": "receiver_id required or not allowed"}), 400
 
-        reply_to = _resolve_reply_target(me, car, reply_to_public)
+        reply_to = _resolve_reply_target(me, car, reply_to_public, receiver)
         if reply_to_public and reply_to is None:
             return jsonify({"message": "Reply target not found"}), 404
 

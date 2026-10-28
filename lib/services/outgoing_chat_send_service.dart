@@ -124,6 +124,7 @@ class OutgoingChatSendEvent {
     required this.kind,
     required this.ownerUserId,
     required this.conversationId,
+    this.receiverId,
     required this.success,
     this.tempMessageId,
     this.messageJson,
@@ -143,6 +144,11 @@ class OutgoingChatSendEvent {
   /// ownership boundary.
   final String? ownerUserId;
   final String conversationId;
+
+  /// The counterpart this send was addressed to (F-05). One listing seller has
+  /// a separate conversation per buyer under the SAME [conversationId] (the
+  /// listing), so consumers must also match the counterpart.
+  final String? receiverId;
   final bool success;
   final String? tempMessageId;
   final Map<String, dynamic>? messageJson;
@@ -205,9 +211,13 @@ class OutgoingChatSendService {
   ///
   /// Only the signed-in account's uploads are visible: another account's
   /// in-flight upload for the same conversation id is never returned.
+  ///
+  /// [peerId] (F-05) restricts the result to uploads addressed to EXACTLY that
+  /// counterpart: the conversation id is the LISTING, shared by every buyer.
   List<InFlightMediaSend> inFlightMediaForConversation(
     String conversationId, {
     required String? ownerUserId,
+    String? peerId,
   }) {
     if (ownerUserId == null || ownerUserId.isEmpty) {
       return const <InFlightMediaSend>[];
@@ -216,9 +226,18 @@ class OutgoingChatSendService {
         .where(
           (e) =>
               e.conversationId == conversationId &&
-              e.ownerUserId == ownerUserId,
+              e.ownerUserId == ownerUserId &&
+              _peerMatches(e.receiverId, peerId),
         )
         .toList(growable: false);
+  }
+
+  /// With a named counterpart the recipient must match EXACTLY: an upload
+  /// whose recipient is unknown is never shown under an arbitrary buyer.
+  static bool _peerMatches(String? recordReceiverId, String? peerId) {
+    final peer = (peerId ?? '').trim();
+    if (peer.isEmpty) return true;
+    return (recordReceiverId ?? '').trim() == peer;
   }
 
   /// Throws [ApiSessionChangedException] unless [session] is still the live
@@ -311,6 +330,7 @@ class OutgoingChatSendService {
         kind: OutgoingChatSendKind.mediaGroup,
         ownerUserId: expectedOwnerUserId ?? ApiService.currentAccountId,
         conversationId: conversationId,
+        receiverId: receiverId,
         success: false,
         tempMessageId: tempMessageId,
         errorCause: ApiSessionChangedException(),
@@ -385,6 +405,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.mediaGroup,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: true,
           tempMessageId: tempMessageId,
           messageJson: msg,
@@ -395,6 +416,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.mediaGroup,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           error: 'Invalid response',
@@ -432,6 +454,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.mediaGroup,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           errorCause: e,
@@ -443,6 +466,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.mediaGroup,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           errorCause: e,
@@ -471,6 +495,7 @@ class OutgoingChatSendService {
         kind: OutgoingChatSendKind.audio,
         ownerUserId: expectedOwnerUserId ?? ApiService.currentAccountId,
         conversationId: conversationId,
+        receiverId: receiverId,
         success: false,
         tempMessageId: tempMessageId,
         errorCause: ApiSessionChangedException(),
@@ -539,6 +564,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.audio,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: true,
           tempMessageId: tempMessageId,
           messageJson: msg,
@@ -549,6 +575,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.audio,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           error: 'Invalid response',
@@ -582,6 +609,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.audio,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           errorCause: e,
@@ -593,6 +621,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.audio,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           errorCause: e,
@@ -618,6 +647,7 @@ class OutgoingChatSendService {
         kind: OutgoingChatSendKind.textMessage,
         ownerUserId: expectedOwnerUserId ?? ApiService.currentAccountId,
         conversationId: conversationId,
+        receiverId: receiverId,
         success: false,
         tempMessageId: resolvedTempId,
         restoredPlainText: content,
@@ -677,6 +707,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.textMessage,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: true,
           tempMessageId: tempMessageId,
           messageJson: msg,
@@ -687,6 +718,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.textMessage,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           restoredPlainText: content,
@@ -722,6 +754,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.textMessage,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           errorCause: e,
@@ -733,6 +766,7 @@ class OutgoingChatSendService {
           kind: OutgoingChatSendKind.textMessage,
           ownerUserId: ownerUserId,
           conversationId: conversationId,
+          receiverId: receiverId,
           success: false,
           tempMessageId: tempMessageId,
           restoredPlainText: content,
@@ -762,6 +796,11 @@ class OutgoingChatSendService {
     final ownerUserId = record.ownerUserId;
     // Defense in depth: a record is only ever resumed by its own owner.
     if (session.accountId != ownerUserId) return;
+    // F-05 fail-closed: a recipient-unknown record (text, audio or media) is
+    // never retried automatically -- the backend would have to GUESS which
+    // buyer it was meant for. It stays stored, untouched (no attempt counted,
+    // not deleted).
+    if (!record.hasKnownRecipient) return;
     final kind = _kindFromStorageString(record.kind);
     if (kind == null) {
       // Unknown/corrupt kind — cannot safely retry; drop it rather than
@@ -797,6 +836,7 @@ class OutgoingChatSendService {
               kind: OutgoingChatSendKind.mediaGroup,
               ownerUserId: ownerUserId,
               conversationId: record.conversationId,
+              receiverId: record.receiverId,
               success: false,
               tempMessageId: record.id,
               error: 'Attachments are no longer available on this device',
@@ -839,6 +879,7 @@ class OutgoingChatSendService {
               kind: OutgoingChatSendKind.audio,
               ownerUserId: ownerUserId,
               conversationId: record.conversationId,
+              receiverId: record.receiverId,
               success: false,
               tempMessageId: record.id,
               error: 'Recording is no longer available on this device',
@@ -893,6 +934,8 @@ class OutgoingChatSendService {
       for (final record in records) {
         if (_retryInProgressIds.contains(record.id)) continue;
         if (_inFlightMediaByTempId.containsKey(record.id)) continue;
+        // F-05: quarantine recipient-unknown records (see hasKnownRecipient).
+        if (!record.hasKnownRecipient) continue;
         if (record.attempts >= maxAutoRetryAttempts) continue;
         final last = record.lastAttemptAt;
         if (last != null &&

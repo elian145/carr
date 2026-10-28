@@ -155,6 +155,7 @@ void main() {
         };
 
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_retry_1',
           content: 'retry me',
           tempMessageId: 'temp_retry_1',
@@ -199,6 +200,7 @@ void main() {
       () async {
         await ChatPendingSendPrefs.upsert(
           ChatPendingSendRecord(
+      receiverId: 'peer_known',
       ownerUserId: 'owner_test',
             id: 'temp_restart_1',
             conversationId: 'car_restart_1',
@@ -243,6 +245,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 503);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_dedupe_1',
           content: 'dedupe me',
           tempMessageId: 'temp_dedupe_1',
@@ -273,6 +276,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 503);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_exhaust_1',
           content: 'never lands',
           tempMessageId: 'temp_exhaust_1',
@@ -334,6 +338,7 @@ void main() {
 
         await ChatPendingSendPrefs.upsert(
           ChatPendingSendRecord(
+      receiverId: 'peer_known',
       ownerUserId: 'owner_test',
             id: 'temp_media_1',
             conversationId: 'car_media_1',
@@ -375,6 +380,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 503);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_conn_1',
           content: 'conn retry',
           tempMessageId: 'temp_conn_1',
@@ -410,6 +416,7 @@ void main() {
         FakeApiServer.chatSendOverride =
             (request, callIndex) => http.Response('', 500);
         OutgoingChatSendService.instance.startTextMessageSend(
+          receiverId: 'peer_known',
           conversationId: 'car_discard_1',
           content: 'to be recalled',
           tempMessageId: 'temp_discard_1',

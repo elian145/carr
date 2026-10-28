@@ -16,6 +16,7 @@ void main() {
     String kind = 'text',
     String idempotencyKey = 'chat-send-key-1',
     String? content = 'hello',
+    String? receiverId,
     int attempts = 1,
     int? lastAttemptAt,
     List<String> filePaths = const <String>[],
@@ -27,6 +28,7 @@ void main() {
       kind: kind,
       idempotencyKey: idempotencyKey,
       content: content,
+      receiverId: receiverId,
       filePaths: filePaths,
       createdAt: DateTime(2026, 1, 1).millisecondsSinceEpoch,
       attempts: attempts,
@@ -59,6 +61,74 @@ void main() {
 
     final forCar1 = await ChatPendingSendPrefs.loadForConversation('car_1', ownerUserId: 'owner_test');
     expect(forCar1.map((r) => r.id), ['t1']);
+  });
+
+  test(
+      'F-05: one listing, two buyers -- the seller\'s pending sends are '
+      'scoped to the open counterpart', () async {
+    await ChatPendingSendPrefs.upsert(
+        buildRecord(id: 'to_b1', receiverId: 'buyer_1'));
+    await ChatPendingSendPrefs.upsert(
+        buildRecord(id: 'to_b2', receiverId: 'buyer_2'));
+    await ChatPendingSendPrefs.upsert(buildRecord(id: 'legacy'));
+
+    List<String> ids(List<ChatPendingSendRecord> l) =>
+        l.map((r) => r.id).toList()..sort();
+
+    expect(
+      ids(await ChatPendingSendPrefs.loadForConversation('car_1',
+          ownerUserId: 'owner_test', peerId: 'buyer_1')),
+      ['to_b1'],
+      reason: "buyer 2's pending message must not appear in buyer 1's thread",
+    );
+    expect(
+      ids(await ChatPendingSendPrefs.loadForConversation('car_1',
+          ownerUserId: 'owner_test', peerId: 'buyer_2')),
+      ['to_b2'],
+    );
+    // No counterpart named (buyer view): unchanged behaviour.
+    expect(
+      ids(await ChatPendingSendPrefs.loadForConversation('car_1',
+          ownerUserId: 'owner_test')),
+      ['legacy', 'to_b1', 'to_b2'],
+    );
+  });
+
+  test(
+      'F-05: a record with an UNKNOWN recipient is never shown or restored '
+      'under any named buyer, but is preserved untouched', () async {
+    await ChatPendingSendPrefs.upsert(buildRecord(id: 'unassigned'));
+    await ChatPendingSendPrefs.upsert(
+        buildRecord(id: 'blank', receiverId: '   '));
+    await ChatPendingSendPrefs.upsert(
+        buildRecord(id: 'to_b1', receiverId: 'buyer_1'));
+
+    for (final buyer in ['buyer_1', 'buyer_2', 'buyer_3']) {
+      final ids = (await ChatPendingSendPrefs.loadForConversation('car_1',
+              ownerUserId: 'owner_test', peerId: buyer))
+          .map((r) => r.id)
+          .toList();
+      expect(ids, isNot(contains('unassigned')),
+          reason: 'legacy message must not be guessed into $buyer\'s thread');
+      expect(ids, isNot(contains('blank')));
+    }
+    // A deleted-thread key (never a record's receiver) matches nothing.
+    expect(
+      await ChatPendingSendPrefs.loadForConversation('car_1',
+          ownerUserId: 'owner_test', peerId: 'deleted-user:7'),
+      isEmpty,
+    );
+
+    // Still stored, byte-for-byte, and visible when NO buyer is named.
+    final all = await ChatPendingSendPrefs.loadAll();
+    expect(all.map((r) => r.id), containsAll(['unassigned', 'blank', 'to_b1']));
+    expect(all.firstWhere((r) => r.id == 'unassigned').receiverId, isNull);
+    expect(
+      (await ChatPendingSendPrefs.loadForConversation('car_1',
+              ownerUserId: 'owner_test'))
+          .map((r) => r.id),
+      containsAll(['unassigned', 'blank', 'to_b1']),
+    );
   });
 
   test('upsert with an existing id updates in place (no duplicate entries)', () async {

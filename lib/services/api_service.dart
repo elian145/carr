@@ -233,6 +233,23 @@ class ApiService {
   static Future<bool> _refreshAccessToken([AuthSessionSnapshot? session]) =>
       _ApiServiceHttp._refreshAccessToken(session);
 
+  /// Refreshes the access token FOR [session] (same-session rotation, e.g. for
+  /// a long-lived realtime connection whose token is about to expire).
+  ///
+  /// Returns `false` when the refresh failed OR the session ended / was
+  /// replaced meanwhile (logout, another account signed in): the caller must
+  /// then NOT reconnect with whatever credentials are current now.
+  static Future<bool> refreshAccessTokenForSession(
+    AuthSessionSnapshot session,
+  ) async {
+    try {
+      final ok = await _ApiServiceHttp._refreshAccessToken(session);
+      return ok && isSessionCurrent(session);
+    } on ApiSessionChangedException {
+      return false;
+    }
+  }
+
   /// "401 and the refresh attempt failed": throws a retryable 503 without
   /// touching stored tokens when the refresh failure was transient,
   /// otherwise clears the session. See `_ApiServiceHttp._lastRefreshTransient`.
@@ -926,10 +943,12 @@ class ApiService {
     String conversationId, {
     int perPage = 50,
     String? before,
+    String? peerId,
   }) => _ApiServiceChat.getChatMessagesByConversation(
     conversationId,
     perPage: perPage,
     before: before,
+    peerId: peerId,
   );
 
   static Future<Map<String, dynamic>> sendChatImage({
