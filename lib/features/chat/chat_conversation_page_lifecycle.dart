@@ -10,13 +10,9 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
     _listingPreview = widget.initialListingPreview == null
         ? null
         : Map<String, dynamic>.from(widget.initialListingPreview!);
-    if ((_carDisplayTitle ?? '').isEmpty && _listingPreview != null) {
-      final fromPreview =
-          localizedListingTitle(context, _listingPreview!).trim();
-      if (fromPreview.isNotEmpty) {
-        _carDisplayTitle = fromPreview;
-      }
-    }
+    // The localized listing title depends on the ambient `Localizations`, which
+    // may not be read until initState() has completed -- see
+    // [didChangeDependencies].
     if ((_carImageUrl ?? '').isEmpty && _listingPreview != null) {
       final fromPreview = listingImageUrlFromMap(_listingPreview!);
       if (fromPreview.isNotEmpty) {
@@ -50,6 +46,22 @@ mixin _ChatConversationPageLifecycle on _ChatConversationMessageUi, WidgetsBindi
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollComposerToTop();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Localized listing title for a caller that supplied only a listing
+    // preview (the chat list does). Runs right after initState() and again
+    // whenever `Localizations` changes, so the title follows a locale switch.
+    // A caller-supplied `carTitle` is authoritative and is left alone.
+    final preview = _listingPreview;
+    if ((widget.carTitle ?? '').trim().isEmpty && preview != null) {
+      final fromPreview = localizedListingTitle(context, preview).trim();
+      if (fromPreview.isNotEmpty) {
+        _carDisplayTitle = fromPreview;
+      }
+    }
   }
 
   @override

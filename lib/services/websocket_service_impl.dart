@@ -295,15 +295,22 @@ class WebSocketService {
       }
 
       final opts = <String, dynamic>{
-        // Start with polling (universally compatible with any WSGI server),
-        // then allow Engine.IO to probe for a websocket upgrade.  If the
-        // server's async worker supports it (eventlet/gevent), future
-        // messages will flow over a persistent websocket.  If the server
-        // does NOT support it (gthread/sync), the upgrade probe silently
-        // fails and the connection stays on polling — no crash, no error.
-        'transports': ['polling', 'websocket'],
-        'upgrade': true,
-        'rememberUpgrade': true,
+        // WebSocket ONLY. On dart:io `socket_io_client` ships a single
+        // transport implementation (IOWebSocketTransport): asked for
+        // ['polling', 'websocket'] it opens a WebSocket handshake that is
+        // labelled `transport=polling`, which the Engine.IO server answers as
+        // a plain polling request (HTTP 200, no upgrade) -- the socket then
+        // fails to connect over and over and never reaches the server, so no
+        // realtime event that depends on a joined room (typing, read
+        // receipts) is ever delivered. HTTP polling stays the app-level
+        // fallback (see `shouldHttpPollChatMessages`).
+        'transports': ['websocket'],
+        // A FRESH Manager for every socket. socket_io_client otherwise
+        // reuses a cached Manager for the same host together with the
+        // extraHeaders (the bearer token) it was created with, so after an
+        // account switch the new socket would authenticate as the PREVIOUS
+        // account and be refused ('Socket account mismatch').
+        'forceNew': true,
         'path': '/socket.io/',
         'autoConnect': false,
         'reconnection': true,

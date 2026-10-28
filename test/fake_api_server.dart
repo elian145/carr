@@ -125,6 +125,19 @@ class FakeApiServer {
   /// request had no `before` cursor). Reset by [stop].
   static final List<String> chatMessagesRequestedBefore = [];
 
+  /// Two-buyer chat coverage: when set, `GET /api/chats` returns these rows
+  /// instead of the one-row stub. Reset by [stop].
+  static List<Map<String, dynamic>>? chatsOverride;
+
+  /// When set, `GET /api/chat/<id>/messages` serves the list keyed by the
+  /// request's `peer_id` query value (empty list for an unknown peer).
+  /// Reset by [stop].
+  static Map<String, List<Map<String, dynamic>>>? chatMessagesByPeer;
+
+  /// Every `peer_id` query value seen on `GET /api/chat/<id>/messages`
+  /// (empty string when absent), in call order. Reset by [stop].
+  static final List<String> chatMessagesRequestedPeers = [];
+
   /// Records every `page` value requested via
   /// `GET /api/user/favorites?page=N`, in call order. Reset by [stop].
   static final List<int> favoritesRequestedPages = [];
@@ -294,6 +307,9 @@ class FakeApiServer {
     myListingsByStatus = null;
     chatMessagesAllItems = null;
     chatMessagesRequestedBefore.clear();
+    chatsOverride = null;
+    chatMessagesByPeer = null;
+    chatMessagesRequestedPeers.clear();
     phoneVerifyOverride = null;
     carsQueryGates = null;
     carsRequestedQueries.clear();
@@ -612,6 +628,18 @@ class FakeApiServer {
 
     if (path.startsWith('/api/chat/')) {
       if (path.endsWith('/messages') && method == 'GET') {
+        final peerRaw = request.url.queryParameters['peer_id'] ?? '';
+        chatMessagesRequestedPeers.add(peerRaw);
+        final byPeer = chatMessagesByPeer;
+        if (byPeer != null) {
+          final rows = byPeer[peerRaw] ?? const <Map<String, dynamic>>[];
+          return _json(200, {
+            'messages': rows,
+            'per_page': 50,
+            'total': rows.length,
+            'has_more': false,
+          });
+        }
         final all = chatMessagesAllItems;
         if (all != null) {
           final perPage =
@@ -773,7 +801,7 @@ class FakeApiServer {
           'pagination': {'has_next': false, 'page': 1, 'per_page': 20},
         });
       case '/api/chats':
-        return _json(200, _sampleChats());
+        return _json(200, chatsOverride ?? _sampleChats());
       case '/api/chat/unread_count':
         return _json(200, {'unread_count': 0});
       case '/api/auth/phone/verify':
