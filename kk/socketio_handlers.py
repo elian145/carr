@@ -4,6 +4,7 @@ import logging
 import os
 import threading
 import time
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +183,16 @@ def _bind_socket(sid: str, user: User, claims: dict, raw: str) -> None:
             "user_public_id": user.public_id,
             "exp": float(claims["exp"]),
             "token": raw,
+            # Used ONLY to evict the typing-authorization cache below (never
+            # to authorize anything): the internal id, and the token's jti.
+            "user_id": user.id,
+            "jti": str(claims.get("jti") or ""),
+            # Typing-event fast path state. It lives INSIDE the binding record,
+            # so it disappears with the socket (disconnect, token expiry,
+            # account switch / reconnect = a new sid = an empty cache).
+            "authz": {},
+            "typing_state": {},
+            "typing_times": deque(),
         }
 
 
@@ -247,6 +258,277 @@ def _watch_socket_expiry(socketio, sid: str) -> None:
         socketio.sleep(min(remaining + 0.25, _EXPIRY_POLL_SECONDS))
 
 
+# ---------------------------------------------------------------------------
+# Typing events: authorize a conversation once, not on every keystroke burst.
+#
+# Measured on staging (20 sockets, NullPool, ~100-290 ms per new DB connection):
+# every ``typing_start`` / ``typing_stop`` re-ran the full authorization chain
+# (token blocklist + user + listing + membership + peer + block lookups: ~8 SQL
+# statements on a freshly opened DB connection) and pushed /api/cars p95 from
+# ~0.6 s to ~3.1 s.
+#
+# A typing indicator is ephemeral and carries no message content, so after the
+# FIRST full validation of a (listing, peer) conversation for a socket, the
+# result is reused for a short, bounded time:
+#
+#   * the cache lives inside the socket's own binding record (``_SOCKET_AUTH``),
+#     so it dies with the socket: disconnect, token expiry, reconnect and
+#     account switching (a new token = a new socket) always start empty;
+#   * it only ever holds results that the full server-side check produced --
+#     never a client-supplied user, room or conversation;
+#   * every event still checks (in memory) that the socket is bound and that
+#     its token has not expired;
+#   * entries expire after ``CHAT_TYPING_AUTHZ_TTL_SECONDS`` (default 15 s) and
+#     are evicted at once, in this process, when a committed change could
+#     remove the permission: a block / unblock, a logout or token revocation,
+#     a deactivated / deleted account, a password change (token cutoff), or a
+#     deactivated / re-owned / deleted listing. The TTL is the backstop for
+#     other workers and for bulk SQL updates that bypass the ORM;
+#   * negative results are never cached, and a per-socket rate limit applies
+#     BEFORE any database work, so spam cannot be used to hit the database;
+#   * duplicate states are dropped (a second ``typing_start`` shortly after one
+#     was relayed, or a ``typing_stop`` when stopped is already known);
+#   * ``send_message`` / ``join_chat`` keep their full per-event validation.
+#
+# ``CHAT_TYPING_AUTHZ_TTL_SECONDS=0`` restores the previous behaviour exactly
+# (full validation per event, no de-duplication, no rate limit).
+# ---------------------------------------------------------------------------
+_TYPING_AUTHZ_TTL_DEFAULT = 15.0
+_TYPING_AUTHZ_TTL_MAX = 120.0
+_TYPING_REFRESH_SECONDS = 5.0  # a repeated typing_start is relayed at most this often
+_TYPING_RATE_MAX = 30  # typing events per socket ...
+_TYPING_RATE_WINDOW = 10.0  # ... per this many seconds, before any DB work
+_TYPING_CACHE_MAX_ENTRIES = 16
+_TYPING_STATE_MAX_ENTRIES = 64
+_TYPING_KEY_MAX_LEN = 128
+
+_EVICT_GEN = 0  # bumped on every eviction (see _remember_authz)
+
+
+def _mono() -> float:
+    """Monotonic clock for cache TTLs / rate limits (patched in tests)."""
+    return time.monotonic()
+
+
+def _typing_authz_ttl() -> float:
+    raw = (os.environ.get("CHAT_TYPING_AUTHZ_TTL_SECONDS") or "").strip()
+    if not raw:
+        return _TYPING_AUTHZ_TTL_DEFAULT
+    try:
+        val = float(raw)
+    except ValueError:
+        return _TYPING_AUTHZ_TTL_DEFAULT
+    if val != val or val <= 0:  # NaN, zero or negative: feature off
+        return 0.0
+    return min(val, _TYPING_AUTHZ_TTL_MAX)
+
+
+def _evict_generation() -> int:
+    return _EVICT_GEN
+
+
+def _typing_fast_path(sid, car_raw: str, peer_raw: str, typing: bool, ttl: float):
+    """In-memory decision for a typing event; NO database access.
+
+    Returns ``("emit", entry)`` (relay it), ``("drop", None)`` (rate limited or
+    duplicate) or ``("miss", None)`` (run the full validation).
+    """
+    if not sid:
+        return "miss", None
+    now = _mono()
+    with _SOCKET_AUTH_LOCK:
+        rec = _SOCKET_AUTH.get(sid)
+        if rec is None or rec["exp"] <= _now():
+            # Unbound / guest, or expired: the full path decides (and closes).
+            return "miss", None
+        times = rec["typing_times"]
+        while times and now - times[0] > _TYPING_RATE_WINDOW:
+            times.popleft()
+        if len(times) >= _TYPING_RATE_MAX:
+            return "drop", None
+        times.append(now)
+        cache = rec["authz"]
+        entry = cache.get((car_raw, peer_raw))
+        if entry is None:
+            return "miss", None
+        if (
+            now - entry["at"] > ttl
+            or entry["me"] != rec["user_public_id"]
+            or entry["me_id"] != rec["user_id"]
+        ):
+            cache.pop((car_raw, peer_raw), None)
+            return "miss", None
+        state = rec["typing_state"].get(entry["state_key"])
+        if state is not None:
+            last, at = state
+            if typing and last is True and now - at < _TYPING_REFRESH_SECONDS:
+                return "drop", None
+            if (not typing) and last is False:
+                return "drop", None
+        _set_typing_state_locked(rec, entry["state_key"], typing, now)
+        return "emit", dict(entry)
+
+
+def _set_typing_state_locked(rec: dict, state_key, typing: bool, now: float) -> None:
+    states = rec["typing_state"]
+    states.pop(state_key, None)
+    states[state_key] = (typing, now)
+    while len(states) > _TYPING_STATE_MAX_ENTRIES:
+        states.pop(next(iter(states)))
+
+
+def _remember_authz(sid, me, car, peer, room, raw_key, gen: int, ttl: float, typing=None) -> None:
+    """Store the result of a FULL authorization (never client input as such)."""
+    if ttl <= 0 or not sid or me is None or car is None or peer is None:
+        return
+    car_raw, peer_raw = raw_key
+    if len(car_raw) > _TYPING_KEY_MAX_LEN or len(peer_raw) > _TYPING_KEY_MAX_LEN:
+        return
+    if not peer_raw and car.seller_id == me.id:
+        # A seller who did not name the buyer is resolved dynamically ("the
+        # only counterpart"); it must be re-resolved every time.
+        return
+    now = _mono()
+    entry = {
+        "at": now,
+        "me": me.public_id,
+        "me_id": me.id,
+        "car_id": car.id,
+        "car_public_id": car.public_id,
+        "peer_id": peer.id,
+        "peer_public_id": peer.public_id,
+        "room": room,
+        "user_name": f"{me.first_name} {me.last_name}".strip(),
+        "state_key": (car.public_id, peer.public_id),
+    }
+    with _SOCKET_AUTH_LOCK:
+        if gen != _EVICT_GEN:
+            return  # something changed while we were validating: do not cache
+        rec = _SOCKET_AUTH.get(sid)
+        if rec is None or rec["user_public_id"] != me.public_id or rec["user_id"] != me.id:
+            return
+        cache = rec["authz"]
+        cache.pop(raw_key, None)
+        while len(cache) >= _TYPING_CACHE_MAX_ENTRIES:
+            cache.pop(next(iter(cache)))
+        cache[raw_key] = entry
+        if typing is not None:
+            _set_typing_state_locked(rec, entry["state_key"], typing, now)
+
+
+def evict_typing_authz(*, user_ids=(), car_ids=(), jtis=()) -> int:
+    """Drop cached typing authorizations affected by a committed change.
+
+    ``user_ids`` evicts every socket of those users and every cached
+    conversation whose peer is one of them; ``car_ids`` evicts the cached
+    conversations of those listings; ``jtis`` evicts the sockets that
+    authenticated with those tokens. Returns the number of sockets touched.
+    """
+    global _EVICT_GEN
+    users, cars, tokens = set(user_ids), set(car_ids), set(jtis)
+    touched = 0
+    with _SOCKET_AUTH_LOCK:
+        _EVICT_GEN += 1
+        for rec in _SOCKET_AUTH.values():
+            cache = rec.get("authz")
+            if not cache:
+                continue
+            if rec.get("user_id") in users or (rec.get("jti") and rec["jti"] in tokens):
+                cache.clear()
+                touched += 1
+                continue
+            stale = [
+                k
+                for k, e in cache.items()
+                if e["peer_id"] in users or e["car_id"] in cars
+            ]
+            for k in stale:
+                cache.pop(k, None)
+            touched += 1 if stale else 0
+    return touched
+
+
+_AUTHZ_EVICT_KEY = "_kk_typing_authz_evict"
+_AUTHZ_LISTENERS_INSTALLED = False
+
+
+def _install_authz_invalidation_listeners() -> None:
+    """Evict cached typing authorizations when a commit could revoke them.
+
+    Collected per session while it flushes and applied only AFTER the commit
+    (a rolled-back change evicts nothing; an eviction can never run before the
+    change it reacts to is visible to other threads).
+    """
+    global _AUTHZ_LISTENERS_INSTALLED
+    if _AUTHZ_LISTENERS_INSTALLED:
+        return
+    _AUTHZ_LISTENERS_INSTALLED = True
+
+    from sqlalchemy import event, inspect as sa_inspect
+    from sqlalchemy.orm import Session, object_session
+
+    from .models import BlockedUser, Car, TokenBlacklist
+
+    def _pending(target) -> dict | None:
+        sess = object_session(target)
+        if sess is None:
+            return None
+        return sess.info.setdefault(_AUTHZ_EVICT_KEY, {"u": set(), "c": set(), "j": set()})
+
+    def _changed(target, *names) -> bool:
+        state = sa_inspect(target)
+        return any(state.attrs[n].history.has_changes() for n in names)
+
+    def _add(target, kind, value) -> None:
+        pend = _pending(target)
+        if pend is not None and value is not None and value != "":
+            pend[kind].add(value)
+
+    def block_changed(_mapper, _conn, target):
+        _add(target, "u", target.blocker_id)
+        _add(target, "u", target.blocked_id)
+
+    def user_changed(_mapper, _conn, target):
+        if _changed(target, "is_active", "tokens_invalid_before", "public_id"):
+            _add(target, "u", target.id)
+
+    def user_deleted(_mapper, _conn, target):
+        _add(target, "u", target.id)
+
+    def token_revoked(_mapper, _conn, target):
+        _add(target, "u", target.user_id)
+        _add(target, "j", target.jti)
+
+    def car_changed(_mapper, _conn, target):
+        if _changed(target, "is_active", "status", "seller_id"):
+            _add(target, "c", target.id)
+
+    def car_deleted(_mapper, _conn, target):
+        _add(target, "c", target.id)
+
+    def message_deleted(_mapper, _conn, target):
+        _add(target, "c", target.car_id)
+
+    event.listen(BlockedUser, "after_insert", block_changed)
+    event.listen(BlockedUser, "after_delete", block_changed)
+    event.listen(User, "after_update", user_changed)
+    event.listen(User, "after_delete", user_deleted)
+    event.listen(TokenBlacklist, "after_insert", token_revoked)
+    event.listen(Car, "after_update", car_changed)
+    event.listen(Car, "after_delete", car_deleted)
+    event.listen(Message, "after_delete", message_deleted)
+
+    @event.listens_for(Session, "after_commit")
+    def _apply_evictions(session):
+        pend = session.info.pop(_AUTHZ_EVICT_KEY, None)
+        if pend and (pend["u"] or pend["c"] or pend["j"]):
+            evict_typing_authz(user_ids=pend["u"], car_ids=pend["c"], jtis=pend["j"])
+
+    @event.listens_for(Session, "after_rollback")
+    def _discard_evictions(session):
+        session.info.pop(_AUTHZ_EVICT_KEY, None)
+
+
 def register_socketio_handlers(socketio) -> None:
     """
     Register Socket.IO handlers on the given SocketIO instance.
@@ -260,6 +542,7 @@ def register_socketio_handlers(socketio) -> None:
         return
     if app_id is not None:
         setattr(socketio, "_kk_handlers_app_id", app_id)
+    _install_authz_invalidation_listeners()
 
     @socketio.on("connect")
     def _connect(auth=None):  # type: ignore[no-redef]
@@ -308,6 +591,7 @@ def register_socketio_handlers(socketio) -> None:
 
     @socketio.on("join_chat")
     def _join_chat(payload):  # type: ignore[no-redef]
+        gen = _evict_generation()
         me = _socket_current_user(optional=False)
         if not me:
             emit("error", {"message": "Unauthorized"})
@@ -363,6 +647,18 @@ def register_socketio_handlers(socketio) -> None:
 
         room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
         join_room(room)
+        # The full check above authorized this conversation: let this socket's
+        # typing events reuse it for a short, bounded time.
+        _remember_authz(
+            getattr(request, "sid", None),
+            me,
+            car,
+            peer,
+            room,
+            (car_id_raw, peer_public),
+            gen,
+            _typing_authz_ttl(),
+        )
         emit(
             "joined_chat",
             {
@@ -392,12 +688,38 @@ def register_socketio_handlers(socketio) -> None:
         """F-25: a typing indicator goes ONLY to the other participant of the
         (listing, seller, buyer) conversation it belongs to -- never to every
         socket that joined the listing."""
-        me = _socket_current_user(optional=False)
-        if not me:
-            return
+        sid = getattr(request, "sid", None)
+        ttl = _typing_authz_ttl()
         data = validate_input_sanitization(payload or {})
         car_id_raw = str(data.get("car_id") or "").strip()
         peer_public = str(data.get("peer_id") or data.get("receiver_id") or "").strip()
+
+        if ttl > 0 and car_id_raw:
+            # Fast path: no database access at all (see the block comment above
+            # _typing_fast_path). A miss -- or anything unusual -- falls through
+            # to the full validation below, which is the source of truth.
+            action, hit = _typing_fast_path(sid, car_id_raw, peer_public, typing, ttl)
+            if action == "drop":
+                return
+            if action == "emit":
+                emit(
+                    "typing",
+                    {
+                        "user_id": hit["me"],
+                        "user_name": hit["user_name"],
+                        "car_id": hit["car_public_id"],
+                        "peer_id": hit["peer_public_id"],
+                        "typing": typing,
+                    },
+                    room=hit["room"],
+                    include_self=False,
+                )
+                return
+
+        gen = _evict_generation()
+        me = _socket_current_user(optional=False)
+        if not me:
+            return
         if not car_id_raw:
             return
         car = resolve_car_for_chat(car_id_raw)
@@ -407,6 +729,9 @@ def register_socketio_handlers(socketio) -> None:
         if peer is None:
             return
         room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
+        _remember_authz(
+            sid, me, car, peer, room, (car_id_raw, peer_public), gen, ttl, typing=typing
+        )
         emit(
             "typing",
             {
