@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import re
 import secrets
 import threading
 import time
 from collections import deque
+from contextlib import contextmanager, nullcontext
 
 logger = logging.getLogger(__name__)
 
@@ -307,6 +309,36 @@ _TYPING_CACHE_MAX_ENTRIES = 16
 _TYPING_STATE_MAX_ENTRIES = 64
 _TYPING_KEY_MAX_LEN = 128
 
+# Maximum staleness of a cached authorization (what the TTL really bounds)
+# --------------------------------------------------------------------------
+# An entry is stamped with the instant its FULL validation STARTED (the moment
+# the permission data was read), never with the instant it finished. A slow
+# validation therefore cannot extend the entry's life: the bound is exactly
+# ``CHAT_TYPING_AUTHZ_TTL_SECONDS`` (default 15 s) after the data was read.
+# (Before this stamp was fixed the effective bound was TTL + validation time;
+# under load that was seconds, and it made 20 lock-step sockets expire in
+# phase -- see the "synchronized expiry" note in the tests.)
+#
+# Jitter: each entry also gets a lifetime drawn uniformly from
+# ``[TTL * (1 - J), TTL]`` (J = ``CHAT_TYPING_AUTHZ_JITTER``, default 0.2, clamped
+# to 0..0.5, 0 = exact TTL). Jitter only ever SHORTENS an entry, so the
+# maximum staleness is never longer than the TTL. It spreads out sockets that were
+# authorized at the same moment (a reconnect storm after a deploy). It cannot
+# de-phase sockets that all emit on one shared tick longer than the lifetime
+# window, which is why full checks are also paced by the limiter below.
+_TYPING_JITTER_DEFAULT = 0.2
+_TYPING_JITTER_MAX = 0.5
+
+# Full (database) validations of typing events are paced per process: at most
+# ``CHAT_TYPING_FULLCHECK_CONCURRENCY`` (default 4, 0 = unlimited, max 32) run at
+# once; the others wait (they are NEVER skipped or answered from the cache --
+# authorization is always completed, only the burst is flattened) for at most
+# ``_FULLCHECK_WAIT_SECONDS`` and then proceed anyway, so the limiter can slow a
+# typing indicator down but can never block or deny it.
+_FULLCHECK_LIMIT_DEFAULT = 4
+_FULLCHECK_LIMIT_MAX = 32
+_FULLCHECK_WAIT_SECONDS = 5.0
+
 _EVICT_GEN = 0  # bumped on every eviction (see _remember_authz)
 
 
@@ -326,6 +358,162 @@ def _typing_authz_ttl() -> float:
     if val != val or val <= 0:  # NaN, zero or negative: feature off
         return 0.0
     return min(val, _TYPING_AUTHZ_TTL_MAX)
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        val = float(raw)
+    except ValueError:
+        return default
+    return val
+
+
+def _typing_jitter() -> float:
+    val = _env_float("CHAT_TYPING_AUTHZ_JITTER", _TYPING_JITTER_DEFAULT)
+    if val != val or val <= 0:
+        return 0.0
+    return min(val, _TYPING_JITTER_MAX)
+
+
+def _entry_life(ttl: float) -> float:
+    """Lifetime of ONE entry: uniform in ``[ttl * (1 - jitter), ttl]``. Never
+    longer than ``ttl`` (jitter can only shorten, so the staleness bound holds)."""
+    jitter = _typing_jitter()
+    return ttl * (1.0 - jitter * random.random()) if jitter > 0 else ttl
+
+
+# ---------------------------------------------------------------------------
+# Aggregate counters (no user ids, tokens, listing ids or any personal data:
+# only event COUNTS by outcome). Read with ``typing_authz_stats()``; a summary
+# line of the non-zero deltas is logged at most every
+# ``CHAT_TYPING_AUTHZ_STATS_LOG_SECONDS`` (default 60, 0 = never) while typing
+# events arrive.
+#
+#   hit                       relayed from the cache (no SQL)
+#   miss_no_entry             nothing cached for this socket / conversation
+#   miss_expired              entry older than its lifetime
+#   miss_identity             entry does not belong to the bound user
+#   miss_unbound              socket unbound or its token expired
+#   miss_epoch_changed        Redis says a permission changed since caching
+#   miss_epoch_unavailable    Redis error / timeout / circuit open / keys missing
+#   miss_evicted_race         entry evicted while its epochs were being read
+#   drop_rate_limit           over the per-socket rate limit (before any DB work)
+#   drop_duplicate            duplicate typing state (not relayed)
+#   full_check                a full database validation ran
+#   full_denied               ... and refused the event
+#   store                     a validation result was cached
+#   skip_store_*              why a validation result was NOT cached
+#   limiter_waited            a full check had to wait for a free slot
+#   limiter_timeout           ... and gave up waiting (then ran anyway)
+#   peak_concurrent_full_checks   highest number of simultaneous full checks
+# ---------------------------------------------------------------------------
+_STATS_LOCK = threading.Lock()
+_STATS: dict[str, int] = {}
+_STATS_LOGGED: dict[str, int] = {}
+_STATS_LAST_LOG = 0.0
+_STATS_LOG_DEFAULT = 60.0
+_ACTIVE_FULL = 0
+_PEAK_FULL = {"all": 0, "window": 0}
+
+
+def _count(name: str, n: int = 1) -> None:
+    with _STATS_LOCK:
+        _STATS[name] = _STATS.get(name, 0) + n
+
+
+def typing_authz_stats(reset: bool = False) -> dict:
+    """Copy of the aggregate counters (see the block above)."""
+    with _STATS_LOCK:
+        snap = dict(_STATS)
+        snap["peak_concurrent_full_checks"] = _PEAK_FULL["all"]
+        if reset:
+            _STATS.clear()
+            _STATS_LOGGED.clear()
+            _PEAK_FULL["all"] = _PEAK_FULL["window"] = 0
+    return snap
+
+
+def _stats_tick() -> None:
+    """Log the non-zero counter deltas now and then (cheap unlocked check)."""
+    global _STATS_LAST_LOG
+    interval = max(0.0, _env_float("CHAT_TYPING_AUTHZ_STATS_LOG_SECONDS", _STATS_LOG_DEFAULT))
+    if interval <= 0:
+        return
+    now = _mono()
+    if _STATS_LAST_LOG and now - _STATS_LAST_LOG < interval:
+        return
+    with _STATS_LOCK:
+        if not _STATS_LAST_LOG:
+            _STATS_LAST_LOG = now  # first event: just open the window
+            return
+        if now - _STATS_LAST_LOG < interval:
+            return
+        elapsed = now - _STATS_LAST_LOG
+        _STATS_LAST_LOG = now
+        delta = {k: v - _STATS_LOGGED.get(k, 0) for k, v in _STATS.items()}
+        _STATS_LOGGED.update(_STATS)
+        peak = _PEAK_FULL["window"]
+        _PEAK_FULL["window"] = _ACTIVE_FULL
+    delta = {k: v for k, v in delta.items() if v}
+    if delta:
+        logger.info(
+            "typing authz stats (%.0fs): %s peak_concurrent_full_checks=%d",
+            elapsed,
+            " ".join(f"{k}={delta[k]}" for k in sorted(delta)),
+            peak,
+        )
+
+
+_FULLCHECK_SEM: tuple | None = None  # (limit, BoundedSemaphore)
+_FULLCHECK_SEM_LOCK = threading.Lock()
+
+
+def _fullcheck_limit() -> int:
+    val = _env_float("CHAT_TYPING_FULLCHECK_CONCURRENCY", float(_FULLCHECK_LIMIT_DEFAULT))
+    if val != val or val <= 0:
+        return 0
+    return min(int(val), _FULLCHECK_LIMIT_MAX)
+
+
+def _fullcheck_semaphore():
+    global _FULLCHECK_SEM
+    limit = _fullcheck_limit()
+    if limit <= 0:
+        return None
+    with _FULLCHECK_SEM_LOCK:
+        if _FULLCHECK_SEM is None or _FULLCHECK_SEM[0] != limit:
+            _FULLCHECK_SEM = (limit, threading.BoundedSemaphore(limit))
+        return _FULLCHECK_SEM[1]
+
+
+@contextmanager
+def _fullcheck_slot():
+    """Pace full database validations of typing events (see the constants).
+    Never skips or denies: after the bounded wait the check runs anyway."""
+    global _ACTIVE_FULL
+    sem = _fullcheck_semaphore()
+    got = False
+    if sem is not None:
+        got = sem.acquire(blocking=False)
+        if not got:
+            _count("limiter_waited")
+            got = sem.acquire(timeout=_FULLCHECK_WAIT_SECONDS)
+            if not got:
+                _count("limiter_timeout")
+    with _STATS_LOCK:
+        _ACTIVE_FULL += 1
+        _PEAK_FULL["all"] = max(_PEAK_FULL["all"], _ACTIVE_FULL)
+        _PEAK_FULL["window"] = max(_PEAK_FULL["window"], _ACTIVE_FULL)
+    try:
+        yield
+    finally:
+        with _STATS_LOCK:
+            _ACTIVE_FULL -= 1
+        if got:
+            sem.release()
 
 
 #
@@ -440,6 +628,7 @@ def _authz_token():
     """Taken BEFORE a full validation starts; handed to ``_remember_authz`` so a
     change that lands while we validate (here or in another worker) prevents
     caching what we are about to learn."""
+    started = _mono()  # the entry's age counts from HERE (when the data is read)
     pre_any = _NO_REDIS
     backend, client = _epoch_backend()
     if backend == "ok":
@@ -455,7 +644,7 @@ def _authz_token():
         pre_any = _NO_REDIS
     else:
         pre_any = None  # no Redis configured: local-only mode
-    return (_EVICT_GEN, pre_any)
+    return (_EVICT_GEN, pre_any, started)
 
 
 def _evict_generation():
@@ -485,21 +674,32 @@ def _epoch_snapshot(keys: list[str], pre_any):
     return list(got[1:])
 
 
-def _entry_epochs_current(entry: dict) -> bool:
-    """One Redis round trip, no SQL: do the epochs the entry was authorized
-    under still hold? Any doubt means ``False`` (-> full validation)."""
+def _entry_epochs_state(entry: dict) -> str:
+    """One Redis round trip, no SQL. ``"ok"`` only when the epochs the entry was
+    authorized under still hold; ``"changed"`` when Redis says they moved;
+    ``"unavailable"`` for any doubt (error, timeout, circuit open, missing key,
+    Redis vs. no-Redis mismatch). Anything but ``"ok"`` means a full validation."""
     keys = entry.get("epoch_keys")
     backend, client = _epoch_backend()
     if keys is None:
-        return backend == "off"  # entry created without Redis: only valid without it
+        # entry created without Redis: only valid without it
+        return "ok" if backend == "off" else "unavailable"
     if backend != "ok":
-        return False
+        return "unavailable"
     try:
         got = client.mget(keys)
     except Exception as exc:  # noqa: BLE001
         _redis_failed(exc)
-        return False
-    return len(got) == len(keys) and all(v is not None for v in got) and got == entry["epochs"]
+        return "unavailable"
+    if len(got) != len(keys) or any(v is None for v in got):
+        return "unavailable"
+    return "ok" if got == entry["epochs"] else "changed"
+
+
+def _entry_epochs_current(entry: dict) -> bool:
+    """Do the epochs the entry was authorized under still hold? Any doubt means
+    ``False`` (-> full validation)."""
+    return _entry_epochs_state(entry) == "ok"
 
 
 def publish_authz_change(*, user_ids=(), car_ids=(), jtis=(), global_keys=()) -> bool:
@@ -554,30 +754,37 @@ def _typing_fast_path(sid, car_raw: str, peer_raw: str, typing: bool, ttl: float
         rec = _SOCKET_AUTH.get(sid)
         if rec is None or rec["exp"] <= _now():
             # Unbound / guest, or expired: the full path decides (and closes).
+            _count("miss_unbound")
             return "miss", None
         times = rec["typing_times"]
         while times and now - times[0] > _TYPING_RATE_WINDOW:
             times.popleft()
         if len(times) >= _TYPING_RATE_MAX:
+            _count("drop_rate_limit")
             return "drop", None
         times.append(now)
         cache = rec["authz"]
         entry = cache.get((car_raw, peer_raw))
         if entry is None:
+            _count("miss_no_entry")
             return "miss", None
-        if (
-            now - entry["at"] > ttl
-            or entry["me"] != rec["user_public_id"]
-            or entry["me_id"] != rec["user_id"]
-        ):
+        # Expiry: never longer than the TTL, and never longer than this entry's
+        # own (jittered, only-shortened) lifetime.
+        if now - entry["at"] > min(ttl, entry.get("life", ttl)):
             cache.pop((car_raw, peer_raw), None)
+            _count("miss_expired")
+            return "miss", None
+        if entry["me"] != rec["user_public_id"] or entry["me_id"] != rec["user_id"]:
+            cache.pop((car_raw, peer_raw), None)
+            _count("miss_identity")
             return "miss", None
         state = rec["typing_state"].get(entry["state_key"])
         if state is not None:
             last, at = state
-            if typing and last is True and now - at < _TYPING_REFRESH_SECONDS:
-                return "drop", None
-            if (not typing) and last is False:
+            if (typing and last is True and now - at < _TYPING_REFRESH_SECONDS) or (
+                (not typing) and last is False
+            ):
+                _count("drop_duplicate")
                 return "drop", None
         return "check", dict(entry)
 
@@ -586,19 +793,23 @@ def _typing_confirm(sid, raw_key, entry: dict, typing: bool) -> bool:
     """Last gate before relaying a cached authorization: the cross-worker epochs
     must still hold (one Redis MGET, no SQL). On success the de-duplication
     state is updated; on failure the entry is dropped."""
-    ok = _entry_epochs_current(entry)
+    epochs = _entry_epochs_state(entry)
     with _SOCKET_AUTH_LOCK:
         rec = _SOCKET_AUTH.get(sid)
         if rec is None:
+            _count("miss_unbound")
             return False
-        if not ok:
+        if epochs != "ok":
             rec["authz"].pop(raw_key, None)
+            _count("miss_epoch_changed" if epochs == "changed" else "miss_epoch_unavailable")
             return False
         # an eviction may have raced with the Redis round trip
         if rec["authz"].get(raw_key) is None:
+            _count("miss_evicted_race")
             return False
         _set_typing_state_locked(rec, entry["state_key"], typing, _mono())
-        return True
+    _count("hit")
+    return True
 
 
 def _set_typing_state_locked(rec: dict, state_key, typing: bool, now: float) -> None:
@@ -615,27 +826,39 @@ def _remember_authz(sid, me, car, peer, room, raw_key, gen: int, ttl: float, typ
         return
     car_raw, peer_raw = raw_key
     if len(car_raw) > _TYPING_KEY_MAX_LEN or len(peer_raw) > _TYPING_KEY_MAX_LEN:
+        _count("skip_store_key_too_long")
         return
     if not peer_raw and car.seller_id == me.id:
         # A seller who did not name the buyer is resolved dynamically ("the
         # only counterpart"); it must be re-resolved every time.
+        _count("skip_store_dynamic_peer")
         return
-    local_gen, pre_any = gen
+    local_gen, pre_any, *_rest = gen
+    # The entry ages from the START of the validation that produced it (see the
+    # constants): a slow check must not lengthen the staleness bound.
+    started = _rest[0] if _rest else _mono()
     with _SOCKET_AUTH_LOCK:
         rec0 = _SOCKET_AUTH.get(sid)
         jti = (rec0 or {}).get("jti") or ""
     epoch_keys = epochs = None
     backend, _client = _epoch_backend()
     if backend == "down":
+        _count("skip_store_redis_down")
         return
     if backend == "ok":
         epoch_keys = _entry_epoch_keys(me, car, peer, jti)
         epochs = _epoch_snapshot(epoch_keys, pre_any)
         if epochs is None:
-            return  # a change happened meanwhile, or Redis is not trustworthy
+            # a change happened meanwhile, or Redis is not trustworthy
+            _count("skip_store_epoch")
+            return
     now = _mono()
+    if now - started > ttl:
+        _count("skip_store_too_slow")  # already past its own lifetime: useless
+        return
     entry = {
-        "at": now,
+        "at": started,
+        "life": _entry_life(ttl),
         "epoch_keys": epoch_keys,
         "epochs": epochs,
         "me": me.public_id,
@@ -650,9 +873,11 @@ def _remember_authz(sid, me, car, peer, room, raw_key, gen: int, ttl: float, typ
     }
     with _SOCKET_AUTH_LOCK:
         if local_gen != _EVICT_GEN:
+            _count("skip_store_evicted")
             return  # something changed while we were validating: do not cache
         rec = _SOCKET_AUTH.get(sid)
         if rec is None or rec["user_public_id"] != me.public_id or rec["user_id"] != me.id:
+            _count("skip_store_binding")
             return
         cache = rec["authz"]
         cache.pop(raw_key, None)
@@ -661,6 +886,7 @@ def _remember_authz(sid, me, car, peer, room, raw_key, gen: int, ttl: float, typ
         cache[raw_key] = entry
         if typing is not None:
             _set_typing_state_locked(rec, entry["state_key"], typing, now)
+    _count("store")
 
 
 def evict_typing_authz(*, user_ids=(), car_ids=(), jtis=()) -> int:
@@ -792,7 +1018,9 @@ def _install_authz_invalidation_listeners() -> None:
         _add(target, "j", target.jti)
 
     def car_changed(_mapper, _conn, target):
-        if _changed(target, "is_active", "status", "seller_id"):
+        # public_id: the cached entry holds the listing's public id and the room
+        # name derived from it, so a renamed listing must not keep authorizing.
+        if _changed(target, "is_active", "status", "seller_id", "public_id"):
             _add(target, "c", target.id)
 
     def car_deleted(_mapper, _conn, target):
@@ -1048,6 +1276,8 @@ def register_socketio_handlers(socketio) -> None:
         car_id_raw = str(data.get("car_id") or "").strip()
         peer_public = str(data.get("peer_id") or data.get("receiver_id") or "").strip()
 
+        if ttl > 0:
+            _stats_tick()
         if ttl > 0 and car_id_raw:
             # Fast path: no database access at all (see the block comment above
             # _typing_fast_path). A miss -- or anything unusual -- falls through
@@ -1072,19 +1302,31 @@ def register_socketio_handlers(socketio) -> None:
                 )
                 return
 
-        gen = _evict_generation() if ttl > 0 else None
-        me = _socket_current_user(optional=False)
-        if not me:
-            return
-        if not car_id_raw:
-            return
-        car = resolve_car_for_chat(car_id_raw)
-        if not car or not user_can_access_chat_room(me, car):
-            return
-        peer, _code = resolve_conversation_peer(me, car, peer_public)
-        if peer is None:
-            return
-        room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
+        # Full validation: paced per process so a burst of simultaneous misses
+        # (sockets that were authorized together expire together) does not open
+        # dozens of database connections at once. The limiter only delays; the
+        # whole chain below always runs. The generation token (and the entry's
+        # start time) is taken inside the slot, right before the data is read.
+        with _fullcheck_slot() if ttl > 0 else nullcontext():
+            if ttl > 0:
+                _count("full_check")
+            gen = _evict_generation() if ttl > 0 else None
+            me = _socket_current_user(optional=False)
+            if not me:
+                return
+            if not car_id_raw:
+                return
+            car = resolve_car_for_chat(car_id_raw)
+            if not car or not user_can_access_chat_room(me, car):
+                if ttl > 0:
+                    _count("full_denied")
+                return
+            peer, _code = resolve_conversation_peer(me, car, peer_public)
+            if peer is None:
+                if ttl > 0:
+                    _count("full_denied")
+                return
+            room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
         _remember_authz(
             sid, me, car, peer, room, (car_id_raw, peer_public), gen, ttl, typing=typing
         )
