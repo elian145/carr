@@ -372,7 +372,7 @@ class TestStalePermissions:
         assert [t["typing"] for t in _typing(s)] == [False]
 
     def test_ttl_backstops_changes_that_bypass_the_orm(self, ctx, world):
-        """A bulk SQL INSERT fires no ORM event (e.g. another worker). The
+        """A write on a bare engine connection fires no callback at all. The
         cached entry survives only until the TTL, then is re-authorized."""
         app, _sio, _c = ctx
         from sqlalchemy import insert
@@ -384,8 +384,9 @@ class TestStalePermissions:
         with app.app_context():
             me = User.query.filter_by(public_id=world.b1).first().id
             other = User.query.filter_by(public_id=world.s).first().id
-            db.session.execute(insert(BlockedUser).values(blocker_id=me, blocked_id=other))
-            db.session.commit()
+            # a bare engine connection: no Session at all, so no callback of any kind
+            with db.engine.begin() as conn:
+                conn.execute(insert(BlockedUser).values(blocker_id=me, blocked_id=other))
         b.emit("typing_start", {"car_id": world.car})
         assert [t["typing"] for t in _typing(s)] == [True], "within the TTL (documented bound)"
         real = sh._mono

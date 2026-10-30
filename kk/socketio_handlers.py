@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import os
+import re
+import secrets
 import threading
 import time
 from collections import deque
@@ -282,8 +284,11 @@ def _watch_socket_expiry(socketio, sid: str) -> None:
 #     are evicted at once, in this process, when a committed change could
 #     remove the permission: a block / unblock, a logout or token revocation,
 #     a deactivated / deleted account, a password change (token cutoff), or a
-#     deactivated / re-owned / deleted listing. The TTL is the backstop for
-#     other workers and for bulk SQL updates that bypass the ORM;
+#     deactivated / re-owned / deleted listing. With Redis configured the same
+#     change is published to every other worker (see "Cross-worker
+#     invalidation" below), including bulk / Core / raw-SQL statements that
+#     bypass the ORM; the TTL is the last backstop (a write on a bare engine
+#     connection, or a lost invalidation);
 #   * negative results are never cached, and a per-socket rate limit applies
 #     BEFORE any database work, so spam cannot be used to hit the database;
 #   * duplicate states are dropped (a second ``typing_start`` shortly after one
@@ -323,15 +328,224 @@ def _typing_authz_ttl() -> float:
     return min(val, _TYPING_AUTHZ_TTL_MAX)
 
 
-def _evict_generation() -> int:
-    return _EVICT_GEN
+#
+# Cross-worker invalidation (Redis / Valkey "epochs").
+#
+# Evicting in the committing process is not enough with WEB_CONCURRENCY > 1: the
+# socket that must stop typing may live in ANOTHER worker. So every committed
+# change that can revoke a permission also writes fresh random "epoch" values
+# to Redis (after the commit), and every cached entry remembers the epochs it
+# was authorized under:
+#
+#     kk:tauthz:v1:u:<user id>   a user changed (blocked / unblocked, deactivated,
+#                                deleted, token cutoff, logout) -- me OR the peer
+#     kk:tauthz:v1:c:<car id>    a listing changed (deactivated, re-owned,
+#                                deleted) or one of its messages was deleted
+#     kk:tauthz:v1:j:<jti>       this exact access token was revoked
+#     kk:tauthz:v1:g:<class>     a bulk / Core / raw-SQL statement (which fires
+#                                no ORM callback) touched users, cars, blocks,
+#                                messages or revoked tokens: coarse, any entry
+#     kk:tauthz:v1:any           bumped by EVERY change (closes the race where a
+#                                change commits while a slow validation runs)
+#     kk:tauthz:v1:boot          sentinel: if Redis lost its data, it is gone
+#
+# A warm typing event does ONE Redis MGET (no SQL, no DB connection) and relays
+# only if every epoch still matches. Any mismatch, missing key, Redis error or
+# timeout is treated as "revoked": the event falls back to the full database
+# validation. Redis problems therefore only cost speed, never security.
+# Epoch values are random tokens (never counters), set with an expiry far
+# above the maximum cache TTL, and created with SET NX before they are read, so
+# an evicted / flushed / expired key can only cause a miss, never a stale hit.
+#
+# Not configured (no REDIS_URL, e.g. one local process): only the in-process
+# eviction above plus the TTL apply.
+_REDIS_PREFIX = "kk:tauthz:v1:"
+_REDIS_EPOCH_TTL_SECONDS = 3600
+_REDIS_TIMEOUT_SECONDS = 0.25
+_REDIS_RETRY_AFTER_SECONDS = 5.0
+_REDIS_GLOBAL_KEYS = ("g:user", "g:car", "g:block", "g:msg", "g:tok")
+
+_REDIS_LOCK = threading.Lock()
+_REDIS_CLIENT: tuple | None = None  # (url, client)
+_REDIS_DOWN_UNTIL = 0.0
+_NO_REDIS = object()  # token marker: the epoch backend was not usable
+
+
+def _make_typing_redis(url: str):
+    """Build the shared client (patched in tests). Short timeouts: a slow Redis
+    must degrade to the database path, not stall typing events."""
+    import redis  # type: ignore
+
+    return redis.Redis.from_url(
+        url,
+        decode_responses=True,
+        socket_timeout=_REDIS_TIMEOUT_SECONDS,
+        socket_connect_timeout=_REDIS_TIMEOUT_SECONDS,
+        max_connections=48,
+    )
+
+
+def _epoch_backend():
+    """``("off", None)`` not configured, ``("down", None)`` circuit open after
+    an error, or ``("ok", client)``."""
+    global _REDIS_CLIENT
+    url = (os.environ.get("CHAT_TYPING_AUTHZ_REDIS_URL") or os.environ.get("REDIS_URL") or "").strip()
+    if not url:
+        return "off", None
+    if _mono() < _REDIS_DOWN_UNTIL:
+        return "down", None
+    with _REDIS_LOCK:
+        if _REDIS_CLIENT is None or _REDIS_CLIENT[0] != url:
+            try:
+                _REDIS_CLIENT = (url, _make_typing_redis(url))
+            except Exception:
+                logger.warning("typing authz: cannot create Redis client", exc_info=True)
+                return "down", None
+        return "ok", _REDIS_CLIENT[1]
+
+
+def _flush_local_authz() -> None:
+    """Forget every cached typing authorization in this process."""
+    global _EVICT_GEN
+    with _SOCKET_AUTH_LOCK:
+        _EVICT_GEN += 1
+        for rec in _SOCKET_AUTH.values():
+            rec["authz"].clear()
+
+
+def _redis_failed(exc: BaseException) -> None:
+    """Redis could not be trusted just now: stop using cached authorizations
+    (fall back to the database), and drop what we hold so nothing that missed an
+    invalidation during the outage can be reused after it."""
+    global _REDIS_DOWN_UNTIL
+    first = _mono() >= _REDIS_DOWN_UNTIL
+    _REDIS_DOWN_UNTIL = _mono() + _REDIS_RETRY_AFTER_SECONDS
+    _flush_local_authz()
+    if first:
+        logger.warning("typing authz: Redis unavailable (%s); using database validation", type(exc).__name__)
+
+
+def _epoch_key(name: str) -> str:
+    return _REDIS_PREFIX + name
+
+
+def _entry_epoch_keys(me, car, peer, jti: str) -> list[str]:
+    names = ["boot", *_REDIS_GLOBAL_KEYS, f"u:{me.id}", f"u:{peer.id}", f"c:{car.id}"]
+    if jti:
+        names.append(f"j:{jti}")
+    return [_epoch_key(n) for n in names]
+
+
+def _authz_token():
+    """Taken BEFORE a full validation starts; handed to ``_remember_authz`` so a
+    change that lands while we validate (here or in another worker) prevents
+    caching what we are about to learn."""
+    pre_any = _NO_REDIS
+    backend, client = _epoch_backend()
+    if backend == "ok":
+        try:
+            pipe = client.pipeline(transaction=True)
+            pipe.set(_epoch_key("any"), secrets.token_hex(8), nx=True, ex=_REDIS_EPOCH_TTL_SECONDS)
+            pipe.get(_epoch_key("any"))
+            pre_any = pipe.execute()[-1]
+        except Exception as exc:  # noqa: BLE001
+            _redis_failed(exc)
+            pre_any = _NO_REDIS
+    elif backend == "down":
+        pre_any = _NO_REDIS
+    else:
+        pre_any = None  # no Redis configured: local-only mode
+    return (_EVICT_GEN, pre_any)
+
+
+def _evict_generation():
+    """Kept for the callers that start a validation (see ``_authz_token``)."""
+    return _authz_token()
+
+
+def _epoch_snapshot(keys: list[str], pre_any):
+    """Atomically create-if-missing and read the epochs of ``keys``.
+
+    Returns the list of values, or ``None`` when it must not be cached (Redis
+    trouble, or some change happened since ``pre_any`` was read)."""
+    backend, client = _epoch_backend()
+    if backend != "ok" or pre_any is _NO_REDIS:
+        return None
+    try:
+        pipe = client.pipeline(transaction=True)
+        for k in keys:
+            pipe.set(k, secrets.token_hex(8), nx=True, ex=_REDIS_EPOCH_TTL_SECONDS)
+        pipe.mget([_epoch_key("any"), *keys])
+        got = pipe.execute()[-1]
+    except Exception as exc:  # noqa: BLE001
+        _redis_failed(exc)
+        return None
+    if got[0] is None or got[0] != pre_any or any(v is None for v in got[1:]):
+        return None
+    return list(got[1:])
+
+
+def _entry_epochs_current(entry: dict) -> bool:
+    """One Redis round trip, no SQL: do the epochs the entry was authorized
+    under still hold? Any doubt means ``False`` (-> full validation)."""
+    keys = entry.get("epoch_keys")
+    backend, client = _epoch_backend()
+    if keys is None:
+        return backend == "off"  # entry created without Redis: only valid without it
+    if backend != "ok":
+        return False
+    try:
+        got = client.mget(keys)
+    except Exception as exc:  # noqa: BLE001
+        _redis_failed(exc)
+        return False
+    return len(got) == len(keys) and all(v is not None for v in got) and got == entry["epochs"]
+
+
+def publish_authz_change(*, user_ids=(), car_ids=(), jtis=(), global_keys=()) -> bool:
+    """Tell every worker that these things changed (call AFTER the commit).
+
+    The ``any`` key is written first inside one MULTI/EXEC, so a validation that
+    straddles the change always sees ``any`` move. Returns ``False`` when Redis
+    could not be written (this process then drops all its cached entries; other
+    workers fall back to the TTL and to their own failing Redis calls).
+    """
+    backend, client = _epoch_backend()
+    if backend == "off":
+        return True
+    # Writers ignore the "down" circuit: changes are rare and must be tried.
+    if client is None:
+        with _REDIS_LOCK:
+            if _REDIS_CLIENT is None:
+                return False
+            client = _REDIS_CLIENT[1]
+    names = (
+        ["any"]
+        + [f"u:{i}" for i in user_ids]
+        + [f"c:{i}" for i in car_ids]
+        + [f"j:{j}" for j in jtis]
+        + list(global_keys)
+    )
+    for attempt in (1, 2):
+        try:
+            token = secrets.token_hex(8)
+            pipe = client.pipeline(transaction=True)
+            for n in names:
+                pipe.set(_epoch_key(n), token, ex=_REDIS_EPOCH_TTL_SECONDS)
+            pipe.execute()
+            return True
+        except Exception as exc:  # noqa: BLE001
+            if attempt == 2:
+                _redis_failed(exc)
+    return False
 
 
 def _typing_fast_path(sid, car_raw: str, peer_raw: str, typing: bool, ttl: float):
     """In-memory decision for a typing event; NO database access.
 
-    Returns ``("emit", entry)`` (relay it), ``("drop", None)`` (rate limited or
-    duplicate) or ``("miss", None)`` (run the full validation).
+    Returns ``("check", entry)`` (cached and not a duplicate: confirm its epochs,
+    then relay), ``("drop", None)`` (rate limited or duplicate) or
+    ``("miss", None)`` (run the full validation).
     """
     if not sid:
         return "miss", None
@@ -365,8 +579,26 @@ def _typing_fast_path(sid, car_raw: str, peer_raw: str, typing: bool, ttl: float
                 return "drop", None
             if (not typing) and last is False:
                 return "drop", None
-        _set_typing_state_locked(rec, entry["state_key"], typing, now)
-        return "emit", dict(entry)
+        return "check", dict(entry)
+
+
+def _typing_confirm(sid, raw_key, entry: dict, typing: bool) -> bool:
+    """Last gate before relaying a cached authorization: the cross-worker epochs
+    must still hold (one Redis MGET, no SQL). On success the de-duplication
+    state is updated; on failure the entry is dropped."""
+    ok = _entry_epochs_current(entry)
+    with _SOCKET_AUTH_LOCK:
+        rec = _SOCKET_AUTH.get(sid)
+        if rec is None:
+            return False
+        if not ok:
+            rec["authz"].pop(raw_key, None)
+            return False
+        # an eviction may have raced with the Redis round trip
+        if rec["authz"].get(raw_key) is None:
+            return False
+        _set_typing_state_locked(rec, entry["state_key"], typing, _mono())
+        return True
 
 
 def _set_typing_state_locked(rec: dict, state_key, typing: bool, now: float) -> None:
@@ -388,9 +620,24 @@ def _remember_authz(sid, me, car, peer, room, raw_key, gen: int, ttl: float, typ
         # A seller who did not name the buyer is resolved dynamically ("the
         # only counterpart"); it must be re-resolved every time.
         return
+    local_gen, pre_any = gen
+    with _SOCKET_AUTH_LOCK:
+        rec0 = _SOCKET_AUTH.get(sid)
+        jti = (rec0 or {}).get("jti") or ""
+    epoch_keys = epochs = None
+    backend, _client = _epoch_backend()
+    if backend == "down":
+        return
+    if backend == "ok":
+        epoch_keys = _entry_epoch_keys(me, car, peer, jti)
+        epochs = _epoch_snapshot(epoch_keys, pre_any)
+        if epochs is None:
+            return  # a change happened meanwhile, or Redis is not trustworthy
     now = _mono()
     entry = {
         "at": now,
+        "epoch_keys": epoch_keys,
+        "epochs": epochs,
         "me": me.public_id,
         "me_id": me.id,
         "car_id": car.id,
@@ -402,7 +649,7 @@ def _remember_authz(sid, me, car, peer, room, raw_key, gen: int, ttl: float, typ
         "state_key": (car.public_id, peer.public_id),
     }
     with _SOCKET_AUTH_LOCK:
-        if gen != _EVICT_GEN:
+        if local_gen != _EVICT_GEN:
             return  # something changed while we were validating: do not cache
         rec = _SOCKET_AUTH.get(sid)
         if rec is None or rec["user_public_id"] != me.public_id or rec["user_id"] != me.id:
@@ -451,6 +698,49 @@ def evict_typing_authz(*, user_ids=(), car_ids=(), jtis=()) -> int:
 _AUTHZ_EVICT_KEY = "_kk_typing_authz_evict"
 _AUTHZ_LISTENERS_INSTALLED = False
 
+# Columns whose bulk UPDATE can change who may type: account state / token
+# cutoff / identity of a user, and the visibility / ownership of a listing.
+_USER_AUTH_COLUMNS = frozenset({"is_active", "tokens_invalid_before", "public_id"})
+_CAR_AUTH_COLUMNS = frozenset({"is_active", "status", "seller_id", "public_id"})
+_RAW_DML_RE = re.compile(
+    r"""^\s*(insert\s+(?:or\s+\w+\s+)?into|update(?:\s+or\s+\w+)?|delete\s+from)\s+
+        ((?:"[^"]+"|`[^`]+`|\w+)(?:\.(?:"[^"]+"|`[^`]+`|\w+))?)""",
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+def _dml_kind_and_table(match) -> tuple[str, str]:
+    word = match.group(1).lower()
+    kind = "insert" if word.startswith("insert") else "delete" if word.startswith("delete") else "update"
+    return kind, match.group(2).split(".")[-1].strip('"`').lower()
+
+
+def _dml_columns(stmt, params) -> set[str] | None:
+    """Columns an UPDATE sets, or ``None`` when that cannot be told (then the
+    caller invalidates)."""
+    names: set[str] = set()
+    vals = getattr(stmt, "_values", None)
+    if vals:
+        names |= {str(getattr(k, "key", k)) for k in vals}
+    ordered = getattr(stmt, "_ordered_values", None)
+    if ordered:
+        names |= {str(getattr(k, "key", k)) for k, _v in ordered}
+    if isinstance(params, dict):
+        names |= {str(getattr(k, "key", k)) for k in params}
+    elif isinstance(params, (list, tuple)):
+        for p in params:
+            if isinstance(p, dict):
+                names |= {str(getattr(k, "key", k)) for k in p}
+    return names or None
+
+
+def _raw_update_columns(sql: str) -> set[str] | None:
+    m = re.search(r"\bset\b(.*?)(?:\bwhere\b|$)", sql, re.IGNORECASE | re.DOTALL)
+    if not m:
+        return None
+    cols = {c.strip().strip('"`').split(".")[-1].lower() for c in re.findall(r"([\w\".`]+)\s*=", m.group(1))}
+    return cols or None
+
 
 def _install_authz_invalidation_listeners() -> None:
     """Evict cached typing authorizations when a commit could revoke them.
@@ -473,7 +763,9 @@ def _install_authz_invalidation_listeners() -> None:
         sess = object_session(target)
         if sess is None:
             return None
-        return sess.info.setdefault(_AUTHZ_EVICT_KEY, {"u": set(), "c": set(), "j": set()})
+        return sess.info.setdefault(
+            _AUTHZ_EVICT_KEY, {"u": set(), "c": set(), "j": set(), "g": set()}
+        )
 
     def _changed(target, *names) -> bool:
         state = sa_inspect(target)
@@ -518,11 +810,73 @@ def _install_authz_invalidation_listeners() -> None:
     event.listen(Car, "after_delete", car_deleted)
     event.listen(Message, "after_delete", message_deleted)
 
+    from sqlalchemy.sql.dml import Delete, Insert, Update
+
+    # Table names of the models above, and what a bulk statement on them means.
+    _tables = {
+        User.__tablename__: ("g:user", {"update", "delete"}, _USER_AUTH_COLUMNS),
+        Car.__tablename__: ("g:car", {"update", "delete"}, _CAR_AUTH_COLUMNS),
+        BlockedUser.__tablename__: ("g:block", {"insert", "update", "delete"}, None),
+        Message.__tablename__: ("g:msg", {"delete"}, None),
+        TokenBlacklist.__tablename__: ("g:tok", {"insert", "update", "delete"}, None),
+    }
+
+    def _bulk_classes(state) -> set[str]:
+        """Bulk / Core / raw-SQL writes fire NO mapper callbacks, so they are
+        recognised here (``Session.execute`` / ``Query.update`` / ``.delete``)
+        and invalidate coarsely. When in doubt, invalidate."""
+        stmt = state.statement
+        kind = table = None
+        cols = None
+        if isinstance(stmt, (Insert, Update, Delete)):
+            # (ORM-annotated subclasses have names like "AnnotatedInsert")
+            kind = (
+                "insert" if isinstance(stmt, Insert) else "update" if isinstance(stmt, Update) else "delete"
+            )
+            table = getattr(getattr(stmt, "table", None), "name", None)
+            cols = _dml_columns(stmt, state.parameters)
+        else:
+            m = _RAW_DML_RE.match(str(getattr(stmt, "text", stmt) or ""))
+            if m is None:
+                return set()
+            kind, table = _dml_kind_and_table(m)
+            cols = _raw_update_columns(str(stmt)) if kind == "update" else None
+        spec = _tables.get(table)
+        if spec is None or kind not in spec[1]:
+            return set()
+        key, _kinds, watched = spec
+        if kind == "update" and watched is not None and cols is not None and not (cols & watched):
+            return set()  # e.g. last_login / counters: no permission involved
+        return {key}
+
+    @event.listens_for(Session, "do_orm_execute")
+    def _note_bulk_statements(state):
+        if state.is_select:
+            return
+        try:
+            classes = _bulk_classes(state)
+        except Exception:  # noqa: BLE001 - never break a write because of this
+            logger.debug("typing authz: could not classify statement", exc_info=True)
+            classes = {"g:user", "g:car", "g:block", "g:msg", "g:tok"}
+        if classes:
+            pend = state.session.info.setdefault(
+                _AUTHZ_EVICT_KEY, {"u": set(), "c": set(), "j": set(), "g": set()}
+            )
+            pend["g"].update(classes)
+
     @event.listens_for(Session, "after_commit")
     def _apply_evictions(session):
         pend = session.info.pop(_AUTHZ_EVICT_KEY, None)
-        if pend and (pend["u"] or pend["c"] or pend["j"]):
+        if pend and (pend["u"] or pend["c"] or pend["j"] or pend.get("g")):
+            if pend.get("g"):
+                _flush_local_authz()  # coarse: any entry may be affected
             evict_typing_authz(user_ids=pend["u"], car_ids=pend["c"], jtis=pend["j"])
+            publish_authz_change(
+                user_ids=pend["u"],
+                car_ids=pend["c"],
+                jtis=pend["j"],
+                global_keys=sorted(pend.get("g", ())),
+            )
 
     @event.listens_for(Session, "after_rollback")
     def _discard_evictions(session):
@@ -591,7 +945,7 @@ def register_socketio_handlers(socketio) -> None:
 
     @socketio.on("join_chat")
     def _join_chat(payload):  # type: ignore[no-redef]
-        gen = _evict_generation()
+        gen = _evict_generation() if _typing_authz_ttl() > 0 else None
         me = _socket_current_user(optional=False)
         if not me:
             emit("error", {"message": "Unauthorized"})
@@ -701,7 +1055,9 @@ def register_socketio_handlers(socketio) -> None:
             action, hit = _typing_fast_path(sid, car_id_raw, peer_public, typing, ttl)
             if action == "drop":
                 return
-            if action == "emit":
+            if action == "check" and _typing_confirm(
+                sid, (car_id_raw, peer_public), hit, typing
+            ):
                 emit(
                     "typing",
                     {
@@ -716,7 +1072,7 @@ def register_socketio_handlers(socketio) -> None:
                 )
                 return
 
-        gen = _evict_generation()
+        gen = _evict_generation() if ttl > 0 else None
         me = _socket_current_user(optional=False)
         if not me:
             return
