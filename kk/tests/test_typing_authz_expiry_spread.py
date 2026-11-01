@@ -50,6 +50,7 @@ from test_typing_authz_cache import (  # noqa: F401
     _per_event_session_teardown,
     _ttl,
     _typing,
+    orm_chain_only,
 )
 from test_typing_authz_redis import fake, other_worker  # noqa: F401  (fixture + helper)
 
@@ -236,7 +237,10 @@ class TestCounters:
         assert got["full_check"] == 2 and got["store"] == 2
         assert got["hit"] == 2 and got["drop_duplicate"] == 1
         assert "full_denied" not in got
-        assert got["peak_concurrent_full_checks"] == 1
+        # every full check was served either by the ORM chain (which takes a limiter
+        # slot, so it shows in the peak) or by the one-statement validator (which does not)
+        assert got.get("full_check_legacy", 0) + got.get("full_check_fast", 0) == got["full_check"]
+        assert got["peak_concurrent_full_checks"] == (1 if got.get("full_check_legacy") else 0)
 
     def test_rate_limit_drops_are_counted(self, ctx, world):
         from kk import socketio_handlers as sh
@@ -246,7 +250,11 @@ class TestCounters:
             sh.typing_authz_stats(reset=True)
             for i in range(6):
                 b.emit("typing_start" if i % 2 == 0 else "typing_stop", {"car_id": world.car})
-            assert sh.typing_authz_stats()["drop_rate_limit"] == 3
+            got = sh.typing_authz_stats()
+            # events 1-3 are budgeted; the 4th (a stop of the indicator the 3rd
+            # opened) is exempt so an indicator can never be left on by the limit;
+            # the 5th (start) and 6th (stop of a closed indicator) are dropped.
+            assert got["drop_rate_limit"] == 2 and got["stop_exempt_rate_limit"] == 1
 
     def test_denials_are_counted_and_never_cached(self, ctx, world):
         from kk import socketio_handlers as sh
@@ -408,7 +416,10 @@ class TestFullCheckLimiter:
     def test_a_saturated_limiter_delays_but_never_skips_or_loosens_authorization(self, ctx, world):
         from kk import socketio_handlers as sh
 
-        with _ttl(15), _env(CHAT_TYPING_FULLCHECK_CONCURRENCY=2), patch.object(sh, "_FULLCHECK_WAIT_SECONDS", 0.1):
+        # The limiter guards the ORM chain; with the validator switched on that chain is
+        # the fallback, so force it (the validator's own busy/unavailable handling and its
+        # interplay with the limiter are covered in test_typing_authz_validator.py).
+        with _ttl(15), orm_chain_only(), _env(CHAT_TYPING_FULLCHECK_CONCURRENCY=2), patch.object(sh, "_FULLCHECK_WAIT_SECONDS", 0.1):
             s, b = _pair(ctx, world, join="seller_only")  # buyer cold
             x = _sock(ctx, world.tok[world.x])  # a stranger
             sem = sh._fullcheck_semaphore()

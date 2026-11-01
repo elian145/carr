@@ -105,13 +105,9 @@ def _extract_raw_token() -> tuple[str | None, str | None]:
     return None, None
 
 
-def _verify_access_token(raw: str | None) -> tuple[dict | None, str | None]:
-    """Validate an access token for a socket. Returns ``(claims, error_code)``.
-
-    ``error_code`` is ``token_expired`` / ``token_revoked`` / ``invalid_token``.
-    Expiry is judged by [_now] so a long-lived connection is checked against
-    the same clock the expiry timer uses.
-    """
+def _decode_access_claims(raw: str | None) -> tuple[dict | None, str | None]:
+    """The database-free half of ``_verify_access_token``: signature, type and
+    expiry. Returns ``(claims, error_code)``."""
     if not raw:
         return None, "invalid_token"
     try:
@@ -125,6 +121,19 @@ def _verify_access_token(raw: str | None) -> tuple[dict | None, str | None]:
         return None, "invalid_token"
     if float(exp) <= _now():
         return None, "token_expired"
+    return claims, None
+
+
+def _verify_access_token(raw: str | None) -> tuple[dict | None, str | None]:
+    """Validate an access token for a socket. Returns ``(claims, error_code)``.
+
+    ``error_code`` is ``token_expired`` / ``token_revoked`` / ``invalid_token``.
+    Expiry is judged by [_now] so a long-lived connection is checked against
+    the same clock the expiry timer uses.
+    """
+    claims, err = _decode_access_claims(raw)
+    if err is not None:
+        return None, err
     try:
         verify_token_not_blocklisted({}, claims)
     except RevokedTokenError:
@@ -197,6 +206,10 @@ def _bind_socket(sid: str, user: User, claims: dict, raw: str) -> None:
             "authz": {},
             "typing_state": {},
             "typing_times": deque(),
+            # Conversations this socket has told the other side it is typing in
+            # (raw key -> what a closing "typing: false" needs). See
+            # ``_mark_typing_open``.
+            "typing_open": {},
         }
 
 
@@ -205,6 +218,62 @@ def _unbind_socket(sid: str | None) -> dict | None:
         return None
     with _SOCKET_AUTH_LOCK:
         return _SOCKET_AUTH.pop(sid, None)
+
+
+def _close_open_typing(sid: str, rec: dict) -> None:
+    """A client whose connection simply goes away (app killed, network lost)
+    while it had told someone it was typing would leave that indicator on
+    forever: nothing else ever sends the missing ``typing_stop``. Send it now,
+    into the same conversation room the ``typing_start`` went to (so exactly
+    the same audience, and the only effect is that an indicator turns off).
+
+    Used ONLY for a plain disconnect. A socket that the server closes because
+    its token expired / was revoked / its account was cut off is unbound first
+    and says NOTHING more (an existing guarantee, pinned by tests). Never
+    raises."""
+    open_ = rec.get("typing_open") or {}
+    if not open_:
+        return
+    infos = list(open_.values())
+    open_.clear()
+    try:
+        from .extensions import socketio as _sio
+
+        for info in infos:
+            _sio.emit(
+                "typing",
+                {
+                    "user_id": info["user_id"],
+                    "user_name": info["user_name"],
+                    "car_id": info["car_id"],
+                    "peer_id": info["peer_id"],
+                    "typing": False,
+                },
+                room=info["room"],
+                skip_sid=sid,
+            )
+        _count("typing_closed_on_unbind", len(infos))
+    except Exception:
+        logger.debug("typing close on unbind failed", exc_info=True)
+
+
+def _mark_typing_open(sid, raw_key, typing: bool, info: dict) -> None:
+    """Remember (or forget) that this socket currently shows a typing
+    indicator in the conversation ``raw_key``. Bounded; used to (a) never
+    rate-limit the ``typing_stop`` of an open indicator and (b) turn the
+    indicator off if the socket disappears."""
+    if not sid:
+        return
+    with _SOCKET_AUTH_LOCK:
+        rec = _SOCKET_AUTH.get(sid)
+        if rec is None:
+            return
+        open_ = rec["typing_open"]
+        open_.pop(raw_key, None)
+        if typing:
+            open_[raw_key] = info
+            while len(open_) > _TYPING_STATE_MAX_ENTRIES:
+                open_.pop(next(iter(open_)))
 
 
 def _expire_socket(sid: str | None, reason: str) -> bool:
@@ -297,8 +366,11 @@ def _watch_socket_expiry(socketio, sid: str) -> None:
 #     was relayed, or a ``typing_stop`` when stopped is already known);
 #   * ``send_message`` / ``join_chat`` keep their full per-event validation.
 #
-# ``CHAT_TYPING_AUTHZ_TTL_SECONDS=0`` restores the previous behaviour exactly
-# (full validation per event, no de-duplication, no rate limit).
+# ``CHAT_TYPING_AUTHZ_TTL_SECONDS=0`` restores the previous per-event behaviour
+# (full ORM validation per event, no de-duplication, no rate limit, no
+# validator). The one thing that applies regardless is the safety net for a
+# client that vanishes mid-typing: the open indicator is turned off on a plain
+# disconnect (see ``_close_open_typing``).
 # ---------------------------------------------------------------------------
 _TYPING_AUTHZ_TTL_DEFAULT = 15.0
 _TYPING_AUTHZ_TTL_MAX = 120.0
@@ -402,8 +474,20 @@ def _entry_life(ttl: float) -> float:
 #   miss_evicted_race         entry evicted while its epochs were being read
 #   drop_rate_limit           over the per-socket rate limit (before any DB work)
 #   drop_duplicate            duplicate typing state (not relayed)
-#   full_check                a full database validation ran
+#   full_check                a full database validation was needed (either route)
+#   full_check_fast           ... served by the one-statement validator on its
+#                             warm dedicated connection (typing_authz_validator)
+#   full_check_legacy         ... served by the ORM chain (validator off,
+#                             deferred or unavailable): a NEW connection each
+#   fast_defer_<why>          the validator did not allow, so the ORM chain
+#                             decided (denials always take that route)
+#   fast_busy / fast_unavailable / fast_error   the dedicated connection was
+#                             busy / down / failed (ORM chain used)
 #   full_denied               ... and refused the event
+#   typing_closed_on_unbind   "typing: false" sent for an indicator left open
+#                             by a socket that disconnected / expired
+#   stop_exempt_rate_limit    a typing_stop that the rate limit would have
+#                             dropped but that closes an open indicator
 #   store                     a validation result was cached
 #   skip_store_*              why a validation result was NOT cached
 #   limiter_waited            a full check had to wait for a free slot
@@ -760,8 +844,15 @@ def _typing_fast_path(sid, car_raw: str, peer_raw: str, typing: bool, ttl: float
         while times and now - times[0] > _TYPING_RATE_WINDOW:
             times.popleft()
         if len(times) >= _TYPING_RATE_MAX:
-            _count("drop_rate_limit")
-            return "drop", None
+            # The one event that is NEVER dropped by the rate limit is the
+            # ``typing_stop`` of an indicator this socket has open: dropping it
+            # would leave "typing..." on the other screen forever. It is bounded
+            # by the starts that were relayed, and a stop for a conversation
+            # that is not open is still limited like everything else.
+            if typing or (car_raw, peer_raw) not in rec["typing_open"]:
+                _count("drop_rate_limit")
+                return "drop", None
+            _count("stop_exempt_rate_limit")
         times.append(now)
         cache = rec["authz"]
         entry = cache.get((car_raw, peer_raw))
@@ -810,6 +901,82 @@ def _typing_confirm(sid, raw_key, entry: dict, typing: bool) -> bool:
         _set_typing_state_locked(rec, entry["state_key"], typing, _mono())
     _count("hit")
     return True
+
+
+def _fast_validator_enabled() -> bool:
+    """Is the one-statement validator usable for this application database?"""
+    try:
+        from . import typing_authz_validator as tv
+
+        if tv.mode() == "off":
+            return False
+        return tv.enabled(db.engine.url)
+    except Exception:
+        logger.debug("typing authz: fast validator check failed", exc_info=True)
+        return False
+
+
+def _jti_in_redis_blocklist(jti: str) -> bool:
+    """Same Redis lookup the JWT blocklist loader does first (``bl:jti:<jti>``;
+    a hit is authoritative, an error is ignored because the database is read
+    as well), on the short-timeout typing client when it is the same Redis."""
+    backend, client = _epoch_backend()
+    typing_url = (os.environ.get("CHAT_TYPING_AUTHZ_REDIS_URL") or os.environ.get("REDIS_URL") or "").strip()
+    if backend == "ok" and typing_url == (os.environ.get("REDIS_URL") or "").strip():
+        try:
+            return bool(client.exists(f"bl:jti:{jti}"))
+        except Exception as exc:  # noqa: BLE001
+            _redis_failed(exc)
+            return False
+    try:
+        from .routes.auth import _redis_client as _loader_redis_client
+
+        r = _loader_redis_client()
+        return bool(r is not None and r.exists(f"bl:jti:{jti}"))
+    except Exception:
+        return False
+
+
+def _fast_validate(sid, car_raw: str, peer_raw: str):
+    """One database round trip for a full typing validation, or ``None`` when
+    the ORM chain must decide (see kk/typing_authz_validator.py). Never raises
+    and never denies."""
+    from . import typing_authz_validator as tv
+
+    try:
+        rec = _bound_socket(sid)
+        if rec is None:
+            _count("fast_defer_unbound")
+            return None
+        claims, err = _decode_access_claims(rec["token"])
+        if err is not None or claims is None:
+            _count("fast_defer_token")
+            return None
+        jti = str(claims.get("jti") or "")
+        if jti and _jti_in_redis_blocklist(jti):
+            _count("fast_defer_revoked")
+            return None
+        verdict, reason = tv.validate(
+            db.engine.url,
+            user_id=rec["user_id"],
+            user_public_id=rec["user_public_id"],
+            claims=claims,
+            car_raw=car_raw,
+            peer_raw=peer_raw,
+        )
+        if verdict is None:
+            _count(f"fast_defer_{reason}")
+        return verdict
+    except tv.ValidatorBusy:
+        _count("fast_busy")
+        return None
+    except tv.ValidatorUnavailable:
+        _count("fast_unavailable")
+        return None
+    except Exception:
+        logger.warning("typing authz: fast validator failed", exc_info=True)
+        _count("fast_error")
+        return None
 
 
 def _set_typing_state_locked(rec: dict, state_key, typing: bool, now: float) -> None:
@@ -1168,7 +1335,10 @@ def register_socketio_handlers(socketio) -> None:
 
     @socketio.on("disconnect")
     def _disconnect(*_args):  # type: ignore[no-redef]
-        _unbind_socket(getattr(request, "sid", None))
+        sid = getattr(request, "sid", None)
+        rec = _unbind_socket(sid)
+        if rec is not None:
+            _close_open_typing(sid, rec)  # plain disconnects only (see there)
         return
 
     @socketio.on("join_chat")
@@ -1288,6 +1458,18 @@ def register_socketio_handlers(socketio) -> None:
             if action == "check" and _typing_confirm(
                 sid, (car_id_raw, peer_public), hit, typing
             ):
+                _mark_typing_open(
+                    sid,
+                    (car_id_raw, peer_public),
+                    typing,
+                    {
+                        "user_id": hit["me"],
+                        "user_name": hit["user_name"],
+                        "car_id": hit["car_public_id"],
+                        "peer_id": hit["peer_public_id"],
+                        "room": hit["room"],
+                    },
+                )
                 emit(
                     "typing",
                     {
@@ -1302,39 +1484,72 @@ def register_socketio_handlers(socketio) -> None:
                 )
                 return
 
-        # Full validation: paced per process so a burst of simultaneous misses
-        # (sockets that were authorized together expire together) does not open
-        # dozens of database connections at once. The limiter only delays; the
-        # whole chain below always runs. The generation token (and the entry's
-        # start time) is taken inside the slot, right before the data is read.
-        with _fullcheck_slot() if ttl > 0 else nullcontext():
-            if ttl > 0:
-                _count("full_check")
-            gen = _evict_generation() if ttl > 0 else None
-            me = _socket_current_user(optional=False)
-            if not me:
-                return
-            if not car_id_raw:
-                return
-            car = resolve_car_for_chat(car_id_raw)
-            if not car or not user_can_access_chat_room(me, car):
+        gen = me = car = peer = room = None
+        counted = False
+        if ttl > 0 and car_id_raw and _fast_validator_enabled():
+            # One SELECT on a warm, dedicated connection (kk/typing_authz_validator.py):
+            # the same rules as the ORM chain below, but it can only ALLOW; every
+            # other outcome (and any trouble) falls through to that chain, which
+            # stays the authority for denials.
+            _count("full_check")
+            counted = True
+            gen = _evict_generation()  # taken BEFORE the data is read
+            fast = _fast_validate(sid, car_id_raw, peer_public)
+            if fast is not None:
+                me, car, peer = fast.me, fast.car, fast.peer
+                room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
+                _count("full_check_fast")
+
+        if me is None:
+            # Full validation through the ORM: paced per process so a burst of
+            # simultaneous misses (sockets that were authorized together expire
+            # together) does not open dozens of database connections at once. The
+            # limiter only delays; the whole chain below always runs. The
+            # generation token (and the entry's start time) is taken inside the
+            # slot, right before the data is read.
+            with _fullcheck_slot() if ttl > 0 else nullcontext():
                 if ttl > 0:
-                    _count("full_denied")
-                return
-            peer, _code = resolve_conversation_peer(me, car, peer_public)
-            if peer is None:
-                if ttl > 0:
-                    _count("full_denied")
-                return
-            room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
+                    if not counted:
+                        _count("full_check")
+                    _count("full_check_legacy")
+                gen = _evict_generation() if ttl > 0 else None
+                me = _socket_current_user(optional=False)
+                if not me:
+                    return
+                if not car_id_raw:
+                    return
+                car = resolve_car_for_chat(car_id_raw)
+                if not car or not user_can_access_chat_room(me, car):
+                    if ttl > 0:
+                        _count("full_denied")
+                    return
+                peer, _code = resolve_conversation_peer(me, car, peer_public)
+                if peer is None:
+                    if ttl > 0:
+                        _count("full_denied")
+                    return
+                room = room_for_conversation(car.public_id, me.public_id, peer.public_id)
         _remember_authz(
             sid, me, car, peer, room, (car_id_raw, peer_public), gen, ttl, typing=typing
+        )
+        user_name = f"{me.first_name} {me.last_name}".strip()
+        _mark_typing_open(
+            sid,
+            (car_id_raw, peer_public),
+            typing,
+            {
+                "user_id": me.public_id,
+                "user_name": user_name,
+                "car_id": car.public_id,
+                "peer_id": peer.public_id,
+                "room": room,
+            },
         )
         emit(
             "typing",
             {
                 "user_id": me.public_id,
-                "user_name": f"{me.first_name} {me.last_name}".strip(),
+                "user_name": user_name,
                 "car_id": car.public_id,
                 "peer_id": peer.public_id,
                 "typing": typing,

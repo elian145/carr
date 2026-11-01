@@ -53,6 +53,10 @@ class DbCounter:
         self.statements: list[str] = []
         self.checkouts = 0
         self._delay = checkout_delay
+        from kk import typing_authz_validator as tv
+
+        self._validator_queries0 = tv.counters()["queries"]
+        self._validator_queries1 = None
 
     def _stmt(self, conn, cursor, statement, params, context, executemany):
         self.statements.append(statement)
@@ -72,12 +76,51 @@ class DbCounter:
     def __exit__(self, *exc):
         from sqlalchemy import event
 
+        from kk import typing_authz_validator as tv
+
+        self._validator_queries1 = tv.counters()["queries"]
         event.remove(self.engine, "before_cursor_execute", self._stmt)
         event.remove(self.engine, "checkout", self._checkout)
 
     @property
     def n(self) -> int:
-        return len(self.statements)
+        """SQL statements the ORM chain ran on the application engine. When the
+        one-statement validator (``CHAT_TYPING_AUTHZ_FAST_VALIDATOR=on``) did the
+        validation instead, each of its queries stands in for the 7-statement
+        chain it replaces, so the "a full validation happened" assertions in this
+        suite can be run in both modes (use ``len(statements)`` for the raw
+        application-engine count)."""
+        from kk import typing_authz_validator as tv
+
+        return len(self.statements) + 7 * self.validator_queries
+
+    @property
+    def validator_queries(self) -> int:
+        """Statements the one-statement validator ran on its own connection."""
+        from kk import typing_authz_validator as tv
+
+        now = self._validator_queries1 if self._validator_queries1 is not None else tv.counters()["queries"]
+        return now - self._validator_queries0
+
+    @property
+    def real_statements(self) -> int:
+        """Every statement actually sent to the database (ORM chain + validator)."""
+        return len(self.statements) + self.validator_queries
+
+
+@contextmanager
+def orm_chain_only():
+    """Exercise the original ORM chain even when the validator is switched on
+    (``CHAT_TYPING_AUTHZ_FAST_VALIDATOR`` in the environment): the validator is
+    made 'unavailable', which is exactly the fallback production takes. For tests
+    that probe ORM-chain internals (its limiter slot, its function hooks)."""
+    from kk import typing_authz_validator as tv
+
+    if tv.mode() == "off":
+        yield
+        return
+    with patch.object(tv, "_fetch", side_effect=tv.ValidatorUnavailable("forced to the ORM chain")):
+        yield
 
 
 def _per_event_session_teardown(app):
@@ -170,7 +213,12 @@ class TestDatabaseWorkPerTypingEvent:
         with _ttl(15):
             s, b = _pair(ctx, world, join="seller_only")  # buyer never joined: cold cache
             first = _emit_counted(ctx, b, "typing_start", {"car_id": world.car})
-            assert first.n >= 5 and first.checkouts >= 1
+            # a full validation ran: the ORM chain on a fresh application connection, or
+            # (validator on) one query on the validator's own connection and none on the app's
+            assert (first.n >= 5 and first.checkouts >= 1) or (first.validator_queries == 1 and len(first.statements) == 0), (
+                first.statements,
+                first.checkouts,
+            )
             for ev in ("typing_stop", "typing_start", "typing_stop"):
                 c = _emit_counted(ctx, b, ev, {"car_id": world.car})
                 assert (c.n, c.checkouts) == (0, 0), ev
@@ -552,8 +600,8 @@ class TestDuplicatesAndAbuse:
             for _ in range(sh._TYPING_RATE_MAX * 3):
                 x.emit("typing_start", {"car_id": world.car, "peer_id": world.b1})
         assert _typing(s) == []
-        per_event_cost = 8  # generous upper bound of the full chain
-        assert c.n <= sh._TYPING_RATE_MAX * per_event_cost
+        per_event_cost = 8  # generous upper bound of the full chain (+1 when the validator ran first and deferred)
+        assert c.real_statements <= sh._TYPING_RATE_MAX * per_event_cost, c.real_statements
         ((_sid, rec),) = _bound(sh, world.x)
         assert rec["authz"] == {}, "denials are never cached"
 

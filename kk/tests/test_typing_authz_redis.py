@@ -43,6 +43,7 @@ from test_typing_authz_cache import (
     _per_event_session_teardown,
     _ttl,
     _typing,
+    orm_chain_only,
 )
 
 # ------------------------------------------------------------ fake Redis ---
@@ -170,6 +171,12 @@ def _public(ctx, public_id):
 
     with app.app_context():
         return User.query.filter_by(public_id=public_id).first().id
+
+
+def _jti_of(token):
+    import jwt as pyjwt
+
+    return pyjwt.decode(token, options={"verify_signature": False})["jti"]
 
 
 def _warm_event(ctx, sock, ev="typing_start", **payload):
@@ -439,7 +446,7 @@ class TestBulkAndRawStatements:
                 runs = {
                     "user_bulk_deactivate": lambda: User.query.filter_by(id=-1).update({"is_active": False}),
                     "user_bulk_benign": lambda: User.query.filter_by(id=-1).update({"firebase_token": "x"}),
-                    "user_raw_deactivate": lambda: db.session.execute(text('UPDATE "user" SET is_active = 0 WHERE id = -1')),
+                    "user_raw_deactivate": lambda: db.session.execute(text('UPDATE "user" SET is_active = FALSE WHERE id = -1')),  # portable: SQLite >= 3.23 and PostgreSQL
                     "user_raw_benign": lambda: db.session.execute(text('UPDATE "user" SET firebase_token = NULL WHERE id = -1')),
                     "car_bulk_deactivate": lambda: Car.query.filter_by(id=-1).update({"is_active": False}),
                     "car_bulk_benign": lambda: Car.query.filter_by(id=-1).update({"views_count": 5}),
@@ -632,13 +639,78 @@ class TestRacesAndIsolation:
                 sh.publish_authz_change(user_ids=[user.id])  # B's after-commit publish
             return ok
 
-        with patch.object(sh, "user_can_access_chat_room", validate_then_other_worker_publishes):
+        # (hooks an ORM-chain function: with the validator switched on, force that chain)
+        with orm_chain_only(), patch.object(sh, "user_can_access_chat_room", validate_then_other_worker_publishes):
             b.emit("typing_start", {"car_id": world.car})  # this event raced: relayed once
         assert fired
         ((_sid, rec),) = _bound(sh, world.b1)
         assert rec["authz"] == {}, "the raced validation must not be cached"
         assert _warm_event(ctx, b, "typing_stop", car_id=world.car).n >= 5
         assert _warm_event(ctx, b, "typing_start", car_id=world.car).n == 0  # cached cleanly now
+
+    @pytest.mark.parametrize("what", ["user", "car", "jti", "any"])
+    def test_a_change_during_a_slow_validator_query_is_never_cached(self, ctx, world, fake, what):
+        """Same race through the one-statement validator: another worker commits and
+        publishes (an epoch bump in Redis) between the validator's read and the store."""
+        from kk import socketio_handlers as sh
+        from kk import typing_authz_validator as tv
+
+        world.seed()
+        s = _sock(ctx, world.tok[world.s])
+        s.emit("join_chat", {"car_id": world.car, "peer_id": world.b1})
+        s.get_received()
+        b = _sock(ctx, world.tok[world.b1])
+        real, fired = tv._fetch, []
+        app, _sio, _c = ctx
+
+        def fetch_then_other_worker_publishes(url, params):
+            row = real(url, params)
+            if not fired:
+                fired.append(1)
+                with app.app_context():
+                    from kk.models import Car
+
+                    car_row = Car.query.filter_by(public_id=world.car).first()
+                    car_id = car_row.id
+                kwargs = {"user": dict(user_ids=[params["me_id"]]), "car": dict(car_ids=[car_id]), "jti": dict(jtis=[_jti_of(world.tok[world.b1])]), "any": dict()}[what]
+                with patch.object(sh, "evict_typing_authz", lambda **_k: 0), patch.object(sh, "_flush_local_authz", lambda: None):
+                    sh.publish_authz_change(**kwargs)
+            return row
+
+        with patch.dict("os.environ", {"CHAT_TYPING_AUTHZ_FAST_VALIDATOR": "on"}), _ttl(15):
+            with patch.object(tv, "_fetch", fetch_then_other_worker_publishes):
+                sh.typing_authz_stats(reset=True)
+                b.emit("typing_start", {"car_id": world.car})
+            stats = sh.typing_authz_stats()
+            assert fired and stats.get("full_check_fast") == 1
+            assert [t["typing"] for t in _typing(s)] == [True]  # the raced event itself is relayed once
+            ((_sid, rec),) = _bound(sh, world.b1)
+            assert rec["authz"] == {}, "the raced validation must not be cached"
+            assert stats.get("store", 0) == 0 and stats.get("skip_store_epoch", 0) + stats.get("skip_store_evicted", 0) == 1, stats
+            b.emit("typing_stop", {"car_id": world.car})  # validated again from scratch ...
+            assert sh.typing_authz_stats().get("full_check_fast") == 2
+            assert list(rec["authz"]) == [(world.car, "")]  # ... and cached cleanly now
+
+    def test_redis_down_validator_allows_only_what_the_database_allows_and_caches_nothing(self, ctx, world, fake):
+        from kk import socketio_handlers as sh
+
+        world.seed()
+        s = _sock(ctx, world.tok[world.s])
+        s.emit("join_chat", {"car_id": world.car, "peer_id": world.b1})
+        s.get_received()
+        b = _sock(ctx, world.tok[world.b1])
+        x = _sock(ctx, world.tok[world.x])
+        fake.down = True
+        with patch.dict("os.environ", {"CHAT_TYPING_AUTHZ_FAST_VALIDATOR": "on"}), _ttl(15):
+            sh.typing_authz_stats(reset=True)
+            b.emit("typing_start", {"car_id": world.car})  # allowed by the database
+            x.emit("typing_start", {"car_id": world.car})  # a stranger: refused whatever Redis says
+            stats = sh.typing_authz_stats()
+        assert [t["typing"] for t in _typing(s)] == [True]
+        assert stats.get("full_check_fast") == 1 and stats.get("store", 0) == 0  # Redis down: nothing is cached
+        assert stats.get("full_denied") == 1
+        ((_sid, rec),) = _bound(sh, world.b1)
+        assert rec["authz"] == {}
 
     def test_two_sockets_never_share_epochs_or_entries(self, ctx, world, fake):
         from kk import socketio_handlers as sh

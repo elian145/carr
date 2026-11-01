@@ -41,6 +41,15 @@ def ctx():
     os.environ["SMS_PROVIDER"] = "console"
     os.environ.pop("LISTING_REQUIRE_APPROVAL", None)
     os.environ["DB_PATH"] = os.path.join(tmp.name, "chat_iso.db")
+    pg_url = (os.environ.get("TYPING_TEST_PG_URL") or "").strip()
+    if pg_url:
+        # Opt-in: run this whole module (and the typing suites that reuse it) against a
+        # DISPOSABLE LOCAL PostgreSQL. Never anything but loopback; the tables are dropped.
+        from sqlalchemy.engine import make_url
+
+        assert make_url(pg_url).host in ("127.0.0.1", "localhost", "::1"), "TYPING_TEST_PG_URL must be a local database"
+        os.environ.pop("DB_PATH", None)
+        os.environ["DATABASE_URL"] = pg_url
 
     from kk.app_factory import create_app
 
@@ -54,6 +63,8 @@ def ctx():
     with app.app_context():
         db.session.remove()
         db.engine.dispose()
+    if pg_url:
+        os.environ.pop("DATABASE_URL", None)
     tmp.cleanup()
 
 
