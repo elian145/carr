@@ -45,6 +45,7 @@ from ..models import (
     db,
 )
 from ..config import dev_debug_response_fields_enabled
+from ..rate_identity import otp_rate_limit
 from ..security import (
     atomic_increment_attempts,
     check_account_login_throttle,
@@ -1900,7 +1901,7 @@ def verify_email():
 
 
 @bp.route("/api/auth/verify-phone", methods=["POST"])
-@rate_limit(max_requests=20, window_minutes=15)
+@otp_rate_limit("verify")
 def verify_phone():
     """Phone verification endpoint"""
     try:
@@ -1971,14 +1972,14 @@ def verify_phone():
 
 
 @bp.route("/api/auth/send_otp", methods=["POST"])
-@rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
+@otp_rate_limit("send")
 def send_otp_legacy():
     """Legacy alias: same as send-verification, accepts 'phone' or 'phone_number'."""
     return send_phone_verification()
 
 
 @bp.route("/api/auth/send-verification", methods=["POST"])
-@rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
+@otp_rate_limit("send")
 def send_phone_verification():
     """Send phone verification code"""
     try:
@@ -2106,7 +2107,7 @@ def _google_review_phone_start_response():
 
 
 @bp.route("/api/auth/phone/start", methods=["POST"])
-@rate_limit(max_requests=_SEND_OTP_MAX_REQUESTS, window_minutes=_SEND_OTP_WINDOW_MINUTES)
+@otp_rate_limit("send")
 def phone_start():
     """Start phone OTP login/signup (passwordless)."""
     try:
@@ -2269,7 +2270,7 @@ def _google_review_login_success_response():
 
 
 @bp.route("/api/auth/phone/verify", methods=["POST"])
-@rate_limit(max_requests=10, window_minutes=15)
+@otp_rate_limit("verify")
 def phone_verify():
     """Verify phone OTP and issue tokens."""
     try:
