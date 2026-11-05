@@ -226,6 +226,11 @@ class AuthService extends ChangeNotifier {
     final identityWasVisible =
         _isAuthenticated || _currentUser != null || _lastSessionSubject != null;
     if (!identityWasVisible) return;
+    // F-38: the session ended without a (successful) server logout, so the
+    // account's device push token can no longer be released server-side:
+    // wipe it locally so its notifications cannot reach whoever uses this
+    // phone next.
+    unawaited(PushNotificationService.clearLocalPushState());
     _isAuthenticated = false;
     _currentUser = null;
     _lastSessionSubject = null;
@@ -812,6 +817,13 @@ class AuthService extends ChangeNotifier {
 
   // Clear authentication state
   Future<void> _clearAuthState() async {
+    // Evaluated before the state below is reset: only a session that really
+    // existed owns device push state (a guest start must not churn the token).
+    final hadSession =
+        _isAuthenticated ||
+        _currentUser != null ||
+        _lastSessionSubject != null ||
+        ApiService.isAuthenticated;
     _isAuthenticated = false;
     _currentUser = null;
     _lastSessionSubject = null;
@@ -830,6 +842,9 @@ class AuthService extends ChangeNotifier {
     _inFlightProfileFetch = null;
     _inFlightProfileFetchToken = null;
     await ApiService.clearTokens();
+    // F-38: logout / deleted account / rejected session -- always drop the
+    // local push state, whatever the server logout outcome was.
+    if (hadSession) unawaited(PushNotificationService.clearLocalPushState());
     notifyListeners();
   }
 
