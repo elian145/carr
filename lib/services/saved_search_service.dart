@@ -99,7 +99,7 @@ class SavedSearchService {
           : <String, dynamic>{},
       'notify': row['notify'] != false,
       'auto_saved': row['auto_saved'] == true,
-      'created_at': row['created_at']?.toString() ?? DateTime.now().toIso8601String(),
+      'created_at': row['created_at']?.toString() ?? DateTime.now().toUtc().toIso8601String(),
     };
   }
 
@@ -290,7 +290,7 @@ class SavedSearchService {
       }
     }
     final notify = forceNotify ? true : (existing?['notify'] as bool? ?? false);
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     final payload = existing != null
         ? {
             ...existing,
@@ -345,7 +345,7 @@ class SavedSearchService {
         'name': name,
         'filters': filters,
         'notify': notify,
-        'created_at': DateTime.now().toIso8601String(),
+        'created_at': DateTime.now().toUtc().toIso8601String(),
       };
   static bool _isServerId(String id) {
     final s = id.trim();

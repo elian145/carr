@@ -25,7 +25,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
     final raw = (m['favorited_at'] ?? m['favoritedAt'])?.toString().trim();
     if (raw == null || raw.isEmpty) return -1;
     try {
-      return DateTime.parse(raw).millisecondsSinceEpoch;
+      return tryParseApiDateTime(raw)?.millisecondsSinceEpoch ?? -1;
     } catch (e, st) {
       logNonFatal(e, st);
       return -1;

@@ -1,3 +1,5 @@
+import '../services/websocket_service.dart' show tryParseApiDateTime;
+
 /// Chat message from REST or WebSocket payloads.
 class ChatMessage {
   const ChatMessage({
@@ -44,7 +46,7 @@ class ChatMessage {
     'conversation_id': conversationId,
     'sender_id': senderId,
     'body': body,
-    if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+    if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
     if (messageType != null) 'message_type': messageType,
     if (mediaUrl != null) 'media_url': mediaUrl,
     'is_read': isRead,
@@ -53,6 +55,7 @@ class ChatMessage {
   static DateTime? _parseDate(dynamic v) {
     if (v == null) return null;
     if (v is DateTime) return v;
-    return DateTime.tryParse(v.toString());
+    // API timestamps are UTC (legacy offset-less or Z); never device-local.
+    return tryParseApiDateTime(v);
   }
 }

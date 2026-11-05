@@ -257,31 +257,42 @@ mixin _SavedSearchesPageHelpers on _SavedSearchesPageLoad {
     );
   }
 
-  String _formatDate(BuildContext context, String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      final now = DateTime.now();
-      final difference = now.difference(date);
-      final l = AppLocalizations.of(context)!;
-      final timeStr =
-          '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-
-      if (difference.inDays == 0) {
-        return '${l.today} $timeStr';
-      } else if (difference.inDays == 1) {
-        return '${l.yesterday} $timeStr';
-      } else if (difference.inDays < 7) {
-        return l.daysAgo(difference.inDays);
-      } else {
-        return '${date.day}/${date.month}/${date.year}';
-      }
-    } catch (e) {
-      return dateString;
-    }
-  }
+  String _formatDate(BuildContext context, String dateString) =>
+      formatSavedSearchDate(context, dateString);
 
   String _capitalizeFirst(String text) {
     if (text.isEmpty) return text;
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+}
+
+/// "Today 14:05" / "Yesterday 14:05" / "N days ago" / "d/m/yyyy" label for a
+/// saved search's `created_at`. The API (and legacy local rows) send UTC, so
+/// the value is parsed with [tryParseApiDateTime] (never device-local) and
+/// shown in the user's local time. [now] is injectable for tests.
+String formatSavedSearchDate(
+  BuildContext context,
+  String dateString, {
+  DateTime? now,
+}) {
+  try {
+    final date = tryParseApiDateTime(dateString);
+    if (date == null) return dateString;
+    final difference = (now ?? DateTime.now()).difference(date);
+    final l = AppLocalizations.of(context)!;
+    final timeStr =
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+    if (difference.inDays == 0) {
+      return '${l.today} $timeStr';
+    } else if (difference.inDays == 1) {
+      return '${l.yesterday} $timeStr';
+    } else if (difference.inDays < 7) {
+      return l.daysAgo(difference.inDays);
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
+  } catch (e) {
+    return dateString;
   }
 }
