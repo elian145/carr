@@ -22,6 +22,7 @@ from ..models import (
     User,
     db,
 )
+from ..time_utils import iso_utc
 
 bp = Blueprint("admin_auto_moderation", __name__, url_prefix="/api/admin/auto-moderation")
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ def _event_dict(ev: ListingModerationEvent) -> dict:
         "type": ev.event_type,
         "actor": ev.actor,
         "data": ev.data,
-        "created_at": ev.created_at.isoformat() if ev.created_at else None,
+        "created_at": iso_utc(ev.created_at),
     }
 
 
@@ -58,7 +59,7 @@ def _run_dict(run: ListingModerationRun, *, detail: bool = False) -> dict:
         "decision": run.decision,
         "outcome": run.outcome,
         "applied": run.applied_at is not None,
-        "applied_at": run.applied_at.isoformat() if run.applied_at else None,
+        "applied_at": iso_utc(run.applied_at),
         "attempts": run.attempts,
         "reason_codes": [r.get("code") for r in reasons if r.get("level") in ("review", "hold")],
         "reason_labels": [
@@ -67,13 +68,13 @@ def _run_dict(run: ListingModerationRun, *, detail: bool = False) -> dict:
         "suspicious": any(r.get("suspicious") for r in reasons),
         "admin_outcome": run.admin_outcome,
         "admin_outcome_by": run.admin_outcome_by,
-        "admin_outcome_at": run.admin_outcome_at.isoformat() if run.admin_outcome_at else None,
+        "admin_outcome_at": iso_utc(run.admin_outcome_at),
         "override_action": run.override_action,
         "override_by": run.override_by,
-        "override_at": run.override_at.isoformat() if run.override_at else None,
+        "override_at": iso_utc(run.override_at),
         "override_note": run.override_note,
-        "created_at": run.created_at.isoformat() if run.created_at else None,
-        "decided_at": run.decided_at.isoformat() if run.decided_at else None,
+        "created_at": iso_utc(run.created_at),
+        "decided_at": iso_utc(run.decided_at),
         "listing": {
             "id": run.car_public_id,
             "title": car.title if car else None,

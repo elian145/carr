@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from ..auth import get_current_user, log_user_action
 from ..listing_visibility import listing_visible_to_viewer, listings_visible_to_viewer_filter
 from ..models import Car, db, user_favorites
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 
 bp = Blueprint("favorites", __name__)
 
@@ -53,7 +53,7 @@ def get_favorites():
             d = car.to_dict()
             if fav_at is not None:
                 try:
-                    d["favorited_at"] = fav_at.isoformat()
+                    d["favorited_at"] = iso_utc(fav_at)
                 except Exception:
                     d["favorited_at"] = str(fav_at)
             cars.append(d)

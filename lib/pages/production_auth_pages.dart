@@ -18,6 +18,7 @@ import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/trust_config.dart';
+import '../services/websocket_service.dart' show tryParseApiDateTime;
 import 'legal_document_page.dart';
 import '../shared/auth/account_scope.dart';
 import '../shared/debug/app_log.dart';

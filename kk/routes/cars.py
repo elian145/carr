@@ -73,7 +73,7 @@ from ..response_cache import (
     public_cached_json,
 )
 from ..retention_dispatch import dispatch_price_drop_alerts, dispatch_saved_search_alerts
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 from .media import _normalize_car_image_kind, _pick_primary_listing_url, _r2_public_base
 from .user import assert_listing_phones_verified, parse_listing_contact_phones
 
@@ -662,10 +662,10 @@ def _working_copy_payload(car: Car, shadow: Car) -> dict:
     d["status"] = getattr(car, "status", None)
     d["is_active"] = car.is_active
     d["is_featured"] = car.is_effectively_featured
-    d["featured_until"] = car.featured_until.isoformat() if car.featured_until else None
+    d["featured_until"] = iso_utc(car.featured_until)
     d["views_count"] = car.views_count
-    d["created_at"] = car.created_at.isoformat() if car.created_at else None
-    d["updated_at"] = car.updated_at.isoformat() if car.updated_at else None
+    d["created_at"] = iso_utc(car.created_at)
+    d["updated_at"] = iso_utc(car.updated_at)
     d["media_status"] = shadow.media_status
     if not d.get("city") and d.get("location"):
         d["city"] = d["location"]
@@ -691,10 +691,10 @@ def serialize_pending_revision(
         "rejection_reason": rev.rejection_reason
         if rev.status == _revisions.REVISION_REJECTED
         else None,
-        "submitted_at": rev.submitted_at.isoformat() if rev.submitted_at else None,
-        "reviewed_at": rev.reviewed_at.isoformat() if rev.reviewed_at else None,
-        "created_at": rev.created_at.isoformat() if rev.created_at else None,
-        "updated_at": rev.updated_at.isoformat() if rev.updated_at else None,
+        "submitted_at": iso_utc(rev.submitted_at),
+        "reviewed_at": iso_utc(rev.reviewed_at),
+        "created_at": iso_utc(rev.created_at),
+        "updated_at": iso_utc(rev.updated_at),
         "revision_token": _revisions.revision_content_token(rev, shadow),
         "changed_fields": _revisions.revision_changed_fields(car, shadow)
         if car is not None

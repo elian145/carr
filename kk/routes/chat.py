@@ -31,7 +31,7 @@ from ..listing_visibility import not_a_working_copy
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
 from ..security import rate_limit, sniff_bytes, validate_input_sanitization
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, parse_api_datetime, utcnow
 from .media import _pick_primary_listing_url
 
 bp = Blueprint("chat", __name__)
@@ -538,7 +538,7 @@ def list_chats():
                         "id": m.public_id,
                         "content": m.content,
                         "message_type": m.message_type,
-                        "created_at": m.created_at.isoformat() if m.created_at else None,
+                        "created_at": iso_utc(m.created_at),
                         "sender_id": m.sender.public_id if m.sender else None,
                     },
                     "unread_count": int(unread or 0),
@@ -650,7 +650,9 @@ def get_messages(conversation_id: str):
         before_raw = (request.args.get("before") or "").strip()
         if before_raw:
             try:
-                before_dt = datetime.fromisoformat(before_raw.replace("Z", "+00:00"))
+                # Accepts "...Z", explicit offsets and the legacy offset-less
+                # form; always normalised to naive UTC like the column (F-07).
+                before_dt = parse_api_datetime(before_raw)
             except Exception:
                 before_dt = None
 

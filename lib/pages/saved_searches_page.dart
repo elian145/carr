@@ -10,6 +10,7 @@ import '../features/saved_searches/saved_search_home_bridge.dart';
 import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../services/saved_search_service.dart';
+import '../services/websocket_service.dart' show tryParseApiDateTime;
 import '../shared/auth/account_scope.dart';
 import '../shared/errors/user_error_text.dart';
 import '../shared/i18n/listing_field_labels.dart';

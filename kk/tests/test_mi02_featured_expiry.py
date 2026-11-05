@@ -158,7 +158,7 @@ class TestSerialization:
         car_id, _pub = _make_car(app, db, seller_id, is_featured=True, featured_until=future)
         with app.app_context():
             car = db.session.get(Car, car_id)
-            assert car.to_dict()["featured_until"] == future.isoformat()
+            assert car.to_dict()["featured_until"] == future.isoformat() + "Z"  # F-07: UTC "Z"
 
         car_id2, _pub2 = _make_car(app, db, seller_id, is_featured=True, featured_until=None)
         with app.app_context():
@@ -186,7 +186,7 @@ class TestSerialization:
             # Serialization computes effective status; the raw column is
             # untouched here -- only the (separate) cleanup task flips it.
             assert car.is_featured is True
-            assert data["featured_until"] == past.isoformat()
+            assert data["featured_until"] == past.isoformat() + "Z"  # F-07: UTC "Z"
 
     def test_indefinite_featured_remains_true(self, app_ctx):
         app, _c, db, _User, Car, _utcnow = app_ctx
@@ -309,7 +309,7 @@ class TestAdminSingleUpdate:
         assert resp.status_code == 200, resp.data
         body = resp.get_json()["car"]
         assert body["is_featured"] is True
-        assert body["featured_until"] == future_iso
+        assert body["featured_until"] == future_iso + "Z"  # F-07: UTC "Z"
         with app.app_context():
             car = db.session.get(Car, car_id)
             assert car.is_featured is True
