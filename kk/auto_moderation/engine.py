@@ -477,8 +477,11 @@ def _record_decision(run_id, attempts, subject, signals, ai, checks, settings, m
 
 
 class PublishResult:
-    def __init__(self, car, notification, seller, removed_urls=(), old_price=None, new_price=None, changed_fields=()):
+    def __init__(self, car, notification, seller, removed_urls=(), old_price=None, new_price=None, changed_fields=(), newly_active=False):
         self.car = car
+        # F-04: True only for a listing that just went pending -> active
+        # (never for an edit/revision of an already-public listing).
+        self.newly_active = newly_active
         self.notification = notification
         self.seller = seller
         self.removed_urls = list(removed_urls)
@@ -502,11 +505,14 @@ def publish_subject(subject: Subject, *, reviewer: str) -> PublishResult:
         car = subject.car
         if _blocked_by_media_readiness(True, "active", car.media_status):
             raise Ineligible("media_not_ready")
+        from ..retention_dispatch import is_new_publication_transition
+
+        newly_active = is_new_publication_transition(car.status, True, "active")
         car.status = "active"
         car.is_active = True
         car.updated_at = utcnow()
         notification = _queue_listing_moderation_notification(car, "active")
-        return PublishResult(car, notification, car.seller)
+        return PublishResult(car, notification, car.seller, newly_active=newly_active)
     result = lr.publish_revision(subject.revision.id, expected_token=subject.token, reviewer=reviewer)
     car = result["car"]
     notification = _queue_listing_revision_notification(car, "approved")
@@ -549,6 +555,15 @@ def post_publish(pr: PublishResult) -> None:
             dispatch_price_drop_alerts(pr.car.id, pr.old_price, pr.new_price)
         except Exception:
             logger.exception("auto-moderation: price-drop dispatch failed")
+    if pr.newly_active:
+        # F-04: a listing that auto-moderation (or an admin override of a
+        # held run) just published is now public -- run saved-search alerts.
+        try:
+            from ..retention_dispatch import dispatch_saved_search_alerts_for_activated
+
+            dispatch_saved_search_alerts_for_activated([pr.car.id])
+        except Exception:
+            logger.exception("auto-moderation: saved-search dispatch failed")
 
 
 def _ai_gate(stored_ai: dict | None, settings: dict, subject: Subject, facts) -> list[Signal]:

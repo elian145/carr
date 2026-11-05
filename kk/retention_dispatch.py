@@ -102,6 +102,46 @@ def dispatch_saved_search_alerts(car_id: int) -> None:
         )
 
 
+def is_new_publication_transition(
+    old_status: str | None, new_is_active: bool, new_status: str | None
+) -> bool:
+    """True only when a listing moves from ``pending`` into public ``active``.
+
+    F-04: in production every new listing starts ``pending`` (moderation) and
+    only becomes publicly visible when an admin (single / bulk) or automated
+    moderation approves it, so that approval -- not ``create_car`` -- is the
+    moment saved-search alerts must fire.
+
+    Deliberately conservative: only ``pending -> active`` counts. A listing
+    that goes ``sold/hidden/draft -> active`` (re-activation / un-hiding) was
+    most likely public before, and there is no "first published" marker on
+    ``Car`` to prove otherwise, so it is NOT announced again as new. An
+    already-active listing (repeat approval, bulk row that is already
+    active) is never a transition. Alert de-duplication per
+    (saved_search, car) additionally lives in the alert task
+    (``SavedSearchAlert`` + ``uq_saved_search_alert``), so even a repeated
+    dispatch cannot notify a saved search twice for the same car.
+    """
+    if (old_status or "").strip().lower() != "pending":
+        return False
+    return bool(new_is_active) and (new_status or "").strip().lower() in ("", "active")
+
+
+def dispatch_saved_search_alerts_for_activated(car_ids) -> None:
+    """Best-effort enqueue of saved-search alerts for newly activated cars.
+
+    Call AFTER the activating transaction committed. Never raises and never
+    runs the alert task inline (see ``dispatch_saved_search_alerts``).
+    """
+    for car_id in car_ids or ():
+        try:
+            dispatch_saved_search_alerts(car_id)
+        except Exception:  # pragma: no cover - dispatch already swallows errors
+            logger.exception(
+                "Saved search alert dispatch failed for activated car %s", car_id
+            )
+
+
 def dispatch_price_drop_alerts(car_id: int, old_price: float, new_price: float) -> None:
     from .tasks.alert_tasks import notify_price_drop_for_car
 
