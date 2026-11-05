@@ -53,7 +53,7 @@ abstract final class _ApiServiceListings {
   }
 
   static Future<Map<String, dynamic>> getCar(String carId) async {
-    await ApiService._ensureTokenLoaded();
+    final session = await ApiService._beginAuthenticatedRequest();
     final response = await ApiService._httpClient
         .get(
           Uri.parse(
@@ -62,6 +62,7 @@ abstract final class _ApiServiceListings {
           headers: ApiService._getHeaders(includeAuth: true),
         )
         .timeout(ApiService._defaultTimeout);
+    ApiService.assertSessionCurrent(session);
 
     return unwrapCarApiPayload(ApiService._handleResponse(response));
   }
@@ -116,7 +117,7 @@ abstract final class _ApiServiceListings {
     if (id.isEmpty) {
       throw ApiException(statusCode: 404, message: 'Invalid car id');
     }
-    await ApiService._ensureTokenLoaded();
+    final session = await ApiService._beginAuthenticatedRequest();
     final url = Uri.parse('${ApiService.baseUrl}/cars/$id');
     var headers = ApiService._getHeaders(includeAuth: true);
     var response = await _ApiServiceHttp._sendAbortableGet(
@@ -125,7 +126,7 @@ abstract final class _ApiServiceListings {
       cancelToken: cancelToken,
     ).timeout(const Duration(seconds: 20));
     if (response.statusCode == 401 &&
-        await ApiService._refreshAccessToken()) {
+        await ApiService._refreshAccessToken(session)) {
       // If cancellation landed while the refresh call above was in-flight,
       // `_sendAbortableGet`'s own pre-flight check (see its doc comment)
       // rejects before this retried GET is ever dispatched — the refresh
@@ -138,6 +139,7 @@ abstract final class _ApiServiceListings {
         cancelToken: cancelToken,
       ).timeout(const Duration(seconds: 20));
     }
+    ApiService.assertSessionCurrent(session);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       // Reuses the shared status -> ApiException mapping (404/401/429/5xx),
       // so a car-detail failure carries the same statusCode/message/body
@@ -172,19 +174,20 @@ abstract final class _ApiServiceListings {
   static Future<List<String>> getCarContactPhones(String carId) async {
     final id = Uri.encodeComponent(carId.trim());
     if (id.isEmpty) return const [];
-    await ApiService._ensureTokenLoaded();
+    final session = await ApiService._beginAuthenticatedRequest();
     final url = Uri.parse('${ApiService.baseUrl}/cars/$id/contact');
     var headers = ApiService._getHeaders(includeAuth: true);
     var response = await ApiService._httpClient
         .get(url, headers: headers)
         .timeout(const Duration(seconds: 15));
     if (response.statusCode == 401 &&
-        await ApiService._refreshAccessToken()) {
+        await ApiService._refreshAccessToken(session)) {
       headers = ApiService._getHeaders(includeAuth: true);
       response = await ApiService._httpClient
           .get(url, headers: headers)
           .timeout(const Duration(seconds: 15));
     }
+    ApiService.assertSessionCurrent(session);
     // Throws ApiException for any non-2xx (401/429/5xx/...); throws
     // FormatException/TypeError for a malformed or non-Map 200 body;
     // never silently returns [] for a failure (F-07).

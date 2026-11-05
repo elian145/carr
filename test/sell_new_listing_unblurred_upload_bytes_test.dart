@@ -31,6 +31,7 @@ import 'package:car_listing_app/features/sell/sell_flow.dart'
     show applySellPlateBlurChoice;
 import 'package:car_listing_app/features/sell/sell_media_identity.dart';
 import 'package:car_listing_app/services/api_service.dart';
+import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/services/config.dart';
 import 'package:car_listing_app/shared/auth/token_store.dart';
 import 'package:car_listing_app/shared/prefs/sell_draft_media_persistence.dart';
@@ -330,10 +331,12 @@ void main() {
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
+    await AuthService().adoptTestSession(user: {'id': 'sell_test_owner'});
   });
 
   tearDown(() async {
     await ApiService.clearTokens();
+    AuthService().resetTestSession();
     ApiService.testHttpClient = null;
     setRuntimeApiBaseOverride(null);
     TokenStore.testMode = false;
@@ -581,6 +584,7 @@ void main() {
             draftId: draftId,
             status: SellSubmissionStatus.pending,
             carData: roundTripped,
+            ownerUserId: 'sell_test_owner',
             idempotencyKey: 'sell-create-$draftId',
             createdAt: now,
             updatedAt: now,
@@ -634,6 +638,7 @@ void main() {
             draftId: draftId,
             status: SellSubmissionStatus.pending,
             carData: carData,
+            ownerUserId: 'sell_test_owner',
             idempotencyKey: 'sell-create-$draftId',
             createdAt: now,
             updatedAt: now,

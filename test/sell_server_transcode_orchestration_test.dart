@@ -30,6 +30,7 @@ import 'dart:io';
 import 'package:car_listing_app/features/sell/pending_sell_submission_service.dart';
 import 'package:car_listing_app/features/sell/sell_server_transcode_video.dart';
 import 'package:car_listing_app/services/api_service.dart';
+import 'package:car_listing_app/services/auth_service.dart';
 import 'package:car_listing_app/shared/auth/token_store.dart';
 import 'package:car_listing_app/shared/prefs/sell_submission_state_prefs.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -376,10 +377,12 @@ void main() {
       accessToken: 'test_access_token',
       refreshToken: 'test_refresh_token',
     );
+    await AuthService().adoptTestSession(user: {'id': 'sell_test_owner'});
   });
 
   tearDown(() async {
     await ApiService.clearTokens();
+    AuthService().resetTestSession();
     ApiService.testHttpClient = null;
     TokenStore.testMode = false;
     TokenStore.resetForTests();
@@ -497,6 +500,7 @@ void main() {
             status: SellSubmissionStatus.inProgress,
             carId: carId,
             carData: carData,
+            ownerUserId: 'sell_test_owner',
             idempotencyKey: 'sell-create-$draftId',
             createdAt: now,
             updatedAt: now,
@@ -573,6 +577,7 @@ void main() {
             status: SellSubmissionStatus.inProgress,
             carId: carId,
             carData: carData,
+            ownerUserId: 'sell_test_owner',
             idempotencyKey: 'sell-create-$draftId',
             createdAt: now,
             updatedAt: now,

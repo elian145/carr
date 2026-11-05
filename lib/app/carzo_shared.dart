@@ -121,15 +121,13 @@ Widget buildFloatingBottomNav(
 
 class AuthStore {
   static String? get token => TokenStore.token;
-  static Future<void> saveToken(String? t) async {
-    await TokenStore.save(t);
-    await ApiService.setAccessToken(TokenStore.token);
-  }
+  // Credentials are only ever written through [ApiService], which serializes
+  // persistence against concurrent login / logout / refresh (a direct
+  // `TokenStore` write here could land after, and overwrite, a newer
+  // session's credentials).
+  static Future<void> saveToken(String? t) => ApiService.setAccessToken(t);
 
-  static Future<void> loadToken() async {
-    await TokenStore.load();
-    await ApiService.setAccessToken(TokenStore.token);
-  }
+  static Future<void> loadToken() => ApiService.initializeTokens();
 }
 
 class LocaleController {
