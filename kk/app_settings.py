@@ -7,7 +7,7 @@ import os
 from typing import Any
 
 from .models import AppSetting, db
-from .time_utils import utcnow
+from .time_utils import iso_utc, utcnow
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +228,7 @@ def get_admin_settings_payload() -> dict[str, Any]:
     try:
         row = AppSetting.query.filter_by(key=PLATFORM_KEY).first()
         if row and row.updated_at:
-            updated_at = row.updated_at.isoformat()
+            updated_at = iso_utc(row.updated_at)
     except Exception:
         pass
     flag_overrides = overrides.get("feature_flags")

@@ -11,7 +11,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 # Use a single UTC helper (avoids deprecated datetime.utcnow()).
-from .time_utils import utcnow
+from .time_utils import iso_utc, utcnow
 from .dealer_socials import public_dealership_socials as _public_dealership_socials
 
 
@@ -314,7 +314,7 @@ class User(db.Model):
                 getattr(self, "dealership_socials", None)
             ),
             'is_featured_dealer': bool(getattr(self, "is_featured_dealer", False)),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': iso_utc(self.created_at),
         }
 
         # H-05: exact GPS only for the owner/admin (include_private) or the
@@ -334,8 +334,8 @@ class User(db.Model):
                 'dealership_verified_phones': verified_phones_out,
                 'dealership_verified_emails': verified_emails_out,
                 'dealership_emails': emails_out,
-                'last_login': self.last_login.isoformat() if self.last_login else None,
-                'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+                'last_login': iso_utc(self.last_login),
+                'updated_at': iso_utc(self.updated_at),
                 # MI-03: own-account language preference only -- never part
                 # of the public shape embedded in listing/dealer responses.
                 'locale': getattr(self, "locale", None),
@@ -474,10 +474,10 @@ class DealerApplication(db.Model):
             "status": self.status,
             **self.snapshot(),
             "review_reason": self.review_reason,
-            "submitted_at": self.submitted_at.isoformat() if self.submitted_at else None,
-            "reviewed_at": self.reviewed_at.isoformat() if self.reviewed_at else None,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "submitted_at": iso_utc(self.submitted_at),
+            "reviewed_at": iso_utc(self.reviewed_at),
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         if include_decisions:
             data["decisions"] = [decision.to_dict() for decision in self.decisions]
@@ -547,8 +547,8 @@ class DealerProfile(db.Model):
             "dealership_opening_hours": self.dealership_opening_hours,
             "dealership_socials": _public_dealership_socials(self.dealership_socials),
             "is_featured_dealer": bool(self.is_featured),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         # H-05: same rule as User.to_dict() — exact GPS only for owner/admin
         # or the explicit public dealer-profile map feature.
@@ -603,7 +603,7 @@ class DealerDecision(db.Model):
                 if self.reviewer
                 else None
             ),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": iso_utc(self.created_at),
         }
 
 
@@ -822,10 +822,10 @@ class Car(db.Model):
             # compute expiry to get correct behavior. The raw expiry is
             # still exposed separately via `featured_until`.
             'is_featured': self.is_effectively_featured,
-            'featured_until': self.featured_until.isoformat() if self.featured_until else None,
+            'featured_until': iso_utc(self.featured_until),
             'views_count': self.views_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
             'images': [img.to_dict() for img in self.images],
             'videos': [video.to_dict() for video in self.videos],
             'seller': (
@@ -841,7 +841,7 @@ class Car(db.Model):
             'ai_detected_body_type': self.ai_detected_body_type,
             'ai_detected_condition': self.ai_detected_condition,
             'ai_confidence_score': self.ai_confidence_score,
-            'ai_analysis_timestamp': self.ai_analysis_timestamp.isoformat() if self.ai_analysis_timestamp else None
+            'ai_analysis_timestamp': iso_utc(self.ai_analysis_timestamp)
         }
 
         if include_private:
@@ -1297,8 +1297,8 @@ class ListingAnalytics(db.Model):
             'calls': self.calls,
             'shares': self.shares,
             'favorites': self.favorites,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_updated': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': iso_utc(self.created_at),
+            'last_updated': iso_utc(self.updated_at),
         }
     
     def __repr__(self):
@@ -1532,8 +1532,8 @@ class Message(db.Model):
             'listing_preview': None if self.is_deleted else self.listing_preview,
             'is_read': self.is_read,
             'is_deleted': self.is_deleted,
-            'edited_at': self.edited_at.isoformat() if self.edited_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'edited_at': iso_utc(self.edited_at),
+            'created_at': iso_utc(self.created_at),
             'sender_name': f"{self.sender.first_name} {self.sender.last_name}".strip() if self.sender else None,
             'sender_username': self.sender.username if self.sender else None,
             'receiver_name': f"{self.receiver.first_name} {self.receiver.last_name}".strip() if self.receiver else None,
@@ -1564,7 +1564,7 @@ class Notification(db.Model):
             'notification_type': self.notification_type,
             'is_read': self.is_read,
             'data': self.data,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': iso_utc(self.created_at)
         }
     
     def __repr__(self):
@@ -1606,13 +1606,13 @@ class ScheduledNotification(db.Model):
             "target_user_id": self.target_user_public_id,
             "notification_type": self.notification_type,
             "send_push": bool(self.send_push),
-            "scheduled_at": self.scheduled_at.isoformat() if self.scheduled_at else None,
+            "scheduled_at": iso_utc(self.scheduled_at),
             "status": self.status,
             "result": self.result,
             "error_message": self.error_message,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
+            "sent_at": iso_utc(self.sent_at),
         }
 
     def __repr__(self):
@@ -1637,7 +1637,7 @@ class UserAction(db.Model):
             'target_type': self.target_type,
             'target_id': self.target_id,
             'action_metadata': self.action_metadata,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': iso_utc(self.created_at)
         }
     
     def __repr__(self):
@@ -1697,8 +1697,8 @@ class SavedSearch(db.Model):
             'filters': self.filters if isinstance(self.filters, dict) else {},
             'notify': bool(self.notify),
             'auto_saved': bool(self.auto_saved),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': iso_utc(self.created_at),
+            'updated_at': iso_utc(self.updated_at),
         }
 
     def __repr__(self):
@@ -1769,8 +1769,8 @@ class UserReport(db.Model):
             'details': self.details,
             'status': self.status,
             'admin_notes': self.admin_notes,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'created_at': iso_utc(self.created_at),
+            'resolved_at': iso_utc(self.resolved_at),
             'reporter': {
                 'id': reporter.public_id if reporter else None,
                 'username': reporter.username if reporter else None,
@@ -1834,8 +1834,8 @@ class ListingReport(db.Model):
             'details': self.details,
             'status': self.status,
             'admin_notes': self.admin_notes,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'created_at': iso_utc(self.created_at),
+            'resolved_at': iso_utc(self.resolved_at),
             'reporter': {
                 'id': reporter.public_id if reporter else None,
                 'username': reporter.username if reporter else None,
@@ -1884,7 +1884,7 @@ class AppSetting(db.Model):
         return {
             "key": self.key,
             "value": self.value if isinstance(self.value, dict) else {},
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "updated_at": iso_utc(self.updated_at),
         }
 
     def __repr__(self):
@@ -1916,8 +1916,8 @@ class CatalogBrand(db.Model):
             "name": self.name,
             "is_active": bool(self.is_active),
             "sort_order": int(self.sort_order or 0),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         if include_model_count:
             data["model_count"] = self.models.count()
@@ -1962,8 +1962,8 @@ class CatalogVehicleModel(db.Model):
             "name": self.name,
             "is_active": bool(self.is_active),
             "sort_order": int(self.sort_order or 0),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
         if include_trim_count:
             data["trim_count"] = self.trims.count()
@@ -2029,8 +2029,8 @@ class CatalogBodyType(db.Model):
             "name": self.name,
             "is_active": bool(self.is_active),
             "sort_order": int(self.sort_order or 0),
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": iso_utc(self.created_at),
+            "updated_at": iso_utc(self.updated_at),
         }
 
     def __repr__(self):

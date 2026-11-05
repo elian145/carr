@@ -41,7 +41,7 @@ from ..retention_dispatch import (
 )
 from ..listing_search import apply_listing_text_search
 from ..localization import get_background_locale, translate
-from ..time_utils import utcnow
+from ..time_utils import iso_utc, utcnow
 
 bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 logger = logging.getLogger(__name__)
@@ -304,7 +304,7 @@ def _find_user(public_id: str) -> User | None:
 
 def _image_admin_dict(img: CarImage) -> dict:
     data = img.to_dict()
-    data["created_at"] = img.created_at.isoformat() if img.created_at else None
+    data["created_at"] = iso_utc(img.created_at)
     car = img.car
     if car:
         data["car"] = {
