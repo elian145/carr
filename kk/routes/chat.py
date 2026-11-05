@@ -20,7 +20,12 @@ from ..chat_realtime import (
     mark_messages_read_for_viewer,
     resolve_allowed_chat_receiver,
 )
-from ..idempotency import remember_response, replay_response
+from ..idempotency import (
+    begin_request,
+    in_progress_response,
+    remember_response,
+    replay_response,
+)
 from ..listing_visibility import not_a_working_copy
 from ..models import BlockedUser, Car, Message, User, UserReport, db
 from ..push import fcm_is_configured, fcm_send_error_hint, last_fcm_send_error, send_push
@@ -721,15 +726,19 @@ def send_message(conversation_id: str):
         # BE-18: replay a completed send for this key instead of re-inserting
         # a duplicate Message (client retries — timeout, 401-refresh retry, etc.).
         idem_key = _get_idempotency_key()
-        if idem_key:
-            replayed = replay_response(
-                scope="chat_send",
-                actor_id=str(me.public_id),
-                idem_key=idem_key,
-            )
-            if replayed is not None:
-                status, body = replayed
-                return jsonify(body), status
+        # F-37: this is the JSON send the client re-sends after a timeout. Also
+        # refuse (retryable 503) a duplicate that arrives while the original
+        # request is still running, instead of inserting a second Message.
+        idem_state, idem_replay = begin_request(
+            scope="chat_send",
+            actor_id=str(me.public_id),
+            idem_key=idem_key,
+        )
+        if idem_state == "replay":
+            status, body = idem_replay
+            return jsonify(body), status
+        if idem_state == "busy":
+            return in_progress_response()
 
         data = validate_input_sanitization(request.get_json(silent=True) or {})
         content = str(data.get("content") or "").strip()

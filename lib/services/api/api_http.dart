@@ -25,9 +25,10 @@ abstract final class _ApiServiceHttp {
   /// if the first attempt reached the server: true for reads and for writes
   /// carrying an `Idempotency-Key`. When false (an unkeyed write) the client
   /// is still recycled so the user's next attempt gets a fresh socket, but the
-  /// request is only re-sent when the failure proves nothing was transmitted
-  /// ([_neverSent]); a reset / closed / broken-pipe error can also happen after
-  /// the server already processed the write, so those are surfaced instead.
+  /// request is NEVER re-sent. None of the classified stale-socket errors
+  /// (including "Bad file descriptor", which `dart:io` also raises when
+  /// reading the RESPONSE of a request the server already processed) proves
+  /// that nothing reached the server, so the error is surfaced instead.
   static Future<T> _withStaleClientRetry<T>(
     Future<T> Function() action, {
     bool resendSafe = true,
@@ -37,15 +38,10 @@ abstract final class _ApiServiceHttp {
     } catch (e) {
       if (!isStaleHttpClientError(e)) rethrow;
       ApiService.recycleProductionHttpClient();
-      if (!resendSafe && !_neverSent(e)) rethrow;
+      if (!resendSafe) rethrow;
       return await action();
     }
   }
-
-  /// A local "Bad file descriptor" (the OS closed our socket while the app was
-  /// suspended) fails before any bytes leave the device.
-  static bool _neverSent(Object e) =>
-      e.toString().toLowerCase().contains('bad file descriptor');
 
   /// True when the server de-duplicates this request, making a re-send safe.
   static bool _hasIdempotencyKey(Map<String, String>? headers) {
